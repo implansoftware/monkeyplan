@@ -18,6 +18,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { User } from "@shared/schema";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -430,237 +431,198 @@ export default function ResellerRepairCenters() {
               <DialogTitle>{editingCenter ? "Modifica Centro" : "Nuovo Centro di Riparazione"}</DialogTitle>
             </DialogHeader>
             
-            <div className="space-y-4">
-              <div className="flex items-center justify-between gap-2 mb-2">
-                {WIZARD_STEPS.map((step) => {
-                  const StepIcon = step.icon;
-                  const isActive = step.id === wizardStep;
-                  const isPast = wizardStep > step.id;
-                  return (
-                    <div key={step.id} className="flex flex-col items-center flex-1">
-                      <div 
-                        className={`w-10 h-10 rounded-full flex items-center justify-center border-2 transition-colors ${
-                          isActive ? 'bg-primary border-primary text-primary-foreground' : 
-                          isPast ? 'bg-primary/20 border-primary text-primary' : 
-                          'bg-muted border-muted-foreground/30 text-muted-foreground'
-                        }`}
-                      >
-                        {isPast ? <Check className="h-5 w-5" /> : <StepIcon className="h-5 w-5" />}
+            {/* MODIFICA: Form con Accordion (tutte le sezioni visibili) */}
+            {editingCenter ? (
+              <div className="space-y-4">
+                <Accordion type="multiple" defaultValue={["info", "address", "fiscal", "config"]} className="w-full">
+                  <AccordionItem value="info">
+                    <AccordionTrigger className="text-sm font-medium">
+                      <div className="flex items-center gap-2">
+                        <Building className="h-4 w-4" />
+                        Info Base
                       </div>
-                      <span className={`text-xs mt-1 text-center ${isActive ? 'text-foreground font-medium' : 'text-muted-foreground'}`}>
-                        {step.title}
-                      </span>
-                    </div>
-                  );
-                })}
-              </div>
-              <Progress value={progressPercent} className="h-1" />
-
-              <div className="min-h-[280px]">
-                {wizardStep === 1 && (
-                  <div className="space-y-4">
-                    <p className="text-sm text-muted-foreground">Informazioni di base del centro di riparazione.</p>
-                    <div className="space-y-2">
-                      <Label htmlFor="name">Nome Centro *</Label>
-                      <Input 
-                        id="name"
-                        value={formData.name}
-                        onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                        data-testid="input-name" 
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="email">Email *</Label>
-                      <Input 
-                        id="email"
-                        type="email"
-                        value={formData.email}
-                        onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
-                        data-testid="input-email" 
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="phone">Telefono *</Label>
-                      <Input 
-                        id="phone"
-                        type="tel"
-                        value={formData.phone}
-                        onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
-                        data-testid="input-phone" 
-                      />
-                    </div>
-                    {!editingCenter && (
+                    </AccordionTrigger>
+                    <AccordionContent className="space-y-4 pt-2">
                       <div className="space-y-2">
-                        <Label htmlFor="password">Password Account * (min 6 caratteri)</Label>
+                        <Label htmlFor="edit-name">Nome Centro *</Label>
                         <Input 
-                          id="password"
-                          type="password"
-                          value={formData.password}
-                          onChange={(e) => setFormData(prev => ({ ...prev, password: e.target.value }))}
-                          placeholder="Password per accesso al centro"
-                          data-testid="input-password" 
-                        />
-                        <p className="text-xs text-muted-foreground">
-                          Questa password verrà usata dal centro per accedere al sistema
-                        </p>
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                {wizardStep === 2 && (
-                  <div className="space-y-4">
-                    <p className="text-sm text-muted-foreground">Indirizzo e ubicazione del centro.</p>
-                    <div className="space-y-2">
-                      <Label>Indirizzo *</Label>
-                      <AddressAutocomplete
-                        value={addressData.address}
-                        onChange={(val) => setAddressData(prev => ({ ...prev, address: val }))}
-                        onAddressSelect={(result) => {
-                          setAddressData({
-                            address: result.address || result.fullAddress,
-                            city: result.city,
-                            cap: result.postalCode,
-                            provincia: result.province,
-                          });
-                        }}
-                        placeholder="Inizia a digitare..."
-                        data-testid="input-address"
-                      />
-                    </div>
-                    <div className="grid grid-cols-2 gap-3">
-                      <div className="space-y-2">
-                        <Label htmlFor="city">Città *</Label>
-                        <Input 
-                          id="city"
-                          value={addressData.city}
-                          onChange={(e) => setAddressData(prev => ({ ...prev, city: e.target.value }))}
-                          data-testid="input-city" 
-                        />
-                      </div>
-                      <div className="grid grid-cols-2 gap-2">
-                        <div className="space-y-2">
-                          <Label htmlFor="cap">CAP</Label>
-                          <Input 
-                            id="cap"
-                            value={addressData.cap}
-                            onChange={(e) => setAddressData(prev => ({ ...prev, cap: e.target.value }))}
-                            data-testid="input-cap" 
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="provincia">Prov.</Label>
-                          <Input 
-                            id="provincia"
-                            maxLength={2}
-                            value={addressData.provincia}
-                            onChange={(e) => setAddressData(prev => ({ ...prev, provincia: e.target.value }))}
-                            placeholder="XX"
-                            data-testid="input-provincia" 
-                          />
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {wizardStep === 3 && (
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between">
-                      <p className="text-sm text-muted-foreground">Dati fiscali e fatturazione (opzionali).</p>
-                      {!editingCenter && (
-                        <div className="flex items-center gap-2">
-                          <Checkbox 
-                            id="useMyFiscalData" 
-                            checked={useMyFiscalData}
-                            onCheckedChange={(checked) => handleUseMyFiscalDataChange(checked as boolean)}
-                            data-testid="checkbox-use-my-fiscal-data"
-                          />
-                          <Label htmlFor="useMyFiscalData" className="text-xs cursor-pointer">
-                            Usa i miei dati
-                          </Label>
-                        </div>
-                      )}
-                    </div>
-                    <div className="grid grid-cols-2 gap-3">
-                      <div className="space-y-2">
-                        <Label htmlFor="ragioneSociale">Ragione Sociale</Label>
-                        <Input 
-                          id="ragioneSociale"
-                          value={formData.ragioneSociale}
-                          onChange={(e) => setFormData(prev => ({ ...prev, ragioneSociale: e.target.value }))}
-                          data-testid="input-ragioneSociale" 
+                          id="edit-name"
+                          value={formData.name}
+                          onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                          data-testid="edit-input-name" 
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="partitaIva">Partita IVA</Label>
+                        <Label htmlFor="edit-email">Email *</Label>
                         <Input 
-                          id="partitaIva"
-                          value={formData.partitaIva}
-                          onChange={(e) => setFormData(prev => ({ ...prev, partitaIva: e.target.value }))}
-                          data-testid="input-partitaIva" 
-                        />
-                      </div>
-                      <div className="space-y-2 col-span-2">
-                        <Label htmlFor="codiceFiscale">Codice Fiscale</Label>
-                        <Input 
-                          id="codiceFiscale"
-                          value={formData.codiceFiscale}
-                          onChange={(e) => setFormData(prev => ({ ...prev, codiceFiscale: e.target.value }))}
-                          data-testid="input-codiceFiscale" 
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="codiceUnivoco">Codice SDI</Label>
-                        <Input 
-                          id="codiceUnivoco"
-                          maxLength={7}
-                          value={formData.codiceUnivoco}
-                          onChange={(e) => setFormData(prev => ({ ...prev, codiceUnivoco: e.target.value }))}
-                          placeholder="7 caratteri"
-                          data-testid="input-codiceUnivoco" 
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="pec">PEC</Label>
-                        <Input 
-                          id="pec"
+                          id="edit-email"
                           type="email"
-                          value={formData.pec}
-                          onChange={(e) => setFormData(prev => ({ ...prev, pec: e.target.value }))}
-                          placeholder="email@pec.it"
-                          data-testid="input-pec" 
+                          value={formData.email}
+                          onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
+                          data-testid="edit-input-email" 
                         />
                       </div>
-                      <div className="space-y-2 col-span-2">
-                        <Label htmlFor="iban">IBAN</Label>
-                        <Input 
-                          id="iban"
-                          value={formData.iban}
-                          onChange={(e) => setFormData(prev => ({ ...prev, iban: e.target.value }))}
-                          placeholder="IT..."
-                          data-testid="input-iban" 
-                        />
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {wizardStep === 4 && (
-                  <div className="space-y-4">
-                    <p className="text-sm text-muted-foreground">Configurazione tariffe e servizi.</p>
-                    
-                    <div className="space-y-2">
-                      <h4 className="font-medium text-sm text-muted-foreground flex items-center gap-2">
-                        <Clock className="h-4 w-4" />
-                        Tariffa Manodopera
-                      </h4>
                       <div className="space-y-2">
-                        <Label htmlFor="hourlyRate">Tariffa Oraria (EUR)</Label>
+                        <Label htmlFor="edit-phone">Telefono *</Label>
+                        <Input 
+                          id="edit-phone"
+                          type="tel"
+                          value={formData.phone}
+                          onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
+                          data-testid="edit-input-phone" 
+                        />
+                      </div>
+                    </AccordionContent>
+                  </AccordionItem>
+
+                  <AccordionItem value="address">
+                    <AccordionTrigger className="text-sm font-medium">
+                      <div className="flex items-center gap-2">
+                        <MapPin className="h-4 w-4" />
+                        Indirizzo
+                      </div>
+                    </AccordionTrigger>
+                    <AccordionContent className="space-y-4 pt-2">
+                      <div className="space-y-2">
+                        <Label>Indirizzo *</Label>
+                        <AddressAutocomplete
+                          value={addressData.address}
+                          onChange={(val) => setAddressData(prev => ({ ...prev, address: val }))}
+                          onAddressSelect={(result) => {
+                            setAddressData({
+                              address: result.address || result.fullAddress,
+                              city: result.city,
+                              cap: result.postalCode,
+                              provincia: result.province,
+                            });
+                          }}
+                          placeholder="Inizia a digitare..."
+                          data-testid="edit-input-address"
+                        />
+                      </div>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="space-y-2">
+                          <Label htmlFor="edit-city">Città *</Label>
+                          <Input 
+                            id="edit-city"
+                            value={addressData.city}
+                            onChange={(e) => setAddressData(prev => ({ ...prev, city: e.target.value }))}
+                            data-testid="edit-input-city" 
+                          />
+                        </div>
+                        <div className="grid grid-cols-2 gap-2">
+                          <div className="space-y-2">
+                            <Label htmlFor="edit-cap">CAP</Label>
+                            <Input 
+                              id="edit-cap"
+                              value={addressData.cap}
+                              onChange={(e) => setAddressData(prev => ({ ...prev, cap: e.target.value }))}
+                              data-testid="edit-input-cap" 
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="edit-provincia">Prov.</Label>
+                            <Input 
+                              id="edit-provincia"
+                              maxLength={2}
+                              value={addressData.provincia}
+                              onChange={(e) => setAddressData(prev => ({ ...prev, provincia: e.target.value }))}
+                              placeholder="XX"
+                              data-testid="edit-input-provincia" 
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    </AccordionContent>
+                  </AccordionItem>
+
+                  <AccordionItem value="fiscal">
+                    <AccordionTrigger className="text-sm font-medium">
+                      <div className="flex items-center gap-2">
+                        <FileText className="h-4 w-4" />
+                        Dati Fiscali
+                      </div>
+                    </AccordionTrigger>
+                    <AccordionContent className="space-y-4 pt-2">
+                      <p className="text-sm text-muted-foreground">Dati fiscali e fatturazione (opzionali).</p>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="space-y-2">
+                          <Label htmlFor="edit-ragioneSociale">Ragione Sociale</Label>
+                          <Input 
+                            id="edit-ragioneSociale"
+                            value={formData.ragioneSociale}
+                            onChange={(e) => setFormData(prev => ({ ...prev, ragioneSociale: e.target.value }))}
+                            data-testid="edit-input-ragioneSociale" 
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="edit-partitaIva">Partita IVA</Label>
+                          <Input 
+                            id="edit-partitaIva"
+                            value={formData.partitaIva}
+                            onChange={(e) => setFormData(prev => ({ ...prev, partitaIva: e.target.value }))}
+                            data-testid="edit-input-partitaIva" 
+                          />
+                        </div>
+                        <div className="space-y-2 col-span-2">
+                          <Label htmlFor="edit-codiceFiscale">Codice Fiscale</Label>
+                          <Input 
+                            id="edit-codiceFiscale"
+                            value={formData.codiceFiscale}
+                            onChange={(e) => setFormData(prev => ({ ...prev, codiceFiscale: e.target.value }))}
+                            data-testid="edit-input-codiceFiscale" 
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="edit-codiceUnivoco">Codice SDI</Label>
+                          <Input 
+                            id="edit-codiceUnivoco"
+                            maxLength={7}
+                            value={formData.codiceUnivoco}
+                            onChange={(e) => setFormData(prev => ({ ...prev, codiceUnivoco: e.target.value }))}
+                            placeholder="7 caratteri"
+                            data-testid="edit-input-codiceUnivoco" 
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="edit-pec">PEC</Label>
+                          <Input 
+                            id="edit-pec"
+                            type="email"
+                            value={formData.pec}
+                            onChange={(e) => setFormData(prev => ({ ...prev, pec: e.target.value }))}
+                            placeholder="email@pec.it"
+                            data-testid="edit-input-pec" 
+                          />
+                        </div>
+                        <div className="space-y-2 col-span-2">
+                          <Label htmlFor="edit-iban">IBAN</Label>
+                          <Input 
+                            id="edit-iban"
+                            value={formData.iban}
+                            onChange={(e) => setFormData(prev => ({ ...prev, iban: e.target.value }))}
+                            placeholder="IT..."
+                            data-testid="edit-input-iban" 
+                          />
+                        </div>
+                      </div>
+                    </AccordionContent>
+                  </AccordionItem>
+
+                  <AccordionItem value="config">
+                    <AccordionTrigger className="text-sm font-medium">
+                      <div className="flex items-center gap-2">
+                        <Settings className="h-4 w-4" />
+                        Configurazione
+                      </div>
+                    </AccordionTrigger>
+                    <AccordionContent className="space-y-4 pt-2">
+                      <div className="space-y-2">
+                        <Label htmlFor="edit-hourlyRate">Tariffa Oraria (EUR)</Label>
                         <div className="relative">
                           <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">€</span>
                           <Input
-                            id="hourlyRate"
+                            id="edit-hourlyRate"
                             type="number"
                             step="0.01"
                             min="0"
@@ -668,29 +630,22 @@ export default function ResellerRepairCenters() {
                             value={hourlyRateEuros}
                             onChange={(e) => setHourlyRateEuros(e.target.value)}
                             className="pl-7"
-                            data-testid="input-hourly-rate"
+                            data-testid="edit-input-hourly-rate"
                           />
                         </div>
                         <p className="text-xs text-muted-foreground">
-                          Tariffa oraria per il calcolo del costo manodopera. 
-                          Se non specificata, verrà usata la tariffa di sistema.
+                          Tariffa oraria per il calcolo del costo manodopera. Se non specificata, verrà usata la tariffa di sistema.
                         </p>
                       </div>
-                    </div>
-                    
-                    {subResellers.length > 0 && (
-                      <div className="space-y-2">
-                        <h4 className="font-medium text-sm text-muted-foreground flex items-center gap-2">
-                          <UserCheck className="h-4 w-4" />
-                          Assegnazione Sub-Reseller
-                        </h4>
+                      
+                      {subResellers.length > 0 && (
                         <div className="space-y-2">
-                          <Label htmlFor="subReseller">Sub-Reseller (opzionale)</Label>
+                          <Label htmlFor="edit-subReseller">Sub-Reseller (opzionale)</Label>
                           <Select
                             value={selectedSubResellerId || "none"}
                             onValueChange={(value) => setSelectedSubResellerId(value === "none" ? null : value)}
                           >
-                            <SelectTrigger data-testid="select-sub-reseller">
+                            <SelectTrigger data-testid="edit-select-sub-reseller">
                               <SelectValue placeholder="Seleziona sub-reseller..." />
                             </SelectTrigger>
                             <SelectContent>
@@ -706,52 +661,354 @@ export default function ResellerRepairCenters() {
                             Assegna questo centro a un sub-reseller per permettergli di gestirlo.
                           </p>
                         </div>
-                      </div>
-                    )}
-                    
-                    <div className="bg-muted/50 p-3 rounded-md mt-4">
-                      <p className="text-xs text-muted-foreground">
-                        Il centro di riparazione sarà automaticamente associato al tuo account rivenditore e potrai gestirne le attività.
-                      </p>
-                    </div>
-                  </div>
-                )}
-              </div>
+                      )}
+                    </AccordionContent>
+                  </AccordionItem>
+                </Accordion>
 
-              <div className="flex justify-between pt-4 border-t">
-                <Button 
-                  type="button" 
-                  variant="outline" 
-                  onClick={prevStep}
-                  disabled={isFirstStep()}
-                  data-testid="button-wizard-prev"
-                >
-                  <ChevronLeft className="mr-1 h-4 w-4" />
-                  Indietro
-                </Button>
-                {isLastStep() ? (
+                <div className="flex justify-end pt-4 border-t gap-2">
+                  <Button 
+                    type="button"
+                    variant="outline"
+                    onClick={() => setDialogOpen(false)}
+                    data-testid="button-cancel-edit"
+                  >
+                    Annulla
+                  </Button>
                   <Button 
                     type="button"
                     onClick={handleFinalSubmit}
-                    disabled={createCenterMutation.isPending || updateCenterMutation.isPending}
-                    data-testid="button-submit-center"
+                    disabled={updateCenterMutation.isPending}
+                    data-testid="button-edit-submit"
                   >
+                    {updateCenterMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                     <Check className="mr-1 h-4 w-4" />
-                    {editingCenter ? "Aggiorna" : "Crea"} Centro
+                    Salva Modifiche
                   </Button>
-                ) : (
-                  <Button 
-                    type="button"
-                    onClick={nextStep}
-                    disabled={!canProceedToNextStep()}
-                    data-testid="button-wizard-next"
-                  >
-                    Avanti
-                    <ChevronRight className="ml-1 h-4 w-4" />
-                  </Button>
-                )}
+                </div>
               </div>
-            </div>
+            ) : (
+              /* CREAZIONE: Wizard a step */
+              <div className="space-y-4">
+                <div className="flex items-center justify-between gap-2 mb-2">
+                  {WIZARD_STEPS.map((step) => {
+                    const StepIcon = step.icon;
+                    const isActive = step.id === wizardStep;
+                    const isPast = wizardStep > step.id;
+                    return (
+                      <div key={step.id} className="flex flex-col items-center flex-1">
+                        <div 
+                          className={`w-10 h-10 rounded-full flex items-center justify-center border-2 transition-colors ${
+                            isActive ? 'bg-primary border-primary text-primary-foreground' : 
+                            isPast ? 'bg-primary/20 border-primary text-primary' : 
+                            'bg-muted border-muted-foreground/30 text-muted-foreground'
+                          }`}
+                        >
+                          {isPast ? <Check className="h-5 w-5" /> : <StepIcon className="h-5 w-5" />}
+                        </div>
+                        <span className={`text-xs mt-1 text-center ${isActive ? 'text-foreground font-medium' : 'text-muted-foreground'}`}>
+                          {step.title}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+                <Progress value={progressPercent} className="h-1" />
+
+                <div className="min-h-[280px]">
+                  {wizardStep === 1 && (
+                    <div className="space-y-4">
+                      <p className="text-sm text-muted-foreground">Informazioni di base del centro di riparazione.</p>
+                      <div className="space-y-2">
+                        <Label htmlFor="name">Nome Centro *</Label>
+                        <Input 
+                          id="name"
+                          value={formData.name}
+                          onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                          data-testid="input-name" 
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="email">Email *</Label>
+                        <Input 
+                          id="email"
+                          type="email"
+                          value={formData.email}
+                          onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
+                          data-testid="input-email" 
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="phone">Telefono *</Label>
+                        <Input 
+                          id="phone"
+                          type="tel"
+                          value={formData.phone}
+                          onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
+                          data-testid="input-phone" 
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="password">Password Account * (min 6 caratteri)</Label>
+                        <Input 
+                          id="password"
+                          type="password"
+                          value={formData.password}
+                          onChange={(e) => setFormData(prev => ({ ...prev, password: e.target.value }))}
+                          placeholder="Password per accesso al centro"
+                          data-testid="input-password" 
+                        />
+                        <p className="text-xs text-muted-foreground">
+                          Questa password verrà usata dal centro per accedere al sistema
+                        </p>
+                      </div>
+                    </div>
+                  )}
+
+                  {wizardStep === 2 && (
+                    <div className="space-y-4">
+                      <p className="text-sm text-muted-foreground">Indirizzo e ubicazione del centro.</p>
+                      <div className="space-y-2">
+                        <Label>Indirizzo *</Label>
+                        <AddressAutocomplete
+                          value={addressData.address}
+                          onChange={(val) => setAddressData(prev => ({ ...prev, address: val }))}
+                          onAddressSelect={(result) => {
+                            setAddressData({
+                              address: result.address || result.fullAddress,
+                              city: result.city,
+                              cap: result.postalCode,
+                              provincia: result.province,
+                            });
+                          }}
+                          placeholder="Inizia a digitare..."
+                          data-testid="input-address"
+                        />
+                      </div>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="space-y-2">
+                          <Label htmlFor="city">Città *</Label>
+                          <Input 
+                            id="city"
+                            value={addressData.city}
+                            onChange={(e) => setAddressData(prev => ({ ...prev, city: e.target.value }))}
+                            data-testid="input-city" 
+                          />
+                        </div>
+                        <div className="grid grid-cols-2 gap-2">
+                          <div className="space-y-2">
+                            <Label htmlFor="cap">CAP</Label>
+                            <Input 
+                              id="cap"
+                              value={addressData.cap}
+                              onChange={(e) => setAddressData(prev => ({ ...prev, cap: e.target.value }))}
+                              data-testid="input-cap" 
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="provincia">Prov.</Label>
+                            <Input 
+                              id="provincia"
+                              maxLength={2}
+                              value={addressData.provincia}
+                              onChange={(e) => setAddressData(prev => ({ ...prev, provincia: e.target.value }))}
+                              placeholder="XX"
+                              data-testid="input-provincia" 
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {wizardStep === 3 && (
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between">
+                        <p className="text-sm text-muted-foreground">Dati fiscali e fatturazione (opzionali).</p>
+                        <div className="flex items-center gap-2">
+                          <Checkbox 
+                            id="useMyFiscalData" 
+                            checked={useMyFiscalData}
+                            onCheckedChange={(checked) => handleUseMyFiscalDataChange(checked as boolean)}
+                            data-testid="checkbox-use-my-fiscal-data"
+                          />
+                          <Label htmlFor="useMyFiscalData" className="text-xs cursor-pointer">
+                            Usa i miei dati
+                          </Label>
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="space-y-2">
+                          <Label htmlFor="ragioneSociale">Ragione Sociale</Label>
+                          <Input 
+                            id="ragioneSociale"
+                            value={formData.ragioneSociale}
+                            onChange={(e) => setFormData(prev => ({ ...prev, ragioneSociale: e.target.value }))}
+                            data-testid="input-ragioneSociale" 
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="partitaIva">Partita IVA</Label>
+                          <Input 
+                            id="partitaIva"
+                            value={formData.partitaIva}
+                            onChange={(e) => setFormData(prev => ({ ...prev, partitaIva: e.target.value }))}
+                            data-testid="input-partitaIva" 
+                          />
+                        </div>
+                        <div className="space-y-2 col-span-2">
+                          <Label htmlFor="codiceFiscale">Codice Fiscale</Label>
+                          <Input 
+                            id="codiceFiscale"
+                            value={formData.codiceFiscale}
+                            onChange={(e) => setFormData(prev => ({ ...prev, codiceFiscale: e.target.value }))}
+                            data-testid="input-codiceFiscale" 
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="codiceUnivoco">Codice SDI</Label>
+                          <Input 
+                            id="codiceUnivoco"
+                            maxLength={7}
+                            value={formData.codiceUnivoco}
+                            onChange={(e) => setFormData(prev => ({ ...prev, codiceUnivoco: e.target.value }))}
+                            placeholder="7 caratteri"
+                            data-testid="input-codiceUnivoco" 
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="pec">PEC</Label>
+                          <Input 
+                            id="pec"
+                            type="email"
+                            value={formData.pec}
+                            onChange={(e) => setFormData(prev => ({ ...prev, pec: e.target.value }))}
+                            placeholder="email@pec.it"
+                            data-testid="input-pec" 
+                          />
+                        </div>
+                        <div className="space-y-2 col-span-2">
+                          <Label htmlFor="iban">IBAN</Label>
+                          <Input 
+                            id="iban"
+                            value={formData.iban}
+                            onChange={(e) => setFormData(prev => ({ ...prev, iban: e.target.value }))}
+                            placeholder="IT..."
+                            data-testid="input-iban" 
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {wizardStep === 4 && (
+                    <div className="space-y-4">
+                      <p className="text-sm text-muted-foreground">Configurazione tariffe e servizi.</p>
+                      
+                      <div className="space-y-2">
+                        <h4 className="font-medium text-sm text-muted-foreground flex items-center gap-2">
+                          <Clock className="h-4 w-4" />
+                          Tariffa Manodopera
+                        </h4>
+                        <div className="space-y-2">
+                          <Label htmlFor="hourlyRate">Tariffa Oraria (EUR)</Label>
+                          <div className="relative">
+                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">€</span>
+                            <Input
+                              id="hourlyRate"
+                              type="number"
+                              step="0.01"
+                              min="0"
+                              placeholder="35.00"
+                              value={hourlyRateEuros}
+                              onChange={(e) => setHourlyRateEuros(e.target.value)}
+                              className="pl-7"
+                              data-testid="input-hourly-rate"
+                            />
+                          </div>
+                          <p className="text-xs text-muted-foreground">
+                            Tariffa oraria per il calcolo del costo manodopera. 
+                            Se non specificata, verrà usata la tariffa di sistema.
+                          </p>
+                        </div>
+                      </div>
+                      
+                      {subResellers.length > 0 && (
+                        <div className="space-y-2">
+                          <h4 className="font-medium text-sm text-muted-foreground flex items-center gap-2">
+                            <UserCheck className="h-4 w-4" />
+                            Assegnazione Sub-Reseller
+                          </h4>
+                          <div className="space-y-2">
+                            <Label htmlFor="subReseller">Sub-Reseller (opzionale)</Label>
+                            <Select
+                              value={selectedSubResellerId || "none"}
+                              onValueChange={(value) => setSelectedSubResellerId(value === "none" ? null : value)}
+                            >
+                              <SelectTrigger data-testid="select-sub-reseller">
+                                <SelectValue placeholder="Seleziona sub-reseller..." />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="none">Nessuno (gestito direttamente)</SelectItem>
+                                {subResellers.map((sr) => (
+                                  <SelectItem key={sr.id} value={sr.id}>
+                                    {sr.fullName}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                            <p className="text-xs text-muted-foreground">
+                              Assegna questo centro a un sub-reseller per permettergli di gestirlo.
+                            </p>
+                          </div>
+                        </div>
+                      )}
+                      
+                      <div className="bg-muted/50 p-3 rounded-md mt-4">
+                        <p className="text-xs text-muted-foreground">
+                          Il centro di riparazione sarà automaticamente associato al tuo account rivenditore e potrai gestirne le attività.
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                <div className="flex justify-between pt-4 border-t">
+                  <Button 
+                    type="button" 
+                    variant="outline" 
+                    onClick={prevStep}
+                    disabled={isFirstStep()}
+                    data-testid="button-wizard-prev"
+                  >
+                    <ChevronLeft className="mr-1 h-4 w-4" />
+                    Indietro
+                  </Button>
+                  {isLastStep() ? (
+                    <Button 
+                      type="button"
+                      onClick={handleFinalSubmit}
+                      disabled={createCenterMutation.isPending}
+                      data-testid="button-submit-center"
+                    >
+                      {createCenterMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                      <Check className="mr-1 h-4 w-4" />
+                      Crea Centro
+                    </Button>
+                  ) : (
+                    <Button 
+                      type="button"
+                      onClick={nextStep}
+                      disabled={!canProceedToNextStep()}
+                      data-testid="button-wizard-next"
+                    >
+                      Avanti
+                      <ChevronRight className="ml-1 h-4 w-4" />
+                    </Button>
+                  )}
+                </div>
+              </div>
+            )}
           </DialogContent>
         </Dialog>
         </div>
@@ -910,6 +1167,7 @@ export default function ResellerRepairCenters() {
                               name: center.name || "",
                               phone: center.phone || "",
                               email: center.email || "",
+                              password: "",
                               ragioneSociale: center.ragioneSociale || "",
                               partitaIva: center.partitaIva || "",
                               codiceFiscale: center.codiceFiscale || "",
