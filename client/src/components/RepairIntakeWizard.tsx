@@ -1630,25 +1630,6 @@ export function RepairIntakeWizard({
                     </FormItem>
                   )}
                 />
-
-                {/* Notes */}
-                <FormField
-                  control={form.control}
-                  name="notes"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Note Aggiuntive</FormLabel>
-                      <FormControl>
-                        <Textarea
-                          {...field}
-                          placeholder="Note opzionali..."
-                          rows={2}
-                          data-testid="textarea-notes"
-                        />
-                      </FormControl>
-                    </FormItem>
-                  )}
-                />
               </div>
             )}
 
