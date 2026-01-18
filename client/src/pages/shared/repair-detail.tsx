@@ -330,7 +330,7 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
   // Also load for repair_center role so they can see their own center details
   const { data: repairCenters = [] } = useQuery<RepairCenter[]>({
     queryKey: ["/api/repair-centers"],
-    enabled: user?.role === 'reseller' || user?.role === 'admin' || user?.role === 'repair_center',
+    enabled: user?.role === 'reseller' || user?.role === 'reseller_staff' || user?.role === 'admin' || user?.role === 'repair_center',
   });
 
   const updateRepairCenterMutation = useMutation({
@@ -557,6 +557,7 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
     user.role === 'admin' ||
     (user.role === 'customer' && repair.customerId === user.id) ||
     (user.role === 'reseller' && repair.resellerId === user.id) ||
+    (user.role === 'reseller_staff' && repair.resellerId === user.resellerId) ||
     (user.role === 'repair_center' && repair.repairCenterId === user.repairCenterId)
   ) : false;
 
@@ -566,11 +567,11 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
   ) : false;
 
   const canManageWorkflow = user ? (
-    user.role === 'admin' || user.role === 'repair_center' || user.role === 'reseller'
+    user.role === 'admin' || user.role === 'repair_center' || user.role === 'reseller' || user.role === 'reseller_staff'
   ) : false;
 
   const canViewWorkflow = user ? (
-    user.role === 'admin' || user.role === 'repair_center' || user.role === 'reseller' || user.role === 'customer'
+    user.role === 'admin' || user.role === 'repair_center' || user.role === 'reseller' || user.role === 'reseller_staff' || user.role === 'customer'
   ) : false;
 
   const startRepairMutation = useMutation({
@@ -1829,8 +1830,8 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
                 );
               })()}
               
-              {/* Dropdown for changing center - only for admin/reseller */}
-              {(user?.role === 'admin' || user?.role === 'reseller') && (
+              {/* Dropdown for changing center - only for admin/reseller/reseller_staff */}
+              {(user?.role === 'admin' || user?.role === 'reseller' || user?.role === 'reseller_staff') && (
                 <div className="pt-3 border-t">
                   <span className="text-sm text-muted-foreground block mb-2">Cambia centro</span>
                   <Select
