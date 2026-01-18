@@ -27,6 +27,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
 import { FileText, Plus, Trash2, Package, Calculator, Info, Warehouse } from "lucide-react";
 import type { RepairDiagnostics, RepairOrder, RepairCenter, Warehouse as WarehouseType } from "@shared/schema";
 import { SearchableProductCombobox } from "@/components/SearchableProductCombobox";
@@ -93,6 +95,7 @@ export function QuoteFormDialog({
   const queryClient = useQueryClient();
   const [totalAmount, setTotalAmount] = useState(0);
   const [selectedWarehouseId, setSelectedWarehouseId] = useState<string>("");
+  const [wantAddLaborCost, setWantAddLaborCost] = useState(false);
   const [laborCalculation, setLaborCalculation] = useState<{
     hourlyRate: number;
     estimatedHours: number;
@@ -243,6 +246,7 @@ export function QuoteFormDialog({
         queryKey: [`/api/repair-orders/${repairOrderId}`],
       });
       form.reset();
+      setWantAddLaborCost(false);
       onOpenChange(false);
       onSuccess?.();
     },
@@ -270,6 +274,7 @@ export function QuoteFormDialog({
       onDataCollected(collectedData);
       form.reset();
       setSelectedWarehouseId("");
+      setWantAddLaborCost(false);
       onOpenChange(false);
       return;
     }
@@ -554,32 +559,52 @@ export function QuoteFormDialog({
                   </Alert>
                 )}
 
-                <FormField
-                  control={form.control}
-                  name="laborCost"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Costo Manodopera (EUR)</FormLabel>
-                      <FormControl>
-                        <Input
-                          {...field}
-                          type="number"
-                          min="0"
-                          step="0.01"
-                          placeholder="0,00"
-                          data-testid="input-labor-cost"
-                        />
-                      </FormControl>
-                      <FormDescription>
-                        {laborCalculation 
-                          ? "Pre-calcolato automaticamente. Puoi modificarlo se necessario."
-                          : "Costo totale della manodopera per la riparazione"
-                        }
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
+                {/* Labor Cost Toggle */}
+                <div className="space-y-3">
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id="wantAddLaborCostQuote"
+                      checked={wantAddLaborCost}
+                      onCheckedChange={(checked) => {
+                        setWantAddLaborCost(checked === true);
+                        if (!checked) form.setValue("laborCost", 0);
+                      }}
+                      data-testid="checkbox-want-labor-cost"
+                    />
+                    <Label htmlFor="wantAddLaborCostQuote">
+                      Vuoi aggiungere costo manodopera aggiuntivo?
+                    </Label>
+                  </div>
+                  
+                  {wantAddLaborCost && (
+                    <FormField
+                      control={form.control}
+                      name="laborCost"
+                      render={({ field }) => (
+                        <FormItem className="pl-6">
+                          <FormLabel>Costo Manodopera (EUR)</FormLabel>
+                          <FormControl>
+                            <Input
+                              {...field}
+                              type="number"
+                              min="0"
+                              step="0.01"
+                              placeholder="0,00"
+                              data-testid="input-labor-cost"
+                            />
+                          </FormControl>
+                          <FormDescription>
+                            {laborCalculation 
+                              ? "Pre-calcolato automaticamente. Puoi modificarlo se necessario."
+                              : "Costo totale della manodopera per la riparazione"
+                            }
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
                   )}
-                />
+                </div>
 
                 <Separator />
 

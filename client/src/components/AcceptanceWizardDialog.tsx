@@ -252,6 +252,7 @@ export function AcceptanceWizardDialog({
   const [quoteParts, setQuoteParts] = useState<Array<{ name: string; quantity: number; unitPrice: number }>>([]);
   const [selectedQuoteWarehouseId, setSelectedQuoteWarehouseId] = useState<string>("");
   const [quoteLaborCost, setQuoteLaborCost] = useState(0);
+  const [wantAddLaborCost, setWantAddLaborCost] = useState(false);
   const [quoteNotes, setQuoteNotes] = useState("");
   const [createDiagnosisNow, setCreateDiagnosisNow] = useState(false);
   const [showTechnicalDiagnosis, setShowTechnicalDiagnosis] = useState(false);
@@ -959,6 +960,7 @@ export function AcceptanceWizardDialog({
     setCreateQuoteNow(false);
     setQuoteParts([]);
     setQuoteLaborCost(0);
+    setWantAddLaborCost(false);
     setQuoteNotes("");
     setCreateDiagnosisNow(false);
     setDiagnosisTechnical("");
@@ -2629,23 +2631,6 @@ export function AcceptanceWizardDialog({
 
           {createQuoteNow && (
             <div className="space-y-4 pt-4 border-t">
-              {/* Labor Cost */}
-              <div className="space-y-2">
-                <Label className="flex items-center gap-2">
-                  <Calculator className="h-4 w-4" />
-                  Costo Manodopera (€)
-                </Label>
-                <Input
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  value={quoteLaborCost}
-                  onChange={(e) => setQuoteLaborCost(parseFloat(e.target.value) || 0)}
-                  placeholder="0.00"
-                  data-testid="input-labor-cost"
-                />
-              </div>
-
               {/* Parts Section */}
               <div className="space-y-3">
                 <Label className="flex items-center gap-2">
@@ -2782,6 +2767,42 @@ export function AcceptanceWizardDialog({
                   placeholder="Note aggiuntive per il preventivo..."
                   data-testid="textarea-quote-notes"
                 />
+              </div>
+
+              {/* Labor Cost Toggle */}
+              <div className="space-y-3">
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="wantAddLaborCost"
+                    checked={wantAddLaborCost}
+                    onCheckedChange={(checked) => {
+                      setWantAddLaborCost(checked === true);
+                      if (!checked) setQuoteLaborCost(0);
+                    }}
+                    data-testid="checkbox-want-labor-cost"
+                  />
+                  <Label htmlFor="wantAddLaborCost">
+                    Vuoi aggiungere costo manodopera aggiuntivo?
+                  </Label>
+                </div>
+                
+                {wantAddLaborCost && (
+                  <div className="space-y-2 pl-6">
+                    <Label className="flex items-center gap-2">
+                      <Calculator className="h-4 w-4" />
+                      Costo Manodopera (€)
+                    </Label>
+                    <Input
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      value={quoteLaborCost}
+                      onChange={(e) => setQuoteLaborCost(parseFloat(e.target.value) || 0)}
+                      placeholder="0.00"
+                      data-testid="input-labor-cost"
+                    />
+                  </div>
+                )}
               </div>
 
               {/* Total Preview */}
