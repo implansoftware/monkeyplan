@@ -544,10 +544,11 @@ export function AcceptanceWizardDialog({
     isSubResellerCenter: boolean;
   }>>({
     queryKey: ["/api/repair-centers"],
-    enabled: user?.role === "admin" || user?.role === "repair_center" || user?.role === "reseller" || user?.role === "sub_reseller",
+    enabled: user?.role === "admin" || user?.role === "repair_center" || user?.role === "reseller" || user?.role === "sub_reseller" || user?.role === "reseller_staff" || user?.role === "reseller_collaborator",
   });
   
   // Filter repair centers for sub_reseller to show only their own centers
+  // For reseller_staff/reseller_collaborator, use the full list (they inherit reseller's centers)
   const filteredRepairCenters = user?.role === "sub_reseller"
     ? repairCenters.filter(rc => rc.resellerId === user?.id)
     : repairCenters;
@@ -1472,14 +1473,14 @@ export function AcceptanceWizardDialog({
                 </SelectTrigger>
               </FormControl>
               <SelectContent>
-                {/* For sub_reseller: show simple list of their centers */}
-                {user?.role === "sub_reseller" && filteredRepairCenters.map((center) => (
+                {/* For sub_reseller/reseller_staff/reseller_collaborator: show simple list */}
+                {(user?.role === "sub_reseller" || user?.role === "reseller_staff" || user?.role === "reseller_collaborator") && filteredRepairCenters.map((center) => (
                   <SelectItem key={center.id} value={center.id}>
                     {center.name} {center.address ? `- ${center.address}` : ''}
                   </SelectItem>
                 ))}
-                {/* For reseller/admin: show categorized centers */}
-                {user?.role !== "sub_reseller" && (
+                {/* For reseller/admin/repair_center: show categorized centers */}
+                {user?.role !== "sub_reseller" && user?.role !== "reseller_staff" && user?.role !== "reseller_collaborator" && (
                   <>
                     {/* Own centers first */}
                     {repairCenters.filter(c => c.isOwn).length > 0 && (

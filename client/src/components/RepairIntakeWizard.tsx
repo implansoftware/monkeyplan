@@ -450,7 +450,7 @@ export function RepairIntakeWizard({
     isSubResellerCenter: boolean;
   }>>({
     queryKey: ["/api/repair-centers"],
-    enabled: user?.role === "admin" || user?.role === "reseller" || user?.role === "sub_reseller",
+    enabled: user?.role === "admin" || user?.role === "reseller" || user?.role === "sub_reseller" || user?.role === "reseller_staff" || user?.role === "reseller_collaborator",
   });
 
   // Query for resellers (admin only)
@@ -1120,8 +1120,8 @@ export function RepairIntakeWizard({
                   />
                 )}
 
-                {/* Repair Center Selection - show for admin/reseller/sub_reseller with filtered centers */}
-                {(user?.role === "admin" || user?.role === "reseller" || user?.role === "sub_reseller") && filteredRepairCenters.length > 0 && !showNewCustomerForm && (
+                {/* Repair Center Selection - show for admin/reseller/sub_reseller/reseller_staff with filtered centers */}
+                {(user?.role === "admin" || user?.role === "reseller" || user?.role === "sub_reseller" || user?.role === "reseller_staff" || user?.role === "reseller_collaborator") && filteredRepairCenters.length > 0 && !showNewCustomerForm && (
                   <FormField
                     control={form.control}
                     name="repairCenterId"
@@ -1141,8 +1141,8 @@ export function RepairIntakeWizard({
                                 {rc.name} {rc.ownerName ? `(${rc.ownerName})` : ''}
                               </SelectItem>
                             ))}
-                            {/* For sub_reseller: show own centers */}
-                            {user?.role === "sub_reseller" && filteredRepairCenters.map((rc) => (
+                            {/* For sub_reseller/reseller_staff/reseller_collaborator: show simple list */}
+                            {(user?.role === "sub_reseller" || user?.role === "reseller_staff" || user?.role === "reseller_collaborator") && filteredRepairCenters.map((rc) => (
                               <SelectItem key={rc.id} value={rc.id}>
                                 {rc.name}
                               </SelectItem>
