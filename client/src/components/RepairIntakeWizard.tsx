@@ -41,8 +41,13 @@ import {
   ChevronRight, ChevronLeft, Loader2, Plus, Search,
   Monitor, Tablet, Laptop, Tv, Gamepad2, Watch, Headphones, Printer,
   AlertCircle, UserPlus, X, Mail, Phone, Building, Store, Download, Tag, PartyPopper, FileText, Calculator,
-  Warehouse, Package, Cpu, Code, Wifi, MoreHorizontal
+  Warehouse, Package, Cpu, Code, Wifi, MoreHorizontal, HelpCircle
 } from "lucide-react";
+import { 
+  SiApple, SiSamsung, SiHuawei, SiXiaomi, SiSony, SiLg, SiLenovo, SiDell, SiHp, SiAsus,
+  SiAcer, SiGoogle, SiOneplus, SiMotorola, SiNokia, SiOppo, SiHonor,
+  SiNintendo, SiPlaystation
+} from "react-icons/si";
 import { cn } from "@/lib/utils";
 import { SearchableServiceCombobox } from "@/components/SearchableServiceCombobox";
 import { SearchableProductCombobox } from "@/components/SearchableProductCombobox";
@@ -118,6 +123,33 @@ const DEVICE_TYPE_ICONS: Record<string, any> = {
   cuffie: Headphones,
   stampante: Printer,
 };
+
+const BRAND_ICONS: Record<string, any> = {
+  apple: SiApple,
+  samsung: SiSamsung,
+  huawei: SiHuawei,
+  xiaomi: SiXiaomi,
+  sony: SiSony,
+  lg: SiLg,
+  lenovo: SiLenovo,
+  dell: SiDell,
+  hp: SiHp,
+  asus: SiAsus,
+  acer: SiAcer,
+  google: SiGoogle,
+  oneplus: SiOneplus,
+  motorola: SiMotorola,
+  nokia: SiNokia,
+  oppo: SiOppo,
+  honor: SiHonor,
+  nintendo: SiNintendo,
+  playstation: SiPlaystation,
+};
+
+function getBrandIcon(brandName: string) {
+  const normalized = brandName.toLowerCase().replace(/\s+/g, '');
+  return BRAND_ICONS[normalized] || null;
+}
 
 const AESTHETIC_CONDITIONS = [
   { value: "new", label: "Come nuovo", color: "bg-green-500" },
@@ -1206,54 +1238,64 @@ export function RepairIntakeWizard({
                 {/* Brand & Model */}
                 {selectedTypeId && (
                   <div className="space-y-4">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-                      {/* Brand Select + Create */}
-                      <FormField
-                        control={form.control}
-                        name="deviceBrandId"
-                        render={({ field }) => (
-                          <FormItem>
+                    {/* Brand Selection as Cards */}
+                    <FormField
+                      control={form.control}
+                      name="deviceBrandId"
+                      render={({ field }) => (
+                        <FormItem className="min-w-0">
+                          <div className="flex items-center justify-between mb-2">
                             <FormLabel>Marca</FormLabel>
-                            <div className="flex gap-2">
-                              <Select
-                                value={field.value}
-                                onValueChange={(val) => {
-                                  field.onChange(val);
-                                  setSelectedBrandId(val);
-                                  form.setValue("deviceModelId", "");
-                                }}
+                            {canCreateCatalogItems && (
+                              <Button
+                                type="button"
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => setShowNewBrandForm(true)}
+                                data-testid="button-new-brand"
+                                className="text-xs"
                               >
-                                <FormControl>
-                                  <SelectTrigger data-testid="select-brand" className="flex-1">
-                                    <SelectValue placeholder="Seleziona marca" />
-                                  </SelectTrigger>
-                                </FormControl>
-                                <SelectContent>
-                                  {availableBrands.map((brand) => (
-                                    <SelectItem key={brand.id} value={brand.id}>
-                                      {brand.name}
-                                    </SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
-                              {canCreateCatalogItems && (
-                                <Button
-                                  type="button"
-                                  size="icon"
-                                  variant="outline"
-                                  onClick={() => setShowNewBrandForm(true)}
-                                  data-testid="button-new-brand"
+                                <Plus className="h-3 w-3 mr-1" />
+                                Aggiungi
+                              </Button>
+                            )}
+                          </div>
+                          <div className="grid gap-2 w-full min-w-0" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(90px, 1fr))' }}>
+                            {availableBrands.map((brand) => {
+                              const BrandIcon = getBrandIcon(brand.name);
+                              return (
+                                <Card
+                                  key={brand.id}
+                                  className={cn(
+                                    "cursor-pointer transition-colors min-w-0 w-full hover-elevate",
+                                    field.value === brand.id && "ring-2 ring-primary"
+                                  )}
+                                  onClick={() => {
+                                    field.onChange(brand.id);
+                                    setSelectedBrandId(brand.id);
+                                    form.setValue("deviceModelId", "");
+                                  }}
+                                  data-testid={`card-brand-${brand.id}`}
                                 >
-                                  <Plus className="h-4 w-4" />
-                                </Button>
-                              )}
-                            </div>
-                          </FormItem>
-                        )}
-                      />
+                                  <CardContent className="p-3 text-center">
+                                    {BrandIcon ? (
+                                      <BrandIcon className="h-6 w-6 mx-auto mb-1" />
+                                    ) : (
+                                      <Tag className="h-6 w-6 mx-auto mb-1 text-muted-foreground" />
+                                    )}
+                                    <span className="text-xs truncate block">{brand.name}</span>
+                                  </CardContent>
+                                </Card>
+                              );
+                            })}
+                          </div>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
 
-                      {/* Model Select + Create */}
-                      <FormField
+                    {/* Model Select */}
+                    <FormField
                         control={form.control}
                         name="deviceModelId"
                         render={({ field }) => (
@@ -1293,7 +1335,6 @@ export function RepairIntakeWizard({
                           </FormItem>
                         )}
                       />
-                    </div>
 
                     {/* New Brand Form Inline */}
                     {showNewBrandForm && (
