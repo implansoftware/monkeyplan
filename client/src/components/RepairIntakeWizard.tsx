@@ -404,7 +404,7 @@ export function RepairIntakeWizard({
   const isResellerOrStaff = ["reseller", "reseller_staff"].includes(user?.role || "");
   const canCreateCatalogItems = ["admin", "reseller", "reseller_staff"].includes(user?.role || "");
 
-  const { data: deviceBrands = [] } = useQuery<Array<{ id: string; name: string }>>({
+  const { data: deviceBrands = [] } = useQuery<Array<{ id: string; name: string; logoUrl?: string | null }>>({
     queryKey: isResellerOrStaff 
       ? ["/api/reseller/device-brands", { includeGlobal: true }]
       : ["/api/device-brands"],
@@ -1282,6 +1282,8 @@ export function RepairIntakeWizard({
                                   <CardContent className="p-3 text-center">
                                     {BrandIcon ? (
                                       <BrandIcon className="h-6 w-6 mx-auto mb-1" />
+                                    ) : brand.logoUrl ? (
+                                      <img src={brand.logoUrl} alt={brand.name} className="h-6 w-6 mx-auto mb-1 object-contain" />
                                     ) : (
                                       <Tag className="h-6 w-6 mx-auto mb-1 text-muted-foreground" />
                                     )}

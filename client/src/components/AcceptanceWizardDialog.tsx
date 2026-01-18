@@ -456,6 +456,7 @@ export function AcceptanceWizardDialog({
   const { data: allDeviceBrands = [] } = useQuery<Array<{
     id: string;
     name: string;
+    logoUrl?: string | null;
     isCustom?: boolean;
   }>>({
     queryKey: isResellerOrStaff 
@@ -1598,6 +1599,8 @@ export function AcceptanceWizardDialog({
                       <CardContent className="p-2 text-center">
                         {BrandIcon ? (
                           <BrandIcon className="h-5 w-5 mx-auto mb-1" />
+                        ) : brand.logoUrl ? (
+                          <img src={brand.logoUrl} alt={brand.name} className="h-5 w-5 mx-auto mb-1 object-contain" />
                         ) : (
                           <Tag className="h-5 w-5 mx-auto mb-1 text-muted-foreground" />
                         )}
