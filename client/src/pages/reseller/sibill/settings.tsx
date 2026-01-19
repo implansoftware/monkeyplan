@@ -33,13 +33,16 @@ type SibillCredential = {
 };
 
 type SibillCompany = {
-  id: number;
-  credentialId: number;
-  sibillCompanyId: string;
+  id: string;
+  credentialId: string;
+  resellerId: string;
+  externalId: string;
   name: string;
   vatNumber: string | null;
   fiscalCode: string | null;
+  rawData: unknown;
   createdAt: string;
+  updatedAt: string;
 };
 
 export default function SibillSettingsPage() {
@@ -313,7 +316,7 @@ export default function SibillSettingsPage() {
                           {company.fiscalCode && `CF: ${company.fiscalCode}`}
                         </p>
                       </div>
-                      {credential.selectedCompanyId === company.sibillCompanyId && (
+                      {credential.selectedCompanyId === company.externalId && (
                         <Badge>Selezionata</Badge>
                       )}
                     </div>

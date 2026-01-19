@@ -6606,19 +6606,20 @@ export const sibillCredentials = pgTable("sibill_credentials", {
 export const sibillCompanies = pgTable("sibill_companies", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   credentialId: varchar("credential_id").notNull().references(() => sibillCredentials.id, { onDelete: "cascade" }),
+  resellerId: varchar("reseller_id").notNull(),
   
   // Dati da Sibill API
-  sibillCompanyId: text("sibill_company_id").notNull(),
-  name: text("name").notNull(),
-  vatNumber: text("vat_number"),
-  country: text("country"),
-  fiscalRegime: text("fiscal_regime"),
+  externalId: varchar("external_id").notNull(),
+  name: varchar("name").notNull(),
+  vatNumber: varchar("vat_number"),
+  fiscalCode: varchar("fiscal_code"),
   
-  // Subscription status
-  subscriptionStatus: text("subscription_status"),
+  // Raw data from API
+  rawData: jsonb("raw_data"),
   
-  // Sync
-  syncedAt: timestamp("synced_at").notNull().defaultNow(),
+  // Meta
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
 
 // Documenti/Fatture Sibill (cache sincronizzata)
@@ -6743,7 +6744,8 @@ export const insertSibillCredentialSchema = createInsertSchema(sibillCredentials
 
 export const insertSibillCompanySchema = createInsertSchema(sibillCompanies).omit({
   id: true,
-  syncedAt: true,
+  createdAt: true,
+  updatedAt: true,
 });
 
 export const insertSibillDocumentSchema = createInsertSchema(sibillDocuments).omit({
