@@ -45,6 +45,7 @@ export default function SibillSettingsPage() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [apiToken, setApiToken] = useState("");
+  const [sibillCompanyId, setSibillCompanyId] = useState("");
   const [environment, setEnvironment] = useState<"development" | "production">("production");
   const [showToken, setShowToken] = useState(false);
 
@@ -59,7 +60,11 @@ export default function SibillSettingsPage() {
 
   const saveMutation = useMutation({
     mutationFn: async () => {
-      return apiRequest("POST", "/api/sibill/credentials", { apiToken, environment });
+      return apiRequest("POST", "/api/sibill/credentials", { 
+        apiToken, 
+        environment,
+        companyId: sibillCompanyId || undefined
+      });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/sibill/credentials"] });
@@ -349,6 +354,21 @@ export default function SibillSettingsPage() {
                 >
                   Vai a Sibill <ExternalLink className="h-3 w-3" />
                 </a>
+              </p>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="sibillCompanyId">Company ID Sibill (opzionale)</Label>
+              <Input
+                id="sibillCompanyId"
+                type="text"
+                placeholder="Es: comp_abc123..."
+                value={sibillCompanyId}
+                onChange={(e) => setSibillCompanyId(e.target.value)}
+                data-testid="input-sibill-company-id"
+              />
+              <p className="text-sm text-muted-foreground">
+                ID dell'azienda su Sibill. Se non lo inserisci, verrà recuperato automaticamente dopo la sincronizzazione.
               </p>
             </div>
 

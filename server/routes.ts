@@ -35500,7 +35500,7 @@ export function registerRoutes(app: Express): Server {
       if (!resellerId) {
         return res.status(400).json({ error: "Reseller ID non trovato" });
       }
-      const { apiToken, environment, companyId } = req.body;
+      const { apiToken, environment, companyId: selectedCompanyId } = req.body;
       if (!apiToken) {
         return res.status(400).json({ error: "API Key obbligatoria" });
       }
@@ -35511,7 +35511,7 @@ export function registerRoutes(app: Express): Server {
         const updated = await storage.updateSibillCredential(existing.id, {
           apiToken,
           environment: environment || "production",
-          companyId,
+          selectedCompanyId,
           updatedAt: new Date(),
         });
         res.json(updated);
@@ -35521,7 +35521,7 @@ export function registerRoutes(app: Express): Server {
           resellerId,
           apiToken,
           environment: environment || "production",
-          companyId,
+          selectedCompanyId,
           isActive: true,
         });
         res.json(created);
