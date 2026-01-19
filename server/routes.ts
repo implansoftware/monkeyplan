@@ -35466,7 +35466,7 @@ export function registerRoutes(app: Express): Server {
   // Get Sibill credentials for reseller
   app.get("/api/sibill/credentials", requireAuth, requireRole("reseller", "reseller_staff"), async (req, res) => {
     try {
-      const resellerId = getEffectiveResellerId(req);
+      const resellerId = getEffectiveResellerId(req.user!);
       if (!resellerId) {
         return res.status(400).json({ error: "Reseller ID non trovato" });
       }
@@ -35496,7 +35496,7 @@ export function registerRoutes(app: Express): Server {
   // Create or update Sibill credentials
   app.post("/api/sibill/credentials", requireAuth, requireRole("reseller"), async (req, res) => {
     try {
-      const resellerId = getEffectiveResellerId(req);
+      const resellerId = getEffectiveResellerId(req.user!);
       if (!resellerId) {
         return res.status(400).json({ error: "Reseller ID non trovato" });
       }
@@ -35535,7 +35535,7 @@ export function registerRoutes(app: Express): Server {
   // Test Sibill connection
   app.post("/api/sibill/test-connection", requireAuth, requireRole("reseller", "reseller_staff"), async (req, res) => {
     try {
-      const resellerId = getEffectiveResellerId(req);
+      const resellerId = getEffectiveResellerId(req.user!);
       if (!resellerId) {
         return res.status(400).json({ error: "Reseller ID non trovato" });
       }
@@ -35566,7 +35566,7 @@ export function registerRoutes(app: Express): Server {
   // Get Sibill companies
   app.get("/api/sibill/companies", requireAuth, requireRole("reseller", "reseller_staff"), async (req, res) => {
     try {
-      const resellerId = getEffectiveResellerId(req);
+      const resellerId = getEffectiveResellerId(req.user!);
       if (!resellerId) {
         return res.status(400).json({ error: "Reseller ID non trovato" });
       }
@@ -35583,7 +35583,7 @@ export function registerRoutes(app: Express): Server {
   });
   app.post("/api/sibill/companies/sync", requireAuth, requireRole("reseller"), async (req, res) => {
     try {
-      const resellerId = getEffectiveResellerId(req);
+      const resellerId = getEffectiveResellerId(req.user!);
       if (!resellerId) {
         return res.status(400).json({ error: "Reseller ID non trovato" });
       }
@@ -35638,7 +35638,7 @@ export function registerRoutes(app: Express): Server {
   // Get Sibill documents
   app.get("/api/sibill/documents", requireAuth, requireRole("reseller", "reseller_staff"), async (req, res) => {
     try {
-      const resellerId = getEffectiveResellerId(req);
+      const resellerId = getEffectiveResellerId(req.user!);
       if (!resellerId) {
         return res.status(400).json({ error: "Reseller ID non trovato" });
       }
@@ -35658,7 +35658,7 @@ export function registerRoutes(app: Express): Server {
   // Sync Sibill documents from API
   app.post("/api/sibill/documents/sync", requireAuth, requireRole("reseller"), async (req, res) => {
     try {
-      const resellerId = getEffectiveResellerId(req);
+      const resellerId = getEffectiveResellerId(req.user!);
       if (!resellerId) {
         return res.status(400).json({ error: "Reseller ID non trovato" });
       }
@@ -35726,7 +35726,7 @@ export function registerRoutes(app: Express): Server {
   // Get Sibill bank accounts
   app.get("/api/sibill/accounts", requireAuth, requireRole("reseller", "reseller_staff"), async (req, res) => {
     try {
-      const resellerId = getEffectiveResellerId(req);
+      const resellerId = getEffectiveResellerId(req.user!);
       if (!resellerId) {
         return res.status(400).json({ error: "Reseller ID non trovato" });
       }
@@ -35745,7 +35745,7 @@ export function registerRoutes(app: Express): Server {
   // Sync Sibill bank accounts from API
   app.post("/api/sibill/accounts/sync", requireAuth, requireRole("reseller"), async (req, res) => {
     try {
-      const resellerId = getEffectiveResellerId(req);
+      const resellerId = getEffectiveResellerId(req.user!);
       if (!resellerId) {
         return res.status(400).json({ error: "Reseller ID non trovato" });
       }
@@ -35807,7 +35807,7 @@ export function registerRoutes(app: Express): Server {
   // Get Sibill transactions
   app.get("/api/sibill/transactions", requireAuth, requireRole("reseller", "reseller_staff"), async (req, res) => {
     try {
-      const resellerId = getEffectiveResellerId(req);
+      const resellerId = getEffectiveResellerId(req.user!);
       if (!resellerId) {
         return res.status(400).json({ error: "Reseller ID non trovato" });
       }
@@ -35833,7 +35833,7 @@ export function registerRoutes(app: Express): Server {
   // Sync Sibill transactions from API
   app.post("/api/sibill/transactions/sync", requireAuth, requireRole("reseller"), async (req, res) => {
     try {
-      const resellerId = getEffectiveResellerId(req);
+      const resellerId = getEffectiveResellerId(req.user!);
       if (!resellerId) {
         return res.status(400).json({ error: "Reseller ID non trovato" });
       }
@@ -35906,7 +35906,7 @@ export function registerRoutes(app: Express): Server {
   // Delete Sibill credentials
   app.delete("/api/sibill/credentials", requireAuth, requireRole("reseller"), async (req, res) => {
     try {
-      const resellerId = getEffectiveResellerId(req);
+      const resellerId = getEffectiveResellerId(req.user!);
       if (!resellerId) {
         return res.status(400).json({ error: "Reseller ID non trovato" });
       }
