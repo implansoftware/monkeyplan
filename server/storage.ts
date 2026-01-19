@@ -6935,13 +6935,13 @@ export class DatabaseStorage implements IStorage {
       .from(sibillCompanies)
       .where(and(
         eq(sibillCompanies.credentialId, company.credentialId),
-        eq(sibillCompanies.sibillCompanyId, company.sibillCompanyId)
+        eq(sibillCompanies.externalId, company.externalId)
       ))
       .limit(1);
     
     if (existing.length > 0) {
       const [updated] = await db.update(sibillCompanies)
-        .set({ ...company, syncedAt: new Date() })
+        .set({ ...company, updatedAt: new Date() })
         .where(eq(sibillCompanies.id, existing[0].id))
         .returning();
       return updated;
@@ -6956,20 +6956,20 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Sibill Documents
-  async listSibillDocuments(credentialId: string, companyId?: string): Promise<SibillDocument[]> {
-    if (companyId) {
+  async listSibillDocuments(credentialId: string, resellerId?: string): Promise<SibillDocument[]> {
+    if (resellerId) {
       return await db.select()
         .from(sibillDocuments)
         .where(and(
           eq(sibillDocuments.credentialId, credentialId),
-          eq(sibillDocuments.companyId, companyId)
+          eq(sibillDocuments.resellerId, resellerId)
         ))
-        .orderBy(desc(sibillDocuments.syncedAt));
+        .orderBy(desc(sibillDocuments.createdAt));
     }
     return await db.select()
       .from(sibillDocuments)
       .where(eq(sibillDocuments.credentialId, credentialId))
-      .orderBy(desc(sibillDocuments.syncedAt));
+      .orderBy(desc(sibillDocuments.createdAt));
   }
 
   async getSibillDocument(id: string): Promise<SibillDocument | undefined> {
@@ -6985,13 +6985,13 @@ export class DatabaseStorage implements IStorage {
       .from(sibillDocuments)
       .where(and(
         eq(sibillDocuments.credentialId, doc.credentialId),
-        eq(sibillDocuments.sibillDocumentId, doc.sibillDocumentId)
+        eq(sibillDocuments.externalId, doc.externalId)
       ))
       .limit(1);
     
     if (existing.length > 0) {
       const [updated] = await db.update(sibillDocuments)
-        .set({ ...doc, syncedAt: new Date() })
+        .set({ ...doc, updatedAt: new Date() })
         .where(eq(sibillDocuments.id, existing[0].id))
         .returning();
       return updated;
@@ -7006,13 +7006,13 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Sibill Accounts
-  async listSibillAccounts(credentialId: string, companyId?: string): Promise<SibillAccount[]> {
-    if (companyId) {
+  async listSibillAccounts(credentialId: string, resellerId?: string): Promise<SibillAccount[]> {
+    if (resellerId) {
       return await db.select()
         .from(sibillAccounts)
         .where(and(
           eq(sibillAccounts.credentialId, credentialId),
-          eq(sibillAccounts.companyId, companyId)
+          eq(sibillAccounts.resellerId, resellerId)
         ));
     }
     return await db.select()
@@ -7033,13 +7033,13 @@ export class DatabaseStorage implements IStorage {
       .from(sibillAccounts)
       .where(and(
         eq(sibillAccounts.credentialId, account.credentialId),
-        eq(sibillAccounts.sibillAccountId, account.sibillAccountId)
+        eq(sibillAccounts.externalId, account.externalId)
       ))
       .limit(1);
     
     if (existing.length > 0) {
       const [updated] = await db.update(sibillAccounts)
-        .set({ ...account, syncedAt: new Date() })
+        .set({ ...account, updatedAt: new Date() })
         .where(eq(sibillAccounts.id, existing[0].id))
         .returning();
       return updated;
@@ -7054,13 +7054,13 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Sibill Transactions
-  async listSibillTransactions(credentialId: string, companyId?: string): Promise<SibillTransaction[]> {
-    if (companyId) {
+  async listSibillTransactions(credentialId: string, resellerId?: string): Promise<SibillTransaction[]> {
+    if (resellerId) {
       return await db.select()
         .from(sibillTransactions)
         .where(and(
           eq(sibillTransactions.credentialId, credentialId),
-          eq(sibillTransactions.companyId, companyId)
+          eq(sibillTransactions.resellerId, resellerId)
         ));
     }
     return await db.select()
@@ -7073,13 +7073,13 @@ export class DatabaseStorage implements IStorage {
       .from(sibillTransactions)
       .where(and(
         eq(sibillTransactions.credentialId, tx.credentialId),
-        eq(sibillTransactions.sibillTransactionId, tx.sibillTransactionId)
+        eq(sibillTransactions.externalId, tx.externalId)
       ))
       .limit(1);
     
     if (existing.length > 0) {
       const [updated] = await db.update(sibillTransactions)
-        .set({ ...tx, syncedAt: new Date() })
+        .set({ ...tx, updatedAt: new Date() })
         .where(eq(sibillTransactions.id, existing[0].id))
         .returning();
       return updated;
@@ -7094,13 +7094,13 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Sibill Categories
-  async listSibillCategories(credentialId: string, companyId?: string): Promise<SibillCategory[]> {
-    if (companyId) {
+  async listSibillCategories(credentialId: string, resellerId?: string): Promise<SibillCategory[]> {
+    if (resellerId) {
       return await db.select()
         .from(sibillCategories)
         .where(and(
           eq(sibillCategories.credentialId, credentialId),
-          eq(sibillCategories.companyId, companyId)
+          eq(sibillCategories.resellerId, resellerId)
         ));
     }
     return await db.select()
@@ -7113,13 +7113,13 @@ export class DatabaseStorage implements IStorage {
       .from(sibillCategories)
       .where(and(
         eq(sibillCategories.credentialId, cat.credentialId),
-        eq(sibillCategories.sibillCategoryId, cat.sibillCategoryId)
+        eq(sibillCategories.externalId, cat.externalId)
       ))
       .limit(1);
     
     if (existing.length > 0) {
       const [updated] = await db.update(sibillCategories)
-        .set({ ...cat, syncedAt: new Date() })
+        .set({ ...cat, updatedAt: new Date() })
         .where(eq(sibillCategories.id, existing[0].id))
         .returning();
       return updated;
