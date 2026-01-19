@@ -6626,109 +6626,110 @@ export const sibillCompanies = pgTable("sibill_companies", {
 export const sibillDocuments = pgTable("sibill_documents", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   credentialId: varchar("credential_id").notNull().references(() => sibillCredentials.id, { onDelete: "cascade" }),
-  companyId: text("company_id").notNull(),
+  resellerId: varchar("reseller_id").notNull(),
   
   // Dati da Sibill API
-  sibillDocumentId: text("sibill_document_id").notNull(),
-  documentType: text("document_type"), // BILL, INVOICE, CREDIT_NOTE, etc.
-  direction: text("direction"), // ISSUED, RECEIVED
-  number: text("number"),
-  
-  // Importi (in centesimi per precisione)
-  grossAmount: integer("gross_amount"),
-  vatAmount: integer("vat_amount"),
-  currency: text("currency").default("EUR"),
-  
-  // Stato documento
-  status: text("status"), // DRAFT, PENDING, SENT, DELIVERED, etc.
-  isEInvoice: boolean("is_e_invoice").default(false),
-  format: text("format"), // FPA12, etc.
-  
-  // Controparte
-  counterpartId: text("counterpart_id"),
-  counterpartName: text("counterpart_name"),
-  counterpartVatNumber: text("counterpart_vat_number"),
+  externalId: varchar("external_id").notNull(),
+  documentNumber: varchar("document_number"),
+  documentType: varchar("document_type"),
+  status: varchar("status"),
   
   // Date
-  creationDate: date("creation_date"),
-  deliveryDate: date("delivery_date"),
-  deliveryStatus: text("delivery_status"),
+  issueDate: date("issue_date"),
+  dueDate: date("due_date"),
   
-  // Pagamenti
-  paymentStatus: text("payment_status"),
-  paymentMethod: text("payment_method"),
-  expectedPaymentDate: date("expected_payment_date"),
-  paymentDate: date("payment_date"),
+  // Importi (in centesimi per precisione)
+  totalAmount: integer("total_amount"),
+  currency: varchar("currency").default("EUR"),
   
-  // Note
-  notes: text("notes"),
+  // Controparte
+  counterpartyName: varchar("counterparty_name"),
+  counterpartyVat: varchar("counterparty_vat"),
+  
+  // Raw data from API
+  rawData: jsonb("raw_data"),
   
   // Meta
-  sibillCreatedAt: timestamp("sibill_created_at"),
-  sibillUpdatedAt: timestamp("sibill_updated_at"),
-  syncedAt: timestamp("synced_at").notNull().defaultNow(),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
 
 // Conti bancari Sibill (cache)
 export const sibillAccounts = pgTable("sibill_accounts", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   credentialId: varchar("credential_id").notNull().references(() => sibillCredentials.id, { onDelete: "cascade" }),
-  companyId: text("company_id").notNull(),
+  resellerId: varchar("reseller_id").notNull(),
   
   // Dati da Sibill API
-  sibillAccountId: text("sibill_account_id").notNull(),
-  nickname: text("nickname"),
-  currency: text("currency").default("EUR"),
+  externalId: varchar("external_id").notNull(),
+  name: varchar("name"),
+  iban: varchar("iban"),
+  bankName: varchar("bank_name"),
+  accountType: varchar("account_type"),
   
   // Saldi (in centesimi)
-  currentBalance: integer("current_balance"),
-  availableBalance: integer("available_balance"),
-  creditLimit: integer("credit_limit"),
-  balanceDate: timestamp("balance_date"),
+  balance: integer("balance"),
+  currency: varchar("currency").default("EUR"),
+  
+  // Raw data from API
+  rawData: jsonb("raw_data"),
   
   // Meta
-  sibillCreatedAt: timestamp("sibill_created_at"),
-  syncedAt: timestamp("synced_at").notNull().defaultNow(),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
 
 // Transazioni Sibill (cache)
 export const sibillTransactions = pgTable("sibill_transactions", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   credentialId: varchar("credential_id").notNull().references(() => sibillCredentials.id, { onDelete: "cascade" }),
-  companyId: text("company_id").notNull(),
-  accountId: text("account_id"),
+  resellerId: varchar("reseller_id").notNull(),
+  accountId: varchar("account_id"),
   
   // Dati da Sibill API
-  sibillTransactionId: text("sibill_transaction_id").notNull(),
+  externalId: varchar("external_id").notNull(),
   
   // Importo (in centesimi)
   amount: integer("amount"),
-  currency: text("currency").default("EUR"),
+  currency: varchar("currency").default("EUR"),
   
   // Dettagli
+  transactionDate: timestamp("transaction_date"),
+  valueDate: timestamp("value_date"),
   description: text("description"),
-  counterpartName: text("counterpart_name"),
-  transactionDate: date("transaction_date"),
-  valueDate: date("value_date"),
+  counterpartyName: varchar("counterparty_name"),
+  counterpartyIban: varchar("counterparty_iban"),
   
-  // Riconciliazione
-  isReconciled: boolean("is_reconciled").default(false),
-  reconciliationId: text("reconciliation_id"),
+  // Categorizzazione
+  categoryId: varchar("category_id"),
+  status: varchar("status"),
+  matchedDocumentId: varchar("matched_document_id"),
+  
+  // Raw data from API
+  rawData: jsonb("raw_data"),
   
   // Meta
-  syncedAt: timestamp("synced_at").notNull().defaultNow(),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
 
 // Categorie Sibill (cache)
 export const sibillCategories = pgTable("sibill_categories", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   credentialId: varchar("credential_id").notNull().references(() => sibillCredentials.id, { onDelete: "cascade" }),
-  companyId: text("company_id").notNull(),
+  resellerId: varchar("reseller_id").notNull(),
   
-  sibillCategoryId: text("sibill_category_id").notNull(),
-  name: text("name").notNull(),
+  externalId: varchar("external_id").notNull(),
+  name: varchar("name").notNull(),
+  parentId: varchar("parent_id"),
+  categoryType: varchar("category_type"),
   
-  syncedAt: timestamp("synced_at").notNull().defaultNow(),
+  // Raw data from API
+  rawData: jsonb("raw_data"),
+  
+  // Meta
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
 
 // Insert Schemas Sibill
@@ -6750,22 +6751,26 @@ export const insertSibillCompanySchema = createInsertSchema(sibillCompanies).omi
 
 export const insertSibillDocumentSchema = createInsertSchema(sibillDocuments).omit({
   id: true,
-  syncedAt: true,
+  createdAt: true,
+  updatedAt: true,
 });
 
 export const insertSibillAccountSchema = createInsertSchema(sibillAccounts).omit({
   id: true,
-  syncedAt: true,
+  createdAt: true,
+  updatedAt: true,
 });
 
 export const insertSibillTransactionSchema = createInsertSchema(sibillTransactions).omit({
   id: true,
-  syncedAt: true,
+  createdAt: true,
+  updatedAt: true,
 });
 
 export const insertSibillCategorySchema = createInsertSchema(sibillCategories).omit({
   id: true,
-  syncedAt: true,
+  createdAt: true,
+  updatedAt: true,
 });
 
 // Types Sibill
