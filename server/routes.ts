@@ -592,6 +592,8 @@ async function autoSyncWorkProfileFromRepairCenter(repairCenterId: string, openi
     
     const profileData = {
       resellerId,
+          apiKey: apiToken,
+          apiKey: apiToken,
       name: `Orario ${repairCenter.name}`,
       description: `Profilo sincronizzato automaticamente da ${repairCenter.name}`,
       weeklyHours,
@@ -1033,6 +1035,8 @@ export function registerRoutes(app: Express): Server {
       // Use DB-level filtering
       const filteredItems = await storage.getServiceItemsFiltered({
         resellerId,
+          apiKey: apiToken,
+          apiKey: apiToken,
         parentResellerId,
         repairCenterId,
         isAdmin,
@@ -1906,6 +1910,8 @@ export function registerRoutes(app: Express): Server {
         phone: userData.phone || null,
         role: "reseller_staff",
         resellerId,
+          apiKey: apiToken,
+          apiKey: apiToken,
         isActive: true
       });
 
@@ -2605,6 +2611,8 @@ export function registerRoutes(app: Express): Server {
           phone: c.phone,
           email: c.email,
           resellerId: c.resellerId,
+          apiKey: apiToken,
+          apiKey: apiToken,
           ownerName: ownerName || null,
           isOwn,
           isSubResellerCenter
@@ -2787,6 +2795,8 @@ export function registerRoutes(app: Express): Server {
           phone: c.phone,
           city: c.city,
           resellerId: c.resellerId,
+          apiKey: apiToken,
+          apiKey: apiToken,
         })),
       });
     } catch (error: any) {
@@ -3424,6 +3434,8 @@ export function registerRoutes(app: Express): Server {
       const price = await storage.createProductPrice({
         productId,
         resellerId,
+          apiKey: apiToken,
+          apiKey: apiToken,
         priceCents,
         costPriceCents,
       });
@@ -5848,6 +5860,8 @@ export function registerRoutes(app: Express): Server {
       
       const brand = await storage.createResellerDeviceBrand({
         resellerId,
+          apiKey: apiToken,
+          apiKey: apiToken,
         name,
         logoUrl: logoUrl || null,
         isActive: true
@@ -6099,6 +6113,8 @@ export function registerRoutes(app: Express): Server {
           product: product ? {
             ...product,
             isOwn: product.createdBy === context.resellerId,
+          apiKey: apiToken,
+          apiKey: apiToken,
           } : null,
           repairCenter: centersMap.get(item.repairCenterId) || null,
         };
@@ -6698,6 +6714,8 @@ export function registerRoutes(app: Express): Server {
       const updatedAssignment = await storage.updateResellerProductByProductAndReseller(
         req.params.productId,
         context.resellerId,
+          apiKey: apiToken,
+          apiKey: apiToken,
         updates
       );
       
@@ -9238,6 +9256,8 @@ export function registerRoutes(app: Express): Server {
       const order = await storage.createServiceOrder({
         customerId: req.user.id,
         resellerId,
+          apiKey: apiToken,
+          apiKey: apiToken,
         serviceItemId,
         priceCents: effectivePrice.priceCents,
         deviceType,
@@ -9727,6 +9747,8 @@ export function registerRoutes(app: Express): Server {
         {
           customerId: order.customerId,
           resellerId: order.resellerId,
+          apiKey: apiToken,
+          apiKey: apiToken,
           repairCenterId: order.repairCenterId || undefined,
           deviceType: order.deviceType || 'smartphone',
           deviceModel: order.model || order.brand || 'Dispositivo',
@@ -13834,6 +13856,8 @@ export function registerRoutes(app: Express): Server {
           const b2bOrder = await storage.createRepairCenterPurchaseOrder({
             repairCenterId: repairOrder.repairCenterId,
             resellerId: repairCenter.resellerId,
+          apiKey: apiToken,
+          apiKey: apiToken,
             status: 'pending',
             subtotal,
             discountAmount: 0,
@@ -15042,6 +15066,8 @@ export function registerRoutes(app: Express): Server {
         repairOrderId: req.params.id,
         repairCenterId: repairOrder.repairCenterId,
         resellerId: req.user.role === 'reseller' ? req.user.id : repairOrder.resellerId,
+          apiKey: apiToken,
+          apiKey: apiToken,
         customerId: repairOrder.customerId,
         date: req.body.date,
         startTime: req.body.startTime,
@@ -19957,6 +19983,8 @@ export function registerRoutes(app: Express): Server {
       
       const credential = await storage.createTrovausatiCredential({
         resellerId,
+          apiKey: apiToken,
+          apiKey: apiToken,
         apiType: req.body.apiType || "resellers",
         apiKey: req.body.apiKey,
         marketplaceApiKey: req.body.marketplaceApiKey,
@@ -24052,6 +24080,7 @@ export function registerRoutes(app: Express): Server {
       if (existing) {
         const updated = await storage.updateFonedayCredential(existing.id, {
           apiToken,
+          apiKey: apiToken,
           isActive: true,
         });
         res.json(updated);
@@ -24059,6 +24088,7 @@ export function registerRoutes(app: Express): Server {
         const created = await storage.createFonedayCredential({
           resellerId: req.user.id,
           apiToken,
+          apiKey: apiToken,
           isActive: true,
         });
         res.json(created);
@@ -25987,6 +26017,8 @@ export function registerRoutes(app: Express): Server {
       if (!cart) {
         cart = await storage.createCart({
           resellerId,
+          apiKey: apiToken,
+          apiKey: apiToken,
           customerId,
           sessionId: customerId ? null : sessionId
         });
@@ -26017,6 +26049,8 @@ export function registerRoutes(app: Express): Server {
       if (!cart) {
         cart = await storage.createCart({
           resellerId,
+          apiKey: apiToken,
+          apiKey: apiToken,
           customerId,
           sessionId: customerId ? null : sessionId
         });
@@ -26114,6 +26148,8 @@ export function registerRoutes(app: Express): Server {
         orderNumber,
         customerId: req.user.id,
         resellerId,
+          apiKey: apiToken,
+          apiKey: apiToken,
         status: 'pending',
         deliveryType: deliveryType as any,
         subtotal: cart.subtotal,
@@ -26287,6 +26323,8 @@ export function registerRoutes(app: Express): Server {
             orderNumber: order.orderNumber,
             customerId: order.customerId,
             resellerId: order.resellerId,
+          apiKey: apiToken,
+          apiKey: apiToken,
             total: order.total,
             taxAmount: order.taxAmount || 0,
           });
@@ -26518,6 +26556,8 @@ export function registerRoutes(app: Express): Server {
         returnNumber,
         orderId,
         resellerId: order.resellerId,
+          apiKey: apiToken,
+          apiKey: apiToken,
         customerId: order.customerId || undefined,
         reason,
         customerNotes: notes,
@@ -27406,6 +27446,8 @@ export function registerRoutes(app: Express): Server {
         requesterWarehouseId: requesterWarehouse.id,
         sourceWarehouseId: finalSourceWarehouseId,
         targetResellerId: repairCenter.resellerId,
+          apiKey: apiToken,
+          apiKey: apiToken,
         status: 'pending',
         notes,
       });
@@ -27691,6 +27733,8 @@ export function registerRoutes(app: Express): Server {
       if (user?.parentResellerId) {
         outgoingRaw = await storage.listTransferRequests({ 
           requesterId: resellerId,
+          apiKey: apiToken,
+          apiKey: apiToken,
           requesterType: 'sub_reseller'
         });
       }
@@ -28547,6 +28591,8 @@ export function registerRoutes(app: Express): Server {
         notes: notes || `Bonifico ricevuto per ordine B2B ${order.orderNumber}`,
         confirmedBy: req.user.id,
         resellerId: order.resellerId,
+          apiKey: apiToken,
+          apiKey: apiToken,
         resellerName: reseller?.fullName || reseller?.ragioneSociale || 'N/A',
       });
       
@@ -29774,6 +29820,8 @@ export function registerRoutes(app: Express): Server {
       const order = await storage.createRepairCenterPurchaseOrder({
         repairCenterId: req.user.repairCenterId,
         resellerId: repairCenter.resellerId,
+          apiKey: apiToken,
+          apiKey: apiToken,
         status: 'pending',
         subtotal: totalCents,
         total: totalCents,
@@ -29843,6 +29891,8 @@ export function registerRoutes(app: Express): Server {
         resellerIds.map(resellerId => 
           storage.listRepairCenterPurchaseOrders({ 
             resellerId,
+          apiKey: apiToken,
+          apiKey: apiToken,
             ...(status && { status })
           })
         )
@@ -29996,6 +30046,8 @@ export function registerRoutes(app: Express): Server {
           orderNumber: order.orderNumber,
           repairCenterId: order.repairCenterId,
           resellerId: order.resellerId,
+          apiKey: apiToken,
+          apiKey: apiToken,
           total: order.total,
         });
       }
@@ -30121,6 +30173,8 @@ export function registerRoutes(app: Express): Server {
         orderId,
         repairCenterId: req.user.repairCenterId,
         resellerId: order.resellerId,
+          apiKey: apiToken,
+          apiKey: apiToken,
         reason,
         reasonDetails,
         repairCenterNotes,
@@ -30436,6 +30490,8 @@ export function registerRoutes(app: Express): Server {
       // Get reseller's spare parts
       const filters: { resellerId?: string; productType?: string } = { 
         resellerId: repairCenter.resellerId,
+          apiKey: apiToken,
+          apiKey: apiToken,
         productType: 'ricambio'
       };
       const spareParts = await storage.listProducts(filters);
@@ -30709,6 +30765,8 @@ export function registerRoutes(app: Express): Server {
       const profile = await storage.createHrWorkProfile({ ...req.body, resellerId });
       await storage.createHrAuditLog({
         resellerId,
+          apiKey: apiToken,
+          apiKey: apiToken,
         userId: req.body.userId || req.user.id,
         action: 'create',
         entityType: 'work_profile',
@@ -30730,6 +30788,8 @@ export function registerRoutes(app: Express): Server {
       if (resellerId) {
         await storage.createHrAuditLog({
           resellerId,
+          apiKey: apiToken,
+          apiKey: apiToken,
           userId: req.body.userId || req.user.id,
           action: 'update',
           entityType: 'work_profile',
@@ -30752,6 +30812,8 @@ export function registerRoutes(app: Express): Server {
       if (resellerId) {
         await storage.createHrAuditLog({
           resellerId,
+          apiKey: apiToken,
+          apiKey: apiToken,
           userId: req.body.userId || req.user.id,
           action: 'delete',
           entityType: 'work_profile',
@@ -30829,6 +30891,8 @@ export function registerRoutes(app: Express): Server {
       // Create or update work profile
       const profileData = {
         resellerId,
+          apiKey: apiToken,
+          apiKey: apiToken,
         name: profileName || `Orario ${repairCenter.name}`,
         description: `Profilo sincronizzato da ${repairCenter.name}`,
         weeklyHours,
@@ -30860,6 +30924,8 @@ export function registerRoutes(app: Express): Server {
       // Audit log
       await storage.createHrAuditLog({
         resellerId,
+          apiKey: apiToken,
+          apiKey: apiToken,
         userId: req.body.userId || req.user.id,
         action: existingProfile ? 'update' : 'create',
         entityType: 'work_profile',
@@ -30981,6 +31047,8 @@ export function registerRoutes(app: Express): Server {
         scope = await resolveResellerEntityScope({
           storage,
           requesterResellerId: resellerId,
+          apiKey: apiToken,
+          apiKey: apiToken,
           entityType: entityType as string | undefined,
           entityId: entityId as string | undefined
         });
@@ -31028,6 +31096,8 @@ export function registerRoutes(app: Express): Server {
       
       const event = await storage.createHrClockEvent({
         resellerId,
+          apiKey: apiToken,
+          apiKey: apiToken,
         userId,
         eventType,
         eventTime: new Date(),
@@ -31082,6 +31152,8 @@ export function registerRoutes(app: Express): Server {
         scope = await resolveResellerEntityScope({
           storage,
           requesterResellerId: resellerId,
+          apiKey: apiToken,
+          apiKey: apiToken,
           entityType: entityType as string | undefined,
           entityId: entityId as string | undefined
         });
@@ -31128,6 +31200,8 @@ export function registerRoutes(app: Express): Server {
       const request = await storage.createHrLeaveRequest({
         ...req.body,
         resellerId,
+          apiKey: apiToken,
+          apiKey: apiToken,
         userId: req.body.userId || req.user.id,
         startDate: new Date(req.body.startDate),
         endDate: new Date(req.body.endDate),
@@ -31137,6 +31211,8 @@ export function registerRoutes(app: Express): Server {
       
       await storage.createHrAuditLog({
         resellerId,
+          apiKey: apiToken,
+          apiKey: apiToken,
         userId: req.body.userId || req.user.id,
         action: 'create',
         entityType: 'leave_request',
@@ -31175,6 +31251,8 @@ export function registerRoutes(app: Express): Server {
       if (resellerId) {
         await storage.createHrAuditLog({
           resellerId,
+          apiKey: apiToken,
+          apiKey: apiToken,
           userId: req.body.userId || req.user.id,
           action: 'update',
           entityType: 'leave_request',
@@ -31203,6 +31281,8 @@ export function registerRoutes(app: Express): Server {
         scope = await resolveResellerEntityScope({
           storage,
           requesterResellerId: resellerId,
+          apiKey: apiToken,
+          apiKey: apiToken,
           entityType: entityType as string | undefined,
           entityId: entityId as string | undefined
         });
@@ -31243,6 +31323,8 @@ export function registerRoutes(app: Express): Server {
         startDate: req.body.startDate ? new Date(req.body.startDate) : undefined,
         endDate: req.body.endDate ? new Date(req.body.endDate) : undefined,
         resellerId,
+          apiKey: apiToken,
+          apiKey: apiToken,
         userId: req.body.userId || req.user.id
       });
       
@@ -31312,6 +31394,8 @@ export function registerRoutes(app: Express): Server {
       const certificate = await storage.createHrCertificate({
         userId: sickLeave.userId,
         resellerId,
+          apiKey: apiToken,
+          apiKey: apiToken,
         certificateType: 'malattia',
         relatedSickLeaveId: sickLeaveId,
         fileName: req.file.originalname,
@@ -31381,6 +31465,8 @@ export function registerRoutes(app: Express): Server {
         scope = await resolveResellerEntityScope({
           storage,
           requesterResellerId: resellerId,
+          apiKey: apiToken,
+          apiKey: apiToken,
           entityType: entityType as string | undefined,
           entityId: entityId as string | undefined
         });
@@ -31419,6 +31505,8 @@ export function registerRoutes(app: Express): Server {
       const report = await storage.createHrExpenseReport({
         ...req.body,
         resellerId,
+          apiKey: apiToken,
+          apiKey: apiToken,
         userId: req.body.userId || req.user.id
       });
       
@@ -31447,6 +31535,8 @@ export function registerRoutes(app: Express): Server {
       if (resellerId) {
         await storage.createHrAuditLog({
           resellerId,
+          apiKey: apiToken,
+          apiKey: apiToken,
           userId: req.body.userId || req.user.id,
           action: 'update',
           entityType: 'expense_report',
@@ -31470,6 +31560,8 @@ export function registerRoutes(app: Express): Server {
       if (resellerId) {
         await storage.createHrAuditLog({
           resellerId,
+          apiKey: apiToken,
+          apiKey: apiToken,
           userId: req.body.userId || req.user.id,
           action: 'delete',
           entityType: 'expense_report',
@@ -31749,6 +31841,8 @@ export function registerRoutes(app: Express): Server {
       const absence = await storage.createHrAbsence({
         ...req.body,
         resellerId,
+          apiKey: apiToken,
+          apiKey: apiToken,
         userId: req.body.userId || req.user.id
       });
       
@@ -31768,6 +31862,8 @@ export function registerRoutes(app: Express): Server {
       const justification = await storage.createHrJustification({
         ...req.body,
         resellerId,
+          apiKey: apiToken,
+          apiKey: apiToken,
         submittedBy: req.user.id
       });
       
@@ -31829,6 +31925,8 @@ export function registerRoutes(app: Express): Server {
         scope = await resolveResellerEntityScope({
           storage,
           requesterResellerId: resellerId,
+          apiKey: apiToken,
+          apiKey: apiToken,
           entityType: normalizedEntityType,
           entityId: entityId as string | undefined
         });
@@ -31889,6 +31987,8 @@ export function registerRoutes(app: Express): Server {
           id: rc.id,
           name: rc.name,
           parentId: rc.subResellerId || rc.resellerId,
+          apiKey: apiToken,
+          apiKey: apiToken,
           parentName: parentReseller?.ragioneSociale || parentReseller?.fullName
         });
       }
@@ -32387,6 +32487,8 @@ export function registerRoutes(app: Express): Server {
       const { unreadOnly } = req.query;
       const notifications = await storage.listHrNotifications({
         resellerId,
+          apiKey: apiToken,
+          apiKey: apiToken,
         recipientId: req.user.id,
         unreadOnly: unreadOnly === 'true'
       });
@@ -32432,6 +32534,8 @@ export function registerRoutes(app: Express): Server {
       
       const logs = await storage.listHrAuditLogs({
         resellerId,
+          apiKey: apiToken,
+          apiKey: apiToken,
         userId: userId as string | undefined,
         entityType: entityType as string | undefined,
         limit: limit ? parseInt(limit as string) : undefined
@@ -35478,6 +35582,8 @@ export function registerRoutes(app: Express): Server {
       res.json({
         id: credential.id,
         resellerId: credential.resellerId,
+          apiKey: apiToken,
+          apiKey: apiToken,
         environment: credential.environment,
         companyId: credential.companyId,
         isActive: credential.isActive,
@@ -35510,6 +35616,7 @@ export function registerRoutes(app: Express): Server {
         // Update existing
         const updated = await storage.updateSibillCredential(existing.id, {
           apiToken,
+          apiKey: apiToken,
           environment: environment || "production",
           selectedCompanyId,
           updatedAt: new Date(),
@@ -35519,6 +35626,7 @@ export function registerRoutes(app: Express): Server {
         // Create new
         const created = await storage.createSibillCredential({
           resellerId,
+          apiKey: apiToken,
           apiToken,
           environment: environment || "production",
           selectedCompanyId,
@@ -35612,6 +35720,8 @@ export function registerRoutes(app: Express): Server {
           await storage.createSibillCompany({
             credentialId: credential.id,
             resellerId,
+          apiKey: apiToken,
+          apiKey: apiToken,
             externalId: company.id,
             name: company.name,
             vatNumber: company.vat_number,
@@ -35695,6 +35805,8 @@ export function registerRoutes(app: Express): Server {
           await storage.createSibillDocument({
             credentialId: credential.id,
             resellerId,
+          apiKey: apiToken,
+          apiKey: apiToken,
             externalId: doc.id,
             documentNumber: doc.number,
             documentType: doc.type,
@@ -35779,6 +35891,8 @@ export function registerRoutes(app: Express): Server {
           await storage.createSibillAccount({
             credentialId: credential.id,
             resellerId,
+          apiKey: apiToken,
+          apiKey: apiToken,
             externalId: account.id,
             name: account.name,
             iban: account.iban,
@@ -35874,6 +35988,8 @@ export function registerRoutes(app: Express): Server {
             await storage.createSibillTransaction({
               credentialId: credential.id,
               resellerId,
+          apiKey: apiToken,
+          apiKey: apiToken,
               accountId: account.id,
               externalId: tx.id,
               amount: tx.amount ? Math.round(tx.amount * 100) : 0,

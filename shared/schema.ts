@@ -6577,7 +6577,10 @@ export const sibillCredentials = pgTable("sibill_credentials", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   resellerId: varchar("reseller_id").notNull().references(() => users.id, { onDelete: "cascade" }),
   
-  // API Token (Bearer)
+  // API Key (legacy) - kept for backwards compatibility
+  apiKey: text("api_key").notNull(),
+  
+  // API Token (Bearer) - primary field used
   apiToken: text("api_token").notNull(),
   
   // Ambiente: development | production
