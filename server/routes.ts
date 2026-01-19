@@ -24043,7 +24043,7 @@ export function registerRoutes(app: Express): Server {
       if (!req.user) return res.status(401).send("Unauthorized");
       
       const { apiToken } = req.body;
-      if (!apiToken) {
+      if (!apiKey) {
         return res.status(400).send("API Token obbligatorio");
       }
       
@@ -35500,8 +35500,8 @@ export function registerRoutes(app: Express): Server {
       if (!resellerId) {
         return res.status(400).json({ error: "Reseller ID non trovato" });
       }
-      const { apiToken, environment, companyId: selectedCompanyId } = req.body;
-      if (!apiToken) {
+      const { apiToken: apiKey, environment, companyId } = req.body;
+      if (!apiKey) {
         return res.status(400).json({ error: "API Key obbligatoria" });
       }
       
@@ -35509,9 +35509,9 @@ export function registerRoutes(app: Express): Server {
       if (existing) {
         // Update existing
         const updated = await storage.updateSibillCredential(existing.id, {
-          apiToken,
+          apiKey,
           environment: environment || "production",
-          selectedCompanyId,
+          companyId,
           updatedAt: new Date(),
         });
         res.json(updated);
@@ -35519,9 +35519,9 @@ export function registerRoutes(app: Express): Server {
         // Create new
         const created = await storage.createSibillCredential({
           resellerId,
-          apiToken,
+          apiKey,
           environment: environment || "production",
-          selectedCompanyId,
+          companyId,
           isActive: true,
         });
         res.json(created);

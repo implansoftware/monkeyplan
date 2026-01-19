@@ -6577,14 +6577,17 @@ export const sibillCredentials = pgTable("sibill_credentials", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   resellerId: varchar("reseller_id").notNull().references(() => users.id, { onDelete: "cascade" }),
   
-  // API Token (Bearer)
-  apiToken: text("api_token").notNull(),
+  // API Key (Bearer token)
+  apiKey: text("api_key").notNull(),
   
   // Ambiente: development | production
-  environment: sibillEnvironmentEnum("environment").notNull().default("development"),
+  environment: varchar("environment").default("development"),
+  
+  // Company ID (opzionale, può essere inserito manualmente)
+  companyId: varchar("company_id"),
   
   // Company selezionata (dopo la prima sincronizzazione)
-  selectedCompanyId: text("selected_company_id"),
+  selectedCompanyId: varchar("selected_company_id"),
   selectedCompanyName: text("selected_company_name"),
   
   // Stato

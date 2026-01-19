@@ -16,10 +16,11 @@ import { Link } from "wouter";
 import sibillLogo from "@/assets/logos/sibill.png";
 
 type SibillCredential = {
-  id: number;
-  resellerId: number;
-  apiToken: string;
-  environment: "development" | "production";
+  id: string;
+  resellerId: string;
+  apiKey: string;
+  environment: string | null;
+  companyId: string | null;
   selectedCompanyId: string | null;
   selectedCompanyName: string | null;
   isActive: boolean;
@@ -196,7 +197,7 @@ export default function SibillSettingsPage() {
                   <div className="flex items-center gap-2">
                     <Input
                       type={showToken ? "text" : "password"}
-                      value={credential.apiToken}
+                      value={credential.apiKey}
                       readOnly
                       className="font-mono text-sm"
                       data-testid="input-token-display"
