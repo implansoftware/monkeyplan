@@ -1,7 +1,9 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Clock, User, RefreshCw, MapPin, ArrowRight, ArrowLeft, Pencil } from "lucide-react";
+import { Clock, User, RefreshCw, MapPin, ArrowRight, ArrowLeft, Pencil, ChevronLeft, ChevronRight, Calendar as CalendarIcon } from "lucide-react";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
@@ -70,9 +72,34 @@ export default function AdminAttendancePage() {
     eventTime: "",
     notes: ""
   });
+  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
+  const [datePickerOpen, setDatePickerOpen] = useState(false);
   const { toast } = useToast();
 
+  const today = new Date();
+  const isToday = selectedDate.toDateString() === today.toDateString();
+  const startOfDay = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), selectedDate.getDate());
+  const endOfDay = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), selectedDate.getDate(), 23, 59, 59);
+
+  const goToPreviousDay = () => {
+    const prev = new Date(selectedDate);
+    prev.setDate(prev.getDate() - 1);
+    setSelectedDate(prev);
+  };
+  
+  const goToNextDay = () => {
+    const next = new Date(selectedDate);
+    next.setDate(next.getDate() + 1);
+    setSelectedDate(next);
+  };
+  
+  const goToToday = () => {
+    setSelectedDate(new Date());
+  };
+
   const queryParams = new URLSearchParams();
+  queryParams.set("startDate", startOfDay.toISOString());
+  queryParams.set("endDate", endOfDay.toISOString());
   if (entityType !== "all" && selectedEntityId) {
     queryParams.set("entityType", entityType);
     queryParams.set("entityId", selectedEntityId);
@@ -80,11 +107,9 @@ export default function AdminAttendancePage() {
   const queryString = queryParams.toString();
 
   const { data: events = [], isLoading, refetch } = useQuery<ClockEvent[]>({
-    queryKey: ["/api/admin/hr/clock-events", queryString],
+    queryKey: ["/api/admin/hr/clock-events", queryString, selectedDate.toDateString()],
     queryFn: async () => {
-      const url = queryString 
-        ? `/api/admin/hr/clock-events?${queryString}` 
-        : "/api/admin/hr/clock-events";
+      const url = `/api/admin/hr/clock-events?${queryString}`;
       const res = await fetch(url, { credentials: "include" });
       if (!res.ok) throw new Error("Errore nel caricamento");
       return res.json();
@@ -155,13 +180,50 @@ export default function AdminAttendancePage() {
       </div>
 
       <Card>
-        <CardHeader>
+        <CardHeader className="space-y-4">
           <AdminEntityFilterSelector
             entityType={entityType}
             setEntityType={setEntityType}
             selectedEntityId={selectedEntityId}
             setSelectedEntityId={setSelectedEntityId}
           />
+          <div className="flex items-center gap-2 pt-2 border-t">
+            <CalendarIcon className="h-5 w-5 text-muted-foreground" />
+            <span className="font-medium">{isToday ? "Oggi" : "Data selezionata"}:</span>
+            <Button size="icon" variant="ghost" onClick={goToPreviousDay} data-testid="button-prev-day">
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+            <Popover open={datePickerOpen} onOpenChange={setDatePickerOpen}>
+              <PopoverTrigger asChild>
+                <Button variant="outline" className="min-w-[200px] justify-start text-left font-normal" data-testid="button-date-picker">
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {format(selectedDate, "EEEE d MMMM yyyy", { locale: it })}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar
+                  mode="single"
+                  selected={selectedDate}
+                  onSelect={(date) => {
+                    if (date) {
+                      setSelectedDate(date);
+                      setDatePickerOpen(false);
+                    }
+                  }}
+                  initialFocus
+                  locale={it}
+                />
+              </PopoverContent>
+            </Popover>
+            <Button size="icon" variant="ghost" onClick={goToNextDay} data-testid="button-next-day">
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+            {!isToday && (
+              <Button variant="secondary" size="sm" onClick={goToToday} data-testid="button-go-today">
+                Oggi
+              </Button>
+            )}
+          </div>
         </CardHeader>
         <CardContent>
           {isLoading ? (
@@ -171,7 +233,7 @@ export default function AdminAttendancePage() {
           ) : events.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">
               <Clock className="h-12 w-12 mx-auto mb-4 opacity-50" />
-              <p>Nessuna timbratura registrata</p>
+              <p>{isToday ? "Nessuna timbratura registrata oggi" : `Nessuna timbratura per il ${format(selectedDate, "d MMMM yyyy", { locale: it })}`}</p>
             </div>
           ) : (
             <Table>

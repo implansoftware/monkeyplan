@@ -17,8 +17,13 @@ import {
   LogOut,
   Coffee,
   Utensils,
-  Pencil
+  Pencil,
+  ChevronLeft,
+  ChevronRight,
+  Calendar as CalendarIcon
 } from "lucide-react";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { Skeleton } from "@/components/ui/skeleton";
 import { format } from "date-fns";
@@ -57,16 +62,40 @@ export default function RepairCenterHrAttendance() {
   const [editingEvent, setEditingEvent] = useState<ClockEvent | null>(null);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [editForm, setEditForm] = useState({ eventType: "", eventTime: "", notes: "" });
+  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
+  const [datePickerOpen, setDatePickerOpen] = useState(false);
   const { toast } = useToast();
 
   const today = new Date();
-  const startOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-  const endOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 23, 59, 59);
+  const isToday = selectedDate.toDateString() === today.toDateString();
+  const startOfDay = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), selectedDate.getDate());
+  const endOfDay = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), selectedDate.getDate(), 23, 59, 59);
+
+  const goToPreviousDay = () => {
+    const prev = new Date(selectedDate);
+    prev.setDate(prev.getDate() - 1);
+    setSelectedDate(prev);
+  };
+  
+  const goToNextDay = () => {
+    const next = new Date(selectedDate);
+    next.setDate(next.getDate() + 1);
+    setSelectedDate(next);
+  };
+  
+  const goToToday = () => {
+    setSelectedDate(new Date());
+  };
 
   const clockEventsUrl = `/api/repair-center/hr/clock-events?startDate=${encodeURIComponent(startOfDay.toISOString())}&endDate=${encodeURIComponent(endOfDay.toISOString())}`;
   
   const { data: clockEvents = [], isLoading } = useQuery<ClockEvent[]>({
-    queryKey: [clockEventsUrl],
+    queryKey: ["/api/repair-center/hr/clock-events", selectedDate.toDateString()],
+    queryFn: async () => {
+      const res = await fetch(clockEventsUrl);
+      if (!res.ok) throw new Error("Errore nel caricamento");
+      return res.json();
+    },
   });
 
   const { data: staffMembers = [] } = useQuery<StaffMember[]>({
@@ -78,7 +107,7 @@ export default function RepairCenterHrAttendance() {
       return apiRequest("POST", "/api/repair-center/hr/clock-events", data);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [clockEventsUrl] });
+      queryClient.invalidateQueries({ queryKey: ["/api/repair-center/hr/clock-events"] });
       setDialogOpen(false);
       setNewEvent({ eventType: "entrata", userId: "", notes: "" });
       toast({ title: "Timbratura registrata", description: "La timbratura è stata salvata con successo." });
@@ -93,7 +122,7 @@ export default function RepairCenterHrAttendance() {
       return apiRequest("PATCH", `/api/repair-center/hr/clock-events/${id}`, data);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [clockEventsUrl] });
+      queryClient.invalidateQueries({ queryKey: ["/api/repair-center/hr/clock-events"] });
       setEditDialogOpen(false);
       setEditingEvent(null);
       toast({ title: "Timbratura aggiornata", description: "La modifica è stata salvata." });
@@ -204,26 +233,66 @@ export default function RepairCenterHrAttendance() {
       </Card>
 
       <Card>
-        <CardHeader className="flex flex-row items-center justify-between gap-2 flex-wrap">
-          <CardTitle>Timbrature di Oggi</CardTitle>
-          <div className="flex gap-2 items-center">
-            <Select value={selectedUser} onValueChange={setSelectedUser}>
-              <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="Tutti gli utenti" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Tutti gli utenti</SelectItem>
-                {staffMembers.map((member) => (
-                  <SelectItem key={member.id} value={member.id}>
-                    {member.fullName}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Button onClick={() => setDialogOpen(true)}>
-              <Plus className="h-4 w-4 mr-2" />
-              Nuova
+        <CardHeader className="flex flex-col gap-4">
+          <div className="flex flex-row items-center justify-between gap-2 flex-wrap">
+            <CardTitle className="flex items-center gap-2">
+              <CalendarIcon className="h-5 w-5 text-muted-foreground" />
+              {isToday ? "Timbrature di Oggi" : "Timbrature del Giorno"}
+            </CardTitle>
+            <div className="flex gap-2 items-center">
+              <Select value={selectedUser} onValueChange={setSelectedUser}>
+                <SelectTrigger className="w-[180px]">
+                  <SelectValue placeholder="Tutti gli utenti" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Tutti gli utenti</SelectItem>
+                  {staffMembers.map((member) => (
+                    <SelectItem key={member.id} value={member.id}>
+                      {member.fullName}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Button onClick={() => setDialogOpen(true)}>
+                <Plus className="h-4 w-4 mr-2" />
+                Nuova
+              </Button>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button size="icon" variant="ghost" onClick={goToPreviousDay} data-testid="button-prev-day">
+              <ChevronLeft className="h-4 w-4" />
             </Button>
+            <Popover open={datePickerOpen} onOpenChange={setDatePickerOpen}>
+              <PopoverTrigger asChild>
+                <Button variant="outline" className="min-w-[200px] justify-start text-left font-normal" data-testid="button-date-picker">
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {format(selectedDate, "EEEE d MMMM yyyy", { locale: it })}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar
+                  mode="single"
+                  selected={selectedDate}
+                  onSelect={(date) => {
+                    if (date) {
+                      setSelectedDate(date);
+                      setDatePickerOpen(false);
+                    }
+                  }}
+                  initialFocus
+                  locale={it}
+                />
+              </PopoverContent>
+            </Popover>
+            <Button size="icon" variant="ghost" onClick={goToNextDay} data-testid="button-next-day">
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+            {!isToday && (
+              <Button variant="secondary" size="sm" onClick={goToToday} data-testid="button-go-today">
+                Oggi
+              </Button>
+            )}
           </div>
         </CardHeader>
         <CardContent>
@@ -235,7 +304,8 @@ export default function RepairCenterHrAttendance() {
             </div>
           ) : filteredEvents.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">
-              Nessuna timbratura registrata oggi
+              <Clock className="h-12 w-12 mx-auto mb-3 opacity-50" />
+              <p>{isToday ? "Nessuna timbratura registrata oggi" : `Nessuna timbratura per il ${format(selectedDate, "d MMMM yyyy", { locale: it })}`}</p>
             </div>
           ) : (
             <Table>
