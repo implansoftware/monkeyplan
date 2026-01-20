@@ -35600,7 +35600,7 @@ export function registerRoutes(app: Express): Server {
       
       const { SibillService } = await import("./services/sibill");
       const sibillService = new SibillService({ apiToken: credential.apiKey, environment: credential.environment as "development" | "production" });
-      const companiesData = await sibillService.getCompanies();
+      const companiesData = await sibillService.listCompanies();
       
       // Sync companies to database
       let synced = 0;
