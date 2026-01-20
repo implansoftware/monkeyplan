@@ -35606,26 +35606,16 @@ export function registerRoutes(app: Express): Server {
       // Sync companies to database
       let synced = 0;
       for (const company of companies) {
-        const existing = await storage.getSibillCompanyByExternalId(credential.id, company.id);
-        if (existing) {
-          await storage.updateSibillCompany(existing.id, {
-            name: company.name,
-            vatNumber: company.vat_number,
-            fiscalCode: company.country || null,
-            rawData: company,
-            updatedAt: new Date(),
-          });
-        } else {
-          await storage.createSibillCompany({
-            credentialId: credential.id,
-            resellerId,
-            externalId: company.id,
-            name: company.name,
-            vatNumber: company.vat_number,
-            fiscalCode: company.country || null,
-            rawData: company,
-          });
-        }
+        console.log(`[Sibill Sync] Processing company: ${company.id} - ${company.name}`);
+        await storage.upsertSibillCompany({
+          credentialId: credential.id,
+          resellerId,
+          externalId: company.id,
+          name: company.name,
+          vatNumber: company.vat_number || null,
+          fiscalCode: company.country || null,
+          rawData: company,
+        });
         synced++;
       }
       
