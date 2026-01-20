@@ -35600,17 +35600,18 @@ export function registerRoutes(app: Express): Server {
       
       const { SibillService } = await import("./services/sibill");
       const sibillService = new SibillService({ apiToken: credential.apiKey, environment: credential.environment as "development" | "production" });
-      const companiesData = await sibillService.listCompanies();
+      const companies = await sibillService.listCompanies();
+      console.log(`[Sibill Sync] Found ${companies.length} companies from API`);
       
       // Sync companies to database
       let synced = 0;
-      for (const company of companiesData.companies || []) {
+      for (const company of companies) {
         const existing = await storage.getSibillCompanyByExternalId(credential.id, company.id);
         if (existing) {
           await storage.updateSibillCompany(existing.id, {
             name: company.name,
             vatNumber: company.vat_number,
-            fiscalCode: company.fiscal_code,
+            fiscalCode: company.country || null,
             rawData: company,
             updatedAt: new Date(),
           });
@@ -35621,7 +35622,7 @@ export function registerRoutes(app: Express): Server {
             externalId: company.id,
             name: company.name,
             vatNumber: company.vat_number,
-            fiscalCode: company.fiscal_code,
+            fiscalCode: company.country || null,
             rawData: company,
           });
         }
