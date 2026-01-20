@@ -62,11 +62,41 @@ interface SessionDetail {
   }>;
 }
 
+interface TransactionItem {
+  id: string;
+  productName: string;
+  productSku?: string;
+  quantity: number;
+  unitPrice: number;
+  totalPrice: number;
+  isService?: boolean;
+}
+
+interface TransactionDetail {
+  transaction: {
+    id: string;
+    transactionNumber: string;
+    status: string;
+    paymentMethod: string;
+    subtotal: number;
+    discountAmount: number;
+    taxAmount: number;
+    total: number;
+    createdAt: string;
+    notes?: string;
+  };
+  items: TransactionItem[];
+  operator?: { id: string; fullName: string };
+  customer?: { id: string; fullName: string; email: string; phone: string | null };
+  repairCenterName?: string;
+}
+
 export default function ResellerPosSessions() {
   const [repairCenterFilter, setRepairCenterFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedSessionId, setSelectedSessionId] = useState<string | null>(null);
+  const [selectedTransactionId, setSelectedTransactionId] = useState<string | null>(null);
   const [isExporting, setIsExporting] = useState(false);
   const { toast } = useToast();
 
@@ -95,6 +125,16 @@ export default function ResellerPosSessions() {
       return res.json();
     },
     enabled: !!selectedSessionId,
+  });
+
+  const { data: transactionDetail, isLoading: transactionDetailLoading } = useQuery<TransactionDetail>({
+    queryKey: ["/api/reseller/pos/transaction", selectedTransactionId],
+    queryFn: async () => {
+      const res = await fetch(`/api/reseller/pos/transaction/${selectedTransactionId}`, { credentials: "include" });
+      if (!res.ok) throw new Error("Failed to fetch transaction detail");
+      return res.json();
+    },
+    enabled: !!selectedTransactionId,
   });
 
   const formatCurrency = (amount: number) => {
@@ -363,7 +403,12 @@ export default function ResellerPosSessions() {
                     </TableHeader>
                     <TableBody>
                       {sessionDetail.transactions.map(tx => (
-                        <TableRow key={tx.id}>
+                        <TableRow 
+                          key={tx.id} 
+                          className="cursor-pointer hover-elevate"
+                          onClick={() => setSelectedTransactionId(tx.id)}
+                          data-testid={`row-transaction-${tx.id}`}
+                        >
                           <TableCell className="font-mono">{tx.transactionNumber}</TableCell>
                           <TableCell>{format(new Date(tx.createdAt), "HH:mm", { locale: it })}</TableCell>
                           <TableCell>{tx.paymentMethod}</TableCell>
@@ -372,6 +417,113 @@ export default function ResellerPosSessions() {
                       ))}
                     </TableBody>
                   </Table>
+                </div>
+              )}
+            </div>
+          ) : null}
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!selectedTransactionId} onOpenChange={(open) => !open && setSelectedTransactionId(null)}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Receipt className="w-5 h-5" />
+              Dettaglio Transazione
+            </DialogTitle>
+          </DialogHeader>
+          
+          {transactionDetailLoading ? (
+            <div className="space-y-3">
+              <Skeleton className="h-20 w-full" />
+              <Skeleton className="h-40 w-full" />
+            </div>
+          ) : transactionDetail ? (
+            <div className="space-y-6">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-sm text-muted-foreground">Numero</p>
+                  <p className="font-mono font-medium">{transactionDetail.transaction.transactionNumber}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Centro</p>
+                  <p className="font-medium">{transactionDetail.repairCenterName || "-"}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Operatore</p>
+                  <p className="font-medium">{transactionDetail.operator?.fullName || "-"}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Cliente</p>
+                  <p className="font-medium">{transactionDetail.customer?.fullName || "Vendita anonima"}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Data/Ora</p>
+                  <p className="font-medium">{format(new Date(transactionDetail.transaction.createdAt), "dd/MM/yyyy HH:mm", { locale: it })}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Metodo Pagamento</p>
+                  <Badge variant="outline">{transactionDetail.transaction.paymentMethod}</Badge>
+                </div>
+              </div>
+
+              {transactionDetail.items.length > 0 && (
+                <div>
+                  <h4 className="font-medium mb-3">Articoli</h4>
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Prodotto</TableHead>
+                        <TableHead className="text-center">Qtà</TableHead>
+                        <TableHead className="text-right">Prezzo Unit.</TableHead>
+                        <TableHead className="text-right">Totale</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {transactionDetail.items.map(item => (
+                        <TableRow key={item.id}>
+                          <TableCell>
+                            <div>
+                              <p className="font-medium">{item.productName}</p>
+                              {item.productSku && <p className="text-xs text-muted-foreground">SKU: {item.productSku}</p>}
+                              {item.isService && <Badge variant="secondary" className="text-xs mt-1">Servizio</Badge>}
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-center">{item.quantity}</TableCell>
+                          <TableCell className="text-right">{formatCurrency(item.unitPrice)}</TableCell>
+                          <TableCell className="text-right font-medium">{formatCurrency(item.totalPrice)}</TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              )}
+
+              <div className="border-t pt-4 space-y-2">
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Subtotale</span>
+                  <span>{formatCurrency(transactionDetail.transaction.subtotal)}</span>
+                </div>
+                {transactionDetail.transaction.discountAmount > 0 && (
+                  <div className="flex justify-between text-green-600">
+                    <span>Sconto</span>
+                    <span>-{formatCurrency(transactionDetail.transaction.discountAmount)}</span>
+                  </div>
+                )}
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">IVA</span>
+                  <span>{formatCurrency(transactionDetail.transaction.taxAmount)}</span>
+                </div>
+                <div className="flex justify-between text-lg font-bold border-t pt-2">
+                  <span>Totale</span>
+                  <span>{formatCurrency(transactionDetail.transaction.total)}</span>
+                </div>
+              </div>
+
+              {transactionDetail.transaction.notes && (
+                <div>
+                  <p className="text-sm text-muted-foreground">Note</p>
+                  <p className="text-sm">{transactionDetail.transaction.notes}</p>
                 </div>
               )}
             </div>
