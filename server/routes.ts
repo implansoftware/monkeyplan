@@ -35603,29 +35603,20 @@ export function registerRoutes(app: Express): Server {
       const companies = await sibillService.listCompanies();
       console.log(`[Sibill Sync] Found ${companies.length} companies from API`);
       
+      
       // Sync companies to database
       let synced = 0;
       for (const company of companies) {
-        const existing = await storage.getSibillCompanyByExternalId(credential.id, company.id);
-        if (existing) {
-          await storage.updateSibillCompany(existing.id, {
-            name: company.name,
-            vatNumber: company.vat_number,
-            fiscalCode: company.country || null,
-            rawData: company,
-            updatedAt: new Date(),
-          });
-        } else {
-          await storage.createSibillCompany({
-            credentialId: credential.id,
-            resellerId,
-            externalId: company.id,
-            name: company.name,
-            vatNumber: company.vat_number,
-            fiscalCode: company.country || null,
-            rawData: company,
-          });
-        }
+        console.log(`[Sibill Sync] Processing company: ${company.id} - ${company.name}`);
+        await storage.upsertSibillCompany({
+          credentialId: credential.id,
+          resellerId,
+          externalId: company.id,
+          name: company.name,
+          vatNumber: company.vat_number || null,
+          fiscalCode: company.country || null,
+          rawData: company,
+        });
         synced++;
       }
       
@@ -35781,6 +35772,7 @@ export function registerRoutes(app: Express): Server {
             currency: account.currency || "EUR",
             rawData: account,
             updatedAt: new Date(),
+      });
           });
         } else {
           await storage.createSibillAccount({
@@ -35802,6 +35794,7 @@ export function registerRoutes(app: Express): Server {
       await storage.updateSibillCredential(credential.id, {
         lastSyncAt: new Date(),
         updatedAt: new Date(),
+      });
       });
       
       res.json({ success: true, syncedCount: synced });
@@ -35876,6 +35869,7 @@ export function registerRoutes(app: Express): Server {
               status: tx.status || "pending",
               rawData: tx,
               updatedAt: new Date(),
+      });
             });
           } else {
             await storage.createSibillTransaction({
@@ -35901,6 +35895,7 @@ export function registerRoutes(app: Express): Server {
       await storage.updateSibillCredential(credential.id, {
         lastSyncAt: new Date(),
         updatedAt: new Date(),
+      });
       });
       
       res.json({ success: true, syncedCount: totalSynced });
