@@ -24340,7 +24340,17 @@ export function registerRoutes(app: Express): Server {
         
         // Search products in each warehouse
         for (const warehouse of accessibleWarehouses) {
-          const warehouseStock = await storage.listWarehouseStock(warehouse.id, searchTerm);
+          const allWarehouseStock = await storage.listWarehouseStock(warehouse.id);
+          // Load products and filter by search term
+          const warehouseStock = [];
+          for (const stock of allWarehouseStock) {
+            if (stock.quantity > 0) {
+              const product = await storage.getProduct(stock.productId);
+              if (product && product.name.toLowerCase().includes(searchTerm)) {
+                warehouseStock.push({ ...stock, product });
+              }
+            }
+          }
           
           for (const stock of warehouseStock.slice(0, limitNum)) {
             if (stock.quantity > 0 && stock.product) {
