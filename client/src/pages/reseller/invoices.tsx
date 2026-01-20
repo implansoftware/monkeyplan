@@ -8,7 +8,9 @@ import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
-import { Search, FileText, Download, CalendarIcon, Euro, Wrench, ShoppingCart, Store, RefreshCw, Building2 } from "lucide-react";
+import { Search, FileText, Download, CalendarIcon, Euro, Wrench, ShoppingCart, Store, RefreshCw, Building2, Eye, X } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -25,6 +27,7 @@ export default function ResellerInvoices() {
   const [dateRange, setDateRange] = useState<DateRange | undefined>();
   const [isExporting, setIsExporting] = useState(false);
   const [activeTab, setActiveTab] = useState("monkeyplan");
+  const [selectedSibillDoc, setSelectedSibillDoc] = useState<SibillDocument | null>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -415,7 +418,12 @@ export default function ResellerInvoices() {
                     </TableHeader>
                     <TableBody>
                       {sibillDocuments.map((doc) => (
-                        <TableRow key={doc.id} data-testid={`row-sibill-doc-${doc.id}`}>
+                        <TableRow 
+                          key={doc.id} 
+                          data-testid={`row-sibill-doc-${doc.id}`}
+                          className="cursor-pointer hover-elevate"
+                          onClick={() => setSelectedSibillDoc(doc)}
+                        >
                           <TableCell className="font-medium font-mono">{doc.documentNumber || "-"}</TableCell>
                           <TableCell>
                             <Badge variant="outline">{doc.documentType || "N/D"}</Badge>
@@ -451,6 +459,92 @@ export default function ResellerInvoices() {
           </TabsContent>
         )}
       </Tabs>
+
+      <Dialog open={!!selectedSibillDoc} onOpenChange={(open) => !open && setSelectedSibillDoc(null)}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <FileText className="h-5 w-5" />
+              Dettagli Documento Sibill
+            </DialogTitle>
+            <DialogDescription>
+              {selectedSibillDoc?.documentNumber || "Documento"}
+            </DialogDescription>
+          </DialogHeader>
+          
+          {selectedSibillDoc && (
+            <div className="space-y-6">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-sm text-muted-foreground">Numero Documento</p>
+                  <p className="font-mono font-medium">{selectedSibillDoc.documentNumber || "-"}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Tipo</p>
+                  <Badge variant="outline">{selectedSibillDoc.documentType || "N/D"}</Badge>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Data Emissione</p>
+                  <p className="font-medium">
+                    {selectedSibillDoc.issueDate
+                      ? format(new Date(selectedSibillDoc.issueDate), "dd MMMM yyyy", { locale: it })
+                      : "N/D"}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Data Scadenza</p>
+                  <p className="font-medium">
+                    {selectedSibillDoc.dueDate
+                      ? format(new Date(selectedSibillDoc.dueDate), "dd MMMM yyyy", { locale: it })
+                      : "N/D"}
+                  </p>
+                </div>
+              </div>
+
+              <Separator />
+
+              <div>
+                <h4 className="font-medium mb-3">Controparte</h4>
+                <div className="grid grid-cols-2 gap-4 bg-muted/50 rounded-lg p-4">
+                  <div>
+                    <p className="text-sm text-muted-foreground">Nome / Ragione Sociale</p>
+                    <p className="font-medium">{selectedSibillDoc.counterpartyName || "-"}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Partita IVA</p>
+                    <p className="font-mono">{selectedSibillDoc.counterpartyVat || "-"}</p>
+                  </div>
+                </div>
+              </div>
+
+              <Separator />
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-sm text-muted-foreground">Importo Totale</p>
+                  <p className="text-2xl font-bold text-primary">
+                    {selectedSibillDoc.totalAmount ? formatCurrency(selectedSibillDoc.totalAmount) : "N/D"}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Valuta</p>
+                  <p className="font-medium">{selectedSibillDoc.currency || "EUR"}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Stato</p>
+                  <Badge variant={selectedSibillDoc.status === "paid" ? "default" : "secondary"}>
+                    {selectedSibillDoc.status || "N/D"}
+                  </Badge>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">ID Esterno</p>
+                  <p className="font-mono text-xs">{selectedSibillDoc.externalId || "-"}</p>
+                </div>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
