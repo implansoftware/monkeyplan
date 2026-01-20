@@ -1,7 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Clock, User, RefreshCw, MapPin, ArrowRight, ArrowLeft, Pencil, ChevronLeft, ChevronRight, Calendar as CalendarIcon } from "lucide-react";
+import { Clock, User, RefreshCw, MapPin, ArrowRight, ArrowLeft, Pencil, ChevronLeft, ChevronRight, Calendar as CalendarIcon, Plus } from "lucide-react";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useQuery, useMutation } from "@tanstack/react-query";
@@ -74,6 +74,13 @@ export default function AdminAttendancePage() {
   });
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [datePickerOpen, setDatePickerOpen] = useState(false);
+  const [createDialogOpen, setCreateDialogOpen] = useState(false);
+  const [newEvent, setNewEvent] = useState({
+    eventType: "entry",
+    userId: "",
+    eventTime: format(new Date(), "HH:mm"),
+    notes: ""
+  });
   const { toast } = useToast();
 
   const today = new Date();
@@ -116,6 +123,23 @@ export default function AdminAttendancePage() {
     },
   });
 
+  interface EntityUser {
+    id: string;
+    fullName: string;
+    role: string;
+  }
+
+  const { data: entityUsers = [] } = useQuery<EntityUser[]>({
+    queryKey: ["/api/admin/hr/users", entityType, selectedEntityId],
+    queryFn: async () => {
+      if (entityType === "all" || !selectedEntityId) return [];
+      const res = await fetch(`/api/admin/hr/users?entityType=${entityType}&entityId=${selectedEntityId}`, { credentials: "include" });
+      if (!res.ok) return [];
+      return res.json();
+    },
+    enabled: entityType !== "all" && !!selectedEntityId
+  });
+
   const editMutation = useMutation({
     mutationFn: async (data: { id: string; eventType: string; eventTime: string; notes: string }) => {
       return apiRequest("PATCH", `/api/admin/hr/clock-events/${data.id}`, {
@@ -132,6 +156,32 @@ export default function AdminAttendancePage() {
     },
     onError: () => {
       toast({ title: "Errore durante l'aggiornamento", variant: "destructive" });
+    }
+  });
+
+  const createMutation = useMutation({
+    mutationFn: async (data: { userId: string; eventType: string; eventTime: string; notes: string }) => {
+      const now = new Date();
+      const [hours, minutes] = data.eventTime.split(":").map(Number);
+      now.setHours(hours, minutes, 0, 0);
+      
+      return apiRequest("POST", "/api/admin/hr/clock-events", {
+        userId: data.userId,
+        eventType: data.eventType,
+        eventTime: now.toISOString(),
+        notes: data.notes || null,
+        entityType,
+        entityId: selectedEntityId
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/hr/clock-events"] });
+      setCreateDialogOpen(false);
+      setNewEvent({ eventType: "entry", userId: "", eventTime: format(new Date(), "HH:mm"), notes: "" });
+      toast({ title: "Timbratura creata", description: "La timbratura è stata salvata con successo." });
+    },
+    onError: (error: any) => {
+      toast({ title: "Errore", description: error.message, variant: "destructive" });
     }
   });
 
@@ -173,10 +223,18 @@ export default function AdminAttendancePage() {
             Visualizzazione globale di tutte le timbrature
           </p>
         </div>
-        <Button variant="outline" size="sm" onClick={() => refetch()}>
-          <RefreshCw className="h-4 w-4 mr-2" />
-          Aggiorna
-        </Button>
+        <div className="flex items-center gap-2">
+          {entityType !== "all" && selectedEntityId && (
+            <Button onClick={() => setCreateDialogOpen(true)} data-testid="button-create-clock-event">
+              <Plus className="h-4 w-4 mr-2" />
+              Nuova Timbratura
+            </Button>
+          )}
+          <Button variant="outline" size="sm" onClick={() => refetch()}>
+            <RefreshCw className="h-4 w-4 mr-2" />
+            Aggiorna
+          </Button>
+        </div>
       </div>
 
       <Card>
@@ -368,6 +426,78 @@ export default function AdminAttendancePage() {
             </Button>
             <Button onClick={handleEdit} disabled={editMutation.isPending} data-testid="button-save-edit">
               {editMutation.isPending ? "Salvataggio..." : "Salva"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Nuova Timbratura</DialogTitle>
+            <DialogDescription>
+              Crea una timbratura per un dipendente dell'entità selezionata.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>Dipendente</Label>
+              <Select value={newEvent.userId} onValueChange={(v) => setNewEvent({ ...newEvent, userId: v })}>
+                <SelectTrigger data-testid="select-create-user">
+                  <SelectValue placeholder="Seleziona dipendente..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {entityUsers.map((u) => (
+                    <SelectItem key={u.id} value={u.id}>
+                      {u.fullName} ({u.role})
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>Tipo Evento</Label>
+              <Select value={newEvent.eventType} onValueChange={(v) => setNewEvent({ ...newEvent, eventType: v })}>
+                <SelectTrigger data-testid="select-create-event-type">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="entry">Entrata</SelectItem>
+                  <SelectItem value="exit">Uscita</SelectItem>
+                  <SelectItem value="break_start">Inizio Pausa</SelectItem>
+                  <SelectItem value="break_end">Fine Pausa</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>Orario</Label>
+              <Input
+                type="time"
+                value={newEvent.eventTime}
+                onChange={(e) => setNewEvent({ ...newEvent, eventTime: e.target.value })}
+                data-testid="input-create-event-time"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Note (opzionale)</Label>
+              <Textarea
+                value={newEvent.notes}
+                onChange={(e) => setNewEvent({ ...newEvent, notes: e.target.value })}
+                placeholder="Note aggiuntive..."
+                data-testid="textarea-create-notes"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setCreateDialogOpen(false)}>
+              Annulla
+            </Button>
+            <Button 
+              onClick={() => createMutation.mutate(newEvent)} 
+              disabled={!newEvent.userId || createMutation.isPending}
+              data-testid="button-confirm-create"
+            >
+              {createMutation.isPending ? "Salvataggio..." : "Crea Timbratura"}
             </Button>
           </DialogFooter>
         </DialogContent>

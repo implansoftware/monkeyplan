@@ -32358,6 +32358,98 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // Admin HR - Get users for a specific entity (for creating clock events)
+  app.get("/api/admin/hr/users", requireRole("admin", "admin_staff"), async (req, res) => {
+    try {
+      const { entityType, entityId } = req.query;
+      
+      if (!entityType || !entityId) {
+        return res.status(400).json({ error: "entityType e entityId richiesti" });
+      }
+      
+      const users: Array<{ id: string; fullName: string; role: string }> = [];
+      
+      if (entityType === 'reseller' || entityType === 'sub-reseller') {
+        // Get the reseller and their staff
+        const reseller = await storage.getUser(entityId as string);
+        if (reseller && (reseller.role === 'reseller' || reseller.role === 'sub_reseller')) {
+          users.push({ id: reseller.id, fullName: reseller.fullName || reseller.email, role: reseller.role });
+        }
+        
+        // Get reseller staff
+        const staff = await storage.getResellerStaff(entityId as string);
+        for (const s of staff) {
+          users.push({ id: s.id, fullName: s.fullName || s.email, role: s.role });
+        }
+      } else if (entityType === 'repair-center') {
+        // Get repair center and their staff
+        const repairCenter = await storage.getRepairCenter(entityId as string);
+        if (repairCenter) {
+          // Get the owner user
+          const owner = await storage.getUser(repairCenter.ownerId);
+          if (owner) {
+            users.push({ id: owner.id, fullName: owner.fullName || owner.email, role: owner.role });
+          }
+          
+          // Get repair center staff
+          const staff = await storage.getRepairCenterStaff(entityId as string);
+          for (const s of staff) {
+            users.push({ id: s.id, fullName: s.fullName || s.email, role: s.role });
+          }
+        }
+      }
+      
+      res.json(users);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Admin HR - Create clock event for any user
+  app.post("/api/admin/hr/clock-events", requireRole("admin", "admin_staff"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Non autenticato" });
+      
+      const { userId, eventType, eventTime, notes, entityType, entityId } = req.body;
+      
+      if (!userId) {
+        return res.status(400).json({ error: "userId richiesto" });
+      }
+      if (!eventType) {
+        return res.status(400).json({ error: "eventType richiesto" });
+      }
+      
+      // Determine the resellerId based on entityType
+      let resellerId: string | undefined;
+      
+      if (entityType === 'reseller' || entityType === 'sub-reseller') {
+        resellerId = entityId;
+      } else if (entityType === 'repair-center') {
+        // Get the parent reseller of the repair center
+        const repairCenter = await storage.getRepairCenter(entityId);
+        if (repairCenter) {
+          resellerId = repairCenter.subResellerId || repairCenter.resellerId;
+        }
+      }
+      
+      if (!resellerId) {
+        return res.status(400).json({ error: "Impossibile determinare il reseller associato" });
+      }
+      
+      const event = await storage.createHrClockEvent({
+        userId,
+        resellerId,
+        eventType,
+        eventTime: eventTime ? new Date(eventTime) : new Date(),
+        notes
+      });
+      
+      res.json(event);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   app.patch("/api/admin/hr/clock-events/:id", requireRole("admin", "admin_staff"), async (req, res) => {
     try {
       if (!req.user) return res.status(401).json({ error: "Non autenticato" });
