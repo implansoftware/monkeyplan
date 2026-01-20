@@ -504,6 +504,7 @@ export interface IStorage {
   // Supplier Catalog Products
   listSupplierCatalogProducts(supplierId: string): Promise<SupplierCatalogProduct[]>;
   getSupplierCatalogProduct(id: string): Promise<SupplierCatalogProduct | undefined>;
+  searchSupplierCatalogProducts(supplierId: string, search: string, limit?: number): Promise<SupplierCatalogProduct[]>;
   upsertSupplierCatalogProduct(product: InsertSupplierCatalogProduct): Promise<{ product: SupplierCatalogProduct; created: boolean }>;
   mapCatalogProductToLocal(catalogProductId: string, linkedProductId: string): Promise<SupplierCatalogProduct>;
   
@@ -5269,6 +5270,20 @@ export class DatabaseStorage implements IStorage {
       .orderBy(supplierCatalogProducts.title);
   }
 
+
+  async searchSupplierCatalogProducts(supplierId: string, search: string, limit: number = 20): Promise<SupplierCatalogProduct[]> {
+    const searchPattern = `%${search}%`;
+    return db.select()
+      .from(supplierCatalogProducts)
+      .where(and(
+        eq(supplierCatalogProducts.supplierId, supplierId),
+        or(
+          ilike(supplierCatalogProducts.title, searchPattern),
+          ilike(supplierCatalogProducts.externalSku, searchPattern)
+        )
+      ))
+      .limit(limit);
+  }
   async getSupplierCatalogProduct(id: string): Promise<SupplierCatalogProduct | undefined> {
     const [product] = await db.select()
       .from(supplierCatalogProducts)

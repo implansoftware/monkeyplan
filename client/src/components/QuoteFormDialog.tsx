@@ -32,6 +32,7 @@ import { Label } from "@/components/ui/label";
 import { FileText, Plus, Trash2, Package, Calculator, Info, Warehouse } from "lucide-react";
 import type { RepairDiagnostics, RepairOrder, RepairCenter, Warehouse as WarehouseType } from "@shared/schema";
 import { SearchableProductCombobox } from "@/components/SearchableProductCombobox";
+import { NetworkProductSearch } from "@/components/NetworkProductSearch";
 import { SearchableServiceCombobox } from "@/components/SearchableServiceCombobox";
 import {
   Select,
@@ -378,12 +379,25 @@ export function QuoteFormDialog({
                     brandId={(repairOrder as any)?.deviceBrandId || undefined}
                     modelId={repairOrder?.deviceModelId || undefined}
                   />
+                  <NetworkProductSearch
+                    onSelect={(product) => {
+                      append({
+                        productId: product.id,
+                        name: product.source === "supplier" 
+                          ? `[${product.supplierName}] ${product.name}` 
+                          : `[${product.ownerName}] ${product.name}`,
+                        quantity: 1,
+                        unitPrice: product.unitPrice / 100,
+                        imageUrl: product.imageUrl,
+                      });
+                    }}
+                  />
                 </div>
               </CardHeader>
               <CardContent className="space-y-4">
                 {fields.length === 0 ? (
                   <p className="text-sm text-muted-foreground text-center py-4">
-                    Nessun elemento aggiunto. Seleziona dal magazzino, catalogo servizi o aggiungi manualmente.
+                    Nessun elemento aggiunto. Seleziona dal magazzino, rete, catalogo servizi o aggiungi manualmente.
                   </p>
                 ) : (
                   fields.map((field, index) => (

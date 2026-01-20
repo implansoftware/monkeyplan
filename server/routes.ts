@@ -24237,6 +24237,227 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // GET /api/network/products/search - Search products across network warehouses and suppliers
+  app.get("/api/network/products/search", requireAuth, async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Non autenticato" });
+      
+      const { search, source, limit = "20" } = req.query;
+      const searchTerm = (search as string || "").trim().toLowerCase();
+      const sourceFilter = source as string || "all"; // "all", "network", "suppliers"
+      const limitNum = Math.min(parseInt(limit as string) || 20, 50);
+      
+      if (!searchTerm || searchTerm.length < 2) {
+        return res.json({ network: [], suppliers: [] });
+      }
+      
+      const results: {
+        network: Array<{
+          id: string;
+          name: string;
+          sku: string;
+          unitPrice: number;
+          availableQuantity: number;
+          warehouseName: string;
+          warehouseId: string;
+          ownerName: string;
+          ownerId: string;
+          ownerType: string;
+          imageUrl?: string;
+          source: "network";
+        }>;
+        suppliers: Array<{
+          id: string;
+          name: string;
+          sku: string;
+          unitPrice: number;
+          availableQuantity: number;
+          supplierName: string;
+          supplierId: string;
+          supplierType: string;
+          imageUrl?: string;
+          source: "supplier";
+        }>;
+      } = { network: [], suppliers: [] };
+      
+      // Determine reseller context
+      let resellerId: string | null = null;
+      if (req.user.role === "reseller") {
+        resellerId = req.user.id;
+      } else if (req.user.role === "sub_reseller") {
+        resellerId = req.user.parentResellerId || req.user.id;
+      } else if (req.user.role === "repair_center") {
+        resellerId = req.user.resellerId || null;
+      } else if (req.user.role === "reseller_staff" || req.user.role === "collaborator") {
+        resellerId = req.user.resellerId || null;
+      } else if (req.user.role === "admin" || req.user.role === "admin_staff") {
+        resellerId = null; // Admin can see all
+      }
+      
+      // Search network warehouses (excluding own warehouse)
+      if (sourceFilter === "all" || sourceFilter === "network") {
+        const allWarehouses = await storage.listWarehouses();
+        
+        // Filter warehouses based on role
+        let accessibleWarehouses = allWarehouses;
+        if (resellerId) {
+          // Get sub-resellers and repair centers in the network
+          const subResellers = await storage.listSubResellers(resellerId);
+          const repairCenters = await storage.listRepairCenters({ resellerId });
+          
+          const networkUserIds = new Set<string>([
+            resellerId,
+            ...subResellers.map(sr => sr.id),
+            ...repairCenters.map(rc => rc.id),
+          ]);
+          
+          accessibleWarehouses = allWarehouses.filter(w => {
+            if (!w.ownerId) return false;
+            return networkUserIds.has(w.ownerId);
+          });
+        }
+        
+        // Exclude current user's own warehouse from results
+        // For staff users, exclude the warehouse of their parent reseller
+        let ownWarehouseOwnerId = req.user.id;
+        let ownWarehouseOwnerType: "admin" | "reseller" | "sub_reseller" | "repair_center" = "reseller";
+        
+        if (req.user.role === "reseller_staff" || req.user.role === "collaborator") {
+          ownWarehouseOwnerId = req.user.resellerId || req.user.id;
+          ownWarehouseOwnerType = "reseller";
+        } else if (req.user.role === "sub_reseller") {
+          ownWarehouseOwnerType = "sub_reseller";
+        } else if (req.user.role === "repair_center") {
+          ownWarehouseOwnerType = "repair_center";
+        } else if (req.user.role === "admin" || req.user.role === "admin_staff") {
+          ownWarehouseOwnerType = "admin";
+        }
+        
+        const ownWarehouse = await storage.getWarehouseByOwner(ownWarehouseOwnerType, ownWarehouseOwnerId);
+        if (ownWarehouse) {
+          accessibleWarehouses = accessibleWarehouses.filter(w => w.id !== ownWarehouse.id);
+        }
+        
+        // Search products in each warehouse
+        for (const warehouse of accessibleWarehouses) {
+          const warehouseStock = await storage.listWarehouseStock(warehouse.id, searchTerm);
+          
+          for (const stock of warehouseStock.slice(0, limitNum)) {
+            if (stock.quantity > 0 && stock.product) {
+              const owner = await storage.getUser(warehouse.ownerId || "");
+              results.network.push({
+                id: stock.product.id,
+                name: stock.product.name,
+                sku: stock.product.sku,
+                unitPrice: stock.product.unitPrice || 0,
+                availableQuantity: stock.quantity,
+                warehouseName: warehouse.name,
+                warehouseId: warehouse.id,
+                ownerName: owner?.businessName || owner?.username || "Sconosciuto",
+                ownerId: warehouse.ownerId || "",
+                ownerType: warehouse.ownerType || "",
+                imageUrl: stock.product.imageUrl || undefined,
+                source: "network",
+              });
+            }
+          }
+        }
+        
+        // Limit network results
+        results.network = results.network.slice(0, limitNum);
+      }
+      
+      // Search supplier catalogs
+      if (sourceFilter === "all" || sourceFilter === "suppliers") {
+        // Get configured integrations for this reseller
+        const effectiveResellerId = resellerId || req.user.id;
+        
+        // Search Foneday catalog if configured
+        const fonedayCreds = await storage.getFonedayCredentials(effectiveResellerId);
+        if (fonedayCreds) {
+          const fonedayProducts = await storage.searchSupplierCatalogProducts(
+            fonedayCreds.supplierId || "",
+            searchTerm,
+            limitNum
+          );
+          
+          for (const product of fonedayProducts) {
+            results.suppliers.push({
+              id: product.id,
+              name: product.title,
+              sku: product.externalSku,
+              unitPrice: product.purchasePrice || 0,
+              availableQuantity: product.stockQuantity || 0,
+              supplierName: "Foneday",
+              supplierId: product.supplierId,
+              supplierType: "foneday",
+              imageUrl: product.imageUrl || undefined,
+              source: "supplier",
+            });
+          }
+        }
+        
+        // Search MobileSentrix catalog if configured
+        const msCreds = await storage.getMobilesentrixCredentials(effectiveResellerId);
+        if (msCreds) {
+          const msProducts = await storage.searchSupplierCatalogProducts(
+            msCreds.supplierId || "",
+            searchTerm,
+            limitNum
+          );
+          
+          for (const product of msProducts) {
+            results.suppliers.push({
+              id: product.id,
+              name: product.title,
+              sku: product.externalSku,
+              unitPrice: product.purchasePrice || 0,
+              availableQuantity: product.stockQuantity || 0,
+              supplierName: "MobileSentrix",
+              supplierId: product.supplierId,
+              supplierType: "mobilesentrix",
+              imageUrl: product.imageUrl || undefined,
+              source: "supplier",
+            });
+          }
+        }
+        
+        // Search TrovaUsati catalog if configured
+        const tuCreds = await storage.getTrovausatiCredentials(effectiveResellerId);
+        if (tuCreds) {
+          const tuProducts = await storage.searchSupplierCatalogProducts(
+            tuCreds.supplierId || "",
+            searchTerm,
+            limitNum
+          );
+          
+          for (const product of tuProducts) {
+            results.suppliers.push({
+              id: product.id,
+              name: product.title,
+              sku: product.externalSku,
+              unitPrice: product.purchasePrice || 0,
+              availableQuantity: product.stockQuantity || 0,
+              supplierName: "TrovaUsati",
+              supplierId: product.supplierId,
+              supplierType: "trovausati",
+              imageUrl: product.imageUrl || undefined,
+              source: "supplier",
+            });
+          }
+        }
+        
+        // Limit supplier results
+        results.suppliers = results.suppliers.slice(0, limitNum);
+      }
+      
+      res.json(results);
+    } catch (error: any) {
+      console.error("Network products search error:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   // GET /api/foneday/catalog/products - Search Foneday products (with persistent DB caching)
   app.get("/api/foneday/catalog/products", requireAuth, requireRole("reseller"), async (req, res) => {
     try {
