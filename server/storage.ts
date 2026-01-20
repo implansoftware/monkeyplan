@@ -495,6 +495,8 @@ export interface IStorage {
   listSuppliers(activeOnly?: boolean): Promise<Supplier[]>;
   getSupplier(id: string): Promise<Supplier | undefined>;
   getSupplierByCode(code: string): Promise<Supplier | undefined>;
+  getSupplierByName(name: string): Promise<Supplier | undefined>;
+  findOrCreateSupplierByIntegration(integrationCode: string, integrationName: string): Promise<Supplier>;
   createSupplier(supplier: InsertSupplier): Promise<Supplier>;
   updateSupplier(id: string, updates: Partial<InsertSupplier>): Promise<Supplier>;
   deleteSupplier(id: string): Promise<void>;
@@ -5196,6 +5198,30 @@ export class DatabaseStorage implements IStorage {
   async getSupplierByCode(code: string): Promise<Supplier | undefined> {
     const [supplier] = await db.select().from(suppliers).where(eq(suppliers.code, code));
     return supplier || undefined;
+  }
+
+  async getSupplierByName(name: string): Promise<Supplier | undefined> {
+    const [supplier] = await db.select().from(suppliers).where(eq(suppliers.name, name));
+    return supplier || undefined;
+  }
+
+  async findOrCreateSupplierByIntegration(integrationCode: string, integrationName: string): Promise<Supplier> {
+    // Cerca prima per nome integrazione
+    let supplier = await this.getSupplierByName(integrationName);
+    
+    if (!supplier) {
+      // Crea il fornitore per l'integrazione esterna
+      supplier = await this.createSupplier({
+        name: integrationName,
+        email: `integration@${integrationCode.toLowerCase()}.com`,
+        phone: '',
+        isActive: true,
+        apiType: integrationCode.toLowerCase() as any,
+        notes: `Fornitore automatico per integrazione ${integrationName}`,
+      });
+    }
+    
+    return supplier;
   }
 
   async createSupplier(insertSupplier: InsertSupplier): Promise<Supplier> {

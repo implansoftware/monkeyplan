@@ -20175,6 +20175,49 @@ export function registerRoutes(app: Express): Server {
         productsData: JSON.stringify(order.attributes.products),
       });
       
+      // Crea supplierOrder per tracciare la ricezione stock
+      try {
+        const supplier = await storage.findOrCreateSupplierByIntegration('trovausati', 'TrovaUsati');
+        
+        // Trova il magazzino del reseller
+        const reseller = await storage.getUser(resellerId);
+        const warehouse = await storage.getWarehouseByOwner(
+          reseller?.parentResellerId ? 'sub_reseller' : 'reseller', 
+          resellerId
+        );
+        
+        const supplierOrder = await storage.createSupplierOrder({
+          supplierId: supplier.id,
+          ownerType: reseller?.parentResellerId ? 'sub_reseller' : 'reseller',
+          ownerId: resellerId,
+          targetWarehouseId: warehouse?.id,
+          status: 'sent',
+          subtotal: order.attributes.price,
+          totalAmount: order.attributes.price,
+          sentAt: new Date(),
+          notes: `Ordine TrovaUsati #${order.attributes.reference || order.id}`,
+          createdBy: req.user!.id,
+        });
+        
+        // Crea items per ogni prodotto (se disponibili)
+        if (order.attributes.products && Array.isArray(order.attributes.products)) {
+          for (const product of order.attributes.products) {
+            await storage.createSupplierOrderItem({
+              supplierOrderId: supplierOrder.id,
+              supplierCode: product.sku || product.id?.toString() || 'N/A',
+              description: product.title || product.name || 'Prodotto TrovaUsati',
+              quantity: 1,
+              unitPrice: product.price || 0,
+              totalPrice: product.price || 0,
+            });
+          }
+        }
+        
+        console.log(`Created supplierOrder ${supplierOrder.orderNumber} for TrovaUsati order ${order.id}`);
+      } catch (supplierError) {
+        console.error('Failed to create supplierOrder for TrovaUsati order:', supplierError);
+      }
+      
       res.json(order);
     } catch (error: any) {
       res.status(500).json({ error: error.message });
@@ -20233,6 +20276,49 @@ export function registerRoutes(app: Express): Server {
         addressData: JSON.stringify(order.attributes.address),
         productsData: JSON.stringify(order.attributes.products),
       });
+      
+      // Crea supplierOrder per tracciare la ricezione stock
+      try {
+        const supplier = await storage.findOrCreateSupplierByIntegration('trovausati', 'TrovaUsati');
+        
+        // Trova il magazzino del reseller
+        const reseller = await storage.getUser(resellerId);
+        const warehouse = await storage.getWarehouseByOwner(
+          reseller?.parentResellerId ? 'sub_reseller' : 'reseller', 
+          resellerId
+        );
+        
+        const supplierOrder = await storage.createSupplierOrder({
+          supplierId: supplier.id,
+          ownerType: reseller?.parentResellerId ? 'sub_reseller' : 'reseller',
+          ownerId: resellerId,
+          targetWarehouseId: warehouse?.id,
+          status: 'sent',
+          subtotal: order.attributes.price,
+          totalAmount: order.attributes.price,
+          sentAt: new Date(),
+          notes: `Ordine TrovaUsati #${order.attributes.reference || order.id}`,
+          createdBy: req.user!.id,
+        });
+        
+        // Crea items per ogni prodotto (se disponibili)
+        if (order.attributes.products && Array.isArray(order.attributes.products)) {
+          for (const product of order.attributes.products) {
+            await storage.createSupplierOrderItem({
+              supplierOrderId: supplierOrder.id,
+              supplierCode: product.sku || product.id?.toString() || 'N/A',
+              description: product.title || product.name || 'Prodotto TrovaUsati',
+              quantity: 1,
+              unitPrice: product.price || 0,
+              totalPrice: product.price || 0,
+            });
+          }
+        }
+        
+        console.log(`Created supplierOrder ${supplierOrder.orderNumber} for TrovaUsati order ${order.id}`);
+      } catch (supplierError) {
+        console.error('Failed to create supplierOrder for TrovaUsati order:', supplierError);
+      }
       
       res.json(order);
     } catch (error: any) {
@@ -24123,7 +24209,6 @@ export function registerRoutes(app: Express): Server {
       }
       
       const { createFonedayService } = await import("./fonedayService");
-      const fonedayService = createFonedayService(credential);
       
       const categories = await fonedayService.getCategories();
       res.json(categories);
@@ -24239,7 +24324,6 @@ export function registerRoutes(app: Express): Server {
       }
       
       const { createFonedayService } = await import("./fonedayService");
-      const fonedayService = createFonedayService(credential);
       
       const products = await fonedayService.searchProducts({
         query: search,
@@ -24402,7 +24486,6 @@ export function registerRoutes(app: Express): Server {
       }
       
       const { createFonedayService } = await import("./fonedayService");
-      const fonedayService = createFonedayService(credential);
       
       const product = await fonedayService.getProduct(req.params.sku);
       res.json(product);
@@ -24510,7 +24593,6 @@ export function registerRoutes(app: Express): Server {
       // Also sync with Foneday API (fire and forget)
       try {
         const { createFonedayService } = await import("./fonedayService");
-        const fonedayService = createFonedayService(credential);
         await fonedayService.removeFromCart([{ sku, quantity: Number(quantity) }]);
       } catch (apiError) {
         console.log("Foneday API cart sync error (non-blocking):", apiError);
@@ -24570,7 +24652,9 @@ export function registerRoutes(app: Express): Server {
       }
       
       const { createFonedayService } = await import("./fonedayService");
-      const fonedayService = createFonedayService(credential);
+      
+      // Ottieni il carrello PRIMA di inviare l'ordine per salvare gli items
+      const cartItems = await fonedayService.getCart();
       
       const order = await fonedayService.submitOrder(shippingMethodId, shippingAddress, notes);
       
@@ -24582,6 +24666,57 @@ export function registerRoutes(app: Express): Server {
         totalCents: Math.round(order.total * 100),
         orderData: order as any,
       });
+      
+      // Crea supplierOrder per tracciare la ricezione stock
+      try {
+        const supplier = await storage.findOrCreateSupplierByIntegration('foneday', 'Foneday');
+        
+        // Trova il magazzino del reseller
+        const reseller = await storage.getUser(req.user.id);
+        const warehouse = await storage.getWarehouseByOwner(
+          reseller?.parentResellerId ? 'sub_reseller' : 'reseller', 
+          req.user.id
+        );
+        
+        // Calcola totali
+        let subtotal = 0;
+        for (const item of cartItems) {
+          const itemPrice = parseFloat(item.price.replace(',', '.')) * 100;
+          subtotal += itemPrice * item.quantity;
+        }
+        
+        const supplierOrder = await storage.createSupplierOrder({
+          supplierId: supplier.id,
+          ownerType: reseller?.parentResellerId ? 'sub_reseller' : 'reseller',
+          ownerId: req.user.id,
+          targetWarehouseId: warehouse?.id,
+          status: 'sent',
+          subtotal: Math.round(subtotal),
+          totalAmount: Math.round(order.total * 100),
+          sentAt: new Date(),
+          notes: `Ordine Foneday #${order.order_number}`,
+          createdBy: req.user.id,
+        });
+        
+        // Crea items per ogni prodotto nel carrello
+        for (const item of cartItems) {
+          const itemPrice = parseFloat(item.price.replace(',', '.')) * 100;
+          await storage.createSupplierOrderItem({
+            supplierOrderId: supplierOrder.id,
+            supplierCode: item.sku,
+            description: item.title,
+            quantity: item.quantity,
+            unitPrice: Math.round(itemPrice),
+            totalPrice: Math.round(itemPrice * item.quantity),
+            notes: item.note || undefined,
+          });
+        }
+        
+        console.log(`Created supplierOrder ${supplierOrder.orderNumber} for Foneday order ${order.order_number}`);
+      } catch (supplierError) {
+        // Non bloccare l'ordine se fallisce la creazione del supplierOrder
+        console.error('Failed to create supplierOrder for Foneday order:', supplierError);
+      }
       
       res.json(order);
     } catch (error: any) {
@@ -25277,6 +25412,47 @@ export function registerRoutes(app: Express): Server {
         
         // Clear cart after successful order
         await storage.clearMobilesentrixCart(credential.id);
+        
+        // Crea supplierOrder per tracciare la ricezione stock
+        try {
+          const supplier = await storage.findOrCreateSupplierByIntegration('mobilesentrix', 'MobileSentrix');
+          
+          // Trova il magazzino del reseller
+          const reseller = await storage.getUser(req.user.id);
+          const warehouse = await storage.getWarehouseByOwner(
+            reseller?.parentResellerId ? 'sub_reseller' : 'reseller', 
+            req.user.id
+          );
+          
+          const supplierOrder = await storage.createSupplierOrder({
+            supplierId: supplier.id,
+            ownerType: reseller?.parentResellerId ? 'sub_reseller' : 'reseller',
+            ownerId: req.user.id,
+            targetWarehouseId: warehouse?.id,
+            status: 'sent',
+            subtotal: totalAmount,
+            totalAmount: totalAmount,
+            sentAt: new Date(),
+            notes: `Ordine MobileSentrix #${msOrder.order_number}`,
+            createdBy: req.user.id,
+          });
+          
+          // Crea items per ogni prodotto nel carrello
+          for (const cartItem of cartItems) {
+            await storage.createSupplierOrderItem({
+              supplierOrderId: supplierOrder.id,
+              supplierCode: cartItem.sku,
+              description: cartItem.name,
+              quantity: cartItem.quantity,
+              unitPrice: cartItem.price,
+              totalPrice: cartItem.price * cartItem.quantity,
+            });
+          }
+          
+          console.log(`Created supplierOrder ${supplierOrder.orderNumber} for MobileSentrix order ${msOrder.order_number}`);
+        } catch (supplierError) {
+          console.error('Failed to create supplierOrder for MobileSentrix order:', supplierError);
+        }
         
         res.json({ success: true, order, mobilesentrixOrderId: msOrder.order_id });
       } catch (msError: any) {
