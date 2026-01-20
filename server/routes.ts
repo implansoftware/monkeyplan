@@ -24363,6 +24363,75 @@ export function registerRoutes(app: Express): Server {
           }
         }
         
+        
+        // Search B2B Marketplace (Admin catalog for resellers, Reseller catalog for repair centers)
+        if (req.user.role === "reseller" || req.user.role === "sub_reseller" || req.user.role === "reseller_staff") {
+          // Resellers can buy from Admin's B2B catalog
+          const adminCatalog = await storage.getAdminCatalogForReseller(resellerId || req.user.id);
+          for (const item of adminCatalog) {
+            if (item.product && item.product.name.toLowerCase().includes(searchTerm)) {
+              // Check if product is in admin's warehouse
+              const adminWarehouse = await storage.getWarehouseByOwner("admin", "admin");
+              let availableQty = item.availableQuantity || 0;
+              if (adminWarehouse) {
+                const stock = await storage.getWarehouseStockByProduct(adminWarehouse.id, item.product.id);
+                availableQty = stock?.quantity || 0;
+              }
+              
+              if (availableQty > 0) {
+                results.network.push({
+                  id: item.product.id,
+                  name: item.product.name,
+                  sku: item.product.sku,
+                  unitPrice: item.b2bPriceInCents || item.product.unitPrice || 0,
+                  availableQuantity: availableQty,
+                  warehouseName: "Marketplace B2B Admin",
+                  warehouseId: adminWarehouse?.id || "",
+                  ownerName: "Admin (B2B)",
+                  ownerId: "admin",
+                  ownerType: "admin",
+                  imageUrl: item.product.imageUrl || undefined,
+                  source: "network",
+                });
+              }
+            }
+          }
+        } else if (req.user.role === "repair_center") {
+          // Repair centers can buy from their reseller's B2B catalog
+          const parentResellerId = req.user.resellerId;
+          if (parentResellerId) {
+            const resellerCatalog = await storage.getResellerCatalogForRepairCenter(req.user.id);
+            for (const item of resellerCatalog) {
+              if (item.product && item.product.name.toLowerCase().includes(searchTerm)) {
+                const resellerWarehouse = await storage.getWarehouseByOwner("reseller", parentResellerId);
+                let availableQty = item.availableQuantity || 0;
+                if (resellerWarehouse) {
+                  const stock = await storage.getWarehouseStockByProduct(resellerWarehouse.id, item.product.id);
+                  availableQty = stock?.quantity || 0;
+                }
+                
+                if (availableQty > 0) {
+                  const reseller = await storage.getUser(parentResellerId);
+                  results.network.push({
+                    id: item.product.id,
+                    name: item.product.name,
+                    sku: item.product.sku,
+                    unitPrice: item.b2bPriceInCents || item.product.unitPrice || 0,
+                    availableQuantity: availableQty,
+                    warehouseName: "Marketplace B2B Reseller",
+                    warehouseId: resellerWarehouse?.id || "",
+                    ownerName: reseller?.businessName || "Reseller (B2B)",
+                    ownerId: parentResellerId,
+                    ownerType: "reseller",
+                    imageUrl: item.product.imageUrl || undefined,
+                    source: "network",
+                  });
+                }
+              }
+            }
+          }
+        }
+        
         // Limit network results
         results.network = results.network.slice(0, limitNum);
       }
