@@ -21,11 +21,15 @@ import {
   Coffee,
   Utensils,
   Filter,
-  Calendar,
+  Calendar as CalendarIcon,
   User,
   Eye,
-  Pencil
+  Pencil,
+  ChevronLeft,
+  ChevronRight
 } from "lucide-react";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { Skeleton } from "@/components/ui/skeleton";
 import { format } from "date-fns";
@@ -69,20 +73,39 @@ export default function HrAttendance() {
   const [editingEvent, setEditingEvent] = useState<ClockEvent | null>(null);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [editForm, setEditForm] = useState({ eventType: "", eventTime: "", notes: "" });
+  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
+  const [datePickerOpen, setDatePickerOpen] = useState(false);
   const { toast } = useToast();
 
   const readOnly = isReadOnly(entityType, selectedEntityId);
 
   const today = new Date();
-  const startOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-  const endOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 23, 59, 59);
+  const isToday = selectedDate.toDateString() === today.toDateString();
+  const startOfDay = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), selectedDate.getDate());
+  const endOfDay = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), selectedDate.getDate(), 23, 59, 59);
+  
+  const goToPreviousDay = () => {
+    const prev = new Date(selectedDate);
+    prev.setDate(prev.getDate() - 1);
+    setSelectedDate(prev);
+  };
+  
+  const goToNextDay = () => {
+    const next = new Date(selectedDate);
+    next.setDate(next.getDate() + 1);
+    setSelectedDate(next);
+  };
+  
+  const goToToday = () => {
+    setSelectedDate(new Date());
+  };
 
   const baseParams = `startDate=${encodeURIComponent(startOfDay.toISOString())}&endDate=${encodeURIComponent(endOfDay.toISOString())}`;
   const entityParams = entityType !== "own" && selectedEntityId ? `&entityType=${entityType}&entityId=${selectedEntityId}` : "";
   const clockEventsUrl = `/api/reseller/hr/clock-events?${baseParams}${entityParams}`;
   
   const { data: clockEvents = [], isLoading } = useQuery<ClockEvent[]>({
-    queryKey: ["/api/reseller/hr/clock-events", entityType, selectedEntityId, today.toDateString()],
+    queryKey: ["/api/reseller/hr/clock-events", entityType, selectedEntityId, selectedDate.toDateString()],
     queryFn: async () => {
       const res = await fetch(clockEventsUrl);
       if (!res.ok) throw new Error("Errore nel caricamento");
@@ -290,10 +313,44 @@ export default function HrAttendance() {
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
               <CardTitle className="flex items-center gap-2">
-                <Calendar className="h-5 w-5 text-muted-foreground" />
-                Timbrature di Oggi
+                <CalendarIcon className="h-5 w-5 text-muted-foreground" />
+                {isToday ? "Timbrature di Oggi" : "Timbrature del Giorno"}
               </CardTitle>
-              <CardDescription>{format(today, "EEEE d MMMM yyyy", { locale: it })}</CardDescription>
+              <div className="flex items-center gap-2 mt-1">
+                <Button size="icon" variant="ghost" onClick={goToPreviousDay} data-testid="button-prev-day">
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
+                <Popover open={datePickerOpen} onOpenChange={setDatePickerOpen}>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" className="min-w-[200px] justify-start text-left font-normal" data-testid="button-date-picker">
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {format(selectedDate, "EEEE d MMMM yyyy", { locale: it })}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={selectedDate}
+                      onSelect={(date) => {
+                        if (date) {
+                          setSelectedDate(date);
+                          setDatePickerOpen(false);
+                        }
+                      }}
+                      initialFocus
+                      locale={it}
+                    />
+                  </PopoverContent>
+                </Popover>
+                <Button size="icon" variant="ghost" onClick={goToNextDay} data-testid="button-next-day">
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+                {!isToday && (
+                  <Button variant="secondary" size="sm" onClick={goToToday} data-testid="button-go-today">
+                    Oggi
+                  </Button>
+                )}
+              </div>
             </div>
             <div className="flex gap-2">
               <Select value={selectedUser} onValueChange={setSelectedUser}>
@@ -308,10 +365,12 @@ export default function HrAttendance() {
                   ))}
                 </SelectContent>
               </Select>
-              <Button variant="outline" onClick={() => setDialogOpen(true)} data-testid="button-add-manual">
-                <Plus className="h-4 w-4 mr-2" />
-                Manuale
-              </Button>
+              {!readOnly && (
+                <Button variant="outline" onClick={() => setDialogOpen(true)} data-testid="button-add-manual">
+                  <Plus className="h-4 w-4 mr-2" />
+                  Manuale
+                </Button>
+              )}
             </div>
           </div>
         </CardHeader>
@@ -323,7 +382,7 @@ export default function HrAttendance() {
           ) : filteredEvents.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">
               <Clock className="h-12 w-12 mx-auto mb-3 opacity-50" />
-              <p>Nessuna timbratura registrata oggi</p>
+              <p>{isToday ? "Nessuna timbratura registrata oggi" : `Nessuna timbratura per il ${format(selectedDate, "d MMMM yyyy", { locale: it })}`}</p>
             </div>
           ) : (
             <Table>
