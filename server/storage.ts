@@ -175,6 +175,7 @@ export interface IStorage {
   setStaffRepairCenters(staffId: string, repairCenterIds: string[]): Promise<void>;
   listAllStaffRepairCenters(): Promise<StaffRepairCenter[]>;
   
+  listSubResellers(resellerId: string): Promise<User[]>;
   // Repair Centers
   listRepairCenters(filters?: { resellerId?: string; subResellerId?: string }): Promise<RepairCenter[]>;
   getRepairCenter(id: string): Promise<RepairCenter | undefined>;
@@ -1515,6 +1516,12 @@ export class DatabaseStorage implements IStorage {
 
   async listAllStaffSubResellers(): Promise<StaffSubReseller[]> {
     return await db.select().from(staffSubResellers);
+  }
+
+  async listSubResellers(resellerId: string): Promise<User[]> {
+    return await db.select().from(users)
+      .where(and(eq(users.parentResellerId, resellerId), eq(users.role, "sub_reseller")))
+      .orderBy(desc(users.createdAt));
   }
 
   // Repair Centers
