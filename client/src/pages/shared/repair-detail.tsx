@@ -1054,7 +1054,7 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
                           variant="outline"
                           onClick={() => updateQuoteStatusMutation.mutate('rejected')}
                           disabled={updateQuoteStatusMutation.isPending}
-                          className="flex-1"
+                          className="flex-1 bg-[#ff0808] text-[#ffffff]"
                           data-testid="button-reject-quote"
                         >
                           <XCircle className="mr-2 h-4 w-4" />
