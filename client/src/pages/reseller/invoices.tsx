@@ -541,6 +541,17 @@ export default function ResellerInvoices() {
                   <p className="font-mono text-xs">{selectedSibillDoc.externalId || "-"}</p>
                 </div>
               </div>
+
+              <Separator />
+              
+              <details className="text-xs">
+                <summary className="cursor-pointer text-muted-foreground hover:text-foreground">
+                  Mostra dati grezzi API
+                </summary>
+                <pre className="bg-muted rounded-lg p-4 mt-2 overflow-auto max-h-48">
+                  {JSON.stringify(selectedSibillDoc.rawData as Record<string, unknown>, null, 2)}
+                </pre>
+              </details>
             </div>
           )}
         </DialogContent>
