@@ -24363,7 +24363,7 @@ export function registerRoutes(app: Express): Server {
                 availableQuantity: stock.quantity,
                 warehouseName: warehouse.name,
                 warehouseId: warehouse.id,
-                ownerName: owner?.businessName || owner?.username || "Sconosciuto",
+                ownerName: owner?.businessName || owner?.username || warehouse.name,
                 ownerId: warehouse.ownerId || "",
                 ownerType: warehouse.ownerType || "",
                 imageUrl: stock.product.imageUrl || undefined,
