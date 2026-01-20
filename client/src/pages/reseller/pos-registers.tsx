@@ -275,10 +275,12 @@ export default function ResellerPosRegistersPage() {
               ))}
             </SelectContent>
           </Select>
-          <Button onClick={openCreateDialog} data-testid="button-add-register">
-            <Plus className="h-4 w-4 mr-2" />
-            Nuova Cassa
-          </Button>
+          {centerFilter !== "all" && (
+            <Button onClick={openCreateDialog} data-testid="button-add-register">
+              <Plus className="h-4 w-4 mr-2" />
+              Nuova Cassa
+            </Button>
+          )}
         </div>
       </div>
 
@@ -321,17 +323,16 @@ export default function ResellerPosRegistersPage() {
             <div className="text-center py-12 text-muted-foreground">
               <Store className="h-12 w-12 mx-auto mb-4 opacity-50" />
               {centerFilter === "all" ? (
-                <>
-                  <p>Seleziona un centro riparazione per visualizzare le casse</p>
-                  <p className="text-sm mt-2">oppure</p>
-                </>
+                <p>Seleziona un centro riparazione per visualizzare e gestire le casse</p>
               ) : (
-                <p>Nessuna cassa configurata per questo centro</p>
+                <>
+                  <p>Nessuna cassa configurata per questo centro</p>
+                  <Button onClick={openCreateDialog} variant="outline" className="mt-4">
+                    <Plus className="h-4 w-4 mr-2" />
+                    Crea la prima cassa
+                  </Button>
+                </>
               )}
-              <Button onClick={openCreateDialog} variant="outline" className="mt-4">
-                <Plus className="h-4 w-4 mr-2" />
-                Crea la prima cassa
-              </Button>
             </div>
           ) : (
             <Table>
