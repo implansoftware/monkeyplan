@@ -1073,7 +1073,7 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
                       <div className="pt-3 border-t">
                         <Button
                           variant="secondary"
-                          className="w-full bg-[#ffff00]"
+                          className="w-full bg-[#ffff00] text-[#000000]"
                           onClick={() => setDiagnosisDialogOpen(true)}
                           data-testid="button-add-diagnosis-later"
                         >
