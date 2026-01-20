@@ -26281,6 +26281,26 @@ export function registerRoutes(app: Express): Server {
       const cartItems = await storage.listCartItems(cart.id);
       if (cartItems.length === 0) return res.status(400).json({ error: "Carrello vuoto" });
       
+      // Verifica disponibilità stock nel magazzino reseller
+      const resellerUser = await storage.getUser(resellerId);
+      const resellerWarehouse = await storage.getWarehouseByOwner(
+        resellerUser?.parentResellerId ? 'sub_reseller' : 'reseller',
+        resellerId
+      );
+      
+      if (resellerWarehouse) {
+        for (const item of cartItems) {
+          const stock = await storage.getWarehouseStock(resellerWarehouse.id, item.productId);
+          const availableQty = stock?.quantity || 0;
+          if (availableQty < item.quantity) {
+            const product = await storage.getProduct(item.productId);
+            return res.status(400).json({ 
+              error: `Stock insufficiente per "${product?.name || 'prodotto'}". Disponibili: ${availableQty}, richiesti: ${item.quantity}` 
+            });
+          }
+        }
+      }
+      
       const shippingAddress = shippingAddressId ? await storage.getCustomerAddress(shippingAddressId) : null;
       const billingAddress = billingAddressId ? await storage.getCustomerAddress(billingAddressId) : shippingAddress;
       
@@ -26316,9 +26336,10 @@ export function registerRoutes(app: Express): Server {
         source: 'web'
       });
       
+      const orderItems: Array<{ id: string; productId: string; quantity: number }> = [];
       for (const item of cartItems) {
         const product = await storage.getProduct(item.productId);
-        await storage.createSalesOrderItem({
+        const orderItem = await storage.createSalesOrderItem({
           orderId: order.id,
           productId: item.productId,
           productName: product?.name || 'Prodotto',
@@ -26329,6 +26350,37 @@ export function registerRoutes(app: Express): Server {
           discount: item.discount,
           totalPrice: item.totalPrice
         });
+        orderItems.push({ id: orderItem.id, productId: item.productId, quantity: item.quantity });
+      }
+      
+      // Scala stock dal magazzino reseller e crea prenotazioni
+      if (resellerWarehouse) {
+        for (const item of orderItems) {
+          // Scala lo stock
+          await storage.updateWarehouseStockQuantity(resellerWarehouse.id, item.productId, -item.quantity);
+          
+          // Crea movimento magazzino
+          await storage.createWarehouseMovement({
+            warehouseId: resellerWarehouse.id,
+            productId: item.productId,
+            movementType: 'vendita',
+            quantity: item.quantity,
+            referenceType: 'ordine_ecommerce',
+            referenceId: order.id,
+            notes: `Ordine e-commerce ${order.orderNumber}`,
+            createdBy: req.user.id,
+          });
+          
+          // Crea prenotazione stock
+          await storage.createStockReservation({
+            orderId: order.id,
+            orderItemId: item.id,
+            productId: item.productId,
+            resellerId,
+            quantity: item.quantity,
+            status: 'reserved',
+          });
+        }
       }
       
       if (paymentMethod) {
@@ -26450,7 +26502,59 @@ export function registerRoutes(app: Express): Server {
       }
       
       const { status, reason } = req.body;
+      const previousStatus = order.status;
       const updated = await storage.updateSalesOrderStatus(req.params.id, status, req.user.id, reason);
+      
+      // Gestisci prenotazioni stock in base al cambio di stato
+      const reservations = await storage.listStockReservations(order.id);
+      
+      // Se l'ordine viene spedito/completato -> committa le prenotazioni
+      if ((status === 'shipped' || status === 'delivered' || status === 'completed') && 
+          !['shipped', 'delivered', 'completed'].includes(previousStatus)) {
+        for (const reservation of reservations) {
+          if (reservation.status === 'reserved') {
+            await storage.commitStockReservation(reservation.id);
+          }
+        }
+      }
+      
+      // Se l'ordine viene annullato -> rilascia prenotazioni e ripristina stock
+      // Gestisce sia prenotazioni 'reserved' che 'committed' (cancellazione dopo spedizione)
+      if (status === 'cancelled' && previousStatus !== 'cancelled') {
+        const resellerId = order.resellerId;
+        const resellerUser = await storage.getUser(resellerId);
+        const resellerWarehouse = await storage.getWarehouseByOwner(
+          resellerUser?.parentResellerId ? 'sub_reseller' : 'reseller',
+          resellerId
+        );
+        
+        for (const reservation of reservations) {
+          // Ripristina stock per prenotazioni reserved o committed (non released)
+          if (reservation.status === 'reserved' || reservation.status === 'committed') {
+            await storage.releaseStockReservation(reservation.id);
+            
+            // Ripristina stock nel magazzino
+            if (resellerWarehouse) {
+              await storage.updateWarehouseStockQuantity(
+                resellerWarehouse.id, 
+                reservation.productId, 
+                reservation.quantity
+              );
+              
+              await storage.createWarehouseMovement({
+                warehouseId: resellerWarehouse.id,
+                productId: reservation.productId,
+                movementType: 'reso',
+                quantity: reservation.quantity,
+                referenceType: 'ordine_ecommerce',
+                referenceId: order.id,
+                notes: `Annullamento ordine e-commerce ${order.orderNumber}`,
+                createdBy: req.user.id,
+              });
+            }
+          }
+        }
+      }
       
       // Auto-create invoice for resellers when order is delivered/completed
       let invoice = null;
