@@ -24472,8 +24472,8 @@ export function registerRoutes(app: Express): Server {
         const msCreds = await storage.getMobilesentrixCredentialByReseller(effectiveResellerId);
         if (msCreds && msCreds.isActive && msCreds.accessToken) {
           try {
-            const { createMobilesentrixService } = await import('./mobilesentrixService');
-            const msService = createMobilesentrixService(msCreds);
+            const { getMobilesentrixService } = await import('./mobilesentrixService');
+            const msService = getMobilesentrixService(msCreds);
             const searchResult = await msService.searchProducts({ query: searchTerm, limit: limitNum });
             
             for (const product of searchResult.products) {
@@ -24495,25 +24495,30 @@ export function registerRoutes(app: Express): Server {
           }
         }
         
-        // Search TrovaUsati catalog LIVE if configured
+        
+        // Search TrovaUsati marketplace LIVE if configured
         const tuCreds = await storage.getTrovausatiCredentialByReseller(effectiveResellerId);
         if (tuCreds && tuCreds.isActive) {
           try {
             const { createTrovausatiService } = await import('./trovausatiService');
             const tuService = createTrovausatiService(tuCreds);
-            const searchResult = await tuService.searchProducts({ query: searchTerm, limit: limitNum });
+            // TrovaUsati doesn't have search, so we get products and filter locally
+            const allProducts = await tuService.getMarketplaceProducts(0, 100);
+            const filtered = allProducts.filter((p: any) => 
+              (p.title || p.name || "").toLowerCase().includes(searchTerm)
+            ).slice(0, limitNum);
             
-            for (const product of searchResult.products || []) {
+            for (const product of filtered) {
               results.suppliers.push({
                 id: `trovausati-${product.id}`,
                 name: product.title || product.name || "",
-                sku: product.sku || product.id?.toString() || "",
+                sku: product.id?.toString() || "",
                 unitPrice: Math.round((product.price || 0) * 100),
                 availableQuantity: 1,
                 supplierName: "TrovaUsati",
                 supplierId: "",
                 supplierType: "trovausati",
-                imageUrl: product.image_url || undefined,
+                imageUrl: product.imageUrl || product.image_url || undefined,
                 source: "supplier",
               });
             }
