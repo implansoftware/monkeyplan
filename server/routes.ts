@@ -24372,81 +24372,88 @@ export function registerRoutes(app: Express): Server {
         // Get configured integrations for this reseller
         const effectiveResellerId = resellerId || req.user.id;
         
-        // Search Foneday catalog if configured
+        // Search Foneday catalog LIVE if configured
         const fonedayCreds = await storage.getFonedayCredentials(effectiveResellerId);
-        if (fonedayCreds) {
-          const fonedayProducts = await storage.searchSupplierCatalogProducts(
-            fonedayCreds.supplierId || "",
-            searchTerm,
-            limitNum
-          );
-          
-          for (const product of fonedayProducts) {
-            results.suppliers.push({
-              id: product.id,
-              name: product.title,
-              sku: product.externalSku,
-              unitPrice: product.purchasePrice || 0,
-              availableQuantity: product.stockQuantity || 0,
-              supplierName: "Foneday",
-              supplierId: product.supplierId,
-              supplierType: "foneday",
-              imageUrl: product.imageUrl || undefined,
-              source: "supplier",
-            });
+        if (fonedayCreds && fonedayCreds.isActive) {
+          try {
+            const { createFonedayService } = await import('./fonedayService');
+            const fonedayService = createFonedayService(fonedayCreds);
+            const searchResult = await fonedayService.searchProducts({ query: searchTerm, per_page: limitNum });
+            
+            for (const product of searchResult.products) {
+              results.suppliers.push({
+                id: `foneday-${product.sku || product.id}`,
+                name: product.name,
+                sku: product.sku,
+                unitPrice: Math.round((product.price || 0) * 100),
+                availableQuantity: product.stock || 0,
+                supplierName: "Foneday",
+                supplierId: "",
+                supplierType: "foneday",
+                imageUrl: product.image_url || undefined,
+                source: "supplier",
+              });
+            }
+          } catch (e) {
+            console.error("Foneday search error:", e);
           }
         }
         
-        // Search MobileSentrix catalog if configured
+        // Search MobileSentrix catalog LIVE if configured
         const msCreds = await storage.getMobilesentrixCredentials(effectiveResellerId);
-        if (msCreds) {
-          const msProducts = await storage.searchSupplierCatalogProducts(
-            msCreds.supplierId || "",
-            searchTerm,
-            limitNum
-          );
-          
-          for (const product of msProducts) {
-            results.suppliers.push({
-              id: product.id,
-              name: product.title,
-              sku: product.externalSku,
-              unitPrice: product.purchasePrice || 0,
-              availableQuantity: product.stockQuantity || 0,
-              supplierName: "MobileSentrix",
-              supplierId: product.supplierId,
-              supplierType: "mobilesentrix",
-              imageUrl: product.imageUrl || undefined,
-              source: "supplier",
-            });
+        if (msCreds && msCreds.isActive && msCreds.accessToken) {
+          try {
+            const { createMobilesentrixService } = await import('./mobilesentrixService');
+            const msService = createMobilesentrixService(msCreds);
+            const searchResult = await msService.searchProducts({ query: searchTerm, limit: limitNum });
+            
+            for (const product of searchResult.products) {
+              results.suppliers.push({
+                id: `mobilesentrix-${product.sku || product.id}`,
+                name: product.name,
+                sku: product.sku || "",
+                unitPrice: Math.round((product.price || 0) * 100),
+                availableQuantity: product.stock || 0,
+                supplierName: "MobileSentrix",
+                supplierId: "",
+                supplierType: "mobilesentrix",
+                imageUrl: product.image_url || undefined,
+                source: "supplier",
+              });
+            }
+          } catch (e) {
+            console.error("MobileSentrix search error:", e);
           }
         }
         
-        // Search TrovaUsati catalog if configured
+        // Search TrovaUsati catalog LIVE if configured
         const tuCreds = await storage.getTrovausatiCredentials(effectiveResellerId);
-        if (tuCreds) {
-          const tuProducts = await storage.searchSupplierCatalogProducts(
-            tuCreds.supplierId || "",
-            searchTerm,
-            limitNum
-          );
-          
-          for (const product of tuProducts) {
-            results.suppliers.push({
-              id: product.id,
-              name: product.title,
-              sku: product.externalSku,
-              unitPrice: product.purchasePrice || 0,
-              availableQuantity: product.stockQuantity || 0,
-              supplierName: "TrovaUsati",
-              supplierId: product.supplierId,
-              supplierType: "trovausati",
-              imageUrl: product.imageUrl || undefined,
-              source: "supplier",
-            });
+        if (tuCreds && tuCreds.isActive) {
+          try {
+            const { createTrovausatiService } = await import('./trovausatiService');
+            const tuService = createTrovausatiService(tuCreds);
+            const searchResult = await tuService.searchProducts({ query: searchTerm, limit: limitNum });
+            
+            for (const product of searchResult.products || []) {
+              results.suppliers.push({
+                id: `trovausati-${product.id}`,
+                name: product.title || product.name || "",
+                sku: product.sku || product.id?.toString() || "",
+                unitPrice: Math.round((product.price || 0) * 100),
+                availableQuantity: 1,
+                supplierName: "TrovaUsati",
+                supplierId: "",
+                supplierType: "trovausati",
+                imageUrl: product.image_url || undefined,
+                source: "supplier",
+              });
+            }
+          } catch (e) {
+            console.error("TrovaUsati search error:", e);
           }
         }
         
+        // Limit supplier results
         // Limit supplier results
         results.suppliers = results.suppliers.slice(0, limitNum);
       }

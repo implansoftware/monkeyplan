@@ -1520,7 +1520,7 @@ export class DatabaseStorage implements IStorage {
 
   async listSubResellers(resellerId: string): Promise<User[]> {
     return await db.select().from(users)
-      .where(and(eq(users.parentResellerId, resellerId), eq(users.role, "sub_reseller")))
+      .where(and(eq(users.parentResellerId, resellerId), eq(users.role, "reseller")))
       .orderBy(desc(users.createdAt));
   }
 
