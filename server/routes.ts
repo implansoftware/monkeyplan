@@ -35472,17 +35472,23 @@ export function registerRoutes(app: Express): Server {
       }
       const credential = await storage.getSibillCredentialByReseller(resellerId);
       if (!credential) {
-        return res.status(404).json({ error: "Credenziali Sibill non configurate" });
+        // Return null with 200 so React Query does not treat it as an error
+        return res.json(null);
       }
-      // Don't return the actual API key for security
+      // Return masked API key for display (show first 8 and last 4 chars)
+      const maskedKey = credential.apiKey.length > 12
+        ? credential.apiKey.slice(0, 8) + '••••••••' + credential.apiKey.slice(-4)
+        : '••••••••••••';
       res.json({
         id: credential.id,
         resellerId: credential.resellerId,
+        apiKey: maskedKey,
         environment: credential.environment,
         companyId: credential.companyId,
         isActive: credential.isActive,
         lastTestAt: credential.lastTestAt,
-        lastTestResult: credential.lastTestResult,
+        testStatus: credential.lastTestResult,
+        testMessage: credential.testMessage,
         lastSyncAt: credential.lastSyncAt,
         createdAt: credential.createdAt,
         updatedAt: credential.updatedAt,
