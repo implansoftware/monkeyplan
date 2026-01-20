@@ -24373,7 +24373,7 @@ export function registerRoutes(app: Express): Server {
         const effectiveResellerId = resellerId || req.user.id;
         
         // Search Foneday catalog LIVE if configured
-        const fonedayCreds = await storage.getFonedayCredentials(effectiveResellerId);
+        const fonedayCreds = await storage.getFonedayCredentialByReseller(effectiveResellerId);
         if (fonedayCreds && fonedayCreds.isActive) {
           try {
             const { createFonedayService } = await import('./fonedayService');
@@ -24400,7 +24400,7 @@ export function registerRoutes(app: Express): Server {
         }
         
         // Search MobileSentrix catalog LIVE if configured
-        const msCreds = await storage.getMobilesentrixCredentials(effectiveResellerId);
+        const msCreds = await storage.getMobilesentrixCredentialByReseller(effectiveResellerId);
         if (msCreds && msCreds.isActive && msCreds.accessToken) {
           try {
             const { createMobilesentrixService } = await import('./mobilesentrixService');
@@ -24427,7 +24427,7 @@ export function registerRoutes(app: Express): Server {
         }
         
         // Search TrovaUsati catalog LIVE if configured
-        const tuCreds = await storage.getTrovausatiCredentials(effectiveResellerId);
+        const tuCreds = await storage.getTrovausatiCredentialByReseller(effectiveResellerId);
         if (tuCreds && tuCreds.isActive) {
           try {
             const { createTrovausatiService } = await import('./trovausatiService');
