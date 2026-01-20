@@ -128,6 +128,14 @@ export class SibillService {
   ): Promise<T> {
     const url = `${this.baseUrl}${endpoint}`;
     
+    // Debug logging
+    const maskedToken = this.token.length > 12
+      ? this.token.slice(0, 8) + '...' + this.token.slice(-4)
+      : '***';
+    console.log(`[Sibill API] ${method} ${url}`);
+    console.log(`[Sibill API] Token (masked): ${maskedToken}`);
+    console.log(`[Sibill API] Token length: ${this.token.length} chars`);
+    
     const headers: HeadersInit = {
       'Authorization': `Bearer ${this.token}`,
       'Content-Type': 'application/json',
@@ -144,8 +152,11 @@ export class SibillService {
 
     const response = await fetch(url, options);
 
+    console.log(`[Sibill API] Response status: ${response.status}`);
+
     if (!response.ok) {
       const errorText = await response.text();
+      console.log(`[Sibill API] Error response: ${errorText}`);
       throw new Error(`Sibill API error ${response.status}: ${errorText}`);
     }
 

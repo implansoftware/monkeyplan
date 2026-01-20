@@ -35552,7 +35552,7 @@ export function registerRoutes(app: Express): Server {
       
       // Import and use the Sibill service
       const { SibillService } = await import("./services/sibill");
-      const sibillService = new SibillService({ apiToken: credential.apiToken, environment: credential.environment as "development" | "production" });
+      const sibillService = new SibillService({ apiToken: credential.apiKey, environment: credential.environment as "development" | "production" });
       const result = await sibillService.testConnection();
       
       // Update credential test status
@@ -35599,7 +35599,7 @@ export function registerRoutes(app: Express): Server {
       }
       
       const { SibillService } = await import("./services/sibill");
-      const sibillService = new SibillService({ apiToken: credential.apiToken, environment: credential.environment as "development" | "production" });
+      const sibillService = new SibillService({ apiToken: credential.apiKey, environment: credential.environment as "development" | "production" });
       const companiesData = await sibillService.getCompanies();
       
       // Sync companies to database
@@ -35677,7 +35677,7 @@ export function registerRoutes(app: Express): Server {
       }
       
       const { SibillService } = await import("./services/sibill");
-      const sibillService = new SibillService({ apiToken: credential.apiToken, environment: credential.environment as "development" | "production" });
+      const sibillService = new SibillService({ apiToken: credential.apiKey, environment: credential.environment as "development" | "production" });
       const documentsData = await sibillService.getDocuments(credential.companyId);
       
       let synced = 0;
@@ -35764,7 +35764,7 @@ export function registerRoutes(app: Express): Server {
       }
       
       const { SibillService } = await import("./services/sibill");
-      const sibillService = new SibillService({ apiToken: credential.apiToken, environment: credential.environment as "development" | "production" });
+      const sibillService = new SibillService({ apiToken: credential.apiKey, environment: credential.environment as "development" | "production" });
       const accountsData = await sibillService.getAccounts(credential.companyId);
       
       let synced = 0;
@@ -35855,7 +35855,7 @@ export function registerRoutes(app: Express): Server {
       }
       
       const { SibillService } = await import("./services/sibill");
-      const sibillService = new SibillService({ apiToken: credential.apiToken, environment: credential.environment as "development" | "production" });
+      const sibillService = new SibillService({ apiToken: credential.apiKey, environment: credential.environment as "development" | "production" });
       
       let totalSynced = 0;
       for (const account of accounts) {
