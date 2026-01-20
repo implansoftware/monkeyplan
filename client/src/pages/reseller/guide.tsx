@@ -12,7 +12,14 @@ import {
   Zap,
   Building,
   Settings,
-  CreditCard
+  CreditCard,
+  Shield,
+  BarChart3,
+  Link2,
+  Calendar,
+  RefreshCcw,
+  PackageCheck,
+  LayoutDashboard
 } from "lucide-react";
 
 interface GuideSectionProps {
@@ -53,6 +60,17 @@ function GuideSection({ icon: Icon, title, description, features }: GuideSection
 export default function ResellerGuide() {
   const sections: GuideSectionProps[] = [
     {
+      icon: LayoutDashboard,
+      title: "Dashboard Personalizzabile",
+      description: "Configura la tua dashboard secondo le tue esigenze",
+      features: [
+        "Personalizza i widget visibili nella dashboard",
+        "Riordina i widget trascinandoli nella posizione desiderata",
+        "Nascondi i widget che non utilizzi frequentemente",
+        "Le preferenze sono salvate per ogni utente"
+      ]
+    },
+    {
       icon: Users,
       title: "Gestione Clienti",
       description: "Gestisci la tua base clienti in modo efficiente",
@@ -82,7 +100,20 @@ export default function ResellerGuide() {
         "Crea nuove riparazioni con il wizard guidato",
         "Traccia lo stato di avanzamento di ogni riparazione",
         "Gestisci preventivi e approvazioni cliente",
-        "Registra le parti utilizzate e i costi"
+        "Registra le parti utilizzate e i costi",
+        "Crea diagnosi e preventivi durante l'accettazione"
+      ]
+    },
+    {
+      icon: Shield,
+      title: "Garanzie e Assicurazioni",
+      description: "Offri estensioni di garanzia ai tuoi clienti",
+      features: [
+        "Crea prodotti garanzia personalizzati",
+        "Offri garanzie direttamente dalla pagina riparazione",
+        "Visualizza analytics sulle vendite garanzie",
+        "Genera fatture automatiche per le garanzie vendute",
+        "I clienti possono visualizzare le loro garanzie nel portale"
       ]
     },
     {
@@ -93,7 +124,20 @@ export default function ResellerGuide() {
         "Visualizza le giacenze in tempo reale",
         "Gestisci i movimenti di magazzino",
         "Imposta soglie minime per i riordini",
-        "Trasferisci prodotti tra magazzini della rete"
+        "Trasferisci prodotti tra magazzini della rete",
+        "Lo stock viene aggiornato automaticamente su ordini e vendite"
+      ]
+    },
+    {
+      icon: RefreshCcw,
+      title: "Gestione Stock Automatica",
+      description: "Lo stock si aggiorna automaticamente con ogni operazione",
+      features: [
+        "Ordini e-commerce scalano lo stock dal magazzino",
+        "Ordini B2B trasferiscono stock tra magazzini",
+        "Ricezione merce da fornitori aggiorna le giacenze",
+        "Annullamento ordini ripristina automaticamente lo stock",
+        "Movimenti di magazzino tracciati per ogni operazione"
       ]
     },
     {
@@ -105,6 +149,18 @@ export default function ResellerGuide() {
         "Verifica compatibilita e disponibilita",
         "Gestisci i prezzi di vendita al cliente",
         "Ordina ricambi dai fornitori integrati"
+      ]
+    },
+    {
+      icon: Link2,
+      title: "Integrazioni Fornitori",
+      description: "Collegati ai principali fornitori di ricambi",
+      features: [
+        "Integrazione con SIFAR per ricambi originali",
+        "Integrazione con Foneday per accessori",
+        "Integrazione con MobileSentrix",
+        "Integrazione con TrovaUsati per l'usato",
+        "Ordini automatici con aggiornamento stock"
       ]
     },
     {
@@ -124,9 +180,21 @@ export default function ResellerGuide() {
       description: "Gestione completa della fatturazione",
       features: [
         "Genera fatture automatiche per le riparazioni",
-        "Personalizza i template delle fatture",
+        "Fatturazione automatica su ordini e-commerce",
+        "Fatturazione automatica su vendita garanzie",
         "Esporta i dati per la contabilita",
         "Monitora i pagamenti in sospeso"
+      ]
+    },
+    {
+      icon: BarChart3,
+      title: "Sibill",
+      description: "Integrazione per fatturazione elettronica",
+      features: [
+        "Collega il tuo account Sibill",
+        "Sincronizza fatture e documenti",
+        "Riconciliazione bancaria automatica",
+        "Gestione conti e transazioni"
       ]
     },
     {
@@ -136,8 +204,9 @@ export default function ResellerGuide() {
       features: [
         "Configura il catalogo prodotti per lo shop",
         "Gestisci gli ordini dei clienti online",
+        "Verifica disponibilita stock in tempo reale",
         "Traccia spedizioni e consegne",
-        "Gestisci resi e rimborsi"
+        "Gestisci resi e rimborsi con ripristino stock"
       ]
     },
     {
@@ -148,7 +217,31 @@ export default function ResellerGuide() {
         "Sfoglia il catalogo B2B dell'admin",
         "Effettua ordini all'ingrosso",
         "Visualizza i prezzi riservati",
-        "Traccia lo stato degli ordini"
+        "Traccia lo stato degli ordini",
+        "Ricevi lo stock direttamente nel tuo magazzino"
+      ]
+    },
+    {
+      icon: PackageCheck,
+      title: "Ordini B2B Centri Riparazione",
+      description: "Gestisci gli ordini dai tuoi centri di riparazione",
+      features: [
+        "Ricevi ordini dai centri della tua rete",
+        "Approva o rifiuta le richieste",
+        "Spedisci merce con trasferimento stock automatico",
+        "Traccia consegne e conferme di ricezione",
+        "Fatturazione automatica alla spedizione"
+      ]
+    },
+    {
+      icon: Calendar,
+      title: "Presenze e HR",
+      description: "Gestisci le presenze del personale",
+      features: [
+        "Registra entrate e uscite del personale",
+        "Visualizza lo storico presenze",
+        "Calcola ore lavorate automaticamente",
+        "Gestisci ferie e permessi"
       ]
     },
     {
@@ -181,14 +274,14 @@ export default function ResellerGuide() {
         "Personalizza i dati aziendali",
         "Configura le notifiche email",
         "Gestisci il team e i permessi",
-        "Collega le integrazioni esterne"
+        "Collega le integrazioni esterne",
+        "Gestisci sub-reseller e fatturazione autonoma"
       ]
     }
   ];
 
   return (
     <div className="p-6 space-y-6" data-testid="page-reseller-guide">
-      {/* Hero Header */}
       <div className="relative overflow-hidden rounded-xl bg-gradient-to-br from-primary/5 via-primary/10 to-slate-100 dark:from-primary/10 dark:via-primary/5 dark:to-slate-900 p-6 border">
         <div className="absolute inset-0 opacity-[0.03]" style={{
           backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23000' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
