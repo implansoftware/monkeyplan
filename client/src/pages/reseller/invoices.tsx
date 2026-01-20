@@ -1,19 +1,21 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { Invoice } from "@shared/schema";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { Invoice, SibillDocument } from "@shared/schema";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
-import { Search, FileText, Download, CalendarIcon, Euro, Wrench, ShoppingCart, Store } from "lucide-react";
+import { Search, FileText, Download, CalendarIcon, Euro, Wrench, ShoppingCart, Store, RefreshCw, Building2 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
 import { useToast } from "@/hooks/use-toast";
+import { apiRequest } from "@/lib/queryClient";
 import type { DateRange } from "react-day-picker";
 
 export default function ResellerInvoices() {
@@ -22,7 +24,9 @@ export default function ResellerInvoices() {
   const [sourceFilter, setSourceFilter] = useState<string>("all");
   const [dateRange, setDateRange] = useState<DateRange | undefined>();
   const [isExporting, setIsExporting] = useState(false);
+  const [activeTab, setActiveTab] = useState("monkeyplan");
   const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   const { data: invoices = [], isLoading } = useQuery<Invoice[]>({
     queryKey: ["/api/reseller/invoices", statusFilter, sourceFilter],
@@ -35,6 +39,39 @@ export default function ResellerInvoices() {
       });
       if (!response.ok) throw new Error("Failed to fetch invoices");
       return response.json();
+    },
+  });
+
+  // Check if Sibill is configured
+  const { data: sibillCredentials } = useQuery<{ id: string } | null>({
+    queryKey: ["/api/sibill/credentials"],
+  });
+
+  // Get Sibill documents
+  const { data: sibillDocuments = [], isLoading: isLoadingSibill } = useQuery<SibillDocument[]>({
+    queryKey: ["/api/sibill/documents"],
+    enabled: !!sibillCredentials,
+  });
+
+  // Sync Sibill documents mutation
+  const syncSibillMutation = useMutation({
+    mutationFn: async () => {
+      const res = await apiRequest("POST", "/api/sibill/documents/sync");
+      return res.json();
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/sibill/documents"] });
+      toast({
+        title: "Sincronizzazione completata",
+        description: `Importati ${data.syncedCount} documenti da ${data.companiesProcessed} aziende`,
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Errore sincronizzazione",
+        description: error.message,
+        variant: "destructive",
+      });
     },
   });
 
@@ -142,6 +179,17 @@ export default function ResellerInvoices() {
               </p>
             </div>
           </div>
+          {sibillCredentials && (
+            <Button
+              variant="outline"
+              onClick={() => syncSibillMutation.mutate()}
+              disabled={syncSibillMutation.isPending}
+              data-testid="button-sync-sibill"
+            >
+              <RefreshCw className={`h-4 w-4 mr-2 ${syncSibillMutation.isPending ? 'animate-spin' : ''}`} />
+              {syncSibillMutation.isPending ? "Sincronizzazione..." : "Importa da Sibill"}
+            </Button>
+          )}
         </div>
       </div>
 
@@ -187,133 +235,222 @@ export default function ResellerInvoices() {
         </Card>
       </div>
 
-      <Card>
-        <CardHeader>
-          <div className="flex flex-col gap-4">
-            <div className="flex flex-col sm:flex-row gap-4 flex-wrap">
-              <div className="flex-1 relative min-w-[200px]">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Cerca fattura..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-9"
-                  data-testid="input-search-invoices"
-                />
-              </div>
-              <Select value={sourceFilter} onValueChange={setSourceFilter}>
-                <SelectTrigger className="w-full sm:w-40" data-testid="select-filter-source">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Tutte le fonti</SelectItem>
-                  <SelectItem value="repair">Riparazioni</SelectItem>
-                  <SelectItem value="pos">POS</SelectItem>
-                  <SelectItem value="marketplace">Marketplace</SelectItem>
-                  <SelectItem value="b2b">B2B</SelectItem>
-                </SelectContent>
-              </Select>
-              <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger className="w-full sm:w-40" data-testid="select-filter-status">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Tutti gli stati</SelectItem>
-                  <SelectItem value="paid">Pagate</SelectItem>
-                  <SelectItem value="pending">In sospeso</SelectItem>
-                  <SelectItem value="overdue">Scadute</SelectItem>
-                  <SelectItem value="cancelled">Annullate</SelectItem>
-                </SelectContent>
-              </Select>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button variant="outline" className="w-full sm:w-64" data-testid="button-date-range">
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {dateRange?.from ? (
-                      dateRange.to ? (
-                        `${format(dateRange.from, "dd MMM yyyy", { locale: it })} - ${format(dateRange.to, "dd MMM yyyy", { locale: it })}`
-                      ) : (
-                        format(dateRange.from, "dd MMM yyyy", { locale: it })
-                      )
-                    ) : (
-                      "Seleziona periodo"
-                    )}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="end">
-                  <Calendar
-                    mode="range"
-                    selected={dateRange}
-                    onSelect={setDateRange}
-                    numberOfMonths={2}
-                    locale={it}
-                  />
-                </PopoverContent>
-              </Popover>
-              <Button
-                onClick={handleExport}
-                disabled={isExporting || filteredInvoices.length === 0}
-                variant="outline"
-                data-testid="button-export-invoices"
-              >
-                <Download className="h-4 w-4 mr-2" />
-                {isExporting ? "Esportazione..." : "Esporta CSV"}
-              </Button>
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent>
-          {isLoading ? (
-            <div className="space-y-3">
-              <Skeleton className="h-12 w-full" />
-              <Skeleton className="h-12 w-full" />
-              <Skeleton className="h-12 w-full" />
-            </div>
-          ) : filteredInvoices.length === 0 ? (
-            <div className="text-center py-12 text-muted-foreground">
-              <FileText className="h-12 w-12 mx-auto mb-4 opacity-20" />
-              <p>Nessuna fattura trovata</p>
-            </div>
-          ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Numero</TableHead>
-                  <TableHead>Data</TableHead>
-                  <TableHead>Fonte</TableHead>
-                  <TableHead>Importo</TableHead>
-                  <TableHead>Metodo</TableHead>
-                  <TableHead>Scadenza</TableHead>
-                  <TableHead>Stato</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredInvoices.map((invoice) => (
-                  <TableRow key={invoice.id} data-testid={`row-invoice-${invoice.id}`}>
-                    <TableCell className="font-medium font-mono">{invoice.invoiceNumber}</TableCell>
-                    <TableCell>
-                      {format(new Date(invoice.createdAt), "dd MMM yyyy", { locale: it })}
-                    </TableCell>
-                    <TableCell>{getSourceBadge(invoice.source)}</TableCell>
-                    <TableCell className="font-semibold">
-                      {formatCurrency(invoice.total)}
-                    </TableCell>
-                    <TableCell className="capitalize">
-                      {invoice.paymentMethod?.replace("_", " ") || "N/D"}
-                    </TableCell>
-                    <TableCell>
-                      {invoice.dueDate
-                        ? format(new Date(invoice.dueDate), "dd MMM yyyy", { locale: it })
-                        : "N/D"}
-                    </TableCell>
-                    <TableCell>{getStatusBadge(invoice.paymentStatus)}</TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
+        <TabsList>
+          <TabsTrigger value="monkeyplan" data-testid="tab-monkeyplan">
+            <FileText className="h-4 w-4 mr-2" />
+            MonkeyPlan ({invoices.length})
+          </TabsTrigger>
+          {sibillCredentials && (
+            <TabsTrigger value="sibill" data-testid="tab-sibill">
+              <Building2 className="h-4 w-4 mr-2" />
+              Sibill ({sibillDocuments.length})
+            </TabsTrigger>
           )}
-        </CardContent>
-      </Card>
+        </TabsList>
+
+        <TabsContent value="monkeyplan">
+          <Card>
+            <CardHeader>
+              <div className="flex flex-col gap-4">
+                <div className="flex flex-col sm:flex-row gap-4 flex-wrap">
+                  <div className="flex-1 relative min-w-[200px]">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      placeholder="Cerca fattura..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className="pl-9"
+                      data-testid="input-search-invoice"
+                    />
+                  </div>
+                  <Select value={statusFilter} onValueChange={setStatusFilter}>
+                    <SelectTrigger className="w-[180px]" data-testid="select-status-filter">
+                      <SelectValue placeholder="Stato" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Tutti gli stati</SelectItem>
+                      <SelectItem value="paid">Pagate</SelectItem>
+                      <SelectItem value="pending">In sospeso</SelectItem>
+                      <SelectItem value="overdue">Scadute</SelectItem>
+                      <SelectItem value="cancelled">Annullate</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <Select value={sourceFilter} onValueChange={setSourceFilter}>
+                    <SelectTrigger className="w-[180px]" data-testid="select-source-filter">
+                      <SelectValue placeholder="Fonte" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Tutte le fonti</SelectItem>
+                      <SelectItem value="repair">Riparazione</SelectItem>
+                      <SelectItem value="pos">POS</SelectItem>
+                      <SelectItem value="marketplace">Marketplace</SelectItem>
+                      <SelectItem value="b2b">B2B</SelectItem>
+                      <SelectItem value="other">Altro</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button variant="outline" className="gap-2" data-testid="button-date-range">
+                        <CalendarIcon className="h-4 w-4" />
+                        {dateRange?.from ? (
+                          dateRange.to ? (
+                            <>
+                              {format(dateRange.from, "dd/MM/yy")} - {format(dateRange.to, "dd/MM/yy")}
+                            </>
+                          ) : (
+                            format(dateRange.from, "dd/MM/yyyy")
+                          )
+                        ) : (
+                          "Periodo"
+                        )}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="end">
+                      <Calendar
+                        initialFocus
+                        mode="range"
+                        defaultMonth={dateRange?.from}
+                        selected={dateRange}
+                        onSelect={setDateRange}
+                        numberOfMonths={2}
+                        locale={it}
+                      />
+                    </PopoverContent>
+                  </Popover>
+                  <Button variant="outline" onClick={handleExport} disabled={isExporting} data-testid="button-export-csv">
+                    <Download className="h-4 w-4 mr-2" />
+                    {isExporting ? "Esportazione..." : "Esporta CSV"}
+                  </Button>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent>
+              {isLoading ? (
+                <div className="space-y-3">
+                  <Skeleton className="h-12 w-full" />
+                  <Skeleton className="h-12 w-full" />
+                  <Skeleton className="h-12 w-full" />
+                </div>
+              ) : filteredInvoices.length === 0 ? (
+                <div className="text-center py-12 text-muted-foreground">
+                  <FileText className="h-12 w-12 mx-auto mb-4 opacity-20" />
+                  <p>Nessuna fattura trovata</p>
+                </div>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Numero</TableHead>
+                      <TableHead>Data</TableHead>
+                      <TableHead>Fonte</TableHead>
+                      <TableHead>Importo</TableHead>
+                      <TableHead>Metodo</TableHead>
+                      <TableHead>Scadenza</TableHead>
+                      <TableHead>Stato</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredInvoices.map((invoice) => (
+                      <TableRow key={invoice.id} data-testid={`row-invoice-${invoice.id}`}>
+                        <TableCell className="font-medium font-mono">{invoice.invoiceNumber}</TableCell>
+                        <TableCell>
+                          {format(new Date(invoice.createdAt), "dd MMM yyyy", { locale: it })}
+                        </TableCell>
+                        <TableCell>{getSourceBadge(invoice.source)}</TableCell>
+                        <TableCell className="font-semibold">
+                          {formatCurrency(invoice.total)}
+                        </TableCell>
+                        <TableCell className="capitalize">
+                          {invoice.paymentMethod?.replace("_", " ") || "N/D"}
+                        </TableCell>
+                        <TableCell>
+                          {invoice.dueDate
+                            ? format(new Date(invoice.dueDate), "dd MMM yyyy", { locale: it })
+                            : "N/D"}
+                        </TableCell>
+                        <TableCell>{getStatusBadge(invoice.paymentStatus)}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {sibillCredentials && (
+          <TabsContent value="sibill">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Building2 className="h-5 w-5" />
+                  Documenti Sibill
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {isLoadingSibill ? (
+                  <div className="space-y-3">
+                    <Skeleton className="h-12 w-full" />
+                    <Skeleton className="h-12 w-full" />
+                    <Skeleton className="h-12 w-full" />
+                  </div>
+                ) : sibillDocuments.length === 0 ? (
+                  <div className="text-center py-12 text-muted-foreground">
+                    <Building2 className="h-12 w-12 mx-auto mb-4 opacity-20" />
+                    <p>Nessun documento Sibill importato</p>
+                    <p className="text-sm mt-2">Clicca "Importa da Sibill" per sincronizzare i documenti</p>
+                  </div>
+                ) : (
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Numero</TableHead>
+                        <TableHead>Tipo</TableHead>
+                        <TableHead>Data</TableHead>
+                        <TableHead>Controparte</TableHead>
+                        <TableHead>Importo</TableHead>
+                        <TableHead>Stato</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {sibillDocuments.map((doc) => (
+                        <TableRow key={doc.id} data-testid={`row-sibill-doc-${doc.id}`}>
+                          <TableCell className="font-medium font-mono">{doc.documentNumber || "-"}</TableCell>
+                          <TableCell>
+                            <Badge variant="outline">{doc.documentType || "N/D"}</Badge>
+                          </TableCell>
+                          <TableCell>
+                            {doc.issueDate
+                              ? format(new Date(doc.issueDate), "dd MMM yyyy", { locale: it })
+                              : "N/D"}
+                          </TableCell>
+                          <TableCell>
+                            <div>
+                              <p className="font-medium">{doc.counterpartyName || "-"}</p>
+                              {doc.counterpartyVat && (
+                                <p className="text-xs text-muted-foreground">P.IVA: {doc.counterpartyVat}</p>
+                              )}
+                            </div>
+                          </TableCell>
+                          <TableCell className="font-semibold">
+                            {doc.totalAmount ? formatCurrency(doc.totalAmount) : "N/D"}
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant={doc.status === "paid" ? "default" : "secondary"}>
+                              {doc.status || "N/D"}
+                            </Badge>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+        )}
+      </Tabs>
     </div>
   );
 }

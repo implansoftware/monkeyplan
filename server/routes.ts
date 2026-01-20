@@ -35663,49 +35663,42 @@ export function registerRoutes(app: Express): Server {
       if (!credential) {
         return res.status(404).json({ error: "Credenziali Sibill non configurate" });
       }
-      if (!credential.companyId) {
-        return res.status(400).json({ error: "Company ID non configurato" });
+      
+      // Get all synced companies for this credential
+      const companies = await storage.listSibillCompanies(credential.id);
+      if (companies.length === 0) {
+        return res.status(400).json({ error: "Nessuna azienda sincronizzata. Sincronizza prima le aziende." });
       }
       
       const { SibillService } = await import("./services/sibill");
       const sibillService = new SibillService({ apiToken: credential.apiKey, environment: credential.environment as "development" | "production" });
-      const documentsData = await sibillService.getDocuments(credential.companyId);
       
-      let synced = 0;
-      for (const doc of documentsData.documents || []) {
-        const existing = await storage.getSibillDocumentByExternalId(credential.id, doc.id);
-        if (existing) {
-          await storage.updateSibillDocument(existing.id, {
-            documentNumber: doc.number,
-            documentType: doc.type,
-            status: doc.status,
-            issueDate: doc.issue_date ? new Date(doc.issue_date) : null,
-            dueDate: doc.due_date ? new Date(doc.due_date) : null,
-            totalAmount: doc.total_amount ? Math.round(doc.total_amount * 100) : null,
-            currency: doc.currency || "EUR",
-            counterpartyName: doc.counterparty_name,
-            counterpartyVat: doc.counterparty_vat,
-            rawData: doc,
-            updatedAt: new Date(),
-          });
-        } else {
-          await storage.createSibillDocument({
+      let totalSynced = 0;
+      
+      // Sync documents for each company
+      for (const company of companies) {
+        console.log(`[Sibill Sync] Syncing documents for company: ${company.externalId} - ${company.name}`);
+        const documentsData = await sibillService.listDocuments(company.externalId);
+        console.log(`[Sibill Sync] Found ${documentsData.data.length} documents`);
+        
+        for (const doc of documentsData.data) {
+          await storage.upsertSibillDocument({
             credentialId: credential.id,
             resellerId,
             externalId: doc.id,
-            documentNumber: doc.number,
-            documentType: doc.type,
-            status: doc.status,
-            issueDate: doc.issue_date ? new Date(doc.issue_date) : null,
-            dueDate: doc.due_date ? new Date(doc.due_date) : null,
-            totalAmount: doc.total_amount ? Math.round(doc.total_amount * 100) : null,
-            currency: doc.currency || "EUR",
-            counterpartyName: doc.counterparty_name,
-            counterpartyVat: doc.counterparty_vat,
+            documentNumber: doc.number || null,
+            documentType: doc.type || null,
+            status: doc.status || null,
+            issueDate: doc.creation_date ? doc.creation_date.split("T")[0] : null,
+            dueDate: null,
+            totalAmount: doc.gross_amount?.amount ? Math.round(parseFloat(doc.gross_amount.amount) * 100) : null,
+            currency: doc.gross_amount?.currency || "EUR",
+            counterpartyName: doc.counterpart?.company_name || null,
+            counterpartyVat: doc.counterpart?.vat_number || null,
             rawData: doc,
           });
+          totalSynced++;
         }
-        synced++;
       }
       
       await storage.updateSibillCredential(credential.id, {
@@ -35713,13 +35706,12 @@ export function registerRoutes(app: Express): Server {
         updatedAt: new Date(),
       });
       
-      res.json({ success: true, syncedCount: synced });
+      res.json({ success: true, syncedCount: totalSynced, companiesProcessed: companies.length });
     } catch (error: any) {
       console.error("Error syncing Sibill documents:", error);
       res.status(500).json({ error: error.message });
     }
   });
-
   // Get Sibill bank accounts
   app.get("/api/sibill/accounts", requireAuth, requireRole("reseller", "reseller_staff"), async (req, res) => {
     try {
