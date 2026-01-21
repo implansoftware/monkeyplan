@@ -18239,7 +18239,7 @@ export function registerRoutes(app: Express): Server {
   // Get device types (only active for dropdown)
   app.get("/api/device-types", requireAuth, async (req, res) => {
     try {
-      const activeOnly = req.query.activeOnly !== 'false'; // Default true
+      const activeOnly = true; // Non-admin always gets active only
       const deviceTypes = await storage.listDeviceTypes(activeOnly);
       res.json(deviceTypes);
     } catch (error: any) {
@@ -18250,7 +18250,7 @@ export function registerRoutes(app: Express): Server {
   // Get device brands (only active for dropdown)
   app.get("/api/device-brands", requireAuth, async (req, res) => {
     try {
-      const activeOnly = req.query.activeOnly !== 'false'; // Default true
+      const activeOnly = true; // Non-admin always gets active only
       const deviceBrands = await storage.listDeviceBrands(activeOnly);
       res.json(deviceBrands);
     } catch (error: any) {
@@ -18263,7 +18263,7 @@ export function registerRoutes(app: Express): Server {
     try {
       const typeId = req.query.typeId as string | undefined;
       const brandId = req.query.brandId as string | undefined;
-      const activeOnly = req.query.activeOnly !== 'false'; // Default true
+      const activeOnly = true; // Non-admin always gets active only
       
       const deviceModels = await storage.listDeviceModels({ typeId, brandId, activeOnly });
       res.json(deviceModels);
@@ -18411,7 +18411,7 @@ export function registerRoutes(app: Express): Server {
   app.get("/api/issue-types", requireAuth, async (req, res) => {
     try {
       const deviceTypeId = req.query.deviceTypeId as string | undefined;
-      const activeOnly = req.query.activeOnly !== 'false'; // Default true
+      const activeOnly = true; // Non-admin always gets active only
       const issueTypes = await storage.listIssueTypes(deviceTypeId, activeOnly);
       res.json(issueTypes);
     } catch (error: any) {
@@ -18425,7 +18425,7 @@ export function registerRoutes(app: Express): Server {
   app.get("/api/aesthetic-defects", requireAuth, async (req, res) => {
     try {
       const deviceTypeId = req.query.deviceTypeId as string | undefined;
-      const activeOnly = req.query.activeOnly !== 'false'; // Default true
+      const activeOnly = true; // Non-admin always gets active only
       const defects = await storage.listAestheticDefects(deviceTypeId, activeOnly);
       res.json(defects);
     } catch (error: any) {
@@ -18439,7 +18439,7 @@ export function registerRoutes(app: Express): Server {
   app.get("/api/accessory-types", requireAuth, async (req, res) => {
     try {
       const deviceTypeId = req.query.deviceTypeId as string | undefined;
-      const activeOnly = req.query.activeOnly !== 'false'; // Default true
+      const activeOnly = true; // Non-admin always gets active only
       const accessories = await storage.listAccessoryTypes(deviceTypeId, activeOnly);
       res.json(accessories);
     } catch (error: any) {
@@ -18453,7 +18453,7 @@ export function registerRoutes(app: Express): Server {
   app.get("/api/diagnostic-findings", requireAuth, async (req, res) => {
     try {
       const deviceTypeId = req.query.deviceTypeId as string | undefined;
-      const activeOnly = req.query.activeOnly !== 'false'; // Default true
+      const activeOnly = true; // Non-admin always gets active only
       const findings = await storage.listDiagnosticFindings(deviceTypeId, activeOnly);
       res.json(findings);
     } catch (error: any) {
@@ -18467,7 +18467,7 @@ export function registerRoutes(app: Express): Server {
   app.get("/api/damaged-component-types", requireAuth, async (req, res) => {
     try {
       const deviceTypeId = req.query.deviceTypeId as string | undefined;
-      const activeOnly = req.query.activeOnly !== 'false'; // Default true
+      const activeOnly = true; // Non-admin always gets active only
       const components = await storage.listDamagedComponentTypes(deviceTypeId, activeOnly);
       res.json(components);
     } catch (error: any) {
@@ -18481,7 +18481,7 @@ export function registerRoutes(app: Express): Server {
   app.get("/api/estimated-repair-times", requireAuth, async (req, res) => {
     try {
       const deviceTypeId = req.query.deviceTypeId as string | undefined;
-      const activeOnly = req.query.activeOnly !== 'false'; // Default true
+      const activeOnly = true; // Non-admin always gets active only
       const times = await storage.listEstimatedRepairTimes(deviceTypeId, activeOnly);
       res.json(times);
     } catch (error: any) {
@@ -18492,6 +18492,17 @@ export function registerRoutes(app: Express): Server {
   // ============ ADMIN: DIAGNOSTIC FINDINGS CRUD ============
 
   // Admin: Create diagnostic finding
+
+  // Admin: List all diagnostic findings (including inactive)
+  app.get("/api/admin/diagnostic-findings", requireAuth, requireRole('admin'), async (req, res) => {
+    try {
+      const deviceTypeId = req.query.deviceTypeId as string | undefined;
+      const findings = await storage.listDiagnosticFindings(deviceTypeId, false);
+      res.json(findings);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
   app.post("/api/admin/diagnostic-findings", requireAuth, requireRole('admin'), async (req, res) => {
     try {
       const { name, description, category, deviceTypeId, sortOrder } = req.body;
@@ -18525,6 +18536,17 @@ export function registerRoutes(app: Express): Server {
 
   // ============ ADMIN: DAMAGED COMPONENT TYPES CRUD ============
 
+
+  // Admin: List all damaged component types (including inactive)
+  app.get("/api/admin/damaged-component-types", requireAuth, requireRole('admin'), async (req, res) => {
+    try {
+      const deviceTypeId = req.query.deviceTypeId as string | undefined;
+      const components = await storage.listDamagedComponentTypes(deviceTypeId, false);
+      res.json(components);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
   // Admin: Create damaged component type
   app.post("/api/admin/damaged-component-types", requireAuth, requireRole('admin'), async (req, res) => {
     try {
@@ -18562,7 +18584,7 @@ export function registerRoutes(app: Express): Server {
   // Get all promotions (for diagnosis form)
   app.get("/api/promotions", requireAuth, async (req, res) => {
     try {
-      const activeOnly = req.query.activeOnly !== 'false'; // Default true
+      const activeOnly = true; // Non-admin always gets active only
       const promotions = await storage.listPromotions(activeOnly);
       res.json(promotions);
     } catch (error: any) {
@@ -18954,7 +18976,7 @@ export function registerRoutes(app: Express): Server {
   app.get("/api/unrepairable-reasons", requireAuth, async (req, res) => {
     try {
       const deviceTypeId = req.query.deviceTypeId as string | undefined;
-      const activeOnly = req.query.activeOnly !== 'false'; // Default true
+      const activeOnly = true; // Non-admin always gets active only
       const reasons = await storage.listUnrepairableReasons(deviceTypeId, activeOnly);
       res.json(reasons);
     } catch (error: any) {

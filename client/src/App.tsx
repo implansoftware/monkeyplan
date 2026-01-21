@@ -66,6 +66,7 @@ import AdminChat from "@/pages/admin/chat";
 import AdminActivityLogs from "@/pages/admin/activity-logs";
 import AdminAnalytics from "@/pages/admin/analytics";
 import AdminSettings from "@/pages/admin/settings";
+import AdminDiagnosisSettings from "@/pages/admin/diagnosis-settings";
 import AdminServiceCatalog from "@/pages/admin/service-catalog";
 import AdminSuppliers from "@/pages/admin/suppliers";
 import AdminSupplierOrders from "@/pages/admin/supplier-orders";
@@ -348,6 +349,7 @@ function Router() {
       <ProtectedRoute path="/admin/utility/commissions" component={AdminUtilityCommissions} />
       <ProtectedRoute path="/admin/utility/reports" component={AdminUtilityReports} />
       <ProtectedRoute path="/admin/settings" component={AdminSettings} />
+      <ProtectedRoute path="/admin/diagnosis-settings" component={AdminDiagnosisSettings} />
       <ProtectedRoute path="/admin/unrepairable-reasons" component={AdminUnrepairableReasons} />
       <ProtectedRoute path="/admin/service-catalog" component={AdminServiceCatalog} />
       <ProtectedRoute path="/admin/dispositivi" component={AdminSmartphoneCatalog} />

@@ -121,6 +121,7 @@ const menuItems = {
     { title: "Integrazioni API", url: "/admin/external-integrations", icon: Plug, group: "Sistema" },
     { title: "Activity Logs", url: "/admin/activity-logs", icon: Shield, group: "Sistema" },
     { title: "Motivi Irriparabilità", url: "/admin/unrepairable-reasons", icon: AlertTriangle, group: "Sistema" },
+    { title: "Impostazioni Diagnosi", url: "/admin/diagnosis-settings", icon: Settings, group: "Sistema" },
     { title: "Impostazioni", url: "/admin/settings", icon: Settings, group: "Sistema" },
     { title: "Team Admin", url: "/admin/team", icon: UsersRound, group: "Sistema" },
     { title: "Ticket", url: "/admin/tickets", icon: Ticket, group: "Assistenza" },
