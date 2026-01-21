@@ -18489,6 +18489,74 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // ============ ADMIN: DIAGNOSTIC FINDINGS CRUD ============
+
+  // Admin: Create diagnostic finding
+  app.post("/api/admin/diagnostic-findings", requireAuth, requireRole('admin'), async (req, res) => {
+    try {
+      const { name, description, category, deviceTypeId, sortOrder } = req.body;
+      if (!name) return res.status(400).json({ error: "Nome richiesto" });
+      const finding = await storage.createDiagnosticFinding({ name, description, category, deviceTypeId, sortOrder });
+      res.status(201).json(finding);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Admin: Update diagnostic finding
+  app.patch("/api/admin/diagnostic-findings/:id", requireAuth, requireRole('admin'), async (req, res) => {
+    try {
+      const finding = await storage.updateDiagnosticFinding(req.params.id, req.body);
+      res.json(finding);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Admin: Delete diagnostic finding
+  app.delete("/api/admin/diagnostic-findings/:id", requireAuth, requireRole('admin'), async (req, res) => {
+    try {
+      await storage.deleteDiagnosticFinding(req.params.id);
+      res.status(204).send();
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // ============ ADMIN: DAMAGED COMPONENT TYPES CRUD ============
+
+  // Admin: Create damaged component type
+  app.post("/api/admin/damaged-component-types", requireAuth, requireRole('admin'), async (req, res) => {
+    try {
+      const { name, description, deviceTypeId, sortOrder } = req.body;
+      if (!name) return res.status(400).json({ error: "Nome richiesto" });
+      const component = await storage.createDamagedComponentType({ name, description, deviceTypeId, sortOrder });
+      res.status(201).json(component);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Admin: Update damaged component type
+  app.patch("/api/admin/damaged-component-types/:id", requireAuth, requireRole('admin'), async (req, res) => {
+    try {
+      const component = await storage.updateDamagedComponentType(req.params.id, req.body);
+      res.json(component);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Admin: Delete damaged component type
+  app.delete("/api/admin/damaged-component-types/:id", requireAuth, requireRole('admin'), async (req, res) => {
+    try {
+      await storage.deleteDamagedComponentType(req.params.id);
+      res.status(204).send();
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   // ============ PROMOTIONS (for "Non Conveniente" diagnosis outcome) ============
 
   // Get all promotions (for diagnosis form)
