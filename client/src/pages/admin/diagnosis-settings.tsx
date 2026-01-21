@@ -162,7 +162,7 @@ export default function DiagnosisSettings() {
       name: "",
       description: "",
       category: "",
-      deviceTypeId: "",
+      deviceTypeId: "__all__",
       sortOrder: 0,
       isActive: true,
     });
@@ -175,7 +175,7 @@ export default function DiagnosisSettings() {
       name: item.name,
       description: item.description || "",
       category: (item as DiagnosticFinding).category || "",
-      deviceTypeId: item.deviceTypeId || "",
+      deviceTypeId: item.deviceTypeId || "__all__",
       sortOrder: item.sortOrder,
       isActive: item.isActive,
     });
@@ -190,9 +190,9 @@ export default function DiagnosisSettings() {
   const onSubmit = (data: FormData) => {
     const payload = {
       name: data.name,
-      description: data.description || null,
-      category: data.category || null,
-      deviceTypeId: data.deviceTypeId || null,
+      description: data.description || undefined,
+      category: data.category || undefined,
+      deviceTypeId: data.deviceTypeId === "__all__" ? undefined : (data.deviceTypeId || undefined),
       sortOrder: data.sortOrder,
       isActive: data.isActive,
     };
@@ -491,7 +491,7 @@ export default function DiagnosisSettings() {
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="">Tutti i dispositivi</SelectItem>
+                        <SelectItem value="__all__">Tutti i dispositivi</SelectItem>
                         {deviceTypes?.map((dt) => (
                           <SelectItem key={dt.id} value={dt.id}>{dt.name}</SelectItem>
                         ))}
