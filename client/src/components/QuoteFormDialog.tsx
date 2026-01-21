@@ -24,12 +24,32 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
-import { FileText, Plus, Trash2, Package, Calculator, Info, Warehouse } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { 
+  FileText, 
+  Plus, 
+  Trash2, 
+  Package, 
+  Calculator, 
+  Info, 
+  Warehouse,
+  PenLine,
+  Search,
+  Wrench,
+  Globe,
+  ShoppingCart,
+  Euro,
+  Calendar,
+  StickyNote,
+  ChevronDown,
+  ChevronUp,
+} from "lucide-react";
 import type { RepairDiagnostics, RepairOrder, RepairCenter, Warehouse as WarehouseType } from "@shared/schema";
 import { SearchableProductCombobox } from "@/components/SearchableProductCombobox";
 import { NetworkProductSearch } from "@/components/NetworkProductSearch";
@@ -41,6 +61,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 
 interface WarehouseWithOwner extends WarehouseType {
   owner?: { id: string; username: string; fullName: string | null } | null;
@@ -50,7 +75,6 @@ interface HourlyRateResponse {
   hourlyRateCents: number;
 }
 
-// Data structure for standalone mode callback
 export interface QuoteCollectedData {
   parts: Array<{ name: string; quantity: number; unitPrice: number }>;
   laborCost: number;
@@ -62,7 +86,6 @@ interface QuoteFormDialogProps {
   onOpenChange: (open: boolean) => void;
   repairOrderId?: string;
   onSuccess?: () => void;
-  // Standalone mode props (for use in wizards)
   standalone?: boolean;
   onDataCollected?: (data: QuoteCollectedData) => void;
 }
@@ -73,6 +96,7 @@ const partSchema = z.object({
   quantity: z.coerce.number().min(1, "La quantità deve essere almeno 1"),
   unitPrice: z.coerce.number().min(0, "Il prezzo deve essere positivo"),
   imageUrl: z.string().optional(),
+  source: z.string().optional(),
 });
 
 const quoteSchema = z.object({
@@ -97,6 +121,7 @@ export function QuoteFormDialog({
   const [totalAmount, setTotalAmount] = useState(0);
   const [selectedWarehouseId, setSelectedWarehouseId] = useState<string>("");
   const [wantAddLaborCost, setWantAddLaborCost] = useState(false);
+  const [showAdvanced, setShowAdvanced] = useState(false);
   const [laborCalculation, setLaborCalculation] = useState<{
     hourlyRate: number;
     estimatedHours: number;
@@ -108,14 +133,12 @@ export function QuoteFormDialog({
     enabled: open,
   });
 
-  // Fetch repair order to get the assigned repair center (only in non-standalone mode)
   const { data: repairOrder } = useQuery<RepairOrder>({
     queryKey: ["/api/repair-orders", repairOrderId],
     enabled: open && !!repairOrderId && !standalone,
     retry: false,
   });
 
-  // Fetch repair center to get specific hourly rate
   const { data: repairCenter } = useQuery<RepairCenter>({
     queryKey: ["/api/repair-centers", repairOrder?.repairCenterId],
     enabled: open && !!repairOrder?.repairCenterId,
@@ -132,7 +155,6 @@ export function QuoteFormDialog({
     retry: false,
   });
 
-  // Fetch global hourly rate as fallback
   const { 
     data: globalHourlyRateData, 
     isError: isHourlyRateError,
@@ -143,7 +165,6 @@ export function QuoteFormDialog({
     retry: false,
   });
 
-  // Effective hourly rate: repair center rate > global rate
   const effectiveHourlyRateCents = repairCenter?.hourlyRateCents ?? globalHourlyRateData?.hourlyRateCents ?? 3500;
   const hourlyRateSource = repairCenter?.hourlyRateCents ? `Centro: ${repairCenter.name}` : "Tariffa Globale";
 
@@ -210,6 +231,8 @@ export function QuoteFormDialog({
   useEffect(() => {
     if (!open) {
       setLaborCalculation(null);
+      setShowAdvanced(false);
+      setSelectedWarehouseId("");
     }
   }, [open]);
 
@@ -261,7 +284,6 @@ export function QuoteFormDialog({
   });
 
   const onSubmit = (data: QuoteFormData) => {
-    // Standalone mode: collect data and return via callback
     if (standalone && onDataCollected) {
       const collectedData: QuoteCollectedData = {
         parts: (data.parts || []).map(p => ({
@@ -280,7 +302,6 @@ export function QuoteFormDialog({
       return;
     }
     
-    // Normal mode: save to database
     createQuoteMutation.mutate(data);
   };
 
@@ -291,290 +312,346 @@ export function QuoteFormDialog({
     }).format(amount);
   };
 
+  const getSourceBadge = (source?: string) => {
+    switch (source) {
+      case "warehouse":
+        return <Badge variant="outline" className="text-xs"><Warehouse className="h-3 w-3 mr-1" />Magazzino</Badge>;
+      case "service":
+        return <Badge variant="outline" className="text-xs"><Wrench className="h-3 w-3 mr-1" />Servizio</Badge>;
+      case "network":
+        return <Badge variant="outline" className="text-xs"><Globe className="h-3 w-3 mr-1" />Rete</Badge>;
+      case "supplier":
+        return <Badge variant="outline" className="text-xs"><ShoppingCart className="h-3 w-3 mr-1" />Fornitore</Badge>;
+      default:
+        return <Badge variant="outline" className="text-xs"><PenLine className="h-3 w-3 mr-1" />Manuale</Badge>;
+    }
+  };
+
+  const partsTotal = (watchParts || []).reduce((sum, part) => {
+    const qty = Number(part.quantity) || 0;
+    const price = Number(part.unitPrice) || 0;
+    return sum + (qty * price);
+  }, 0);
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader className="relative pb-4">
-          <div className="absolute inset-0 bg-gradient-to-r from-blue-500/10 via-blue-500/5 to-transparent rounded-t-lg -m-6 mb-0 p-6" />
-          <DialogTitle className="relative flex items-center gap-3">
-            <div className="h-10 w-10 rounded-xl bg-blue-500/10 flex items-center justify-center shadow-lg shadow-blue-500/20">
-              <FileText className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+      <DialogContent className="max-w-3xl max-h-[90vh] overflow-hidden flex flex-col">
+        <DialogHeader className="flex-shrink-0 pb-2">
+          <div className="flex items-center gap-3">
+            <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center">
+              <FileText className="h-5 w-5 text-primary" />
             </div>
             <div>
-              <span className="text-lg font-semibold">Crea Preventivo</span>
-              <DialogDescription className="mt-0.5">
-                Crea un preventivo con i costi di ricambi e manodopera
+              <DialogTitle className="text-lg">Crea Preventivo</DialogTitle>
+              <DialogDescription className="text-sm">
+                Aggiungi ricambi e servizi per creare il preventivo
               </DialogDescription>
             </div>
-          </DialogTitle>
+          </div>
         </DialogHeader>
 
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-            <Card className="relative overflow-hidden">
-              <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-transparent pointer-events-none" />
-              <CardHeader className="relative space-y-3">
-                <CardTitle className="text-base flex items-center gap-2">
-                  <div className="h-6 w-6 rounded-md bg-blue-500/10 flex items-center justify-center">
-                    <Package className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400" />
-                  </div>
-                  Ricambi e Servizi
-                </CardTitle>
-                <div className="flex flex-col gap-2">
-                  <p className="text-sm text-muted-foreground">
-                    Seleziona prima il magazzino di riferimento per cercare i prodotti disponibili:
+          <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col flex-1 overflow-hidden">
+            <div className="flex-1 overflow-y-auto space-y-4 pr-1">
+              
+              <div className="rounded-lg border bg-card">
+                <div className="p-4 border-b bg-muted/30">
+                  <h3 className="font-medium flex items-center gap-2">
+                    <Package className="h-4 w-4 text-primary" />
+                    Aggiungi Articoli
+                  </h3>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Scegli come vuoi aggiungere ricambi e servizi al preventivo
                   </p>
-                  <div className="flex items-center gap-2">
-                    <Select value={selectedWarehouseId} onValueChange={setSelectedWarehouseId}>
-                      <SelectTrigger className="w-[220px]" data-testid="select-warehouse">
-                        <Warehouse className="h-4 w-4 mr-2" />
-                        <SelectValue placeholder="Seleziona magazzino" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {accessibleWarehouses.map((wh) => (
-                          <SelectItem key={wh.id} value={wh.id}>
-                            {wh.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
                 </div>
-                <div className="flex gap-2 flex-wrap">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => append({ productId: "", name: "", quantity: 1, unitPrice: 0 })}
-                    data-testid="button-add-part"
-                  >
-                    <Plus className="h-4 w-4 mr-1" />
-                    Manuale
-                  </Button>
-                  <SearchableProductCombobox
-                    onSelect={(product) => {
-                      append({
-                        productId: product.id,
-                        name: product.name,
-                        quantity: 1,
-                        unitPrice: (product.unitPrice || 0) / 100,
-                        imageUrl: product.imageUrl || undefined,
-                      });
-                    }}
-                    warehouseId={selectedWarehouseId || undefined}
-                    productType="ricambio"
-                  />
-                  <SearchableServiceCombobox
-                    onSelect={(service) => {
-                      append({
-                        productId: "",
-                        name: `[Servizio] ${service.name}`,
-                        quantity: 1,
-                        unitPrice: service.effectivePriceCents / 100,
-                      });
-                    }}
-                    repairCenterId={repairOrder?.repairCenterId || undefined}
-                    resellerId={repairOrder?.resellerId || undefined}
-                    deviceTypeId={(repairOrder as any)?.deviceTypeId || undefined}
-                    brandId={(repairOrder as any)?.deviceBrandId || undefined}
-                    modelId={repairOrder?.deviceModelId || undefined}
-                  />
-                  <NetworkProductSearch
-                    onSelect={(product) => {
-                      append({
-                        productId: product.id,
-                        name: product.source === "supplier" 
-                          ? `[${product.supplierName}] ${product.name}` 
-                          : `[${product.ownerName}] ${product.name}`,
-                        quantity: 1,
-                        unitPrice: product.unitPrice / 100,
-                        imageUrl: product.imageUrl,
-                      });
-                    }}
-                  />
-                </div>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {fields.length === 0 ? (
-                  <p className="text-sm text-muted-foreground text-center py-4">
-                    Nessun elemento aggiunto. Seleziona dal magazzino, rete, catalogo servizi o aggiungi manualmente.
-                  </p>
-                ) : (
-                  fields.map((field, index) => (
-                    <div
-                      key={field.id}
-                      className="flex gap-3 items-end"
-                    >
-                      {/* Product Thumbnail */}
-                      <div className={`w-10 h-10 flex-shrink-0 rounded border overflow-hidden ${index === 0 ? 'mt-6' : ''}`}>
-                        {field.imageUrl ? (
-                          <img 
-                            src={field.imageUrl} 
-                            alt={field.name}
-                            className="w-full h-full object-cover"
-                          />
-                        ) : (
-                          <div className="w-full h-full bg-muted flex items-center justify-center">
-                            <Package className="h-4 w-4 text-muted-foreground" />
-                          </div>
-                        )}
+                
+                <Tabs defaultValue="warehouse" className="w-full">
+                  <TabsList className="w-full grid grid-cols-4 p-1 m-2 mr-4">
+                    <TabsTrigger value="warehouse" className="text-xs gap-1" data-testid="tab-warehouse">
+                      <Warehouse className="h-3.5 w-3.5" />
+                      <span className="hidden sm:inline">Magazzino</span>
+                    </TabsTrigger>
+                    <TabsTrigger value="services" className="text-xs gap-1" data-testid="tab-services">
+                      <Wrench className="h-3.5 w-3.5" />
+                      <span className="hidden sm:inline">Servizi</span>
+                    </TabsTrigger>
+                    <TabsTrigger value="network" className="text-xs gap-1" data-testid="tab-network">
+                      <Globe className="h-3.5 w-3.5" />
+                      <span className="hidden sm:inline">Rete</span>
+                    </TabsTrigger>
+                    <TabsTrigger value="manual" className="text-xs gap-1" data-testid="tab-manual">
+                      <PenLine className="h-3.5 w-3.5" />
+                      <span className="hidden sm:inline">Manuale</span>
+                    </TabsTrigger>
+                  </TabsList>
+
+                  <div className="p-4 pt-2">
+                    <TabsContent value="warehouse" className="mt-0 space-y-3">
+                      <div className="text-sm text-muted-foreground">
+                        Cerca ricambi disponibili nel tuo magazzino
                       </div>
-                      <FormField
-                        control={form.control}
-                        name={`parts.${index}.name`}
-                        render={({ field: nameField }) => (
-                          <FormItem className="flex-1">
-                            {index === 0 && <FormLabel>Nome Ricambio</FormLabel>}
-                            <FormControl>
-                              <Input
-                                {...nameField}
-                                placeholder="es. Schermo LCD"
-                                data-testid={`input-part-name-${index}`}
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
+                      <div className="flex items-center gap-2">
+                        <Select value={selectedWarehouseId} onValueChange={setSelectedWarehouseId}>
+                          <SelectTrigger className="w-full" data-testid="select-warehouse">
+                            <Warehouse className="h-4 w-4 mr-2 text-muted-foreground" />
+                            <SelectValue placeholder="Seleziona un magazzino..." />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {accessibleWarehouses.map((wh) => (
+                              <SelectItem key={wh.id} value={wh.id}>
+                                {wh.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      {selectedWarehouseId && (
+                        <SearchableProductCombobox
+                          onSelect={(product) => {
+                            append({
+                              productId: product.id,
+                              name: product.name,
+                              quantity: 1,
+                              unitPrice: (product.unitPrice || 0) / 100,
+                              imageUrl: product.imageUrl || undefined,
+                              source: "warehouse",
+                            });
+                          }}
+                          warehouseId={selectedWarehouseId}
+                          productType="ricambio"
+                        />
+                      )}
+                      {!selectedWarehouseId && (
+                        <div className="text-center py-4 text-sm text-muted-foreground border rounded-lg border-dashed">
+                          <Warehouse className="h-8 w-8 mx-auto mb-2 opacity-30" />
+                          Seleziona prima un magazzino per cercare i ricambi
+                        </div>
+                      )}
+                    </TabsContent>
+
+                    <TabsContent value="services" className="mt-0 space-y-3">
+                      <div className="text-sm text-muted-foreground">
+                        Aggiungi servizi dal catalogo (sostituzione schermo, riparazione, ecc.)
+                      </div>
+                      <SearchableServiceCombobox
+                        onSelect={(service) => {
+                          append({
+                            productId: "",
+                            name: service.name,
+                            quantity: 1,
+                            unitPrice: service.effectivePriceCents / 100,
+                            source: "service",
+                          });
+                        }}
+                        repairCenterId={repairOrder?.repairCenterId || undefined}
+                        resellerId={repairOrder?.resellerId || undefined}
+                        deviceTypeId={(repairOrder as any)?.deviceTypeId || undefined}
+                        brandId={(repairOrder as any)?.deviceBrandId || undefined}
+                        modelId={repairOrder?.deviceModelId || undefined}
                       />
-                      <FormField
-                        control={form.control}
-                        name={`parts.${index}.quantity`}
-                        render={({ field: qtyField }) => (
-                          <FormItem className="w-20">
-                            {index === 0 && <FormLabel>Qtà</FormLabel>}
-                            <FormControl>
-                              <Input
-                                {...qtyField}
-                                type="number"
-                                min="1"
-                                data-testid={`input-part-qty-${index}`}
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
+                    </TabsContent>
+
+                    <TabsContent value="network" className="mt-0 space-y-3">
+                      <div className="text-sm text-muted-foreground">
+                        Cerca prodotti nella rete (altri magazzini, marketplace, fornitori)
+                      </div>
+                      <NetworkProductSearch
+                        onSelect={(product) => {
+                          append({
+                            productId: product.id,
+                            name: product.source === "supplier" 
+                              ? `[${product.supplierName}] ${product.name}` 
+                              : `[${product.ownerName}] ${product.name}`,
+                            quantity: 1,
+                            unitPrice: product.unitPrice / 100,
+                            imageUrl: product.imageUrl,
+                            source: product.source === "supplier" ? "supplier" : "network",
+                          });
+                        }}
                       />
-                      <FormField
-                        control={form.control}
-                        name={`parts.${index}.unitPrice`}
-                        render={({ field: priceField }) => (
-                          <FormItem className="w-28">
-                            {index === 0 && <FormLabel>Prezzo Unit.</FormLabel>}
-                            <FormControl>
-                              <Input
-                                {...priceField}
-                                type="number"
-                                min="0"
-                                step="0.01"
-                                placeholder="0,00"
-                                data-testid={`input-part-price-${index}`}
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
+                    </TabsContent>
+
+                    <TabsContent value="manual" className="mt-0 space-y-3">
+                      <div className="text-sm text-muted-foreground">
+                        Inserisci manualmente un articolo con nome e prezzo personalizzati
+                      </div>
                       <Button
                         type="button"
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => remove(index)}
-                        data-testid={`button-remove-part-${index}`}
+                        variant="outline"
+                        className="w-full"
+                        onClick={() => append({ productId: "", name: "", quantity: 1, unitPrice: 0, source: "manual" })}
+                        data-testid="button-add-part"
                       >
-                        <Trash2 className="h-4 w-4 text-destructive" />
+                        <Plus className="h-4 w-4 mr-2" />
+                        Aggiungi Voce Manuale
                       </Button>
-                    </div>
-                  ))
-                )}
-              </CardContent>
-            </Card>
-
-            <Card className="relative overflow-hidden">
-              <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/5 to-transparent pointer-events-none" />
-              <CardHeader className="relative">
-                <CardTitle className="text-base flex items-center gap-2">
-                  <div className="h-6 w-6 rounded-md bg-emerald-500/10 flex items-center justify-center">
-                    <Calculator className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
+                    </TabsContent>
                   </div>
-                  Manodopera e Totali
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {laborCalculation && (
-                  <Alert className="bg-muted">
-                    <Info className="h-4 w-4" />
-                    <AlertDescription>
-                      <span className="font-medium">Calcolo Automatico:</span>{" "}
-                      {formatCurrency(laborCalculation.hourlyRate)}/ora &times; {laborCalculation.estimatedHours} ore = {formatCurrency(laborCalculation.calculatedCost)}
-                      <br />
-                      <span className="text-xs text-muted-foreground">
-                        Tariffa: {hourlyRateSource}. Puoi modificare il valore se necessario.
-                      </span>
-                    </AlertDescription>
-                  </Alert>
-                )}
+                </Tabs>
+              </div>
 
-                {diagnosisNotFound && (
-                  <Alert variant="default" className="bg-muted/50">
-                    <Info className="h-4 w-4" />
-                    <AlertDescription>
-                      <span className="text-sm font-medium">
-                        Diagnosi non ancora presente per questa lavorazione. 
-                      </span>
-                      <br />
-                      <span className="text-xs text-muted-foreground">
-                        Inserisci il costo manodopera manualmente o completa prima la diagnosi.
-                      </span>
-                    </AlertDescription>
-                  </Alert>
-                )}
+              {fields.length > 0 && (
+                <div className="rounded-lg border bg-card">
+                  <div className="p-4 border-b bg-muted/30 flex items-center justify-between">
+                    <h3 className="font-medium flex items-center gap-2">
+                      <ShoppingCart className="h-4 w-4 text-primary" />
+                      Articoli nel Preventivo
+                      <Badge variant="secondary" className="ml-1">{fields.length}</Badge>
+                    </h3>
+                    <div className="text-sm font-medium">
+                      Subtotale: {formatCurrency(partsTotal)}
+                    </div>
+                  </div>
+                  <div className="divide-y">
+                    {fields.map((field, index) => (
+                      <div
+                        key={field.id}
+                        className="p-3 flex gap-3 items-start hover:bg-muted/20 transition-colors"
+                      >
+                        <div className="w-12 h-12 flex-shrink-0 rounded-lg border overflow-hidden bg-muted">
+                          {field.imageUrl ? (
+                            <img 
+                              src={field.imageUrl} 
+                              alt={field.name}
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center">
+                              <Package className="h-5 w-5 text-muted-foreground/50" />
+                            </div>
+                          )}
+                        </div>
+                        
+                        <div className="flex-1 min-w-0 space-y-2">
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="flex-1 min-w-0">
+                              <FormField
+                                control={form.control}
+                                name={`parts.${index}.name`}
+                                render={({ field: nameField }) => (
+                                  <FormItem className="space-y-0">
+                                    <FormControl>
+                                      <Input
+                                        {...nameField}
+                                        placeholder="Nome articolo"
+                                        className="h-8 text-sm font-medium"
+                                        data-testid={`input-part-name-${index}`}
+                                      />
+                                    </FormControl>
+                                    <FormMessage className="text-xs" />
+                                  </FormItem>
+                                )}
+                              />
+                            </div>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 flex-shrink-0"
+                              onClick={() => remove(index)}
+                              data-testid={`button-remove-part-${index}`}
+                            >
+                              <Trash2 className="h-4 w-4 text-destructive" />
+                            </Button>
+                          </div>
+                          
+                          <div className="flex items-center gap-3">
+                            {getSourceBadge(field.source)}
+                            <div className="flex items-center gap-2 ml-auto">
+                              <FormField
+                                control={form.control}
+                                name={`parts.${index}.quantity`}
+                                render={({ field: qtyField }) => (
+                                  <FormItem className="space-y-0">
+                                    <div className="flex items-center gap-1">
+                                      <span className="text-xs text-muted-foreground">Qtà:</span>
+                                      <FormControl>
+                                        <Input
+                                          {...qtyField}
+                                          type="number"
+                                          min="1"
+                                          className="h-7 w-14 text-center text-sm"
+                                          data-testid={`input-part-qty-${index}`}
+                                        />
+                                      </FormControl>
+                                    </div>
+                                  </FormItem>
+                                )}
+                              />
+                              <span className="text-muted-foreground">×</span>
+                              <FormField
+                                control={form.control}
+                                name={`parts.${index}.unitPrice`}
+                                render={({ field: priceField }) => (
+                                  <FormItem className="space-y-0">
+                                    <div className="flex items-center gap-1">
+                                      <FormControl>
+                                        <Input
+                                          {...priceField}
+                                          type="number"
+                                          min="0"
+                                          step="0.01"
+                                          className="h-7 w-20 text-right text-sm"
+                                          data-testid={`input-part-price-${index}`}
+                                        />
+                                      </FormControl>
+                                      <Euro className="h-3 w-3 text-muted-foreground" />
+                                    </div>
+                                  </FormItem>
+                                )}
+                              />
+                              <span className="text-sm font-medium min-w-[70px] text-right">
+                                = {formatCurrency((Number(watchParts?.[index]?.quantity) || 0) * (Number(watchParts?.[index]?.unitPrice) || 0))}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
 
-                {diagnosisFetchError && (
-                  <Alert variant="destructive" className="bg-destructive/10">
-                    <Info className="h-4 w-4" />
-                    <AlertDescription>
-                      <span className="text-sm">
-                        Errore nel recupero della diagnosi. Inserisci il costo manodopera manualmente.
-                      </span>
-                    </AlertDescription>
-                  </Alert>
-                )}
+              {fields.length === 0 && (
+                <div className="rounded-lg border border-dashed p-8 text-center">
+                  <ShoppingCart className="h-10 w-10 mx-auto mb-3 text-muted-foreground/30" />
+                  <h4 className="font-medium text-muted-foreground">Nessun articolo aggiunto</h4>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Usa le schede sopra per aggiungere ricambi, servizi o voci manuali
+                  </p>
+                </div>
+              )}
 
-                {hourlyRatePermissionError && (
-                  <Alert variant="default" className="bg-muted/50">
-                    <Info className="h-4 w-4" />
-                    <AlertDescription>
-                      <span className="text-sm">
-                        Tariffa oraria non accessibile. Inserisci il costo manodopera manualmente.
-                      </span>
-                    </AlertDescription>
-                  </Alert>
-                )}
+              <div className="rounded-lg border bg-card">
+                <div className="p-4 border-b bg-muted/30">
+                  <h3 className="font-medium flex items-center gap-2">
+                    <Calculator className="h-4 w-4 text-primary" />
+                    Manodopera
+                  </h3>
+                </div>
+                <div className="p-4 space-y-4">
+                  {laborCalculation && (
+                    <Alert className="bg-emerald-500/5 border-emerald-500/20">
+                      <Calculator className="h-4 w-4 text-emerald-600" />
+                      <AlertDescription className="text-sm">
+                        <span className="font-medium">Calcolato automaticamente:</span>{" "}
+                        {formatCurrency(laborCalculation.hourlyRate)}/ora × {laborCalculation.estimatedHours}h = {formatCurrency(laborCalculation.calculatedCost)}
+                        <span className="block text-xs text-muted-foreground mt-0.5">
+                          Fonte: {hourlyRateSource}
+                        </span>
+                      </AlertDescription>
+                    </Alert>
+                  )}
 
-                {hourlyRateFetchError && (
-                  <Alert variant="destructive" className="bg-destructive/10">
-                    <Info className="h-4 w-4" />
-                    <AlertDescription>
-                      <span className="text-sm">
-                        Errore nel recupero della tariffa oraria. Inserisci il costo manodopera manualmente.
-                      </span>
-                    </AlertDescription>
-                  </Alert>
-                )}
+                  {diagnosisNotFound && !standalone && (
+                    <Alert variant="default" className="bg-muted/50">
+                      <Info className="h-4 w-4" />
+                      <AlertDescription className="text-sm">
+                        Diagnosi non ancora presente. Inserisci manualmente il costo manodopera.
+                      </AlertDescription>
+                    </Alert>
+                  )}
 
-                {!laborCalculation && !isDiagnosisError && !isHourlyRateError && diagnosis && !diagnosis.estimatedRepairTime && (
-                  <Alert variant="default" className="bg-muted/50">
-                    <Info className="h-4 w-4" />
-                    <AlertDescription>
-                      <span className="text-sm">
-                        Nessun tempo di riparazione stimato nella diagnosi. Inserisci il costo manodopera manualmente.
-                      </span>
-                    </AlertDescription>
-                  </Alert>
-                )}
-
-                {/* Labor Cost Toggle */}
-                <div className="space-y-3">
                   <div className="flex items-center space-x-2">
                     <Checkbox
                       id="wantAddLaborCostQuote"
@@ -585,8 +662,8 @@ export function QuoteFormDialog({
                       }}
                       data-testid="checkbox-want-labor-cost"
                     />
-                    <Label htmlFor="wantAddLaborCostQuote">
-                      Vuoi aggiungere costo manodopera aggiuntivo?
+                    <Label htmlFor="wantAddLaborCostQuote" className="text-sm">
+                      Aggiungi costo manodopera
                     </Label>
                   </div>
                   
@@ -595,113 +672,125 @@ export function QuoteFormDialog({
                       control={form.control}
                       name="laborCost"
                       render={({ field }) => (
-                        <FormItem className="pl-6">
-                          <FormLabel>Costo Manodopera (EUR)</FormLabel>
-                          <FormControl>
-                            <Input
-                              {...field}
-                              type="number"
-                              min="0"
-                              step="0.01"
-                              placeholder="0,00"
-                              data-testid="input-labor-cost"
-                            />
-                          </FormControl>
-                          <FormDescription>
-                            {laborCalculation 
-                              ? "Pre-calcolato automaticamente. Puoi modificarlo se necessario."
-                              : "Costo totale della manodopera per la riparazione"
-                            }
-                          </FormDescription>
+                        <FormItem>
+                          <div className="flex items-center gap-2">
+                            <FormControl>
+                              <Input
+                                {...field}
+                                type="number"
+                                min="0"
+                                step="0.01"
+                                placeholder="0,00"
+                                className="w-32"
+                                data-testid="input-labor-cost"
+                              />
+                            </FormControl>
+                            <Euro className="h-4 w-4 text-muted-foreground" />
+                          </div>
                           <FormMessage />
                         </FormItem>
                       )}
                     />
                   )}
                 </div>
+              </div>
 
-                <Separator />
+              <Collapsible open={showAdvanced} onOpenChange={setShowAdvanced}>
+                <CollapsibleTrigger asChild>
+                  <Button variant="ghost" className="w-full justify-between" type="button">
+                    <span className="flex items-center gap-2 text-sm">
+                      <StickyNote className="h-4 w-4" />
+                      Opzioni Avanzate
+                    </span>
+                    {showAdvanced ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                  </Button>
+                </CollapsibleTrigger>
+                <CollapsibleContent className="space-y-4 pt-2">
+                  <div className="rounded-lg border bg-card p-4 space-y-4">
+                    <FormField
+                      control={form.control}
+                      name="validUntil"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="flex items-center gap-2">
+                            <Calendar className="h-4 w-4" />
+                            Valido Fino Al
+                          </FormLabel>
+                          <FormControl>
+                            <Input
+                              {...field}
+                              type="date"
+                              className="w-48"
+                              data-testid="input-valid-until"
+                            />
+                          </FormControl>
+                          <FormDescription className="text-xs">
+                            Data di scadenza del preventivo (opzionale)
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
 
-                <div className="flex justify-between items-center text-lg font-semibold">
-                  <span>Importo Totale:</span>
-                  <span data-testid="text-total-amount">
-                    {formatCurrency(totalAmount)}
-                  </span>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="relative overflow-hidden">
-              <div className="absolute inset-0 bg-gradient-to-br from-slate-500/5 to-transparent pointer-events-none" />
-              <CardHeader className="relative">
-                <CardTitle className="text-base flex items-center gap-2">
-                  <div className="h-6 w-6 rounded-md bg-slate-500/10 flex items-center justify-center">
-                    <Info className="h-3.5 w-3.5 text-slate-600 dark:text-slate-400" />
+                    <FormField
+                      control={form.control}
+                      name="notes"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="flex items-center gap-2">
+                            <StickyNote className="h-4 w-4" />
+                            Note
+                          </FormLabel>
+                          <FormControl>
+                            <Textarea
+                              {...field}
+                              placeholder="Note aggiuntive o condizioni..."
+                              rows={2}
+                              data-testid="input-quote-notes"
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
                   </div>
-                  Dettagli Aggiuntivi
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <FormField
-                  control={form.control}
-                  name="validUntil"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Valido Fino Al</FormLabel>
-                      <FormControl>
-                        <Input
-                          {...field}
-                          type="date"
-                          data-testid="input-valid-until"
-                        />
-                      </FormControl>
-                      <FormDescription>
-                        Data di scadenza del preventivo (opzionale)
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                </CollapsibleContent>
+              </Collapsible>
+            </div>
 
-                <FormField
-                  control={form.control}
-                  name="notes"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Note</FormLabel>
-                      <FormControl>
-                        <Textarea
-                          {...field}
-                          placeholder="Note aggiuntive o condizioni..."
-                          rows={3}
-                          data-testid="input-quote-notes"
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </CardContent>
-            </Card>
-
-            <div className="flex justify-end gap-3">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => onOpenChange(false)}
-                data-testid="button-cancel"
-              >
-                Annulla
-              </Button>
-              <Button
-                type="submit"
-                disabled={createQuoteMutation.isPending}
-                data-testid="button-create-quote"
-              >
-                {createQuoteMutation.isPending
-                  ? "Creazione..."
-                  : "Crea Preventivo"}
-              </Button>
+            <div className="flex-shrink-0 pt-4 mt-4 border-t bg-background">
+              <div className="flex items-center justify-between mb-4">
+                <div className="text-sm text-muted-foreground">
+                  {fields.length} articol{fields.length === 1 ? 'o' : 'i'} 
+                  {wantAddLaborCost && watchLaborCost > 0 && ` + manodopera`}
+                </div>
+                <div className="text-right">
+                  <div className="text-xs text-muted-foreground">Totale Preventivo</div>
+                  <div className="text-2xl font-bold text-primary" data-testid="text-total-amount">
+                    {formatCurrency(totalAmount)}
+                  </div>
+                </div>
+              </div>
+              
+              <div className="flex justify-end gap-3">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => onOpenChange(false)}
+                  data-testid="button-cancel"
+                >
+                  Annulla
+                </Button>
+                <Button
+                  type="submit"
+                  disabled={createQuoteMutation.isPending}
+                  data-testid="button-create-quote"
+                >
+                  {createQuoteMutation.isPending
+                    ? "Creazione..."
+                    : standalone ? "Conferma" : "Crea Preventivo"}
+                </Button>
+              </div>
             </div>
           </form>
         </Form>
