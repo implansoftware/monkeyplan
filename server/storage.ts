@@ -399,9 +399,17 @@ export interface IStorage {
   
   // Diagnostic Findings (Predefined diagnostic results per device type)
   listDiagnosticFindings(deviceTypeId?: string, activeOnly?: boolean): Promise<DiagnosticFinding[]>;
+  getDiagnosticFinding(id: string): Promise<DiagnosticFinding | undefined>;
+  createDiagnosticFinding(data: { name: string; description?: string; category?: string; deviceTypeId?: string; sortOrder?: number }): Promise<DiagnosticFinding>;
+  updateDiagnosticFinding(id: string, updates: Partial<{ name: string; description: string; category: string; deviceTypeId: string | null; isActive: boolean; sortOrder: number }>): Promise<DiagnosticFinding>;
+  deleteDiagnosticFinding(id: string): Promise<void>;
   
   // Damaged Component Types (Predefined damaged components per device type)
   listDamagedComponentTypes(deviceTypeId?: string, activeOnly?: boolean): Promise<DamagedComponentType[]>;
+  getDamagedComponentType(id: string): Promise<DamagedComponentType | undefined>;
+  createDamagedComponentType(data: { name: string; description?: string; deviceTypeId?: string; sortOrder?: number }): Promise<DamagedComponentType>;
+  updateDamagedComponentType(id: string, updates: Partial<{ name: string; description: string; deviceTypeId: string | null; isActive: boolean; sortOrder: number }>): Promise<DamagedComponentType>;
+  deleteDamagedComponentType(id: string): Promise<void>;
   
   // Estimated Repair Times (Predefined repair time ranges)
   listEstimatedRepairTimes(deviceTypeId?: string, activeOnly?: boolean): Promise<EstimatedRepairTime[]>;
@@ -4477,6 +4485,63 @@ export class DatabaseStorage implements IStorage {
     }
     
     return await query.orderBy(damagedComponentTypes.sortOrder, damagedComponentTypes.name);
+  }
+
+  // CRUD for Diagnostic Findings
+  async getDiagnosticFinding(id: string): Promise<DiagnosticFinding | undefined> {
+    const [finding] = await db.select().from(diagnosticFindings).where(eq(diagnosticFindings.id, id));
+    return finding;
+  }
+
+  async createDiagnosticFinding(data: { name: string; description?: string; category?: string; deviceTypeId?: string; sortOrder?: number }): Promise<DiagnosticFinding> {
+    const [finding] = await db.insert(diagnosticFindings).values({
+      name: data.name,
+      description: data.description || null,
+      category: data.category || null,
+      deviceTypeId: data.deviceTypeId || null,
+      sortOrder: data.sortOrder ?? 0,
+    }).returning();
+    return finding;
+  }
+
+  async updateDiagnosticFinding(id: string, updates: Partial<{ name: string; description: string; category: string; deviceTypeId: string | null; isActive: boolean; sortOrder: number }>): Promise<DiagnosticFinding> {
+    const [finding] = await db.update(diagnosticFindings)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(diagnosticFindings.id, id))
+      .returning();
+    return finding;
+  }
+
+  async deleteDiagnosticFinding(id: string): Promise<void> {
+    await db.delete(diagnosticFindings).where(eq(diagnosticFindings.id, id));
+  }
+
+  // CRUD for Damaged Component Types
+  async getDamagedComponentType(id: string): Promise<DamagedComponentType | undefined> {
+    const [component] = await db.select().from(damagedComponentTypes).where(eq(damagedComponentTypes.id, id));
+    return component;
+  }
+
+  async createDamagedComponentType(data: { name: string; description?: string; deviceTypeId?: string; sortOrder?: number }): Promise<DamagedComponentType> {
+    const [component] = await db.insert(damagedComponentTypes).values({
+      name: data.name,
+      description: data.description || null,
+      deviceTypeId: data.deviceTypeId || null,
+      sortOrder: data.sortOrder ?? 0,
+    }).returning();
+    return component;
+  }
+
+  async updateDamagedComponentType(id: string, updates: Partial<{ name: string; description: string; deviceTypeId: string | null; isActive: boolean; sortOrder: number }>): Promise<DamagedComponentType> {
+    const [component] = await db.update(damagedComponentTypes)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(damagedComponentTypes.id, id))
+      .returning();
+    return component;
+  }
+
+  async deleteDamagedComponentType(id: string): Promise<void> {
+    await db.delete(damagedComponentTypes).where(eq(damagedComponentTypes.id, id));
   }
 
   // Estimated Repair Times (Predefined repair time ranges)
