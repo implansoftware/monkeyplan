@@ -177,13 +177,18 @@ export function NetworkProductSearch({
               )}
               {!isLoading && activeProducts.length > 0 && (
                 <CommandGroup heading={activeTab === "network" ? "Magazzini Rete" : "Cataloghi Fornitori"}>
-                  {activeProducts.map((product) => (
+                  {activeProducts.map((product, index) => {
+                    // Create unique key combining source, id, and warehouse/supplier
+                    const uniqueKey = product.source === "network" 
+                      ? `${product.source}-${product.id}-${product.warehouseId || index}`
+                      : `${product.source}-${product.id}-${product.supplierId || index}`;
+                    return (
                     <CommandItem
-                      key={`${product.source}-${product.id}`}
-                      value={product.id}
+                      key={uniqueKey}
+                      value={uniqueKey}
                       onSelect={() => handleSelect(product)}
                       className="cursor-pointer"
-                      data-testid={`network-product-item-${product.id}`}
+                      data-testid={`network-product-item-${product.id}-${index}`}
                     >
                       <div className="flex items-center gap-2 w-full">
                         <div className="w-8 h-8 flex-shrink-0 rounded border overflow-hidden">
@@ -230,7 +235,8 @@ export function NetworkProductSearch({
                         </div>
                       </div>
                     </CommandItem>
-                  ))}
+                  )})}
+
                 </CommandGroup>
               )}
             </CommandList>
