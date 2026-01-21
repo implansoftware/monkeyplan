@@ -78,8 +78,13 @@ export default function ResellerShopCatalog() {
     item.product.sku.toLowerCase().includes(searchQuery.toLowerCase())
   ) || [];
 
-  const publishedProducts = filteredCatalog.filter(p => p.assignment?.isPublished || (p.isOwn && !p.assignment));
-  const unpublishedProducts = filteredCatalog.filter(p => !p.assignment?.isPublished && !(p.isOwn && !p.assignment));
+  // Per prodotti propri usa product.isActive, per assegnati usa assignment.isPublished
+  const isProductPublished = (item: CatalogProduct) => {
+    if (item.isOwn) return item.product.isActive;
+    return item.assignment?.isPublished ?? false;
+  };
+  const publishedProducts = filteredCatalog.filter(isProductPublished);
+  const unpublishedProducts = filteredCatalog.filter(p => !isProductPublished(p));
 
   const handleOpenPriceDialog = (item: CatalogProduct) => {
     setSelectedProduct(item);
@@ -149,7 +154,7 @@ export default function ResellerShopCatalog() {
       <TableCell>
         <div className="flex items-center gap-2">
           <Switch
-            checked={item.assignment?.isPublished ?? (item.isOwn && !item.assignment)}
+            checked={isProductPublished(item)}
             onCheckedChange={(checked) => togglePublishMutation.mutate({
               productId: item.product.id,
               publish: checked,
@@ -157,7 +162,7 @@ export default function ResellerShopCatalog() {
             disabled={togglePublishMutation.isPending}
             data-testid={`switch-publish-${item.product.id}`}
           />
-          {item.assignment?.isPublished ? (
+          {isProductPublished(item) ? (
             <Eye className="h-4 w-4 text-green-500" />
           ) : (
             <EyeOff className="h-4 w-4 text-muted-foreground" />

@@ -6460,7 +6460,7 @@ export function registerRoutes(app: Express): Server {
       // Ottieni prodotti propri del reseller che hanno stock
       const ownProducts = allProducts.filter(p => 
         p.createdBy === context.resellerId && 
-        p.isActive && 
+        
         stockMap.has(p.id)
       );
       
