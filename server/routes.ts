@@ -24515,6 +24515,7 @@ export function registerRoutes(app: Express): Server {
             const tuService = createTrovausatiService(tuCreds);
             // TrovaUsati doesn't have search, so we get products and filter locally
             const allProducts = await tuService.getMarketplaceProducts(0, 100);
+            console.log("TrovaUsati products fetched:", allProducts.length, "searching for:", searchTerm);
             const filtered = allProducts.filter((p: any) => 
               (p.title || p.name || "").toLowerCase().includes(searchTerm)
             ).slice(0, limitNum);
