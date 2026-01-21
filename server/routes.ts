@@ -16314,6 +16314,7 @@ export function registerRoutes(app: Express): Server {
       
       // Terms and conditions
       doc.moveDown();
+      doc.x = 60; // Reset X position to left margin
       doc.fontSize(8).font('Helvetica').text(
         'CONDIZIONI DEL PREVENTIVO:\n' +
         '1. I prezzi indicati sono IVA inclusa salvo diversa indicazione.\n' +
