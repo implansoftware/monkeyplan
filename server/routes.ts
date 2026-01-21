@@ -24464,7 +24464,7 @@ export function registerRoutes(app: Express): Server {
                 id: `foneday-${product.sku || product.id}`,
                 name: product.name,
                 sku: product.sku,
-                unitPrice: Math.round((product.price || 0) * 100),
+                unitPrice: Math.round((product.attributes?.price || product.price || 0)),
                 availableQuantity: product.stock || 0,
                 supplierName: "Foneday",
                 supplierId: "",
@@ -24491,7 +24491,7 @@ export function registerRoutes(app: Express): Server {
                 id: `mobilesentrix-${product.sku || product.id}`,
                 name: product.name,
                 sku: product.sku || "",
-                unitPrice: Math.round((product.price || 0) * 100),
+                unitPrice: Math.round((product.attributes?.price || product.price || 0)),
                 availableQuantity: product.stock || 0,
                 supplierName: "MobileSentrix",
                 supplierId: "",
@@ -24517,20 +24517,20 @@ export function registerRoutes(app: Express): Server {
             const allProducts = await tuService.getMarketplaceProducts(0, 100);
             console.log("TrovaUsati products fetched:", allProducts.length, "searching for:", searchTerm, "sample product:", JSON.stringify(allProducts[0] || {}).slice(0, 500));
             const filtered = allProducts.filter((p: any) => 
-              (p.title || p.name || "").toLowerCase().includes(searchTerm)
+              (p.attributes?.model || p.attributes?.brand || p.title || p.name || "").toLowerCase().includes(searchTerm)
             ).slice(0, limitNum);
             
             for (const product of filtered) {
               results.suppliers.push({
                 id: `trovausati-${product.id}`,
-                name: product.title || product.name || "",
+                name: product.attributes?.brand ? `${product.attributes.brand} ${product.attributes.model || ""}`.trim() : (product.title || product.name || ""),
                 sku: product.id?.toString() || "",
-                unitPrice: Math.round((product.price || 0) * 100),
+                unitPrice: Math.round((product.attributes?.price || product.price || 0)),
                 availableQuantity: 1,
                 supplierName: "TrovaUsati",
                 supplierId: "",
                 supplierType: "trovausati",
-                imageUrl: product.imageUrl || product.image_url || undefined,
+                imageUrl: product.attributes?.image_url || product.imageUrl || product.image_url || undefined,
                 source: "supplier",
               });
             }
