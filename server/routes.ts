@@ -28796,7 +28796,18 @@ export function registerRoutes(app: Express): Server {
     try {
       if (!req.user) return res.status(401).json({ error: "Non autenticato" });
       const catalog = await storage.getAdminCatalogForReseller(req.user.id);
-      res.json(catalog);
+      
+      // Arricchisci con nome proprietario
+      const ownerIds = [...new Set(catalog.map(c => c.product.createdBy).filter(Boolean))];
+      const owners = await Promise.all(ownerIds.map(id => storage.getUser(id!)));
+      const ownerMap = new Map(owners.filter(Boolean).map(u => [u!.id, u!.companyName || u!.username]));
+      
+      const enrichedCatalog = catalog.map(item => ({
+        ...item,
+        ownerName: item.product.createdBy ? (ownerMap.get(item.product.createdBy) || 'Admin') : 'Admin',
+      }));
+      
+      res.json(enrichedCatalog);
     } catch (error: any) {
       res.status(500).json({ error: error.message });
     }
