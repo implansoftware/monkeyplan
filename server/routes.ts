@@ -6492,12 +6492,22 @@ export function registerRoutes(app: Express): Server {
       const context = getEffectiveContext(req);
       if (!context.resellerId) return res.status(400).send("Rivenditore non trovato");
       
-      // Trova l'assegnazione per questo prodotto
+      const productId = req.params.productId;
+      
+      // Prima controlla se è un prodotto proprio
+      const product = await storage.getProduct(productId);
+      if (product && product.createdBy === context.resellerId) {
+        // È un prodotto proprio, modifica isActive
+        const updated = await storage.updateProduct(productId, { isActive: true });
+        return res.json({ product: updated, isOwn: true });
+      }
+      
+      // Altrimenti cerca in resellerProducts (prodotti assegnati)
       const assignments = await storage.listResellerProducts({ resellerId: context.resellerId });
-      const assignment = assignments.find(a => a.productId === req.params.productId);
+      const assignment = assignments.find(a => a.productId === productId);
       
       if (!assignment) {
-        return res.status(404).send("Prodotto non assegnato a questo reseller");
+        return res.status(404).send("Prodotto non trovato nel tuo catalogo");
       }
       
       const updated = await storage.updateResellerProduct(assignment.id, { isPublished: true });
@@ -6515,12 +6525,22 @@ export function registerRoutes(app: Express): Server {
       const context = getEffectiveContext(req);
       if (!context.resellerId) return res.status(400).send("Rivenditore non trovato");
       
-      // Trova l'assegnazione per questo prodotto
+      const productId = req.params.productId;
+      
+      // Prima controlla se è un prodotto proprio
+      const product = await storage.getProduct(productId);
+      if (product && product.createdBy === context.resellerId) {
+        // È un prodotto proprio, modifica isActive
+        const updated = await storage.updateProduct(productId, { isActive: false });
+        return res.json({ product: updated, isOwn: true });
+      }
+      
+      // Altrimenti cerca in resellerProducts (prodotti assegnati)
       const assignments = await storage.listResellerProducts({ resellerId: context.resellerId });
-      const assignment = assignments.find(a => a.productId === req.params.productId);
+      const assignment = assignments.find(a => a.productId === productId);
       
       if (!assignment) {
-        return res.status(404).send("Prodotto non assegnato a questo reseller");
+        return res.status(404).send("Prodotto non trovato nel tuo catalogo");
       }
       
       if (!assignment.canUnpublish) {
