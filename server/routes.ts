@@ -24508,6 +24508,7 @@ export function registerRoutes(app: Express): Server {
         
         // Search TrovaUsati marketplace LIVE if configured
         const tuCreds = await storage.getTrovausatiCredentialByReseller(effectiveResellerId);
+        console.log("TrovaUsati creds for search:", tuCreds ? { id: tuCreds.id, isActive: tuCreds.isActive, hasMarketplaceApiKey: !!tuCreds.marketplaceApiKey, marketplaceId: tuCreds.marketplaceId } : null);
         if (tuCreds && tuCreds.isActive) {
           try {
             const { createTrovausatiService } = await import('./trovausatiService');
