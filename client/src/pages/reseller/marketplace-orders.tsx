@@ -18,6 +18,7 @@ interface MarketplaceOrderItem {
   productId: string;
   productName: string;
   productSku: string | null;
+  productImageUrl: string | null;
   quantity: number;
   unitPrice: number;
   totalPrice: number;
@@ -227,12 +228,23 @@ export default function ResellerMarketplaceOrders() {
               <div className="space-y-2">
                 <h4 className="font-medium">Prodotti</h4>
                 {selectedOrder.items.map((item) => (
-                  <div key={item.id} className="flex justify-between items-center p-2 bg-muted/50 rounded">
-                    <div>
-                      <p className="font-medium">{item.productName}</p>
+                  <div key={item.id} className="flex items-center gap-3 p-2 bg-muted/50 rounded">
+                    <div className="w-10 h-10 rounded overflow-hidden bg-muted flex-shrink-0 flex items-center justify-center">
+                      {item.productImageUrl ? (
+                        <img 
+                          src={item.productImageUrl} 
+                          alt={item.productName} 
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <Package className="w-5 h-5 text-muted-foreground" />
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium truncate">{item.productName}</p>
                       {item.productSku && <p className="text-xs text-muted-foreground">{item.productSku}</p>}
                     </div>
-                    <div className="text-right">
+                    <div className="text-right flex-shrink-0">
                       <p>{item.quantity} x {formatPrice(item.unitPrice)}</p>
                       <p className="font-medium">{formatPrice(item.totalPrice)}</p>
                     </div>

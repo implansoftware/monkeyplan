@@ -29830,9 +29830,14 @@ export function registerRoutes(app: Express): Server {
       const enrichedOrders = await Promise.all(orders.map(async (order) => {
         const seller = await storage.getUser(order.sellerResellerId);
         const items = await storage.listMarketplaceOrderItems(order.id);
+        // Enrich items with product imageUrl
+        const enrichedItems = await Promise.all(items.map(async (item) => {
+          const product = await storage.getProduct(item.productId);
+          return { ...item, productImageUrl: product?.imageUrl || null };
+        }));
         return { 
           ...order, 
-          items,
+          items: enrichedItems,
           sellerName: seller?.fullName || seller?.ragioneSociale || 'Rivenditore'
         };
       }));
@@ -29853,9 +29858,14 @@ export function registerRoutes(app: Express): Server {
       const enrichedOrders = await Promise.all(orders.map(async (order) => {
         const buyer = await storage.getUser(order.buyerResellerId);
         const items = await storage.listMarketplaceOrderItems(order.id);
+        // Enrich items with product imageUrl
+        const enrichedItems = await Promise.all(items.map(async (item) => {
+          const product = await storage.getProduct(item.productId);
+          return { ...item, productImageUrl: product?.imageUrl || null };
+        }));
         return { 
           ...order, 
-          items,
+          items: enrichedItems,
           buyerName: buyer?.fullName || buyer?.ragioneSociale || 'Rivenditore'
         };
       }));
