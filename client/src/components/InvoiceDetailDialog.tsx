@@ -2,8 +2,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { Invoice, User } from "@shared/schema";
-import { Download, FileText, Calendar, CreditCard, Euro, Building2 } from "lucide-react";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Invoice, User, MarketplaceOrderItem } from "@shared/schema";
+import { Download, FileText, Calendar, CreditCard, Euro, Building2, Package } from "lucide-react";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
 import { useQuery } from "@tanstack/react-query";
@@ -25,6 +26,11 @@ export function InvoiceDetailDialog({ invoice, open, onOpenChange }: InvoiceDeta
   const { data: customer } = useQuery<User>({
     queryKey: ["/api/users", invoice?.customerId],
     enabled: !!invoice?.customerId && open,
+  });
+
+  const { data: orderItems = [] } = useQuery<MarketplaceOrderItem[]>({
+    queryKey: ["/api/invoices", invoice?.id, "items"],
+    enabled: !!invoice?.id && invoice?.source === 'b2b' && open,
   });
 
   if (!invoice) return null;
@@ -116,6 +122,45 @@ export function InvoiceDetailDialog({ invoice, open, onOpenChange }: InvoiceDeta
                 {format(new Date(invoice.dueDate), "dd MMMM yyyy", { locale: it })}
               </p>
             </div>
+          )}
+
+          {orderItems.length > 0 && (
+            <>
+              <Separator />
+              <div className="space-y-2">
+                <h4 className="font-medium flex items-center gap-2">
+                  <Package className="h-4 w-4" />
+                  Prodotti
+                </h4>
+                <div className="border rounded-md">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Prodotto</TableHead>
+                        <TableHead className="text-center">Qtà</TableHead>
+                        <TableHead className="text-right">Prezzo</TableHead>
+                        <TableHead className="text-right">Totale</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {orderItems.map((item) => (
+                        <TableRow key={item.id}>
+                          <TableCell className="font-medium">
+                            {item.productName}
+                            {item.productSku && (
+                              <span className="text-xs text-muted-foreground ml-1">({item.productSku})</span>
+                            )}
+                          </TableCell>
+                          <TableCell className="text-center">{item.quantity}</TableCell>
+                          <TableCell className="text-right">{formatCurrency(item.unitPrice)}</TableCell>
+                          <TableCell className="text-right font-medium">{formatCurrency(item.totalPrice)}</TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              </div>
+            </>
           )}
 
           <Separator />

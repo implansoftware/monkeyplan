@@ -12943,6 +12943,47 @@ export function registerRoutes(app: Express): Server {
   });
 
 
+  // GET /api/invoices/:id/items - Get invoice order items (for B2B invoices)
+  app.get("/api/invoices/:id/items", requireAuth, async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const invoice = await storage.getInvoice(req.params.id);
+      if (!invoice) {
+        return res.status(404).send("Invoice not found");
+      }
+      
+      // Access control
+      if (req.user.role === 'customer' && invoice.customerId !== req.user.id) {
+        return res.status(403).send("Access denied");
+      }
+      if ((req.user.role === 'reseller' || req.user.role === 'sub_reseller') && invoice.resellerId !== req.user.id) {
+        return res.status(403).send("Access denied");
+      }
+      
+      // Only B2B invoices have order items
+      if (invoice.source !== 'b2b' || !invoice.notes) {
+        return res.json([]);
+      }
+      
+      // Extract order number from notes
+      const orderNumberMatch = invoice.notes.match(/MP-\d{4}-\d{5}/);
+      if (!orderNumberMatch) {
+        return res.json([]);
+      }
+      
+      const order = await storage.getMarketplaceOrderByNumber(orderNumberMatch[0]);
+      if (!order) {
+        return res.json([]);
+      }
+      
+      const orderItems = await storage.listMarketplaceOrderItems(order.id);
+      res.json(orderItems);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
   // GET /api/invoices/:id/pdf - Download invoice PDF
   app.get("/api/invoices/:id/pdf", requireAuth, async (req, res) => {
     try {
