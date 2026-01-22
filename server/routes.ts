@@ -12978,7 +12978,7 @@ export function registerRoutes(app: Express): Server {
           issuer.email = reseller.email || "";
           issuer.phone = reseller.phone || "";
           
-          const billing = await storage.getBillingData(reseller.id);
+          const billing = await storage.getBillingDataByUserId(reseller.id);
           if (billing) {
             issuer.name = billing.companyName || issuer.name;
             issuer.address = billing.address || "";
@@ -12998,7 +12998,7 @@ export function registerRoutes(app: Express): Server {
           customer.name = cust.fullName || cust.username;
           customer.email = cust.email || "";
           
-          const billing = await storage.getBillingData(cust.id);
+          const billing = await storage.getBillingDataByUserId(cust.id);
           if (billing) {
             customer.name = billing.companyName || customer.name;
             customer.address = billing.address || "";
