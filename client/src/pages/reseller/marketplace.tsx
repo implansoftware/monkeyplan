@@ -314,9 +314,23 @@ export default function ResellerMarketplace() {
           <ScrollArea className="max-h-64">
             <div className="space-y-2">
               {cart.map(item => (
-                <div key={item.productId} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
-                  <div className="flex-1">
-                    <p className="font-medium">{item.product.name}</p>
+                <div key={item.productId} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg gap-3">
+                  <div className="w-12 h-12 rounded-md overflow-hidden bg-muted flex-shrink-0 flex items-center justify-center">
+                    {item.product.imageUrl ? (
+                      <img 
+                        src={item.product.imageUrl} 
+                        alt={item.product.name} 
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <Package className="w-6 h-6 text-muted-foreground" />
+                    )}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium truncate">{item.product.name}</p>
+                    {item.product.sku && (
+                      <p className="text-xs text-muted-foreground">SKU: {item.product.sku}</p>
+                    )}
                     <p className="text-sm text-muted-foreground">{formatPrice(item.unitPrice)} / pz</p>
                   </div>
                   <div className="flex items-center gap-2">
