@@ -7,7 +7,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Separator } from "@/components/ui/separator";
-import { ShoppingBag, Package, CheckCircle2, XCircle, Truck, Clock, Eye } from "lucide-react";
+import { ShoppingBag, Package, CheckCircle2, XCircle, Truck, Clock, Eye, Download, FileText } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
@@ -275,10 +275,20 @@ export default function ResellerMarketplaceOrders() {
             </div>
           )}
 
-          <DialogFooter>
+          <DialogFooter className="flex-wrap gap-2">
             <Button variant="outline" onClick={() => setSelectedOrder(null)}>
               Chiudi
             </Button>
+            {selectedOrder && ['approved', 'shipped', 'received'].includes(selectedOrder.status) && (
+              <Button
+                variant="outline"
+                onClick={() => window.open(`/api/invoices/by-order/${selectedOrder.orderNumber}/pdf`, "_blank")}
+                data-testid="button-download-invoice"
+              >
+                <Download className="h-4 w-4 mr-2" />
+                Scarica Fattura
+              </Button>
+            )}
             {selectedOrder?.status === 'shipped' && (
               <Button 
                 onClick={() => confirmReceiptMutation.mutate(selectedOrder.id)}

@@ -12957,7 +12957,7 @@ export function registerRoutes(app: Express): Server {
       if (req.user.role === 'customer' && invoice.customerId !== req.user.id) {
         return res.status(403).send("Access denied");
       }
-      if ((req.user.role === 'reseller' || req.user.role === 'sub_reseller') && invoice.resellerId !== req.user.id) {
+      if ((req.user.role === 'reseller' || req.user.role === 'sub_reseller') && invoice.resellerId !== req.user.id && invoice.customerId !== req.user.id) {
         return res.status(403).send("Access denied");
       }
       
@@ -12983,6 +12983,92 @@ export function registerRoutes(app: Express): Server {
       res.status(500).send(error.message);
     }
   });
+  // GET /api/invoices/by-order/:orderNumber/pdf - Download invoice PDF by order number
+  app.get("/api/invoices/by-order/:orderNumber/pdf", requireAuth, async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const orderNumber = req.params.orderNumber;
+      
+      // Find invoice by order number in notes
+      const allInvoices = await storage.listInvoices({ source: 'b2b' });
+      const invoice = allInvoices.find(inv => inv.notes?.includes(orderNumber));
+      
+      if (!invoice) {
+        return res.status(404).send("Fattura non trovata per questo ordine");
+      }
+      
+      // Access control: allow resellerId (seller) or customerId (buyer)
+      if ((req.user.role === 'reseller' || req.user.role === 'sub_reseller') && 
+          invoice.resellerId !== req.user.id && invoice.customerId !== req.user.id) {
+        return res.status(403).send("Access denied");
+      }
+      
+      // Get issuer and customer data
+      let issuer = { name: "MonkeyPlan", address: "", city: "", postalCode: "", province: "", vatNumber: "", fiscalCode: "", phone: "", email: "", pec: "", iban: "" };
+      let customer = { name: "Cliente", address: "", city: "", postalCode: "", province: "", vatNumber: "", fiscalCode: "", email: "" };
+      
+      if (invoice.resellerId) {
+        const reseller = await storage.getUser(invoice.resellerId);
+        if (reseller) {
+          issuer.name = reseller.fullName || reseller.username;
+          issuer.email = reseller.email || "";
+          issuer.phone = reseller.phone || "";
+          const billing = await storage.getBillingDataByUserId(reseller.id);
+          if (billing) {
+            issuer.name = billing.companyName || issuer.name;
+            issuer.address = billing.address || "";
+            issuer.city = billing.city || "";
+            issuer.postalCode = billing.zipCode || "";
+            issuer.vatNumber = billing.vatNumber || "";
+            issuer.fiscalCode = billing.fiscalCode || "";
+            issuer.pec = billing.pec || "";
+            issuer.iban = billing.iban || "";
+          }
+        }
+      }
+      
+      if (invoice.customerId) {
+        const cust = await storage.getUser(invoice.customerId);
+        if (cust) {
+          customer.name = cust.fullName || cust.username;
+          customer.email = cust.email || "";
+          const billing = await storage.getBillingDataByUserId(cust.id);
+          if (billing) {
+            customer.name = billing.companyName || customer.name;
+            customer.address = billing.address || "";
+            customer.city = billing.city || "";
+            customer.postalCode = billing.zipCode || "";
+            customer.vatNumber = billing.vatNumber || "";
+            customer.fiscalCode = billing.fiscalCode || "";
+          }
+        }
+      }
+      
+      // Get order items
+      let items: Array<{ description: string; quantity: number; unitPrice: number; total: number }> = [];
+      const order = await storage.getMarketplaceOrderByNumber(orderNumber);
+      if (order) {
+        const orderItems = await storage.listMarketplaceOrderItems(order.id);
+        items = orderItems.map(item => ({
+          description: item.productName + (item.productSku ? ` (${item.productSku})` : ''),
+          quantity: item.quantity,
+          unitPrice: item.unitPrice,
+          total: item.totalPrice,
+        }));
+      }
+      
+      const pdfBuffer = await generateInvoicePdf({ invoice, issuer, customer, items });
+      
+      res.setHeader("Content-Type", "application/pdf");
+      res.setHeader("Content-Disposition", `attachment; filename="${invoice.invoiceNumber}.pdf"`);
+      res.send(pdfBuffer);
+    } catch (error: any) {
+      console.error("Error generating invoice PDF by order:", error);
+      res.status(500).send(error.message);
+    }
+  });
+
 
   // GET /api/invoices/:id/pdf - Download invoice PDF
   app.get("/api/invoices/:id/pdf", requireAuth, async (req, res) => {
@@ -12998,7 +13084,7 @@ export function registerRoutes(app: Express): Server {
       if (req.user.role === 'customer' && invoice.customerId !== req.user.id) {
         return res.status(403).send("Access denied");
       }
-      if ((req.user.role === 'reseller' || req.user.role === 'sub_reseller') && invoice.resellerId !== req.user.id) {
+      if ((req.user.role === 'reseller' || req.user.role === 'sub_reseller') && invoice.resellerId !== req.user.id && invoice.customerId !== req.user.id) {
         return res.status(403).send("Access denied");
       }
       if (req.user.role === 'reseller_staff') {
