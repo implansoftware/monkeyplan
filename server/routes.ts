@@ -30882,6 +30882,26 @@ export function registerRoutes(app: Express): Server {
         deliveredAt: new Date(),
       });
       
+      // Incrementa stock nel magazzino del centro riparazione
+      const rcWarehouse = await storage.getWarehouseByOwner('repair_center', req.user.repairCenterId);
+      if (rcWarehouse) {
+        const orderItems = await storage.listRepairCenterPurchaseOrderItems(order.id);
+        for (const item of orderItems) {
+          await storage.updateWarehouseStockQuantity(rcWarehouse.id, item.productId, item.quantity);
+          await storage.createWarehouseMovement({
+            warehouseId: rcWarehouse.id,
+            productId: item.productId,
+            movementType: 'acquisto_b2b',
+            quantity: item.quantity,
+            referenceType: 'rc_b2b_order',
+            referenceId: order.id,
+            requestedBy: req.user.id,
+            createdBy: req.user.id,
+          });
+        }
+      }
+
+      
       res.json(updated);
     } catch (error: any) {
       res.status(500).json({ error: error.message });
@@ -31051,6 +31071,25 @@ export function registerRoutes(app: Express): Server {
       });
       
       // Auto-create invoice for reseller when shipping RC B2B order
+      // Decrementa stock dal magazzino del reseller
+      const resellerWarehouse = await storage.getWarehouseByOwner('reseller', req.user.id);
+      if (resellerWarehouse) {
+        const orderItems = await storage.listRepairCenterPurchaseOrderItems(order.id);
+        for (const item of orderItems) {
+          await storage.updateWarehouseStockQuantity(resellerWarehouse.id, item.productId, -item.quantity);
+          await storage.createWarehouseMovement({
+            warehouseId: resellerWarehouse.id,
+            productId: item.productId,
+            movementType: 'vendita_b2b',
+            quantity: -item.quantity,
+            referenceType: 'rc_b2b_order',
+            referenceId: order.id,
+            requestedBy: req.user.id,
+            createdBy: req.user.id,
+          });
+        }
+      }
+
       let invoice = null;
       if (!req.user.parentResellerId || req.user.hasAutonomousInvoicing) {
         // Main resellers and autonomous sub-resellers get auto-invoices
