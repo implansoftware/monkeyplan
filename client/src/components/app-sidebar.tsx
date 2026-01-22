@@ -578,37 +578,49 @@ export function AppSidebar() {
 
   return (
     <Sidebar>
-      <SidebarHeader className="px-4 py-3 border-b border-sidebar-border/50">
+      <SidebarHeader className="px-3 py-4">
         {parentReseller?.logoUrl ? (
-          <div className="flex items-center gap-3">
-            <Avatar className="h-10 w-10 rounded-xl shadow-sm">
-              <AvatarImage src={parentReseller.logoUrl} alt={parentReseller.ragioneSociale || parentReseller.fullName} className="object-contain" />
-              <AvatarFallback className="rounded-xl bg-gradient-to-br from-primary to-primary/80 text-primary-foreground text-sm font-semibold">
-                {getInitials(parentReseller.ragioneSociale || parentReseller.fullName)}
-              </AvatarFallback>
-            </Avatar>
+          <div className="flex items-center gap-3 p-3 rounded-xl bg-gradient-to-br from-primary/10 via-primary/5 to-transparent border border-primary/10">
+            <div className="relative">
+              <div className="absolute inset-0 bg-gradient-to-br from-primary/30 to-primary/10 rounded-xl blur-sm" />
+              <Avatar className="relative h-11 w-11 rounded-xl shadow-lg ring-2 ring-primary/20">
+                <AvatarImage src={parentReseller.logoUrl} alt={parentReseller.ragioneSociale || parentReseller.fullName} className="object-contain" />
+                <AvatarFallback className="rounded-xl bg-gradient-to-br from-primary to-primary/70 text-primary-foreground text-sm font-bold">
+                  {getInitials(parentReseller.ragioneSociale || parentReseller.fullName)}
+                </AvatarFallback>
+              </Avatar>
+            </div>
             <div className="min-w-0 flex-1">
-              <span className="font-semibold text-sm block truncate">
+              <span className="font-bold text-sm block truncate">
                 {parentReseller.ragioneSociale || parentReseller.fullName}
               </span>
-              <p className="text-xs text-muted-foreground capitalize">
-                {user.role.replace("_", " ")}
-              </p>
+              <div className="flex items-center gap-1.5 mt-0.5">
+                <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                <p className="text-xs text-muted-foreground capitalize">
+                  {user.role.replace("_", " ")}
+                </p>
+              </div>
             </div>
           </div>
         ) : (
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-primary/80 text-primary-foreground shadow-sm">
-              <Wrench className="h-5 w-5" />
+          <div className="flex items-center gap-3 p-3 rounded-xl bg-gradient-to-br from-primary/10 via-primary/5 to-transparent border border-primary/10">
+            <div className="relative">
+              <div className="absolute inset-0 bg-gradient-to-br from-primary/40 to-primary/20 rounded-xl blur-sm" />
+              <div className="relative flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-primary/80 text-primary-foreground shadow-lg ring-2 ring-primary/30">
+                <Wrench className="h-5 w-5" />
+              </div>
             </div>
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-2">
                 <span className="font-bold text-sm tracking-tight">MonkeyPlan</span>
-                <span className="text-[10px] text-primary-foreground font-semibold px-1.5 py-0.5 rounded-md bg-primary shadow-sm">Beta v.23.5</span>
+                <span className="text-[10px] text-white font-semibold px-2 py-0.5 rounded-full bg-gradient-to-r from-primary to-primary/80 shadow-sm">Beta v.23.5</span>
               </div>
-              <p className="text-xs text-muted-foreground capitalize">
-                {user.role.replace("_", " ")}
-              </p>
+              <div className="flex items-center gap-1.5 mt-0.5">
+                <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                <p className="text-xs text-muted-foreground capitalize">
+                  {user.role.replace("_", " ")}
+                </p>
+              </div>
             </div>
           </div>
         )}
@@ -638,7 +650,7 @@ export function AppSidebar() {
                         <SidebarMenuButton 
                           asChild 
                           isActive={isActive} 
-                          className={`px-3 py-2.5 rounded-lg transition-all duration-200 ${isActive ? "bg-primary text-primary-foreground shadow-sm" : "hover:bg-sidebar-accent"}`}
+                          className={`px-3 py-2.5 rounded-xl transition-all duration-200 ${isActive ? "bg-gradient-to-r from-primary to-primary/90 text-primary-foreground shadow-md" : "hover:bg-sidebar-accent/70"}`}
                         >
                           <Link 
                             href={item.url} 
@@ -662,10 +674,12 @@ export function AppSidebar() {
               <Collapsible open={isOpen} onOpenChange={(open) => setGroupOpen(group, open)}>
                 <CollapsibleTrigger asChild>
                   <SidebarMenuButton 
-                    className={`w-full px-3 py-2.5 rounded-lg transition-all duration-200 ${hasActiveItem && !isOpen ? "bg-sidebar-accent/50" : "hover:bg-sidebar-accent/50"}`}
+                    className={`w-full px-3 py-2.5 rounded-xl transition-all duration-200 ${hasActiveItem && !isOpen ? "bg-primary/10 border border-primary/20" : "hover:bg-sidebar-accent/60"}`}
                     data-testid={`button-group-${group.toLowerCase().replace(/\s+/g, "-")}`}
                   >
-                    <GroupIcon className={`h-4 w-4 ${hasActiveItem ? "text-primary" : "text-muted-foreground"}`} />
+                    <div className={`flex h-6 w-6 items-center justify-center rounded-lg ${hasActiveItem ? "bg-primary/15" : "bg-sidebar-accent/50"}`}>
+                      <GroupIcon className={`h-3.5 w-3.5 ${hasActiveItem ? "text-primary" : "text-muted-foreground"}`} />
+                    </div>
                     <span className={`flex-1 text-left font-medium ${hasActiveItem ? "text-foreground" : "text-muted-foreground"}`}>
                       {group}
                     </span>
@@ -706,7 +720,7 @@ export function AppSidebar() {
                 </CollapsibleTrigger>
                 <CollapsibleContent>
                   <SidebarGroupContent>
-                    <SidebarMenu className="ml-6 mt-1 border-l-2 border-sidebar-border/30">
+                    <SidebarMenu className="ml-7 mt-1.5 border-l border-sidebar-border/40 pl-0.5">
                       {groupItems.map((item) => {
                         const isActive = location === item.url || location.startsWith(item.url + "/");
                         const showTransferBadge = item.url === "/reseller/transfer-requests" && pendingTransferRequestsCount > 0;
@@ -719,15 +733,15 @@ export function AppSidebar() {
                             <SidebarMenuButton 
                               asChild 
                               isActive={isActive} 
-                              className={`pl-4 py-2 rounded-md transition-all duration-150 ${isActive ? "bg-primary/10 text-primary font-medium" : "text-muted-foreground hover:text-foreground hover:bg-sidebar-accent/50"}`}
+                              className={`pl-3 py-2 rounded-lg transition-all duration-150 ${isActive ? "bg-primary/10 text-primary font-medium border-l-2 border-primary -ml-[3px] pl-[14px]" : "text-muted-foreground hover:text-foreground hover:bg-sidebar-accent/50"}`}
                             >
                               <Link 
                                 href={item.url} 
                                 onClick={handleLinkClick}
                                 data-testid={`link-${item.title.toLowerCase().replace(/\s+/g, "-")}`}
                               >
-                                <item.icon className={`h-4 w-4 ${isActive ? "text-primary" : ""}`} />
-                                <span className="flex-1">{item.title}</span>
+                                <item.icon className={`h-3.5 w-3.5 ${isActive ? "text-primary" : ""}`} />
+                                <span className="flex-1 text-[13px]">{item.title}</span>
                                 {showTransferBadge && (
                                   <span 
                                     className="flex h-5 min-w-5 items-center justify-center rounded-full bg-destructive text-destructive-foreground text-xs font-medium px-1.5"
@@ -832,21 +846,24 @@ export function AppSidebar() {
         })}
       </SidebarContent>
 
-      <SidebarFooter className="px-3 py-3 border-t border-sidebar-border/50">
-        <div className="flex items-center gap-3 p-2 rounded-lg bg-sidebar-accent/30 hover:bg-sidebar-accent/50 transition-colors duration-200">
-          <Avatar className="h-9 w-9 shadow-sm">
-            <AvatarFallback className="text-xs font-semibold bg-gradient-to-br from-primary/20 to-primary/10 text-primary">
-              {getInitials(user.fullName)}
-            </AvatarFallback>
-          </Avatar>
+      <SidebarFooter className="px-3 py-3">
+        <div className="flex items-center gap-3 p-3 rounded-xl bg-gradient-to-br from-sidebar-accent/50 via-sidebar-accent/30 to-transparent border border-sidebar-border/30 hover:border-sidebar-border/50 transition-all duration-200">
+          <div className="relative">
+            <Avatar className="h-10 w-10 shadow-md ring-2 ring-primary/20">
+              <AvatarFallback className="text-xs font-bold bg-gradient-to-br from-primary/30 to-primary/10 text-primary">
+                {getInitials(user.fullName)}
+              </AvatarFallback>
+            </Avatar>
+            <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-emerald-500 border-2 border-sidebar" />
+          </div>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium truncate">{user.fullName}</p>
+            <p className="text-sm font-semibold truncate">{user.fullName}</p>
             <p className="text-xs text-muted-foreground truncate">{user.email}</p>
           </div>
           <Button
             variant="ghost"
             size="icon"
-            className="h-8 w-8 flex-shrink-0 rounded-lg hover:bg-destructive/10 hover:text-destructive"
+            className="h-9 w-9 flex-shrink-0 rounded-xl hover:bg-destructive/10 hover:text-destructive transition-colors duration-200"
             onClick={() => logoutMutation.mutate()}
             disabled={logoutMutation.isPending}
             data-testid="button-logout"
