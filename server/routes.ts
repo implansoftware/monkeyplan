@@ -49,6 +49,7 @@ import { ObjectStorageService, objectStorageClient, parseObjectPath, signObjectU
 import { canAccessObject, ObjectPermission } from "./objectAcl";
 import { generateAndStoreReturnDocuments, getSignedDownloadUrl, generateTransferDDT, TransferDdtData } from "./services/shippingDocuments";
 import { generatePosReceiptPdf } from "./services/posReceipt";
+import { generateInvoicePdf } from "./services/invoicePdf";
 import { calculateRepairPriority } from "./helpers/priorityCalculation";
 import { db } from "./db";
 import { sql, eq, and, inArray, isNull } from "drizzle-orm";
@@ -12941,6 +12942,88 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+
+  // GET /api/invoices/:id/pdf - Download invoice PDF
+  app.get("/api/invoices/:id/pdf", requireAuth, async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const invoice = await storage.getInvoice(req.params.id);
+      if (!invoice) {
+        return res.status(404).send("Invoice not found");
+      }
+      
+      // Access control
+      if (req.user.role === 'customer' && invoice.customerId !== req.user.id) {
+        return res.status(403).send("Access denied");
+      }
+      if ((req.user.role === 'reseller' || req.user.role === 'sub_reseller') && invoice.resellerId !== req.user.id) {
+        return res.status(403).send("Access denied");
+      }
+      if (req.user.role === 'reseller_staff') {
+        const hasPermission = await storage.checkStaffPermission(req.user.id, 'invoices', 'read');
+        if (!hasPermission || invoice.resellerId !== req.user.resellerId) {
+          return res.status(403).send("Access denied");
+        }
+      }
+      
+      // Get issuer (reseller) and customer data
+      let issuer = { name: "MonkeyPlan", address: "", city: "", postalCode: "", province: "", vatNumber: "", fiscalCode: "", phone: "", email: "", pec: "", iban: "" };
+      let customer = { name: "Cliente", address: "", city: "", postalCode: "", province: "", vatNumber: "", fiscalCode: "", email: "" };
+      
+      if (invoice.resellerId) {
+        const reseller = await storage.getUser(invoice.resellerId);
+        if (reseller) {
+          issuer.name = reseller.fullName || reseller.username;
+          issuer.email = reseller.email || "";
+          issuer.phone = reseller.phone || "";
+          
+          const billing = await storage.getBillingData(reseller.id);
+          if (billing) {
+            issuer.name = billing.companyName || issuer.name;
+            issuer.address = billing.address || "";
+            issuer.city = billing.city || "";
+            issuer.postalCode = billing.zipCode || "";
+            issuer.vatNumber = billing.vatNumber || "";
+            issuer.fiscalCode = billing.fiscalCode || "";
+            issuer.pec = billing.pec || "";
+            issuer.iban = billing.iban || "";
+          }
+        }
+      }
+      
+      if (invoice.customerId) {
+        const cust = await storage.getUser(invoice.customerId);
+        if (cust) {
+          customer.name = cust.fullName || cust.username;
+          customer.email = cust.email || "";
+          
+          const billing = await storage.getBillingData(cust.id);
+          if (billing) {
+            customer.name = billing.companyName || customer.name;
+            customer.address = billing.address || "";
+            customer.city = billing.city || "";
+            customer.postalCode = billing.zipCode || "";
+            customer.vatNumber = billing.vatNumber || "";
+            customer.fiscalCode = billing.fiscalCode || "";
+          }
+        }
+      }
+      
+      const pdfBuffer = await generateInvoicePdf({
+        invoice,
+        issuer,
+        customer,
+      });
+      
+      res.setHeader("Content-Type", "application/pdf");
+      res.setHeader("Content-Disposition", `attachment; filename="${invoice.invoiceNumber}.pdf"`);
+      res.send(pdfBuffer);
+    } catch (error: any) {
+      console.error("Error generating invoice PDF:", error);
+      res.status(500).send(error.message);
+    }
+  });
   app.post("/api/invoices", requireAuth, async (req, res) => {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");

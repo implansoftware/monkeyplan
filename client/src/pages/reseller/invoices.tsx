@@ -19,6 +19,7 @@ import { it } from "date-fns/locale";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import type { DateRange } from "react-day-picker";
+import { InvoiceDetailDialog } from "@/components/InvoiceDetailDialog";
 
 export default function ResellerInvoices() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -28,6 +29,7 @@ export default function ResellerInvoices() {
   const [isExporting, setIsExporting] = useState(false);
   const [activeTab, setActiveTab] = useState("monkeyplan");
   const [selectedSibillDoc, setSelectedSibillDoc] = useState<SibillDocument | null>(null);
+  const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -351,6 +353,7 @@ export default function ResellerInvoices() {
                       <TableHead>Metodo</TableHead>
                       <TableHead>Scadenza</TableHead>
                       <TableHead>Stato</TableHead>
+                      <TableHead className="text-right">Azioni</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -373,6 +376,16 @@ export default function ResellerInvoices() {
                             : "N/D"}
                         </TableCell>
                         <TableCell>{getStatusBadge(invoice.paymentStatus)}</TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex justify-end gap-1">
+                            <Button size="icon" variant="ghost" onClick={() => setSelectedInvoice(invoice)} data-testid={`button-view-invoice-${invoice.id}`}>
+                              <Eye className="h-4 w-4" />
+                            </Button>
+                            <Button size="icon" variant="ghost" onClick={() => window.open(`/api/invoices/${invoice.id}/pdf`, "_blank")} data-testid={`button-download-invoice-${invoice.id}`}>
+                              <Download className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
@@ -472,6 +485,12 @@ export default function ResellerInvoices() {
             </DialogDescription>
           </DialogHeader>
           
+      <InvoiceDetailDialog
+        invoice={selectedInvoice}
+        open={!!selectedInvoice}
+        onOpenChange={(open) => !open && setSelectedInvoice(null)}
+      />
+
           {selectedSibillDoc && (
             <div className="space-y-6">
               <div className="grid grid-cols-2 gap-4">
