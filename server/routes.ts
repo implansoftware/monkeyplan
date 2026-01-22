@@ -29297,6 +29297,25 @@ export function registerRoutes(app: Express): Server {
       }
       
       const createdItems = await storage.listResellerPurchaseOrderItems(order.id);
+      
+      // Notifica agli Admin
+      const adminUsers = await db.select().from(users).where(eq(users.role, "admin"));
+      for (const admin of adminUsers) {
+        await storage.createNotification({
+          userId: admin.id,
+          type: "message",
+          title: "Nuovo ordine B2B",
+          message: `Ordine ${order.orderNumber} da ${req.user.companyName || req.user.username}`,
+          data: JSON.stringify({ orderId: order.id, orderNumber: order.orderNumber })
+        });
+        broadcastNotification(admin.id, {
+          type: "notification",
+          title: "Nuovo ordine B2B",
+          message: `Ordine ${order.orderNumber} da ${req.user.companyName || req.user.username}`,
+          orderId: order.id
+        });
+      }
+
       res.status(201).json({ ...order, items: createdItems });
     } catch (error: any) {
       res.status(500).json({ error: error.message });
