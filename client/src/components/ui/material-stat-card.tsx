@@ -1,5 +1,6 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { LucideIcon } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 
 type GradientVariant = "primary" | "success" | "warning" | "info" | "danger" | "purple" | "dark";
@@ -27,6 +28,8 @@ interface MaterialStatCardProps {
   };
   onClick?: () => void;
   className?: string;
+  isLoading?: boolean;
+  "data-testid"?: string;
 }
 
 export function MaterialStatCard({
@@ -39,21 +42,28 @@ export function MaterialStatCard({
   trend,
   onClick,
   className,
+  isLoading = false,
+  "data-testid": testId,
 }: MaterialStatCardProps) {
   return (
     <Card 
       className={cn(
-        "relative overflow-visible border-0 bg-card shadow-md transition-all duration-200",
-        onClick && "cursor-pointer hover:shadow-lg",
+        "relative overflow-visible border-0 bg-card shadow-md transition-all duration-200 hover-elevate",
+        onClick && "cursor-pointer",
         className
       )}
       onClick={onClick}
+      data-testid={testId}
     >
       <CardContent className="p-4 pt-2">
         <div className="flex items-start justify-between">
           <div className="flex-1 pt-6">
             <p className="text-sm font-medium text-muted-foreground">{title}</p>
-            <h3 className="text-2xl font-bold mt-1 text-foreground">{value}</h3>
+            {isLoading ? (
+              <Skeleton className="h-8 w-20 mt-1" />
+            ) : (
+              <h3 className="text-2xl font-bold mt-1 text-foreground">{value}</h3>
+            )}
           </div>
           <div 
             className={cn(

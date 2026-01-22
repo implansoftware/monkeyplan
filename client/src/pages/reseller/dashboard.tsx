@@ -1,5 +1,6 @@
 import { useState, useMemo, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { MaterialStatCard } from "@/components/ui/material-stat-card";
 import { useQuery } from "@tanstack/react-query";
 import { ShoppingCart, Users, TrendingUp, FileText, Package, AlertCircle, Zap, ArrowRightLeft, Network, ChevronRight, ExternalLink, LayoutDashboard, Store, Briefcase, Euro, Clock, Stethoscope, AlertTriangle, PackageX, ClipboardList } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -422,109 +423,57 @@ export default function ResellerDashboard() {
         </Card>
       )}
 
-      {/* Main KPI Cards - Dynamically ordered */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      {/* Main KPI Cards - Material Dashboard Style */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 pt-4">
         {[
           { id: "stats-repairs", render: () => (
-            <Card key="stats-repairs" className="relative overflow-hidden group hover:shadow-md transition-shadow" data-testid="card-kpi-repairs">
-              <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent" />
-              <CardContent className="relative pt-5 pb-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1">Riparazioni Attive</p>
-                    {isLoading ? (
-                      <Skeleton className="h-9 w-16" />
-                    ) : (
-                      <p className="text-3xl font-bold tabular-nums" data-testid="text-active-repairs">
-                        {stats?.overview?.activeRepairs ?? 0}
-                      </p>
-                    )}
-                    <div className="flex items-center gap-1 mt-1">
-                      <TrendingUp className="h-3 w-3 text-emerald-500" />
-                      <span className="text-xs text-emerald-600 dark:text-emerald-400 font-medium">
-                        {stats?.overview?.totalRepairs ?? 0} totali
-                      </span>
-                    </div>
-                  </div>
-                  <div className="h-12 w-12 rounded-xl bg-primary text-primary-foreground flex items-center justify-center shadow-lg shadow-primary/20">
-                    <Wrench className="h-6 w-6" />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+            <MaterialStatCard
+              key="stats-repairs"
+              title="Riparazioni Attive"
+              value={stats?.overview?.activeRepairs ?? 0}
+              subtitle={`${stats?.overview?.totalRepairs ?? 0} totali`}
+              subtitleIcon={TrendingUp}
+              icon={Wrench}
+              gradient="primary"
+              isLoading={isLoading}
+              data-testid="card-kpi-repairs"
+            />
           )},
           { id: "stats-users", render: () => (
-            <Card key="stats-users" className="relative overflow-hidden group hover:shadow-md transition-shadow" data-testid="card-kpi-customers">
-              <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/5 to-transparent" />
-              <CardContent className="relative pt-5 pb-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1">Clienti</p>
-                    {isLoading ? (
-                      <Skeleton className="h-9 w-16" />
-                    ) : (
-                      <p className="text-3xl font-bold tabular-nums text-emerald-600 dark:text-emerald-400" data-testid="text-customers">
-                        {stats?.overview?.totalCustomers ?? 0}
-                      </p>
-                    )}
-                    <p className="text-xs text-muted-foreground mt-1">Gestiti attivamente</p>
-                  </div>
-                  <div className="h-12 w-12 rounded-xl bg-emerald-500 text-white flex items-center justify-center shadow-lg shadow-emerald-500/20">
-                    <Users className="h-6 w-6" />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+            <MaterialStatCard
+              key="stats-users"
+              title="Clienti"
+              value={stats?.overview?.totalCustomers ?? 0}
+              subtitle="Gestiti attivamente"
+              icon={Users}
+              gradient="success"
+              isLoading={isLoading}
+              data-testid="card-kpi-customers"
+            />
           )},
           { id: "stats-invoices", render: () => (
-            <Card key="stats-invoices" className="relative overflow-hidden group hover:shadow-md transition-shadow" data-testid="card-kpi-revenue">
-              <div className="absolute inset-0 bg-gradient-to-br from-amber-500/5 to-transparent" />
-              <CardContent className="relative pt-5 pb-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1">Fatturato</p>
-                    {isLoading ? (
-                      <Skeleton className="h-9 w-24" />
-                    ) : (
-                      <p className="text-2xl font-bold tabular-nums text-amber-600 dark:text-amber-400" data-testid="text-revenue">
-                        {formatCurrency(stats?.overview?.totalRevenue ?? 0)}
-                      </p>
-                    )}
-                    <p className="text-xs text-muted-foreground mt-1">Da riparazioni</p>
-                  </div>
-                  <div className="h-12 w-12 rounded-xl bg-amber-500 text-white flex items-center justify-center shadow-lg shadow-amber-500/20">
-                    <TrendingUp className="h-6 w-6" />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+            <MaterialStatCard
+              key="stats-invoices"
+              title="Fatturato"
+              value={formatCurrency(stats?.overview?.totalRevenue ?? 0)}
+              subtitle="Da riparazioni"
+              icon={TrendingUp}
+              gradient="warning"
+              isLoading={isLoading}
+              data-testid="card-kpi-revenue"
+            />
           )},
           { id: "stats-inventory", render: () => (
-            <Card key="stats-inventory" className="relative overflow-hidden group hover:shadow-md transition-shadow" data-testid="card-kpi-stock">
-              <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-transparent" />
-              <CardContent className="relative pt-5 pb-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1">Stock</p>
-                    {isLoading ? (
-                      <Skeleton className="h-9 w-16" />
-                    ) : (
-                      <p className="text-3xl font-bold tabular-nums text-blue-600 dark:text-blue-400" data-testid="text-stock">
-                        {stats?.warehouse?.totalStock ?? 0}
-                      </p>
-                    )}
-                    <p className="text-xs text-muted-foreground mt-1">
-                      {stats?.warehouse?.lowStockItems ? (
-                        <span className="text-amber-600 dark:text-amber-400">{stats.warehouse.lowStockItems} sotto scorta</span>
-                      ) : "Articoli in magazzino"}
-                    </p>
-                  </div>
-                  <div className="h-12 w-12 rounded-xl bg-blue-500 text-white flex items-center justify-center shadow-lg shadow-blue-500/20">
-                    <Warehouse className="h-6 w-6" />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+            <MaterialStatCard
+              key="stats-inventory"
+              title="Stock Magazzino"
+              value={stats?.warehouse?.totalStock ?? 0}
+              subtitle={stats?.warehouse?.lowStockItems ? `${stats.warehouse.lowStockItems} sotto scorta` : "Articoli totali"}
+              icon={Warehouse}
+              gradient="info"
+              isLoading={isLoading}
+              data-testid="card-kpi-stock"
+            />
           )},
         ]
           .filter(w => isWidgetVisible(w.id))
