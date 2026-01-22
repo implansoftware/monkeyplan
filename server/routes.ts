@@ -30839,6 +30839,22 @@ export function registerRoutes(app: Express): Server {
       }
       
       const createdItems = await storage.listRepairCenterPurchaseOrderItems(order.id);
+      // Notifica al rivenditore
+      const rcInfo = await storage.getRepairCenter(req.user.repairCenterId);
+      await storage.createNotification({
+        userId: repairCenter.resellerId,
+        type: "message",
+        title: "Nuovo ordine da Centro Riparazione",
+        message: `Ordine ${order.orderNumber} da ${rcInfo?.name || "Centro Riparazione"}`,
+        data: JSON.stringify({ orderId: order.id, orderNumber: order.orderNumber })
+      });
+      broadcastNotification(repairCenter.resellerId, {
+        type: "notification",
+        title: "Nuovo ordine da Centro Riparazione",
+        message: `Ordine ${order.orderNumber} da ${rcInfo?.name || "Centro Riparazione"}`,
+        orderId: order.id
+      });
+
       res.status(201).json({ ...order, items: createdItems });
     } catch (error: any) {
       res.status(500).json({ error: error.message });
