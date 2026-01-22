@@ -12,7 +12,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
-import { Store, Search, ShoppingCart, Plus, Minus, Trash2, Send, Package, Users } from "lucide-react";
+import { Store, Search, ShoppingCart, Plus, Minus, Trash2, Send, Package, Users, Building2, ArrowRight } from "lucide-react";
+import { Link } from "wouter";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 
@@ -181,8 +182,8 @@ export default function ResellerMarketplace() {
               <Store className="h-5 w-5" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold tracking-tight">Marketplace</h1>
-              <p className="text-sm text-muted-foreground">Acquista prodotti da altri rivenditori</p>
+              <h1 className="text-2xl font-bold tracking-tight">Marketplace tra Rivenditori</h1>
+              <p className="text-sm text-muted-foreground">Acquista prodotti pubblicati da altri rivenditori della rete</p>
             </div>
           </div>
           <div className="flex items-center gap-4">
@@ -214,13 +215,38 @@ export default function ResellerMarketplace() {
         </div>
       </div>
 
+      <Card className="bg-emerald-50 dark:bg-emerald-950/30 border-emerald-200 dark:border-emerald-800">
+        <CardContent className="py-4">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div className="flex items-start gap-3">
+              <Store className="h-5 w-5 text-emerald-600 dark:text-emerald-400 mt-0.5 shrink-0" />
+              <div>
+                <p className="text-sm font-medium text-emerald-900 dark:text-emerald-100">
+                  Stai acquistando da altri rivenditori della rete
+                </p>
+                <p className="text-xs text-emerald-700 dark:text-emerald-300 mt-0.5">
+                  Qui trovi i prodotti pubblicati da altri rivenditori che hanno stock disponibile.
+                </p>
+              </div>
+            </div>
+            <Link href="/reseller/b2b-catalog" data-testid="link-to-b2b-catalog">
+              <Button variant="outline" size="sm" className="border-emerald-300 dark:border-emerald-700 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-900/50">
+                <Building2 className="h-4 w-4 mr-2" />
+                Vai al Catalogo Admin
+                <ArrowRight className="h-4 w-4 ml-2" />
+              </Button>
+            </Link>
+          </div>
+        </CardContent>
+      </Card>
+
       {Object.keys(groupedBySeller).length === 0 ? (
         <Card>
           <CardContent className="py-12 text-center">
             <Store className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
             <h3 className="text-lg font-semibold mb-2">Nessun prodotto disponibile</h3>
             <p className="text-muted-foreground">
-              Al momento non ci sono prodotti disponibili nel marketplace.
+              Al momento non ci sono prodotti pubblicati da altri rivenditori nel marketplace.
             </p>
           </CardContent>
         </Card>

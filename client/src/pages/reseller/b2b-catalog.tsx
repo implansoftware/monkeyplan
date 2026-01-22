@@ -13,7 +13,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
-import { Package, Search, ShoppingCart, Plus, Minus, Trash2, CreditCard, Send, Box, Building2 } from "lucide-react";
+import { Package, Search, ShoppingCart, Plus, Minus, Trash2, CreditCard, Send, Box, Building2, Store, ArrowRight } from "lucide-react";
+import { Link } from "wouter";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 
@@ -152,8 +153,8 @@ export default function ResellerB2BCatalog() {
               <Building2 className="h-5 w-5" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold">Catalogo B2B</h1>
-              <p className="text-muted-foreground text-sm">Prodotti per ordini B2B</p>
+              <h1 className="text-2xl font-bold">Catalogo B2B Admin</h1>
+              <p className="text-muted-foreground text-sm">Ordina prodotti direttamente dall'Admin (fornitore centrale)</p>
             </div>
           </div>
           <div className="flex items-center gap-4">
@@ -185,11 +186,36 @@ export default function ResellerB2BCatalog() {
         </div>
       </div>
 
+      <Card className="bg-blue-50 dark:bg-blue-950/30 border-blue-200 dark:border-blue-800">
+        <CardContent className="py-4">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div className="flex items-start gap-3">
+              <Building2 className="h-5 w-5 text-blue-600 dark:text-blue-400 mt-0.5 shrink-0" />
+              <div>
+                <p className="text-sm font-medium text-blue-900 dark:text-blue-100">
+                  Stai ordinando dall'Admin (fornitore centrale)
+                </p>
+                <p className="text-xs text-blue-700 dark:text-blue-300 mt-0.5">
+                  Qui trovi i prodotti messi a disposizione dall'amministratore della piattaforma.
+                </p>
+              </div>
+            </div>
+            <Link href="/reseller/marketplace" data-testid="link-to-marketplace">
+              <Button variant="outline" size="sm" className="border-blue-300 dark:border-blue-700 text-blue-700 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-blue-900/50">
+                <Store className="h-4 w-4 mr-2" />
+                Vai al Marketplace Rivenditori
+                <ArrowRight className="h-4 w-4 ml-2" />
+              </Button>
+            </Link>
+          </div>
+        </CardContent>
+      </Card>
+
       {filteredCatalog.length === 0 ? (
         <Card>
           <CardContent className="py-12 text-center">
             <Package className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-            <p className="text-muted-foreground">Nessun prodotto disponibile nel catalogo B2B</p>
+            <p className="text-muted-foreground">Nessun prodotto disponibile nel catalogo B2B Admin</p>
           </CardContent>
         </Card>
       ) : (
