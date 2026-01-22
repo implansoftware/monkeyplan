@@ -3424,7 +3424,7 @@ export class DatabaseStorage implements IStorage {
     });
   }
 
-  // Reseller Inventory - Get own products with stock in own centers
+  // Reseller Inventory - Get own products with stock in own warehouses and centers
   async getResellerProductsWithStock(resellerId: string): Promise<Array<{ 
     product: Product; 
     stockByCenter: Array<{ repairCenterId: string; repairCenterName: string; quantity: number }>;
@@ -3443,48 +3443,75 @@ export class DatabaseStorage implements IStorage {
       return [];
     }
     
-    // Get reseller's own repair centers
+    const productIds = resellerProducts.map(p => p.id);
+    
+    // Get reseller's warehouses
+    const resellerWarehouses = await db.select()
+      .from(warehouses)
+      .where(eq(warehouses.ownerId, resellerId));
+    
+    // Get reseller's repair centers
     const resellerCenters = await db.select()
       .from(repairCenters)
       .where(eq(repairCenters.resellerId, resellerId));
     
-    if (resellerCenters.length === 0) {
-      // No centers, return products with empty stock
-      return resellerProducts.map(product => ({
-        product,
-        stockByCenter: [],
-        totalStock: 0,
-      }));
+    // Build stock map combining warehouse and repair center stock
+    const stockMap = new Map<string, Array<{ repairCenterId: string; repairCenterName: string; quantity: number }>>();
+    
+    // Get warehouse stock
+    if (resellerWarehouses.length > 0) {
+      const warehouseIds = resellerWarehouses.map(w => w.id);
+      const warehouseStockData = await db.select({
+        productId: warehouseStock.productId,
+        warehouseId: warehouseStock.warehouseId,
+        warehouseName: warehouses.name,
+        quantity: warehouseStock.quantity,
+      })
+      .from(warehouseStock)
+      .innerJoin(warehouses, eq(warehouseStock.warehouseId, warehouses.id))
+      .where(and(
+        inArray(warehouseStock.productId, productIds),
+        inArray(warehouseStock.warehouseId, warehouseIds)
+      ));
+      
+      for (const stock of warehouseStockData) {
+        if (!stockMap.has(stock.productId)) {
+          stockMap.set(stock.productId, []);
+        }
+        stockMap.get(stock.productId)!.push({
+          repairCenterId: stock.warehouseId,
+          repairCenterName: stock.warehouseName,
+          quantity: stock.quantity,
+        });
+      }
     }
     
-    const centerIds = resellerCenters.map(c => c.id);
-    const productIds = resellerProducts.map(p => p.id);
-    
-    // Get stock only for reseller's products in reseller's centers
-    const stockData = await db.select({
-      productId: inventoryStock.productId,
-      repairCenterId: inventoryStock.repairCenterId,
-      repairCenterName: repairCenters.name,
-      quantity: inventoryStock.quantity,
-    })
-    .from(inventoryStock)
-    .innerJoin(repairCenters, eq(inventoryStock.repairCenterId, repairCenters.id))
-    .where(and(
-      inArray(inventoryStock.productId, productIds),
-      inArray(inventoryStock.repairCenterId, centerIds)
-    ));
-    
-    // Build stock map
-    const stockMap = new Map<string, Array<{ repairCenterId: string; repairCenterName: string; quantity: number }>>();
-    for (const stock of stockData) {
-      if (!stockMap.has(stock.productId)) {
-        stockMap.set(stock.productId, []);
+    // Get repair center stock (inventory_stock)
+    if (resellerCenters.length > 0) {
+      const centerIds = resellerCenters.map(c => c.id);
+      const centerStockData = await db.select({
+        productId: inventoryStock.productId,
+        repairCenterId: inventoryStock.repairCenterId,
+        repairCenterName: repairCenters.name,
+        quantity: inventoryStock.quantity,
+      })
+      .from(inventoryStock)
+      .innerJoin(repairCenters, eq(inventoryStock.repairCenterId, repairCenters.id))
+      .where(and(
+        inArray(inventoryStock.productId, productIds),
+        inArray(inventoryStock.repairCenterId, centerIds)
+      ));
+      
+      for (const stock of centerStockData) {
+        if (!stockMap.has(stock.productId)) {
+          stockMap.set(stock.productId, []);
+        }
+        stockMap.get(stock.productId)!.push({
+          repairCenterId: stock.repairCenterId,
+          repairCenterName: stock.repairCenterName,
+          quantity: stock.quantity,
+        });
       }
-      stockMap.get(stock.productId)!.push({
-        repairCenterId: stock.repairCenterId,
-        repairCenterName: stock.repairCenterName,
-        quantity: stock.quantity,
-      });
     }
     
     return resellerProducts.map(product => {
