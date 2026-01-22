@@ -30165,7 +30165,21 @@ export function registerRoutes(app: Express): Server {
         warehouseTransferId: transfer.id,
       });
       
-      res.json(updated);
+      // Auto-generate invoice for seller (B2B between resellers)
+      let generatedInvoice = null;
+      try {
+        generatedInvoice = await storage.createInvoiceForB2BOrder({
+          id: order.id,
+          orderNumber: order.orderNumber,
+          resellerId: order.sellerResellerId,
+          buyerId: order.buyerResellerId,
+          total: order.totalAmount,
+        });
+      } catch (invoiceError: any) {
+        console.error('Failed to auto-generate marketplace invoice:', invoiceError);
+      }
+      
+      res.json({ ...updated, generatedInvoice });
     } catch (error: any) {
       res.status(500).json({ error: error.message });
     }
