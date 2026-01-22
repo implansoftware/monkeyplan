@@ -6881,6 +6881,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json(updatedStock);
     } catch (error: any) {
+      console.error("[STOCK UPDATE ERROR]", error);
       res.status(500).send(error.message);
     }
   });
