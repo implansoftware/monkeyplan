@@ -1358,10 +1358,6 @@ export default function ResellerProducts() {
                         </SelectContent>
                       </Select>
                     </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="color">Colore</Label>
-                      <Input id="color" name="color" placeholder="es. Nero, Bianco" data-testid="input-create-color" />
-                    </div>
                   </div>
 
                   <div className="space-y-2">
@@ -1881,16 +1877,6 @@ export default function ResellerProducts() {
                             <SelectItem value="compatibile">Compatibile</SelectItem>
                           </SelectContent>
                         </Select>
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="edit-color">Colore</Label>
-                        <Input 
-                          id="edit-color" 
-                          name="color" 
-                          placeholder="es. Nero, Bianco" 
-                          defaultValue={editingProduct.color || ""} 
-                          data-testid="input-edit-color" 
-                        />
                       </div>
                     </div>
 
