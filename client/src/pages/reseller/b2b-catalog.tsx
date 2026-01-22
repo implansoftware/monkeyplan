@@ -249,12 +249,6 @@ export default function ResellerB2BCatalog() {
                   </div>
                 </CardHeader>
                 <CardContent className="space-y-2">
-                  {item.ownerName && (
-                    <div className="flex justify-between text-sm">
-                      <span className="text-muted-foreground">Fornitore:</span>
-                      <span className="font-medium truncate max-w-[120px]" title={item.ownerName}>{item.ownerName}</span>
-                    </div>
-                  )}
                   <div className="flex justify-between text-sm">
                     <span className="text-muted-foreground">Prezzo B2B:</span>
                     <span className="font-semibold text-primary">{formatPrice(item.b2bPrice)}</span>
