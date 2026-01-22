@@ -344,10 +344,25 @@ export default function ResellerB2BCatalog() {
                 {cart.map((item) => (
                   <TableRow key={item.productId} data-testid={`row-cart-${item.productId}`}>
                     <TableCell>
-                      <div className="font-medium">{item.product.name}</div>
-                      {item.product.sku && (
-                        <div className="text-sm text-muted-foreground">{item.product.sku}</div>
-                      )}
+                      <div className="flex items-center gap-3">
+                        {item.product.imageUrl ? (
+                          <img 
+                            src={item.product.imageUrl} 
+                            alt={item.product.name}
+                            className="w-10 h-10 object-cover rounded border"
+                          />
+                        ) : (
+                          <div className="w-10 h-10 bg-muted rounded border flex items-center justify-center">
+                            <Package className="h-4 w-4 text-muted-foreground" />
+                          </div>
+                        )}
+                        <div>
+                          <div className="font-medium">{item.product.name}</div>
+                          {item.product.sku && (
+                            <div className="text-sm text-muted-foreground">{item.product.sku}</div>
+                          )}
+                        </div>
+                      </div>
                     </TableCell>
                     <TableCell className="text-right">{formatPrice(item.unitPrice)}</TableCell>
                     <TableCell className="text-right">
