@@ -30173,7 +30173,7 @@ export function registerRoutes(app: Express): Server {
           orderNumber: order.orderNumber,
           resellerId: order.sellerResellerId,
           buyerId: order.buyerResellerId,
-          total: order.totalAmount,
+          total: order.total,
         });
       } catch (invoiceError: any) {
         console.error('Failed to auto-generate marketplace invoice:', invoiceError);
