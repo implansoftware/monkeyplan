@@ -1084,7 +1084,7 @@ export default function TransferRequestsPage() {
                                   {totalStock} disponibili
                                 </Badge>
                                 <p className="text-xs text-muted-foreground mt-1">
-                                  {item.warehouses.length} magazzin{item.warehouses.length === 1 ? 'o' : 'i'}
+                                  {Array.from(new Set(item.warehouses.map(w => w.ownerName))).filter(Boolean).join(', ') || `${item.warehouses.length} magazzin${item.warehouses.length === 1 ? 'o' : 'i'}`}
                                 </p>
                               </div>
                             </div>

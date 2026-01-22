@@ -349,7 +349,7 @@ export default function SubResellerTransferRequestsPage() {
                                     {totalStock} disponibili
                                   </Badge>
                                   <p className="text-xs text-muted-foreground mt-1">
-                                    {[...new Set(item.warehouses.map(w => w.ownerName))].join(', ') || `${item.warehouses.length} magazzin${item.warehouses.length === 1 ? 'o' : 'i'}`}
+                                    {Array.from(new Set(item.warehouses.map(w => w.ownerName))).filter(Boolean).join(', ') || `${item.warehouses.length} magazzin${item.warehouses.length === 1 ? 'o' : 'i'}`}
                                   </p>
                                 </div>
                               </div>
