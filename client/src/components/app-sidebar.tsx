@@ -604,7 +604,7 @@ export function AppSidebar() {
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-2">
                 <span className="font-bold text-sm tracking-tight">MonkeyPlan</span>
-                <span className="text-[10px] text-primary-foreground font-semibold px-1.5 py-0.5 rounded-md bg-primary shadow-sm">Beta v.23</span>
+                <span className="text-[10px] text-primary-foreground font-semibold px-1.5 py-0.5 rounded-md bg-primary shadow-sm">Beta v.23.5</span>
               </div>
               <p className="text-xs text-muted-foreground capitalize">
                 {user.role.replace("_", " ")}
