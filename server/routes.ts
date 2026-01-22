@@ -30132,6 +30132,7 @@ export function registerRoutes(app: Express): Server {
           referenceType: 'marketplace_order',
           referenceId: order.id,
           notes: `Vendita Marketplace ${order.orderNumber} → ${buyerWarehouse.name}`,
+          createdBy: req.user.id,
         });
         
         // Add to buyer
@@ -30144,6 +30145,7 @@ export function registerRoutes(app: Express): Server {
           referenceType: 'marketplace_order',
           referenceId: order.id,
           notes: `Acquisto Marketplace ${order.orderNumber} ← ${sellerWarehouse.name}`,
+          createdBy: req.user.id,
         });
         
         // Create transfer item
