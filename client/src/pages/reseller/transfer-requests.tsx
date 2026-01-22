@@ -761,9 +761,20 @@ export default function TransferRequestsPage() {
                 <Label>Quantità da approvare per ogni prodotto</Label>
                 <div className="mt-2 border rounded-lg divide-y">
                   {selectedRequest.items.map((item, idx) => (
-                    <div key={item.id} className="p-3 flex items-center justify-between gap-4">
-                      <div className="flex-1">
-                        <p className="font-medium">{item.product?.name || 'Prodotto'}</p>
+                    <div key={item.id} className="p-3 flex items-center gap-3">
+                      <div className="w-10 h-10 rounded bg-muted flex items-center justify-center overflow-hidden flex-shrink-0">
+                        {item.product?.imageUrl ? (
+                          <img 
+                            src={item.product.imageUrl} 
+                            alt={item.product.name}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <Package className="h-5 w-5 text-muted-foreground" />
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium truncate">{item.product?.name || 'Prodotto'}</p>
                         <p className="text-sm text-muted-foreground">
                           Richiesti: {item.requestedQuantity}
                         </p>
