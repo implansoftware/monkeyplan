@@ -437,7 +437,7 @@ export async function generateTransferDDT(data: TransferDdtData): Promise<Buffer
 
     const tableTop = doc.y + 10;
     const tableLeft = 40;
-    const colWidths = [50, 300, 100, 60];
+    const colWidths = [30, 250, 160, 70];
     const headers = ["#", "Descrizione Prodotto", "Codice", "Quantità"];
     
     doc.fontSize(9).font("Helvetica-Bold");
@@ -457,9 +457,9 @@ export async function generateTransferDDT(data: TransferDdtData): Promise<Buffer
       xPos += colWidths[0];
       doc.text(item.productName, xPos + 5, rowY, { width: colWidths[1] - 10 });
       xPos += colWidths[1];
-      doc.text(item.productSku || "-", xPos + 5, rowY);
+      doc.text(item.productSku || "-", xPos + 5, rowY, { width: colWidths[2] - 10 });
       xPos += colWidths[2];
-      doc.text(String(item.quantity), xPos + 5, rowY);
+      doc.text(String(item.quantity), xPos + 5, rowY, { width: colWidths[3] - 10, align: 'left' });
       rowY += 18;
     });
 
