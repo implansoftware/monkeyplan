@@ -196,6 +196,7 @@ export default function AdminInvoices() {
                   <TableHead>Metodo</TableHead>
                   <TableHead>Scadenza</TableHead>
                   <TableHead>Stato</TableHead>
+                  <TableHead className="text-right">Azioni</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -217,6 +218,38 @@ export default function AdminInvoices() {
                         : "N/D"}
                     </TableCell>
                     <TableCell>{getStatusBadge(invoice.paymentStatus)}</TableCell>
+                    <TableCell className="text-right">
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={async () => {
+                          try {
+                            const response = await fetch(`/api/invoices/${invoice.id}/pdf`, {
+                              credentials: "include",
+                            });
+                            if (!response.ok) throw new Error("Download failed");
+                            const blob = await response.blob();
+                            const url = window.URL.createObjectURL(blob);
+                            const a = document.createElement("a");
+                            a.href = url;
+                            a.download = `${invoice.invoiceNumber}.pdf`;
+                            document.body.appendChild(a);
+                            a.click();
+                            window.URL.revokeObjectURL(url);
+                            document.body.removeChild(a);
+                          } catch (error) {
+                            toast({
+                              title: "Errore",
+                              description: "Impossibile scaricare la fattura",
+                              variant: "destructive",
+                            });
+                          }
+                        }}
+                        data-testid={`button-download-invoice-${invoice.id}`}
+                      >
+                        <Download className="h-4 w-4" />
+                      </Button>
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
