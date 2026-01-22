@@ -294,14 +294,21 @@ export default function RepairCenterB2BCatalog() {
           <ScrollArea className="max-h-64">
             <div className="space-y-3">
               {cart.map((item) => (
-                <div key={item.productId} className="flex items-center justify-between py-2 border-b">
-                  <div className="flex-1">
-                    <p className="font-medium">{item.product.name}</p>
+                <div key={item.productId} className="flex items-center gap-3 py-2 border-b">
+                  <div className="h-12 w-12 rounded-md border bg-muted flex items-center justify-center overflow-hidden shrink-0">
+                    {item.product.imageUrl ? (
+                      <img src={item.product.imageUrl} alt={item.product.name} className="h-full w-full object-cover" />
+                    ) : (
+                      <Package className="h-5 w-5 text-muted-foreground" />
+                    )}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium truncate">{item.product.name}</p>
                     <p className="text-sm text-muted-foreground">
                       {formatPrice(item.unitPrice)} x {item.quantity}
                     </p>
                   </div>
-                  <p className="font-semibold">{formatPrice(item.unitPrice * item.quantity)}</p>
+                  <p className="font-semibold shrink-0">{formatPrice(item.unitPrice * item.quantity)}</p>
                 </div>
               ))}
             </div>
