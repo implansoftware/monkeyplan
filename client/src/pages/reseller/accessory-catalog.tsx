@@ -765,6 +765,7 @@ export default function AccessoryCatalog() {
             </div>
           ) : (
             <ScrollArea className="h-[500px]">
+              <div className="min-w-[1000px]">
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -908,6 +909,7 @@ export default function AccessoryCatalog() {
                   })}
                 </TableBody>
               </Table>
+              </div>
             </ScrollArea>
           )}
         </CardContent>
