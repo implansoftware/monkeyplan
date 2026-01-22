@@ -362,6 +362,7 @@ const groupIcons: Record<string, typeof LayoutDashboard> = {
   "Marketplace P2P": Store,
   "Assistenza": Ticket,
   "Principale": LayoutDashboard,
+  "Sub-Reseller": Network,
   "Le mie riparazioni": Wrench,
   "Lavorazioni": Wrench,
   "Cataloghi": Package,
@@ -500,14 +501,14 @@ export function AppSidebar() {
     }
     
     if (isReseller && isFranchisingOrGdo) {
-      // Add Sub-Reseller item after Dashboard in "Dashboard" group for franchising/gdo resellers
+      // Add Sub-Reseller item in its own group for franchising/gdo resellers
       const dashboardIndex = baseItems.findIndex(item => item.url === "/reseller");
       if (dashboardIndex !== -1) {
         const subResellerItem = { 
-          title: "Sub-Reseller", 
+          title: "Gestione Sub-Reseller", 
           url: "/reseller/sub-resellers", 
           icon: Network, 
-          group: "Dashboard" 
+          group: "Sub-Reseller" 
         };
         return [
           ...baseItems.slice(0, dashboardIndex + 1),
@@ -638,8 +639,8 @@ export function AppSidebar() {
           const isOpen = isGroupOpen(group);
           const hasActiveItem = groupItems.some(item => location === item.url || location.startsWith(item.url + "/"));
           
-          // Dashboard group: render items directly without collapsible
-          if (group === "Dashboard" || group === "Principale") {
+          // Dashboard and Sub-Reseller groups: render items directly without collapsible
+          if (group === "Dashboard" || group === "Principale" || group === "Sub-Reseller") {
             return (
               <SidebarGroup key={group} className="px-3 py-2">
                 <SidebarMenu>
