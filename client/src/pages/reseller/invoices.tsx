@@ -473,6 +473,12 @@ export default function ResellerInvoices() {
         )}
       </Tabs>
 
+      <InvoiceDetailDialog
+        invoice={selectedInvoice}
+        open={!!selectedInvoice}
+        onOpenChange={(open) => !open && setSelectedInvoice(null)}
+      />
+
       <Dialog open={!!selectedSibillDoc} onOpenChange={(open) => !open && setSelectedSibillDoc(null)}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
@@ -485,11 +491,6 @@ export default function ResellerInvoices() {
             </DialogDescription>
           </DialogHeader>
           
-      <InvoiceDetailDialog
-        invoice={selectedInvoice}
-        open={!!selectedInvoice}
-        onOpenChange={(open) => !open && setSelectedInvoice(null)}
-      />
 
           {selectedSibillDoc && (
             <div className="space-y-6">
