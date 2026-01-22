@@ -54,7 +54,6 @@ const wizardSchema = z.object({
   sku: z.string().optional(),
   category: z.string().min(1, "Seleziona la categoria"),
   brand: z.string().min(1, "Seleziona la marca"),
-  color: z.string().optional(),
   description: z.string().optional(),
   condition: z.string().min(1, "Seleziona la condizione"),
   storage: z.string().optional(), // Ora opzionale - validato dinamicamente in base alla categoria
@@ -117,11 +116,7 @@ const getBrandsForCategory = (category: string): string[] => {
       return Array.from(new Set([...MOBILE_BRANDS, ...PC_BRANDS])); // Tutte le marche per altre categorie
   }
 };
-const COLOR_OPTIONS = [
-  "Nero", "Bianco", "Argento", "Grigio", "Oro", "Oro Rosa", "Blu", "Blu Notte", 
-  "Verde", "Verde Alpino", "Viola", "Rosso", "Giallo", "Arancione", "Rosa", "Titanio Nero", 
-  "Titanio Naturale", "Titanio Blu", "Titanio Bianco", "Altro"
-];
+
 const GRADE_OPTIONS = [
   { value: "A+", label: "A+ - Come nuovo" },
   { value: "A", label: "A - Ottimo" },
@@ -204,7 +199,6 @@ export function SmartphoneWizard({
       sku: "",
       category: "smartphone",
       brand: "",
-      color: "",
       description: "",
       condition: "ricondizionato",
       storage: "128GB",
@@ -344,7 +338,6 @@ export function SmartphoneWizard({
       const specsConfig = getSpecsConfig(data.category);
       const specsData: Record<string, any> = {
         brand: data.brand,
-        color: data.color,
         notes: data.notes,
       };
       
@@ -655,28 +648,6 @@ export function SmartphoneWizard({
                     )}
                   />
 
-                  <FormField
-                    control={form.control}
-                    name="color"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Colore</FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value}>
-                          <FormControl>
-                            <SelectTrigger data-testid="select-smartphone-color">
-                              <SelectValue placeholder="Seleziona colore" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            {COLOR_OPTIONS.map(color => (
-                              <SelectItem key={color} value={color}>{color}</SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
                 </div>
 
                 <FormField
@@ -1269,10 +1240,6 @@ export function SmartphoneWizard({
                       <div>
                         <Label className="text-xs text-muted-foreground">Grado</Label>
                         <p className="font-medium">{values.grade}</p>
-                      </div>
-                      <div>
-                        <Label className="text-xs text-muted-foreground">Colore</Label>
-                        <p className="font-medium">{values.color || "-"}</p>
                       </div>
                       <div>
                         <Label className="text-xs text-muted-foreground">Batteria</Label>
