@@ -809,9 +809,9 @@ export default function SmartphoneCatalog() {
                         </div>
                       </TableCell>
                       <TableCell>
-                      <TableCell>
                         <BarcodeDisplay value={smartphone.barcode || ""} size="sm" />
                       </TableCell>
+                      <TableCell>
                         {smartphone.category ? (
                           <Badge variant="outline" className="text-xs">
                             {DEVICE_CATEGORIES.find(c => c.value === smartphone.category)?.label || smartphone.category}
