@@ -409,7 +409,25 @@ export default function IncomingTransferRequestsPage() {
                     <tbody>
                       {selectedRequest.items.map((item) => (
                         <tr key={item.id} className="border-t">
-                          <td className="p-2">{item.product?.name || "Prodotto"}</td>
+                          <td className="p-2">
+                            <div className="flex items-center gap-2">
+                              <div className="w-10 h-10 rounded bg-muted flex items-center justify-center overflow-hidden flex-shrink-0">
+                                {item.product?.imageUrl ? (
+                                  <img 
+                                    src={item.product.imageUrl} 
+                                    alt={item.product.name}
+                                    className="w-full h-full object-cover"
+                                  />
+                                ) : (
+                                  <Package className="h-5 w-5 text-muted-foreground" />
+                                )}
+                              </div>
+                              <div className="min-w-0">
+                                <p className="font-medium truncate">{item.product?.name || "Prodotto"}</p>
+                                <p className="text-xs text-muted-foreground">{item.product?.sku}</p>
+                              </div>
+                            </div>
+                          </td>
                           <td className="text-center p-2">{item.requestedQuantity}</td>
                           <td className="text-center p-2">{item.approvedQuantity ?? "-"}</td>
                           <td className="text-center p-2">{item.shippedQuantity ?? "-"}</td>
@@ -442,9 +460,20 @@ export default function IncomingTransferRequestsPage() {
                 <Label>Quantità Approvate:</Label>
                 <div className="mt-2 space-y-2">
                   {selectedRequest.items.map((item, index) => (
-                    <div key={item.id} className="flex items-center justify-between p-3 border rounded-md">
-                      <div className="flex-1">
-                        <p className="font-medium">{item.product?.name || "Prodotto"}</p>
+                    <div key={item.id} className="flex items-center gap-3 p-3 border rounded-md">
+                      <div className="w-10 h-10 rounded bg-muted flex items-center justify-center overflow-hidden flex-shrink-0">
+                        {item.product?.imageUrl ? (
+                          <img 
+                            src={item.product.imageUrl} 
+                            alt={item.product.name}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <Package className="h-5 w-5 text-muted-foreground" />
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium truncate">{item.product?.name || "Prodotto"}</p>
                         <p className="text-sm text-muted-foreground">
                           Richiesto: {item.requestedQuantity} | Disponibile: {item.availableStock ?? "N/A"}
                         </p>
@@ -570,9 +599,20 @@ export default function IncomingTransferRequestsPage() {
                 </p>
                 <div className="space-y-2 max-h-60 overflow-y-auto">
                   {selectedRequest.items.map((item, index) => (
-                    <div key={item.id} className="flex items-center justify-between p-3 border rounded-md">
-                      <div>
-                        <p className="font-medium">{item.product?.name || "Prodotto"}</p>
+                    <div key={item.id} className="flex items-center gap-3 p-3 border rounded-md">
+                      <div className="w-10 h-10 rounded bg-muted flex items-center justify-center overflow-hidden flex-shrink-0">
+                        {item.product?.imageUrl ? (
+                          <img 
+                            src={item.product.imageUrl} 
+                            alt={item.product.name}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <Package className="h-5 w-5 text-muted-foreground" />
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium truncate">{item.product?.name || "Prodotto"}</p>
                         <p className="text-sm text-muted-foreground">
                           Approvato: {item.approvedQuantity || 0}
                         </p>

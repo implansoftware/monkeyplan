@@ -695,12 +695,23 @@ export default function TransferRequestsPage() {
                 <Label className="text-muted-foreground">Prodotti Richiesti</Label>
                 <div className="mt-2 border rounded-lg divide-y">
                   {selectedRequest.items.map(item => (
-                    <div key={item.id} className="p-3 flex items-center justify-between">
-                      <div>
-                        <p className="font-medium">{item.product?.name || 'Prodotto sconosciuto'}</p>
+                    <div key={item.id} className="p-3 flex items-center gap-3">
+                      <div className="w-12 h-12 rounded bg-muted flex items-center justify-center overflow-hidden flex-shrink-0">
+                        {item.product?.imageUrl ? (
+                          <img 
+                            src={item.product.imageUrl} 
+                            alt={item.product.name}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <Package className="h-6 w-6 text-muted-foreground" />
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium truncate">{item.product?.name || 'Prodotto sconosciuto'}</p>
                         <p className="text-sm text-muted-foreground">{item.product?.sku}</p>
                       </div>
-                      <div className="text-right text-sm">
+                      <div className="text-right text-sm flex-shrink-0">
                         <p>Richiesti: <span className="font-medium">{item.requestedQuantity}</span></p>
                         {item.approvedQuantity !== null && (
                           <p>Approvati: <span className="font-medium">{item.approvedQuantity}</span></p>
