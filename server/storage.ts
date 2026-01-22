@@ -277,8 +277,10 @@ export interface IStorage {
   getInvoicesByReseller(resellerId: string, filters?: { repairCenterId?: string; source?: string; paymentStatus?: string }): Promise<Invoice[]>;
   generateInvoiceNumber(repairCenterId: string): Promise<string>;
   generateResellerInvoiceNumber(resellerId: string): Promise<string>;
+  generateAdminInvoiceNumber(): Promise<string>;
   createInvoiceForSalesOrder(order: { id: string; orderNumber: string; customerId: string; resellerId: string; total: number; taxAmount: number }): Promise<Invoice | null>;
   createInvoiceForB2BOrder(order: { id: string; orderNumber: string; resellerId: string; buyerId: string; total: number }): Promise<Invoice | null>;
+  createInvoiceForAdminB2BOrder(order: { id: string; orderNumber: string; buyerId: string; total: number }): Promise<Invoice | null>;
   createInvoiceForRepairCenterB2BOrder(order: { id: string; orderNumber: string; repairCenterId: string; resellerId: string; total: number }): Promise<Invoice | null>;
   createInvoiceForWarranty(warranty: { id: string; customerId: string; sellerId: string; sellerType: string; priceSnapshot: number; productNameSnapshot: string; repairOrderId: string }): Promise<Invoice | null>;
   
@@ -2904,6 +2906,27 @@ export class DatabaseStorage implements IStorage {
     return `FT-R-${year}-${nextNumber.toString().padStart(5, '0')}`;
   }
 
+  async generateAdminInvoiceNumber(): Promise<string> {
+    const now = new Date();
+    const year = now.getFullYear();
+    
+    // Count admin invoices (resellerId is null) in the current year
+    const startOfYear = new Date(year, 0, 1);
+    const endOfYear = new Date(year, 11, 31, 23, 59, 59);
+    
+    const [result] = await db.select({ count: sql<number>`count(*)` })
+      .from(invoices)
+      .where(and(
+        isNull(invoices.resellerId),
+        isNull(invoices.repairCenterId),
+        gte(invoices.createdAt, startOfYear),
+        lte(invoices.createdAt, endOfYear)
+      ));
+    
+    const nextNumber = (result?.count || 0) + 1;
+    return `FT-A-${year}-${nextNumber.toString().padStart(5, '0')}`;
+  }
+
   async createInvoiceForSalesOrder(order: {
     id: string;
     orderNumber: string;
@@ -2985,6 +3008,47 @@ export class DatabaseStorage implements IStorage {
       paymentMethod: 'bank_transfer',
       dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
       notes: `Fattura B2B per ordine ${order.orderNumber}`,
+    }).returning();
+    
+    return invoice;
+  }
+
+  async createInvoiceForAdminB2BOrder(order: {
+    id: string;
+    orderNumber: string;
+    buyerId: string;
+    total: number;
+  }): Promise<Invoice | null> {
+    // Check if invoice already exists
+    const existingInvoices = await db.select().from(invoices).where(
+      and(
+        eq(invoices.source, 'b2b'),
+        sql`${invoices.notes} LIKE ${'%' + order.orderNumber + '%'}`
+      )
+    );
+    if (existingInvoices.length > 0) {
+      return existingInvoices[0];
+    }
+
+    const invoiceNumber = await this.generateAdminInvoiceNumber();
+    
+    // B2B orders are in cents
+    const totalCents = order.total;
+    const taxCents = Math.round(totalCents * 0.22 / 1.22); // IVA 22% inclusa
+    const amountCents = totalCents - taxCents;
+    
+    const [invoice] = await db.insert(invoices).values({
+      invoiceNumber,
+      customerId: order.buyerId,
+      resellerId: null, // Admin invoice - resellerId is null
+      source: 'b2b',
+      amount: amountCents,
+      tax: taxCents,
+      total: totalCents,
+      paymentStatus: 'pending',
+      paymentMethod: 'bank_transfer',
+      dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+      notes: `Fattura B2B Admin per ordine ${order.orderNumber}`,
     }).returning();
     
     return invoice;

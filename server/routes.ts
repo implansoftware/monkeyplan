@@ -29623,7 +29623,21 @@ export function registerRoutes(app: Express): Server {
         carrier,
       });
       
-      res.json(updated);
+      // Auto-generate invoice for Admin B2B order on ship
+      let generatedInvoice = null;
+      try {
+        generatedInvoice = await storage.createInvoiceForAdminB2BOrder({
+          id: order.id,
+          orderNumber: order.orderNumber,
+          buyerId: order.resellerId, // The reseller is the buyer
+          total: order.total,
+        });
+      } catch (invoiceError: any) {
+        console.error('Failed to auto-generate invoice for Admin B2B order:', invoiceError);
+        // Non-blocking: continue even if invoice generation fails
+      }
+      
+      res.json({ ...updated, generatedInvoice });
     } catch (error: any) {
       res.status(500).json({ error: error.message });
     }
