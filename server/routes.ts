@@ -21563,7 +21563,7 @@ export function registerRoutes(app: Express): Server {
               productId: item.productId,
               repairCenterId: returnData.repairCenterId,
               movementType: 'out',
-              quantity: item.quantity,
+              requestedQuantity: item.quantity,
               notes: `Reso fornitore ${returnData.returnNumber} - Spedito al fornitore`,
               requestedBy: req.user.id,
         createdBy: req.user.id,
@@ -25169,7 +25169,7 @@ export function registerRoutes(app: Express): Server {
             supplierOrderId: supplierOrder.id,
             supplierCode: item.sku,
             description: item.title,
-            quantity: item.quantity,
+            requestedQuantity: item.quantity,
             unitPrice: Math.round(itemPrice),
             totalPrice: Math.round(itemPrice * item.quantity),
             notes: item.note || undefined,
@@ -25840,7 +25840,7 @@ export function registerRoutes(app: Express): Server {
         const msOrder = await mobilesentrixService.createOrder(
           cartItems.map(item => ({
             sku: item.sku,
-            quantity: item.quantity,
+            requestedQuantity: item.quantity,
             price: item.price / 100, // Convert back to dollars
           })),
           req.body.shippingAddress || {},
@@ -26810,7 +26810,7 @@ export function registerRoutes(app: Express): Server {
           productName: product?.name || 'Prodotto',
           productSku: product?.sku,
           productImage: product?.images?.[0],
-          quantity: item.quantity,
+          requestedQuantity: item.quantity,
           unitPrice: item.unitPrice,
           discount: item.discount,
           totalPrice: item.totalPrice
@@ -26829,7 +26829,7 @@ export function registerRoutes(app: Express): Server {
             warehouseId: resellerWarehouse.id,
             productId: item.productId,
             movementType: 'vendita',
-            quantity: item.quantity,
+            requestedQuantity: item.quantity,
             referenceType: 'ordine_ecommerce',
             referenceId: order.id,
             notes: `Ordine e-commerce ${order.orderNumber}`,
@@ -26843,7 +26843,7 @@ export function registerRoutes(app: Express): Server {
             orderItemId: item.id,
             productId: item.productId,
             resellerId,
-            quantity: item.quantity,
+            requestedQuantity: item.quantity,
             status: 'reserved',
           });
         }
@@ -27278,7 +27278,7 @@ export function registerRoutes(app: Express): Server {
             returnId: returnData.id,
             orderItemId: item.orderItemId,
             productId: item.productId,
-            quantity: item.quantity,
+            requestedQuantity: item.quantity,
             reason: item.reason || reason,
             condition: item.condition || 'unknown'
           });
@@ -29037,7 +29037,7 @@ export function registerRoutes(app: Express): Server {
         totalCents += lineTotalCents;
         orderItems.push({
           productId: item.productId,
-          quantity: item.quantity,
+          requestedQuantity: item.quantity,
           unitPriceCents: catalogItem.b2bPrice,
           productName: catalogItem.product.name,
         });
@@ -29058,7 +29058,7 @@ export function registerRoutes(app: Express): Server {
         await storage.createResellerPurchaseOrderItem({
           orderId: order.id,
           productId: item.productId,
-          quantity: item.quantity,
+          requestedQuantity: item.quantity,
           unitPrice: item.unitPriceCents,
           totalPrice: item.unitPriceCents * item.quantity,
           productName: item.productName,
@@ -29233,7 +29233,7 @@ export function registerRoutes(app: Express): Server {
           warehouseId: adminWarehouse.id,
           productId: item.productId,
           movementType: 'trasferimento_out',
-          quantity: item.quantity,
+          requestedQuantity: item.quantity,
           referenceType: 'ordine_b2b',
           referenceId: order.id,
           notes: `Ordine B2B ${order.orderNumber} → ${resellerWarehouse.name}`,
@@ -29247,7 +29247,7 @@ export function registerRoutes(app: Express): Server {
           warehouseId: resellerWarehouse.id,
           productId: item.productId,
           movementType: 'trasferimento_in',
-          quantity: item.quantity,
+          requestedQuantity: item.quantity,
           referenceType: 'ordine_b2b',
           referenceId: order.id,
           notes: `Ordine B2B ${order.orderNumber} ← ${adminWarehouse.name}`,
@@ -29476,7 +29476,7 @@ export function registerRoutes(app: Express): Server {
           productId: item.productId,
           productName: item.productName,
           productSku: item.productSku,
-          quantity: item.quantity,
+          requestedQuantity: item.quantity,
           unitPrice: item.unitPrice,
           totalPrice: item.quantity * item.unitPrice,
           reason: item.reason,
@@ -29678,7 +29678,7 @@ export function registerRoutes(app: Express): Server {
         await storage.createWarehouseMovement({
           warehouseId: adminWarehouse.id,
           productId: item.productId,
-          quantity: item.quantity,
+          requestedQuantity: item.quantity,
           movementType: 'trasferimento_in',
           notes: `Reso B2B ${returnDoc.returnNumber} - Rientro da ${returnDoc.resellerId}`,
         });
@@ -30018,7 +30018,7 @@ export function registerRoutes(app: Express): Server {
         
         validatedItems.push({
           productId: item.productId,
-          quantity: item.quantity,
+          requestedQuantity: item.quantity,
           unitPrice,
           totalPrice,
           productName: product.name,
@@ -30140,7 +30140,7 @@ export function registerRoutes(app: Express): Server {
         await storage.createWarehouseMovement({
           warehouseId: buyerWarehouse.id,
           productId: item.productId,
-          quantity: item.quantity,
+          requestedQuantity: item.quantity,
           movementType: 'trasferimento_in',
           referenceType: 'marketplace_order',
           referenceId: order.id,
@@ -30152,7 +30152,7 @@ export function registerRoutes(app: Express): Server {
         await storage.createWarehouseTransferItem({
           transferId: transfer.id,
           productId: item.productId,
-          quantity: item.quantity,
+          requestedQuantity: item.quantity,
         });
       }
       
@@ -30364,7 +30364,7 @@ export function registerRoutes(app: Express): Server {
         subtotal += price * item.quantity;
         orderItems.push({
           productId: item.productId,
-          quantity: item.quantity,
+          requestedQuantity: item.quantity,
           unitPrice: price,
         });
       }
@@ -30388,7 +30388,7 @@ export function registerRoutes(app: Express): Server {
         await storage.createRepairCenterPurchaseOrderItem({
           orderId: order.id,
           productId: item.productId,
-          quantity: item.quantity,
+          requestedQuantity: item.quantity,
           unitPrice: item.unitPrice,
         });
       }
@@ -30564,7 +30564,7 @@ export function registerRoutes(app: Express): Server {
         
         orderItems.push({
           productId: item.productId,
-          quantity: item.quantity,
+          requestedQuantity: item.quantity,
           unitPriceCents: b2bPrice,
           productName: product.name,
         });
@@ -30586,7 +30586,7 @@ export function registerRoutes(app: Express): Server {
         await storage.createRepairCenterPurchaseOrderItem({
           orderId: order.id,
           productId: item.productId,
-          quantity: item.quantity,
+          requestedQuantity: item.quantity,
           unitPrice: item.unitPriceCents,
           totalPrice: item.unitPriceCents * item.quantity,
           productName: item.productName,
@@ -30704,7 +30704,7 @@ export function registerRoutes(app: Express): Server {
           warehouseId: resellerWarehouse.id,
           productId: item.productId,
           movementType: 'trasferimento_out',
-          quantity: item.quantity,
+          requestedQuantity: item.quantity,
           referenceType: 'ordine_rc_b2b',
           referenceId: order.id,
           notes: `Ordine RC B2B ${order.orderNumber}`,
@@ -30718,7 +30718,7 @@ export function registerRoutes(app: Express): Server {
           warehouseId: rcWarehouse.id,
           productId: item.productId,
           movementType: 'trasferimento_in',
-          quantity: item.quantity,
+          requestedQuantity: item.quantity,
           referenceType: 'ordine_rc_b2b',
           referenceId: order.id,
           notes: `Ordine RC B2B ${order.orderNumber}`,
@@ -30938,7 +30938,7 @@ export function registerRoutes(app: Express): Server {
           productId: item.productId,
           productName: item.productName,
           productSku: item.productSku,
-          quantity: item.quantity,
+          requestedQuantity: item.quantity,
           unitPrice: item.unitPrice,
           returnReason: item.returnReason,
           condition: item.condition,
@@ -34909,7 +34909,7 @@ export function registerRoutes(app: Express): Server {
             productSku: null,
             productBarcode: null,
             isTemporary: true,
-            quantity: item.quantity,
+            requestedQuantity: item.quantity,
             unitPrice: item.unitPrice,
             discount: itemDiscount,
             totalPrice,
@@ -34941,7 +34941,7 @@ export function registerRoutes(app: Express): Server {
             serviceItemId: item.serviceItemId,
             isService: true,
             isTemporary: false,
-            quantity: item.quantity,
+            requestedQuantity: item.quantity,
             unitPrice,
             discount: itemDiscount,
             totalPrice,
@@ -34965,7 +34965,7 @@ export function registerRoutes(app: Express): Server {
           productSku: product.sku || null,
           productBarcode: product.barcode || null,
           isTemporary: false,
-          quantity: item.quantity,
+          requestedQuantity: item.quantity,
           unitPrice,
           discount: itemDiscount,
           totalPrice,
@@ -35144,7 +35144,7 @@ export function registerRoutes(app: Express): Server {
         items: items.map(item => ({
           productName: item.productName,
           productSku: item.productSku,
-          quantity: item.quantity,
+          requestedQuantity: item.quantity,
           unitPrice: item.unitPrice,
           discount: item.discount,
           totalPrice: item.totalPrice,
@@ -35946,7 +35946,7 @@ export function registerRoutes(app: Express): Server {
         items: items.map(item => ({
           productName: item.productName,
           productSku: item.productSku || undefined,
-          quantity: item.quantity,
+          requestedQuantity: item.quantity,
           unitPrice: item.unitPrice,
           discount: item.discount,
           totalPrice: item.totalPrice,
