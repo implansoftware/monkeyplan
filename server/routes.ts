@@ -13010,10 +13010,31 @@ export function registerRoutes(app: Express): Server {
         }
       }
       
+      // Get order items for B2B invoices
+      let items: Array<{ description: string; quantity: number; unitPrice: number; total: number }> = [];
+      
+      if (invoice.source === 'b2b' && invoice.notes) {
+        // Extract order number from notes (format: "Fattura B2B per ordine MP-2026-00021")
+        const orderNumberMatch = invoice.notes.match(/MP-\d{4}-\d{5}/);
+        if (orderNumberMatch) {
+          const order = await storage.getMarketplaceOrderByNumber(orderNumberMatch[0]);
+          if (order) {
+            const orderItems = await storage.listMarketplaceOrderItems(order.id);
+            items = orderItems.map(item => ({
+              description: item.productName + (item.productSku ? ` (${item.productSku})` : ''),
+              quantity: item.quantity,
+              unitPrice: item.unitPrice,
+              total: item.totalPrice,
+            }));
+          }
+        }
+      }
+
       const pdfBuffer = await generateInvoicePdf({
         invoice,
         issuer,
         customer,
+        items,
       });
       
       res.setHeader("Content-Type", "application/pdf");
