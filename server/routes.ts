@@ -28247,7 +28247,7 @@ export function registerRoutes(app: Express): Server {
       if (!user?.parentResellerId) return res.status(403).json({ error: "Solo sub-reseller possono creare richieste" });
       
       // Get sub-reseller's own warehouse
-      const requesterWarehouse = await storage.getWarehouseByOwner('reseller', req.user.id);
+      const requesterWarehouse = await storage.getWarehouseByOwner('sub_reseller', req.user.id);
       if (!requesterWarehouse) return res.status(404).json({ error: "Magazzino richiedente non trovato" });
       
       // Get source warehouse from request body or fallback to parent reseller's warehouse
