@@ -12874,9 +12874,9 @@ export function registerRoutes(app: Express): Server {
       let invoices;
       
       if (req.user.role === 'admin') {
-        // Admin sees all invoices
+        // Admin sees only invoices issued by admin (resellerId is null)
         const paymentStatus = req.query.paymentStatus as string | undefined;
-        invoices = await storage.listInvoices({ paymentStatus });
+        invoices = await storage.listInvoices({ adminOnly: true, paymentStatus });
       } else if (req.user.role === 'customer') {
         // Customer sees only own invoices
         invoices = await storage.listInvoices({ customerId: req.user.id });

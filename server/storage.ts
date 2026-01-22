@@ -2751,7 +2751,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Invoices
-  async listInvoices(filters?: { customerId?: string; paymentStatus?: string; resellerId?: string }): Promise<Invoice[]> {
+  async listInvoices(filters?: { customerId?: string; paymentStatus?: string; resellerId?: string; adminOnly?: boolean }): Promise<Invoice[]> {
     const conditions = [];
     
     if (filters?.customerId) {
@@ -2759,6 +2759,10 @@ export class DatabaseStorage implements IStorage {
     }
     if (filters?.paymentStatus) {
       conditions.push(eq(invoices.paymentStatus, filters.paymentStatus as any));
+    }
+    if (filters?.adminOnly) {
+      // Admin invoices have null resellerId
+      conditions.push(isNull(invoices.resellerId));
     }
     if (filters?.resellerId) {
       // Get customers associated with this reseller through repair orders
