@@ -810,9 +810,9 @@ export default function AccessoryCatalog() {
                           </div>
                         </TableCell>
                         <TableCell>
-                        <TableCell>
                           <BarcodeDisplay value={accessory.barcode || ""} size="sm" />
                         </TableCell>
+                        <TableCell>
                           <div className="flex items-center gap-2">
                             <TypeIcon className="h-4 w-4 text-muted-foreground" />
                             <span>{typeInfo?.label || accessory.specs?.accessoryType}</span>
