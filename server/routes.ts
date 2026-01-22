@@ -29995,6 +29995,23 @@ export function registerRoutes(app: Express): Server {
       }
       
       const createdItems = await storage.listMarketplaceOrderItems(order.id);
+      
+      // Notifica al venditore
+      const buyer = await storage.getUser(req.user.id);
+      await storage.createNotification({
+        userId: sellerResellerId,
+        type: "message",
+        title: "Nuovo ordine Marketplace",
+        message: `Ordine ${order.orderNumber} da ${buyer?.businessName || buyer?.email}`,
+        data: JSON.stringify({ orderId: order.id, orderNumber: order.orderNumber })
+      });
+      broadcastNotification(sellerResellerId, {
+        type: "notification",
+        title: "Nuovo ordine Marketplace",
+        message: `Ordine ${order.orderNumber} da ${buyer?.businessName || buyer?.email}`,
+        orderId: order.id
+      });
+      
       res.json({ ...order, items: createdItems });
     } catch (error: any) {
       res.status(500).json({ error: error.message });
