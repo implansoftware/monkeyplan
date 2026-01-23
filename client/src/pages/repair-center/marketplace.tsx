@@ -315,9 +315,22 @@ export default function RepairCenterMarketplace() {
             <div className="space-y-2">
               {cart.map(item => (
                 <div key={item.productId} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
-                  <div className="flex-1">
-                    <p className="font-medium">{item.product.name}</p>
-                    <p className="text-sm text-muted-foreground">{formatPrice(item.unitPrice)} / pz</p>
+                  <div className="flex items-center gap-3 flex-1">
+                    {item.product.imageUrl ? (
+                      <img 
+                        src={item.product.imageUrl} 
+                        alt={item.product.name} 
+                        className="w-12 h-12 object-cover rounded-md border"
+                      />
+                    ) : (
+                      <div className="w-12 h-12 bg-muted rounded-md flex items-center justify-center border">
+                        <Package className="w-6 h-6 text-muted-foreground" />
+                      </div>
+                    )}
+                    <div>
+                      <p className="font-medium">{item.product.name}</p>
+                      <p className="text-sm text-muted-foreground">{formatPrice(item.unitPrice)} / pz</p>
+                    </div>
                   </div>
                   <div className="flex items-center gap-2">
                     <Button 
