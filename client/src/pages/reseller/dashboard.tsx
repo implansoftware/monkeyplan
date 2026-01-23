@@ -1,7 +1,7 @@
 import { useState, useMemo, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useQuery } from "@tanstack/react-query";
-import { ShoppingCart, Users, TrendingUp, FileText, Package, AlertCircle, Zap, ArrowRightLeft, Network, ChevronRight, ExternalLink, LayoutDashboard, Store, Briefcase, Euro, Clock, Stethoscope, AlertTriangle, PackageX, ClipboardList } from "lucide-react";
+import { ShoppingCart, Users, TrendingUp, FileText, Package, AlertCircle, Zap, ArrowRightLeft, Network, ChevronRight, ExternalLink, LayoutDashboard, Store, Briefcase, Euro, Clock, Stethoscope, AlertTriangle, PackageX, ClipboardList, BarChart3, PieChart as PieChartIcon } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -230,23 +230,34 @@ export default function ResellerDashboard() {
 
   return (
     <div className="space-y-6" data-testid="page-reseller-dashboard">
-      {/* Hero Header - Control Room Style */}
-      <div className="relative overflow-hidden rounded-xl bg-gradient-to-br from-primary/5 via-primary/10 to-slate-100 dark:from-primary/10 dark:via-primary/5 dark:to-slate-900 p-6 border">
-        <div className="absolute inset-0 opacity-[0.03]" style={{
-          backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23000' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
-        }} />
+      {/* Hero Header - Modern Glass Style */}
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-500 p-6">
+        {/* Animated background blobs */}
+        <div className="absolute -top-20 -left-20 w-80 h-80 rounded-full bg-orange-400/20 blur-3xl animate-pulse" />
+        <div className="absolute bottom-0 right-0 w-64 h-64 rounded-full bg-yellow-400/20 blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
+        <div className="absolute top-1/2 left-1/3 w-48 h-48 rounded-full bg-emerald-300/20 blur-3xl animate-pulse" style={{ animationDelay: '2s' }} />
+        
+        {/* Pattern overlay */}
+        <div 
+          className="absolute inset-0 opacity-5"
+          style={{
+            backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M30 5 L35 15 L45 15 L37 22 L40 32 L30 26 L20 32 L23 22 L15 15 L25 15 Z' fill='white'/%3E%3C/svg%3E")`,
+            backgroundSize: '60px 60px'
+          }}
+        />
+        
         <div className="relative flex flex-col gap-4">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
               <div className="flex items-center gap-3 mb-1">
-                <div className="h-10 w-10 rounded-xl bg-primary text-primary-foreground flex items-center justify-center shadow-lg shadow-primary/25">
-                  <LayoutDashboard className="h-5 w-5" />
+                <div className="h-12 w-12 rounded-2xl bg-white/20 backdrop-blur-sm border border-white/30 flex items-center justify-center">
+                  <LayoutDashboard className="h-6 w-6 text-white" />
                 </div>
                 <div>
-                  <h1 className="text-xl font-bold tracking-tight">
+                  <h1 className="text-2xl font-bold tracking-tight text-white">
                     Ciao{user?.fullName ? `, ${user.fullName.split(' ')[0]}` : ''}
                   </h1>
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-sm text-white/80">
                     {format(new Date(), "EEEE d MMMM", { locale: it })}
                   </p>
                 </div>
@@ -259,7 +270,11 @@ export default function ResellerDashboard() {
                 onSave={saveLayout}
                 isSaving={isSavingLayout}
               />
-              <Button onClick={() => setAcceptanceDialogOpen(true)} className="shadow-lg shadow-primary/25" data-testid="button-new-repair">
+              <Button 
+                onClick={() => setAcceptanceDialogOpen(true)} 
+                className="bg-white/20 backdrop-blur-sm border border-white/30 text-white shadow-lg" 
+                data-testid="button-new-repair"
+              >
                 <PackageOpen className="h-4 w-4 mr-2" />
                 Nuova Lavorazione
               </Button>
@@ -267,13 +282,13 @@ export default function ResellerDashboard() {
           </div>
           
           {/* Today's Summary Pills */}
-          <div className="flex flex-wrap items-center gap-3 pt-2 border-t border-primary/10">
+          <div className="flex flex-wrap items-center gap-3 pt-3 border-t border-white/20">
             <TooltipUI>
               <TooltipTrigger asChild>
-                <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-background/80 border text-sm" data-testid="pill-repairs">
-                  <Wrench className="h-3.5 w-3.5 text-primary" />
-                  <span className="font-semibold tabular-nums">{stats?.overview?.activeRepairs ?? 0}</span>
-                  <span className="text-muted-foreground text-xs">riparazioni</span>
+                <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-white/15 backdrop-blur-sm border border-white/25 text-sm" data-testid="pill-repairs">
+                  <Wrench className="h-3.5 w-3.5 text-white" />
+                  <span className="font-semibold tabular-nums text-white">{stats?.overview?.activeRepairs ?? 0}</span>
+                  <span className="text-white/80 text-xs">riparazioni</span>
                 </div>
               </TooltipTrigger>
               <TooltipContent>Riparazioni attive in corso</TooltipContent>
@@ -281,10 +296,10 @@ export default function ResellerDashboard() {
             
             <TooltipUI>
               <TooltipTrigger asChild>
-                <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-background/80 border text-sm" data-testid="pill-revenue">
-                  <Euro className="h-3.5 w-3.5 text-emerald-500" />
-                  <span className="font-semibold tabular-nums">{formatCurrency(todayRevenue)}</span>
-                  <span className="text-muted-foreground text-xs">totale</span>
+                <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-white/15 backdrop-blur-sm border border-white/25 text-sm" data-testid="pill-revenue">
+                  <Euro className="h-3.5 w-3.5 text-yellow-300" />
+                  <span className="font-semibold tabular-nums text-white">{formatCurrency(todayRevenue)}</span>
+                  <span className="text-white/80 text-xs">totale</span>
                 </div>
               </TooltipTrigger>
               <TooltipContent>Totale vendite periodo corrente</TooltipContent>
@@ -293,10 +308,10 @@ export default function ResellerDashboard() {
             {totalUrgencies > 0 && (
               <TooltipUI>
                 <TooltipTrigger asChild>
-                  <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-amber-50 dark:bg-amber-950/50 border border-amber-200 dark:border-amber-800 text-sm" data-testid="pill-urgencies">
-                    <AlertTriangle className="h-3.5 w-3.5 text-amber-500" />
-                    <span className="font-semibold tabular-nums text-amber-700 dark:text-amber-400">{totalUrgencies}</span>
-                    <span className="text-amber-600 dark:text-amber-500 text-xs">urgenze</span>
+                  <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-orange-400/30 backdrop-blur-sm border border-orange-300/30 text-sm" data-testid="pill-urgencies">
+                    <AlertTriangle className="h-3.5 w-3.5 text-orange-200" />
+                    <span className="font-semibold tabular-nums text-white">{totalUrgencies}</span>
+                    <span className="text-orange-100 text-xs">urgenze</span>
                   </div>
                 </TooltipTrigger>
                 <TooltipContent>Elementi che richiedono attenzione</TooltipContent>
@@ -422,12 +437,11 @@ export default function ResellerDashboard() {
         </Card>
       )}
 
-      {/* Main KPI Cards - Dynamically ordered */}
+      {/* Main KPI Cards - Modern Glass Style */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {[
           { id: "stats-repairs", render: () => (
-            <Card key="stats-repairs" className="relative overflow-hidden group hover:shadow-md transition-shadow" data-testid="card-kpi-repairs">
-              <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent" />
+            <Card key="stats-repairs" className="relative overflow-hidden group hover:shadow-lg transition-all border-0 bg-gradient-to-br from-teal-50 to-emerald-50 dark:from-teal-950/40 dark:to-emerald-950/40" data-testid="card-kpi-repairs">
               <CardContent className="relative pt-5 pb-4">
                 <div className="flex items-center justify-between">
                   <div>
@@ -435,7 +449,7 @@ export default function ResellerDashboard() {
                     {isLoading ? (
                       <Skeleton className="h-9 w-16" />
                     ) : (
-                      <p className="text-3xl font-bold tabular-nums" data-testid="text-active-repairs">
+                      <p className="text-3xl font-bold tabular-nums text-teal-700 dark:text-teal-300" data-testid="text-active-repairs">
                         {stats?.overview?.activeRepairs ?? 0}
                       </p>
                     )}
@@ -446,7 +460,7 @@ export default function ResellerDashboard() {
                       </span>
                     </div>
                   </div>
-                  <div className="h-12 w-12 rounded-xl bg-primary text-primary-foreground flex items-center justify-center shadow-lg shadow-primary/20">
+                  <div className="h-12 w-12 rounded-2xl bg-gradient-to-br from-teal-500 to-emerald-500 text-white flex items-center justify-center shadow-lg shadow-teal-500/30">
                     <Wrench className="h-6 w-6" />
                   </div>
                 </div>
@@ -454,8 +468,7 @@ export default function ResellerDashboard() {
             </Card>
           )},
           { id: "stats-users", render: () => (
-            <Card key="stats-users" className="relative overflow-hidden group hover:shadow-md transition-shadow" data-testid="card-kpi-customers">
-              <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/5 to-transparent" />
+            <Card key="stats-users" className="relative overflow-hidden group hover:shadow-lg transition-all border-0 bg-gradient-to-br from-emerald-50 to-green-50 dark:from-emerald-950/40 dark:to-green-950/40" data-testid="card-kpi-customers">
               <CardContent className="relative pt-5 pb-4">
                 <div className="flex items-center justify-between">
                   <div>
@@ -463,13 +476,13 @@ export default function ResellerDashboard() {
                     {isLoading ? (
                       <Skeleton className="h-9 w-16" />
                     ) : (
-                      <p className="text-3xl font-bold tabular-nums text-emerald-600 dark:text-emerald-400" data-testid="text-customers">
+                      <p className="text-3xl font-bold tabular-nums text-emerald-700 dark:text-emerald-300" data-testid="text-customers">
                         {stats?.overview?.totalCustomers ?? 0}
                       </p>
                     )}
                     <p className="text-xs text-muted-foreground mt-1">Gestiti attivamente</p>
                   </div>
-                  <div className="h-12 w-12 rounded-xl bg-emerald-500 text-white flex items-center justify-center shadow-lg shadow-emerald-500/20">
+                  <div className="h-12 w-12 rounded-2xl bg-gradient-to-br from-emerald-500 to-green-500 text-white flex items-center justify-center shadow-lg shadow-emerald-500/30">
                     <Users className="h-6 w-6" />
                   </div>
                 </div>
@@ -477,8 +490,7 @@ export default function ResellerDashboard() {
             </Card>
           )},
           { id: "stats-invoices", render: () => (
-            <Card key="stats-invoices" className="relative overflow-hidden group hover:shadow-md transition-shadow" data-testid="card-kpi-revenue">
-              <div className="absolute inset-0 bg-gradient-to-br from-amber-500/5 to-transparent" />
+            <Card key="stats-invoices" className="relative overflow-hidden group hover:shadow-lg transition-all border-0 bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-950/40 dark:to-orange-950/40" data-testid="card-kpi-revenue">
               <CardContent className="relative pt-5 pb-4">
                 <div className="flex items-center justify-between">
                   <div>
@@ -486,13 +498,13 @@ export default function ResellerDashboard() {
                     {isLoading ? (
                       <Skeleton className="h-9 w-24" />
                     ) : (
-                      <p className="text-2xl font-bold tabular-nums text-amber-600 dark:text-amber-400" data-testid="text-revenue">
+                      <p className="text-2xl font-bold tabular-nums text-amber-700 dark:text-amber-300" data-testid="text-revenue">
                         {formatCurrency(stats?.overview?.totalRevenue ?? 0)}
                       </p>
                     )}
                     <p className="text-xs text-muted-foreground mt-1">Da riparazioni</p>
                   </div>
-                  <div className="h-12 w-12 rounded-xl bg-amber-500 text-white flex items-center justify-center shadow-lg shadow-amber-500/20">
+                  <div className="h-12 w-12 rounded-2xl bg-gradient-to-br from-amber-500 to-orange-500 text-white flex items-center justify-center shadow-lg shadow-amber-500/30">
                     <TrendingUp className="h-6 w-6" />
                   </div>
                 </div>
@@ -500,8 +512,7 @@ export default function ResellerDashboard() {
             </Card>
           )},
           { id: "stats-inventory", render: () => (
-            <Card key="stats-inventory" className="relative overflow-hidden group hover:shadow-md transition-shadow" data-testid="card-kpi-stock">
-              <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-transparent" />
+            <Card key="stats-inventory" className="relative overflow-hidden group hover:shadow-lg transition-all border-0 bg-gradient-to-br from-cyan-50 to-blue-50 dark:from-cyan-950/40 dark:to-blue-950/40" data-testid="card-kpi-stock">
               <CardContent className="relative pt-5 pb-4">
                 <div className="flex items-center justify-between">
                   <div>
@@ -509,7 +520,7 @@ export default function ResellerDashboard() {
                     {isLoading ? (
                       <Skeleton className="h-9 w-16" />
                     ) : (
-                      <p className="text-3xl font-bold tabular-nums text-blue-600 dark:text-blue-400" data-testid="text-stock">
+                      <p className="text-3xl font-bold tabular-nums text-cyan-700 dark:text-cyan-300" data-testid="text-stock">
                         {stats?.warehouse?.totalStock ?? 0}
                       </p>
                     )}
@@ -519,7 +530,7 @@ export default function ResellerDashboard() {
                       ) : "Articoli in magazzino"}
                     </p>
                   </div>
-                  <div className="h-12 w-12 rounded-xl bg-blue-500 text-white flex items-center justify-center shadow-lg shadow-blue-500/20">
+                  <div className="h-12 w-12 rounded-2xl bg-gradient-to-br from-cyan-500 to-blue-500 text-white flex items-center justify-center shadow-lg shadow-cyan-500/30">
                     <Warehouse className="h-6 w-6" />
                   </div>
                 </div>
@@ -532,24 +543,24 @@ export default function ResellerDashboard() {
           .map(w => w.render())}
       </div>
 
-      {/* Secondary Metrics - Dynamically ordered */}
+      {/* Secondary Metrics - Modern Style */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {[
           { id: "stats-tickets", render: () => (
             <Link key="stats-tickets" href="/reseller/transfer-requests" className="block group">
-              <Card className="h-full transition-all hover:shadow-md hover:border-primary/50" data-testid="card-interscambio">
+              <Card className="h-full border-0 bg-gradient-to-br from-violet-50 to-purple-50 dark:from-violet-950/40 dark:to-purple-950/40 hover-elevate" data-testid="card-interscambio">
                 <CardContent className="pt-4 pb-3">
                   <div className="flex items-center gap-3">
-                    <div className="h-9 w-9 rounded-lg bg-violet-500/10 flex items-center justify-center">
-                      <ArrowRightLeft className="h-4 w-4 text-violet-500" />
+                    <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-violet-500 to-purple-500 flex items-center justify-center shadow-lg shadow-violet-500/30">
+                      <ArrowRightLeft className="h-5 w-5 text-white" />
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-xs text-muted-foreground">Interscambio</p>
-                      <p className="text-xl font-bold tabular-nums" data-testid="text-pending-transfers">
+                      <p className="text-xl font-bold tabular-nums text-violet-700 dark:text-violet-300" data-testid="text-pending-transfers">
                         {stats?.interscambio?.pendingRequests ?? 0}
                       </p>
                     </div>
-                    <ChevronRight className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+                    <ChevronRight className="h-4 w-4 text-violet-400 opacity-0 group-hover:opacity-100 transition-opacity" />
                   </div>
                 </CardContent>
               </Card>
@@ -557,19 +568,19 @@ export default function ResellerDashboard() {
           )},
           { id: "stats-b2b-orders", render: () => (
             <Link key="stats-b2b-orders" href="/reseller/b2b-orders" className="block group">
-              <Card className="h-full transition-all hover:shadow-md hover:border-primary/50" data-testid="card-b2b">
+              <Card className="h-full border-0 bg-gradient-to-br from-orange-50 to-amber-50 dark:from-orange-950/40 dark:to-amber-950/40 hover-elevate" data-testid="card-b2b">
                 <CardContent className="pt-4 pb-3">
                   <div className="flex items-center gap-3">
-                    <div className="h-9 w-9 rounded-lg bg-orange-500/10 flex items-center justify-center">
-                      <ShoppingCart className="h-4 w-4 text-orange-500" />
+                    <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-orange-500 to-amber-500 flex items-center justify-center shadow-lg shadow-orange-500/30">
+                      <ShoppingCart className="h-5 w-5 text-white" />
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-xs text-muted-foreground">Ordini B2B</p>
-                      <p className="text-xl font-bold tabular-nums" data-testid="text-pending-b2b">
+                      <p className="text-xl font-bold tabular-nums text-orange-700 dark:text-orange-300" data-testid="text-pending-b2b">
                         {stats?.b2b?.pendingOrders ?? 0}
                       </p>
                     </div>
-                    <ChevronRight className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+                    <ChevronRight className="h-4 w-4 text-orange-400 opacity-0 group-hover:opacity-100 transition-opacity" />
                   </div>
                 </CardContent>
               </Card>
@@ -577,19 +588,19 @@ export default function ResellerDashboard() {
           )},
           { id: "stats-pos", render: () => (
             <Link key="stats-pos" href="/reseller/utility/practices" className="block group">
-              <Card className="h-full transition-all hover:shadow-md hover:border-primary/50" data-testid="card-utility">
+              <Card className="h-full border-0 bg-gradient-to-br from-yellow-50 to-amber-50 dark:from-yellow-950/40 dark:to-amber-950/40 hover-elevate" data-testid="card-utility">
                 <CardContent className="pt-4 pb-3">
                   <div className="flex items-center gap-3">
-                    <div className="h-9 w-9 rounded-lg bg-yellow-500/10 flex items-center justify-center">
-                      <Zap className="h-4 w-4 text-yellow-500" />
+                    <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-yellow-500 to-orange-400 flex items-center justify-center shadow-lg shadow-yellow-500/30">
+                      <Zap className="h-5 w-5 text-white" />
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-xs text-muted-foreground">Pratiche Utility</p>
-                      <p className="text-xl font-bold tabular-nums" data-testid="text-active-practices">
+                      <p className="text-xl font-bold tabular-nums text-yellow-700 dark:text-yellow-300" data-testid="text-active-practices">
                         {stats?.utility?.activePractices ?? 0}
                       </p>
                     </div>
-                    <ChevronRight className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+                    <ChevronRight className="h-4 w-4 text-yellow-400 opacity-0 group-hover:opacity-100 transition-opacity" />
                   </div>
                 </CardContent>
               </Card>
@@ -597,19 +608,19 @@ export default function ResellerDashboard() {
           )},
           { id: "stats-network", render: () => (
             <Link key="stats-network" href="/reseller/repair-centers" className="block group">
-              <Card className="h-full transition-all hover:shadow-md hover:border-primary/50" data-testid="card-network-stats">
+              <Card className="h-full border-0 bg-gradient-to-br from-cyan-50 to-teal-50 dark:from-cyan-950/40 dark:to-teal-950/40 hover-elevate" data-testid="card-network-stats">
                 <CardContent className="pt-4 pb-3">
                   <div className="flex items-center gap-3">
-                    <div className="h-9 w-9 rounded-lg bg-cyan-500/10 flex items-center justify-center">
-                      <Network className="h-4 w-4 text-cyan-500" />
+                    <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-cyan-500 to-teal-500 flex items-center justify-center shadow-lg shadow-cyan-500/30">
+                      <Network className="h-5 w-5 text-white" />
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-xs text-muted-foreground">Centri Riparazione</p>
-                      <p className="text-xl font-bold tabular-nums" data-testid="text-network-centers">
+                      <p className="text-xl font-bold tabular-nums text-cyan-700 dark:text-cyan-300" data-testid="text-network-centers">
                         {stats?.network?.repairCenters ?? 0}
                       </p>
                     </div>
-                    <ChevronRight className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+                    <ChevronRight className="h-4 w-4 text-cyan-400 opacity-0 group-hover:opacity-100 transition-opacity" />
                   </div>
                 </CardContent>
               </Card>
@@ -623,20 +634,20 @@ export default function ResellerDashboard() {
 
       {/* Sales Overview */}
       {isWidgetVisible("activity-sales") && (
-      <Card className="overflow-hidden" data-testid="card-sales-overview">
-        <CardHeader className="pb-3 border-b bg-gradient-to-r from-emerald-50 to-blue-50 dark:from-emerald-950/30 dark:to-blue-950/30">
+      <Card className="overflow-hidden rounded-2xl border-0 shadow-lg" data-testid="card-sales-overview">
+        <CardHeader className="pb-3 border-b bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="h-9 w-9 rounded-lg bg-gradient-to-br from-emerald-500 to-blue-500 text-white flex items-center justify-center">
-                <TrendingUp className="h-4 w-4" />
+              <div className="h-10 w-10 rounded-xl bg-white/20 backdrop-blur-sm border border-white/30 flex items-center justify-center">
+                <TrendingUp className="h-5 w-5 text-white" />
               </div>
               <div>
-                <CardTitle className="text-base font-semibold">Panoramica Vendite</CardTitle>
-                <p className="text-xs text-muted-foreground">Aggregato da tutte le fonti</p>
+                <CardTitle className="text-base font-semibold text-white">Panoramica Vendite</CardTitle>
+                <p className="text-xs text-white/80">Aggregato da tutte le fonti</p>
               </div>
             </div>
             <Link href="/reseller/sales">
-              <Button variant="outline" size="sm" data-testid="button-view-sales">
+              <Button variant="outline" size="sm" className="bg-white/20 backdrop-blur-sm border-white/30 text-white" data-testid="button-view-sales">
                 Dettagli
                 <ChevronRight className="h-4 w-4 ml-1" />
               </Button>
@@ -734,15 +745,21 @@ export default function ResellerDashboard() {
 
       {/* Quick Actions - Grouped by Context */}
       {isWidgetVisible("management-quick-actions") && (
-      <Card className="overflow-hidden">
-        <CardHeader className="pb-3 border-b bg-muted/30">
-          <CardTitle className="text-base font-semibold">Azioni Rapide</CardTitle>
+      <Card className="overflow-hidden rounded-2xl">
+        <CardHeader className="pb-3 border-b bg-gradient-to-r from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800">
+          <div className="flex items-center gap-3">
+            <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-slate-600 to-slate-700 flex items-center justify-center">
+              <Zap className="h-4 w-4 text-white" />
+            </div>
+            <CardTitle className="text-base font-semibold">Azioni Rapide</CardTitle>
+          </div>
         </CardHeader>
         <CardContent className="pt-4 space-y-4">
           {/* Primary CTA */}
           <div className="flex flex-wrap gap-3">
             <Button 
               onClick={() => setAcceptanceDialogOpen(true)}
+              className="bg-gradient-to-r from-emerald-500 to-teal-500 shadow-lg shadow-emerald-500/25"
               data-testid="button-quick-new-repair"
             >
               <PackageOpen className="h-4 w-4 mr-2" />
@@ -869,9 +886,14 @@ export default function ResellerDashboard() {
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
         <div className="xl:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6">
           {isWidgetVisible("chart-repairs-status") && (
-            <Card className="overflow-hidden">
-              <CardHeader className="pb-2 border-b bg-muted/30">
-                <CardTitle className="text-sm font-semibold">Riparazioni per Stato</CardTitle>
+            <Card className="overflow-hidden rounded-2xl">
+              <CardHeader className="pb-2 border-b bg-gradient-to-r from-teal-50 to-cyan-50 dark:from-teal-950/30 dark:to-cyan-950/30">
+                <div className="flex items-center gap-2">
+                  <div className="h-7 w-7 rounded-lg bg-gradient-to-br from-teal-500 to-cyan-500 flex items-center justify-center">
+                    <BarChart3 className="h-3.5 w-3.5 text-white" />
+                  </div>
+                  <CardTitle className="text-sm font-semibold">Riparazioni per Stato</CardTitle>
+                </div>
               </CardHeader>
               <CardContent className="pt-4">
                 {isLoading ? (
@@ -905,9 +927,14 @@ export default function ResellerDashboard() {
           )}
 
           {isWidgetVisible("chart-work-status") && (
-            <Card className="overflow-hidden">
-              <CardHeader className="pb-2 border-b bg-muted/30">
-                <CardTitle className="text-sm font-semibold">Stato Lavori</CardTitle>
+            <Card className="overflow-hidden rounded-2xl">
+              <CardHeader className="pb-2 border-b bg-gradient-to-r from-violet-50 to-purple-50 dark:from-violet-950/30 dark:to-purple-950/30">
+                <div className="flex items-center gap-2">
+                  <div className="h-7 w-7 rounded-lg bg-gradient-to-br from-violet-500 to-purple-500 flex items-center justify-center">
+                    <PieChartIcon className="h-3.5 w-3.5 text-white" />
+                  </div>
+                  <CardTitle className="text-sm font-semibold">Stato Lavori</CardTitle>
+                </div>
               </CardHeader>
               <CardContent className="pt-4">
                 {isLoading ? (
@@ -964,9 +991,14 @@ export default function ResellerDashboard() {
         </div>
 
         {isWidgetVisible("activity-recent-repairs") && (
-          <Card className="overflow-hidden">
-            <CardHeader className="flex flex-row items-center justify-between gap-1 pb-3 border-b bg-muted/30">
-              <CardTitle className="text-sm font-semibold">Ultime Riparazioni</CardTitle>
+          <Card className="overflow-hidden rounded-2xl">
+            <CardHeader className="flex flex-row items-center justify-between gap-1 pb-3 border-b bg-gradient-to-r from-emerald-50 to-teal-50 dark:from-emerald-950/30 dark:to-teal-950/30">
+              <div className="flex items-center gap-2">
+                <div className="h-7 w-7 rounded-lg bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center">
+                  <Wrench className="h-3.5 w-3.5 text-white" />
+                </div>
+                <CardTitle className="text-sm font-semibold">Ultime Riparazioni</CardTitle>
+              </div>
               <Link href="/reseller/repairs">
                 <Button variant="ghost" size="sm" className="h-7 text-xs">
                   Tutte
