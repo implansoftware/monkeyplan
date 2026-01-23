@@ -30915,25 +30915,24 @@ export function registerRoutes(app: Express): Server {
         deliveredAt: new Date(),
       });
       
-      // Incrementa stock nel magazzino del centro riparazione
-      const rcWarehouse = await storage.getWarehouseByOwner('repair_center', req.user.repairCenterId);
-      if (rcWarehouse) {
-        const orderItems = await storage.listRepairCenterPurchaseOrderItems(order.id);
-        for (const item of orderItems) {
-          await storage.updateWarehouseStockQuantity(rcWarehouse.id, item.productId, item.quantity);
-          await storage.createWarehouseMovement({
-            warehouseId: rcWarehouse.id,
-            productId: item.productId,
-            movementType: 'acquisto_b2b',
-            quantity: item.quantity,
-            referenceType: 'rc_b2b_order',
-            referenceId: order.id,
-            requestedBy: req.user.id,
-            createdBy: req.user.id,
-          });
-        }
+      // Assicura che il magazzino del centro riparazione esista e incrementa stock
+      const repairCenter = await storage.getRepairCenter(req.user.repairCenterId);
+      const rcWarehouse = await storage.ensureDefaultWarehouse('repair_center', req.user.repairCenterId, repairCenter?.name || 'Centro Riparazione');
+      
+      const orderItems = await storage.listRepairCenterPurchaseOrderItems(order.id);
+      for (const item of orderItems) {
+        await storage.updateWarehouseStockQuantity(rcWarehouse.id, item.productId, item.quantity);
+        await storage.createWarehouseMovement({
+          warehouseId: rcWarehouse.id,
+          productId: item.productId,
+          movementType: 'acquisto_b2b',
+          quantity: item.quantity,
+          referenceType: 'rc_b2b_order',
+          referenceId: order.id,
+          requestedBy: req.user.id,
+          createdBy: req.user.id,
+        });
       }
-
       
       res.json(updated);
     } catch (error: any) {
