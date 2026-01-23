@@ -18,6 +18,7 @@ interface OrderItem {
   id: string;
   productId: string;
   productName: string;
+  productImage?: string | null;
   quantity: number;
   unitPrice: number;
   totalPrice: number;
@@ -215,14 +216,32 @@ export default function RepairCenterB2BOrders() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {selectedOrder.items.map((item) => (
-                    <TableRow key={item.id}>
-                      <TableCell>{item.productName}</TableCell>
-                      <TableCell className="text-center">{item.quantity}</TableCell>
-                      <TableCell className="text-right">{formatPrice(item.unitPrice)}</TableCell>
-                      <TableCell className="text-right font-semibold">{formatPrice(item.totalPrice)}</TableCell>
-                    </TableRow>
-                  ))}
+                  {selectedOrder.items.map((item) => {
+                    const imageUrl = item.product?.imageUrl || item.productImage;
+                    return (
+                      <TableRow key={item.id}>
+                        <TableCell>
+                          <div className="flex items-center gap-3">
+                            {imageUrl ? (
+                              <img 
+                                src={imageUrl} 
+                                alt={item.productName}
+                                className="w-10 h-10 rounded object-cover"
+                              />
+                            ) : (
+                              <div className="w-10 h-10 rounded bg-muted flex items-center justify-center">
+                                <Package className="h-5 w-5 text-muted-foreground" />
+                              </div>
+                            )}
+                            <span>{item.productName}</span>
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-center">{item.quantity}</TableCell>
+                        <TableCell className="text-right">{formatPrice(item.unitPrice)}</TableCell>
+                        <TableCell className="text-right font-semibold">{formatPrice(item.totalPrice)}</TableCell>
+                      </TableRow>
+                    );
+                  })}
                 </TableBody>
               </Table>
               
