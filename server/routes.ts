@@ -33788,11 +33788,11 @@ export function registerRoutes(app: Express): Server {
       const team = [
         ...(repairCenterData ? [{
           id: repairCenterData.id,
-          fullName: repairCenterData.fullName,
-          username: repairCenterData.username,
+          fullName: repairCenterData.name || "Centro Riparazione",
+          username: repairCenterData.email,
           email: repairCenterData.email,
           phone: repairCenterData.phone,
-          role: repairCenterData.role,
+          role: "repair_center",
           isActive: repairCenterData.isActive,
           createdAt: repairCenterData.createdAt,
           isOwner: true
