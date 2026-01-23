@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -45,7 +45,10 @@ import {
   CheckCircle,
   XCircle,
   AlertTriangle,
-  Building2
+  Building2,
+  PlayCircle,
+  StopCircle,
+  Loader2
 } from "lucide-react";
 import { Link } from "wouter";
 import { useToast } from "@/hooks/use-toast";
@@ -77,6 +80,77 @@ interface RegisterFormData {
   isDefault: boolean;
 }
 
+interface PosSession {
+  id: string;
+  registerId: string | null;
+  status: string;
+  openedAt: string;
+  operatorId: string;
+}
+
+interface RegisterWithSession extends PosRegister {
+  openSession?: PosSession | null;
+}
+
+// Helper component for session cell to avoid hooks issues
+function SessionCell({ 
+  register, 
+  session, 
+  onOpenSession, 
+  onCloseSession,
+  isOpenPending,
+  isClosePending
+}: { 
+  register: PosRegister; 
+  session: PosSession | null;
+  onOpenSession: () => void;
+  onCloseSession: (session: PosSession) => void;
+  isOpenPending: boolean;
+  isClosePending: boolean;
+}) {
+  if (session) {
+    return (
+      <div className="flex flex-col items-center gap-1">
+        <Badge variant="default" className="bg-green-500">
+          <PlayCircle className="h-3 w-3 mr-1" />
+          Aperta
+        </Badge>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => onCloseSession(session)}
+          disabled={isClosePending}
+          className="text-xs"
+          data-testid={`button-close-session-${register.id}`}
+        >
+          <StopCircle className="h-3 w-3 mr-1" />
+          Chiudi
+        </Button>
+      </div>
+    );
+  }
+  
+  return (
+    <div className="flex flex-col items-center gap-1">
+      <Badge variant="secondary">
+        <StopCircle className="h-3 w-3 mr-1" />
+        Chiusa
+      </Badge>
+      <Button
+        variant="outline"
+        size="sm"
+        onClick={onOpenSession}
+        disabled={!register.isActive || isOpenPending}
+        className="text-xs"
+        data-testid={`button-open-session-${register.id}`}
+      >
+        <PlayCircle className="h-3 w-3 mr-1" />
+        Apri
+      </Button>
+    </div>
+  );
+}
+
 export default function ResellerPosRegistersPage() {
   const { toast } = useToast();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -89,6 +163,17 @@ export default function ResellerPosRegistersPage() {
     description: "",
     isDefault: false,
   });
+  
+  // State for session dialogs
+  const [openSessionDialog, setOpenSessionDialog] = useState<{ register: PosRegister; open: boolean }>({ register: null as any, open: false });
+  const [closeSessionDialog, setCloseSessionDialog] = useState<{ session: PosSession; register: PosRegister; open: boolean }>({ session: null as any, register: null as any, open: false });
+  const [openingCash, setOpeningCash] = useState<string>("");
+  const [openingNotes, setOpeningNotes] = useState<string>("");
+  const [closingCash, setClosingCash] = useState<string>("");
+  const [closingNotes, setClosingNotes] = useState<string>("");
+  
+  // Map to track open sessions per register
+  const [sessionsByRegister, setSessionsByRegister] = useState<Map<string, PosSession | null>>(new Map());
 
   const { data: repairCenters = [] } = useQuery<RepairCenter[]>({
     queryKey: ["/api/reseller/repair-centers"],
@@ -154,6 +239,75 @@ export default function ResellerPosRegistersPage() {
       setDeleteRegister(null);
     },
   });
+
+  // Open session mutation
+  const openSessionMutation = useMutation({
+    mutationFn: async ({ repairCenterId, registerId, openingCash, openingNotes }: { repairCenterId: string; registerId: string; openingCash?: number; openingNotes?: string }) => {
+      return apiRequest("POST", "/api/reseller/pos/session/open", { repairCenterId, registerId, openingCash, openingNotes });
+    },
+    onSuccess: (session) => {
+      invalidatePosQueries();
+      toast({ title: "Cassa aperta", description: "La sessione cassa è stata aperta con successo" });
+      setOpenSessionDialog({ register: null as any, open: false });
+      setOpeningCash("");
+      setOpeningNotes("");
+      // Refresh session data
+      if (openSessionDialog.register) {
+        fetchSessionForRegister(openSessionDialog.register.id);
+      }
+    },
+    onError: (error: Error) => {
+      toast({ title: "Errore", description: error.message, variant: "destructive" });
+    },
+  });
+
+  // Close session mutation
+  const closeSessionMutation = useMutation({
+    mutationFn: async ({ sessionId, closingCash, closingNotes }: { sessionId: string; closingCash: number; closingNotes?: string }) => {
+      return apiRequest("POST", `/api/reseller/pos/session/${sessionId}/close`, { closingCash, closingNotes });
+    },
+    onSuccess: () => {
+      invalidatePosQueries();
+      toast({ title: "Cassa chiusa", description: "La sessione cassa è stata chiusa con successo" });
+      setCloseSessionDialog({ session: null as any, register: null as any, open: false });
+      setClosingCash("");
+      setClosingNotes("");
+      // Refresh session data
+      if (closeSessionDialog.register) {
+        fetchSessionForRegister(closeSessionDialog.register.id);
+      }
+    },
+    onError: (error: Error) => {
+      toast({ title: "Errore", description: error.message, variant: "destructive" });
+    },
+  });
+
+  // Fetch session status for a register
+  const fetchSessionForRegister = async (registerId: string) => {
+    try {
+      const res = await fetch(`/api/reseller/pos/register/${registerId}/session`, { credentials: "include" });
+      if (res.ok) {
+        const data = await res.json();
+        setSessionsByRegister(prev => new Map(prev).set(registerId, data.session));
+      }
+    } catch (error) {
+      console.error("Error fetching session:", error);
+    }
+  };
+
+  // Fetch sessions for all registers when data changes
+  const fetchAllSessions = async () => {
+    for (const register of registers) {
+      await fetchSessionForRegister(register.id);
+    }
+  };
+
+  // Effect to fetch sessions when registers change
+  useEffect(() => {
+    if (registers.length > 0) {
+      fetchAllSessions();
+    }
+  }, [registers]);
 
   const openCreateDialog = () => {
     setEditingRegister(null);
@@ -353,6 +507,7 @@ export default function ResellerPosRegistersPage() {
                   <TableHead>Descrizione</TableHead>
                   <TableHead className="text-center">Stato</TableHead>
                   <TableHead className="text-center">Predefinita</TableHead>
+                  <TableHead className="text-center">Sessione</TableHead>
                   <TableHead>Creata il</TableHead>
                   <TableHead className="text-right">Azioni</TableHead>
                 </TableRow>
@@ -402,6 +557,24 @@ export default function ResellerPosRegistersPage() {
                           <Star className="h-4 w-4 text-muted-foreground" />
                         </Button>
                       )}
+                    </TableCell>
+                    <TableCell className="text-center">
+                      <SessionCell
+                        register={register}
+                        session={sessionsByRegister.get(register.id) || null}
+                        onOpenSession={() => {
+                          setOpenSessionDialog({ register, open: true });
+                          setOpeningCash("");
+                          setOpeningNotes("");
+                        }}
+                        onCloseSession={(session) => {
+                          setCloseSessionDialog({ session, register, open: true });
+                          setClosingCash("");
+                          setClosingNotes("");
+                        }}
+                        isOpenPending={openSessionMutation.isPending}
+                        isClosePending={closeSessionMutation.isPending}
+                      />
                     </TableCell>
                     <TableCell className="text-muted-foreground">
                       {format(new Date(register.createdAt), "dd/MM/yyyy", { locale: it })}
@@ -550,6 +723,156 @@ export default function ResellerPosRegistersPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Dialog Apertura Cassa */}
+      <Dialog open={openSessionDialog.open} onOpenChange={(open) => !open && setOpenSessionDialog({ register: null as any, open: false })}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <PlayCircle className="h-5 w-5 text-green-500" />
+              Apri Cassa
+            </DialogTitle>
+            <DialogDescription>
+              Stai per aprire una sessione per la cassa "{openSessionDialog.register?.name}" 
+              {openSessionDialog.register?.repairCenterName && ` del centro ${openSessionDialog.register.repairCenterName}`}.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="openingCash">Fondo cassa iniziale (€)</Label>
+              <Input
+                id="openingCash"
+                type="number"
+                step="0.01"
+                placeholder="0.00"
+                value={openingCash}
+                onChange={(e) => setOpeningCash(e.target.value)}
+                data-testid="input-opening-cash"
+              />
+              <p className="text-sm text-muted-foreground">
+                Lascia vuoto per usare il saldo della sessione precedente
+              </p>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="openingNotes">Note apertura</Label>
+              <Textarea
+                id="openingNotes"
+                placeholder="Note opzionali..."
+                value={openingNotes}
+                onChange={(e) => setOpeningNotes(e.target.value)}
+                rows={2}
+                data-testid="input-opening-notes"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setOpenSessionDialog({ register: null as any, open: false })} data-testid="button-cancel-open">
+              Annulla
+            </Button>
+            <Button 
+              onClick={() => {
+                if (openSessionDialog.register) {
+                  openSessionMutation.mutate({
+                    repairCenterId: openSessionDialog.register.repairCenterId,
+                    registerId: openSessionDialog.register.id,
+                    openingCash: openingCash ? Math.round(parseFloat(openingCash) * 100) : undefined,
+                    openingNotes: openingNotes || undefined,
+                  });
+                }
+              }}
+              disabled={openSessionMutation.isPending}
+              className="bg-green-500 hover:bg-green-600"
+              data-testid="button-confirm-open"
+            >
+              {openSessionMutation.isPending ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Apertura...
+                </>
+              ) : (
+                <>
+                  <PlayCircle className="h-4 w-4 mr-2" />
+                  Apri Cassa
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog Chiusura Cassa */}
+      <Dialog open={closeSessionDialog.open} onOpenChange={(open) => !open && setCloseSessionDialog({ session: null as any, register: null as any, open: false })}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <StopCircle className="h-5 w-5 text-red-500" />
+              Chiudi Cassa
+            </DialogTitle>
+            <DialogDescription>
+              Stai per chiudere la sessione della cassa "{closeSessionDialog.register?.name}".
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="closingCash">Conteggio cassa finale (€) *</Label>
+              <Input
+                id="closingCash"
+                type="number"
+                step="0.01"
+                placeholder="0.00"
+                value={closingCash}
+                onChange={(e) => setClosingCash(e.target.value)}
+                data-testid="input-closing-cash"
+              />
+              <p className="text-sm text-muted-foreground">
+                Inserisci l'importo effettivo in cassa
+              </p>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="closingNotes">Note chiusura</Label>
+              <Textarea
+                id="closingNotes"
+                placeholder="Note opzionali..."
+                value={closingNotes}
+                onChange={(e) => setClosingNotes(e.target.value)}
+                rows={2}
+                data-testid="input-closing-notes"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setCloseSessionDialog({ session: null as any, register: null as any, open: false })} data-testid="button-cancel-close">
+              Annulla
+            </Button>
+            <Button 
+              onClick={() => {
+                if (closeSessionDialog.session && closingCash) {
+                  closeSessionMutation.mutate({
+                    sessionId: closeSessionDialog.session.id,
+                    closingCash: Math.round(parseFloat(closingCash) * 100),
+                    closingNotes: closingNotes || undefined,
+                  });
+                }
+              }}
+              disabled={closeSessionMutation.isPending || !closingCash}
+              variant="destructive"
+              data-testid="button-confirm-close"
+            >
+              {closeSessionMutation.isPending ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Chiusura...
+                </>
+              ) : (
+                <>
+                  <StopCircle className="h-4 w-4 mr-2" />
+                  Chiudi Cassa
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

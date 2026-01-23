@@ -34359,6 +34359,136 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // Apri sessione POS per conto di un centro riparazione (reseller)
+  app.post("/api/reseller/pos/session/open", requireRole("reseller", "reseller_staff", "sub_reseller"), async (req, res) => {
+    try {
+      const { resellerId } = getEffectiveContext(req);
+      const operatorId = req.user!.id;
+      const { repairCenterId, registerId, openingCash, openingNotes } = req.body;
+      
+      if (!repairCenterId) {
+        return res.status(400).json({ error: "repairCenterId è obbligatorio" });
+      }
+      
+      // Verifica che il centro riparazione appartenga al reseller
+      const center = await storage.getRepairCenter(repairCenterId);
+      if (!center || center.resellerId !== resellerId) {
+        return res.status(403).json({ error: "Non autorizzato ad operare su questo centro riparazione" });
+      }
+      
+      // Se registerId non fornito, usa la cassa di default
+      let effectiveRegisterId = registerId;
+      if (!effectiveRegisterId) {
+        const defaultRegister = await storage.getDefaultPosRegister(repairCenterId);
+        effectiveRegisterId = defaultRegister?.id;
+      }
+      
+      if (!effectiveRegisterId) {
+        return res.status(400).json({ error: "Nessuna cassa disponibile. Crea prima una cassa per questo centro." });
+      }
+      
+      // Verifica che il registro appartenga al centro riparazione
+      const register = await storage.getPosRegister(effectiveRegisterId);
+      if (!register || register.repairCenterId !== repairCenterId) {
+        return res.status(403).json({ error: "Cassa non appartenente a questo centro riparazione" });
+      }
+      
+      // Verifica che non ci sia già una sessione aperta
+      const existingSession = await storage.getOpenPosSession(repairCenterId, effectiveRegisterId);
+      if (existingSession) {
+        return res.status(400).json({ error: "Esiste già una sessione cassa aperta per questa cassa. Chiudila prima di aprirne una nuova." });
+      }
+
+      // Se openingCash non fornito, usa il closingCash dell'ultima sessione di questa cassa
+      let finalOpeningCash = openingCash;
+      if (finalOpeningCash === undefined || finalOpeningCash === null) {
+        const lastSession = await storage.getLastClosedPosSession(repairCenterId, effectiveRegisterId);
+        finalOpeningCash = lastSession?.closingCash || 0;
+      }
+      
+      const session = await storage.createPosSession({
+        repairCenterId,
+        operatorId,
+        registerId: effectiveRegisterId || null,
+        openingCash: finalOpeningCash,
+        openingNotes: openingNotes || null,
+      });
+      
+      res.json(session);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+  app.post("/api/reseller/pos/session/:sessionId/close", requireRole("reseller", "reseller_staff", "sub_reseller"), async (req, res) => {
+    try {
+      const { resellerId } = getEffectiveContext(req);
+      const { sessionId } = req.params;
+      
+      const session = await storage.getPosSession(sessionId);
+      if (!session) return res.status(404).json({ error: "Sessione non trovata" });
+      
+      // Verifica che il centro riparazione della sessione appartenga al reseller
+      const center = await storage.getRepairCenter(session.repairCenterId);
+      if (!center || center.resellerId !== resellerId) {
+        return res.status(403).json({ error: "Non autorizzato" });
+      }
+      
+      if (session.status === "closed") {
+        return res.status(400).json({ error: "Sessione già chiusa" });
+      }
+
+      const transactions = await storage.getPosTransactionsBySession(sessionId);
+      const completed = transactions.filter(t => t.status === "completed");
+      const refunded = transactions.filter(t => t.status === "refunded" || t.status === "partial_refund");
+      
+      const totalSales = completed.reduce((sum, t) => sum + t.total, 0);
+      const totalCashSales = completed.filter(t => t.paymentMethod === "cash").reduce((sum, t) => sum + t.total, 0);
+      const totalCardSales = completed.filter(t => t.paymentMethod !== "cash").reduce((sum, t) => sum + t.total, 0);
+      const totalRefunds = refunded.reduce((sum, t) => sum + (t.refundedAmount || 0), 0);
+      
+      const { closingCash, closingNotes } = req.body;
+      const expectedCash = session.openingCash + totalCashSales - totalRefunds;
+      const cashDifference = (closingCash || 0) - expectedCash;
+
+      const closedSession = await storage.closePosSession(sessionId, {
+        closingCash: closingCash || 0,
+        expectedCash,
+        cashDifference,
+        closingNotes: closingNotes || null,
+        totalSales,
+        totalTransactions: completed.length,
+        totalCashSales,
+        totalCardSales,
+        totalRefunds,
+      });
+      
+      res.json(closedSession);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Ottieni stato sessione corrente per una cassa (reseller)
+  app.get("/api/reseller/pos/register/:registerId/session", requireRole("reseller", "reseller_staff", "sub_reseller"), async (req, res) => {
+    try {
+      const { resellerId } = getEffectiveContext(req);
+      const { registerId } = req.params;
+      
+      const register = await storage.getPosRegister(registerId);
+      if (!register) return res.status(404).json({ error: "Cassa non trovata" });
+      
+      const center = await storage.getRepairCenter(register.repairCenterId);
+      if (!center || center.resellerId !== resellerId) {
+        return res.status(403).json({ error: "Non autorizzato" });
+      }
+      
+      const session = await storage.getOpenPosSession(register.repairCenterId, registerId);
+      res.json({ session: session || null });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   // Export sessioni POS per reseller
   app.get("/api/reseller/pos/sessions/export", requireRole("reseller", "reseller_staff", "sub_reseller"), async (req, res) => {
     try {
