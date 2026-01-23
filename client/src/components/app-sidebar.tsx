@@ -248,8 +248,6 @@ const menuItems = {
     { title: "Rimborsi Spese", url: "/repair-center/hr/expenses", icon: ReceiptText, group: "Gestione HR" },
     { title: "Malattie", url: "/repair-center/hr/sick-leave", icon: Stethoscope, group: "Gestione HR" },
     { title: "Calendario Team", url: "/repair-center/hr/calendar", icon: CalendarCheck, group: "Gestione HR" },
-    // Assistenza
-    { title: "Ticket", url: "/repair-center/tickets", icon: Ticket, group: "Assistenza" },
     // Lavorazioni
     { title: "Lavorazioni", url: "/repair-center/repairs", icon: Wrench, group: "Lavorazioni" },
     { title: "Appuntamenti", url: "/repair-center/appointments", icon: CalendarCheck, group: "Lavorazioni" },
@@ -270,10 +268,6 @@ const menuItems = {
     { title: "Accessori", url: "/repair-center/accessory-catalog", icon: ShoppingCart, group: "Cataloghi" },
     { title: "Ricambi", url: "/repair-center/spare-parts-catalog", icon: Wrench, group: "Cataloghi" },
     { title: "Carrello", url: "/repair-center/cart", icon: ShoppingCart, group: "Cataloghi" },
-    // Gestione
-    { title: "Clienti", url: "/repair-center/customers", icon: Users, group: "Gestione" },
-    { title: "Fatture", url: "/repair-center/invoices", icon: FileText, group: "Gestione" },
-    { title: "Impostazioni", url: "/repair-center/settings", icon: Settings, group: "Gestione" },
     // Garanzie
     { title: "Analytics Garanzie", url: "/repair-center/warranty-analytics", icon: BarChart3, group: "Garanzie" },
     // Acquisti B2B
@@ -287,6 +281,12 @@ const menuItems = {
     // Fornitori
     { title: "Anagrafica Fornitori", url: "/repair-center/suppliers", icon: Truck, group: "Fornitori" },
     { title: "Ordini a Fornitori", url: "/repair-center/supplier-orders", icon: ShoppingCart, group: "Fornitori" },
+    // Gestione
+    { title: "Clienti", url: "/repair-center/customers", icon: Users, group: "Gestione" },
+    { title: "Fatture", url: "/repair-center/invoices", icon: FileText, group: "Gestione" },
+    { title: "Impostazioni", url: "/repair-center/settings", icon: Settings, group: "Gestione" },
+    // Assistenza
+    { title: "Ticket", url: "/repair-center/tickets", icon: Ticket, group: "Assistenza" },
   ],
   customer: [
     { title: "Dashboard", url: "/customer", icon: LayoutDashboard, group: "Principale" },
