@@ -53,7 +53,7 @@ import { generateInvoicePdf } from "./services/invoicePdf";
 import { calculateRepairPriority } from "./helpers/priorityCalculation";
 import { db } from "./db";
 import { sql, eq, and, inArray, isNull } from "drizzle-orm";
-import { repairAttachments } from "@shared/schema";
+import { repairAttachments, users } from "@shared/schema";
 
 const scryptAsync = promisify(scrypt);
 
