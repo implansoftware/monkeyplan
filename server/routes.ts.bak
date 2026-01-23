@@ -31604,24 +31604,29 @@ export function registerRoutes(app: Express): Server {
   app.get("/api/reseller/hr/dashboard", requireRole("reseller", "reseller_staff"), async (req, res) => {
     try {
       if (!req.user) return res.status(401).json({ error: "Non autenticato" });
-      const resellerId = req.user.role === 'reseller' ? req.user.id : req.user.resellerId;
-      if (!resellerId) return res.status(400).json({ error: "Reseller ID non trovato" });
       
-      const accessibleResellerIds = await storage.getAccessibleResellerIds(resellerId);
+      // Use context switching to get effective reseller/repair center
+      const context = getEffectiveContext(req);
       const today = new Date();
-      const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
-      const endOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0);
       
-      const [
-        pendingLeaveRequests,
-        pendingExpenses,
-        todayClockEvents,
-        absencesThisMonth
-      ] = await Promise.all([
-        storage.listHrLeaveRequests({ resellerIds: accessibleResellerIds, status: 'pending' }),
-        storage.listHrExpenseReports({ resellerIds: accessibleResellerIds, status: 'pending' }),
-        storage.listHrClockEvents({ resellerIds: accessibleResellerIds, startDate: today, endDate: today }),
-        storage.listHrAbsences({ resellerIds: accessibleResellerIds })
+      let resellerIds: string[];
+      
+      if (context.repairCenterId) {
+        // Acting as a repair center - show only that reseller's data
+        resellerIds = [context.resellerId];
+      } else if (context.isActingAs) {
+        // Acting as a sub-reseller - show only that sub-reseller data (no children)
+        resellerIds = [context.resellerId];
+      } else {
+        // Main reseller view - show all network data (self + sub-resellers)
+        resellerIds = await storage.getAccessibleResellerIds(context.resellerId);
+      }
+      
+      const [pendingLeaveRequests, pendingExpenses, todayClockEvents, absencesThisMonth] = await Promise.all([
+        storage.listHrLeaveRequests({ resellerIds, status: 'pending' }),
+        storage.listHrExpenseReports({ resellerIds, status: 'pending' }),
+        storage.listHrClockEvents({ resellerIds, startDate: today, endDate: today }),
+        storage.listHrAbsences({ resellerIds })
       ]);
       
       res.json({
@@ -31634,8 +31639,6 @@ export function registerRoutes(app: Express): Server {
       res.status(500).json({ error: error.message });
     }
   });
-
-  // HR Leave Balances
   app.get("/api/reseller/hr/leave-balances/:userId", requireRole("reseller", "reseller_staff"), async (req, res) => {
     try {
       if (!req.user) return res.status(401).json({ error: "Non autenticato" });
