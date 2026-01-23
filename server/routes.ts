@@ -33944,7 +33944,18 @@ export function registerRoutes(app: Express): Server {
       
       const rcStaff = await storage.listRepairCenterStaff(repairCenterId);
       const rcStaffIds = new Set(rcStaff.map((s: any) => s.id));
-      rcStaffIds.add(repairCenterId);
+      // Add the owner user ID (not the repair center ID)
+      // If current user is owner, add their ID; otherwise find the owner
+      if (req.user.role === 'repair_center') {
+        rcStaffIds.add(req.user.id);
+      } else {
+        // Find owner by querying users with this repairCenterId and role repair_center
+        const owners = await db.select().from(users).where(and(
+          eq(users.repairCenterId, repairCenterId),
+          eq(users.role, 'repair_center')
+        ));
+        if (owners[0]) rcStaffIds.add(owners[0].id);
+      }
       
       res.json({
         pendingLeaveRequests: leaveRequests.filter((lr: any) => rcStaffIds.has(lr.userId)).length,
@@ -33971,7 +33982,7 @@ export function registerRoutes(app: Express): Server {
       
       const rcStaff = await storage.listRepairCenterStaff(repairCenterId);
       const rcStaffIds = new Set(rcStaff.map((s: any) => s.id));
-      rcStaffIds.add(repairCenterId);
+      if (req.user.role === 'repair_center') { rcStaffIds.add(req.user.id); } else { const ownersQ = await db.select().from(users).where(and(eq(users.repairCenterId, repairCenterId), eq(users.role, 'repair_center'))); if (ownersQ[0]) rcStaffIds.add(ownersQ[0].id); }
       
       const events = await storage.listHrClockEvents({
         resellerIds: [parentResellerId],
@@ -34052,7 +34063,7 @@ export function registerRoutes(app: Express): Server {
       
       const rcStaff = await storage.listRepairCenterStaff(repairCenterId);
       const rcStaffIds = new Set(rcStaff.map((s: any) => s.id));
-      rcStaffIds.add(repairCenterId);
+      if (req.user.role === 'repair_center') { rcStaffIds.add(req.user.id); } else { const ownersQ = await db.select().from(users).where(and(eq(users.repairCenterId, repairCenterId), eq(users.role, 'repair_center'))); if (ownersQ[0]) rcStaffIds.add(ownersQ[0].id); }
       
       const requests = await storage.listHrLeaveRequests({ resellerId: parentResellerId });
       res.json(requests.filter((r: any) => rcStaffIds.has(r.userId)));
@@ -34107,7 +34118,7 @@ export function registerRoutes(app: Express): Server {
       
       const rcStaff = await storage.listRepairCenterStaff(repairCenterId);
       const rcStaffIds = new Set(rcStaff.map((s) => s.id));
-      rcStaffIds.add(repairCenterId);
+      if (req.user.role === 'repair_center') { rcStaffIds.add(req.user.id); } else { const ownersQ = await db.select().from(users).where(and(eq(users.repairCenterId, repairCenterId), eq(users.role, 'repair_center'))); if (ownersQ[0]) rcStaffIds.add(ownersQ[0].id); }
       
       if (!rcStaffIds.has(existing.userId)) {
         return res.status(403).json({ error: "Non autorizzato a modificare questa richiesta" });
@@ -34164,7 +34175,7 @@ export function registerRoutes(app: Express): Server {
       
       const rcStaff = await storage.listRepairCenterStaff(repairCenterId);
       const rcStaffIds = new Set(rcStaff.map((s) => s.id));
-      rcStaffIds.add(repairCenterId);
+      if (req.user.role === 'repair_center') { rcStaffIds.add(req.user.id); } else { const ownersQ = await db.select().from(users).where(and(eq(users.repairCenterId, repairCenterId), eq(users.role, 'repair_center'))); if (ownersQ[0]) rcStaffIds.add(ownersQ[0].id); }
       
       if (!rcStaffIds.has(existing.userId)) {
         return res.status(403).json({ error: "Non autorizzato a modificare questa malattia" });
@@ -34203,7 +34214,7 @@ export function registerRoutes(app: Express): Server {
       
       const rcStaff = await storage.listRepairCenterStaff(repairCenterId);
       const rcStaffIds = new Set(rcStaff.map((s: any) => s.id));
-      rcStaffIds.add(repairCenterId);
+      if (req.user.role === 'repair_center') { rcStaffIds.add(req.user.id); } else { const ownersQ = await db.select().from(users).where(and(eq(users.repairCenterId, repairCenterId), eq(users.role, 'repair_center'))); if (ownersQ[0]) rcStaffIds.add(ownersQ[0].id); }
       
       const sickLeaves = await storage.listHrSickLeaves({ resellerId: parentResellerId });
       res.json(sickLeaves.filter((sl: any) => rcStaffIds.has(sl.userId)));
@@ -34314,7 +34325,7 @@ export function registerRoutes(app: Express): Server {
       
       const rcStaff = await storage.listRepairCenterStaff(repairCenterId);
       const rcStaffIds = new Set(rcStaff.map((s: any) => s.id));
-      rcStaffIds.add(repairCenterId);
+      if (req.user.role === 'repair_center') { rcStaffIds.add(req.user.id); } else { const ownersQ = await db.select().from(users).where(and(eq(users.repairCenterId, repairCenterId), eq(users.role, 'repair_center'))); if (ownersQ[0]) rcStaffIds.add(ownersQ[0].id); }
       
       const reports = await storage.listHrExpenseReports({ resellerId: parentResellerId });
       res.json(reports.filter((r: any) => rcStaffIds.has(r.userId)));
@@ -34728,7 +34739,7 @@ export function registerRoutes(app: Express): Server {
       
       const rcStaff = await storage.listRepairCenterStaff(repairCenterId);
       const rcStaffIds = new Set(rcStaff.map((s: any) => s.id));
-      rcStaffIds.add(repairCenterId);
+      if (req.user.role === 'repair_center') { rcStaffIds.add(req.user.id); } else { const ownersQ = await db.select().from(users).where(and(eq(users.repairCenterId, repairCenterId), eq(users.role, 'repair_center'))); if (ownersQ[0]) rcStaffIds.add(ownersQ[0].id); }
       
       const startDate = new Date(req.query.startDate as string || new Date());
       const endDate = new Date(req.query.endDate as string || new Date());
