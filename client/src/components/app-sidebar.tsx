@@ -70,6 +70,17 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Link, useLocation } from "wouter";
 import { ContextSwitcher } from "@/components/ContextSwitcher";
 
+// Type for context response
+interface ActingAs {
+  type: 'reseller' | 'repair_center';
+  id: string;
+  name: string;
+}
+
+interface ContextResponse {
+  actingAs: ActingAs | null;
+}
+
 const menuItems = {
   admin: [
     { title: "Dashboard", url: "/", icon: LayoutDashboard, group: "Dashboard" },
@@ -402,6 +413,13 @@ export function AppSidebar() {
 
   const hasSubResellers = subResellers.length > 0;
 
+  // Query current context (acting as sub-reseller or repair center)
+  const { data: contextData } = useQuery<ContextResponse>({
+    queryKey: ['/api/reseller/context'],
+    enabled: isReseller || isResellerStaff,
+  });
+  const actingAs = contextData?.actingAs;
+
   // Query pending incoming transfer requests count for badge (reseller/reseller_staff)
   const { data: transferRequestsSummary } = useQuery<{ pendingCount: number }>({
     queryKey: ["/api/reseller/incoming-transfer-requests/summary"],
@@ -464,18 +482,37 @@ export function AppSidebar() {
     supplier => activeIntegrationCodes.includes(supplier.key)
   );
 
-  // Build menu items dynamically based on sub-resellers and permissions
+  // Build menu items dynamically based on sub-resellers, permissions, and context
   const items = useMemo(() => {
-    // For reseller_staff, use reseller menu items
     let baseItems: typeof menuItems.admin = [];
-    if (user?.role === "reseller_staff") {
-      baseItems = [...menuItems.reseller];
-    } else if (user) {
-      baseItems = menuItems[user.role as keyof typeof menuItems] || [];
+    
+    // Check if reseller is acting as a different entity
+    if ((isReseller || isResellerStaff) && actingAs) {
+      if (actingAs.type === 'repair_center') {
+        // When acting as a repair center, show repair center menu items
+        baseItems = [...menuItems.repair_center];
+      } else if (actingAs.type === 'reseller') {
+        // When acting as a sub-reseller, show reseller items but with restrictions
+        baseItems = [...menuItems.reseller];
+        // Remove items that sub-resellers shouldn't see
+        const excludedUrls = [
+          "/reseller/sub-resellers",
+          "/reseller/rc-b2b-orders",
+          "/reseller/marketplace-sales",
+        ];
+        baseItems = baseItems.filter(item => !excludedUrls.includes(item.url));
+      }
+    } else {
+      // Normal mode: use role-based menu items
+      if (user?.role === "reseller_staff") {
+        baseItems = [...menuItems.reseller];
+      } else if (user) {
+        baseItems = menuItems[user.role as keyof typeof menuItems] || [];
+      }
     }
     
-    // For reseller_staff, filter items based on permissions
-    if (isResellerStaff && !hasFullAccess) {
+    // For reseller_staff, filter items based on permissions (only when not acting as another entity)
+    if (isResellerStaff && !hasFullAccess && !actingAs) {
       baseItems = baseItems.filter(item => {
         // Dashboard is always accessible
         if (item.url === "/reseller") return true;
@@ -499,8 +536,8 @@ export function AppSidebar() {
       );
     }
     
-    if (isReseller && isFranchisingOrGdo) {
-      // Add Sub-Reseller item in its own group for franchising/gdo resellers
+    // Add Sub-Reseller management item for franchising/gdo resellers (only when NOT acting as another entity)
+    if (isReseller && isFranchisingOrGdo && !actingAs) {
       const dashboardIndex = baseItems.findIndex(item => item.url === "/reseller");
       if (dashboardIndex !== -1) {
         const subResellerItem = { 
@@ -518,7 +555,7 @@ export function AppSidebar() {
     }
     
     return baseItems;
-  }, [user, isReseller, isResellerStaff, isFranchisingOrGdo, hasFullAccess, canAccessModule]);
+  }, [user, isReseller, isResellerStaff, isFranchisingOrGdo, hasFullAccess, canAccessModule, actingAs]);
   
   const groupedItems = items.reduce((acc, item) => {
     if (!acc[item.group]) {
