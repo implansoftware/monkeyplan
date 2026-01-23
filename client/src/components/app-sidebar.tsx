@@ -492,15 +492,10 @@ export function AppSidebar() {
         // When acting as a repair center, show repair center menu items
         baseItems = [...menuItems.repair_center];
       } else if (actingAs.type === 'reseller') {
-        // When acting as a sub-reseller, show reseller items but with restrictions
+        // When acting as a sub-reseller, show reseller items but without sub-reseller management
         baseItems = [...menuItems.reseller];
-        // Remove items that sub-resellers shouldn't see
-        const excludedUrls = [
-          "/reseller/sub-resellers",
-          "/reseller/rc-b2b-orders",
-          "/reseller/marketplace-sales",
-        ];
-        baseItems = baseItems.filter(item => !excludedUrls.includes(item.url));
+        // Sub-resellers cannot manage other sub-resellers (only main reseller can)
+        baseItems = baseItems.filter(item => item.url !== "/reseller/sub-resellers");
       }
     } else {
       // Normal mode: use role-based menu items
