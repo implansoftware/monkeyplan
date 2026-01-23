@@ -30619,7 +30619,7 @@ export function registerRoutes(app: Express): Server {
       
       // Validate items and calculate totals
       let subtotal = 0;
-      const orderItems: { productId: string; quantity: number; unitPrice: number }[] = [];
+      const orderItems: { productId: string; quantity: number; unitPrice: number; productName: string; productSku: string | null; totalPrice: number }[] = [];
       
       for (const item of items) {
         const product = await storage.getProduct(item.productId);
@@ -30644,6 +30644,9 @@ export function registerRoutes(app: Express): Server {
           productId: item.productId,
           quantity: item.quantity,
           unitPrice: price,
+          productName: product.name,
+          productSku: product.sku || null,
+          totalPrice: price * item.quantity,
         });
       }
       
@@ -30666,8 +30669,11 @@ export function registerRoutes(app: Express): Server {
         await storage.createRepairCenterPurchaseOrderItem({
           orderId: order.id,
           productId: item.productId,
+          productName: item.productName,
+          productSku: item.productSku,
           quantity: item.quantity,
           unitPrice: item.unitPrice,
+          totalPrice: item.totalPrice,
         });
       }
       
