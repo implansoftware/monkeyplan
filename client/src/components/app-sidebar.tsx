@@ -277,14 +277,13 @@ const menuItems = {
     // Garanzie
     { title: "Analytics Garanzie", url: "/repair-center/warranty-analytics", icon: BarChart3, group: "Garanzie" },
     // Acquisti B2B
-    { title: "Catalogo B2B", url: "/repair-center/b2b-catalog", icon: ShoppingCart, group: "Acquisti B2B" },
+    { title: "Catalogo Rivenditore", url: "/repair-center/b2b-catalog", icon: ShoppingCart, group: "Acquisti B2B" },
+    { title: "Marketplace Rivenditori", url: "/repair-center/marketplace", icon: Store, group: "Acquisti B2B" },
     { title: "Ordini B2B", url: "/repair-center/b2b-orders", icon: FileText, group: "Acquisti B2B" },
     { title: "Resi B2B", url: "/repair-center/b2b-returns", icon: RotateCcw, group: "Acquisti B2B" },
     // Interscambio
     { title: "Panoramica", url: "/repair-center/transfer-requests/overview", icon: ArrowRightLeft, group: "Interscambio" },
     { title: "Nuova Richiesta", url: "/repair-center/transfer-requests", icon: Send, group: "Interscambio" },
-    // Marketplace
-    { title: "Marketplace Rivenditori", url: "/repair-center/marketplace", icon: Store, group: "Marketplace" },
     // Fornitori
     { title: "Anagrafica Fornitori", url: "/repair-center/suppliers", icon: Truck, group: "Fornitori" },
     { title: "Ordini a Fornitori", url: "/repair-center/supplier-orders", icon: ShoppingCart, group: "Fornitori" },
