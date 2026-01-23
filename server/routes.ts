@@ -34709,6 +34709,311 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // ==========================================
+  // RESELLER POS TERMINAL ENDPOINTS
+  // ==========================================
+  
+  // Crea transazione POS per conto di un centro riparazione
+  app.post("/api/reseller/pos/transaction", requireRole("reseller", "reseller_staff", "sub_reseller"), async (req, res) => {
+    try {
+      const { resellerId } = getEffectiveContext(req);
+      const operatorId = req.user!.id;
+      const { repairCenterId, registerId, items, paymentMethod, customerId, discountAmount, discountPercent, cashReceived, notes, customerNotes, invoiceRequested } = req.body;
+      
+      if (!repairCenterId) return res.status(400).json({ error: "repairCenterId è obbligatorio" });
+      
+      // Verifica ownership del centro riparazione
+      const center = await storage.getRepairCenter(repairCenterId);
+      if (!center || center.resellerId !== resellerId) {
+        return res.status(403).json({ error: "Non autorizzato ad operare su questo centro riparazione" });
+      }
+      
+      // Verifica che il registro appartenga al centro
+      if (registerId) {
+        const register = await storage.getPosRegister(registerId);
+        if (!register || register.repairCenterId !== repairCenterId) {
+          return res.status(403).json({ error: "Cassa non appartenente a questo centro riparazione" });
+        }
+      }
+      
+      const session = await storage.getOpenPosSession(repairCenterId, registerId);
+      if (!session) return res.status(400).json({ error: "Nessuna sessione cassa aperta per questa cassa." });
+
+      if (!items || items.length === 0) return res.status(400).json({ error: "Nessun articolo" });
+      if (!paymentMethod) return res.status(400).json({ error: "Metodo pagamento richiesto" });
+
+      // Trova il magazzino del repair center
+      const warehouseList = await storage.listWarehouses({ 
+        ownerType: 'repair_center', 
+        ownerId: repairCenterId 
+      });
+      const repairCenterWarehouseId = warehouseList.length > 0 ? warehouseList[0].id : null;
+
+      let subtotal = 0;
+      const processedItems = [];
+      
+      for (const item of items) {
+        if (item.isTemporary) {
+          if (!item.productName || typeof item.unitPrice !== 'number') {
+            return res.status(400).json({ error: "Prodotto temporaneo richiede nome e prezzo" });
+          }
+          const itemDiscount = item.discount || 0;
+          const totalPrice = (item.unitPrice * item.quantity) - itemDiscount;
+          
+          processedItems.push({
+            productId: null,
+            productName: item.productName,
+            productSku: null,
+            productBarcode: null,
+            isTemporary: true,
+            quantity: item.quantity,
+            unitPrice: item.unitPrice,
+            discount: itemDiscount,
+            totalPrice,
+            warehouseId: null,
+          });
+          
+          subtotal += totalPrice;
+          continue;
+        }
+        
+        if (item.isService) {
+          if (!item.serviceItemId) {
+            return res.status(400).json({ error: "Servizio richiede serviceItemId" });
+          }
+          const serviceItem = await storage.getServiceItem(item.serviceItemId);
+          if (!serviceItem) return res.status(400).json({ error: `Servizio ${item.serviceItemId} non trovato` });
+          
+          const unitPrice = item.unitPrice ?? serviceItem.defaultPriceCents;
+          const itemDiscount = item.discount || 0;
+          const totalPrice = (unitPrice * item.quantity) - itemDiscount;
+          
+          processedItems.push({
+            productId: null,
+            productName: serviceItem.name,
+            productSku: serviceItem.code,
+            productBarcode: null,
+            serviceItemId: item.serviceItemId,
+            isService: true,
+            isTemporary: false,
+            quantity: item.quantity,
+            unitPrice,
+            discount: itemDiscount,
+            totalPrice,
+            warehouseId: null,
+          });
+          
+          subtotal += totalPrice;
+          continue;
+        }
+        
+        const product = await storage.getProduct(item.productId);
+        if (!product) return res.status(400).json({ error: `Prodotto ${item.productId} non trovato` });
+        
+        const unitPrice = item.unitPrice || (product.unitPrice || 0);
+        const itemDiscount = item.discount || 0;
+        const totalPrice = (unitPrice * item.quantity) - itemDiscount;
+        
+        processedItems.push({
+          productId: item.productId,
+          productName: product.name,
+          productSku: product.sku || null,
+          productBarcode: product.barcode || null,
+          isTemporary: false,
+          quantity: item.quantity,
+          unitPrice,
+          discount: itemDiscount,
+          totalPrice,
+          warehouseId: repairCenterWarehouseId,
+        });
+        
+        subtotal += totalPrice;
+      }
+
+      const discount = discountAmount || (discountPercent ? Math.round(subtotal * discountPercent / 100) : 0);
+      const taxRate = 22;
+      const taxableAmount = subtotal - discount;
+      const taxAmount = Math.round(taxableAmount * taxRate / (100 + taxRate));
+      const total = taxableAmount;
+
+      const transactionNumber = await storage.generatePosTransactionNumber(repairCenterId);
+      let changeGiven = null;
+      if (paymentMethod === "cash" && cashReceived) changeGiven = cashReceived - total;
+
+      const transaction = await storage.createPosTransaction({
+        transactionNumber,
+        repairCenterId,
+        sessionId: session.id,
+        registerId: session.registerId || null,
+        customerId: customerId || null,
+        operatorId,
+        subtotal,
+        discountAmount: discount,
+        discountPercent: discountPercent || null,
+        taxRate,
+        taxAmount,
+        total,
+        paymentMethod,
+        cashReceived: cashReceived || null,
+        changeGiven,
+        notes: notes || null,
+        customerNotes: customerNotes || null,
+        invoiceRequested: invoiceRequested || false,
+        status: "completed",
+      });
+
+      const transactionItems = await storage.createPosTransactionItems(
+        processedItems.map(item => ({ transactionId: transaction.id, ...item, inventoryDeducted: false }))
+      );
+      
+      for (const item of transactionItems) {
+        if (item.warehouseId && item.productId && item.quantity > 0 && !item.isTemporary) {
+          await storage.updateWarehouseStockQuantity(item.warehouseId, item.productId, -item.quantity);
+          await storage.markPosItemInventoryDeducted(item.id);
+        }
+      }
+      
+      const sessionTxs = await storage.getPosTransactionsBySession(session.id);
+      const completedTxs = sessionTxs.filter(t => t.status === "completed");
+      await storage.updatePosSessionTotals(session.id, {
+        totalSales: completedTxs.reduce((sum, t) => sum + t.total, 0),
+        totalTransactions: completedTxs.length,
+        totalCashSales: completedTxs.filter(t => t.paymentMethod === "cash").reduce((sum, t) => sum + t.total, 0),
+        totalCardSales: completedTxs.filter(t => t.paymentMethod !== "cash").reduce((sum, t) => sum + t.total, 0),
+      });
+
+      let invoice = null;
+      if (invoiceRequested && customerId) {
+        const invoiceNumber = await storage.generateInvoiceNumber(repairCenterId);
+        invoice = await storage.createInvoice({
+          invoiceNumber,
+          customerId,
+          posTransactionId: transaction.id,
+          repairCenterId,
+          source: 'pos',
+          amount: subtotal - discount,
+          tax: taxAmount,
+          total,
+          paymentStatus: 'paid',
+          paymentMethod,
+          paidDate: new Date(),
+          notes: `Fattura automatica da vendita POS ${transactionNumber}`,
+        });
+        await storage.updatePosTransactionInvoice(transaction.id, invoice.id);
+      }
+
+      res.json({ transaction, items: transactionItems, invoice });
+    } catch (error: any) {
+      console.error("Reseller POS transaction error:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Lista prodotti di un centro riparazione (per POS terminal reseller)
+  app.get("/api/reseller/pos/:repairCenterId/products", requireRole("reseller", "reseller_staff", "sub_reseller"), async (req, res) => {
+    try {
+      const { resellerId } = getEffectiveContext(req);
+      const { repairCenterId } = req.params;
+      
+      const center = await storage.getRepairCenter(repairCenterId);
+      if (!center || center.resellerId !== resellerId) {
+        return res.status(403).json({ error: "Non autorizzato" });
+      }
+      
+      // Cerca prodotti nel magazzino del centro
+      const warehouseList = await storage.listWarehouses({ 
+        ownerType: 'repair_center', 
+        ownerId: repairCenterId 
+      });
+      
+      if (warehouseList.length === 0) {
+        return res.json([]);
+      }
+      
+      const warehouseId = warehouseList[0].id;
+      const stock = await storage.getWarehouseStock(warehouseId);
+      
+      // Arricchisci con dati prodotto
+      const products = await Promise.all(
+        stock.filter(s => s.quantity > 0).map(async (s) => {
+          const product = await storage.getProduct(s.productId);
+          return product ? {
+            id: product.id,
+            name: product.name,
+            sku: product.sku,
+            barcode: product.barcode,
+            category: product.category,
+            unitPrice: product.unitPrice,
+            quantity: s.quantity,
+            warehouseId,
+          } : null;
+        })
+      );
+      
+      res.json(products.filter(Boolean));
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Lista servizi per POS terminal reseller
+  app.get("/api/reseller/pos/:repairCenterId/services", requireRole("reseller", "reseller_staff", "sub_reseller"), async (req, res) => {
+    try {
+      const { resellerId } = getEffectiveContext(req);
+      const { repairCenterId } = req.params;
+      
+      const center = await storage.getRepairCenter(repairCenterId);
+      if (!center || center.resellerId !== resellerId) {
+        return res.status(403).json({ error: "Non autorizzato" });
+      }
+      
+      const services = await storage.getServiceItemsByReseller(resellerId);
+      res.json(services);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Clienti del centro (per selezione in POS)
+  app.get("/api/reseller/pos/:repairCenterId/customers", requireRole("reseller", "reseller_staff", "sub_reseller"), async (req, res) => {
+    try {
+      const { resellerId } = getEffectiveContext(req);
+      const { repairCenterId } = req.params;
+      
+      const center = await storage.getRepairCenter(repairCenterId);
+      if (!center || center.resellerId !== resellerId) {
+        return res.status(403).json({ error: "Non autorizzato" });
+      }
+      
+      const customers = await storage.getCustomersByRepairCenter(repairCenterId);
+      res.json(customers);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Transazioni sessione corrente (per POS terminal)
+  app.get("/api/reseller/pos/:repairCenterId/session-transactions", requireRole("reseller", "reseller_staff", "sub_reseller"), async (req, res) => {
+    try {
+      const { resellerId } = getEffectiveContext(req);
+      const { repairCenterId } = req.params;
+      const { registerId } = req.query;
+      
+      const center = await storage.getRepairCenter(repairCenterId);
+      if (!center || center.resellerId !== resellerId) {
+        return res.status(403).json({ error: "Non autorizzato" });
+      }
+      
+      const session = await storage.getOpenPosSession(repairCenterId, registerId as string);
+      if (!session) return res.json([]);
+      
+      const transactions = await storage.getPosTransactionsBySession(session.id);
+      res.json(transactions);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
     // Genera immagine barcode PNG
   app.get("/api/barcode/:code", async (req, res) => {
     try {

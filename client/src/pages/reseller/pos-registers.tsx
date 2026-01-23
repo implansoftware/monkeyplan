@@ -115,17 +115,30 @@ function SessionCell({
           <PlayCircle className="h-3 w-3 mr-1" />
           Aperta
         </Badge>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => onCloseSession(session)}
-          disabled={isClosePending}
-          className="text-xs"
-          data-testid={`button-close-session-${register.id}`}
-        >
-          <StopCircle className="h-3 w-3 mr-1" />
-          Chiudi
-        </Button>
+        <div className="flex gap-1">
+          <Link href={`/reseller/pos/terminal/${register.repairCenterId}/${register.id}`}>
+            <Button
+              variant="default"
+              size="sm"
+              className="text-xs bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600"
+              data-testid={`button-enter-session-${register.id}`}
+            >
+              <PlayCircle className="h-3 w-3 mr-1" />
+              Entra
+            </Button>
+          </Link>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => onCloseSession(session)}
+            disabled={isClosePending}
+            className="text-xs"
+            data-testid={`button-close-session-${register.id}`}
+          >
+            <StopCircle className="h-3 w-3 mr-1" />
+            Chiudi
+          </Button>
+        </div>
       </div>
     );
   }
