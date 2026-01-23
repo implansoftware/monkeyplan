@@ -118,7 +118,7 @@ export function DashboardCustomizer({
   return (
     <Dialog open={open} onOpenChange={(isOpen) => isOpen ? handleOpen() : handleClose()}>
       <DialogTrigger asChild>
-        <Button variant="outline" size="sm" data-testid="button-customize-dashboard">
+        <Button variant="outline" size="sm" className="bg-white/90 backdrop-blur-sm border-white/50 text-emerald-700 shadow-lg" data-testid="button-customize-dashboard">
           <Settings className="h-4 w-4 mr-2" />
           Personalizza
         </Button>
