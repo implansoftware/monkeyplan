@@ -34914,13 +34914,14 @@ export function registerRoutes(app: Express): Server {
     try {
       const { resellerId } = getEffectiveContext(req);
       const { repairCenterId } = req.params;
+      const search = req.query.search as string | undefined;
       
       const center = await storage.getRepairCenter(repairCenterId);
       if (!center || center.resellerId !== resellerId) {
         return res.status(403).json({ error: "Non autorizzato" });
       }
       
-      // Cerca prodotti nel magazzino del centro
+      // Cerca magazzino del centro
       const warehouseList = await storage.listWarehouses({ 
         ownerType: 'repair_center', 
         ownerId: repairCenterId 
@@ -34930,27 +34931,10 @@ export function registerRoutes(app: Express): Server {
         return res.json([]);
       }
       
-      const warehouseId = warehouseList[0].id;
-      const stock = await storage.getWarehouseStock(warehouseId);
+      const warehouse = warehouseList[0];
+      const productsWithStock = await storage.listWarehouseProductsWithStock(warehouse.id, search);
       
-      // Arricchisci con dati prodotto
-      const products = await Promise.all(
-        stock.filter(s => s.quantity > 0).map(async (s) => {
-          const product = await storage.getProduct(s.productId);
-          return product ? {
-            id: product.id,
-            name: product.name,
-            sku: product.sku,
-            barcode: product.barcode,
-            category: product.category,
-            unitPrice: product.unitPrice,
-            quantity: s.quantity,
-            warehouseId,
-          } : null;
-        })
-      );
-      
-      res.json(products.filter(Boolean));
+      res.json(productsWithStock);
     } catch (error: any) {
       res.status(500).json({ error: error.message });
     }
@@ -34961,14 +34945,36 @@ export function registerRoutes(app: Express): Server {
     try {
       const { resellerId } = getEffectiveContext(req);
       const { repairCenterId } = req.params;
+      const search = req.query.search as string | undefined;
+      const category = req.query.category as string | undefined;
       
       const center = await storage.getRepairCenter(repairCenterId);
       if (!center || center.resellerId !== resellerId) {
         return res.status(403).json({ error: "Non autorizzato" });
       }
       
-      const services = await storage.getServiceItemsByReseller(resellerId);
-      res.json(services);
+      // Prendi tutti i servizi e filtra per reseller
+      const items = await storage.listServiceItems();
+      let activeItems = items.filter(item => 
+        item.isActive && (
+          !item.resellerId || 
+          item.resellerId === resellerId
+        )
+      );
+      
+      if (search) {
+        const searchLower = search.toLowerCase();
+        activeItems = activeItems.filter(item =>
+          item.name.toLowerCase().includes(searchLower) ||
+          (item.description && item.description.toLowerCase().includes(searchLower))
+        );
+      }
+      
+      if (category) {
+        activeItems = activeItems.filter(item => item.category === category);
+      }
+      
+      res.json(activeItems);
     } catch (error: any) {
       res.status(500).json({ error: error.message });
     }
