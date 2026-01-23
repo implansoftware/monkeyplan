@@ -4703,16 +4703,43 @@ export function registerRoutes(app: Express): Server {
         return res.status(403).send("Non autorizzato a visualizzare questo centro");
       }
       
-      // Get the repair center's team (staff + owner)
+      // Get the repair center's team (staff only)
       const staff = await storage.listRepairCenterStaff(id);
       
-      // Return without password
-      const safeStaff = staff.map((s: any) => {
-        const { password: _, ...safe } = s;
-        return safe;
-      });
+      // Find the owner (user with role 'repair_center' and this repairCenterId)
+      const owners = await db.select().from(users).where(and(
+        eq(users.repairCenterId, id),
+        eq(users.role, 'repair_center')
+      ));
+      const ownerUser = owners[0] || null;
       
-      res.json(safeStaff);
+      // Build team with owner first, then staff
+      const team = [
+        ...(ownerUser ? [{
+          id: ownerUser.id,
+          fullName: ownerUser.fullName || "Proprietario",
+          username: ownerUser.username,
+          email: ownerUser.email,
+          phone: ownerUser.phone,
+          role: ownerUser.role,
+          isActive: ownerUser.isActive,
+          createdAt: ownerUser.createdAt,
+          isOwner: true
+        }] : []),
+        ...staff.map((s: any) => ({
+          id: s.id,
+          fullName: s.fullName,
+          username: s.username,
+          email: s.email,
+          phone: s.phone,
+          role: s.role,
+          isActive: s.isActive,
+          createdAt: s.createdAt,
+          isOwner: false
+        }))
+      ];
+      
+      res.json(team);
     } catch (error: any) {
       res.status(500).send(error.message);
     }
