@@ -589,8 +589,25 @@ export default function RepairCenterTransferRequestsOverviewPage() {
                       {selectedRequest.items.map((item) => (
                         <tr key={item.id} className="border-t">
                           <td className="p-2">
-                            <span className="font-medium">{item.product?.name || 'Prodotto'}</span>
-                            <span className="text-muted-foreground text-xs ml-2">{item.product?.sku}</span>
+                            <div className="flex items-center gap-3">
+                              {item.product?.imageUrl ? (
+                                <img 
+                                  src={item.product.imageUrl} 
+                                  alt={item.product?.name || "Prodotto"} 
+                                  className="w-10 h-10 object-cover rounded-md border"
+                                />
+                              ) : (
+                                <div className="w-10 h-10 bg-muted rounded-md flex items-center justify-center">
+                                  <Package className="w-5 h-5 text-muted-foreground" />
+                                </div>
+                              )}
+                              <div>
+                                <span className="font-medium">{item.product?.name || 'Prodotto'}</span>
+                                {item.product?.sku && (
+                                  <span className="text-muted-foreground text-xs block">SKU: {item.product.sku}</span>
+                                )}
+                              </div>
+                            </div>
                           </td>
                           <td className="text-right p-2">{item.requestedQuantity}</td>
                           <td className="text-right p-2">{item.approvedQuantity ?? '-'}</td>
@@ -630,7 +647,22 @@ export default function RepairCenterTransferRequestsOverviewPage() {
                   <tbody>
                     {selectedRequest.items.map((item, idx) => (
                       <tr key={item.id} className="border-t">
-                        <td className="p-2">{item.product?.name || 'Prodotto'}</td>
+                        <td className="p-2">
+                          <div className="flex items-center gap-3">
+                            {item.product?.imageUrl ? (
+                              <img 
+                                src={item.product.imageUrl} 
+                                alt={item.product?.name || "Prodotto"} 
+                                className="w-10 h-10 object-cover rounded-md border"
+                              />
+                            ) : (
+                              <div className="w-10 h-10 bg-muted rounded-md flex items-center justify-center">
+                                <Package className="w-5 h-5 text-muted-foreground" />
+                              </div>
+                            )}
+                            <span className="font-medium">{item.product?.name || 'Prodotto'}</span>
+                          </div>
+                        </td>
                         <td className="text-right p-2">{item.shippedQuantity || item.approvedQuantity || item.requestedQuantity}</td>
                         <td className="text-right p-2">
                           <Input
