@@ -645,21 +645,22 @@ export function AppSidebar() {
               <SidebarGroup key={group} className="px-3 py-2">
                 <SidebarMenu>
                   {groupItems.map((item) => {
-                    const isActive = location === item.url || location.startsWith(item.url + "/");
+                    // Exact match for Dashboard items to prevent sub-routes from highlighting parent
+                    const isActive = location === item.url;
                     return (
                       <SidebarMenuItem key={item.title}>
                         <SidebarMenuButton 
                           asChild 
                           isActive={isActive} 
-                          className={`px-3 py-2.5 rounded-xl transition-all duration-200 ${isActive ? "bg-gradient-to-r from-primary to-primary/90 text-primary-foreground shadow-md" : "hover:bg-sidebar-accent/70"}`}
+                          className={`px-3 py-2.5 rounded-xl transition-all duration-200 ${isActive ? "bg-gradient-to-r from-primary to-primary/90 text-white shadow-md" : "hover:bg-sidebar-accent/70"}`}
                         >
                           <Link 
                             href={item.url} 
                             onClick={handleLinkClick}
                             data-testid={`link-${item.title.toLowerCase().replace(/\s+/g, "-")}`}
                           >
-                            <item.icon className="h-4 w-4" />
-                            <span className="font-semibold">{item.title}</span>
+                            <item.icon className={`h-4 w-4 ${isActive ? "text-white" : ""}`} />
+                            <span className={`font-semibold ${isActive ? "text-white" : ""}`}>{item.title}</span>
                           </Link>
                         </SidebarMenuButton>
                       </SidebarMenuItem>
