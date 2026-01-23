@@ -792,7 +792,7 @@ export default function RepairCenterTransferRequestsOverviewPage() {
                                   {totalStock} disponibili
                                 </Badge>
                                 <p className="text-xs text-muted-foreground mt-1">
-                                  {[...new Set(item.warehouses.map(w => w.ownerName))].join(', ')}
+                                  {Array.from(new Set(item.warehouses.map(w => w.ownerName))).join(', ')}
                                 </p>
                               </div>
                             </div>
