@@ -199,35 +199,49 @@ export default function ResellerPosSessions() {
 
   return (
     <div className="p-6 space-y-6">
-      <div className="flex items-center justify-between flex-wrap gap-4">
-        <div>
-          <h1 className="text-2xl font-bold flex items-center gap-2">
-            <Clock className="w-6 h-6" />
-            Storico Sessioni Centri
-          </h1>
-          <p className="text-muted-foreground">Visualizza tutte le sessioni cassa dei tuoi centri riparazione</p>
+      {/* Hero Header - Modern Glass Style */}
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-500 p-6">
+        {/* Animated background blobs */}
+        <div className="absolute -top-20 -left-20 w-80 h-80 rounded-full bg-white/10 blur-3xl animate-pulse" />
+        <div className="absolute bottom-0 right-0 w-64 h-64 rounded-full bg-white/10 blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
+        <div className="absolute top-1/2 left-1/3 w-48 h-48 rounded-full bg-white/10 blur-3xl animate-pulse" style={{ animationDelay: '2s' }} />
+        
+        <div className="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className="h-12 w-12 rounded-2xl bg-white/20 backdrop-blur-sm border border-white/30 flex items-center justify-center">
+              <Clock className="h-6 w-6 text-white" />
+            </div>
+            <div>
+              <h1 className="text-2xl font-bold tracking-tight text-white">
+                Storico Sessioni Centri
+              </h1>
+              <p className="text-sm text-white/80">
+                Visualizza tutte le sessioni cassa dei tuoi centri riparazione
+              </p>
+            </div>
+          </div>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button className="bg-white/20 backdrop-blur-sm border border-white/30 text-white shadow-lg" disabled={isExporting} data-testid="button-export-sessions">
+                <Download className="h-4 w-4 mr-2" />
+                {isExporting ? "Esportazione..." : "Esporta"}
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => handleExport('csv')} data-testid="menu-export-csv">
+                <FileText className="h-4 w-4 mr-2" />
+                Esporta CSV
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleExport('xlsx')} data-testid="menu-export-xlsx">
+                <FileSpreadsheet className="h-4 w-4 mr-2" />
+                Esporta Excel
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="outline" disabled={isExporting} data-testid="button-export-sessions">
-              <Download className="h-4 w-4 mr-2" />
-              {isExporting ? "Esportazione..." : "Esporta"}
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={() => handleExport('csv')} data-testid="menu-export-csv">
-              <FileText className="h-4 w-4 mr-2" />
-              Esporta CSV
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => handleExport('xlsx')} data-testid="menu-export-xlsx">
-              <FileSpreadsheet className="h-4 w-4 mr-2" />
-              Esporta Excel
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
       </div>
 
-      <Card>
+      <Card className="rounded-2xl">
         <CardHeader>
           <CardTitle className="text-lg">Filtri</CardTitle>
         </CardHeader>
@@ -268,7 +282,7 @@ export default function ResellerPosSessions() {
         </CardContent>
       </Card>
 
-      <Card>
+      <Card className="rounded-2xl">
         <CardHeader>
           <CardTitle className="text-lg flex items-center gap-2">
             <Clock className="w-5 h-5" />

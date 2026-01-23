@@ -246,46 +246,56 @@ export default function ResellerPosRegistersPage() {
 
   return (
     <div className="container mx-auto p-6 space-y-6">
-      <div className="flex items-center justify-between flex-wrap gap-4">
-        <div className="flex items-center gap-4">
-          <Link href="/reseller/pos">
-            <Button variant="ghost" size="icon" data-testid="button-back">
-              <ArrowLeft className="h-5 w-5" />
-            </Button>
-          </Link>
-          <div>
-            <h1 className="text-2xl font-bold flex items-center gap-2">
-              <Store className="h-6 w-6" />
-              Gestione Casse
-            </h1>
-            <p className="text-muted-foreground">
-              Configura i registri di cassa dei tuoi centri riparazione
-            </p>
+      {/* Hero Header - Modern Glass Style */}
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-500 p-6">
+        {/* Animated background blobs */}
+        <div className="absolute -top-20 -left-20 w-80 h-80 rounded-full bg-white/10 blur-3xl animate-pulse" />
+        <div className="absolute bottom-0 right-0 w-64 h-64 rounded-full bg-white/10 blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
+        <div className="absolute top-1/2 left-1/3 w-48 h-48 rounded-full bg-white/10 blur-3xl animate-pulse" style={{ animationDelay: '2s' }} />
+        
+        <div className="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div className="flex items-center gap-4">
+            <Link href="/reseller/pos">
+              <Button variant="ghost" size="icon" className="bg-white/20 backdrop-blur-sm border border-white/30 text-white" data-testid="button-back">
+                <ArrowLeft className="h-5 w-5" />
+              </Button>
+            </Link>
+            <div className="h-12 w-12 rounded-2xl bg-white/20 backdrop-blur-sm border border-white/30 flex items-center justify-center">
+              <Store className="h-6 w-6 text-white" />
+            </div>
+            <div>
+              <h1 className="text-2xl font-bold tracking-tight text-white">
+                Gestione Casse
+              </h1>
+              <p className="text-sm text-white/80">
+                Configura i registri di cassa dei tuoi centri riparazione
+              </p>
+            </div>
           </div>
-        </div>
-        <div className="flex items-center gap-2">
-          <Select value={centerFilter} onValueChange={setCenterFilter}>
-            <SelectTrigger className="w-[200px]" data-testid="select-center-filter">
-              <SelectValue placeholder="Filtra per centro" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Tutti i centri</SelectItem>
-              {repairCenters.map(center => (
-                <SelectItem key={center.id} value={center.id}>{center.name}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          {centerFilter !== "all" && (
-            <Button onClick={openCreateDialog} data-testid="button-add-register">
-              <Plus className="h-4 w-4 mr-2" />
-              Nuova Cassa
-            </Button>
-          )}
+          <div className="flex items-center gap-2">
+            <Select value={centerFilter} onValueChange={setCenterFilter}>
+              <SelectTrigger className="w-[200px] bg-white/20 backdrop-blur-sm border-white/30 text-white" data-testid="select-center-filter">
+                <SelectValue placeholder="Filtra per centro" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Tutti i centri</SelectItem>
+                {repairCenters.map(center => (
+                  <SelectItem key={center.id} value={center.id}>{center.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {centerFilter !== "all" && (
+              <Button onClick={openCreateDialog} className="bg-white/20 backdrop-blur-sm border border-white/30 text-white shadow-lg" data-testid="button-add-register">
+                <Plus className="h-4 w-4 mr-2" />
+                Nuova Cassa
+              </Button>
+            )}
+          </div>
         </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card>
+        <Card className="rounded-2xl">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">Totale Casse</CardTitle>
           </CardHeader>
@@ -293,7 +303,7 @@ export default function ResellerPosRegistersPage() {
             <div className="text-2xl font-bold">{registers.length}</div>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="rounded-2xl">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">Casse Attive</CardTitle>
           </CardHeader>
@@ -301,7 +311,7 @@ export default function ResellerPosRegistersPage() {
             <div className="text-2xl font-bold text-green-600">{activeCount}</div>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="rounded-2xl">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">Casse Disattive</CardTitle>
           </CardHeader>
@@ -311,7 +321,7 @@ export default function ResellerPosRegistersPage() {
         </Card>
       </div>
 
-      <Card>
+      <Card className="rounded-2xl">
         <CardHeader>
           <CardTitle>Elenco Casse</CardTitle>
           <CardDescription>
