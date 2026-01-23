@@ -33894,7 +33894,7 @@ export function registerRoutes(app: Express): Server {
   // ============================================================================
 
   const getRepairCenterIdFromUser = (user: any): string | null => {
-    if (user.role === 'repair_center') return user.id;
+    if (user.role === 'repair_center') return user.repairCenterId;
     if (user.role === 'repair_center_staff' && user.repairCenterId) return user.repairCenterId;
     return null;
   };
