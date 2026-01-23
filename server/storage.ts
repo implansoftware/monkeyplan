@@ -7621,21 +7621,13 @@ export class DatabaseStorage implements IStorage {
       ));
   }
 
-  // Repair Center Staff Team Management - includes owner + staff
+  // Repair Center Staff Team Management - only staff members (owner is added separately in routes)
   async listRepairCenterStaff(repairCenterId: string): Promise<User[]> {
     return await db.select()
       .from(users)
-      .where(or(
-        // Staff members
-        and(
-          eq(users.repairCenterId, repairCenterId),
-          eq(users.role, 'repair_center_staff')
-        ),
-        // Owner (the repair center user - their repair_center_id points to the center)
-        and(
-          eq(users.repairCenterId, repairCenterId),
-          eq(users.role, 'repair_center')
-        )
+      .where(and(
+        eq(users.repairCenterId, repairCenterId),
+        eq(users.role, 'repair_center_staff')
       ));
   }
 
