@@ -85,27 +85,28 @@ export default function SalesHistoryPage() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="relative overflow-hidden rounded-xl bg-gradient-to-br from-emerald-500/5 via-teal-500/10 to-cyan-500/5 dark:from-emerald-500/10 dark:via-teal-500/5 dark:to-cyan-900/10 p-6 border">
-        <div className="absolute inset-0 opacity-[0.03]" style={{
-          backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23000' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
-        }} />
+    <div className="space-y-6 p-6">
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-500 p-6">
+        <div className="absolute -top-20 -left-20 w-80 h-80 rounded-full bg-orange-400/20 blur-3xl animate-pulse" />
+        <div className="absolute bottom-0 right-0 w-64 h-64 rounded-full bg-yellow-400/20 blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
+        <div className="absolute top-1/2 left-1/3 w-48 h-48 rounded-full bg-emerald-300/20 blur-3xl animate-pulse" style={{ animationDelay: '2s' }} />
+        
         <div className="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div className="flex items-center gap-3 mb-1">
-            <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-500 text-white flex items-center justify-center shadow-lg shadow-emerald-500/25">
-              <ShoppingCart className="h-5 w-5" />
+          <div className="flex items-center gap-4">
+            <div className="h-14 w-14 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center shadow-xl">
+              <FileText className="h-7 w-7 text-white" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold tracking-tight">Storico Vendite</h1>
-              <p className="text-sm text-muted-foreground">Tutte le transazioni effettuate dal POS</p>
+              <h1 className="text-2xl sm:text-3xl font-bold text-white tracking-tight">Fatture POS</h1>
+              <p className="text-emerald-100">Tutte le transazioni effettuate dal POS</p>
             </div>
           </div>
           <div className="flex items-center gap-3">
             <div className="text-right">
-              <p className="text-xs text-muted-foreground">Totale incassato</p>
-              <p className="text-lg font-bold text-emerald-600 dark:text-emerald-400">{formatCurrency(totalRevenue)}</p>
+              <p className="text-xs text-emerald-100">Totale incassato</p>
+              <p className="text-lg font-bold text-white">{formatCurrency(totalRevenue)}</p>
             </div>
-            <Badge variant="secondary" className="text-sm">
+            <Badge className="bg-white/20 backdrop-blur-sm text-white border-white/30">
               {transactions.length} vendite
             </Badge>
           </div>
@@ -204,7 +205,9 @@ export default function SalesHistoryPage() {
                         <div className="flex items-center gap-2">
                           {getStatusBadge(tx.status)}
                           {tx.hasInvoice && (
-                            <FileText className="h-3.5 w-3.5 text-blue-500" title="Fattura emessa" />
+                            <span title="Fattura emessa">
+                              <FileText className="h-3.5 w-3.5 text-blue-500" />
+                            </span>
                           )}
                         </div>
                       </TableCell>

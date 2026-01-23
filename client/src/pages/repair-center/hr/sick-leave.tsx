@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Link } from "wouter";
-import { Thermometer, Plus, ArrowLeft, FileUp, Download, Pencil } from "lucide-react";
+import { HeartPulse, Plus, ArrowLeft, FileUp, Download, Pencil } from "lucide-react";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { Skeleton } from "@/components/ui/skeleton";
 import { format } from "date-fns";
@@ -140,27 +140,29 @@ export default function RepairCenterHrSickLeave() {
 
   return (
     <div className="space-y-6" data-testid="page-rc-hr-sick-leave">
-      <div className="relative overflow-hidden rounded-xl bg-gradient-to-br from-red-500/5 via-red-500/10 to-slate-100 dark:from-red-500/10 dark:via-red-500/5 dark:to-slate-900 p-6 border">
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-500 p-6">
+        <div className="absolute -top-20 -left-20 w-80 h-80 rounded-full bg-orange-400/20 blur-3xl animate-pulse" />
+        <div className="absolute bottom-0 right-0 w-64 h-64 rounded-full bg-yellow-400/20 blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
+        <div className="absolute top-1/2 left-1/3 w-48 h-48 rounded-full bg-emerald-300/20 blur-3xl animate-pulse" style={{ animationDelay: '2s' }} />
+        
         <div className="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div>
-            <div className="flex items-center gap-3 mb-2">
-              <div className="h-12 w-12 rounded-lg bg-red-500/10 flex items-center justify-center">
-                <Thermometer className="h-6 w-6 text-red-600 dark:text-red-400" />
-              </div>
-              <div>
-                <h1 className="text-2xl font-bold">Gestione Malattie</h1>
-                <p className="text-muted-foreground">Certificati e assenze per malattia</p>
-              </div>
+          <div className="flex items-center gap-4">
+            <div className="h-14 w-14 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center shadow-xl">
+              <HeartPulse className="h-7 w-7 text-white" />
+            </div>
+            <div>
+              <h1 className="text-2xl sm:text-3xl font-bold text-white tracking-tight">Malattia</h1>
+              <p className="text-emerald-100">Certificati e assenze per malattia</p>
             </div>
           </div>
-          <div className="flex gap-2">
+          <div className="flex items-center gap-2">
             <Link href="/repair-center/hr">
-              <Button variant="outline">
+              <Button variant="outline" className="bg-white/20 backdrop-blur-sm text-white border-white/30 hover:bg-white/30 shadow-lg">
                 <ArrowLeft className="h-4 w-4 mr-2" />
                 Dashboard HR
               </Button>
             </Link>
-            <Button onClick={() => setDialogOpen(true)}>
+            <Button onClick={() => setDialogOpen(true)} className="bg-white/20 backdrop-blur-sm text-white border-white/30 hover:bg-white/30 shadow-lg" variant="outline">
               <Plus className="h-4 w-4 mr-2" />
               Registra Malattia
             </Button>

@@ -269,25 +269,31 @@ export default function RepairCenterServiceCatalog() {
 
   return (
     <div className="p-6 space-y-6">
-      <div className="flex flex-wrap items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold flex items-center gap-2" data-testid="text-page-title">
-            <Wrench className="h-6 w-6" />
-            Listino Interventi
-          </h1>
-          <p className="text-muted-foreground">
-            Catalogo servizi con prezzi applicati al tuo centro
-          </p>
-        </div>
-        <div className="flex gap-2">
-          <Button variant="outline" size="sm" onClick={() => refetch()} data-testid="button-refresh">
-            <RefreshCw className="h-4 w-4 mr-2" />
-            Aggiorna
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-500 p-6">
+        <div className="absolute -top-20 -left-20 w-80 h-80 rounded-full bg-orange-400/20 blur-3xl animate-pulse" />
+        <div className="absolute bottom-0 right-0 w-64 h-64 rounded-full bg-yellow-400/20 blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
+        <div className="absolute top-1/2 left-1/3 w-48 h-48 rounded-full bg-emerald-300/20 blur-3xl animate-pulse" style={{ animationDelay: '2s' }} />
+        
+        <div className="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div className="flex items-center gap-4">
+            <div className="h-14 w-14 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center shadow-xl">
+              <Wrench className="h-7 w-7 text-white" />
+            </div>
+            <div>
+              <h1 className="text-2xl sm:text-3xl font-bold text-white tracking-tight" data-testid="text-page-title">Catalogo Servizi</h1>
+              <p className="text-emerald-100">Catalogo servizi con prezzi applicati al tuo centro</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" className="bg-white/20 backdrop-blur-sm text-white border-white/30 hover:bg-white/30 shadow-lg" onClick={() => refetch()} data-testid="button-refresh">
+              <RefreshCw className="h-4 w-4 mr-2" />
+              Aggiorna
+            </Button>
+            <Button variant="outline" className="bg-white/20 backdrop-blur-sm text-white border-white/30 hover:bg-white/30 shadow-lg" onClick={openNewItemDialog} data-testid="button-new-item">
+              <Plus className="h-4 w-4 mr-2" />
+              Nuovo Intervento
           </Button>
-          <Button size="sm" onClick={openNewItemDialog} data-testid="button-new-item">
-            <Plus className="h-4 w-4 mr-2" />
-            Nuovo Intervento
-          </Button>
+          </div>
         </div>
       </div>
 

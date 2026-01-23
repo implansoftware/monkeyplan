@@ -41,6 +41,7 @@ import {
   Star, 
   ArrowLeft,
   Store,
+  Monitor,
   CheckCircle,
   XCircle,
   AlertTriangle
@@ -216,27 +217,33 @@ export default function PosRegistersPage() {
 
   return (
     <div className="container mx-auto p-6 space-y-6">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <Link href="/repair-center/pos">
-            <Button variant="ghost" size="icon" data-testid="button-back">
-              <ArrowLeft className="h-5 w-5" />
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-500 p-6">
+        <div className="absolute -top-20 -left-20 w-80 h-80 rounded-full bg-orange-400/20 blur-3xl animate-pulse" />
+        <div className="absolute bottom-0 right-0 w-64 h-64 rounded-full bg-yellow-400/20 blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
+        <div className="absolute top-1/2 left-1/3 w-48 h-48 rounded-full bg-emerald-300/20 blur-3xl animate-pulse" style={{ animationDelay: '2s' }} />
+        
+        <div className="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div className="flex items-center gap-4">
+            <Link href="/repair-center/pos">
+              <Button variant="outline" size="icon" className="bg-white/20 backdrop-blur-sm text-white border-white/30 hover:bg-white/30 shadow-lg" data-testid="button-back">
+                <ArrowLeft className="h-5 w-5" />
+              </Button>
+            </Link>
+            <div className="h-14 w-14 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center shadow-xl">
+              <Monitor className="h-7 w-7 text-white" />
+            </div>
+            <div>
+              <h1 className="text-2xl sm:text-3xl font-bold text-white tracking-tight">Registratori</h1>
+              <p className="text-emerald-100">Configura i registri di cassa per il tuo punto vendita</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button onClick={openCreateDialog} className="bg-white/20 backdrop-blur-sm text-white border-white/30 hover:bg-white/30 shadow-lg" variant="outline" data-testid="button-add-register">
+              <Plus className="h-4 w-4 mr-2" />
+              Nuova Cassa
             </Button>
-          </Link>
-          <div>
-            <h1 className="text-2xl font-bold flex items-center gap-2">
-              <Store className="h-6 w-6" />
-              Gestione Casse
-            </h1>
-            <p className="text-muted-foreground">
-              Configura i registri di cassa per il tuo punto vendita
-            </p>
           </div>
         </div>
-        <Button onClick={openCreateDialog} data-testid="button-add-register">
-          <Plus className="h-4 w-4 mr-2" />
-          Nuova Cassa
-        </Button>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">

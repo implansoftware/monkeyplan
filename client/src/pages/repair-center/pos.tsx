@@ -809,55 +809,65 @@ export default function PosPage() {
   return (
     <div className="h-[calc(100vh-4rem)] flex flex-col lg:flex-row gap-4 p-4">
       <div className="flex-1 flex flex-col min-w-0 gap-4">
-        <div className="flex items-center gap-3 flex-wrap">
-          <div className="flex items-center gap-2">
-            <Select value={selectedRegisterId} onValueChange={setSelectedRegisterId}>
-              <SelectTrigger className="w-[200px] h-8" data-testid="select-register">
-                <Store className="w-4 h-4 mr-1" />
-                <SelectValue placeholder="Seleziona cassa" />
-              </SelectTrigger>
-              <SelectContent>
-                {registers.filter(r => r.isActive).map(reg => (
-                  <SelectItem key={reg.id} value={reg.id} data-testid={`select-register-${reg.id}`}>
-                    <span className="flex items-center gap-2">
-                      <span className={`w-2 h-2 rounded-full ${registerSessions[reg.id] ? "bg-green-500" : "bg-gray-300"}`} />
-                      {reg.name} {reg.isDefault && "(Default)"}
-                      {registerSessions[reg.id] && <span className="text-xs text-green-600 ml-1">Aperta</span>}
-                    </span>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Link href="/repair-center/pos/registers">
-              <Button variant="ghost" size="icon" className="h-8 w-8" data-testid="button-manage-registers">
-                <Settings className="w-4 h-4" />
+        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-500 p-4">
+          <div className="absolute -top-20 -left-20 w-80 h-80 rounded-full bg-orange-400/20 blur-3xl animate-pulse" />
+          <div className="absolute bottom-0 right-0 w-64 h-64 rounded-full bg-yellow-400/20 blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
+          <div className="absolute top-1/2 left-1/3 w-48 h-48 rounded-full bg-emerald-300/20 blur-3xl animate-pulse" style={{ animationDelay: '2s' }} />
+          
+          <div className="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <div className="h-12 w-12 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center shadow-xl">
+                <CreditCard className="h-6 w-6 text-white" />
+              </div>
+              <div>
+                <h1 className="text-xl sm:text-2xl font-bold text-white tracking-tight">POS</h1>
+                <div className="flex items-center gap-2 text-emerald-100 text-sm">
+                  <div className="w-2 h-2 rounded-full bg-green-300 animate-pulse" />
+                  {selectedRegister?.name || "Cassa"} • dalle {format(new Date(currentSession.openedAt), "HH:mm", { locale: it })}
+                </div>
+              </div>
+            </div>
+            <div className="flex items-center gap-2 flex-wrap">
+              <Select value={selectedRegisterId} onValueChange={setSelectedRegisterId}>
+                <SelectTrigger className="w-[180px] h-8 bg-white/20 backdrop-blur-sm text-white border-white/30" data-testid="select-register">
+                  <Store className="w-4 h-4 mr-1" />
+                  <SelectValue placeholder="Seleziona cassa" />
+                </SelectTrigger>
+                <SelectContent>
+                  {registers.filter(r => r.isActive).map(reg => (
+                    <SelectItem key={reg.id} value={reg.id} data-testid={`select-register-${reg.id}`}>
+                      <span className="flex items-center gap-2">
+                        <span className={`w-2 h-2 rounded-full ${registerSessions[reg.id] ? "bg-green-500" : "bg-gray-300"}`} />
+                        {reg.name} {reg.isDefault && "(Default)"}
+                        {registerSessions[reg.id] && <span className="text-xs text-green-600 ml-1">Aperta</span>}
+                      </span>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Link href="/repair-center/pos/registers">
+                <Button variant="outline" size="icon" className="h-8 w-8 bg-white/20 backdrop-blur-sm text-white border-white/30 hover:bg-white/30" data-testid="button-manage-registers">
+                  <Settings className="w-4 h-4" />
+                </Button>
+              </Link>
+              <Link href="/repair-center/pos/sessions">
+                <Button variant="outline" size="sm" className="bg-white/20 backdrop-blur-sm text-white border-white/30 hover:bg-white/30" data-testid="button-session-history">
+                  <History className="w-4 h-4 mr-1" />
+                  Storico
+                </Button>
+              </Link>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setCloseSessionDialog(true)}
+                className="bg-red-500/30 backdrop-blur-sm text-white border-red-300/50 hover:bg-red-500/50"
+                data-testid="button-close-session"
+              >
+                <X className="w-4 h-4 mr-1" />
+                Chiudi
               </Button>
-            </Link>
-            <Badge variant="outline" className="bg-green-500/10 text-green-600 border-green-500/30">
-              <div className="w-2 h-2 rounded-full bg-green-500 mr-1 animate-pulse" />
-              {selectedRegister?.name || "Cassa"} Aperta
-            </Badge>
-            <span className="text-sm text-muted-foreground">
-              dalle {format(new Date(currentSession.openedAt), "HH:mm", { locale: it })}
-            </span>
+            </div>
           </div>
-          <div className="flex-1" />
-          <Link href="/repair-center/pos/sessions">
-            <Button variant="outline" size="sm" data-testid="button-session-history">
-              <History className="w-4 h-4 mr-1" />
-              Storico Sessioni
-            </Button>
-          </Link>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setCloseSessionDialog(true)}
-            className="text-destructive hover:text-destructive"
-            data-testid="button-close-session"
-          >
-            <X className="w-4 h-4 mr-1" />
-            Chiudi Cassa
-          </Button>
         </div>
 
         <Card className="flex-1 flex flex-col overflow-hidden">

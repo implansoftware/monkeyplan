@@ -279,60 +279,68 @@ export default function PosTransactionDetailPage() {
 
   return (
     <div className="p-6 space-y-6 max-w-4xl mx-auto">
-      <div className="flex items-center justify-between gap-4 flex-wrap">
-        <div className="flex items-center gap-3">
-          <Button variant="ghost" size="icon" onClick={() => navigate("/repair-center/pos")} data-testid="button-back">
-            <ArrowLeft className="w-5 h-5" />
-          </Button>
-          <div>
-            <h1 className="text-2xl font-bold flex items-center gap-2">
-              <Receipt className="w-6 h-6" />
-              {transaction.transactionNumber}
-            </h1>
-            <p className="text-sm text-muted-foreground">
-              {format(new Date(transaction.createdAt), "EEEE d MMMM yyyy, HH:mm", { locale: it })}
-            </p>
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-500 p-6">
+        <div className="absolute -top-20 -left-20 w-80 h-80 rounded-full bg-orange-400/20 blur-3xl animate-pulse" />
+        <div className="absolute bottom-0 right-0 w-64 h-64 rounded-full bg-yellow-400/20 blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
+        <div className="absolute top-1/2 left-1/3 w-48 h-48 rounded-full bg-emerald-300/20 blur-3xl animate-pulse" style={{ animationDelay: '2s' }} />
+        
+        <div className="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div className="flex items-center gap-4">
+            <Button variant="outline" size="icon" className="bg-white/20 backdrop-blur-sm text-white border-white/30 hover:bg-white/30 shadow-lg" onClick={() => navigate("/repair-center/pos")} data-testid="button-back">
+              <ArrowLeft className="w-5 h-5" />
+            </Button>
+            <div className="h-14 w-14 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center shadow-xl">
+              <Receipt className="h-7 w-7 text-white" />
+            </div>
+            <div>
+              <h1 className="text-2xl sm:text-3xl font-bold text-white tracking-tight">{transaction.transactionNumber}</h1>
+              <p className="text-emerald-100">
+                {format(new Date(transaction.createdAt), "EEEE d MMMM yyyy, HH:mm", { locale: it })}
+              </p>
+            </div>
           </div>
-        </div>
-        <div className="flex items-center gap-2 flex-wrap">
-          <Badge variant={statusInfo.variant}>{statusInfo.label}</Badge>
-          {transaction.status === "completed" && (
-            <>
-              <Button 
-                variant="outline" 
-                size="sm" 
-                data-testid="button-refund"
-                onClick={() => {
-                  setRefundAmount((transaction.total / 100).toFixed(2));
-                  setRefundDialogOpen(true);
-                }}
-              >
-                <RotateCcw className="w-4 h-4 mr-2" />
-                Reso
-              </Button>
-              <Button 
-                variant="outline" 
-                size="sm" 
-                data-testid="button-void"
-                className="text-destructive border-destructive hover:bg-destructive/10"
-                onClick={() => setVoidDialogOpen(true)}
-              >
-                <Ban className="w-4 h-4 mr-2" />
-                Annulla
-              </Button>
-            </>
-          )}
-          <Button 
-            variant="outline" 
-            size="sm" 
-            data-testid="button-print"
-            onClick={() => {
-              window.open(`/api/repair-center/pos/transaction/${transaction.id}/receipt`, '_blank');
-            }}
-          >
-            <Printer className="w-4 h-4 mr-2" />
-            Stampa
-          </Button>
+          <div className="flex items-center gap-2 flex-wrap">
+            <Badge className={`${statusInfo.variant === 'destructive' ? 'bg-red-500/80' : statusInfo.variant === 'secondary' ? 'bg-white/30' : 'bg-white/20'} backdrop-blur-sm text-white border-white/30`}>{statusInfo.label}</Badge>
+            {transaction.status === "completed" && (
+              <>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="bg-white/20 backdrop-blur-sm text-white border-white/30 hover:bg-white/30 shadow-lg"
+                  data-testid="button-refund"
+                  onClick={() => {
+                    setRefundAmount((transaction.total / 100).toFixed(2));
+                    setRefundDialogOpen(true);
+                  }}
+                >
+                  <RotateCcw className="w-4 h-4 mr-2" />
+                  Reso
+                </Button>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  data-testid="button-void"
+                  className="bg-red-500/30 backdrop-blur-sm text-white border-red-300/50 hover:bg-red-500/50 shadow-lg"
+                  onClick={() => setVoidDialogOpen(true)}
+                >
+                  <Ban className="w-4 h-4 mr-2" />
+                  Annulla
+                </Button>
+              </>
+            )}
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="bg-white/20 backdrop-blur-sm text-white border-white/30 hover:bg-white/30 shadow-lg"
+              data-testid="button-print"
+              onClick={() => {
+                window.open(`/api/repair-center/pos/transaction/${transaction.id}/receipt`, '_blank');
+              }}
+            >
+              <Printer className="w-4 h-4 mr-2" />
+              Stampa
+            </Button>
+          </div>
         </div>
       </div>
 

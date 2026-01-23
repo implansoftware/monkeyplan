@@ -189,73 +189,78 @@ export default function PosSessionsPage() {
 
   return (
     <div className="p-6 space-y-6">
-      <div className="flex items-center justify-between flex-wrap gap-4">
-        <div className="flex items-center gap-4">
-          <Link href="/repair-center/pos">
-            <Button variant="ghost" size="icon" data-testid="button-back">
-              <ArrowLeft className="h-5 w-5" />
-            </Button>
-          </Link>
-          <div>
-            <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-500 to-cyan-500 bg-clip-text text-transparent">
-              Storico Sessioni Cassa
-            </h1>
-            <p className="text-muted-foreground">
-              Cronologia aperture e chiusure cassa
-            </p>
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-500 p-6">
+        <div className="absolute -top-20 -left-20 w-80 h-80 rounded-full bg-orange-400/20 blur-3xl animate-pulse" />
+        <div className="absolute bottom-0 right-0 w-64 h-64 rounded-full bg-yellow-400/20 blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
+        <div className="absolute top-1/2 left-1/3 w-48 h-48 rounded-full bg-emerald-300/20 blur-3xl animate-pulse" style={{ animationDelay: '2s' }} />
+        
+        <div className="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div className="flex items-center gap-4">
+            <Link href="/repair-center/pos">
+              <Button variant="outline" size="icon" className="bg-white/20 backdrop-blur-sm text-white border-white/30 hover:bg-white/30 shadow-lg" data-testid="button-back">
+                <ArrowLeft className="h-5 w-5" />
+              </Button>
+            </Link>
+            <div className="h-14 w-14 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center shadow-xl">
+              <Clock className="h-7 w-7 text-white" />
+            </div>
+            <div>
+              <h1 className="text-2xl sm:text-3xl font-bold text-white tracking-tight">Sessioni POS</h1>
+              <p className="text-emerald-100">Cronologia aperture e chiusure cassa</p>
+            </div>
           </div>
-        </div>
-        <div className="flex items-center gap-2">
-          {registers.length > 1 && (
-            <Select value={selectedRegisterId} onValueChange={setSelectedRegisterId}>
-              <SelectTrigger className="w-48" data-testid="select-register-filter">
-                <Store className="w-4 h-4 mr-1" />
-                <SelectValue placeholder="Tutte le casse" />
+          <div className="flex items-center gap-2 flex-wrap">
+            {registers.length > 1 && (
+              <Select value={selectedRegisterId} onValueChange={setSelectedRegisterId}>
+                <SelectTrigger className="w-48 bg-white/20 backdrop-blur-sm text-white border-white/30" data-testid="select-register-filter">
+                  <Store className="w-4 h-4 mr-1" />
+                  <SelectValue placeholder="Tutte le casse" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Tutte le casse</SelectItem>
+                  {registers.map(reg => (
+                    <SelectItem key={reg.id} value={reg.id}>
+                      {reg.name} {reg.isDefault && "(Default)"}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+            <Select value={period} onValueChange={setPeriod}>
+              <SelectTrigger className="w-40 bg-white/20 backdrop-blur-sm text-white border-white/30" data-testid="select-period">
+                <SelectValue placeholder="Periodo" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">Tutte le casse</SelectItem>
-                {registers.map(reg => (
-                  <SelectItem key={reg.id} value={reg.id}>
-                    {reg.name} {reg.isDefault && "(Default)"}
-                  </SelectItem>
-                ))}
+                <SelectItem value="all">Tutte</SelectItem>
+                <SelectItem value="today">Oggi</SelectItem>
+                <SelectItem value="week">Settimana</SelectItem>
+                <SelectItem value="month">Mese</SelectItem>
               </SelectContent>
             </Select>
-          )}
-          <Select value={period} onValueChange={setPeriod}>
-            <SelectTrigger className="w-40" data-testid="select-period">
-              <SelectValue placeholder="Periodo" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Tutte</SelectItem>
-              <SelectItem value="today">Oggi</SelectItem>
-              <SelectItem value="week">Settimana</SelectItem>
-              <SelectItem value="month">Mese</SelectItem>
-            </SelectContent>
-          </Select>
-          
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" disabled={isExporting || filteredSessions.length === 0} data-testid="button-export">
-                <Download className="h-4 w-4 mr-2" />
-                {isExporting ? "Export..." : "Esporta"}
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={() => handleExport('csv')} data-testid="menu-export-csv">
-                <FileText className="h-4 w-4 mr-2" />
-                Esporta CSV
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => handleExport('xlsx')} data-testid="menu-export-xlsx">
-                <FileSpreadsheet className="h-4 w-4 mr-2" />
-                Esporta Excel (XLSX)
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => handleExport('pdf')} data-testid="menu-export-pdf">
-                <File className="h-4 w-4 mr-2" />
-                Esporta PDF
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+            
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" className="bg-white/20 backdrop-blur-sm text-white border-white/30 hover:bg-white/30 shadow-lg" disabled={isExporting || filteredSessions.length === 0} data-testid="button-export">
+                  <Download className="h-4 w-4 mr-2" />
+                  {isExporting ? "Export..." : "Esporta"}
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={() => handleExport('csv')} data-testid="menu-export-csv">
+                  <FileText className="h-4 w-4 mr-2" />
+                  Esporta CSV
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => handleExport('xlsx')} data-testid="menu-export-xlsx">
+                  <FileSpreadsheet className="h-4 w-4 mr-2" />
+                  Esporta Excel (XLSX)
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => handleExport('pdf')} data-testid="menu-export-pdf">
+                  <File className="h-4 w-4 mr-2" />
+                  Esporta PDF
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
         </div>
       </div>
 
