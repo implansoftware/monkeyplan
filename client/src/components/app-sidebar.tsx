@@ -580,12 +580,12 @@ export function AppSidebar() {
     <Sidebar>
       <SidebarHeader className="px-3 py-4">
         {parentReseller?.logoUrl ? (
-          <div className="flex items-center gap-3 p-3 rounded-xl bg-gradient-to-br from-primary/10 via-primary/5 to-transparent border border-primary/10">
+          <div className="flex items-center gap-3 p-3 rounded-2xl bg-gradient-to-br from-emerald-500/10 via-teal-500/5 to-cyan-500/10 border border-emerald-500/20 backdrop-blur-sm">
             <div className="relative">
-              <div className="absolute inset-0 bg-gradient-to-br from-primary/30 to-primary/10 rounded-xl blur-sm" />
-              <Avatar className="relative h-11 w-11 rounded-xl shadow-lg ring-2 ring-primary/20">
+              <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/30 to-teal-500/20 rounded-xl blur-sm" />
+              <Avatar className="relative h-11 w-11 rounded-xl shadow-lg ring-2 ring-emerald-500/30">
                 <AvatarImage src={parentReseller.logoUrl} alt={parentReseller.ragioneSociale || parentReseller.fullName} className="object-contain" />
-                <AvatarFallback className="rounded-xl bg-gradient-to-br from-primary to-primary/70 text-primary-foreground text-sm font-bold">
+                <AvatarFallback className="rounded-xl bg-gradient-to-br from-emerald-500 to-teal-500 text-white text-sm font-bold">
                   {getInitials(parentReseller.ragioneSociale || parentReseller.fullName)}
                 </AvatarFallback>
               </Avatar>
@@ -603,17 +603,17 @@ export function AppSidebar() {
             </div>
           </div>
         ) : (
-          <div className="flex items-center gap-3 p-3 rounded-xl bg-gradient-to-br from-primary/10 via-primary/5 to-transparent border border-primary/10">
+          <div className="flex items-center gap-3 p-3 rounded-2xl bg-gradient-to-br from-emerald-500/10 via-teal-500/5 to-cyan-500/10 border border-emerald-500/20 backdrop-blur-sm">
             <div className="relative">
-              <div className="absolute inset-0 bg-gradient-to-br from-primary/40 to-primary/20 rounded-xl blur-sm" />
-              <div className="relative flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-primary/80 text-primary-foreground shadow-lg ring-2 ring-primary/30">
+              <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/40 to-teal-500/20 rounded-xl blur-sm" />
+              <div className="relative flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-500 to-teal-500 text-white shadow-lg ring-2 ring-emerald-500/30">
                 <Wrench className="h-5 w-5" />
               </div>
             </div>
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-2">
                 <span className="font-bold text-sm tracking-tight">MonkeyPlan</span>
-                <span className="text-[10px] text-white font-semibold px-2 py-0.5 rounded-full bg-gradient-to-r from-primary to-primary/80 shadow-sm">Beta v.23.5</span>
+                <span className="text-[10px] text-white font-semibold px-2 py-0.5 rounded-full bg-gradient-to-r from-emerald-500 to-teal-500 shadow-sm">Beta v.23.5</span>
               </div>
               <div className="flex items-center gap-1.5 mt-0.5">
                 <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
@@ -651,7 +651,7 @@ export function AppSidebar() {
                         <SidebarMenuButton 
                           asChild 
                           isActive={isActive} 
-                          className={`px-3 py-2.5 rounded-xl transition-all duration-200 ${isActive ? "bg-gradient-to-r from-primary to-primary/90 text-white shadow-md" : "hover:bg-sidebar-accent/70"}`}
+                          className={`px-3 py-2.5 rounded-xl ${isActive ? "bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-md shadow-emerald-500/20" : "hover-elevate"}`}
                         >
                           <Link 
                             href={item.url} 
@@ -675,11 +675,11 @@ export function AppSidebar() {
               <Collapsible open={isOpen} onOpenChange={(open) => setGroupOpen(group, open)}>
                 <CollapsibleTrigger asChild>
                   <SidebarMenuButton 
-                    className={`w-full px-3 py-2.5 rounded-xl transition-all duration-200 ${hasActiveItem && !isOpen ? "bg-primary/10 border border-primary/20" : "hover:bg-sidebar-accent/60"}`}
+                    className={`w-full px-3 py-2.5 rounded-xl hover-elevate ${hasActiveItem && !isOpen ? "bg-gradient-to-r from-emerald-500/10 to-teal-500/10 border border-emerald-500/20" : ""}`}
                     data-testid={`button-group-${group.toLowerCase().replace(/\s+/g, "-")}`}
                   >
-                    <div className={`flex h-6 w-6 items-center justify-center rounded-lg ${hasActiveItem ? "bg-primary/15" : "bg-sidebar-accent/50"}`}>
-                      <GroupIcon className={`h-3.5 w-3.5 ${hasActiveItem ? "text-primary" : "text-muted-foreground"}`} />
+                    <div className={`flex h-6 w-6 items-center justify-center rounded-lg ${hasActiveItem ? "bg-gradient-to-br from-emerald-500/20 to-teal-500/20" : "bg-sidebar-accent/50"}`}>
+                      <GroupIcon className={`h-3.5 w-3.5 ${hasActiveItem ? "text-emerald-600 dark:text-emerald-400" : "text-muted-foreground"}`} />
                     </div>
                     <span className={`flex-1 text-left font-medium ${hasActiveItem ? "text-foreground" : "text-muted-foreground"}`}>
                       {group}
@@ -734,7 +734,7 @@ export function AppSidebar() {
                             <SidebarMenuButton 
                               asChild 
                               isActive={isActive} 
-                              className={`pl-3 py-2 rounded-lg transition-all duration-150 ${isActive ? "bg-primary/10 text-primary font-medium border-l-2 border-primary -ml-[3px] pl-[14px]" : "text-muted-foreground hover:text-foreground hover:bg-sidebar-accent/50"}`}
+                              className={`pl-3 py-2 rounded-lg ${isActive ? "bg-gradient-to-r from-emerald-500/10 to-teal-500/10 text-emerald-600 dark:text-emerald-400 font-medium" : "text-muted-foreground hover-elevate"}`}
                             >
                               <Link 
                                 href={item.url} 
@@ -848,10 +848,10 @@ export function AppSidebar() {
       </SidebarContent>
 
       <SidebarFooter className="px-3 py-3">
-        <div className="flex items-center gap-3 p-3 rounded-xl bg-gradient-to-br from-sidebar-accent/50 via-sidebar-accent/30 to-transparent border border-sidebar-border/30 hover:border-sidebar-border/50 transition-all duration-200">
+        <div className="flex items-center gap-3 p-3 rounded-2xl bg-gradient-to-br from-emerald-500/5 via-teal-500/5 to-cyan-500/5 border border-emerald-500/10 backdrop-blur-sm">
           <div className="relative">
-            <Avatar className="h-10 w-10 shadow-md ring-2 ring-primary/20">
-              <AvatarFallback className="text-xs font-bold bg-gradient-to-br from-primary/30 to-primary/10 text-primary">
+            <Avatar className="h-10 w-10 shadow-md ring-2 ring-emerald-500/20">
+              <AvatarFallback className="text-xs font-bold bg-gradient-to-br from-emerald-500/30 to-teal-500/20 text-emerald-700 dark:text-emerald-300">
                 {getInitials(user.fullName)}
               </AvatarFallback>
             </Avatar>
@@ -864,7 +864,7 @@ export function AppSidebar() {
           <Button
             variant="ghost"
             size="icon"
-            className="h-9 w-9 flex-shrink-0 rounded-xl hover:bg-destructive/10 hover:text-destructive transition-colors duration-200"
+            className="flex-shrink-0 rounded-xl"
             onClick={() => logoutMutation.mutate()}
             disabled={logoutMutation.isPending}
             data-testid="button-logout"
