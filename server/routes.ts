@@ -33786,15 +33786,15 @@ export function registerRoutes(app: Express): Server {
       const repairCenterData = await storage.getRepairCenter(repairCenterId);
       
       const team = [
-        ...(repairCenter ? [{
-          id: repairCenter.id,
-          fullName: repairCenter.fullName,
-          username: repairCenter.username,
-          email: repairCenter.email,
-          phone: repairCenter.phone,
-          role: repairCenter.role,
-          isActive: repairCenter.isActive,
-          createdAt: repairCenter.createdAt,
+        ...(repairCenterData ? [{
+          id: repairCenterData.id,
+          fullName: repairCenterData.fullName,
+          username: repairCenterData.username,
+          email: repairCenterData.email,
+          phone: repairCenterData.phone,
+          role: repairCenterData.role,
+          isActive: repairCenterData.isActive,
+          createdAt: repairCenterData.createdAt,
           isOwner: true
         }] : []),
         ...staff.map((s: any) => ({
