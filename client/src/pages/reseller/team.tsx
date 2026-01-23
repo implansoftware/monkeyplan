@@ -419,19 +419,26 @@ export default function ResellerTeam() {
   return (
     <div className="space-y-6" data-testid="page-reseller-team">
       {/* Hero Header */}
-      <div className="relative overflow-hidden rounded-xl bg-gradient-to-br from-primary/5 via-primary/10 to-slate-100 dark:from-primary/10 dark:via-primary/5 dark:to-slate-900 p-6 border">
-        <div className="absolute inset-0 opacity-[0.03]" style={{
-          backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23000' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
-        }} />
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-500 p-6">
+        <div className="absolute -top-20 -left-20 w-80 h-80 rounded-full bg-orange-400/20 blur-3xl animate-pulse" />
+        <div className="absolute bottom-0 right-0 w-64 h-64 rounded-full bg-yellow-400/20 blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
+        <div className="absolute top-1/2 left-1/3 w-48 h-48 rounded-full bg-emerald-300/20 blur-3xl animate-pulse" style={{ animationDelay: '2s' }} />
+        <div 
+          className="absolute inset-0 opacity-5"
+          style={{
+            backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M30 5 L35 15 L45 15 L37 22 L40 32 L30 26 L20 32 L23 22 L15 15 L25 15 Z' fill='white'/%3E%3C/svg%3E")`,
+            backgroundSize: '60px 60px'
+          }}
+        />
         <div className="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <div className="flex items-center gap-3 mb-1">
-              <div className="h-10 w-10 rounded-xl bg-primary text-primary-foreground flex items-center justify-center shadow-lg shadow-primary/25">
-                <Users className="h-5 w-5" />
+              <div className="h-12 w-12 rounded-2xl bg-white/20 backdrop-blur-sm border border-white/30 flex items-center justify-center">
+                <Users className="h-6 w-6 text-white" />
               </div>
               <div>
-                <h1 className="text-2xl font-bold tracking-tight">Gestione Team</h1>
-                <p className="text-sm text-muted-foreground">
+                <h1 className="text-2xl font-bold tracking-tight text-white">Gestione Team</h1>
+                <p className="text-sm text-white/80">
                   Collaboratori e permessi
                 </p>
               </div>
@@ -439,13 +446,13 @@ export default function ResellerTeam() {
           </div>
           <div className="flex gap-2">
             <Link href="/reseller/hr">
-              <Button variant="outline" data-testid="button-hr-module">
+              <Button variant="outline" className="bg-white/10 border-white/30 text-white backdrop-blur-sm" data-testid="button-hr-module">
                 <Briefcase className="h-4 w-4 mr-2" />
                 Gestione HR
               </Button>
             </Link>
             {isOwnTeam && (
-              <Button onClick={openCreateDialog} className="shadow-lg shadow-primary/25" data-testid="button-new-staff">
+              <Button onClick={openCreateDialog} className="bg-white text-emerald-600 shadow-lg" data-testid="button-new-staff">
                 <Plus className="h-4 w-4 mr-2" />
                 Nuovo Collaboratore
               </Button>
@@ -456,8 +463,8 @@ export default function ResellerTeam() {
 
       {/* Stats Row */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <Card className="relative overflow-hidden group hover:shadow-md transition-shadow">
-          <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent" />
+        <Card className="relative overflow-hidden rounded-2xl hover-elevate">
+          <div className="absolute inset-0 bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-emerald-950/40 dark:to-teal-950/40" />
           <CardContent className="relative pt-5 pb-4">
             <div className="flex items-center justify-between">
               <div>
@@ -468,15 +475,15 @@ export default function ResellerTeam() {
                   <span className="text-xs text-emerald-600 dark:text-emerald-400 font-medium">Team attivo</span>
                 </div>
               </div>
-              <div className="h-12 w-12 rounded-xl bg-primary text-primary-foreground flex items-center justify-center shadow-lg shadow-primary/20">
+              <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-500 text-white flex items-center justify-center shadow-lg shadow-emerald-500/25">
                 <Users className="h-6 w-6" />
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="relative overflow-hidden group hover:shadow-md transition-shadow">
-          <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/5 to-transparent" />
+        <Card className="relative overflow-hidden rounded-2xl hover-elevate">
+          <div className="absolute inset-0 bg-gradient-to-br from-cyan-50 to-teal-50 dark:from-cyan-950/40 dark:to-teal-950/40" />
           <CardContent className="relative pt-5 pb-4">
             <div className="flex items-center justify-between">
               <div>
@@ -486,15 +493,15 @@ export default function ResellerTeam() {
                   {staffMembers.length > 0 ? Math.round((activeMembers / staffMembers.length) * 100) : 0}% del totale
                 </p>
               </div>
-              <div className="h-12 w-12 rounded-xl bg-emerald-500 text-white flex items-center justify-center shadow-lg shadow-emerald-500/20">
+              <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-cyan-500 to-teal-500 text-white flex items-center justify-center shadow-lg shadow-cyan-500/25">
                 <UserCheck className="h-6 w-6" />
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="relative overflow-hidden group hover:shadow-md transition-shadow">
-          <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-transparent" />
+        <Card className="relative overflow-hidden rounded-2xl hover-elevate">
+          <div className="absolute inset-0 bg-gradient-to-br from-blue-50 to-cyan-50 dark:from-blue-950/40 dark:to-cyan-950/40" />
           <CardContent className="relative pt-5 pb-4">
             <div className="flex items-center justify-between">
               <div>
@@ -504,7 +511,7 @@ export default function ResellerTeam() {
                   Media {staffMembers.length > 0 ? (totalPermissions / staffMembers.length).toFixed(1) : 0} per membro
                 </p>
               </div>
-              <div className="h-12 w-12 rounded-xl bg-blue-500 text-white flex items-center justify-center shadow-lg shadow-blue-500/20">
+              <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-blue-500 to-cyan-500 text-white flex items-center justify-center shadow-lg shadow-blue-500/25">
                 <Shield className="h-6 w-6" />
               </div>
             </div>
@@ -513,7 +520,7 @@ export default function ResellerTeam() {
       </div>
 
       {/* Entity Selector */}
-      <Card className="overflow-hidden">
+      <Card className="overflow-hidden rounded-2xl">
         <CardContent className="py-4">
           <div className="flex flex-col sm:flex-row sm:items-center gap-4">
             <div className="flex items-center gap-2">

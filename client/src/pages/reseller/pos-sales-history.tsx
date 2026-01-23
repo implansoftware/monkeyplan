@@ -25,7 +25,8 @@ import {
   Building2,
   Download,
   FileSpreadsheet,
-  FileText
+  FileText,
+  History
 } from "lucide-react";
 import { useState } from "react";
 import { format } from "date-fns";
@@ -104,7 +105,7 @@ export default function ResellerPosSalesHistory() {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case "completed":
-        return <Badge variant="default" className="bg-green-600"><CheckCircle className="w-3 h-3 mr-1" />Completata</Badge>;
+        return <Badge variant="default" className="bg-emerald-600"><CheckCircle className="w-3 h-3 mr-1" />Completata</Badge>;
       case "voided":
         return <Badge variant="destructive"><XCircle className="w-3 h-3 mr-1" />Annullata</Badge>;
       case "refunded":
@@ -161,39 +162,56 @@ export default function ResellerPosSalesHistory() {
 
   return (
     <div className="p-6 space-y-6">
-      <div className="flex items-center justify-between flex-wrap gap-4">
-        <div>
-          <h1 className="text-2xl font-bold flex items-center gap-2">
-            <Receipt className="w-6 h-6" />
-            Storico Vendite Centri
-          </h1>
-          <p className="text-muted-foreground">Visualizza tutte le transazioni POS dei tuoi centri riparazione</p>
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-500 p-6">
+        <div className="absolute -top-20 -left-20 w-80 h-80 rounded-full bg-white/10 blur-3xl animate-pulse" />
+        <div className="absolute bottom-0 right-0 w-64 h-64 rounded-full bg-cyan-300/20 blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
+        <div className="absolute top-1/2 left-1/3 w-48 h-48 rounded-full bg-emerald-300/20 blur-3xl animate-pulse" style={{ animationDelay: '2s' }} />
+        
+        <div className="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className="h-12 w-12 rounded-2xl bg-white/20 backdrop-blur-sm border border-white/30 flex items-center justify-center">
+              <History className="h-6 w-6 text-white" />
+            </div>
+            <div>
+              <h1 className="text-2xl font-bold tracking-tight text-white">
+                Storico Vendite Centri
+              </h1>
+              <p className="text-sm text-white/80">
+                Visualizza tutte le transazioni POS dei tuoi centri riparazione
+              </p>
+            </div>
+          </div>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button className="bg-white/20 backdrop-blur-sm border border-white/30 text-white" disabled={isExporting} data-testid="button-export-transactions">
+                <Download className="h-4 w-4 mr-2" />
+                {isExporting ? "Esportazione..." : "Esporta"}
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => handleExport('csv')} data-testid="menu-export-csv">
+                <FileText className="h-4 w-4 mr-2" />
+                Esporta CSV
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleExport('xlsx')} data-testid="menu-export-xlsx">
+                <FileSpreadsheet className="h-4 w-4 mr-2" />
+                Esporta Excel
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="outline" disabled={isExporting} data-testid="button-export-transactions">
-              <Download className="h-4 w-4 mr-2" />
-              {isExporting ? "Esportazione..." : "Esporta"}
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={() => handleExport('csv')} data-testid="menu-export-csv">
-              <FileText className="h-4 w-4 mr-2" />
-              Esporta CSV
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => handleExport('xlsx')} data-testid="menu-export-xlsx">
-              <FileSpreadsheet className="h-4 w-4 mr-2" />
-              Esporta Excel
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">Filtri</CardTitle>
+      <Card className="rounded-2xl">
+        <CardHeader className="bg-gradient-to-r from-emerald-50 to-teal-50 dark:from-emerald-950/20 dark:to-teal-950/20 rounded-t-2xl">
+          <CardTitle className="flex items-center gap-2 text-lg">
+            <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center">
+              <Search className="h-4 w-4 text-white" />
+            </div>
+            Filtri
+          </CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="pt-4">
           <div className="flex flex-wrap gap-4">
             <div className="flex-1 min-w-[200px]">
               <Input
@@ -231,14 +249,16 @@ export default function ResellerPosSalesHistory() {
         </CardContent>
       </Card>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg flex items-center gap-2">
-            <Receipt className="w-5 h-5" />
+      <Card className="rounded-2xl">
+        <CardHeader className="bg-gradient-to-r from-teal-50 to-cyan-50 dark:from-teal-950/20 dark:to-cyan-950/20 rounded-t-2xl">
+          <CardTitle className="flex items-center gap-2 text-lg">
+            <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-teal-500 to-cyan-500 flex items-center justify-center">
+              <Receipt className="h-4 w-4 text-white" />
+            </div>
             Transazioni ({filteredTransactions?.length || 0})
           </CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="pt-4">
           {isLoading ? (
             <div className="space-y-2">
               {[...Array(5)].map((_, i) => <Skeleton key={i} className="h-12 w-full" />)}

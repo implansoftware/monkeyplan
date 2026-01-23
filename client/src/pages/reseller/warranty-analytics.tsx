@@ -42,14 +42,35 @@ export default function ResellerWarrantyAnalytics() {
   }));
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
-      <div className="flex items-center gap-3">
-        <BarChart3 className="h-8 w-8 text-primary" />
-        <h1 className="text-2xl font-bold">Analytics Garanzie</h1>
+    <div className="space-y-6">
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-500 p-6">
+        <div className="absolute -top-20 -left-20 w-80 h-80 rounded-full bg-orange-400/20 blur-3xl animate-pulse" />
+        <div className="absolute bottom-0 right-0 w-64 h-64 rounded-full bg-yellow-400/20 blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
+        <div className="absolute top-1/2 left-1/3 w-48 h-48 rounded-full bg-emerald-300/20 blur-3xl animate-pulse" style={{ animationDelay: '2s' }} />
+        
+        <div 
+          className="absolute inset-0 opacity-5"
+          style={{
+            backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M30 5 L35 15 L45 15 L37 22 L40 32 L30 26 L20 32 L23 22 L15 15 L25 15 Z' fill='white'/%3E%3C/svg%3E")`,
+            backgroundSize: '60px 60px'
+          }}
+        />
+        
+        <div className="relative flex items-center gap-3">
+          <div className="h-12 w-12 rounded-2xl bg-white/20 backdrop-blur-sm border border-white/30 flex items-center justify-center">
+            <BarChart3 className="h-6 w-6 text-white" />
+          </div>
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight text-white">Analytics Garanzie</h1>
+            <p className="text-sm text-white/80">
+              Statistiche e performance delle vendite garanzie
+            </p>
+          </div>
+        </div>
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Card data-testid="card-total-offered">
+        <Card className="rounded-2xl" data-testid="card-total-offered">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 gap-2">
             <CardTitle className="text-sm font-medium">Garanzie Offerte</CardTitle>
             <Shield className="h-4 w-4 text-muted-foreground" />
@@ -60,7 +81,7 @@ export default function ResellerWarrantyAnalytics() {
           </CardContent>
         </Card>
 
-        <Card data-testid="card-total-accepted">
+        <Card className="rounded-2xl" data-testid="card-total-accepted">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 gap-2">
             <CardTitle className="text-sm font-medium">Garanzie Vendute</CardTitle>
             <CheckCircle2 className="h-4 w-4 text-emerald-500" />
@@ -71,7 +92,7 @@ export default function ResellerWarrantyAnalytics() {
           </CardContent>
         </Card>
 
-        <Card data-testid="card-conversion-rate">
+        <Card className="rounded-2xl" data-testid="card-conversion-rate">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 gap-2">
             <CardTitle className="text-sm font-medium">Tasso Conversione</CardTitle>
             <TrendingUp className="h-4 w-4 text-blue-500" />
@@ -84,7 +105,7 @@ export default function ResellerWarrantyAnalytics() {
           </CardContent>
         </Card>
 
-        <Card data-testid="card-total-revenue">
+        <Card className="rounded-2xl" data-testid="card-total-revenue">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 gap-2">
             <CardTitle className="text-sm font-medium">Fatturato Garanzie</CardTitle>
             <DollarSign className="h-4 w-4 text-amber-500" />
@@ -99,7 +120,7 @@ export default function ResellerWarrantyAnalytics() {
       </div>
 
       <div className="grid gap-6 lg:grid-cols-2">
-        <Card data-testid="card-monthly-trend">
+        <Card className="rounded-2xl" data-testid="card-monthly-trend">
           <CardHeader>
             <CardTitle className="text-lg">Trend Mensile</CardTitle>
           </CardHeader>
@@ -127,7 +148,7 @@ export default function ResellerWarrantyAnalytics() {
           </CardContent>
         </Card>
 
-        <Card data-testid="card-top-products">
+        <Card className="rounded-2xl" data-testid="card-top-products">
           <CardHeader>
             <CardTitle className="text-lg">Prodotti Più Venduti</CardTitle>
           </CardHeader>

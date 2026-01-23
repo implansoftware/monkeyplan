@@ -230,35 +230,34 @@ export default function HrWorkProfiles() {
 
   return (
     <div className="space-y-6" data-testid="page-hr-work-profiles">
-      <div className="relative overflow-hidden rounded-xl bg-gradient-to-br from-purple-500/5 via-purple-500/10 to-slate-100 dark:from-purple-500/10 dark:via-purple-500/5 dark:to-slate-900 p-6 border">
-        <div className="absolute inset-0 opacity-[0.03]" style={{
-          backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23000' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
-        }} />
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-500 p-6">
+        <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
+        <div className="absolute bottom-0 left-0 w-48 h-48 bg-white/10 rounded-full blur-3xl translate-y-1/2 -translate-x-1/2" />
         <div className="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <div className="flex items-center gap-3 mb-2">
-              <div className="h-12 w-12 rounded-lg bg-purple-500/10 flex items-center justify-center">
-                <Briefcase className="h-6 w-6 text-purple-600 dark:text-purple-400" />
+              <div className="h-12 w-12 rounded-lg bg-white/20 backdrop-blur-sm border border-white/30 flex items-center justify-center">
+                <Briefcase className="h-6 w-6 text-white" />
               </div>
               <div>
-                <h1 className="text-2xl font-bold" data-testid="text-profiles-title">Profili Orario</h1>
-                <p className="text-muted-foreground">Configurazione orari di lavoro del personale</p>
+                <h1 className="text-2xl font-bold text-white" data-testid="text-profiles-title">Profili Orario</h1>
+                <p className="text-white/80">Configurazione orari di lavoro del personale</p>
               </div>
             </div>
           </div>
           <div className="flex gap-2 flex-wrap">
             <Link href="/reseller/hr">
-              <Button variant="outline" data-testid="button-back-to-hr">
+              <Button variant="secondary" data-testid="button-back-to-hr">
                 <ArrowLeft className="h-4 w-4 mr-2" />
                 Torna a HR
               </Button>
             </Link>
-            <Button variant="outline" onClick={() => setSyncDialogOpen(true)} data-testid="button-sync-from-center">
+            <Button variant="secondary" onClick={() => setSyncDialogOpen(true)} data-testid="button-sync-from-center">
               <Building2 className="h-4 w-4 mr-2" />
               Sincronizza Centro
             </Button>
             <Button 
-              variant="outline" 
+              variant="secondary" 
               onClick={() => syncAllMutation.mutate()} 
               disabled={syncAllMutation.isPending}
               data-testid="button-sync-all"
@@ -266,7 +265,7 @@ export default function HrWorkProfiles() {
               <RefreshCw className={`h-4 w-4 mr-2 ${syncAllMutation.isPending ? 'animate-spin' : ''}`} />
               {syncAllMutation.isPending ? 'Sincronizzazione...' : 'Sincronizza Tutti'}
             </Button>
-            <Button onClick={() => { resetForm(); setDialogOpen(true); }} data-testid="button-new-profile">
+            <Button variant="secondary" onClick={() => { resetForm(); setDialogOpen(true); }} data-testid="button-new-profile">
               <Plus className="h-4 w-4 mr-2" />
               Nuovo Profilo
             </Button>
@@ -274,7 +273,7 @@ export default function HrWorkProfiles() {
         </div>
       </div>
 
-      <Card data-testid="card-work-profiles-list">
+      <Card className="rounded-2xl" data-testid="card-work-profiles-list">
         <CardHeader>
           <div className="flex items-center justify-between gap-4 flex-wrap">
             <div>

@@ -104,25 +104,32 @@ export default function HrDashboard() {
 
   return (
     <div className="space-y-6" data-testid="page-hr-dashboard">
-      <div className="relative overflow-hidden rounded-xl bg-gradient-to-br from-primary/5 via-primary/10 to-slate-100 dark:from-primary/10 dark:via-primary/5 dark:to-slate-900 p-6 border">
-        <div className="absolute inset-0 opacity-[0.03]" style={{
-          backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23000' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
-        }} />
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-500 p-6">
+        <div className="absolute -top-20 -left-20 w-80 h-80 rounded-full bg-orange-400/20 blur-3xl animate-pulse" />
+        <div className="absolute bottom-0 right-0 w-64 h-64 rounded-full bg-yellow-400/20 blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
+        <div className="absolute top-1/2 left-1/3 w-48 h-48 rounded-full bg-emerald-300/20 blur-3xl animate-pulse" style={{ animationDelay: '2s' }} />
+        <div 
+          className="absolute inset-0 opacity-5"
+          style={{
+            backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M30 5 L35 15 L45 15 L37 22 L40 32 L30 26 L20 32 L23 22 L15 15 L25 15 Z' fill='white'/%3E%3C/svg%3E")`,
+            backgroundSize: '60px 60px'
+          }}
+        />
         <div className="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <div className="flex items-center gap-3 mb-2">
-              <div className="h-12 w-12 rounded-lg bg-primary/10 flex items-center justify-center">
-                <Users className="h-6 w-6 text-primary" />
+              <div className="h-12 w-12 rounded-2xl bg-white/20 backdrop-blur-sm border border-white/30 flex items-center justify-center">
+                <Users className="h-6 w-6 text-white" />
               </div>
               <div>
-                <h1 className="text-2xl font-bold" data-testid="text-hr-title">Gestione Risorse Umane</h1>
-                <p className="text-muted-foreground">Presenze, ferie, permessi e amministrazione personale</p>
+                <h1 className="text-2xl font-bold text-white" data-testid="text-hr-title">Gestione Risorse Umane</h1>
+                <p className="text-white/80">Presenze, ferie, permessi e amministrazione personale</p>
               </div>
             </div>
           </div>
           <div className="flex gap-2">
             <Link href="/reseller/team">
-              <Button variant="outline" data-testid="button-back-to-team">
+              <Button variant="outline" className="bg-white/10 border-white/30 text-white backdrop-blur-sm" data-testid="button-back-to-team">
                 <Users className="h-4 w-4 mr-2" />
                 Torna al Team
               </Button>
@@ -132,8 +139,8 @@ export default function HrDashboard() {
       </div>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card className="relative overflow-hidden" data-testid="card-pending-leave">
-          <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/5 to-transparent" />
+        <Card className="relative overflow-hidden rounded-2xl hover-elevate" data-testid="card-pending-leave">
+          <div className="absolute inset-0 bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-emerald-950/40 dark:to-teal-950/40" />
           <CardContent className="relative pt-5 pb-4">
             <div className="flex items-center justify-between">
               <div>
@@ -144,15 +151,15 @@ export default function HrDashboard() {
                   <p className="text-3xl font-bold" data-testid="text-pending-leave-count">{stats?.pendingLeaveRequests || 0}</p>
                 )}
               </div>
-              <div className="h-10 w-10 rounded-full bg-emerald-500/10 flex items-center justify-center">
-                <CalendarDays className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
+              <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center shadow-lg shadow-emerald-500/25">
+                <CalendarDays className="h-6 w-6 text-white" />
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="relative overflow-hidden" data-testid="card-pending-expenses">
-          <div className="absolute inset-0 bg-gradient-to-br from-amber-500/5 to-transparent" />
+        <Card className="relative overflow-hidden rounded-2xl hover-elevate" data-testid="card-pending-expenses">
+          <div className="absolute inset-0 bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-950/40 dark:to-orange-950/40" />
           <CardContent className="relative pt-5 pb-4">
             <div className="flex items-center justify-between">
               <div>
@@ -163,15 +170,15 @@ export default function HrDashboard() {
                   <p className="text-3xl font-bold" data-testid="text-pending-expenses-count">{stats?.pendingExpenses || 0}</p>
                 )}
               </div>
-              <div className="h-10 w-10 rounded-full bg-amber-500/10 flex items-center justify-center">
-                <Receipt className="h-5 w-5 text-amber-600 dark:text-amber-400" />
+              <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-amber-500 to-orange-500 flex items-center justify-center shadow-lg shadow-amber-500/25">
+                <Receipt className="h-6 w-6 text-white" />
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="relative overflow-hidden" data-testid="card-today-clocking">
-          <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-transparent" />
+        <Card className="relative overflow-hidden rounded-2xl hover-elevate" data-testid="card-today-clocking">
+          <div className="absolute inset-0 bg-gradient-to-br from-blue-50 to-cyan-50 dark:from-blue-950/40 dark:to-cyan-950/40" />
           <CardContent className="relative pt-5 pb-4">
             <div className="flex items-center justify-between">
               <div>
@@ -182,15 +189,15 @@ export default function HrDashboard() {
                   <p className="text-3xl font-bold" data-testid="text-today-clocking-count">{stats?.todayClockEvents || 0}</p>
                 )}
               </div>
-              <div className="h-10 w-10 rounded-full bg-blue-500/10 flex items-center justify-center">
-                <Clock className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+              <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center shadow-lg shadow-blue-500/25">
+                <Clock className="h-6 w-6 text-white" />
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="relative overflow-hidden" data-testid="card-pending-absences">
-          <div className="absolute inset-0 bg-gradient-to-br from-red-500/5 to-transparent" />
+        <Card className="relative overflow-hidden rounded-2xl hover-elevate" data-testid="card-pending-absences">
+          <div className="absolute inset-0 bg-gradient-to-br from-red-50 to-rose-50 dark:from-red-950/40 dark:to-rose-950/40" />
           <CardContent className="relative pt-5 pb-4">
             <div className="flex items-center justify-between">
               <div>
@@ -201,8 +208,8 @@ export default function HrDashboard() {
                   <p className="text-3xl font-bold" data-testid="text-pending-absences-count">{stats?.pendingAbsences || 0}</p>
                 )}
               </div>
-              <div className="h-10 w-10 rounded-full bg-red-500/10 flex items-center justify-center">
-                <AlertCircle className="h-5 w-5 text-red-600 dark:text-red-400" />
+              <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-red-500 to-rose-500 flex items-center justify-center shadow-lg shadow-red-500/25">
+                <AlertCircle className="h-6 w-6 text-white" />
               </div>
             </div>
           </CardContent>
@@ -215,14 +222,14 @@ export default function HrDashboard() {
           {quickActions.map((action) => (
             <Link key={action.href} href={action.href}>
               <Card 
-                className="h-full hover-elevate cursor-pointer transition-all border"
+                className="h-full hover-elevate cursor-pointer transition-all border rounded-2xl"
                 data-testid={`card-hr-module-${action.title.toLowerCase().replace(/\s+/g, '-')}`}
               >
-                <div className={`absolute inset-0 bg-gradient-to-br ${action.color} rounded-lg`} />
+                <div className={`absolute inset-0 bg-gradient-to-br ${action.color} rounded-2xl`} />
                 <CardContent className="relative p-4">
                   <div className="flex items-start justify-between">
                     <div className="flex items-center gap-3">
-                      <div className={`h-10 w-10 rounded-lg bg-background/80 flex items-center justify-center ${action.iconColor}`}>
+                      <div className={`h-10 w-10 rounded-xl bg-background/80 flex items-center justify-center ${action.iconColor}`}>
                         <action.icon className="h-5 w-5" />
                       </div>
                       <div>
@@ -240,8 +247,8 @@ export default function HrDashboard() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card data-testid="card-recent-activity">
-          <CardHeader>
+        <Card className="rounded-2xl" data-testid="card-recent-activity">
+          <CardHeader className="bg-gradient-to-r from-slate-50 to-gray-50 dark:from-slate-900/50 dark:to-gray-900/50 rounded-t-2xl">
             <CardTitle className="flex items-center gap-2">
               <Activity className="h-5 w-5 text-muted-foreground" />
               Attivit Recenti
@@ -257,31 +264,31 @@ export default function HrDashboard() {
           </CardContent>
         </Card>
 
-        <Card data-testid="card-quick-stats">
-          <CardHeader>
+        <Card className="rounded-2xl" data-testid="card-quick-stats">
+          <CardHeader className="bg-gradient-to-r from-emerald-50 to-teal-50 dark:from-emerald-900/20 dark:to-teal-900/20 rounded-t-2xl">
             <CardTitle className="flex items-center gap-2">
               <TrendingUp className="h-5 w-5 text-muted-foreground" />
               Riepilogo Mensile
             </CardTitle>
             <CardDescription>Statistiche del mese corrente</CardDescription>
           </CardHeader>
-          <CardContent>
+          <CardContent className="pt-4">
             <div className="space-y-4">
-              <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
+              <div className="flex items-center justify-between p-3 bg-gradient-to-r from-emerald-50/50 to-teal-50/50 dark:from-emerald-950/30 dark:to-teal-950/30 rounded-xl">
                 <div className="flex items-center gap-2">
                   <UserCheck className="h-4 w-4 text-emerald-600" />
                   <span className="text-sm">Presenze registrate</span>
                 </div>
                 <Badge variant="secondary">-</Badge>
               </div>
-              <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
+              <div className="flex items-center justify-between p-3 bg-gradient-to-r from-blue-50/50 to-cyan-50/50 dark:from-blue-950/30 dark:to-cyan-950/30 rounded-xl">
                 <div className="flex items-center gap-2">
                   <CalendarDays className="h-4 w-4 text-blue-600" />
                   <span className="text-sm">Giorni ferie richiesti</span>
                 </div>
                 <Badge variant="secondary">-</Badge>
               </div>
-              <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
+              <div className="flex items-center justify-between p-3 bg-gradient-to-r from-amber-50/50 to-orange-50/50 dark:from-amber-950/30 dark:to-orange-950/30 rounded-xl">
                 <div className="flex items-center gap-2">
                   <Receipt className="h-4 w-4 text-amber-600" />
                   <span className="text-sm">Totale rimborsi</span>

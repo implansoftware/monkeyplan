@@ -183,31 +183,30 @@ export default function HrSickLeave() {
 
   return (
     <div className="space-y-6" data-testid="page-hr-sick-leave">
-      <div className="relative overflow-hidden rounded-xl bg-gradient-to-br from-red-500/5 via-red-500/10 to-slate-100 dark:from-red-500/10 dark:via-red-500/5 dark:to-slate-900 p-6 border">
-        <div className="absolute inset-0 opacity-[0.03]" style={{
-          backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23000' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
-        }} />
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-500 p-6">
+        <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
+        <div className="absolute bottom-0 left-0 w-48 h-48 bg-white/10 rounded-full blur-3xl translate-y-1/2 -translate-x-1/2" />
         <div className="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <div className="flex items-center gap-3 mb-2">
-              <div className="h-12 w-12 rounded-lg bg-red-500/10 flex items-center justify-center">
-                <Thermometer className="h-6 w-6 text-red-600 dark:text-red-400" />
+              <div className="h-12 w-12 rounded-lg bg-white/20 backdrop-blur-sm border border-white/30 flex items-center justify-center">
+                <Thermometer className="h-6 w-6 text-white" />
               </div>
               <div>
-                <h1 className="text-2xl font-bold" data-testid="text-sick-leave-title">Gestione Malattie</h1>
-                <p className="text-muted-foreground">Certificati e comunicazioni di malattia</p>
+                <h1 className="text-2xl font-bold text-white" data-testid="text-sick-leave-title">Gestione Malattie</h1>
+                <p className="text-white/80">Certificati e comunicazioni di malattia</p>
               </div>
             </div>
           </div>
           <div className="flex gap-2">
             <Link href="/reseller/hr">
-              <Button variant="outline" data-testid="button-back-to-hr">
+              <Button variant="secondary" data-testid="button-back-to-hr">
                 <ArrowLeft className="h-4 w-4 mr-2" />
                 Torna a HR
               </Button>
             </Link>
             {!readOnly && (
-              <Button onClick={() => setDialogOpen(true)} data-testid="button-new-sick-leave">
+              <Button variant="secondary" onClick={() => setDialogOpen(true)} data-testid="button-new-sick-leave">
                 <Plus className="h-4 w-4 mr-2" />
                 Registra Malattia
               </Button>
@@ -223,7 +222,7 @@ export default function HrSickLeave() {
           />
         </div>
         {readOnly && (
-          <div className="mt-3 flex items-center gap-2 text-sm text-amber-600 dark:text-amber-400">
+          <div className="mt-3 flex items-center gap-2 text-sm text-white/80">
             <Eye className="h-4 w-4" />
             <span>Modalità sola lettura - Visualizzazione dati esterni</span>
           </div>
@@ -231,7 +230,7 @@ export default function HrSickLeave() {
       </div>
 
       {activeSickLeaves > 0 && (
-        <Card className="border-red-200 bg-red-50/50 dark:border-red-900 dark:bg-red-900/10" data-testid="card-active-alert">
+        <Card className="border-red-200 bg-red-50/50 dark:border-red-900 dark:bg-red-900/10 rounded-2xl" data-testid="card-active-alert">
           <CardContent className="p-4 flex items-center gap-3">
             <div className="h-10 w-10 rounded-full bg-red-500/10 flex items-center justify-center">
               <Thermometer className="h-5 w-5 text-red-600" />
@@ -244,7 +243,7 @@ export default function HrSickLeave() {
         </Card>
       )}
 
-      <Card data-testid="card-sick-leave-list">
+      <Card className="rounded-2xl" data-testid="card-sick-leave-list">
         <CardHeader>
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>

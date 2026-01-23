@@ -140,7 +140,7 @@ function IntegrationCard({ integration }: { integration: IntegrationSummary }) {
   };
 
   return (
-    <Card className="relative overflow-hidden">
+    <Card className="relative overflow-hidden rounded-2xl">
       <div className={`absolute top-0 left-0 w-1 h-full ${integration.isConfigured && integration.isActive ? "bg-green-500" : integration.isConfigured ? "bg-yellow-500" : "bg-muted"}`} />
       
       <CardHeader className="pb-3">
@@ -257,31 +257,51 @@ export default function IntegrationsPage() {
 
   return (
     <div className="p-6 space-y-6">
-      <div className="flex items-center justify-between flex-wrap gap-4">
-        <div className="flex items-center gap-3">
-          <Plug className="h-8 w-8" />
-          <div>
-            <h1 className="text-2xl font-bold">Integrazioni</h1>
-            <p className="text-muted-foreground">
-              Gestisci tutte le integrazioni con fornitori e servizi esterni
-            </p>
+      {/* Hero Header - Modern Glass Style */}
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-500 p-6">
+        {/* Animated background blobs */}
+        <div className="absolute -top-20 -left-20 w-80 h-80 rounded-full bg-orange-400/20 blur-3xl animate-pulse" />
+        <div className="absolute bottom-0 right-0 w-64 h-64 rounded-full bg-yellow-400/20 blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
+        <div className="absolute top-1/2 left-1/3 w-48 h-48 rounded-full bg-emerald-300/20 blur-3xl animate-pulse" style={{ animationDelay: '2s' }} />
+        
+        {/* Pattern overlay */}
+        <div 
+          className="absolute inset-0 opacity-5"
+          style={{
+            backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M30 5 L35 15 L45 15 L37 22 L40 32 L30 26 L20 32 L23 22 L15 15 L25 15 Z' fill='white'/%3E%3C/svg%3E")`,
+            backgroundSize: '60px 60px'
+          }}
+        />
+        
+        <div className="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className="h-12 w-12 rounded-2xl bg-white/20 backdrop-blur-sm border border-white/30 flex items-center justify-center">
+              <Plug className="h-6 w-6 text-white" />
+            </div>
+            <div>
+              <h1 className="text-2xl font-bold tracking-tight text-white">Integrazioni</h1>
+              <p className="text-sm text-white/80">
+                Gestisci tutte le integrazioni con fornitori e servizi esterni
+              </p>
+            </div>
           </div>
-        </div>
-        <div className="flex items-center gap-4">
-          <div className="flex items-center gap-2 text-sm">
-            <Badge variant="outline">{configuredCount} configurate</Badge>
-            <Badge className="bg-green-500/10 text-green-600 dark:text-green-400">{activeCount} attive</Badge>
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2 text-sm">
+              <Badge variant="outline" className="bg-white/10 border-white/30 text-white">{configuredCount} configurate</Badge>
+              <Badge className="bg-white/20 text-white border-white/30">{activeCount} attive</Badge>
+            </div>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => refetch()}
+              disabled={isRefetching}
+              className="bg-white/10 border-white/30 text-white"
+              data-testid="button-refresh-integrations"
+            >
+              <RefreshCcw className={`h-4 w-4 mr-1 ${isRefetching ? "animate-spin" : ""}`} />
+              Aggiorna
+            </Button>
           </div>
-          <Button 
-            variant="outline" 
-            size="sm" 
-            onClick={() => refetch()}
-            disabled={isRefetching}
-            data-testid="button-refresh-integrations"
-          >
-            <RefreshCcw className={`h-4 w-4 mr-1 ${isRefetching ? "animate-spin" : ""}`} />
-            Aggiorna
-          </Button>
         </div>
       </div>
 
@@ -292,7 +312,7 @@ export default function IntegrationsPage() {
           ))}
         </div>
       ) : (
-        <Card>
+        <Card className="rounded-2xl">
           <CardContent className="flex flex-col items-center justify-center py-12 text-center">
             <Plug className="h-12 w-12 text-muted-foreground mb-4" />
             <h3 className="text-lg font-medium mb-2">Nessuna integrazione disponibile</h3>
@@ -303,7 +323,7 @@ export default function IntegrationsPage() {
         </Card>
       )}
 
-      <Card>
+      <Card className="rounded-2xl">
         <CardHeader>
           <CardTitle className="text-base">Informazioni</CardTitle>
         </CardHeader>

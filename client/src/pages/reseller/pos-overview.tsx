@@ -20,7 +20,8 @@ import {
   Eye,
   Package,
   PlayCircle,
-  StopCircle
+  StopCircle,
+  Store
 } from "lucide-react";
 import { useState } from "react";
 import { format } from "date-fns";
@@ -187,47 +188,60 @@ export default function ResellerPosOverview() {
 
   return (
     <div className="p-6 space-y-6">
-      <div className="flex items-center justify-between flex-wrap gap-4">
-        <div>
-          <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-500 to-cyan-500 bg-clip-text text-transparent">
-            Panoramica POS
-          </h1>
-          <p className="text-muted-foreground">
-            Monitoraggio casse dei tuoi centri riparazione
-          </p>
-        </div>
-        <div className="flex items-center gap-2 flex-wrap">
-          <Select value={repairCenterFilter} onValueChange={setRepairCenterFilter}>
-            <SelectTrigger className="w-48" data-testid="select-repair-center">
-              <SelectValue placeholder="Tutti i centri" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Tutti i centri</SelectItem>
-              {repairCenters?.map((rc) => (
-                <SelectItem key={rc.id} value={rc.id}>
-                  {rc.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <Select value={period} onValueChange={setPeriod}>
-            <SelectTrigger className="w-40" data-testid="select-period">
-              <SelectValue placeholder="Periodo" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="today">Oggi</SelectItem>
-              <SelectItem value="week">Settimana</SelectItem>
-              <SelectItem value="month">Mese</SelectItem>
-            </SelectContent>
-          </Select>
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-500 p-6">
+        <div className="absolute -top-20 -left-20 w-80 h-80 rounded-full bg-white/10 blur-3xl animate-pulse" />
+        <div className="absolute bottom-0 right-0 w-64 h-64 rounded-full bg-cyan-300/20 blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
+        <div className="absolute top-1/2 left-1/3 w-48 h-48 rounded-full bg-emerald-300/20 blur-3xl animate-pulse" style={{ animationDelay: '2s' }} />
+        
+        <div className="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className="h-12 w-12 rounded-2xl bg-white/20 backdrop-blur-sm border border-white/30 flex items-center justify-center">
+              <Store className="h-6 w-6 text-white" />
+            </div>
+            <div>
+              <h1 className="text-2xl font-bold tracking-tight text-white">
+                Panoramica POS
+              </h1>
+              <p className="text-sm text-white/80">
+                Monitoraggio casse dei tuoi centri riparazione
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 flex-wrap">
+            <Select value={repairCenterFilter} onValueChange={setRepairCenterFilter}>
+              <SelectTrigger className="w-48 bg-white/20 backdrop-blur-sm border-white/30 text-white" data-testid="select-repair-center">
+                <SelectValue placeholder="Tutti i centri" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Tutti i centri</SelectItem>
+                {repairCenters?.map((rc) => (
+                  <SelectItem key={rc.id} value={rc.id}>
+                    {rc.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select value={period} onValueChange={setPeriod}>
+              <SelectTrigger className="w-40 bg-white/20 backdrop-blur-sm border-white/30 text-white" data-testid="select-period">
+                <SelectValue placeholder="Periodo" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="today">Oggi</SelectItem>
+                <SelectItem value="week">Settimana</SelectItem>
+                <SelectItem value="month">Mese</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card className="border-blue-500/20 bg-gradient-to-br from-blue-500/5 to-cyan-500/5">
+        <Card className="rounded-2xl bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-emerald-950/40 dark:to-teal-950/40 border-emerald-200/50 dark:border-emerald-800/50">
           <CardHeader className="flex flex-row items-center justify-between gap-2 pb-2">
             <CardTitle className="text-sm font-medium">Sessioni Attive</CardTitle>
-            <Clock className="h-4 w-4 text-blue-500" />
+            <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center">
+              <Clock className="h-4 w-4 text-white" />
+            </div>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{stats?.activeSessions || 0}</div>
@@ -237,10 +251,12 @@ export default function ResellerPosOverview() {
           </CardContent>
         </Card>
 
-        <Card className="border-cyan-500/20 bg-gradient-to-br from-cyan-500/5 to-blue-500/5">
+        <Card className="rounded-2xl bg-gradient-to-br from-teal-50 to-cyan-50 dark:from-teal-950/40 dark:to-cyan-950/40 border-teal-200/50 dark:border-teal-800/50">
           <CardHeader className="flex flex-row items-center justify-between gap-2 pb-2">
             <CardTitle className="text-sm font-medium">Transazioni</CardTitle>
-            <Receipt className="h-4 w-4 text-cyan-500" />
+            <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-teal-500 to-cyan-500 flex items-center justify-center">
+              <Receipt className="h-4 w-4 text-white" />
+            </div>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{stats?.todayTransactions || 0}</div>
@@ -250,10 +266,12 @@ export default function ResellerPosOverview() {
           </CardContent>
         </Card>
 
-        <Card className="border-blue-500/20 bg-gradient-to-br from-blue-600/5 to-cyan-600/5">
+        <Card className="rounded-2xl bg-gradient-to-br from-cyan-50 to-emerald-50 dark:from-cyan-950/40 dark:to-emerald-950/40 border-cyan-200/50 dark:border-cyan-800/50">
           <CardHeader className="flex flex-row items-center justify-between gap-2 pb-2">
             <CardTitle className="text-sm font-medium">Fatturato</CardTitle>
-            <TrendingUp className="h-4 w-4 text-blue-500" />
+            <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-cyan-500 to-emerald-500 flex items-center justify-center">
+              <TrendingUp className="h-4 w-4 text-white" />
+            </div>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
@@ -265,10 +283,12 @@ export default function ResellerPosOverview() {
           </CardContent>
         </Card>
 
-        <Card className="border-cyan-500/20 bg-gradient-to-br from-cyan-600/5 to-blue-600/5">
+        <Card className="rounded-2xl bg-gradient-to-br from-emerald-50 to-cyan-50 dark:from-emerald-950/40 dark:to-cyan-950/40 border-emerald-200/50 dark:border-emerald-800/50">
           <CardHeader className="flex flex-row items-center justify-between gap-2 pb-2">
             <CardTitle className="text-sm font-medium">Resi/Rimborsi</CardTitle>
-            <RotateCcw className="h-4 w-4 text-cyan-500" />
+            <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-emerald-500 to-cyan-500 flex items-center justify-center">
+              <RotateCcw className="h-4 w-4 text-white" />
+            </div>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
@@ -282,14 +302,16 @@ export default function ResellerPosOverview() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card>
-          <CardHeader>
+        <Card className="rounded-2xl">
+          <CardHeader className="bg-gradient-to-r from-emerald-50 to-teal-50 dark:from-emerald-950/20 dark:to-teal-950/20 rounded-t-2xl">
             <CardTitle className="flex items-center gap-2">
-              <DollarSign className="h-5 w-5 text-blue-500" />
+              <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center">
+                <DollarSign className="h-4 w-4 text-white" />
+              </div>
               Metodi di Pagamento
             </CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="pt-4">
             <div className="space-y-4">
               {stats?.paymentBreakdown && Object.entries(stats.paymentBreakdown).map(([method, amount]) => (
                 <div key={method} className="flex items-center justify-between">
@@ -309,14 +331,16 @@ export default function ResellerPosOverview() {
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader>
+        <Card className="rounded-2xl">
+          <CardHeader className="bg-gradient-to-r from-teal-50 to-cyan-50 dark:from-teal-950/20 dark:to-cyan-950/20 rounded-t-2xl">
             <CardTitle className="flex items-center gap-2">
-              <Users className="h-5 w-5 text-cyan-500" />
+              <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-teal-500 to-cyan-500 flex items-center justify-center">
+                <Users className="h-4 w-4 text-white" />
+              </div>
               Top Centri Riparazione
             </CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="pt-4">
             <div className="space-y-4">
               {stats?.topRepairCenters?.map((center, index) => (
                 <div key={center.id} className="flex items-center justify-between">
@@ -342,22 +366,24 @@ export default function ResellerPosOverview() {
         </Card>
       </div>
 
-      <Card>
-        <CardHeader>
+      <Card className="rounded-2xl">
+        <CardHeader className="bg-gradient-to-r from-emerald-50 to-teal-50 dark:from-emerald-950/20 dark:to-teal-950/20 rounded-t-2xl">
           <CardTitle className="flex items-center gap-2">
-            <Receipt className="h-5 w-5 text-blue-500" />
+            <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center">
+              <Receipt className="h-4 w-4 text-white" />
+            </div>
             Ultime Transazioni
           </CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="pt-4">
           <div className="space-y-3">
             {stats?.recentTransactions?.map((tx) => (
               <div key={tx.id} className="flex items-center justify-between p-3 rounded-lg bg-muted/50 hover-elevate cursor-pointer" onClick={() => setSelectedTxId(tx.id.toString())} data-testid={`row-transaction-${tx.id}`}>
                 <div className="flex items-center gap-3">
                   {tx.type === "completed" ? (
-                    <CheckCircle className="h-5 w-5 text-blue-500" />
+                    <CheckCircle className="h-5 w-5 text-emerald-500" />
                   ) : (
-                    <XCircle className="h-5 w-5 text-cyan-500" />
+                    <XCircle className="h-5 w-5 text-teal-500" />
                   )}
                   <div>
                     <div className="font-medium">{tx.transactionNumber}</div>
@@ -368,7 +394,7 @@ export default function ResellerPosOverview() {
                 </div>
                 <div className="flex items-center gap-3">
                   <div className="text-right">
-                    <div className={`font-bold ${tx.type === "refunded" ? "text-cyan-600" : ""}`}>
+                    <div className={`font-bold ${tx.type === "refunded" ? "text-teal-600" : ""}`}>
                       {tx.type === "refunded" ? "-" : ""}{formatCurrency(tx.totalAmount)}
                     </div>
                     <Badge variant="outline" className="text-xs">
@@ -388,14 +414,16 @@ export default function ResellerPosOverview() {
         </CardContent>
       </Card>
 
-      <Card>
-        <CardHeader>
+      <Card className="rounded-2xl">
+        <CardHeader className="bg-gradient-to-r from-teal-50 to-cyan-50 dark:from-teal-950/20 dark:to-cyan-950/20 rounded-t-2xl">
           <CardTitle className="flex items-center gap-2">
-            <Clock className="h-5 w-5 text-cyan-500" />
+            <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-teal-500 to-cyan-500 flex items-center justify-center">
+              <Clock className="h-4 w-4 text-white" />
+            </div>
             Timeline Sessioni Cassa
           </CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="pt-4">
           <div className="space-y-3">
             {sessions?.map((session) => (
               <div key={session.id} className="flex items-center justify-between p-3 rounded-lg bg-muted/50" data-testid={`row-session-${session.id}`}>
@@ -448,7 +476,9 @@ export default function ResellerPosOverview() {
         <DialogContent className="max-w-lg">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <Receipt className="h-5 w-5 text-blue-500" />
+              <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center">
+                <Receipt className="h-4 w-4 text-white" />
+              </div>
               Dettaglio Transazione
             </DialogTitle>
           </DialogHeader>
@@ -501,7 +531,7 @@ export default function ResellerPosOverview() {
                   <span>{formatCurrency(txDetail.transaction.subtotal)}</span>
                 </div>
                 {txDetail.transaction.discount > 0 && (
-                  <div className="flex justify-between text-sm text-cyan-600">
+                  <div className="flex justify-between text-sm text-teal-600">
                     <span>Sconto</span>
                     <span>-{formatCurrency(txDetail.transaction.discount)}</span>
                   </div>

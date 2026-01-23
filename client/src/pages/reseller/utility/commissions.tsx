@@ -176,30 +176,29 @@ export default function ResellerUtilityCommissions() {
   return (
     <div className="p-6 space-y-6">
       {/* Hero Header */}
-      <div className="relative overflow-hidden rounded-xl bg-gradient-to-br from-primary/5 via-primary/10 to-slate-100 dark:from-primary/10 dark:via-primary/5 dark:to-slate-900 p-6 border">
-        <div className="absolute inset-0 opacity-[0.03]" style={{
-          backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23000' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
-        }} />
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-500 p-6">
+        <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
+        <div className="absolute bottom-0 left-0 w-48 h-48 bg-white/10 rounded-full blur-3xl translate-y-1/2 -translate-x-1/2" />
         <div className="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div className="flex items-center gap-3">
             <Link href="/reseller/utility">
-              <Button variant="ghost" size="icon" data-testid="button-back">
+              <Button variant="ghost" size="icon" className="text-white/80" data-testid="button-back">
                 <ArrowLeft className="h-4 w-4" />
               </Button>
             </Link>
-            <div className="h-10 w-10 rounded-xl bg-primary text-primary-foreground flex items-center justify-center shadow-lg shadow-primary/25">
-              <Coins className="h-5 w-5" />
+            <div className="h-12 w-12 rounded-xl bg-white/20 backdrop-blur-sm border border-white/30 flex items-center justify-center">
+              <Coins className="h-6 w-6 text-white" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold tracking-tight">I Miei Compensi</h1>
-              <p className="text-sm text-muted-foreground">Visualizza le tue commissioni</p>
+              <h1 className="text-2xl font-bold tracking-tight text-white">I Miei Compensi</h1>
+              <p className="text-sm text-white/80">Visualizza le tue commissioni</p>
             </div>
           </div>
         </div>
       </div>
 
       <div className="grid gap-4 md:grid-cols-3">
-        <Card data-testid="card-total-pending">
+        <Card className="rounded-2xl" data-testid="card-total-pending">
           <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">In Attesa</CardTitle>
             <Clock className="h-4 w-4 text-yellow-500" />
@@ -212,7 +211,7 @@ export default function ResellerUtilityCommissions() {
           </CardContent>
         </Card>
 
-        <Card data-testid="card-total-paid">
+        <Card className="rounded-2xl" data-testid="card-total-paid">
           <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Pagate</CardTitle>
             <CheckCircle2 className="h-4 w-4 text-green-500" />
@@ -225,7 +224,7 @@ export default function ResellerUtilityCommissions() {
           </CardContent>
         </Card>
 
-        <Card data-testid="card-total">
+        <Card className="rounded-2xl" data-testid="card-total">
           <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Totale Anno</CardTitle>
             <Coins className="h-4 w-4 text-primary" />
@@ -241,7 +240,7 @@ export default function ResellerUtilityCommissions() {
         </Card>
       </div>
 
-      <Card>
+      <Card className="rounded-2xl">
         <CardHeader className="flex flex-row items-center justify-between gap-2 flex-wrap">
           <div className="flex items-center gap-2 flex-wrap">
             <div className="flex items-center gap-2">

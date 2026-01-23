@@ -267,31 +267,30 @@ export default function HrExpenses() {
 
   return (
     <div className="space-y-6" data-testid="page-hr-expenses">
-      <div className="relative overflow-hidden rounded-xl bg-gradient-to-br from-amber-500/5 via-amber-500/10 to-slate-100 dark:from-amber-500/10 dark:via-amber-500/5 dark:to-slate-900 p-6 border">
-        <div className="absolute inset-0 opacity-[0.03]" style={{
-          backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23000' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
-        }} />
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-500 p-6">
+        <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
+        <div className="absolute bottom-0 left-0 w-48 h-48 bg-white/10 rounded-full blur-3xl translate-y-1/2 -translate-x-1/2" />
         <div className="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <div className="flex items-center gap-3 mb-2">
-              <div className="h-12 w-12 rounded-lg bg-amber-500/10 flex items-center justify-center">
-                <Receipt className="h-6 w-6 text-amber-600 dark:text-amber-400" />
+              <div className="h-12 w-12 rounded-lg bg-white/20 backdrop-blur-sm border border-white/30 flex items-center justify-center">
+                <Receipt className="h-6 w-6 text-white" />
               </div>
               <div>
-                <h1 className="text-2xl font-bold" data-testid="text-expenses-title">Rimborsi Spese</h1>
-                <p className="text-muted-foreground">Gestione note spese e trasferte</p>
+                <h1 className="text-2xl font-bold text-white" data-testid="text-expenses-title">Rimborsi Spese</h1>
+                <p className="text-white/80">Gestione note spese e trasferte</p>
               </div>
             </div>
           </div>
           <div className="flex gap-2">
             <Link href="/reseller/hr">
-              <Button variant="outline" data-testid="button-back-to-hr">
+              <Button variant="secondary" data-testid="button-back-to-hr">
                 <ArrowLeft className="h-4 w-4 mr-2" />
                 Torna a HR
               </Button>
             </Link>
             {!readOnly && (
-              <Button onClick={() => setDialogOpen(true)} data-testid="button-new-expense">
+              <Button variant="secondary" onClick={() => setDialogOpen(true)} data-testid="button-new-expense">
                 <Plus className="h-4 w-4 mr-2" />
                 Nuova Nota Spese
               </Button>
@@ -307,7 +306,7 @@ export default function HrExpenses() {
           />
         </div>
         {readOnly && (
-          <div className="mt-3 flex items-center gap-2 text-sm text-amber-600 dark:text-amber-400">
+          <div className="mt-3 flex items-center gap-2 text-sm text-white/80">
             <Eye className="h-4 w-4" />
             <span>Modalità sola lettura - Visualizzazione dati esterni</span>
           </div>
@@ -315,7 +314,7 @@ export default function HrExpenses() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <Card data-testid="card-pending-count">
+        <Card className="rounded-2xl" data-testid="card-pending-count">
           <CardContent className="p-4 flex items-center gap-3">
             <div className="h-10 w-10 rounded-full bg-amber-500/10 flex items-center justify-center">
               <Clock className="h-5 w-5 text-amber-600" />
@@ -326,7 +325,7 @@ export default function HrExpenses() {
             </div>
           </CardContent>
         </Card>
-        <Card data-testid="card-pending-total">
+        <Card className="rounded-2xl" data-testid="card-pending-total">
           <CardContent className="p-4 flex items-center gap-3">
             <div className="h-10 w-10 rounded-full bg-emerald-500/10 flex items-center justify-center">
               <Euro className="h-5 w-5 text-emerald-600" />
@@ -339,7 +338,7 @@ export default function HrExpenses() {
         </Card>
       </div>
 
-      <Card data-testid="card-expenses-list">
+      <Card className="rounded-2xl" data-testid="card-expenses-list">
         <CardHeader>
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>

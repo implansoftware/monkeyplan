@@ -31,7 +31,7 @@ interface GuideSectionProps {
 
 function GuideSection({ icon: Icon, title, description, features }: GuideSectionProps) {
   return (
-    <Card data-testid={`card-guide-${title.toLowerCase().replace(/\s+/g, '-')}`}>
+    <Card className="rounded-2xl" data-testid={`card-guide-${title.toLowerCase().replace(/\s+/g, '-')}`}>
       <CardHeader>
         <div className="flex items-center gap-3">
           <div className="p-2 rounded-md bg-primary/10">
@@ -282,18 +282,27 @@ export default function ResellerGuide() {
 
   return (
     <div className="p-6 space-y-6" data-testid="page-reseller-guide">
-      <div className="relative overflow-hidden rounded-xl bg-gradient-to-br from-primary/5 via-primary/10 to-slate-100 dark:from-primary/10 dark:via-primary/5 dark:to-slate-900 p-6 border">
-        <div className="absolute inset-0 opacity-[0.03]" style={{
-          backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23000' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
-        }} />
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-500 p-6">
+        <div className="absolute -top-20 -left-20 w-80 h-80 rounded-full bg-orange-400/20 blur-3xl animate-pulse" />
+        <div className="absolute bottom-0 right-0 w-64 h-64 rounded-full bg-yellow-400/20 blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
+        <div className="absolute top-1/2 left-1/3 w-48 h-48 rounded-full bg-emerald-300/20 blur-3xl animate-pulse" style={{ animationDelay: '2s' }} />
+        
+        <div 
+          className="absolute inset-0 opacity-5"
+          style={{
+            backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M30 5 L35 15 L45 15 L37 22 L40 32 L30 26 L20 32 L23 22 L15 15 L25 15 Z' fill='white'/%3E%3C/svg%3E")`,
+            backgroundSize: '60px 60px'
+          }}
+        />
+        
         <div className="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div className="flex items-center gap-3 mb-1">
-            <div className="h-10 w-10 rounded-xl bg-primary text-primary-foreground flex items-center justify-center shadow-lg shadow-primary/25">
-              <FileText className="h-5 w-5" />
+            <div className="h-12 w-12 rounded-2xl bg-white/20 backdrop-blur-sm border border-white/30 flex items-center justify-center">
+              <FileText className="h-6 w-6 text-white" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold tracking-tight" data-testid="text-guide-title">Guida alla Piattaforma</h1>
-              <p className="text-sm text-muted-foreground" data-testid="text-guide-subtitle">Scopri tutte le funzionalita di MonkeyPlan per gestire al meglio la tua attivita</p>
+              <h1 className="text-2xl font-bold tracking-tight text-white" data-testid="text-guide-title">Guida alla Piattaforma</h1>
+              <p className="text-sm text-white/80" data-testid="text-guide-subtitle">Scopri tutte le funzionalita di MonkeyPlan per gestire al meglio la tua attivita</p>
             </div>
           </div>
         </div>
@@ -307,7 +316,7 @@ export default function ResellerGuide() {
         ))}
       </div>
 
-      <Card className="bg-muted/50" data-testid="card-guide-support">
+      <Card className="bg-muted/50 rounded-2xl" data-testid="card-guide-support">
         <CardHeader>
           <CardTitle className="text-lg">Hai bisogno di aiuto?</CardTitle>
           <CardDescription>

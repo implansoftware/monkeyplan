@@ -470,21 +470,23 @@ export default function ResellerServiceCatalog() {
 
   if (isLoading) {
     return (
-      <div className="space-y-6">
-        <div className="relative overflow-hidden rounded-xl bg-gradient-to-br from-primary/5 via-primary/10 to-slate-100 dark:from-primary/10 dark:via-primary/5 dark:to-slate-900 p-6 border">
-          <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-xl bg-primary text-primary-foreground flex items-center justify-center shadow-lg shadow-primary/25">
-              <Euro className="h-5 w-5" />
+      <div className="p-6 space-y-6">
+        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-500 p-6">
+          <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
+          <div className="absolute bottom-0 left-0 w-48 h-48 bg-cyan-300/20 rounded-full blur-2xl translate-y-1/2 -translate-x-1/4" />
+          <div className="relative flex items-center gap-3">
+            <div className="h-12 w-12 rounded-xl bg-white/20 backdrop-blur-sm border border-white/30 flex items-center justify-center">
+              <Euro className="h-6 w-6 text-white" />
             </div>
             <div>
-              <Skeleton className="h-7 w-48" />
-              <Skeleton className="h-4 w-64 mt-1" />
+              <Skeleton className="h-7 w-48 bg-white/20" />
+              <Skeleton className="h-4 w-64 mt-1 bg-white/20" />
             </div>
           </div>
         </div>
         <div className="grid gap-4">
           {[1, 2, 3].map(i => (
-            <Skeleton key={i} className="h-24 w-full rounded-xl" />
+            <Skeleton key={i} className="h-24 w-full rounded-2xl" />
           ))}
         </div>
       </div>
@@ -493,25 +495,33 @@ export default function ResellerServiceCatalog() {
 
   return (
     <div className="p-6 space-y-6">
-      {/* Header */}
-      <div className="flex flex-wrap items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold flex items-center gap-2" data-testid="text-page-title">
-            <Euro className="h-6 w-6" />
-            Listino Prezzi
-          </h1>
-          <p className="text-muted-foreground">
-            Gestisci i prezzi e crea le tue voci di listino personalizzate
-          </p>
+      {/* Hero Header */}
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-500 p-6">
+        <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
+        <div className="absolute bottom-0 left-0 w-48 h-48 bg-cyan-300/20 rounded-full blur-2xl translate-y-1/2 -translate-x-1/4" />
+        <div className="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className="h-12 w-12 rounded-xl bg-white/20 backdrop-blur-sm border border-white/30 flex items-center justify-center">
+              <Euro className="h-6 w-6 text-white" />
+            </div>
+            <div>
+              <h1 className="text-2xl font-bold tracking-tight text-white" data-testid="text-page-title">
+                Listino Prezzi
+              </h1>
+              <p className="text-sm text-white/80">
+                Gestisci i prezzi e crea le tue voci di listino personalizzate
+              </p>
+            </div>
+          </div>
+          <Button onClick={() => openItemDialog()} data-testid="button-create-item" variant="secondary" className="bg-white/20 backdrop-blur-sm border border-white/30 text-white">
+            <Plus className="h-4 w-4 mr-2" />
+            Nuova Voce
+          </Button>
         </div>
-        <Button onClick={() => openItemDialog()} data-testid="button-create-item">
-          <Plus className="h-4 w-4 mr-2" />
-          Nuova Voce
-        </Button>
       </div>
 
       {/* Le Mie Voci Section */}
-      <Card>
+      <Card className="rounded-2xl">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-lg">
             <Tag className="h-5 w-5" />
@@ -644,7 +654,7 @@ export default function ResellerServiceCatalog() {
       </Card>
 
       {/* Catalogo Completo Section */}
-          <Card>
+          <Card className="rounded-2xl">
             <CardHeader className="pb-4">
               <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <div className="flex flex-col gap-2 sm:flex-row sm:items-center">

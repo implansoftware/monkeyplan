@@ -200,26 +200,37 @@ export default function ResellerCustomers() {
   return (
     <div className="space-y-6" data-testid="page-reseller-customers">
       {/* Hero Header */}
-      <div className="relative overflow-hidden rounded-xl bg-gradient-to-br from-primary/5 via-primary/10 to-slate-100 dark:from-primary/10 dark:via-primary/5 dark:to-slate-900 p-6 border">
-        <div className="absolute inset-0 opacity-[0.03]" style={{
-          backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23000' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
-        }} />
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-500 p-6">
+        {/* Animated background blobs */}
+        <div className="absolute -top-20 -left-20 w-80 h-80 rounded-full bg-orange-400/20 blur-3xl animate-pulse" />
+        <div className="absolute bottom-0 right-0 w-64 h-64 rounded-full bg-yellow-400/20 blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
+        <div className="absolute top-1/2 left-1/3 w-48 h-48 rounded-full bg-emerald-300/20 blur-3xl animate-pulse" style={{ animationDelay: '2s' }} />
+        
+        {/* Pattern overlay */}
+        <div 
+          className="absolute inset-0 opacity-5"
+          style={{
+            backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M30 5 L35 15 L45 15 L37 22 L40 32 L30 26 L20 32 L23 22 L15 15 L25 15 Z' fill='white'/%3E%3C/svg%3E")`,
+            backgroundSize: '60px 60px'
+          }}
+        />
+        
         <div className="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <div className="flex items-center gap-3 mb-1">
-              <div className="h-10 w-10 rounded-xl bg-primary text-primary-foreground flex items-center justify-center shadow-lg shadow-primary/25">
-                <Users className="h-5 w-5" />
+              <div className="h-12 w-12 rounded-2xl bg-white/20 backdrop-blur-sm border border-white/30 flex items-center justify-center">
+                <Users className="h-6 w-6 text-white" />
               </div>
               <div>
-                <h1 className="text-2xl font-bold tracking-tight">Clienti</h1>
-                <p className="text-sm text-muted-foreground">
+                <h1 className="text-2xl font-bold tracking-tight text-white">Clienti</h1>
+                <p className="text-sm text-white/80">
                   Gestisci la tua base clienti
                 </p>
               </div>
             </div>
           </div>
           <ActionGuard module="customers" action="create">
-            <Button onClick={() => setDialogOpen(true)} className="shadow-lg shadow-primary/25" data-testid="button-new-customer">
+            <Button onClick={() => setDialogOpen(true)} className="bg-white/20 backdrop-blur-sm border border-white/30 text-white shadow-lg" data-testid="button-new-customer">
               <Plus className="h-4 w-4 mr-2" />
               Nuovo Cliente
             </Button>
@@ -234,7 +245,7 @@ export default function ResellerCustomers() {
 
       {/* Stats Row */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <Card className="relative overflow-hidden group hover:shadow-md transition-shadow">
+        <Card className="relative overflow-hidden rounded-2xl">
           <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent" />
           <CardContent className="relative pt-5 pb-4">
             <div className="flex items-center justify-between">
@@ -253,7 +264,7 @@ export default function ResellerCustomers() {
           </CardContent>
         </Card>
 
-        <Card className="relative overflow-hidden group hover:shadow-md transition-shadow">
+        <Card className="relative overflow-hidden rounded-2xl">
           <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/5 to-transparent" />
           <CardContent className="relative pt-5 pb-4">
             <div className="flex items-center justify-between">
@@ -271,7 +282,7 @@ export default function ResellerCustomers() {
           </CardContent>
         </Card>
 
-        <Card className="relative overflow-hidden group hover:shadow-md transition-shadow">
+        <Card className="relative overflow-hidden rounded-2xl">
           <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-transparent" />
           <CardContent className="relative pt-5 pb-4">
             <div className="flex items-center justify-between">
@@ -291,7 +302,7 @@ export default function ResellerCustomers() {
       </div>
 
       {/* Main Table Card */}
-      <Card className="overflow-hidden">
+      <Card className="overflow-hidden rounded-2xl">
         <CardHeader className="pb-4 border-b bg-muted/30">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div className="flex items-center gap-3">

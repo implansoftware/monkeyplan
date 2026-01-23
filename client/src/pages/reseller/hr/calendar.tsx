@@ -98,24 +98,23 @@ export default function HrCalendar() {
 
   return (
     <div className="space-y-6" data-testid="page-hr-calendar">
-      <div className="relative overflow-hidden rounded-xl bg-gradient-to-br from-cyan-500/5 via-cyan-500/10 to-slate-100 dark:from-cyan-500/10 dark:via-cyan-500/5 dark:to-slate-900 p-6 border">
-        <div className="absolute inset-0 opacity-[0.03]" style={{
-          backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23000' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
-        }} />
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-500 p-6">
+        <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
+        <div className="absolute bottom-0 left-0 w-48 h-48 bg-white/10 rounded-full blur-3xl translate-y-1/2 -translate-x-1/2" />
         <div className="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <div className="flex items-center gap-3 mb-2">
-              <div className="h-12 w-12 rounded-lg bg-cyan-500/10 flex items-center justify-center">
-                <Calendar className="h-6 w-6 text-cyan-600 dark:text-cyan-400" />
+              <div className="h-12 w-12 rounded-lg bg-white/20 backdrop-blur-sm border border-white/30 flex items-center justify-center">
+                <Calendar className="h-6 w-6 text-white" />
               </div>
               <div>
-                <h1 className="text-2xl font-bold" data-testid="text-calendar-title">Calendario Team</h1>
-                <p className="text-muted-foreground">Visualizzazione assenze e ferie del team</p>
+                <h1 className="text-2xl font-bold text-white" data-testid="text-calendar-title">Calendario Team</h1>
+                <p className="text-white/80">Visualizzazione assenze e ferie del team</p>
               </div>
             </div>
           </div>
           <Link href="/reseller/hr">
-            <Button variant="outline" data-testid="button-back-to-hr">
+            <Button variant="secondary" data-testid="button-back-to-hr">
               <ArrowLeft className="h-4 w-4 mr-2" />
               Torna a HR
             </Button>
@@ -189,7 +188,7 @@ export default function HrCalendar() {
         )}
       </div>
 
-      <Card data-testid="card-calendar">
+      <Card className="rounded-2xl" data-testid="card-calendar">
         <CardHeader>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
@@ -273,7 +272,7 @@ export default function HrCalendar() {
       </Card>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card data-testid="card-upcoming-vacations">
+        <Card className="rounded-2xl" data-testid="card-upcoming-vacations">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm flex items-center gap-2">
               <CalendarDays className="h-4 w-4 text-emerald-600" />
@@ -296,7 +295,7 @@ export default function HrCalendar() {
           </CardContent>
         </Card>
 
-        <Card data-testid="card-active-sick">
+        <Card className="rounded-2xl" data-testid="card-active-sick">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm flex items-center gap-2">
               <Thermometer className="h-4 w-4 text-red-600" />
@@ -319,7 +318,7 @@ export default function HrCalendar() {
           </CardContent>
         </Card>
 
-        <Card data-testid="card-team-availability">
+        <Card className="rounded-2xl" data-testid="card-team-availability">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm flex items-center gap-2">
               <Users className="h-4 w-4 text-blue-600" />
