@@ -33783,18 +33783,31 @@ export function registerRoutes(app: Express): Server {
       if (!repairCenterId) return res.status(400).json({ error: "Repair Center ID non trovato" });
       
       const staff = await storage.listRepairCenterStaff(repairCenterId);
-      const repairCenterData = await storage.getRepairCenter(repairCenterId);
+      
+      // Find the owner user (the user with role 'repair_center' who owns this center)
+      let ownerUser = null;
+      if (req.user.role === 'repair_center') {
+        // Current user is the owner
+        ownerUser = req.user;
+      } else {
+        // Staff user - find the owner by querying users with this repairCenterId and role repair_center
+        const allUsers = await db.select().from(users).where(and(
+          eq(users.repairCenterId, repairCenterId),
+          eq(users.role, 'repair_center')
+        ));
+        ownerUser = allUsers[0] || null;
+      }
       
       const team = [
-        ...(repairCenterData ? [{
-          id: repairCenterData.id,
-          fullName: repairCenterData.name || "Centro Riparazione",
-          username: repairCenterData.email,
-          email: repairCenterData.email,
-          phone: repairCenterData.phone,
-          role: "repair_center",
-          isActive: repairCenterData.isActive,
-          createdAt: repairCenterData.createdAt,
+        ...(ownerUser ? [{
+          id: ownerUser.id,
+          fullName: ownerUser.fullName || "Proprietario",
+          username: ownerUser.username,
+          email: ownerUser.email,
+          phone: ownerUser.phone,
+          role: ownerUser.role,
+          isActive: ownerUser.isActive,
+          createdAt: ownerUser.createdAt,
           isOwner: true
         }] : []),
         ...staff.map((s: any) => ({
