@@ -199,6 +199,7 @@ type CartItem = {
   totalPrice: number;
   isTemporary?: boolean;
   isService?: boolean;
+  maxStock?: number;
 };
 
 type DailyStats = {
@@ -537,9 +538,14 @@ export default function ResellerPosTerminal() {
 
   const addToCart = (product: Product) => {
     const price = product.sellingPrice || product.unitPrice || 0;
+    const maxStock = product.availableQuantity;
     const existing = cart.find(item => item.productId === product.id);
     
     if (existing) {
+      if (maxStock !== undefined && existing.quantity >= maxStock) {
+        toast({ title: "Stock insufficiente", description: `Disponibilità massima: ${maxStock}`, variant: "destructive" });
+        return;
+      }
       setCart(cart.map(item => 
         item.productId === product.id 
           ? { ...item, quantity: item.quantity + 1, totalPrice: (item.quantity + 1) * item.unitPrice }
@@ -557,6 +563,7 @@ export default function ResellerPosTerminal() {
         unitPrice: price,
         discount: 0,
         totalPrice: price,
+        maxStock,
       }]);
     }
   };
@@ -592,7 +599,10 @@ export default function ResellerPosTerminal() {
   const updateQuantity = (productId: string, delta: number) => {
     setCart(cart.map(item => {
       if (item.productId === productId) {
-        const newQty = Math.max(0, item.quantity + delta);
+        let newQty = Math.max(0, item.quantity + delta);
+        if (item.maxStock !== undefined && newQty > item.maxStock) {
+          newQty = item.maxStock;
+        }
         return { ...item, quantity: newQty, totalPrice: newQty * item.unitPrice };
       }
       return item;
@@ -1205,6 +1215,7 @@ export default function ResellerPosTerminal() {
                           size="icon"
                           className="h-7 w-7"
                           onClick={() => item.isTemporary ? updateTempQuantity(idx, 1) : (item.isService ? updateServiceQuantity(item.serviceItemId!, 1) : updateQuantity(item.productId!, 1))}
+                          disabled={!item.isTemporary && !item.isService && item.maxStock !== undefined && item.quantity >= item.maxStock}
                           data-testid={`button-increase-${itemKey}`}
                         >
                           <Plus className="w-3 h-3" />
