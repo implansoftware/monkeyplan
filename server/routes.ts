@@ -34974,7 +34974,28 @@ export function registerRoutes(app: Express): Server {
         activeItems = activeItems.filter(item => item.category === category);
       }
       
-      res.json(activeItems);
+      // Recupera prezzi personalizzati del centro e del reseller
+      const centerPrices = await storage.listServiceItemPricesByRepairCenter(repairCenterId);
+      const resellerPrices = await storage.listServiceItemPricesByReseller(resellerId);
+      
+      // Mappa i servizi con prezzi effettivi (come fa l'endpoint repair center)
+      const servicesWithPrices = activeItems.map(item => {
+        const centerPrice = centerPrices.find(p => p.serviceItemId === item.id);
+        const resellerPrice = resellerPrices.find(p => p.serviceItemId === item.id);
+        const effectivePrice = centerPrice?.priceCents ?? resellerPrice?.priceCents ?? item.defaultPriceCents;
+        
+        return {
+          id: item.id,
+          code: item.code,
+          name: item.name,
+          description: item.description,
+          category: item.category,
+          priceCents: effectivePrice,
+          laborMinutes: centerPrice?.laborMinutes ?? resellerPrice?.laborMinutes ?? item.defaultLaborMinutes,
+        };
+      });
+      
+      res.json(servicesWithPrices);
     } catch (error: any) {
       res.status(500).json({ error: error.message });
     }
