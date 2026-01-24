@@ -33962,6 +33962,101 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // Statistiche per singola cassa
+  app.get("/api/reseller/pos/register-stats", requireRole("reseller", "reseller_staff", "sub_reseller"), async (req, res) => {
+    try {
+      const { resellerId } = getEffectiveContext(req);
+      const period = (req.query.period as string) || "today";
+      const repairCenterId = req.query.repairCenterId as string | undefined;
+      
+      const now = new Date();
+      let startDate: Date;
+      if (period === "week") {
+        startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+      } else if (period === "month") {
+        startDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+      } else {
+        startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      }
+      
+      // Get all repair centers for this reseller
+      const subResellers = await db.select({ id: users.id })
+        .from(users)
+        .where(and(eq(users.parentResellerId, resellerId), eq(users.role, "reseller")));
+      const allResellerIds = [resellerId, ...subResellers.map(s => s.id)];
+      
+      let centers = await db.select().from(repairCenters)
+        .where(and(
+          inArray(repairCenters.resellerId, allResellerIds),
+          eq(repairCenters.isActive, true)
+        ));
+      
+      if (repairCenterId) {
+        centers = centers.filter(c => c.id === repairCenterId);
+      }
+      
+      const centerIds = centers.map(c => c.id);
+      if (centerIds.length === 0) {
+        return res.json([]);
+      }
+      
+      // Get all registers for these centers
+      const registers = await db.select().from(posRegisters)
+        .where(inArray(posRegisters.repairCenterId, centerIds));
+      
+      // Get transactions per register in the period
+      const transactions = await db.select({
+        registerId: posTransactions.registerId,
+        total: posTransactions.total,
+        paymentMethod: posTransactions.paymentMethod,
+      })
+      .from(posTransactions)
+      .innerJoin(posSessions, eq(posTransactions.sessionId, posSessions.id))
+      .where(and(
+        inArray(posSessions.repairCenterId, centerIds),
+        gte(posTransactions.createdAt, startDate),
+        eq(posTransactions.status, "completed")
+      ));
+      
+      // Aggregate stats per register
+      const registerStats = registers.map(reg => {
+        const regTxs = transactions.filter(tx => tx.registerId === reg.id);
+        const totalRevenue = regTxs.reduce((sum, tx) => sum + (tx.total || 0), 0);
+        const txCount = regTxs.length;
+        const avgTicket = txCount > 0 ? Math.round(totalRevenue / txCount) : 0;
+        
+        const paymentBreakdown = {
+          cash: regTxs.filter(tx => tx.paymentMethod === "cash").length,
+          card: regTxs.filter(tx => tx.paymentMethod === "card").length,
+          pos: regTxs.filter(tx => tx.paymentMethod === "pos_terminal").length,
+          satispay: regTxs.filter(tx => tx.paymentMethod === "satispay").length,
+        };
+        
+        const center = centers.find(c => c.id === reg.repairCenterId);
+        
+        return {
+          id: reg.id,
+          name: reg.name,
+          repairCenterId: reg.repairCenterId,
+          repairCenterName: center?.name || "-",
+          transactionCount: txCount,
+          totalRevenue,
+          avgTicket,
+          paymentBreakdown,
+          isDefault: reg.isDefault,
+          isActive: reg.isActive,
+        };
+      });
+      
+      // Sort by revenue descending
+      registerStats.sort((a, b) => b.totalRevenue - a.totalRevenue);
+      
+      res.json(registerStats);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   app.get("/api/reseller/pos/session/:sessionId", requireRole("reseller", "reseller_staff", "sub_reseller"), async (req, res) => {
     try {
       const { resellerId } = getEffectiveContext(req);

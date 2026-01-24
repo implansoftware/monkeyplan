@@ -95,6 +95,24 @@ interface PosSession {
   totalTransactions: number;
 }
 
+interface RegisterStats {
+  id: string;
+  name: string;
+  repairCenterId: string;
+  repairCenterName: string;
+  transactionCount: number;
+  totalRevenue: number;
+  avgTicket: number;
+  paymentBreakdown: {
+    cash: number;
+    card: number;
+    pos: number;
+    satispay: number;
+  };
+  isDefault: boolean;
+  isActive: boolean;
+}
+
 export default function ResellerPosOverview() {
   const [period, setPeriod] = useState("today");
   const [repairCenterFilter, setRepairCenterFilter] = useState("all");
@@ -136,6 +154,19 @@ export default function ResellerPosOverview() {
       }
       const res = await fetch(`/api/reseller/pos/sessions/feed?${params.toString()}`);
       if (!res.ok) throw new Error("Failed to fetch sessions");
+      return res.json();
+    },
+  });
+
+  const { data: registerStats, isLoading: registerStatsLoading } = useQuery<RegisterStats[]>({
+    queryKey: ["/api/reseller/pos/register-stats", period, repairCenterFilter],
+    queryFn: async () => {
+      const params = new URLSearchParams({ period });
+      if (repairCenterFilter !== "all") {
+        params.set("repairCenterId", repairCenterFilter);
+      }
+      const res = await fetch(`/api/reseller/pos/register-stats?${params.toString()}`);
+      if (!res.ok) throw new Error("Failed to fetch register stats");
       return res.json();
     },
   });
@@ -365,6 +396,67 @@ export default function ResellerPosOverview() {
           </CardContent>
         </Card>
       </div>
+
+      <Card className="rounded-2xl">
+        <CardHeader className="bg-gradient-to-r from-cyan-50 to-teal-50 dark:from-cyan-950/20 dark:to-teal-950/20 rounded-t-2xl">
+          <CardTitle className="flex items-center gap-2">
+            <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-cyan-500 to-teal-500 flex items-center justify-center">
+              <Store className="h-4 w-4 text-white" />
+            </div>
+            Performance Casse
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="pt-4">
+          {registerStatsLoading ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {[1, 2, 3].map((i) => (
+                <Skeleton key={i} className="h-32 w-full rounded-lg" />
+              ))}
+            </div>
+          ) : registerStats && registerStats.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {registerStats.map((reg) => (
+                <div key={reg.id} className="p-4 rounded-lg border bg-card" data-testid={`card-register-${reg.id}`}>
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-2">
+                      <Store className="h-4 w-4 text-teal-500" />
+                      <span className="font-medium">{reg.name}</span>
+                      {reg.isDefault && <Badge variant="secondary" className="text-xs">Default</Badge>}
+                    </div>
+                  </div>
+                  <p className="text-xs text-muted-foreground mb-2">{reg.repairCenterName}</p>
+                  <div className="grid grid-cols-2 gap-2 text-sm">
+                    <div>
+                      <p className="text-xs text-muted-foreground">Transazioni</p>
+                      <p className="font-bold">{reg.transactionCount}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">Fatturato</p>
+                      <p className="font-bold text-emerald-600">{formatCurrency(reg.totalRevenue)}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">Scontrino medio</p>
+                      <p className="font-medium">{formatCurrency(reg.avgTicket)}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">Pagamenti</p>
+                      <div className="flex gap-1 flex-wrap">
+                        {reg.paymentBreakdown.cash > 0 && <Badge variant="outline" className="text-xs"><Banknote className="w-3 h-3 mr-1" />{reg.paymentBreakdown.cash}</Badge>}
+                        {reg.paymentBreakdown.card > 0 && <Badge variant="outline" className="text-xs"><CreditCard className="w-3 h-3 mr-1" />{reg.paymentBreakdown.card}</Badge>}
+                        {reg.paymentBreakdown.pos > 0 && <Badge variant="outline" className="text-xs"><Receipt className="w-3 h-3 mr-1" />{reg.paymentBreakdown.pos}</Badge>}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-sm text-muted-foreground text-center py-8">
+              Nessuna cassa con transazioni nel periodo selezionato
+            </p>
+          )}
+        </CardContent>
+      </Card>
 
       <Card className="rounded-2xl">
         <CardHeader className="bg-gradient-to-r from-emerald-50 to-teal-50 dark:from-emerald-950/20 dark:to-teal-950/20 rounded-t-2xl">
