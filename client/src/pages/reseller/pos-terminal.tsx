@@ -880,7 +880,7 @@ export default function ResellerPosTerminal() {
               <Link href="/reseller/pos/sessions">
                 <Button variant="outline" size="sm" className="bg-white/20 backdrop-blur-sm text-white border-white/30 hover:bg-white/30" data-testid="button-session-history">
                   <History className="w-4 h-4 mr-1" />
-                  Storico
+                  Sessioni
                 </Button>
               </Link>
               <Button
