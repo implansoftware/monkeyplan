@@ -856,7 +856,7 @@ export default function ResellerPosTerminal() {
             </div>
             <div className="flex items-center gap-2 flex-wrap">
               <Select value={selectedRegisterId} onValueChange={setSelectedRegisterId}>
-                <SelectTrigger className="w-[180px] h-8 bg-white/20 backdrop-blur-sm text-white border-white/30" data-testid="select-register">
+                <SelectTrigger className="min-w-[180px] max-w-[280px] h-8 bg-white/20 backdrop-blur-sm text-white border-white/30" data-testid="select-register">
                   <Store className="w-4 h-4 mr-1" />
                   <SelectValue placeholder="Seleziona cassa" />
                 </SelectTrigger>
