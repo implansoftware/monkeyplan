@@ -35012,7 +35012,7 @@ export function registerRoutes(app: Express): Server {
         return res.status(403).json({ error: "Non autorizzato" });
       }
       
-      const customers = await storage.getCustomersByRepairCenter(repairCenterId);
+      const customers = await storage.listCustomers({ repairCenterId });
       res.json(customers);
     } catch (error: any) {
       res.status(500).json({ error: error.message });
