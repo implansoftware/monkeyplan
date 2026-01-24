@@ -391,6 +391,14 @@ export default function ResellerPosSessions() {
                   <p className="font-medium">{sessionDetail.session.closedAt ? format(new Date(sessionDetail.session.closedAt), "dd/MM/yyyy HH:mm", { locale: it }) : "-"}</p>
                 </div>
                 <div>
+                  <p className="text-sm text-muted-foreground">Fondo Cassa Apertura</p>
+                  <p className="font-medium">{sessionDetail.session.openingCash != null ? formatCurrency(sessionDetail.session.openingCash) : "-"}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Fondo Cassa Chiusura</p>
+                  <p className="font-medium">{sessionDetail.session.closingCash != null ? formatCurrency(sessionDetail.session.closingCash) : "-"}</p>
+                </div>
+                <div>
                   <p className="text-sm text-muted-foreground">Transazioni</p>
                   <p className="font-medium">{sessionDetail.session.totalTransactions}</p>
                 </div>
