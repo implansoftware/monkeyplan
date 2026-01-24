@@ -866,7 +866,7 @@ export default function ResellerPosTerminal() {
                       <span className="flex items-center gap-2">
                         <span className={`w-2 h-2 rounded-full ${reg.id === selectedRegisterId && currentSession ? "bg-green-500" : "bg-gray-300"}`} />
                         {reg.name} {reg.isDefault && "(Default)"}
-                        {reg.id === selectedRegisterId && currentSession && <span className="text-xs text-green-600 ml-1">Aperta</span>}
+                        {reg.id === selectedRegisterId && currentSession && <Badge variant="secondary" className="text-xs bg-green-100 text-green-700 ml-1">Aperta</Badge>}
                       </span>
                     </SelectItem>
                   ))}
