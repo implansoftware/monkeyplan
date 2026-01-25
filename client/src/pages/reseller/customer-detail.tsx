@@ -26,7 +26,11 @@ import {
   UserCheck,
   Pencil,
   Check,
-  ChevronRight
+  ChevronRight,
+  Key,
+  MapPin,
+  CreditCard,
+  User as UserIcon
 } from "lucide-react";
 import { getStatusConfig } from "@/lib/repair-status-config";
 import { queryClient, apiRequest } from "@/lib/queryClient";
@@ -493,12 +497,13 @@ export default function ResellerCustomerDetail() {
 
       {/* Edit Dialog */}
       <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Modifica Cliente</DialogTitle>
           </DialogHeader>
           <CustomerEditForm
             customer={customer}
+            billingData={billingData}
             repairCenters={repairCenters}
             onSave={(formData) => updateCustomerMutation.mutate(formData)}
             onCancel={() => setEditDialogOpen(false)}
@@ -516,12 +521,14 @@ type CustomerWithRepairCenters = User & {
 
 function CustomerEditForm({
   customer,
+  billingData,
   repairCenters,
   onSave,
   onCancel,
   isPending,
 }: {
   customer: CustomerWithRepairCenters;
+  billingData?: BillingData;
   repairCenters: RepairCenter[];
   onSave: (data: Record<string, unknown>) => void;
   onCancel: () => void;
@@ -529,11 +536,28 @@ function CustomerEditForm({
 }) {
   const [formData, setFormData] = useState({
     fullName: customer.fullName,
+    username: customer.username,
     email: customer.email,
     phone: customer.phone || "",
     isActive: customer.isActive,
     repairCenterIds: customer.assignedRepairCenters?.map(rc => rc.id) || [],
+    password: "",
+    billingData: {
+      customerType: billingData?.customerType || "private",
+      companyName: billingData?.companyName || "",
+      vatNumber: billingData?.vatNumber || "",
+      fiscalCode: billingData?.fiscalCode || "",
+      pec: billingData?.pec || "",
+      codiceUnivoco: billingData?.codiceUnivoco || "",
+      iban: billingData?.iban || "",
+      address: billingData?.address || "",
+      city: billingData?.city || "",
+      zipCode: billingData?.zipCode || "",
+      country: billingData?.country || "IT",
+    },
   });
+
+  const isCompany = formData.billingData.customerType === "company";
 
   const toggleRepairCenter = (centerId: string) => {
     setFormData(prev => ({
@@ -544,59 +568,246 @@ function CustomerEditForm({
     }));
   };
 
+  const updateBilling = (field: string, value: string) => {
+    setFormData(prev => ({
+      ...prev,
+      billingData: { ...prev.billingData, [field]: value },
+    }));
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSave(formData);
+    const payload: Record<string, unknown> = {
+      ...formData,
+      password: formData.password || undefined,
+    };
+    if (!formData.password) delete payload.password;
+    onSave(payload);
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      <div className="space-y-2">
-        <Label htmlFor="fullName">Nome Completo</Label>
-        <Input
-          id="fullName"
-          value={formData.fullName}
-          onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
-          required
-          data-testid="input-edit-fullName"
-        />
+    <form onSubmit={handleSubmit} className="space-y-6">
+      {/* Account Section */}
+      <div className="space-y-4">
+        <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+          <UserIcon className="h-4 w-4" />
+          Dati Account
+        </div>
+        <div className="grid grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <Label htmlFor="fullName">Nome Completo *</Label>
+            <Input
+              id="fullName"
+              value={formData.fullName}
+              onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
+              required
+              data-testid="input-edit-fullName"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="username">Username *</Label>
+            <Input
+              id="username"
+              value={formData.username}
+              onChange={(e) => setFormData({ ...formData, username: e.target.value })}
+              required
+              data-testid="input-edit-username"
+            />
+          </div>
+        </div>
+        <div className="grid grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <Label htmlFor="email">Email *</Label>
+            <Input
+              id="email"
+              type="email"
+              value={formData.email}
+              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+              required
+              data-testid="input-edit-email"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="phone">Telefono</Label>
+            <Input
+              id="phone"
+              type="tel"
+              value={formData.phone}
+              onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+              data-testid="input-edit-phone"
+            />
+          </div>
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="password" className="flex items-center gap-2">
+            <Key className="h-3 w-3" />
+            Nuova Password (lascia vuoto per non cambiare)
+          </Label>
+          <Input
+            id="password"
+            type="password"
+            value={formData.password}
+            onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+            placeholder="Minimo 6 caratteri"
+            data-testid="input-edit-password"
+          />
+        </div>
+        <div className="flex items-center justify-between">
+          <Label htmlFor="isActive">Cliente Attivo</Label>
+          <Switch
+            id="isActive"
+            checked={formData.isActive}
+            onCheckedChange={(checked) => setFormData({ ...formData, isActive: checked })}
+            data-testid="input-edit-isActive"
+          />
+        </div>
       </div>
 
-      <div className="space-y-2">
-        <Label htmlFor="email">Email</Label>
-        <Input
-          id="email"
-          type="email"
-          value={formData.email}
-          onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-          required
-          data-testid="input-edit-email"
-        />
+      {/* Billing Section */}
+      <div className="space-y-4 pt-4 border-t">
+        <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+          <CreditCard className="h-4 w-4" />
+          Dati Fatturazione
+        </div>
+        <div className="flex gap-4">
+          <Label className="flex items-center gap-2 cursor-pointer">
+            <input
+              type="radio"
+              name="customerType"
+              checked={!isCompany}
+              onChange={() => updateBilling("customerType", "private")}
+              data-testid="radio-private"
+            />
+            Privato
+          </Label>
+          <Label className="flex items-center gap-2 cursor-pointer">
+            <input
+              type="radio"
+              name="customerType"
+              checked={isCompany}
+              onChange={() => updateBilling("customerType", "company")}
+              data-testid="radio-company"
+            />
+            Azienda
+          </Label>
+        </div>
+
+        {isCompany && (
+          <>
+            <div className="space-y-2">
+              <Label htmlFor="companyName">Ragione Sociale</Label>
+              <Input
+                id="companyName"
+                value={formData.billingData.companyName}
+                onChange={(e) => updateBilling("companyName", e.target.value)}
+                data-testid="input-edit-companyName"
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="vatNumber">P.IVA</Label>
+                <Input
+                  id="vatNumber"
+                  value={formData.billingData.vatNumber}
+                  onChange={(e) => updateBilling("vatNumber", e.target.value)}
+                  data-testid="input-edit-vatNumber"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="fiscalCode">Codice Fiscale</Label>
+                <Input
+                  id="fiscalCode"
+                  value={formData.billingData.fiscalCode}
+                  onChange={(e) => updateBilling("fiscalCode", e.target.value)}
+                  data-testid="input-edit-fiscalCode"
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="pec">PEC</Label>
+                <Input
+                  id="pec"
+                  type="email"
+                  value={formData.billingData.pec}
+                  onChange={(e) => updateBilling("pec", e.target.value)}
+                  data-testid="input-edit-pec"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="codiceUnivoco">Codice Univoco SDI</Label>
+                <Input
+                  id="codiceUnivoco"
+                  value={formData.billingData.codiceUnivoco}
+                  onChange={(e) => updateBilling("codiceUnivoco", e.target.value)}
+                  maxLength={7}
+                  data-testid="input-edit-codiceUnivoco"
+                />
+              </div>
+            </div>
+          </>
+        )}
+
+        <div className="space-y-2">
+          <Label htmlFor="iban">IBAN</Label>
+          <Input
+            id="iban"
+            value={formData.billingData.iban}
+            onChange={(e) => updateBilling("iban", e.target.value)}
+            data-testid="input-edit-iban"
+          />
+        </div>
       </div>
 
-      <div className="space-y-2">
-        <Label htmlFor="phone">Telefono</Label>
-        <Input
-          id="phone"
-          type="tel"
-          value={formData.phone}
-          onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-          data-testid="input-edit-phone"
-        />
+      {/* Address Section */}
+      <div className="space-y-4 pt-4 border-t">
+        <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+          <MapPin className="h-4 w-4" />
+          Indirizzo
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="address">Via/Piazza</Label>
+          <Input
+            id="address"
+            value={formData.billingData.address}
+            onChange={(e) => updateBilling("address", e.target.value)}
+            data-testid="input-edit-address"
+          />
+        </div>
+        <div className="grid grid-cols-3 gap-4">
+          <div className="space-y-2">
+            <Label htmlFor="city">Città</Label>
+            <Input
+              id="city"
+              value={formData.billingData.city}
+              onChange={(e) => updateBilling("city", e.target.value)}
+              data-testid="input-edit-city"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="zipCode">CAP</Label>
+            <Input
+              id="zipCode"
+              value={formData.billingData.zipCode}
+              onChange={(e) => updateBilling("zipCode", e.target.value)}
+              data-testid="input-edit-zipCode"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="country">Paese</Label>
+            <Input
+              id="country"
+              value={formData.billingData.country}
+              onChange={(e) => updateBilling("country", e.target.value)}
+              data-testid="input-edit-country"
+            />
+          </div>
+        </div>
       </div>
 
-      <div className="flex items-center justify-between">
-        <Label htmlFor="isActive">Cliente Attivo</Label>
-        <Switch
-          id="isActive"
-          checked={formData.isActive}
-          onCheckedChange={(checked) => setFormData({ ...formData, isActive: checked })}
-          data-testid="input-edit-isActive"
-        />
-      </div>
-
+      {/* Repair Centers */}
       {repairCenters.length > 0 && (
-        <div className="space-y-2 pt-3 border-t">
+        <div className="space-y-2 pt-4 border-t">
           <Label>Centri Riparazione</Label>
           <div className="flex flex-wrap gap-2">
             {repairCenters.map((rc) => {

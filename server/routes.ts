@@ -5315,9 +5315,32 @@ export function registerRoutes(app: Express): Server {
         phone: z.string().optional().nullable(),
         isActive: z.boolean().optional(),
         repairCenterIds: z.array(z.string()).optional(),
+        username: z.string().min(3).optional(),
+        password: z.string().min(6).optional(),
+        billingData: z.object({
+          customerType: z.enum(["private", "company"]).optional(),
+          companyName: z.string().optional().nullable(),
+          vatNumber: z.string().optional().nullable(),
+          fiscalCode: z.string().optional().nullable(),
+          pec: z.string().email().optional().nullable(),
+          codiceUnivoco: z.string().optional().nullable(),
+          iban: z.string().optional().nullable(),
+          address: z.string().optional(),
+          city: z.string().optional(),
+          zipCode: z.string().optional(),
+          country: z.string().optional(),
+        }).optional(),
       });
       
       const validatedData = updateSchema.parse(req.body);
+      
+      // Check username uniqueness if changing
+      if (validatedData.username && validatedData.username !== existingCustomer.username) {
+        const existingWithUsername = await storage.getUserByUsername(validatedData.username);
+        if (existingWithUsername) {
+          return res.status(400).send("Username già in uso");
+        }
+      }
       
       // Validate repair centers belong to this reseller
       const repairCenterIds = validatedData.repairCenterIds;
@@ -5336,6 +5359,12 @@ export function registerRoutes(app: Express): Server {
       if (validatedData.fullName !== undefined) updates.fullName = validatedData.fullName;
       if (validatedData.phone !== undefined) updates.phone = validatedData.phone;
       if (validatedData.isActive !== undefined) updates.isActive = validatedData.isActive;
+      if (validatedData.username !== undefined) updates.username = validatedData.username;
+      
+      // Hash and update password if provided
+      if (validatedData.password) {
+        updates.password = await hashPassword(validatedData.password);
+      }
       
       // Also update repairCenterId for backward compatibility
       if (repairCenterIds !== undefined) {
@@ -5352,11 +5381,35 @@ export function registerRoutes(app: Express): Server {
         await storage.setCustomerRepairCenters(customerId, repairCenterIds);
       }
       
-      // Return updated customer with repair centers
+      // Update billing data if provided
+      if (validatedData.billingData) {
+        const existingBilling = await storage.getBillingDataByUserId(customerId);
+        if (existingBilling) {
+          await storage.updateBillingData(existingBilling.id, validatedData.billingData);
+        } else if (validatedData.billingData.address && validatedData.billingData.city && validatedData.billingData.zipCode) {
+          await storage.createBillingData({
+            userId: customerId,
+            customerType: validatedData.billingData.customerType || "private",
+            companyName: validatedData.billingData.companyName || null,
+            vatNumber: validatedData.billingData.vatNumber || null,
+            fiscalCode: validatedData.billingData.fiscalCode || null,
+            pec: validatedData.billingData.pec || null,
+            codiceUnivoco: validatedData.billingData.codiceUnivoco || null,
+            iban: validatedData.billingData.iban || null,
+            address: validatedData.billingData.address,
+            city: validatedData.billingData.city,
+            zipCode: validatedData.billingData.zipCode,
+            country: validatedData.billingData.country || "IT",
+          });
+        }
+      }
+      
+      // Return updated customer with repair centers and billing
       const assignedRepairCenters = await storage.listRepairCentersForCustomer(customerId);
+      const billingInfo = await storage.getBillingDataByUserId(customerId);
       
       setActivityEntity(res, { type: 'users', id: customerId });
-      res.json({ ...updatedUser, assignedRepairCenters });
+      res.json({ ...updatedUser, assignedRepairCenters, billingData: billingInfo });
     } catch (error: any) {
       res.status(400).send(error.message);
     }
