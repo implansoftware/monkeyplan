@@ -9215,6 +9215,21 @@ export function registerRoutes(app: Express): Server {
         paymentMethod
       });
       
+      // Notify reseller about new service order
+      await storage.createNotification({
+        userId: resellerId,
+        type: "system",
+        title: "Nuovo ordine servizio",
+        message: `${req.user.fullName} ha richiesto: ${serviceItem.name}`,
+        data: JSON.stringify({ serviceOrderId: order.id, customerId: req.user.id })
+      });
+      broadcastNotification(resellerId, {
+        type: "new_service_order",
+        title: "Nuovo ordine servizio",
+        message: `${req.user.fullName} ha richiesto: ${serviceItem.name}`,
+        orderId: order.id
+      });
+      
       setActivityEntity(res, { type: 'service_orders', id: order.id });
       res.status(201).json(order);
     } catch (error: any) {
