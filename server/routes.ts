@@ -5389,11 +5389,11 @@ export function registerRoutes(app: Express): Server {
         await storage.setCustomerRepairCenters(customerId, repairCenterIds);
       }
       
-      // Update billing data if provided
+      // Update or create billing data if provided
       if (validatedData.billing) {
         const existingBilling = await storage.getBillingDataByUserId(customerId);
         if (existingBilling) {
-          const billingUpdates = {};
+          const billingUpdates: any = {};
           if (validatedData.billing.customerType !== undefined) billingUpdates.customerType = validatedData.billing.customerType;
           if (validatedData.billing.companyName !== undefined) billingUpdates.companyName = validatedData.billing.companyName;
           if (validatedData.billing.vatNumber !== undefined) billingUpdates.vatNumber = validatedData.billing.vatNumber;
@@ -5409,6 +5409,820 @@ export function registerRoutes(app: Express): Server {
           if (Object.keys(billingUpdates).length > 0) {
             await storage.updateBillingData(existingBilling.id, billingUpdates);
           }
+        } else {
+          // Create new billing data
+          await storage.createBillingData({
+            userId: customerId,
+            customerType: validatedData.billing.customerType || 'private',
+            companyName: validatedData.billing.companyName || null,
+            vatNumber: validatedData.billing.vatNumber || null,
+            fiscalCode: validatedData.billing.fiscalCode || null,
+            pec: validatedData.billing.pec || null,
+            codiceUnivoco: validatedData.billing.codiceUnivoco || null,
+            iban: validatedData.billing.iban || null,
+            address: validatedData.billing.address || '',
+            city: validatedData.billing.city || '',
+            zipCode: validatedData.billing.zipCode || '',
+            country: validatedData.billing.country || 'IT',
+          });
+        }
+      }
+      // Update or create billing data if provided
+      if (validatedData.billing) {
+        const existingBilling = await storage.getBillingDataByUserId(customerId);
+        if (existingBilling) {
+          const billingUpdates: any = {};
+          if (validatedData.billing.customerType !== undefined) billingUpdates.customerType = validatedData.billing.customerType;
+          if (validatedData.billing.companyName !== undefined) billingUpdates.companyName = validatedData.billing.companyName;
+          if (validatedData.billing.vatNumber !== undefined) billingUpdates.vatNumber = validatedData.billing.vatNumber;
+          if (validatedData.billing.fiscalCode !== undefined) billingUpdates.fiscalCode = validatedData.billing.fiscalCode;
+          if (validatedData.billing.pec !== undefined) billingUpdates.pec = validatedData.billing.pec;
+          if (validatedData.billing.codiceUnivoco !== undefined) billingUpdates.codiceUnivoco = validatedData.billing.codiceUnivoco;
+          if (validatedData.billing.iban !== undefined) billingUpdates.iban = validatedData.billing.iban;
+          if (validatedData.billing.address !== undefined) billingUpdates.address = validatedData.billing.address;
+          if (validatedData.billing.city !== undefined) billingUpdates.city = validatedData.billing.city;
+          if (validatedData.billing.zipCode !== undefined) billingUpdates.zipCode = validatedData.billing.zipCode;
+          if (validatedData.billing.country !== undefined) billingUpdates.country = validatedData.billing.country;
+          
+          if (Object.keys(billingUpdates).length > 0) {
+            await storage.updateBillingData(existingBilling.id, billingUpdates);
+          }
+        } else {
+          // Create new billing data
+          await storage.createBillingData({
+            userId: customerId,
+            customerType: validatedData.billing.customerType || 'private',
+            companyName: validatedData.billing.companyName || null,
+            vatNumber: validatedData.billing.vatNumber || null,
+            fiscalCode: validatedData.billing.fiscalCode || null,
+            pec: validatedData.billing.pec || null,
+            codiceUnivoco: validatedData.billing.codiceUnivoco || null,
+            iban: validatedData.billing.iban || null,
+            address: validatedData.billing.address || '',
+            city: validatedData.billing.city || '',
+            zipCode: validatedData.billing.zipCode || '',
+            country: validatedData.billing.country || 'IT',
+          });
+        }
+      }
+      // Update or create billing data if provided
+      if (validatedData.billing) {
+        const existingBilling = await storage.getBillingDataByUserId(customerId);
+        if (existingBilling) {
+          const billingUpdates: any = {};
+          if (validatedData.billing.customerType !== undefined) billingUpdates.customerType = validatedData.billing.customerType;
+          if (validatedData.billing.companyName !== undefined) billingUpdates.companyName = validatedData.billing.companyName;
+          if (validatedData.billing.vatNumber !== undefined) billingUpdates.vatNumber = validatedData.billing.vatNumber;
+          if (validatedData.billing.fiscalCode !== undefined) billingUpdates.fiscalCode = validatedData.billing.fiscalCode;
+          if (validatedData.billing.pec !== undefined) billingUpdates.pec = validatedData.billing.pec;
+          if (validatedData.billing.codiceUnivoco !== undefined) billingUpdates.codiceUnivoco = validatedData.billing.codiceUnivoco;
+          if (validatedData.billing.iban !== undefined) billingUpdates.iban = validatedData.billing.iban;
+          if (validatedData.billing.address !== undefined) billingUpdates.address = validatedData.billing.address;
+          if (validatedData.billing.city !== undefined) billingUpdates.city = validatedData.billing.city;
+          if (validatedData.billing.zipCode !== undefined) billingUpdates.zipCode = validatedData.billing.zipCode;
+          if (validatedData.billing.country !== undefined) billingUpdates.country = validatedData.billing.country;
+          
+          if (Object.keys(billingUpdates).length > 0) {
+            await storage.updateBillingData(existingBilling.id, billingUpdates);
+          }
+        } else {
+          // Create new billing data
+          await storage.createBillingData({
+            userId: customerId,
+            customerType: validatedData.billing.customerType || 'private',
+            companyName: validatedData.billing.companyName || null,
+            vatNumber: validatedData.billing.vatNumber || null,
+            fiscalCode: validatedData.billing.fiscalCode || null,
+            pec: validatedData.billing.pec || null,
+            codiceUnivoco: validatedData.billing.codiceUnivoco || null,
+            iban: validatedData.billing.iban || null,
+            address: validatedData.billing.address || '',
+            city: validatedData.billing.city || '',
+            zipCode: validatedData.billing.zipCode || '',
+            country: validatedData.billing.country || 'IT',
+          });
+        }
+      }
+      // Update or create billing data if provided
+      if (validatedData.billing) {
+        const existingBilling = await storage.getBillingDataByUserId(customerId);
+        if (existingBilling) {
+          const billingUpdates: any = {};
+          if (validatedData.billing.customerType !== undefined) billingUpdates.customerType = validatedData.billing.customerType;
+          if (validatedData.billing.companyName !== undefined) billingUpdates.companyName = validatedData.billing.companyName;
+          if (validatedData.billing.vatNumber !== undefined) billingUpdates.vatNumber = validatedData.billing.vatNumber;
+          if (validatedData.billing.fiscalCode !== undefined) billingUpdates.fiscalCode = validatedData.billing.fiscalCode;
+          if (validatedData.billing.pec !== undefined) billingUpdates.pec = validatedData.billing.pec;
+          if (validatedData.billing.codiceUnivoco !== undefined) billingUpdates.codiceUnivoco = validatedData.billing.codiceUnivoco;
+          if (validatedData.billing.iban !== undefined) billingUpdates.iban = validatedData.billing.iban;
+          if (validatedData.billing.address !== undefined) billingUpdates.address = validatedData.billing.address;
+          if (validatedData.billing.city !== undefined) billingUpdates.city = validatedData.billing.city;
+          if (validatedData.billing.zipCode !== undefined) billingUpdates.zipCode = validatedData.billing.zipCode;
+          if (validatedData.billing.country !== undefined) billingUpdates.country = validatedData.billing.country;
+          
+          if (Object.keys(billingUpdates).length > 0) {
+            await storage.updateBillingData(existingBilling.id, billingUpdates);
+          }
+        } else {
+          // Create new billing data
+          await storage.createBillingData({
+            userId: customerId,
+            customerType: validatedData.billing.customerType || 'private',
+            companyName: validatedData.billing.companyName || null,
+            vatNumber: validatedData.billing.vatNumber || null,
+            fiscalCode: validatedData.billing.fiscalCode || null,
+            pec: validatedData.billing.pec || null,
+            codiceUnivoco: validatedData.billing.codiceUnivoco || null,
+            iban: validatedData.billing.iban || null,
+            address: validatedData.billing.address || '',
+            city: validatedData.billing.city || '',
+            zipCode: validatedData.billing.zipCode || '',
+            country: validatedData.billing.country || 'IT',
+          });
+        }
+      }
+      // Update or create billing data if provided
+      if (validatedData.billing) {
+        const existingBilling = await storage.getBillingDataByUserId(customerId);
+        if (existingBilling) {
+          const billingUpdates: any = {};
+          if (validatedData.billing.customerType !== undefined) billingUpdates.customerType = validatedData.billing.customerType;
+          if (validatedData.billing.companyName !== undefined) billingUpdates.companyName = validatedData.billing.companyName;
+          if (validatedData.billing.vatNumber !== undefined) billingUpdates.vatNumber = validatedData.billing.vatNumber;
+          if (validatedData.billing.fiscalCode !== undefined) billingUpdates.fiscalCode = validatedData.billing.fiscalCode;
+          if (validatedData.billing.pec !== undefined) billingUpdates.pec = validatedData.billing.pec;
+          if (validatedData.billing.codiceUnivoco !== undefined) billingUpdates.codiceUnivoco = validatedData.billing.codiceUnivoco;
+          if (validatedData.billing.iban !== undefined) billingUpdates.iban = validatedData.billing.iban;
+          if (validatedData.billing.address !== undefined) billingUpdates.address = validatedData.billing.address;
+          if (validatedData.billing.city !== undefined) billingUpdates.city = validatedData.billing.city;
+          if (validatedData.billing.zipCode !== undefined) billingUpdates.zipCode = validatedData.billing.zipCode;
+          if (validatedData.billing.country !== undefined) billingUpdates.country = validatedData.billing.country;
+          
+          if (Object.keys(billingUpdates).length > 0) {
+            await storage.updateBillingData(existingBilling.id, billingUpdates);
+          }
+        } else {
+          // Create new billing data
+          await storage.createBillingData({
+            userId: customerId,
+            customerType: validatedData.billing.customerType || 'private',
+            companyName: validatedData.billing.companyName || null,
+            vatNumber: validatedData.billing.vatNumber || null,
+            fiscalCode: validatedData.billing.fiscalCode || null,
+            pec: validatedData.billing.pec || null,
+            codiceUnivoco: validatedData.billing.codiceUnivoco || null,
+            iban: validatedData.billing.iban || null,
+            address: validatedData.billing.address || '',
+            city: validatedData.billing.city || '',
+            zipCode: validatedData.billing.zipCode || '',
+            country: validatedData.billing.country || 'IT',
+          });
+        }
+      }
+      // Update or create billing data if provided
+      if (validatedData.billing) {
+        const existingBilling = await storage.getBillingDataByUserId(customerId);
+        if (existingBilling) {
+          const billingUpdates: any = {};
+          if (validatedData.billing.customerType !== undefined) billingUpdates.customerType = validatedData.billing.customerType;
+          if (validatedData.billing.companyName !== undefined) billingUpdates.companyName = validatedData.billing.companyName;
+          if (validatedData.billing.vatNumber !== undefined) billingUpdates.vatNumber = validatedData.billing.vatNumber;
+          if (validatedData.billing.fiscalCode !== undefined) billingUpdates.fiscalCode = validatedData.billing.fiscalCode;
+          if (validatedData.billing.pec !== undefined) billingUpdates.pec = validatedData.billing.pec;
+          if (validatedData.billing.codiceUnivoco !== undefined) billingUpdates.codiceUnivoco = validatedData.billing.codiceUnivoco;
+          if (validatedData.billing.iban !== undefined) billingUpdates.iban = validatedData.billing.iban;
+          if (validatedData.billing.address !== undefined) billingUpdates.address = validatedData.billing.address;
+          if (validatedData.billing.city !== undefined) billingUpdates.city = validatedData.billing.city;
+          if (validatedData.billing.zipCode !== undefined) billingUpdates.zipCode = validatedData.billing.zipCode;
+          if (validatedData.billing.country !== undefined) billingUpdates.country = validatedData.billing.country;
+          
+          if (Object.keys(billingUpdates).length > 0) {
+            await storage.updateBillingData(existingBilling.id, billingUpdates);
+          }
+        } else {
+          // Create new billing data
+          await storage.createBillingData({
+            userId: customerId,
+            customerType: validatedData.billing.customerType || 'private',
+            companyName: validatedData.billing.companyName || null,
+            vatNumber: validatedData.billing.vatNumber || null,
+            fiscalCode: validatedData.billing.fiscalCode || null,
+            pec: validatedData.billing.pec || null,
+            codiceUnivoco: validatedData.billing.codiceUnivoco || null,
+            iban: validatedData.billing.iban || null,
+            address: validatedData.billing.address || '',
+            city: validatedData.billing.city || '',
+            zipCode: validatedData.billing.zipCode || '',
+            country: validatedData.billing.country || 'IT',
+          });
+        }
+      }
+      // Update or create billing data if provided
+      if (validatedData.billing) {
+        const existingBilling = await storage.getBillingDataByUserId(customerId);
+        if (existingBilling) {
+          const billingUpdates: any = {};
+          if (validatedData.billing.customerType !== undefined) billingUpdates.customerType = validatedData.billing.customerType;
+          if (validatedData.billing.companyName !== undefined) billingUpdates.companyName = validatedData.billing.companyName;
+          if (validatedData.billing.vatNumber !== undefined) billingUpdates.vatNumber = validatedData.billing.vatNumber;
+          if (validatedData.billing.fiscalCode !== undefined) billingUpdates.fiscalCode = validatedData.billing.fiscalCode;
+          if (validatedData.billing.pec !== undefined) billingUpdates.pec = validatedData.billing.pec;
+          if (validatedData.billing.codiceUnivoco !== undefined) billingUpdates.codiceUnivoco = validatedData.billing.codiceUnivoco;
+          if (validatedData.billing.iban !== undefined) billingUpdates.iban = validatedData.billing.iban;
+          if (validatedData.billing.address !== undefined) billingUpdates.address = validatedData.billing.address;
+          if (validatedData.billing.city !== undefined) billingUpdates.city = validatedData.billing.city;
+          if (validatedData.billing.zipCode !== undefined) billingUpdates.zipCode = validatedData.billing.zipCode;
+          if (validatedData.billing.country !== undefined) billingUpdates.country = validatedData.billing.country;
+          
+          if (Object.keys(billingUpdates).length > 0) {
+            await storage.updateBillingData(existingBilling.id, billingUpdates);
+          }
+        } else {
+          // Create new billing data
+          await storage.createBillingData({
+            userId: customerId,
+            customerType: validatedData.billing.customerType || 'private',
+            companyName: validatedData.billing.companyName || null,
+            vatNumber: validatedData.billing.vatNumber || null,
+            fiscalCode: validatedData.billing.fiscalCode || null,
+            pec: validatedData.billing.pec || null,
+            codiceUnivoco: validatedData.billing.codiceUnivoco || null,
+            iban: validatedData.billing.iban || null,
+            address: validatedData.billing.address || '',
+            city: validatedData.billing.city || '',
+            zipCode: validatedData.billing.zipCode || '',
+            country: validatedData.billing.country || 'IT',
+          });
+        }
+      }
+      // Update or create billing data if provided
+      if (validatedData.billing) {
+        const existingBilling = await storage.getBillingDataByUserId(customerId);
+        if (existingBilling) {
+          const billingUpdates: any = {};
+          if (validatedData.billing.customerType !== undefined) billingUpdates.customerType = validatedData.billing.customerType;
+          if (validatedData.billing.companyName !== undefined) billingUpdates.companyName = validatedData.billing.companyName;
+          if (validatedData.billing.vatNumber !== undefined) billingUpdates.vatNumber = validatedData.billing.vatNumber;
+          if (validatedData.billing.fiscalCode !== undefined) billingUpdates.fiscalCode = validatedData.billing.fiscalCode;
+          if (validatedData.billing.pec !== undefined) billingUpdates.pec = validatedData.billing.pec;
+          if (validatedData.billing.codiceUnivoco !== undefined) billingUpdates.codiceUnivoco = validatedData.billing.codiceUnivoco;
+          if (validatedData.billing.iban !== undefined) billingUpdates.iban = validatedData.billing.iban;
+          if (validatedData.billing.address !== undefined) billingUpdates.address = validatedData.billing.address;
+          if (validatedData.billing.city !== undefined) billingUpdates.city = validatedData.billing.city;
+          if (validatedData.billing.zipCode !== undefined) billingUpdates.zipCode = validatedData.billing.zipCode;
+          if (validatedData.billing.country !== undefined) billingUpdates.country = validatedData.billing.country;
+          
+          if (Object.keys(billingUpdates).length > 0) {
+            await storage.updateBillingData(existingBilling.id, billingUpdates);
+          }
+        } else {
+          // Create new billing data
+          await storage.createBillingData({
+            userId: customerId,
+            customerType: validatedData.billing.customerType || 'private',
+            companyName: validatedData.billing.companyName || null,
+            vatNumber: validatedData.billing.vatNumber || null,
+            fiscalCode: validatedData.billing.fiscalCode || null,
+            pec: validatedData.billing.pec || null,
+            codiceUnivoco: validatedData.billing.codiceUnivoco || null,
+            iban: validatedData.billing.iban || null,
+            address: validatedData.billing.address || '',
+            city: validatedData.billing.city || '',
+            zipCode: validatedData.billing.zipCode || '',
+            country: validatedData.billing.country || 'IT',
+          });
+        }
+      }
+      // Update or create billing data if provided
+      if (validatedData.billing) {
+        const existingBilling = await storage.getBillingDataByUserId(customerId);
+        if (existingBilling) {
+          const billingUpdates: any = {};
+          if (validatedData.billing.customerType !== undefined) billingUpdates.customerType = validatedData.billing.customerType;
+          if (validatedData.billing.companyName !== undefined) billingUpdates.companyName = validatedData.billing.companyName;
+          if (validatedData.billing.vatNumber !== undefined) billingUpdates.vatNumber = validatedData.billing.vatNumber;
+          if (validatedData.billing.fiscalCode !== undefined) billingUpdates.fiscalCode = validatedData.billing.fiscalCode;
+          if (validatedData.billing.pec !== undefined) billingUpdates.pec = validatedData.billing.pec;
+          if (validatedData.billing.codiceUnivoco !== undefined) billingUpdates.codiceUnivoco = validatedData.billing.codiceUnivoco;
+          if (validatedData.billing.iban !== undefined) billingUpdates.iban = validatedData.billing.iban;
+          if (validatedData.billing.address !== undefined) billingUpdates.address = validatedData.billing.address;
+          if (validatedData.billing.city !== undefined) billingUpdates.city = validatedData.billing.city;
+          if (validatedData.billing.zipCode !== undefined) billingUpdates.zipCode = validatedData.billing.zipCode;
+          if (validatedData.billing.country !== undefined) billingUpdates.country = validatedData.billing.country;
+          
+          if (Object.keys(billingUpdates).length > 0) {
+            await storage.updateBillingData(existingBilling.id, billingUpdates);
+          }
+        } else {
+          // Create new billing data
+          await storage.createBillingData({
+            userId: customerId,
+            customerType: validatedData.billing.customerType || 'private',
+            companyName: validatedData.billing.companyName || null,
+            vatNumber: validatedData.billing.vatNumber || null,
+            fiscalCode: validatedData.billing.fiscalCode || null,
+            pec: validatedData.billing.pec || null,
+            codiceUnivoco: validatedData.billing.codiceUnivoco || null,
+            iban: validatedData.billing.iban || null,
+            address: validatedData.billing.address || '',
+            city: validatedData.billing.city || '',
+            zipCode: validatedData.billing.zipCode || '',
+            country: validatedData.billing.country || 'IT',
+          });
+        }
+      }
+      // Update or create billing data if provided
+      if (validatedData.billing) {
+        const existingBilling = await storage.getBillingDataByUserId(customerId);
+        if (existingBilling) {
+          const billingUpdates: any = {};
+          if (validatedData.billing.customerType !== undefined) billingUpdates.customerType = validatedData.billing.customerType;
+          if (validatedData.billing.companyName !== undefined) billingUpdates.companyName = validatedData.billing.companyName;
+          if (validatedData.billing.vatNumber !== undefined) billingUpdates.vatNumber = validatedData.billing.vatNumber;
+          if (validatedData.billing.fiscalCode !== undefined) billingUpdates.fiscalCode = validatedData.billing.fiscalCode;
+          if (validatedData.billing.pec !== undefined) billingUpdates.pec = validatedData.billing.pec;
+          if (validatedData.billing.codiceUnivoco !== undefined) billingUpdates.codiceUnivoco = validatedData.billing.codiceUnivoco;
+          if (validatedData.billing.iban !== undefined) billingUpdates.iban = validatedData.billing.iban;
+          if (validatedData.billing.address !== undefined) billingUpdates.address = validatedData.billing.address;
+          if (validatedData.billing.city !== undefined) billingUpdates.city = validatedData.billing.city;
+          if (validatedData.billing.zipCode !== undefined) billingUpdates.zipCode = validatedData.billing.zipCode;
+          if (validatedData.billing.country !== undefined) billingUpdates.country = validatedData.billing.country;
+          
+          if (Object.keys(billingUpdates).length > 0) {
+            await storage.updateBillingData(existingBilling.id, billingUpdates);
+          }
+        } else {
+          // Create new billing data
+          await storage.createBillingData({
+            userId: customerId,
+            customerType: validatedData.billing.customerType || 'private',
+            companyName: validatedData.billing.companyName || null,
+            vatNumber: validatedData.billing.vatNumber || null,
+            fiscalCode: validatedData.billing.fiscalCode || null,
+            pec: validatedData.billing.pec || null,
+            codiceUnivoco: validatedData.billing.codiceUnivoco || null,
+            iban: validatedData.billing.iban || null,
+            address: validatedData.billing.address || '',
+            city: validatedData.billing.city || '',
+            zipCode: validatedData.billing.zipCode || '',
+            country: validatedData.billing.country || 'IT',
+          });
+        }
+      }
+      // Update or create billing data if provided
+      if (validatedData.billing) {
+        const existingBilling = await storage.getBillingDataByUserId(customerId);
+        if (existingBilling) {
+          const billingUpdates: any = {};
+          if (validatedData.billing.customerType !== undefined) billingUpdates.customerType = validatedData.billing.customerType;
+          if (validatedData.billing.companyName !== undefined) billingUpdates.companyName = validatedData.billing.companyName;
+          if (validatedData.billing.vatNumber !== undefined) billingUpdates.vatNumber = validatedData.billing.vatNumber;
+          if (validatedData.billing.fiscalCode !== undefined) billingUpdates.fiscalCode = validatedData.billing.fiscalCode;
+          if (validatedData.billing.pec !== undefined) billingUpdates.pec = validatedData.billing.pec;
+          if (validatedData.billing.codiceUnivoco !== undefined) billingUpdates.codiceUnivoco = validatedData.billing.codiceUnivoco;
+          if (validatedData.billing.iban !== undefined) billingUpdates.iban = validatedData.billing.iban;
+          if (validatedData.billing.address !== undefined) billingUpdates.address = validatedData.billing.address;
+          if (validatedData.billing.city !== undefined) billingUpdates.city = validatedData.billing.city;
+          if (validatedData.billing.zipCode !== undefined) billingUpdates.zipCode = validatedData.billing.zipCode;
+          if (validatedData.billing.country !== undefined) billingUpdates.country = validatedData.billing.country;
+          
+          if (Object.keys(billingUpdates).length > 0) {
+            await storage.updateBillingData(existingBilling.id, billingUpdates);
+          }
+        } else {
+          // Create new billing data
+          await storage.createBillingData({
+            userId: customerId,
+            customerType: validatedData.billing.customerType || 'private',
+            companyName: validatedData.billing.companyName || null,
+            vatNumber: validatedData.billing.vatNumber || null,
+            fiscalCode: validatedData.billing.fiscalCode || null,
+            pec: validatedData.billing.pec || null,
+            codiceUnivoco: validatedData.billing.codiceUnivoco || null,
+            iban: validatedData.billing.iban || null,
+            address: validatedData.billing.address || '',
+            city: validatedData.billing.city || '',
+            zipCode: validatedData.billing.zipCode || '',
+            country: validatedData.billing.country || 'IT',
+          });
+        }
+      }
+      // Update or create billing data if provided
+      if (validatedData.billing) {
+        const existingBilling = await storage.getBillingDataByUserId(customerId);
+        if (existingBilling) {
+          const billingUpdates: any = {};
+          if (validatedData.billing.customerType !== undefined) billingUpdates.customerType = validatedData.billing.customerType;
+          if (validatedData.billing.companyName !== undefined) billingUpdates.companyName = validatedData.billing.companyName;
+          if (validatedData.billing.vatNumber !== undefined) billingUpdates.vatNumber = validatedData.billing.vatNumber;
+          if (validatedData.billing.fiscalCode !== undefined) billingUpdates.fiscalCode = validatedData.billing.fiscalCode;
+          if (validatedData.billing.pec !== undefined) billingUpdates.pec = validatedData.billing.pec;
+          if (validatedData.billing.codiceUnivoco !== undefined) billingUpdates.codiceUnivoco = validatedData.billing.codiceUnivoco;
+          if (validatedData.billing.iban !== undefined) billingUpdates.iban = validatedData.billing.iban;
+          if (validatedData.billing.address !== undefined) billingUpdates.address = validatedData.billing.address;
+          if (validatedData.billing.city !== undefined) billingUpdates.city = validatedData.billing.city;
+          if (validatedData.billing.zipCode !== undefined) billingUpdates.zipCode = validatedData.billing.zipCode;
+          if (validatedData.billing.country !== undefined) billingUpdates.country = validatedData.billing.country;
+          
+          if (Object.keys(billingUpdates).length > 0) {
+            await storage.updateBillingData(existingBilling.id, billingUpdates);
+          }
+        } else {
+          // Create new billing data
+          await storage.createBillingData({
+            userId: customerId,
+            customerType: validatedData.billing.customerType || 'private',
+            companyName: validatedData.billing.companyName || null,
+            vatNumber: validatedData.billing.vatNumber || null,
+            fiscalCode: validatedData.billing.fiscalCode || null,
+            pec: validatedData.billing.pec || null,
+            codiceUnivoco: validatedData.billing.codiceUnivoco || null,
+            iban: validatedData.billing.iban || null,
+            address: validatedData.billing.address || '',
+            city: validatedData.billing.city || '',
+            zipCode: validatedData.billing.zipCode || '',
+            country: validatedData.billing.country || 'IT',
+          });
+        }
+      }
+      // Update or create billing data if provided
+      if (validatedData.billing) {
+        const existingBilling = await storage.getBillingDataByUserId(customerId);
+        if (existingBilling) {
+          const billingUpdates: any = {};
+          if (validatedData.billing.customerType !== undefined) billingUpdates.customerType = validatedData.billing.customerType;
+          if (validatedData.billing.companyName !== undefined) billingUpdates.companyName = validatedData.billing.companyName;
+          if (validatedData.billing.vatNumber !== undefined) billingUpdates.vatNumber = validatedData.billing.vatNumber;
+          if (validatedData.billing.fiscalCode !== undefined) billingUpdates.fiscalCode = validatedData.billing.fiscalCode;
+          if (validatedData.billing.pec !== undefined) billingUpdates.pec = validatedData.billing.pec;
+          if (validatedData.billing.codiceUnivoco !== undefined) billingUpdates.codiceUnivoco = validatedData.billing.codiceUnivoco;
+          if (validatedData.billing.iban !== undefined) billingUpdates.iban = validatedData.billing.iban;
+          if (validatedData.billing.address !== undefined) billingUpdates.address = validatedData.billing.address;
+          if (validatedData.billing.city !== undefined) billingUpdates.city = validatedData.billing.city;
+          if (validatedData.billing.zipCode !== undefined) billingUpdates.zipCode = validatedData.billing.zipCode;
+          if (validatedData.billing.country !== undefined) billingUpdates.country = validatedData.billing.country;
+          
+          if (Object.keys(billingUpdates).length > 0) {
+            await storage.updateBillingData(existingBilling.id, billingUpdates);
+          }
+        } else {
+          // Create new billing data
+          await storage.createBillingData({
+            userId: customerId,
+            customerType: validatedData.billing.customerType || 'private',
+            companyName: validatedData.billing.companyName || null,
+            vatNumber: validatedData.billing.vatNumber || null,
+            fiscalCode: validatedData.billing.fiscalCode || null,
+            pec: validatedData.billing.pec || null,
+            codiceUnivoco: validatedData.billing.codiceUnivoco || null,
+            iban: validatedData.billing.iban || null,
+            address: validatedData.billing.address || '',
+            city: validatedData.billing.city || '',
+            zipCode: validatedData.billing.zipCode || '',
+            country: validatedData.billing.country || 'IT',
+          });
+        }
+      }
+      // Update or create billing data if provided
+      if (validatedData.billing) {
+        const existingBilling = await storage.getBillingDataByUserId(customerId);
+        if (existingBilling) {
+          const billingUpdates: any = {};
+          if (validatedData.billing.customerType !== undefined) billingUpdates.customerType = validatedData.billing.customerType;
+          if (validatedData.billing.companyName !== undefined) billingUpdates.companyName = validatedData.billing.companyName;
+          if (validatedData.billing.vatNumber !== undefined) billingUpdates.vatNumber = validatedData.billing.vatNumber;
+          if (validatedData.billing.fiscalCode !== undefined) billingUpdates.fiscalCode = validatedData.billing.fiscalCode;
+          if (validatedData.billing.pec !== undefined) billingUpdates.pec = validatedData.billing.pec;
+          if (validatedData.billing.codiceUnivoco !== undefined) billingUpdates.codiceUnivoco = validatedData.billing.codiceUnivoco;
+          if (validatedData.billing.iban !== undefined) billingUpdates.iban = validatedData.billing.iban;
+          if (validatedData.billing.address !== undefined) billingUpdates.address = validatedData.billing.address;
+          if (validatedData.billing.city !== undefined) billingUpdates.city = validatedData.billing.city;
+          if (validatedData.billing.zipCode !== undefined) billingUpdates.zipCode = validatedData.billing.zipCode;
+          if (validatedData.billing.country !== undefined) billingUpdates.country = validatedData.billing.country;
+          
+          if (Object.keys(billingUpdates).length > 0) {
+            await storage.updateBillingData(existingBilling.id, billingUpdates);
+          }
+        } else {
+          // Create new billing data
+          await storage.createBillingData({
+            userId: customerId,
+            customerType: validatedData.billing.customerType || 'private',
+            companyName: validatedData.billing.companyName || null,
+            vatNumber: validatedData.billing.vatNumber || null,
+            fiscalCode: validatedData.billing.fiscalCode || null,
+            pec: validatedData.billing.pec || null,
+            codiceUnivoco: validatedData.billing.codiceUnivoco || null,
+            iban: validatedData.billing.iban || null,
+            address: validatedData.billing.address || '',
+            city: validatedData.billing.city || '',
+            zipCode: validatedData.billing.zipCode || '',
+            country: validatedData.billing.country || 'IT',
+          });
+        }
+      }
+      // Update or create billing data if provided
+      if (validatedData.billing) {
+        const existingBilling = await storage.getBillingDataByUserId(customerId);
+        if (existingBilling) {
+          const billingUpdates: any = {};
+          if (validatedData.billing.customerType !== undefined) billingUpdates.customerType = validatedData.billing.customerType;
+          if (validatedData.billing.companyName !== undefined) billingUpdates.companyName = validatedData.billing.companyName;
+          if (validatedData.billing.vatNumber !== undefined) billingUpdates.vatNumber = validatedData.billing.vatNumber;
+          if (validatedData.billing.fiscalCode !== undefined) billingUpdates.fiscalCode = validatedData.billing.fiscalCode;
+          if (validatedData.billing.pec !== undefined) billingUpdates.pec = validatedData.billing.pec;
+          if (validatedData.billing.codiceUnivoco !== undefined) billingUpdates.codiceUnivoco = validatedData.billing.codiceUnivoco;
+          if (validatedData.billing.iban !== undefined) billingUpdates.iban = validatedData.billing.iban;
+          if (validatedData.billing.address !== undefined) billingUpdates.address = validatedData.billing.address;
+          if (validatedData.billing.city !== undefined) billingUpdates.city = validatedData.billing.city;
+          if (validatedData.billing.zipCode !== undefined) billingUpdates.zipCode = validatedData.billing.zipCode;
+          if (validatedData.billing.country !== undefined) billingUpdates.country = validatedData.billing.country;
+          
+          if (Object.keys(billingUpdates).length > 0) {
+            await storage.updateBillingData(existingBilling.id, billingUpdates);
+          }
+        } else {
+          // Create new billing data
+          await storage.createBillingData({
+            userId: customerId,
+            customerType: validatedData.billing.customerType || 'private',
+            companyName: validatedData.billing.companyName || null,
+            vatNumber: validatedData.billing.vatNumber || null,
+            fiscalCode: validatedData.billing.fiscalCode || null,
+            pec: validatedData.billing.pec || null,
+            codiceUnivoco: validatedData.billing.codiceUnivoco || null,
+            iban: validatedData.billing.iban || null,
+            address: validatedData.billing.address || '',
+            city: validatedData.billing.city || '',
+            zipCode: validatedData.billing.zipCode || '',
+            country: validatedData.billing.country || 'IT',
+          });
+        }
+      }
+      // Update or create billing data if provided
+      if (validatedData.billing) {
+        const existingBilling = await storage.getBillingDataByUserId(customerId);
+        if (existingBilling) {
+          const billingUpdates: any = {};
+          if (validatedData.billing.customerType !== undefined) billingUpdates.customerType = validatedData.billing.customerType;
+          if (validatedData.billing.companyName !== undefined) billingUpdates.companyName = validatedData.billing.companyName;
+          if (validatedData.billing.vatNumber !== undefined) billingUpdates.vatNumber = validatedData.billing.vatNumber;
+          if (validatedData.billing.fiscalCode !== undefined) billingUpdates.fiscalCode = validatedData.billing.fiscalCode;
+          if (validatedData.billing.pec !== undefined) billingUpdates.pec = validatedData.billing.pec;
+          if (validatedData.billing.codiceUnivoco !== undefined) billingUpdates.codiceUnivoco = validatedData.billing.codiceUnivoco;
+          if (validatedData.billing.iban !== undefined) billingUpdates.iban = validatedData.billing.iban;
+          if (validatedData.billing.address !== undefined) billingUpdates.address = validatedData.billing.address;
+          if (validatedData.billing.city !== undefined) billingUpdates.city = validatedData.billing.city;
+          if (validatedData.billing.zipCode !== undefined) billingUpdates.zipCode = validatedData.billing.zipCode;
+          if (validatedData.billing.country !== undefined) billingUpdates.country = validatedData.billing.country;
+          
+          if (Object.keys(billingUpdates).length > 0) {
+            await storage.updateBillingData(existingBilling.id, billingUpdates);
+          }
+        } else {
+          // Create new billing data
+          await storage.createBillingData({
+            userId: customerId,
+            customerType: validatedData.billing.customerType || 'private',
+            companyName: validatedData.billing.companyName || null,
+            vatNumber: validatedData.billing.vatNumber || null,
+            fiscalCode: validatedData.billing.fiscalCode || null,
+            pec: validatedData.billing.pec || null,
+            codiceUnivoco: validatedData.billing.codiceUnivoco || null,
+            iban: validatedData.billing.iban || null,
+            address: validatedData.billing.address || '',
+            city: validatedData.billing.city || '',
+            zipCode: validatedData.billing.zipCode || '',
+            country: validatedData.billing.country || 'IT',
+          });
+        }
+      }
+      // Update or create billing data if provided
+      if (validatedData.billing) {
+        const existingBilling = await storage.getBillingDataByUserId(customerId);
+        if (existingBilling) {
+          const billingUpdates: any = {};
+          if (validatedData.billing.customerType !== undefined) billingUpdates.customerType = validatedData.billing.customerType;
+          if (validatedData.billing.companyName !== undefined) billingUpdates.companyName = validatedData.billing.companyName;
+          if (validatedData.billing.vatNumber !== undefined) billingUpdates.vatNumber = validatedData.billing.vatNumber;
+          if (validatedData.billing.fiscalCode !== undefined) billingUpdates.fiscalCode = validatedData.billing.fiscalCode;
+          if (validatedData.billing.pec !== undefined) billingUpdates.pec = validatedData.billing.pec;
+          if (validatedData.billing.codiceUnivoco !== undefined) billingUpdates.codiceUnivoco = validatedData.billing.codiceUnivoco;
+          if (validatedData.billing.iban !== undefined) billingUpdates.iban = validatedData.billing.iban;
+          if (validatedData.billing.address !== undefined) billingUpdates.address = validatedData.billing.address;
+          if (validatedData.billing.city !== undefined) billingUpdates.city = validatedData.billing.city;
+          if (validatedData.billing.zipCode !== undefined) billingUpdates.zipCode = validatedData.billing.zipCode;
+          if (validatedData.billing.country !== undefined) billingUpdates.country = validatedData.billing.country;
+          
+          if (Object.keys(billingUpdates).length > 0) {
+            await storage.updateBillingData(existingBilling.id, billingUpdates);
+          }
+        } else {
+          // Create new billing data
+          await storage.createBillingData({
+            userId: customerId,
+            customerType: validatedData.billing.customerType || 'private',
+            companyName: validatedData.billing.companyName || null,
+            vatNumber: validatedData.billing.vatNumber || null,
+            fiscalCode: validatedData.billing.fiscalCode || null,
+            pec: validatedData.billing.pec || null,
+            codiceUnivoco: validatedData.billing.codiceUnivoco || null,
+            iban: validatedData.billing.iban || null,
+            address: validatedData.billing.address || '',
+            city: validatedData.billing.city || '',
+            zipCode: validatedData.billing.zipCode || '',
+            country: validatedData.billing.country || 'IT',
+          });
+        }
+      }
+      // Update or create billing data if provided
+      if (validatedData.billing) {
+        const existingBilling = await storage.getBillingDataByUserId(customerId);
+        if (existingBilling) {
+          const billingUpdates: any = {};
+          if (validatedData.billing.customerType !== undefined) billingUpdates.customerType = validatedData.billing.customerType;
+          if (validatedData.billing.companyName !== undefined) billingUpdates.companyName = validatedData.billing.companyName;
+          if (validatedData.billing.vatNumber !== undefined) billingUpdates.vatNumber = validatedData.billing.vatNumber;
+          if (validatedData.billing.fiscalCode !== undefined) billingUpdates.fiscalCode = validatedData.billing.fiscalCode;
+          if (validatedData.billing.pec !== undefined) billingUpdates.pec = validatedData.billing.pec;
+          if (validatedData.billing.codiceUnivoco !== undefined) billingUpdates.codiceUnivoco = validatedData.billing.codiceUnivoco;
+          if (validatedData.billing.iban !== undefined) billingUpdates.iban = validatedData.billing.iban;
+          if (validatedData.billing.address !== undefined) billingUpdates.address = validatedData.billing.address;
+          if (validatedData.billing.city !== undefined) billingUpdates.city = validatedData.billing.city;
+          if (validatedData.billing.zipCode !== undefined) billingUpdates.zipCode = validatedData.billing.zipCode;
+          if (validatedData.billing.country !== undefined) billingUpdates.country = validatedData.billing.country;
+          
+          if (Object.keys(billingUpdates).length > 0) {
+            await storage.updateBillingData(existingBilling.id, billingUpdates);
+          }
+        } else {
+          // Create new billing data
+          await storage.createBillingData({
+            userId: customerId,
+            customerType: validatedData.billing.customerType || 'private',
+            companyName: validatedData.billing.companyName || null,
+            vatNumber: validatedData.billing.vatNumber || null,
+            fiscalCode: validatedData.billing.fiscalCode || null,
+            pec: validatedData.billing.pec || null,
+            codiceUnivoco: validatedData.billing.codiceUnivoco || null,
+            iban: validatedData.billing.iban || null,
+            address: validatedData.billing.address || '',
+            city: validatedData.billing.city || '',
+            zipCode: validatedData.billing.zipCode || '',
+            country: validatedData.billing.country || 'IT',
+          });
+        }
+      }
+      // Update or create billing data if provided
+      if (validatedData.billing) {
+        const existingBilling = await storage.getBillingDataByUserId(customerId);
+        if (existingBilling) {
+          const billingUpdates: any = {};
+          if (validatedData.billing.customerType !== undefined) billingUpdates.customerType = validatedData.billing.customerType;
+          if (validatedData.billing.companyName !== undefined) billingUpdates.companyName = validatedData.billing.companyName;
+          if (validatedData.billing.vatNumber !== undefined) billingUpdates.vatNumber = validatedData.billing.vatNumber;
+          if (validatedData.billing.fiscalCode !== undefined) billingUpdates.fiscalCode = validatedData.billing.fiscalCode;
+          if (validatedData.billing.pec !== undefined) billingUpdates.pec = validatedData.billing.pec;
+          if (validatedData.billing.codiceUnivoco !== undefined) billingUpdates.codiceUnivoco = validatedData.billing.codiceUnivoco;
+          if (validatedData.billing.iban !== undefined) billingUpdates.iban = validatedData.billing.iban;
+          if (validatedData.billing.address !== undefined) billingUpdates.address = validatedData.billing.address;
+          if (validatedData.billing.city !== undefined) billingUpdates.city = validatedData.billing.city;
+          if (validatedData.billing.zipCode !== undefined) billingUpdates.zipCode = validatedData.billing.zipCode;
+          if (validatedData.billing.country !== undefined) billingUpdates.country = validatedData.billing.country;
+          
+          if (Object.keys(billingUpdates).length > 0) {
+            await storage.updateBillingData(existingBilling.id, billingUpdates);
+          }
+        } else {
+          // Create new billing data
+          await storage.createBillingData({
+            userId: customerId,
+            customerType: validatedData.billing.customerType || 'private',
+            companyName: validatedData.billing.companyName || null,
+            vatNumber: validatedData.billing.vatNumber || null,
+            fiscalCode: validatedData.billing.fiscalCode || null,
+            pec: validatedData.billing.pec || null,
+            codiceUnivoco: validatedData.billing.codiceUnivoco || null,
+            iban: validatedData.billing.iban || null,
+            address: validatedData.billing.address || '',
+            city: validatedData.billing.city || '',
+            zipCode: validatedData.billing.zipCode || '',
+            country: validatedData.billing.country || 'IT',
+          });
+        }
+      }
+      // Update or create billing data if provided
+      if (validatedData.billing) {
+        const existingBilling = await storage.getBillingDataByUserId(customerId);
+        if (existingBilling) {
+          const billingUpdates: any = {};
+          if (validatedData.billing.customerType !== undefined) billingUpdates.customerType = validatedData.billing.customerType;
+          if (validatedData.billing.companyName !== undefined) billingUpdates.companyName = validatedData.billing.companyName;
+          if (validatedData.billing.vatNumber !== undefined) billingUpdates.vatNumber = validatedData.billing.vatNumber;
+          if (validatedData.billing.fiscalCode !== undefined) billingUpdates.fiscalCode = validatedData.billing.fiscalCode;
+          if (validatedData.billing.pec !== undefined) billingUpdates.pec = validatedData.billing.pec;
+          if (validatedData.billing.codiceUnivoco !== undefined) billingUpdates.codiceUnivoco = validatedData.billing.codiceUnivoco;
+          if (validatedData.billing.iban !== undefined) billingUpdates.iban = validatedData.billing.iban;
+          if (validatedData.billing.address !== undefined) billingUpdates.address = validatedData.billing.address;
+          if (validatedData.billing.city !== undefined) billingUpdates.city = validatedData.billing.city;
+          if (validatedData.billing.zipCode !== undefined) billingUpdates.zipCode = validatedData.billing.zipCode;
+          if (validatedData.billing.country !== undefined) billingUpdates.country = validatedData.billing.country;
+          
+          if (Object.keys(billingUpdates).length > 0) {
+            await storage.updateBillingData(existingBilling.id, billingUpdates);
+          }
+        } else {
+          // Create new billing data
+          await storage.createBillingData({
+            userId: customerId,
+            customerType: validatedData.billing.customerType || 'private',
+            companyName: validatedData.billing.companyName || null,
+            vatNumber: validatedData.billing.vatNumber || null,
+            fiscalCode: validatedData.billing.fiscalCode || null,
+            pec: validatedData.billing.pec || null,
+            codiceUnivoco: validatedData.billing.codiceUnivoco || null,
+            iban: validatedData.billing.iban || null,
+            address: validatedData.billing.address || '',
+            city: validatedData.billing.city || '',
+            zipCode: validatedData.billing.zipCode || '',
+            country: validatedData.billing.country || 'IT',
+          });
+        }
+      }
+      // Update or create billing data if provided
+      if (validatedData.billing) {
+        const existingBilling = await storage.getBillingDataByUserId(customerId);
+        if (existingBilling) {
+          const billingUpdates: any = {};
+          if (validatedData.billing.customerType !== undefined) billingUpdates.customerType = validatedData.billing.customerType;
+          if (validatedData.billing.companyName !== undefined) billingUpdates.companyName = validatedData.billing.companyName;
+          if (validatedData.billing.vatNumber !== undefined) billingUpdates.vatNumber = validatedData.billing.vatNumber;
+          if (validatedData.billing.fiscalCode !== undefined) billingUpdates.fiscalCode = validatedData.billing.fiscalCode;
+          if (validatedData.billing.pec !== undefined) billingUpdates.pec = validatedData.billing.pec;
+          if (validatedData.billing.codiceUnivoco !== undefined) billingUpdates.codiceUnivoco = validatedData.billing.codiceUnivoco;
+          if (validatedData.billing.iban !== undefined) billingUpdates.iban = validatedData.billing.iban;
+          if (validatedData.billing.address !== undefined) billingUpdates.address = validatedData.billing.address;
+          if (validatedData.billing.city !== undefined) billingUpdates.city = validatedData.billing.city;
+          if (validatedData.billing.zipCode !== undefined) billingUpdates.zipCode = validatedData.billing.zipCode;
+          if (validatedData.billing.country !== undefined) billingUpdates.country = validatedData.billing.country;
+          
+          if (Object.keys(billingUpdates).length > 0) {
+            await storage.updateBillingData(existingBilling.id, billingUpdates);
+          }
+        } else {
+          // Create new billing data
+          await storage.createBillingData({
+            userId: customerId,
+            customerType: validatedData.billing.customerType || 'private',
+            companyName: validatedData.billing.companyName || null,
+            vatNumber: validatedData.billing.vatNumber || null,
+            fiscalCode: validatedData.billing.fiscalCode || null,
+            pec: validatedData.billing.pec || null,
+            codiceUnivoco: validatedData.billing.codiceUnivoco || null,
+            iban: validatedData.billing.iban || null,
+            address: validatedData.billing.address || '',
+            city: validatedData.billing.city || '',
+            zipCode: validatedData.billing.zipCode || '',
+            country: validatedData.billing.country || 'IT',
+          });
+        }
+      }
+      // Update or create billing data if provided
+      if (validatedData.billing) {
+        const existingBilling = await storage.getBillingDataByUserId(customerId);
+        if (existingBilling) {
+          const billingUpdates: any = {};
+          if (validatedData.billing.customerType !== undefined) billingUpdates.customerType = validatedData.billing.customerType;
+          if (validatedData.billing.companyName !== undefined) billingUpdates.companyName = validatedData.billing.companyName;
+          if (validatedData.billing.vatNumber !== undefined) billingUpdates.vatNumber = validatedData.billing.vatNumber;
+          if (validatedData.billing.fiscalCode !== undefined) billingUpdates.fiscalCode = validatedData.billing.fiscalCode;
+          if (validatedData.billing.pec !== undefined) billingUpdates.pec = validatedData.billing.pec;
+          if (validatedData.billing.codiceUnivoco !== undefined) billingUpdates.codiceUnivoco = validatedData.billing.codiceUnivoco;
+          if (validatedData.billing.iban !== undefined) billingUpdates.iban = validatedData.billing.iban;
+          if (validatedData.billing.address !== undefined) billingUpdates.address = validatedData.billing.address;
+          if (validatedData.billing.city !== undefined) billingUpdates.city = validatedData.billing.city;
+          if (validatedData.billing.zipCode !== undefined) billingUpdates.zipCode = validatedData.billing.zipCode;
+          if (validatedData.billing.country !== undefined) billingUpdates.country = validatedData.billing.country;
+          
+          if (Object.keys(billingUpdates).length > 0) {
+            await storage.updateBillingData(existingBilling.id, billingUpdates);
+          }
+        } else {
+          // Create new billing data
+          await storage.createBillingData({
+            userId: customerId,
+            customerType: validatedData.billing.customerType || 'private',
+            companyName: validatedData.billing.companyName || null,
+            vatNumber: validatedData.billing.vatNumber || null,
+            fiscalCode: validatedData.billing.fiscalCode || null,
+            pec: validatedData.billing.pec || null,
+            codiceUnivoco: validatedData.billing.codiceUnivoco || null,
+            iban: validatedData.billing.iban || null,
+            address: validatedData.billing.address || '',
+            city: validatedData.billing.city || '',
+            zipCode: validatedData.billing.zipCode || '',
+            country: validatedData.billing.country || 'IT',
+          });
         }
       }
       
