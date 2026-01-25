@@ -9106,10 +9106,18 @@ export function registerRoutes(app: Express): Server {
         return res.status(400).send("Nessun rivenditore associato");
       }
       
+      // Get reseller's repair centers for filtering
+      const repairCenters = await storage.listRepairCenters();
+      const resellerRepairCenters = repairCenters.filter(rc => rc.resellerId === resellerId);
       
       const items = await storage.listServiceItems();
+      // Include: global items + reseller items + items from reseller's repair centers
       const activeItems = items.filter(item => 
-        item.isActive && (item.createdBy === null || item.createdBy === resellerId)
+        item.isActive && (
+          (!item.resellerId && !item.repairCenterId) || // Global items (admin)
+          item.resellerId === resellerId || // Reseller's own items
+          resellerRepairCenters.some(rc => rc.id === item.repairCenterId) // Repair center items
+        )
       );
       
       const itemsWithPrices = await Promise.all(activeItems.map(async (item) => {
@@ -9119,7 +9127,6 @@ export function registerRoutes(app: Express): Server {
           undefined
         );
         return {
-          isOwned: item.repairCenterId === repairCenterId,
           ...item,
           effectivePriceCents: effectivePrice.priceCents,
           effectiveLaborMinutes: effectivePrice.laborMinutes,
