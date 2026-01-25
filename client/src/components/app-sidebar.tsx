@@ -766,7 +766,7 @@ export function AppSidebar() {
                             <SidebarMenuButton 
                               asChild 
                               isActive={isActive} 
-                              className={`pl-3 py-2 rounded-lg ${isActive ? "bg-gradient-to-r from-emerald-500/10 to-teal-500/10 text-emerald-600 dark:text-emerald-400 font-medium" : "text-muted-foreground hover-elevate"}`}
+                              className={`pl-3 py-2 rounded-lg overflow-visible ${isActive ? "bg-gradient-to-r from-emerald-500/10 to-teal-500/10 text-emerald-600 dark:text-emerald-400 font-medium" : "text-muted-foreground hover-elevate"}`}
                             >
                               <Link 
                                 href={item.url} 
