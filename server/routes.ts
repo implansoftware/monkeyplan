@@ -3084,6 +3084,16 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // GET /api/products/compatibilities-count - Get count of device compatibilities for all products
+  app.get("/api/products/compatibilities-count", requireAuth, async (req, res) => {
+    try {
+      const counts = await storage.getProductCompatibilitiesCount();
+      res.json(counts);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
   // GET /api/products/:id - Get full product details with specs, prices, and compatibilities
   app.get("/api/products/:id", requireAuth, async (req, res) => {
     try {

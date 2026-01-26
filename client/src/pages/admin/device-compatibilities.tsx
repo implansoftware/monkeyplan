@@ -57,6 +57,10 @@ export default function DeviceCompatibilities() {
     queryKey: ["/api/device-models"],
   });
 
+  const { data: compatibilityCounts = {} } = useQuery<Record<string, number>>({
+    queryKey: ["/api/products/compatibilities-count"],
+  });
+
   const { data: productCompatibilities, isLoading: compatLoading } = useQuery<ProductCompatibility | null>({
     queryKey: ["/api/products", selectedProduct?.id, "compatibilities"],
     queryFn: async () => {
@@ -80,6 +84,7 @@ export default function DeviceCompatibilities() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/products"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/products/compatibilities-count"] });
       queryClient.invalidateQueries({ queryKey: ["/api/products", selectedProduct?.id, "compatibilities"] });
       toast({ title: "Compatibilità aggiornate", description: "Le compatibilità sono state salvate con successo." });
       setEditDialogOpen(false);
@@ -270,10 +275,17 @@ export default function DeviceCompatibilities() {
                       <Badge variant="outline">{getCategoryLabel(product.category || "ricambio")}</Badge>
                     </TableCell>
                     <TableCell>
-                      <Badge variant="outline" className="text-muted-foreground">
-                        <Smartphone className="h-3 w-3 mr-1" />
-                        Clicca Gestisci
-                      </Badge>
+                      {compatibilityCounts[product.id] ? (
+                        <Badge variant="default">
+                          <Smartphone className="h-3 w-3 mr-1" />
+                          {compatibilityCounts[product.id]} dispositivi
+                        </Badge>
+                      ) : (
+                        <Badge variant="outline" className="text-muted-foreground">
+                          <Smartphone className="h-3 w-3 mr-1" />
+                          Nessuna
+                        </Badge>
+                      )}
                     </TableCell>
                     <TableCell className="text-right">
                       <Button

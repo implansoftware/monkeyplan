@@ -210,6 +210,7 @@ export interface IStorage {
   addProductCompatibility(compatibility: InsertProductDeviceCompatibility): Promise<ProductDeviceCompatibility>;
   removeProductCompatibility(id: string): Promise<void>;
   setProductCompatibilities(productId: string, compatibilities: Omit<InsertProductDeviceCompatibility, 'productId'>[]): Promise<ProductDeviceCompatibility[]>;
+  getProductCompatibilitiesCount(): Promise<Record<string, number>>;
   
   // Product Prices (prezzi personalizzati per reseller - gestiti da admin)
   listProductPrices(filters?: { productId?: string; resellerId?: string }): Promise<ProductPrice[]>;
@@ -1855,6 +1856,21 @@ export class DatabaseStorage implements IStorage {
     const toInsert = compatibilities.map(c => ({ ...c, productId }));
     const results = await db.insert(productDeviceCompatibilities).values(toInsert).returning();
     return results;
+  }
+
+  async getProductCompatibilitiesCount(): Promise<Record<string, number>> {
+    const results = await db.select({
+      productId: productDeviceCompatibilities.productId,
+      count: sql<number>`count(*)::int`
+    })
+    .from(productDeviceCompatibilities)
+    .groupBy(productDeviceCompatibilities.productId);
+    
+    const counts: Record<string, number> = {};
+    for (const row of results) {
+      counts[row.productId] = row.count;
+    }
+    return counts;
   }
 
   // Product Prices (prezzi personalizzati per reseller - gestiti da admin)
