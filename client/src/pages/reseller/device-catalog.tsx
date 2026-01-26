@@ -65,6 +65,7 @@ type ModelFormValues = z.infer<typeof modelFormSchema>;
 export default function DeviceCatalog() {
   const [activeTab, setActiveTab] = useState("brands");
   const [searchQuery, setSearchQuery] = useState("");
+  const [originFilter, setOriginFilter] = useState<string>("all");
   const [brandDialogOpen, setBrandDialogOpen] = useState(false);
   const [modelDialogOpen, setModelDialogOpen] = useState(false);
   const [deleteBrandDialogOpen, setDeleteBrandDialogOpen] = useState(false);
@@ -254,10 +255,14 @@ export default function DeviceCatalog() {
     brand.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const filteredModels = models.filter((model) =>
-    model.modelName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    (model.brandName && model.brandName.toLowerCase().includes(searchQuery.toLowerCase()))
-  );
+  const filteredModels = models.filter((model) => {
+    const matchesSearch = model.modelName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (model.brandName && model.brandName.toLowerCase().includes(searchQuery.toLowerCase()));
+    const matchesOrigin = originFilter === "all" ||
+      (originFilter === "global" && model.isGlobal) ||
+      (originFilter === "custom" && !model.isGlobal);
+    return matchesSearch && matchesOrigin;
+  });
 
   const openCreateBrandDialog = () => {
     setIsEditing(false);
@@ -486,7 +491,7 @@ export default function DeviceCatalog() {
               </Button>
             </CardHeader>
             <CardContent>
-              <div className="flex items-center gap-2 mb-4">
+              <div className="flex items-center gap-2 mb-4 flex-wrap">
                 <div className="relative flex-1 max-w-sm">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input
@@ -497,6 +502,16 @@ export default function DeviceCatalog() {
                     data-testid="input-search-models"
                   />
                 </div>
+                <Select value={originFilter} onValueChange={setOriginFilter}>
+                  <SelectTrigger className="w-[160px]" data-testid="select-origin-filter">
+                    <SelectValue placeholder="Origine" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Tutte le origini</SelectItem>
+                    <SelectItem value="global">Globale</SelectItem>
+                    <SelectItem value="custom">Personalizzato</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
 
               {modelsLoading ? (
