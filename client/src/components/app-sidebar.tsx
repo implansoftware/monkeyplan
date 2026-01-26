@@ -47,6 +47,7 @@ import {
   Stethoscope,
   ReceiptText,
   AlertTriangle,
+  Link2,
 } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { useState, Fragment, useMemo } from "react";
@@ -125,6 +126,7 @@ const menuItems = {
     { title: "Presenze", url: "/admin/hr/attendance", icon: Clock, group: "Risorse Umane" },
     { title: "Calendario HR", url: "/admin/hr/calendar", icon: Calendar, group: "Risorse Umane" },
     { title: "Catalogo Dispositivi", url: "/admin/device-catalog", icon: Package, group: "Sistema" },
+    { title: "Compatibilità Dispositivi", url: "/admin/device-compatibilities", icon: Link2, group: "Sistema" },
     { title: "Listino Prezzi", url: "/admin/service-catalog", icon: Receipt, group: "Sistema" },
     { title: "Prodotti Garanzia", url: "/admin/warranty-products", icon: Shield, group: "Garanzie" },
     { title: "Analytics Garanzie", url: "/admin/warranty-analytics", icon: BarChart3, group: "Garanzie" },
@@ -173,6 +175,7 @@ const menuItems = {
     { title: "Spedizioni", url: "/admin/shipments", icon: Truck, group: "E-commerce" },
     { title: "Pagamenti", url: "/admin/payments", icon: CreditCard, group: "E-commerce" },
     { title: "Catalogo Dispositivi", url: "/admin/device-catalog", icon: Package, group: "Sistema" },
+    { title: "Compatibilità Dispositivi", url: "/admin/device-compatibilities", icon: Link2, group: "Sistema" },
     { title: "Listino Prezzi", url: "/admin/service-catalog", icon: Receipt, group: "Sistema" },
     { title: "Ticket", url: "/admin/tickets", icon: Ticket, group: "Assistenza" },
     { title: "Live Chat", url: "/admin/chat", icon: MessageSquare, group: "Assistenza" },
