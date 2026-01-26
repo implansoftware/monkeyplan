@@ -76,6 +76,9 @@ export default function ResellerSalesOrders() {
   const [showStatusDialog, setShowStatusDialog] = useState(false);
   const [newStatus, setNewStatus] = useState("");
   const [statusReason, setStatusReason] = useState("");
+  const [shippingCarrier, setShippingCarrier] = useState("");
+  const [shippingCarrierName, setShippingCarrierName] = useState("");
+  const [shippingTrackingNumber, setShippingTrackingNumber] = useState("");
   
   const { data: orders, isLoading } = useQuery<SalesOrder[]>({
     queryKey: ['/api/sales-orders', { status: statusFilter }],
@@ -100,8 +103,21 @@ export default function ResellerSalesOrders() {
   });
   
   const updateStatus = useMutation({
-    mutationFn: async ({ orderId, status, reason }: { orderId: string; status: string; reason?: string }) => {
-      return await apiRequest('PUT', `/api/sales-orders/${orderId}/status`, { status, reason });
+    mutationFn: async ({ orderId, status, reason, carrier, carrierName, trackingNumber }: { 
+      orderId: string; 
+      status: string; 
+      reason?: string;
+      carrier?: string;
+      carrierName?: string;
+      trackingNumber?: string;
+    }) => {
+      return await apiRequest('PUT', `/api/sales-orders/${orderId}/status`, { 
+        status, 
+        reason,
+        carrier,
+        carrierName,
+        trackingNumber
+      });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/sales-orders'] });
@@ -110,6 +126,9 @@ export default function ResellerSalesOrders() {
       setSelectedOrder(null);
       setNewStatus("");
       setStatusReason("");
+      setShippingCarrier("");
+      setShippingCarrierName("");
+      setShippingTrackingNumber("");
     },
     onError: (error: any) => {
       toast({ title: "Errore", description: error.message, variant: "destructive" });
@@ -147,15 +166,32 @@ export default function ResellerSalesOrders() {
     setSelectedOrder(order);
     setNewStatus("");
     setStatusReason("");
+    setShippingCarrier("");
+    setShippingCarrierName("");
+    setShippingTrackingNumber("");
     setShowStatusDialog(true);
   };
   
   const handleStatusChange = () => {
     if (!selectedOrder || !newStatus) return;
+    
+    // Validate shipping fields if status is shipped
+    if (newStatus === 'shipped' && !shippingCarrier) {
+      toast({ title: "Errore", description: "Seleziona un corriere", variant: "destructive" });
+      return;
+    }
+    if (newStatus === 'shipped' && shippingCarrier === 'other' && !shippingCarrierName) {
+      toast({ title: "Errore", description: "Inserisci il nome del corriere", variant: "destructive" });
+      return;
+    }
+    
     updateStatus.mutate({ 
       orderId: selectedOrder.id, 
       status: newStatus, 
-      reason: statusReason || undefined 
+      reason: statusReason || undefined,
+      carrier: newStatus === 'shipped' ? shippingCarrier : undefined,
+      carrierName: newStatus === 'shipped' ? shippingCarrierName : undefined,
+      trackingNumber: newStatus === 'shipped' ? shippingTrackingNumber : undefined
     });
   };
   
@@ -477,6 +513,56 @@ export default function ResellerSalesOrders() {
                       placeholder="Inserisci il motivo dell'annullamento..."
                       rows={3}
                     />
+                  </div>
+                )}
+                
+                {newStatus === 'shipped' && (
+                  <div className="space-y-4 p-4 bg-muted/50 rounded-lg">
+                    <div className="flex items-center gap-2 text-sm font-medium">
+                      <Truck className="h-4 w-4" />
+                      Dati spedizione
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label>Corriere *</Label>
+                      <Select value={shippingCarrier} onValueChange={setShippingCarrier}>
+                        <SelectTrigger data-testid="select-carrier">
+                          <SelectValue placeholder="Seleziona corriere" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="dhl">DHL</SelectItem>
+                          <SelectItem value="ups">UPS</SelectItem>
+                          <SelectItem value="fedex">FedEx</SelectItem>
+                          <SelectItem value="gls">GLS</SelectItem>
+                          <SelectItem value="brt">BRT</SelectItem>
+                          <SelectItem value="sda">SDA</SelectItem>
+                          <SelectItem value="poste_italiane">Poste Italiane</SelectItem>
+                          <SelectItem value="other">Altro</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    
+                    {shippingCarrier === 'other' && (
+                      <div className="space-y-2">
+                        <Label>Nome corriere *</Label>
+                        <Input
+                          value={shippingCarrierName}
+                          onChange={(e) => setShippingCarrierName(e.target.value)}
+                          placeholder="Inserisci nome corriere..."
+                          data-testid="input-carrier-name"
+                        />
+                      </div>
+                    )}
+                    
+                    <div className="space-y-2">
+                      <Label>Numero tracking</Label>
+                      <Input
+                        value={shippingTrackingNumber}
+                        onChange={(e) => setShippingTrackingNumber(e.target.value)}
+                        placeholder="Inserisci numero tracking..."
+                        data-testid="input-tracking-number"
+                      />
+                    </div>
                   </div>
                 )}
               </div>

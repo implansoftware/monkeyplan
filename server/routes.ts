@@ -22486,7 +22486,7 @@ export function registerRoutes(app: Express): Server {
         }
       }
       
-      const { status, reason } = req.body;
+      const { status, reason, carrier, carrierName, trackingNumber } = req.body;
       
       // Create state history entry
       await storage.createUtilityPracticeStateHistory({
@@ -25578,8 +25578,21 @@ export function registerRoutes(app: Express): Server {
         return res.status(403).json({ error: "Accesso negato" });
       }
       
-      const { status, reason } = req.body;
+      const { status, reason, carrier, carrierName, trackingNumber } = req.body;
       const updated = await storage.updateSalesOrderStatus(req.params.id, status, req.user.id, reason);
+      
+      // Create shipment record when status is shipped
+      let shipment = null;
+      if (status === 'shipped') {
+        shipment = await storage.createSalesOrderShipment({
+          orderId: req.params.id,
+          status: 'in_transit',
+          carrier: carrier || null,
+          carrierName: carrier === 'other' ? carrierName : null,
+          trackingNumber: trackingNumber || null,
+          trackingUrl: null,
+        });
+      }
       
       // Auto-create invoice for resellers when order is delivered/completed
       let invoice = null;
