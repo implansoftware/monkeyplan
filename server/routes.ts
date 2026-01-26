@@ -3776,14 +3776,6 @@ export function registerRoutes(app: Express): Server {
       
       const validatedData = insertInventoryMovementSchema.parse(req.body);
 
-      const movement = await storage.createInventoryMovement({
-        productId: validatedData.productId,
-        repairCenterId: validatedData.repairCenterId,
-        movementType: validatedData.movementType,
-        quantity: validatedData.quantity,
-        notes: validatedData.notes,
-        createdBy: req.user.id, // Force from authenticated session
-      });
       setActivityEntity(res, { type: 'inventory', id: movement.id });
       res.status(201).json(movement);
     } catch (error: any) {
@@ -6809,14 +6801,6 @@ export function registerRoutes(app: Express): Server {
       }
       
       // Create inventory movement for the difference
-      const movement = await storage.createInventoryMovement({
-        productId: req.params.id,
-        repairCenterId,
-        movementType: difference > 0 ? 'in' : 'out',
-        quantity: Math.abs(difference),
-        notes: notes || `Rettifica manuale reseller: da ${currentQuantity} a ${quantity}`,
-        createdBy: req.user.id,
-      });
       
       // Get updated stock for all centers
       const updatedStock = await storage.getResellerProductStockByCenter(req.params.id, req.user.id);
@@ -6862,14 +6846,6 @@ export function registerRoutes(app: Express): Server {
         return res.status(400).send("movementType deve essere 'in', 'out' o 'adjustment'");
       }
       
-      const movement = await storage.createInventoryMovement({
-        productId,
-        repairCenterId,
-        movementType,
-        quantity,
-        notes: notes || '',
-        createdBy: req.user.id,
-      });
       
       setActivityEntity(res, { type: 'inventory_movement', id: movement.id });
       res.status(201).json(movement);
@@ -8244,14 +8220,6 @@ export function registerRoutes(app: Express): Server {
       });
       const validatedData = baseSchema.parse(req.body);
 
-      const movement = await storage.createInventoryMovement({
-        productId: validatedData.productId,
-        repairCenterId: req.user.repairCenterId, // Force center ID from session
-        movementType: validatedData.movementType,
-        quantity: validatedData.quantity,
-        notes: validatedData.notes,
-        createdBy: req.user.id,
-      });
       setActivityEntity(res, { type: 'inventory', id: movement.id });
       res.status(201).json(movement);
     } catch (error: any) {
@@ -11561,14 +11529,6 @@ export function registerRoutes(app: Express): Server {
       }
       
       // Create inventory movement for the difference
-      const movement = await storage.createInventoryMovement({
-        productId: req.params.id,
-        repairCenterId,
-        movementType: difference > 0 ? 'in' : 'out',
-        quantity: Math.abs(difference),
-        notes: notes || `Rettifica manuale: da ${currentQuantity} a ${quantity}`,
-        createdBy: req.user.id,
-      });
       
       // Get updated stock
       const updatedStock = await storage.getProductStockByCenter(req.params.id);
@@ -13534,14 +13494,6 @@ export function registerRoutes(app: Express): Server {
       if (req.body.status === 'received') {
         // If linked to a product, add to inventory
         if (partsOrder.productId && repairOrder.repairCenterId) {
-          await storage.createInventoryMovement({
-            productId: partsOrder.productId,
-            repairCenterId: repairOrder.repairCenterId,
-            quantity: partsOrder.quantity,
-            movementType: 'in',
-            notes: `Ricambio ricevuto - Ordine #${partsOrder.id}`,
-            createdBy: req.user.id,
-          });
         }
         
         // If all parts received, check if we can transition to in_riparazione
@@ -20369,14 +20321,6 @@ export function registerRoutes(app: Express): Server {
           
           // Also update legacy inventory if repair center exists (backward compatibility)
           if (order.repairCenterId) {
-            await storage.createInventoryMovement({
-              productId: currentItem.product_id,
-              repairCenterId: order.repairCenterId,
-              movementType: 'in',
-              quantity: delta,
-              notes: `Ordine fornitore ${order.orderNumber} - Ricezione (+${delta})`,
-              createdBy: req.user.id,
-            });
           }
         }
       }
@@ -20571,14 +20515,6 @@ export function registerRoutes(app: Express): Server {
           // Only process items with quantity and a linked product
           if (item.quantity > 0 && item.productId) {
             // Create negative movement (out) for shipped returns
-            await storage.createInventoryMovement({
-              productId: item.productId,
-              repairCenterId: returnData.repairCenterId,
-              movementType: 'out',
-              quantity: item.quantity,
-              notes: `Reso fornitore ${returnData.returnNumber} - Spedito al fornitore`,
-              createdBy: req.user.id,
-            });
           }
         }
       }
@@ -25602,15 +25538,6 @@ export function registerRoutes(app: Express): Server {
           for (const item of orderItems) {
             if (item.productId) {
               await storage.updateWarehouseStockQuantity(resellerWarehouse.id, item.productId, -item.quantity);
-              await storage.createInventoryMovement({
-                productId: item.productId,
-                resellerId: order.resellerId,
-                type: 'out',
-                quantity: item.quantity,
-                reason: 'sale',
-                notes: `Vendita ordine ${order.orderNumber}`,
-                performedBy: req.user.id
-              });
             }
           }
         }

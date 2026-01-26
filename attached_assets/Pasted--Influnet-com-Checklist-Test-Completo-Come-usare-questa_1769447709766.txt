@@ -1,0 +1,402 @@
+ Influnet.com - Checklist Test Completo
+
+## Come usare questa checklist
+- [ ] = Da testare
+- [x] = Testato OK
+- [!] = Bug trovato (annotare dettagli)
+
+**IMPORTANTE**: I flussi cross-role richiedono 2 browser/sessioni aperte contemporaneamente.
+
+---
+
+## 1. AUTENTICAZIONE E REGISTRAZIONE
+
+### 1.1 Registrazione
+- [ ] Registrazione come User
+- [ ] Registrazione come Influencer
+- [ ] Registrazione come Brand
+- [ ] Validazione email (formato corretto)
+- [ ] Validazione password (requisiti minimi)
+- [ ] Errore se email già esistente
+- [ ] Redirect alla dashboard dopo registrazione
+
+### 1.2 Login
+- [ ] Login con credenziali corrette
+- [ ] Errore con credenziali errate
+- [ ] Redirect alla Dashboard per User/Influencer/Brand
+- [ ] Redirect a /admin/dashboard per Admin
+- [ ] Redirect a /agency/dashboard per Agency
+- [ ] Persistenza sessione (refresh pagina)
+- [ ] Logout funzionante
+
+### 1.3 Profilo
+- [ ] Visualizzazione dati profilo
+- [ ] Modifica nome/email
+- [ ] Upload avatar
+- [ ] Cambio password
+
+---
+
+## 2. FLUSSO: REVENUE SHARING (Cross-Role)
+
+> **Setup**: Apri 2 browser - uno come BRAND, uno come USER/INFLUENCER
+
+### Fase 1: Creazione Campagna (BRAND)
+| Step | Brand | User/Influencer |
+|------|-------|-----------------|
+| 1 | [ ] Vai a Revenue Sharing > Crea Campagna | - Attendi - |
+| 2 | [ ] Inserisci titolo, descrizione | |
+| 3 | [ ] Configura budget totale (es. 1000 CREA) | |
+| 4 | [ ] Configura payout per share (es. 10 CREA) | |
+| 5 | [ ] Seleziona piattaforme (Instagram, TikTok) | |
+| 6 | [ ] Upload media assets OPPURE inserisci link post esistente | |
+| 7 | [ ] Attiva campagna | |
+| 8 | [ ] Verifica: budget escrow detratto dal wallet | |
+
+### Fase 2: Partecipazione (USER/INFLUENCER)
+| Step | Brand | User/Influencer |
+|------|-------|-----------------|
+| 9 | - Attendi - | [ ] Vai a Revenue Sharing Marketplace |
+| 10 | | [ ] Verifica campagna visibile |
+| 11 | | [ ] Apri dettaglio campagna |
+| 12 | | [ ] Scarica media assets |
+| 13 | | [ ] Copia hashtags/URL |
+| 14 | | [ ] Pubblica su social (manualmente) |
+| 15 | | [ ] Torna e clicca "Invia Proof" |
+| 16 | | [ ] Inserisci URL post + screenshot |
+| 17 | | [ ] Invia submission |
+| 18 | | [ ] Verifica stato: "In attesa" |
+
+### Fase 3: Approvazione (BRAND)
+| Step | Brand | User/Influencer |
+|------|-------|-----------------|
+| 19 | [ ] Vai a dettaglio campagna | - Attendi - |
+| 20 | [ ] Verifica nuova submission visibile | |
+| 21 | [ ] Apri submission | |
+| 22 | [ ] Verifica proof (URL + screenshot) | |
+| 23 | [ ] Approva submission | |
+| 24 | [ ] Verifica: budget residuo aggiornato | |
+
+### Fase 4: Ricezione Payout (USER/INFLUENCER)
+| Step | Brand | User/Influencer |
+|------|-------|-----------------|
+| 25 | | [ ] Verifica stato submission: "Approvato" |
+| 26 | | [ ] Vai al Wallet |
+| 27 | | [ ] Verifica transazione in entrata (payout netto) |
+| 28 | | [ ] Verifica fonte: "Revenue Sharing" |
+
+### Fase 5: Test Rifiuto (Opzionale)
+| Step | Brand | User/Influencer |
+|------|-------|-----------------|
+| 29 | | [ ] Invia altra submission |
+| 30 | [ ] Rifiuta submission | |
+| 31 | | [ ] Verifica stato: "Rifiutato" |
+| 32 | | [ ] Verifica: nessun payout ricevuto |
+
+### Fase 6: Cancellazione Campagna (BRAND)
+| Step | Brand | User/Influencer |
+|------|-------|-----------------|
+| 33 | [ ] Cancella campagna | |
+| 34 | [ ] Verifica: budget residuo rimborsato | |
+| 35 | | [ ] Verifica: campagna non più visibile |
+
+---
+
+## 3. FLUSSO: CAMPAGNE INFLUENCER (Cross-Role)
+
+> **Setup**: Apri 2 browser - uno come BRAND, uno come INFLUENCER
+
+### Fase 1: Setup Posizionamento (INFLUENCER)
+| Step | Brand | Influencer |
+|------|-------|------------|
+| 1 | - Attendi - | [ ] Vai a Posizionamenti |
+| 2 | | [ ] Crea nuovo posizionamento |
+| 3 | | [ ] Seleziona piattaforma (es. Instagram) |
+| 4 | | [ ] Configura prezzi per tier |
+| 5 | | [ ] Upload immagini |
+| 6 | | [ ] Attiva posizionamento |
+
+### Fase 2: Prenotazione (BRAND)
+| Step | Brand | Influencer |
+|------|-------|------------|
+| 7 | [ ] Vai a Marketplace Influencer | - Attendi - |
+| 8 | [ ] Cerca influencer | |
+| 9 | [ ] Visualizza profilo | |
+| 10 | [ ] Seleziona posizionamento | |
+| 11 | [ ] Configura campagna (brief, date) | |
+| 12 | [ ] Upload file allegati | |
+| 13 | [ ] Invia richiesta campagna | |
+| 14 | [ ] Verifica: budget escrow | |
+
+### Fase 3: Accettazione (INFLUENCER)
+| Step | Brand | Influencer |
+|------|-------|------------|
+| 15 | - Attendi - | [ ] Vai a Campagne |
+| 16 | | [ ] Verifica nuova richiesta |
+| 17 | | [ ] Apri dettaglio |
+| 18 | | [ ] Accetta campagna |
+
+### Fase 4: Esecuzione (INFLUENCER)
+| Step | Brand | Influencer |
+|------|-------|------------|
+| 19 | | [ ] Visualizza milestone |
+| 20 | | [ ] Completa milestone |
+| 21 | | [ ] Upload deliverable |
+| 22 | [ ] Verifica deliverable ricevuto | |
+| 23 | [ ] Approva deliverable | |
+
+### Fase 5: Completamento
+| Step | Brand | Influencer |
+|------|-------|------------|
+| 24 | | [ ] Completa tutte le milestone |
+| 25 | | [ ] Verifica campagna completata |
+| 26 | | [ ] Verifica payout nel wallet |
+| 27 | [ ] Verifica campagna completata | |
+
+---
+
+## 4. FLUSSO: CORSI (Cross-Role)
+
+> **Setup**: Apri 2 browser - uno come INFLUENCER, uno come USER
+
+### Fase 1: Creazione Corso (INFLUENCER)
+| Step | Influencer | User |
+|------|------------|------|
+| 1 | [ ] Vai a Corsi > Crea Corso | - Attendi - |
+| 2 | [ ] Inserisci titolo, descrizione, prezzo | |
+| 3 | [ ] Aggiungi modulo | |
+| 4 | [ ] Aggiungi lezioni (video/pdf/testo) | |
+| 5 | [ ] Imposta lezione preview gratuita | |
+| 6 | [ ] Pubblica corso | |
+
+### Fase 2: Acquisto (USER)
+| Step | Influencer | User |
+|------|------------|------|
+| 7 | - Attendi - | [ ] Vai a Catalogo Corsi |
+| 8 | | [ ] Trova corso |
+| 9 | | [ ] Visualizza preview gratuita |
+| 10 | | [ ] Clicca Acquista |
+| 11 | | [ ] Conferma pagamento CREA |
+| 12 | | [ ] Verifica: saldo wallet decrementato |
+
+### Fase 3: Fruizione (USER)
+| Step | Influencer | User |
+|------|------------|------|
+| 13 | | [ ] Accedi al corso |
+| 14 | | [ ] Visualizza lezioni |
+| 15 | | [ ] Completa lezioni |
+| 16 | | [ ] Verifica progresso % |
+| 17 | | [ ] Completa corso |
+| 18 | | [ ] Richiedi certificato |
+| 19 | | [ ] Visualizza/Scarica certificato |
+
+### Fase 4: Verifica Guadagni (INFLUENCER)
+| Step | Influencer | User |
+|------|------------|------|
+| 20 | [ ] Vai a Vendite Corsi | |
+| 21 | [ ] Verifica vendita registrata | |
+| 22 | [ ] Verifica commissione piattaforma | |
+| 23 | [ ] Verifica payout netto nel wallet | |
+
+---
+
+## 5. FLUSSO: AFFILIAZIONE (Cross-Role)
+
+> **Setup**: Apri 2 browser - uno come BRAND, uno come INFLUENCER/USER
+
+### Fase 1: Setup Programma (BRAND)
+| Step | Brand | Influencer |
+|------|-------|------------|
+| 1 | [ ] Vai a Programma Affiliazione | - Attendi - |
+| 2 | [ ] Configura commissione % | |
+| 3 | [ ] Abilita prodotti per affiliazione | |
+
+### Fase 2: Iscrizione e Link (INFLUENCER)
+| Step | Brand | Influencer |
+|------|-------|------------|
+| 4 | - Attendi - | [ ] Vai a Affiliazione |
+| 5 | | [ ] Iscriviti al programma |
+| 6 | | [ ] Scopri prodotti affiliabili |
+| 7 | | [ ] Genera link affiliato (con UTM) |
+| 8 | | [ ] Copia link |
+
+### Fase 3: Acquisto Tracciato (Simula CLIENTE)
+| Step | Brand | Influencer |
+|------|-------|------------|
+| 9 | | [ ] Apri link affiliato in incognito |
+| 10 | | [ ] Completa acquisto come nuovo user |
+
+### Fase 4: Verifica Commissioni
+| Step | Brand | Influencer |
+|------|-------|------------|
+| 11 | [ ] Verifica ordine con referral | [ ] Verifica commissione generata |
+| 12 | [ ] Verifica commissione in dashboard | [ ] Verifica CREA nel wallet |
+
+---
+
+## 6. FLUSSO: AGENZIA (Cross-Role)
+
+> **Setup**: Apri 2 browser - uno come AGENCY, uno come INFLUENCER
+
+### Fase 1: Invito (AGENCY)
+| Step | Agency | Influencer |
+|------|--------|------------|
+| 1 | [ ] Vai a Inviti | - Attendi - |
+| 2 | [ ] Invia invito a email influencer | |
+| 3 | [ ] Verifica stato: "In attesa" | |
+
+### Fase 2: Accettazione (INFLUENCER)
+| Step | Agency | Influencer |
+|------|--------|------------|
+| 4 | - Attendi - | [ ] Verifica notifica/email |
+| 5 | | [ ] Accetta invito |
+
+### Fase 3: Verifica Roster (AGENCY)
+| Step | Agency | Influencer |
+|------|--------|------------|
+| 6 | [ ] Verifica influencer nel roster | |
+| 7 | [ ] Verifica stato: "Attivo" | |
+| 8 | [ ] Visualizza campagne influencer | |
+
+---
+
+## 7. FLUSSO: ORDINI PRODOTTI (Cross-Role)
+
+> **Setup**: Apri 2 browser - uno come BRAND, uno come USER
+
+### Fase 1: Setup Prodotto (BRAND)
+| Step | Brand | User |
+|------|-------|------|
+| 1 | [ ] Vai a Prodotti | - Attendi - |
+| 2 | [ ] Crea prodotto | |
+| 3 | [ ] Upload immagini | |
+| 4 | [ ] Configura prezzo | |
+| 5 | [ ] Attiva prodotto | |
+
+### Fase 2: Acquisto (USER)
+| Step | Brand | User |
+|------|-------|------|
+| 6 | - Attendi - | [ ] Vai a Marketplace |
+| 7 | | [ ] Trova prodotto |
+| 8 | | [ ] Aggiungi al carrello |
+| 9 | | [ ] Completa checkout |
+| 10 | | [ ] Inserisci indirizzo (autocomplete) |
+| 11 | | [ ] Paga con CREA |
+
+### Fase 3: Gestione Ordine (BRAND)
+| Step | Brand | User |
+|------|-------|------|
+| 12 | [ ] Verifica nuovo ordine | |
+| 13 | [ ] Aggiorna stato: "In spedizione" | [ ] Verifica aggiornamento stato |
+| 14 | [ ] Aggiorna stato: "Consegnato" | [ ] Verifica ordine completato |
+
+---
+
+## 8. SINGOLI RUOLI (Test Isolati)
+
+### 8.1 User
+- [ ] Dashboard con statistiche
+- [ ] Wallet: saldo e storico
+- [ ] Ordini: storico e dettaglio
+- [ ] Corsi: i miei corsi
+- [ ] Certificati: visualizzazione
+
+### 8.2 Influencer
+- [ ] Dashboard con metriche
+- [ ] Posizionamenti: lista e CRUD
+- [ ] Add-ons: lista e CRUD
+- [ ] Campagne: lista e filtri
+- [ ] Corsi creati: gestione
+- [ ] Vendite: dashboard
+
+### 8.3 Brand
+- [ ] Dashboard con vendite
+- [ ] Prodotti: lista e CRUD
+- [ ] Categorie: lista e CRUD
+- [ ] Ordini: lista e gestione
+- [ ] Campagne: lista attive/completate
+
+### 8.4 Agency
+- [ ] Dashboard con statistiche aggregate
+- [ ] Roster influencer
+- [ ] Campagne aggregate
+- [ ] Guadagni per influencer
+
+### 8.5 Admin
+- [ ] Dashboard piattaforma
+- [ ] Gestione utenti
+- [ ] Gestione prodotti (approvazione)
+- [ ] Impostazioni commissioni
+- [ ] Wallet piattaforma
+
+---
+
+## 9. WALLET E COMMISSIONI
+
+### 9.1 Verifica Transazioni
+- [ ] Crediti mostrano fonte corretta
+- [ ] Debiti mostrano destinazione
+- [ ] Commissioni piattaforma separate
+- [ ] Traduzioni IT/EN corrette
+
+### 9.2 Commissioni Piattaforma
+- [ ] Commissione ordini applicata
+- [ ] Commissione corsi applicata
+- [ ] Commissione revenue sharing applicata
+- [ ] Admin vede commissioni nel wallet piattaforma
+
+---
+
+## 10. UI/UX E INTERNAZIONALIZZAZIONE
+
+### 10.1 Cambio Lingua
+- [ ] Switch IT/EN funzionante
+- [ ] Persistenza in localStorage
+- [ ] Tutte le pagine tradotte
+- [ ] Date formattate per locale
+
+### 10.2 Responsive
+- [ ] Desktop: layout corretto
+- [ ] Mobile: menu hamburger
+- [ ] Tablet: adattamento
+
+### 10.3 Dark Mode
+- [ ] Toggle funzionante
+- [ ] Componenti adattati
+- [ ] Contrasti leggibili
+
+---
+
+## 11. SICUREZZA
+
+- [ ] Pagine protette richiedono login
+- [ ] Ruoli rispettati (no accesso cross-role)
+- [ ] Ownership verificata (non modifico dati altrui)
+- [ ] Upload file validati
+- [ ] Rate limiting attivo
+
+---
+
+## NOTE E BUG TROVATI
+
+| # | Flusso | Descrizione Bug | Priorità | Stato |
+|---|--------|-----------------|----------|-------|
+| 1 | Posizionamenti | Statistiche mostrano 0 prenotazioni/revenue (non legge campaign_placements) | Alta | Da fixare |
+| 2 |        |                 |          |       |
+| 3 |        |                 |          |       |
+
+---
+
+## ACCOUNT DI TEST
+
+| Ruolo | Email | Password | Note |
+|-------|-------|----------|------|
+| User | | | |
+| Influencer | | | |
+| Brand | | | |
+| Agency | | | |
+| Admin | | | |
+
+---
+
+*Ultima modifica: Dicembre 2025*
