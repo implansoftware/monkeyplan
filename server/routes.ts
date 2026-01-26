@@ -5963,7 +5963,7 @@ export function registerRoutes(app: Express): Server {
       if (!resellerId) return res.status(400).send("Rivenditore non trovato");
       
       const modelId = req.params.id;
-      const existing = await storage.getResellerDeviceModel(modelId);
+      const existing = await storage.getDeviceModel(modelId);
       
       if (!existing || existing.resellerId !== resellerId) {
         return res.status(404).send("Modello non trovato");
@@ -5996,13 +5996,13 @@ export function registerRoutes(app: Express): Server {
       if (!resellerId) return res.status(400).send("Rivenditore non trovato");
       
       const modelId = req.params.id;
-      const existing = await storage.getResellerDeviceModel(modelId);
+      const existing = await storage.getDeviceModel(modelId);
       
       if (!existing || existing.resellerId !== resellerId) {
         return res.status(404).send("Modello non trovato");
       }
       
-      await storage.deleteResellerDeviceModel(modelId);
+      await storage.deleteDeviceModel(modelId);
       setActivityEntity(res, { type: 'reseller_device_model', id: modelId });
       res.status(204).send();
     } catch (error: any) {
