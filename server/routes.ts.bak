@@ -3776,14 +3776,6 @@ export function registerRoutes(app: Express): Server {
       
       const validatedData = insertInventoryMovementSchema.parse(req.body);
 
-      const movement = await storage.createInventoryMovement({
-        productId: validatedData.productId,
-        repairCenterId: validatedData.repairCenterId,
-        movementType: validatedData.movementType,
-        quantity: validatedData.quantity,
-        notes: validatedData.notes,
-        createdBy: req.user.id, // Force from authenticated session
-      });
       setActivityEntity(res, { type: 'inventory', id: movement.id });
       res.status(201).json(movement);
     } catch (error: any) {
@@ -5315,9 +5307,32 @@ export function registerRoutes(app: Express): Server {
         phone: z.string().optional().nullable(),
         isActive: z.boolean().optional(),
         repairCenterIds: z.array(z.string()).optional(),
+        username: z.string().min(3).optional(),
+        password: z.string().min(6).optional(),
+        billingData: z.object({
+          customerType: z.enum(["private", "company"]).optional(),
+          companyName: z.string().optional().nullable(),
+          vatNumber: z.string().optional().nullable(),
+          fiscalCode: z.string().optional().nullable(),
+          pec: z.string().email().optional().nullable(),
+          codiceUnivoco: z.string().optional().nullable(),
+          iban: z.string().optional().nullable(),
+          address: z.string().optional(),
+          city: z.string().optional(),
+          zipCode: z.string().optional(),
+          country: z.string().optional(),
+        }).optional(),
       });
       
       const validatedData = updateSchema.parse(req.body);
+      
+      // Check username uniqueness if changing
+      if (validatedData.username && validatedData.username !== existingCustomer.username) {
+        const existingWithUsername = await storage.getUserByUsername(validatedData.username);
+        if (existingWithUsername) {
+          return res.status(400).send("Username già in uso");
+        }
+      }
       
       // Validate repair centers belong to this reseller
       const repairCenterIds = validatedData.repairCenterIds;
@@ -5336,6 +5351,12 @@ export function registerRoutes(app: Express): Server {
       if (validatedData.fullName !== undefined) updates.fullName = validatedData.fullName;
       if (validatedData.phone !== undefined) updates.phone = validatedData.phone;
       if (validatedData.isActive !== undefined) updates.isActive = validatedData.isActive;
+      if (validatedData.username !== undefined) updates.username = validatedData.username;
+      
+      // Hash and update password if provided
+      if (validatedData.password) {
+        updates.password = await hashPassword(validatedData.password);
+      }
       
       // Also update repairCenterId for backward compatibility
       if (repairCenterIds !== undefined) {
@@ -5352,11 +5373,35 @@ export function registerRoutes(app: Express): Server {
         await storage.setCustomerRepairCenters(customerId, repairCenterIds);
       }
       
-      // Return updated customer with repair centers
+      // Update billing data if provided
+      if (validatedData.billingData) {
+        const existingBilling = await storage.getBillingDataByUserId(customerId);
+        if (existingBilling) {
+          await storage.updateBillingData(existingBilling.id, validatedData.billingData);
+        } else if (validatedData.billingData.address && validatedData.billingData.city && validatedData.billingData.zipCode) {
+          await storage.createBillingData({
+            userId: customerId,
+            customerType: validatedData.billingData.customerType || "private",
+            companyName: validatedData.billingData.companyName || null,
+            vatNumber: validatedData.billingData.vatNumber || null,
+            fiscalCode: validatedData.billingData.fiscalCode || null,
+            pec: validatedData.billingData.pec || null,
+            codiceUnivoco: validatedData.billingData.codiceUnivoco || null,
+            iban: validatedData.billingData.iban || null,
+            address: validatedData.billingData.address,
+            city: validatedData.billingData.city,
+            zipCode: validatedData.billingData.zipCode,
+            country: validatedData.billingData.country || "IT",
+          });
+        }
+      }
+      
+      // Return updated customer with repair centers and billing
       const assignedRepairCenters = await storage.listRepairCentersForCustomer(customerId);
+      const billingInfo = await storage.getBillingDataByUserId(customerId);
       
       setActivityEntity(res, { type: 'users', id: customerId });
-      res.json({ ...updatedUser, assignedRepairCenters });
+      res.json({ ...updatedUser, assignedRepairCenters, billingData: billingInfo });
     } catch (error: any) {
       res.status(400).send(error.message);
     }
@@ -5918,7 +5963,7 @@ export function registerRoutes(app: Express): Server {
       if (!resellerId) return res.status(400).send("Rivenditore non trovato");
       
       const modelId = req.params.id;
-      const existing = await storage.getResellerDeviceModel(modelId);
+      const existing = await storage.getDeviceModel(modelId);
       
       if (!existing || existing.resellerId !== resellerId) {
         return res.status(404).send("Modello non trovato");
@@ -5951,13 +5996,13 @@ export function registerRoutes(app: Express): Server {
       if (!resellerId) return res.status(400).send("Rivenditore non trovato");
       
       const modelId = req.params.id;
-      const existing = await storage.getResellerDeviceModel(modelId);
+      const existing = await storage.getDeviceModel(modelId);
       
       if (!existing || existing.resellerId !== resellerId) {
         return res.status(404).send("Modello non trovato");
       }
       
-      await storage.deleteResellerDeviceModel(modelId);
+      await storage.deleteDeviceModel(modelId);
       setActivityEntity(res, { type: 'reseller_device_model', id: modelId });
       res.status(204).send();
     } catch (error: any) {
@@ -6756,14 +6801,6 @@ export function registerRoutes(app: Express): Server {
       }
       
       // Create inventory movement for the difference
-      const movement = await storage.createInventoryMovement({
-        productId: req.params.id,
-        repairCenterId,
-        movementType: difference > 0 ? 'in' : 'out',
-        quantity: Math.abs(difference),
-        notes: notes || `Rettifica manuale reseller: da ${currentQuantity} a ${quantity}`,
-        createdBy: req.user.id,
-      });
       
       // Get updated stock for all centers
       const updatedStock = await storage.getResellerProductStockByCenter(req.params.id, req.user.id);
@@ -6809,14 +6846,6 @@ export function registerRoutes(app: Express): Server {
         return res.status(400).send("movementType deve essere 'in', 'out' o 'adjustment'");
       }
       
-      const movement = await storage.createInventoryMovement({
-        productId,
-        repairCenterId,
-        movementType,
-        quantity,
-        notes: notes || '',
-        createdBy: req.user.id,
-      });
       
       setActivityEntity(res, { type: 'inventory_movement', id: movement.id });
       res.status(201).json(movement);
@@ -8191,14 +8220,6 @@ export function registerRoutes(app: Express): Server {
       });
       const validatedData = baseSchema.parse(req.body);
 
-      const movement = await storage.createInventoryMovement({
-        productId: validatedData.productId,
-        repairCenterId: req.user.repairCenterId, // Force center ID from session
-        movementType: validatedData.movementType,
-        quantity: validatedData.quantity,
-        notes: validatedData.notes,
-        createdBy: req.user.id,
-      });
       setActivityEntity(res, { type: 'inventory', id: movement.id });
       res.status(201).json(movement);
     } catch (error: any) {
@@ -9053,10 +9074,18 @@ export function registerRoutes(app: Express): Server {
         return res.status(400).send("Nessun rivenditore associato");
       }
       
+      // Get reseller's repair centers for filtering
+      const repairCenters = await storage.listRepairCenters();
+      const resellerRepairCenters = repairCenters.filter(rc => rc.resellerId === resellerId);
       
       const items = await storage.listServiceItems();
+      // Include: global items + reseller items + items from reseller's repair centers
       const activeItems = items.filter(item => 
-        item.isActive && (item.createdBy === null || item.createdBy === resellerId)
+        item.isActive && (
+          (!item.resellerId && !item.repairCenterId) || // Global items (admin)
+          item.resellerId === resellerId || // Reseller's own items
+          resellerRepairCenters.some(rc => rc.id === item.repairCenterId) // Repair center items
+        )
       );
       
       const itemsWithPrices = await Promise.all(activeItems.map(async (item) => {
@@ -9066,7 +9095,6 @@ export function registerRoutes(app: Express): Server {
           undefined
         );
         return {
-          isOwned: item.repairCenterId === repairCenterId,
           ...item,
           effectivePriceCents: effectivePrice.priceCents,
           effectiveLaborMinutes: effectivePrice.laborMinutes,
@@ -9153,6 +9181,21 @@ export function registerRoutes(app: Express): Server {
         issueDescription,
         customerNotes,
         paymentMethod
+      });
+      
+      // Notify reseller about new service order
+      await storage.createNotification({
+        userId: resellerId,
+        type: "system",
+        title: "Nuovo ordine servizio",
+        message: `${req.user.fullName} ha richiesto: ${serviceItem.name}`,
+        data: JSON.stringify({ serviceOrderId: order.id, customerId: req.user.id })
+      });
+      broadcastNotification(resellerId, {
+        type: "new_service_order",
+        title: "Nuovo ordine servizio",
+        message: `${req.user.fullName} ha richiesto: ${serviceItem.name}`,
+        orderId: order.id
       });
       
       setActivityEntity(res, { type: 'service_orders', id: order.id });
@@ -11486,14 +11529,6 @@ export function registerRoutes(app: Express): Server {
       }
       
       // Create inventory movement for the difference
-      const movement = await storage.createInventoryMovement({
-        productId: req.params.id,
-        repairCenterId,
-        movementType: difference > 0 ? 'in' : 'out',
-        quantity: Math.abs(difference),
-        notes: notes || `Rettifica manuale: da ${currentQuantity} a ${quantity}`,
-        createdBy: req.user.id,
-      });
       
       // Get updated stock
       const updatedStock = await storage.getProductStockByCenter(req.params.id);
@@ -13459,14 +13494,6 @@ export function registerRoutes(app: Express): Server {
       if (req.body.status === 'received') {
         // If linked to a product, add to inventory
         if (partsOrder.productId && repairOrder.repairCenterId) {
-          await storage.createInventoryMovement({
-            productId: partsOrder.productId,
-            repairCenterId: repairOrder.repairCenterId,
-            quantity: partsOrder.quantity,
-            movementType: 'in',
-            notes: `Ricambio ricevuto - Ordine #${partsOrder.id}`,
-            createdBy: req.user.id,
-          });
         }
         
         // If all parts received, check if we can transition to in_riparazione
@@ -20294,14 +20321,6 @@ export function registerRoutes(app: Express): Server {
           
           // Also update legacy inventory if repair center exists (backward compatibility)
           if (order.repairCenterId) {
-            await storage.createInventoryMovement({
-              productId: currentItem.product_id,
-              repairCenterId: order.repairCenterId,
-              movementType: 'in',
-              quantity: delta,
-              notes: `Ordine fornitore ${order.orderNumber} - Ricezione (+${delta})`,
-              createdBy: req.user.id,
-            });
           }
         }
       }
@@ -20496,14 +20515,6 @@ export function registerRoutes(app: Express): Server {
           // Only process items with quantity and a linked product
           if (item.quantity > 0 && item.productId) {
             // Create negative movement (out) for shipped returns
-            await storage.createInventoryMovement({
-              productId: item.productId,
-              repairCenterId: returnData.repairCenterId,
-              movementType: 'out',
-              quantity: item.quantity,
-              notes: `Reso fornitore ${returnData.returnNumber} - Spedito al fornitore`,
-              createdBy: req.user.id,
-            });
           }
         }
       }
@@ -22411,7 +22422,7 @@ export function registerRoutes(app: Express): Server {
         }
       }
       
-      const { status, reason } = req.body;
+      const { status, reason, carrier, carrierName, trackingNumber } = req.body;
       
       // Create state history entry
       await storage.createUtilityPracticeStateHistory({
@@ -25181,7 +25192,20 @@ export function registerRoutes(app: Express): Server {
       
       const product = await storage.getProduct(productId);
       if (!product) return res.status(404).json({ error: "Prodotto non trovato" });
-      if (product.resellerId !== resellerId) return res.status(400).json({ error: "Prodotto non disponibile" });
+      // Verifica se il prodotto è disponibile per questo reseller:
+      // 1. Prodotto proprio del reseller (createdBy === resellerId)
+      // 2. Prodotto globale assegnato e pubblicato
+      const isOwnProduct = product.createdBy === resellerId;
+      let isAssignedProduct = false;
+      
+      if (!isOwnProduct) {
+        const assignment = await storage.getResellerProduct(productId, resellerId);
+        isAssignedProduct = !!assignment && assignment.isPublished;
+      }
+      
+      if (!isOwnProduct && !isAssignedProduct) {
+        return res.status(400).json({ error: "Prodotto non disponibile" });
+      }
       
       const existingItem = await storage.getCartItemByProduct(cart.id, productId);
       
@@ -25191,7 +25215,18 @@ export function registerRoutes(app: Express): Server {
         });
         res.json(updated);
       } else {
-        const unitPrice = (product.priceCents || 0) / 100;
+        // Calcola il prezzo corretto: proprio o assegnato
+        let effectivePrice = product.unitPrice || 0; // unitPrice è in cents
+        
+        // Per prodotti assegnati, usa customPriceCents se disponibile
+        if (!isOwnProduct && isAssignedProduct) {
+          const assignment = await storage.getResellerProduct(productId, resellerId);
+          if (assignment?.customPriceCents) {
+            effectivePrice = assignment.customPriceCents;
+          }
+        }
+        
+        const unitPrice = effectivePrice / 100; // Converti in euro
         const item = await storage.addCartItem({
           cartId: cart.id,
           productId,
@@ -25202,6 +25237,12 @@ export function registerRoutes(app: Express): Server {
         });
         res.json(item);
       }
+      
+      // Ricalcola e aggiorna subtotal del carrello
+      const allItems = await storage.listCartItems(cart.id);
+      const subtotal = allItems.reduce((sum, i) => sum + (i.totalPrice || 0), 0);
+      await storage.updateCart(cart.id, { subtotal, total: subtotal });
+      
     } catch (error: any) {
       res.status(500).json({ error: error.message });
     }
@@ -25210,11 +25251,29 @@ export function registerRoutes(app: Express): Server {
   app.put("/api/cart/items/:itemId", async (req, res) => {
     try {
       const { quantity } = req.body;
+      const item = await storage.getCartItem(req.params.itemId);
+      if (!item) return res.status(404).json({ error: "Item non trovato" });
+      
       if (quantity < 1) {
         await storage.removeCartItem(req.params.itemId);
+        // Ricalcola subtotal dopo rimozione
+        const allItems = await storage.listCartItems(item.cartId);
+        const subtotal = allItems.reduce((sum, i) => sum + (i.totalPrice || 0), 0);
+        await storage.updateCart(item.cartId, { subtotal, total: subtotal });
         return res.json({ success: true, removed: true });
       }
-      const updated = await storage.updateCartItem(req.params.itemId, { quantity });
+      
+      const newTotalPrice = item.unitPrice * quantity;
+      const updated = await storage.updateCartItem(req.params.itemId, { 
+        quantity,
+        totalPrice: newTotalPrice
+      });
+      
+      // Ricalcola subtotal dopo update
+      const allItems = await storage.listCartItems(item.cartId);
+      const subtotal = allItems.reduce((sum, i) => sum + (i.totalPrice || 0), 0);
+      await storage.updateCart(item.cartId, { subtotal, total: subtotal });
+      
       res.json(updated);
     } catch (error: any) {
       res.status(500).json({ error: error.message });
@@ -25223,7 +25282,17 @@ export function registerRoutes(app: Express): Server {
 
   app.delete("/api/cart/items/:itemId", async (req, res) => {
     try {
+      const item = await storage.getCartItem(req.params.itemId);
+      if (!item) return res.status(404).json({ error: "Item non trovato" });
+      
+      const cartId = item.cartId;
       await storage.removeCartItem(req.params.itemId);
+      
+      // Ricalcola subtotal dopo rimozione
+      const allItems = await storage.listCartItems(cartId);
+      const subtotal = allItems.reduce((sum, i) => sum + (i.totalPrice || 0), 0);
+      await storage.updateCart(cartId, { subtotal, total: subtotal });
+      
       res.json({ success: true });
     } catch (error: any) {
       res.status(500).json({ error: error.message });
@@ -25323,6 +25392,21 @@ export function registerRoutes(app: Express): Server {
       }
       
       await storage.updateCart(cart.id, { status: 'converted' });
+      
+      // Notifica al reseller del nuovo ordine
+      await storage.createNotification({
+        userId: resellerId,
+        type: "system",
+        title: "Nuovo ordine e-commerce",
+        message: `${req.user.fullName} ha effettuato l'ordine #${order.orderNumber}`,
+        data: JSON.stringify({ salesOrderId: order.id, customerId: req.user.id })
+      });
+      broadcastNotification(resellerId, {
+        type: "new_sales_order",
+        title: "Nuovo ordine e-commerce",
+        message: `${req.user.fullName} ha effettuato l'ordine #${order.orderNumber}`,
+        orderId: order.id
+      });
       
       res.json({ order, orderNumber: order.orderNumber });
     } catch (error: any) {
@@ -25430,8 +25514,34 @@ export function registerRoutes(app: Express): Server {
         return res.status(403).json({ error: "Accesso negato" });
       }
       
-      const { status, reason } = req.body;
+      const { status, reason, carrier, carrierName, trackingNumber } = req.body;
       const updated = await storage.updateSalesOrderStatus(req.params.id, status, req.user.id, reason);
+      
+      // Create shipment record when status is shipped
+      let shipment = null;
+      if (status === 'shipped') {
+        shipment = await storage.createSalesOrderShipment({
+          orderId: req.params.id,
+          status: 'in_transit',
+          carrier: carrier || null,
+          carrierName: carrier === 'other' ? carrierName : null,
+          trackingNumber: trackingNumber || null,
+          trackingUrl: null,
+        });
+      }
+      
+      // Deduct stock from reseller warehouse when shipped
+      if (status === 'shipped' && order.resellerId) {
+        const resellerWarehouse = await storage.getWarehouseByOwner('reseller', order.resellerId);
+        if (resellerWarehouse) {
+          const orderItems = await storage.listSalesOrderItems(req.params.id);
+          for (const item of orderItems) {
+            if (item.productId) {
+              await storage.updateWarehouseStockQuantity(resellerWarehouse.id, item.productId, -item.quantity);
+            }
+          }
+        }
+      }
       
       // Auto-create invoice for resellers when order is delivered/completed
       let invoice = null;
@@ -33962,6 +34072,101 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // Statistiche per singola cassa
+  app.get("/api/reseller/pos/register-stats", requireRole("reseller", "reseller_staff", "sub_reseller"), async (req, res) => {
+    try {
+      const { resellerId } = getEffectiveContext(req);
+      const period = (req.query.period as string) || "today";
+      const repairCenterId = req.query.repairCenterId as string | undefined;
+      
+      const now = new Date();
+      let startDate: Date;
+      if (period === "week") {
+        startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+      } else if (period === "month") {
+        startDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+      } else {
+        startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      }
+      
+      // Get all repair centers for this reseller
+      const subResellers = await db.select({ id: users.id })
+        .from(users)
+        .where(and(eq(users.parentResellerId, resellerId), eq(users.role, "reseller")));
+      const allResellerIds = [resellerId, ...subResellers.map(s => s.id)];
+      
+      let centers = await db.select().from(repairCenters)
+        .where(and(
+          inArray(repairCenters.resellerId, allResellerIds),
+          eq(repairCenters.isActive, true)
+        ));
+      
+      if (repairCenterId) {
+        centers = centers.filter(c => c.id === repairCenterId);
+      }
+      
+      const centerIds = centers.map(c => c.id);
+      if (centerIds.length === 0) {
+        return res.json([]);
+      }
+      
+      // Get all registers for these centers
+      const registers = await db.select().from(posRegisters)
+        .where(inArray(posRegisters.repairCenterId, centerIds));
+      
+      // Get transactions per register in the period
+      const transactions = await db.select({
+        registerId: posTransactions.registerId,
+        total: posTransactions.total,
+        paymentMethod: posTransactions.paymentMethod,
+      })
+      .from(posTransactions)
+      .innerJoin(posSessions, eq(posTransactions.sessionId, posSessions.id))
+      .where(and(
+        inArray(posSessions.repairCenterId, centerIds),
+        gte(posTransactions.createdAt, startDate),
+        eq(posTransactions.status, "completed")
+      ));
+      
+      // Aggregate stats per register
+      const registerStats = registers.map(reg => {
+        const regTxs = transactions.filter(tx => tx.registerId === reg.id);
+        const totalRevenue = regTxs.reduce((sum, tx) => sum + (tx.total || 0), 0);
+        const txCount = regTxs.length;
+        const avgTicket = txCount > 0 ? Math.round(totalRevenue / txCount) : 0;
+        
+        const paymentBreakdown = {
+          cash: regTxs.filter(tx => tx.paymentMethod === "cash").length,
+          card: regTxs.filter(tx => tx.paymentMethod === "card").length,
+          pos: regTxs.filter(tx => tx.paymentMethod === "pos_terminal").length,
+          satispay: regTxs.filter(tx => tx.paymentMethod === "satispay").length,
+        };
+        
+        const center = centers.find(c => c.id === reg.repairCenterId);
+        
+        return {
+          id: reg.id,
+          name: reg.name,
+          repairCenterId: reg.repairCenterId,
+          repairCenterName: center?.name || "-",
+          transactionCount: txCount,
+          totalRevenue,
+          avgTicket,
+          paymentBreakdown,
+          isDefault: reg.isDefault,
+          isActive: reg.isActive,
+        };
+      });
+      
+      // Sort by revenue descending
+      registerStats.sort((a, b) => b.totalRevenue - a.totalRevenue);
+      
+      res.json(registerStats);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   app.get("/api/reseller/pos/session/:sessionId", requireRole("reseller", "reseller_staff", "sub_reseller"), async (req, res) => {
     try {
       const { resellerId } = getEffectiveContext(req);
@@ -34359,6 +34564,136 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // Apri sessione POS per conto di un centro riparazione (reseller)
+  app.post("/api/reseller/pos/session/open", requireRole("reseller", "reseller_staff", "sub_reseller"), async (req, res) => {
+    try {
+      const { resellerId } = getEffectiveContext(req);
+      const operatorId = req.user!.id;
+      const { repairCenterId, registerId, openingCash, openingNotes } = req.body;
+      
+      if (!repairCenterId) {
+        return res.status(400).json({ error: "repairCenterId è obbligatorio" });
+      }
+      
+      // Verifica che il centro riparazione appartenga al reseller
+      const center = await storage.getRepairCenter(repairCenterId);
+      if (!center || center.resellerId !== resellerId) {
+        return res.status(403).json({ error: "Non autorizzato ad operare su questo centro riparazione" });
+      }
+      
+      // Se registerId non fornito, usa la cassa di default
+      let effectiveRegisterId = registerId;
+      if (!effectiveRegisterId) {
+        const defaultRegister = await storage.getDefaultPosRegister(repairCenterId);
+        effectiveRegisterId = defaultRegister?.id;
+      }
+      
+      if (!effectiveRegisterId) {
+        return res.status(400).json({ error: "Nessuna cassa disponibile. Crea prima una cassa per questo centro." });
+      }
+      
+      // Verifica che il registro appartenga al centro riparazione
+      const register = await storage.getPosRegister(effectiveRegisterId);
+      if (!register || register.repairCenterId !== repairCenterId) {
+        return res.status(403).json({ error: "Cassa non appartenente a questo centro riparazione" });
+      }
+      
+      // Verifica che non ci sia già una sessione aperta
+      const existingSession = await storage.getOpenPosSession(repairCenterId, effectiveRegisterId);
+      if (existingSession) {
+        return res.status(400).json({ error: "Esiste già una sessione cassa aperta per questa cassa. Chiudila prima di aprirne una nuova." });
+      }
+
+      // Se openingCash non fornito, usa il closingCash dell'ultima sessione di questa cassa
+      let finalOpeningCash = openingCash;
+      if (finalOpeningCash === undefined || finalOpeningCash === null) {
+        const lastSession = await storage.getLastClosedPosSession(repairCenterId, effectiveRegisterId);
+        finalOpeningCash = lastSession?.closingCash || 0;
+      }
+      
+      const session = await storage.createPosSession({
+        repairCenterId,
+        operatorId,
+        registerId: effectiveRegisterId || null,
+        openingCash: finalOpeningCash,
+        openingNotes: openingNotes || null,
+      });
+      
+      res.json(session);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+  app.post("/api/reseller/pos/session/:sessionId/close", requireRole("reseller", "reseller_staff", "sub_reseller"), async (req, res) => {
+    try {
+      const { resellerId } = getEffectiveContext(req);
+      const { sessionId } = req.params;
+      
+      const session = await storage.getPosSession(sessionId);
+      if (!session) return res.status(404).json({ error: "Sessione non trovata" });
+      
+      // Verifica che il centro riparazione della sessione appartenga al reseller
+      const center = await storage.getRepairCenter(session.repairCenterId);
+      if (!center || center.resellerId !== resellerId) {
+        return res.status(403).json({ error: "Non autorizzato" });
+      }
+      
+      if (session.status === "closed") {
+        return res.status(400).json({ error: "Sessione già chiusa" });
+      }
+
+      const transactions = await storage.getPosTransactionsBySession(sessionId);
+      const completed = transactions.filter(t => t.status === "completed");
+      const refunded = transactions.filter(t => t.status === "refunded" || t.status === "partial_refund");
+      
+      const totalSales = completed.reduce((sum, t) => sum + t.total, 0);
+      const totalCashSales = completed.filter(t => t.paymentMethod === "cash").reduce((sum, t) => sum + t.total, 0);
+      const totalCardSales = completed.filter(t => t.paymentMethod !== "cash").reduce((sum, t) => sum + t.total, 0);
+      const totalRefunds = refunded.reduce((sum, t) => sum + (t.refundedAmount || 0), 0);
+      
+      const { closingCash, closingNotes } = req.body;
+      const expectedCash = session.openingCash + totalCashSales - totalRefunds;
+      const cashDifference = (closingCash || 0) - expectedCash;
+
+      const closedSession = await storage.closePosSession(sessionId, {
+        closingCash: closingCash || 0,
+        expectedCash,
+        cashDifference,
+        closingNotes: closingNotes || null,
+        totalSales,
+        totalTransactions: completed.length,
+        totalCashSales,
+        totalCardSales,
+        totalRefunds,
+      });
+      
+      res.json(closedSession);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Ottieni stato sessione corrente per una cassa (reseller)
+  app.get("/api/reseller/pos/register/:registerId/session", requireRole("reseller", "reseller_staff", "sub_reseller"), async (req, res) => {
+    try {
+      const { resellerId } = getEffectiveContext(req);
+      const { registerId } = req.params;
+      
+      const register = await storage.getPosRegister(registerId);
+      if (!register) return res.status(404).json({ error: "Cassa non trovata" });
+      
+      const center = await storage.getRepairCenter(register.repairCenterId);
+      if (!center || center.resellerId !== resellerId) {
+        return res.status(403).json({ error: "Non autorizzato" });
+      }
+      
+      const session = await storage.getOpenPosSession(register.repairCenterId, registerId);
+      res.json({ session: session || null });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   // Export sessioni POS per reseller
   app.get("/api/reseller/pos/sessions/export", requireRole("reseller", "reseller_staff", "sub_reseller"), async (req, res) => {
     try {
@@ -34575,6 +34910,338 @@ export function registerRoutes(app: Express): Server {
       }
     } catch (error: any) {
       console.error("Error exporting transactions:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // ==========================================
+  // RESELLER POS TERMINAL ENDPOINTS
+  // ==========================================
+  
+  // Crea transazione POS per conto di un centro riparazione
+  app.post("/api/reseller/pos/transaction", requireRole("reseller", "reseller_staff", "sub_reseller"), async (req, res) => {
+    try {
+      const { resellerId } = getEffectiveContext(req);
+      const operatorId = req.user!.id;
+      const { repairCenterId, registerId, items, paymentMethod, customerId, discountAmount, discountPercent, cashReceived, notes, customerNotes, invoiceRequested } = req.body;
+      
+      if (!repairCenterId) return res.status(400).json({ error: "repairCenterId è obbligatorio" });
+      
+      // Verifica ownership del centro riparazione
+      const center = await storage.getRepairCenter(repairCenterId);
+      if (!center || center.resellerId !== resellerId) {
+        return res.status(403).json({ error: "Non autorizzato ad operare su questo centro riparazione" });
+      }
+      
+      // Verifica che il registro appartenga al centro
+      if (registerId) {
+        const register = await storage.getPosRegister(registerId);
+        if (!register || register.repairCenterId !== repairCenterId) {
+          return res.status(403).json({ error: "Cassa non appartenente a questo centro riparazione" });
+        }
+      }
+      
+      const session = await storage.getOpenPosSession(repairCenterId, registerId);
+      if (!session) return res.status(400).json({ error: "Nessuna sessione cassa aperta per questa cassa." });
+
+      if (!items || items.length === 0) return res.status(400).json({ error: "Nessun articolo" });
+      if (!paymentMethod) return res.status(400).json({ error: "Metodo pagamento richiesto" });
+
+      // Trova il magazzino del repair center
+      const warehouseList = await storage.listWarehouses({ 
+        ownerType: 'repair_center', 
+        ownerId: repairCenterId 
+      });
+      const repairCenterWarehouseId = warehouseList.length > 0 ? warehouseList[0].id : null;
+
+      let subtotal = 0;
+      const processedItems = [];
+      
+      for (const item of items) {
+        if (item.isTemporary) {
+          if (!item.productName || typeof item.unitPrice !== 'number') {
+            return res.status(400).json({ error: "Prodotto temporaneo richiede nome e prezzo" });
+          }
+          const itemDiscount = item.discount || 0;
+          const totalPrice = (item.unitPrice * item.quantity) - itemDiscount;
+          
+          processedItems.push({
+            productId: null,
+            productName: item.productName,
+            productSku: null,
+            productBarcode: null,
+            isTemporary: true,
+            quantity: item.quantity,
+            unitPrice: item.unitPrice,
+            discount: itemDiscount,
+            totalPrice,
+            warehouseId: null,
+          });
+          
+          subtotal += totalPrice;
+          continue;
+        }
+        
+        if (item.isService) {
+          if (!item.serviceItemId) {
+            return res.status(400).json({ error: "Servizio richiede serviceItemId" });
+          }
+          const serviceItem = await storage.getServiceItem(item.serviceItemId);
+          if (!serviceItem) return res.status(400).json({ error: `Servizio ${item.serviceItemId} non trovato` });
+          
+          const unitPrice = item.unitPrice ?? serviceItem.defaultPriceCents;
+          const itemDiscount = item.discount || 0;
+          const totalPrice = (unitPrice * item.quantity) - itemDiscount;
+          
+          processedItems.push({
+            productId: null,
+            productName: serviceItem.name,
+            productSku: serviceItem.code,
+            productBarcode: null,
+            serviceItemId: item.serviceItemId,
+            isService: true,
+            isTemporary: false,
+            quantity: item.quantity,
+            unitPrice,
+            discount: itemDiscount,
+            totalPrice,
+            warehouseId: null,
+          });
+          
+          subtotal += totalPrice;
+          continue;
+        }
+        
+        const product = await storage.getProduct(item.productId);
+        if (!product) return res.status(400).json({ error: `Prodotto ${item.productId} non trovato` });
+        
+        const unitPrice = item.unitPrice || (product.unitPrice || 0);
+        const itemDiscount = item.discount || 0;
+        const totalPrice = (unitPrice * item.quantity) - itemDiscount;
+        
+        processedItems.push({
+          productId: item.productId,
+          productName: product.name,
+          productSku: product.sku || null,
+          productBarcode: product.barcode || null,
+          isTemporary: false,
+          quantity: item.quantity,
+          unitPrice,
+          discount: itemDiscount,
+          totalPrice,
+          warehouseId: repairCenterWarehouseId,
+        });
+        
+        subtotal += totalPrice;
+      }
+
+      const discount = discountAmount || (discountPercent ? Math.round(subtotal * discountPercent / 100) : 0);
+      const taxRate = 22;
+      const taxableAmount = subtotal - discount;
+      const taxAmount = Math.round(taxableAmount * taxRate / (100 + taxRate));
+      const total = taxableAmount;
+
+      const transactionNumber = await storage.generatePosTransactionNumber(repairCenterId);
+      let changeGiven = null;
+      if (paymentMethod === "cash" && cashReceived) changeGiven = cashReceived - total;
+
+      const transaction = await storage.createPosTransaction({
+        transactionNumber,
+        repairCenterId,
+        sessionId: session.id,
+        registerId: session.registerId || null,
+        customerId: customerId || null,
+        operatorId,
+        subtotal,
+        discountAmount: discount,
+        discountPercent: discountPercent || null,
+        taxRate,
+        taxAmount,
+        total,
+        paymentMethod,
+        cashReceived: cashReceived || null,
+        changeGiven,
+        notes: notes || null,
+        customerNotes: customerNotes || null,
+        invoiceRequested: invoiceRequested || false,
+        status: "completed",
+      });
+
+      const transactionItems = await storage.createPosTransactionItems(
+        processedItems.map(item => ({ transactionId: transaction.id, ...item, inventoryDeducted: false }))
+      );
+      
+      for (const item of transactionItems) {
+        if (item.warehouseId && item.productId && item.quantity > 0 && !item.isTemporary) {
+          await storage.updateWarehouseStockQuantity(item.warehouseId, item.productId, -item.quantity);
+          await storage.markPosItemInventoryDeducted(item.id);
+        }
+      }
+      
+      const sessionTxs = await storage.getPosTransactionsBySession(session.id);
+      const completedTxs = sessionTxs.filter(t => t.status === "completed");
+      await storage.updatePosSessionTotals(session.id, {
+        totalSales: completedTxs.reduce((sum, t) => sum + t.total, 0),
+        totalTransactions: completedTxs.length,
+        totalCashSales: completedTxs.filter(t => t.paymentMethod === "cash").reduce((sum, t) => sum + t.total, 0),
+        totalCardSales: completedTxs.filter(t => t.paymentMethod !== "cash").reduce((sum, t) => sum + t.total, 0),
+      });
+
+      let invoice = null;
+      if (invoiceRequested && customerId) {
+        const invoiceNumber = await storage.generateInvoiceNumber(repairCenterId);
+        invoice = await storage.createInvoice({
+          invoiceNumber,
+          customerId,
+          posTransactionId: transaction.id,
+          repairCenterId,
+          source: 'pos',
+          amount: subtotal - discount,
+          tax: taxAmount,
+          total,
+          paymentStatus: 'paid',
+          paymentMethod,
+          paidDate: new Date(),
+          notes: `Fattura automatica da vendita POS ${transactionNumber}`,
+        });
+        await storage.updatePosTransactionInvoice(transaction.id, invoice.id);
+      }
+
+      res.json({ transaction, items: transactionItems, invoice });
+    } catch (error: any) {
+      console.error("Reseller POS transaction error:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Lista prodotti di un centro riparazione (per POS terminal reseller)
+  app.get("/api/reseller/pos/:repairCenterId/products", requireRole("reseller", "reseller_staff", "sub_reseller"), async (req, res) => {
+    try {
+      const { resellerId } = getEffectiveContext(req);
+      const { repairCenterId } = req.params;
+      const search = req.query.search as string | undefined;
+      
+      const center = await storage.getRepairCenter(repairCenterId);
+      if (!center || center.resellerId !== resellerId) {
+        return res.status(403).json({ error: "Non autorizzato" });
+      }
+      
+      // Cerca magazzino del centro
+      const warehouseList = await storage.listWarehouses({ 
+        ownerType: 'repair_center', 
+        ownerId: repairCenterId 
+      });
+      
+      if (warehouseList.length === 0) {
+        return res.json([]);
+      }
+      
+      const warehouse = warehouseList[0];
+      const productsWithStock = await storage.listWarehouseProductsWithStock(warehouse.id, search);
+      
+      res.json(productsWithStock);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Lista servizi per POS terminal reseller
+  app.get("/api/reseller/pos/:repairCenterId/services", requireRole("reseller", "reseller_staff", "sub_reseller"), async (req, res) => {
+    try {
+      const { resellerId } = getEffectiveContext(req);
+      const { repairCenterId } = req.params;
+      const search = req.query.search as string | undefined;
+      const category = req.query.category as string | undefined;
+      
+      const center = await storage.getRepairCenter(repairCenterId);
+      if (!center || center.resellerId !== resellerId) {
+        return res.status(403).json({ error: "Non autorizzato" });
+      }
+      
+      // Prendi tutti i servizi e filtra per reseller
+      const items = await storage.listServiceItems();
+      let activeItems = items.filter(item => 
+        item.isActive && (
+          !item.resellerId || 
+          item.resellerId === resellerId
+        )
+      );
+      
+      if (search) {
+        const searchLower = search.toLowerCase();
+        activeItems = activeItems.filter(item =>
+          item.name.toLowerCase().includes(searchLower) ||
+          (item.description && item.description.toLowerCase().includes(searchLower))
+        );
+      }
+      
+      if (category) {
+        activeItems = activeItems.filter(item => item.category === category);
+      }
+      
+      // Recupera prezzi personalizzati del centro e del reseller
+      const centerPrices = await storage.listServiceItemPricesByRepairCenter(repairCenterId);
+      const resellerPrices = await storage.listServiceItemPricesByReseller(resellerId);
+      
+      // Mappa i servizi con prezzi effettivi (come fa l'endpoint repair center)
+      const servicesWithPrices = activeItems.map(item => {
+        const centerPrice = centerPrices.find(p => p.serviceItemId === item.id);
+        const resellerPrice = resellerPrices.find(p => p.serviceItemId === item.id);
+        const effectivePrice = centerPrice?.priceCents ?? resellerPrice?.priceCents ?? item.defaultPriceCents;
+        
+        return {
+          id: item.id,
+          code: item.code,
+          name: item.name,
+          description: item.description,
+          category: item.category,
+          priceCents: effectivePrice,
+          laborMinutes: centerPrice?.laborMinutes ?? resellerPrice?.laborMinutes ?? item.defaultLaborMinutes,
+        };
+      });
+      
+      res.json(servicesWithPrices);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Clienti del centro (per selezione in POS)
+  app.get("/api/reseller/pos/:repairCenterId/customers", requireRole("reseller", "reseller_staff", "sub_reseller"), async (req, res) => {
+    try {
+      const { resellerId } = getEffectiveContext(req);
+      const { repairCenterId } = req.params;
+      
+      const center = await storage.getRepairCenter(repairCenterId);
+      if (!center || center.resellerId !== resellerId) {
+        return res.status(403).json({ error: "Non autorizzato" });
+      }
+      
+      const customers = await storage.listCustomers({ repairCenterId });
+      res.json(customers);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Transazioni sessione corrente (per POS terminal)
+  app.get("/api/reseller/pos/:repairCenterId/session-transactions", requireRole("reseller", "reseller_staff", "sub_reseller"), async (req, res) => {
+    try {
+      const { resellerId } = getEffectiveContext(req);
+      const { repairCenterId } = req.params;
+      const { registerId } = req.query;
+      
+      const center = await storage.getRepairCenter(repairCenterId);
+      if (!center || center.resellerId !== resellerId) {
+        return res.status(403).json({ error: "Non autorizzato" });
+      }
+      
+      const session = await storage.getOpenPosSession(repairCenterId, registerId as string);
+      if (!session) return res.json([]);
+      
+      const transactions = await storage.getPosTransactionsBySession(session.id);
+      res.json(transactions);
+    } catch (error: any) {
       res.status(500).json({ error: error.message });
     }
   });

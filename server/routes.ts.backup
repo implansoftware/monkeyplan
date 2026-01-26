@@ -2945,17 +2945,6 @@ export function registerRoutes(app: Express): Server {
     try {
       const validatedData = insertProductSchema.parse(req.body);
       const product = await storage.createProduct(validatedData);
-      
-      // Create device compatibilities if provided
-      if (req.body.deviceCompatibilities && Array.isArray(req.body.deviceCompatibilities) && req.body.deviceCompatibilities.length > 0) {
-        const compatEntries = req.body.deviceCompatibilities.map((c: { deviceBrandId: string; deviceModelId?: string | null }) => ({
-          productId: product.id,
-          deviceBrandId: c.deviceBrandId,
-          deviceModelId: c.deviceModelId || null,
-        }));
-        await storage.setProductCompatibilities(product.id, compatEntries);
-      }
-      
       setActivityEntity(res, { type: 'products', id: product.id });
       res.status(201).json(product);
     } catch (error: any) {
@@ -6218,18 +6207,6 @@ export function registerRoutes(app: Express): Server {
         }
       }
       
-
-      // Create device compatibilities if provided
-      const { deviceCompatibilities } = req.body;
-      if (deviceCompatibilities && Array.isArray(deviceCompatibilities) && deviceCompatibilities.length > 0) {
-        const compatEntries = deviceCompatibilities.map((c: { deviceBrandId: string; deviceModelId?: string | null }) => ({
-          productId: product.id,
-          deviceBrandId: c.deviceBrandId,
-          deviceModelId: c.deviceModelId || null,
-        }));
-        await storage.setProductCompatibilities(product.id, compatEntries);
-      }
-
       res.status(201).json(product);
     } catch (error: any) {
       res.status(400).send(error.message);
@@ -11480,16 +11457,6 @@ export function registerRoutes(app: Express): Server {
       const updated = await storage.updateProduct(req.params.id, updates);
       setActivityEntity(res, { type: 'product', id: updated.id });
       
-      // Update device compatibilities if provided
-      if (req.body.deviceCompatibilities && Array.isArray(req.body.deviceCompatibilities)) {
-        const compatEntries = req.body.deviceCompatibilities.map((c: { deviceBrandId: string; deviceModelId?: string | null }) => ({
-          productId: req.params.id,
-          deviceBrandId: c.deviceBrandId,
-          deviceModelId: c.deviceModelId || null,
-        }));
-        await storage.setProductCompatibilities(req.params.id, compatEntries);
-      }
-      
       res.json(updated);
     } catch (error: any) {
       res.status(400).send(error.message);
@@ -11865,20 +11832,6 @@ export function registerRoutes(app: Express): Server {
         }
       }
       
-      
-      // Create device compatibilities if provided
-      const deviceCompatibilities = typeof req.body.deviceCompatibilities === 'string' 
-        ? JSON.parse(req.body.deviceCompatibilities) 
-        : req.body.deviceCompatibilities;
-      if (deviceCompatibilities && Array.isArray(deviceCompatibilities) && deviceCompatibilities.length > 0) {
-        const compatEntries = deviceCompatibilities.map((c: { deviceBrandId: string; deviceModelId?: string | null }) => ({
-          productId: createdProduct.id,
-          deviceBrandId: c.deviceBrandId,
-          deviceModelId: c.deviceModelId || null,
-        }));
-        await storage.setProductCompatibilities(createdProduct.id, compatEntries);
-      }
-
       // Create specs linked to product
       specs.productId = createdProduct.id;
       const createdSpecs = await storage.createSmartphoneSpecs(specs);
@@ -12221,20 +12174,6 @@ export function registerRoutes(app: Express): Server {
         }
       }
       
-      
-      // Create device compatibilities if provided
-      const deviceCompatibilities = typeof req.body.deviceCompatibilities === 'string' 
-        ? JSON.parse(req.body.deviceCompatibilities) 
-        : req.body.deviceCompatibilities;
-      if (deviceCompatibilities && Array.isArray(deviceCompatibilities) && deviceCompatibilities.length > 0) {
-        const compatEntries = deviceCompatibilities.map((c: { deviceBrandId: string; deviceModelId?: string | null }) => ({
-          productId: createdProduct.id,
-          deviceBrandId: c.deviceBrandId,
-          deviceModelId: c.deviceModelId || null,
-        }));
-        await storage.setProductCompatibilities(createdProduct.id, compatEntries);
-      }
-
       // Create specs linked to product
       specs.productId = createdProduct.id;
       const createdSpecs = await storage.createAccessorySpecs(specs);
