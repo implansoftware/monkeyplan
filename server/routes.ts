@@ -25457,6 +25457,21 @@ export function registerRoutes(app: Express): Server {
       
       await storage.updateCart(cart.id, { status: 'converted' });
       
+      // Notifica al reseller del nuovo ordine
+      await storage.createNotification({
+        userId: resellerId,
+        type: "system",
+        title: "Nuovo ordine e-commerce",
+        message: `${req.user.fullName} ha effettuato l'ordine #${order.orderNumber}`,
+        data: JSON.stringify({ salesOrderId: order.id, customerId: req.user.id })
+      });
+      broadcastNotification(resellerId, {
+        type: "new_sales_order",
+        title: "Nuovo ordine e-commerce",
+        message: `${req.user.fullName} ha effettuato l'ordine #${order.orderNumber}`,
+        orderId: order.id
+      });
+      
       res.json({ order, orderNumber: order.orderNumber });
     } catch (error: any) {
       res.status(500).json({ error: error.message });
