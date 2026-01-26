@@ -20,10 +20,10 @@ interface ProductCompatibility {
   productName: string;
   productCategory: string;
   compatibilities: Array<{
-    brandId: string;
-    brandName: string;
-    modelId: string | null;
-    modelName: string | null;
+    deviceBrandId: string;
+    deviceBrandName: string | null;
+    deviceModelId: string | null;
+    deviceModelName: string | null;
   }>;
 }
 
@@ -96,9 +96,9 @@ export default function DeviceCompatibilities() {
 
   useEffect(() => {
     if (productCompatibilities?.compatibilities) {
-      const entries: CompatibilityEntry[] = productCompatibilities.compatibilities.map((c) => ({
-        deviceBrandId: c.brandId,
-        deviceModelId: c.modelId || null,
+      const entries: CompatibilityEntry[] = productCompatibilities.compatibilities.map((c: any) => ({
+        deviceBrandId: c.deviceBrandId,
+        deviceModelId: c.deviceModelId || null,
       }));
       setSelectedCompatibilities(entries);
     }
