@@ -306,6 +306,7 @@ const menuItems = {
     { title: "Le Mie Garanzie", url: "/customer/warranties", icon: Shield, group: "Le mie riparazioni" },
     { title: "Richieste Remote", url: "/customer/remote-requests", icon: Send, group: "Le mie riparazioni" },
     { title: "Catalogo Servizi", url: "/customer/service-catalog", icon: Wrench, group: "Le mie riparazioni" },
+    { title: "I Miei Ordini", url: "/customer/service-orders", icon: ClipboardList, group: "Le mie riparazioni" },
     { title: "Ordini", url: "/customer/orders", icon: ShoppingCart, group: "Acquisti" },
     { title: "Resi", url: "/customer/sales-returns", icon: RotateCcw, group: "Acquisti" },
     { title: "Profilo", url: "/customer/profile", icon: UserCircle, group: "Account" },

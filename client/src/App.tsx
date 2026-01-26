@@ -246,6 +246,7 @@ import CustomerSalesReturns from "@/pages/customer/sales-returns";
 import CustomerProfile from "@/pages/customer/profile";
 import CustomerRemoteRequests from "@/pages/customer/remote-requests";
 import CustomerServiceCatalog from "@/pages/customer/service-catalog";
+import CustomerServiceOrders from "@/pages/customer/service-orders";
 
 // Shop pages (public)
 import ShopCatalog from "@/pages/shop/catalog";
@@ -525,6 +526,7 @@ function Router() {
       <ProtectedRoute path="/customer/profile" component={CustomerProfile} />
       <ProtectedRoute path="/customer/remote-requests" component={CustomerRemoteRequests} />
       <ProtectedRoute path="/customer/service-catalog" component={CustomerServiceCatalog} />
+      <ProtectedRoute path="/customer/service-orders" component={CustomerServiceOrders} />
       
       {/* Shop admin routes */}
       <ProtectedRoute path="/shop/admin/products/:id" component={ShopAdminProductDetail} />
