@@ -25256,7 +25256,20 @@ export function registerRoutes(app: Express): Server {
       
       const product = await storage.getProduct(productId);
       if (!product) return res.status(404).json({ error: "Prodotto non trovato" });
-      if (product.resellerId !== resellerId) return res.status(400).json({ error: "Prodotto non disponibile" });
+      // Verifica se il prodotto è disponibile per questo reseller:
+      // 1. Prodotto proprio del reseller (createdBy === resellerId)
+      // 2. Prodotto globale assegnato e pubblicato
+      const isOwnProduct = product.createdBy === resellerId;
+      let isAssignedProduct = false;
+      
+      if (!isOwnProduct) {
+        const assignment = await storage.getResellerProduct(productId, resellerId);
+        isAssignedProduct = !!assignment && assignment.isPublished;
+      }
+      
+      if (!isOwnProduct && !isAssignedProduct) {
+        return res.status(400).json({ error: "Prodotto non disponibile" });
+      }
       
       const existingItem = await storage.getCartItemByProduct(cart.id, productId);
       
