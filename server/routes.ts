@@ -25279,7 +25279,18 @@ export function registerRoutes(app: Express): Server {
         });
         res.json(updated);
       } else {
-        const unitPrice = (product.priceCents || 0) / 100;
+        // Calcola il prezzo corretto: proprio o assegnato
+        let effectivePrice = product.unitPrice || 0; // unitPrice è in cents
+        
+        // Per prodotti assegnati, usa customPriceCents se disponibile
+        if (!isOwnProduct && isAssignedProduct) {
+          const assignment = await storage.getResellerProduct(productId, resellerId);
+          if (assignment?.customPriceCents) {
+            effectivePrice = assignment.customPriceCents;
+          }
+        }
+        
+        const unitPrice = effectivePrice / 100; // Converti in euro
         const item = await storage.addCartItem({
           cartId: cart.id,
           productId,

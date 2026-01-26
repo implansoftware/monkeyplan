@@ -128,9 +128,9 @@ export default function ShopCart() {
                 <CardContent className="p-4">
                   <div className="flex gap-4">
                     <div className="w-20 h-20 bg-muted rounded flex-shrink-0 flex items-center justify-center">
-                      {item.product?.images?.[0] ? (
+                      {item.product?.imageUrl ? (
                         <img 
-                          src={item.product.images[0]} 
+                          src={item.product.imageUrl} 
                           alt={item.product?.name}
                           className="w-full h-full object-cover rounded"
                         />
