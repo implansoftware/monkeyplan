@@ -144,14 +144,17 @@ export default function CustomerServiceCatalog() {
 
   return (
     <div className="space-y-6">
-      <div className="relative overflow-hidden rounded-xl bg-gradient-to-br from-emerald-500/10 via-teal-500/10 to-cyan-500/10 p-6 border">
-        <div className="flex items-center gap-3">
-          <div className="p-2 rounded-lg bg-gradient-to-br from-emerald-500 to-teal-500">
-            <Wrench className="w-6 h-6 text-white" />
+      {/* Hero Header */}
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-500 p-6">
+        <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl animate-pulse" />
+        <div className="absolute bottom-0 left-0 w-48 h-48 bg-cyan-300/20 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
+        <div className="relative flex items-center gap-4">
+          <div className="h-12 w-12 rounded-xl bg-white/20 backdrop-blur-sm border border-white/30 flex items-center justify-center">
+            <Wrench className="h-6 w-6 text-white" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold">Catalogo Servizi</h1>
-            <p className="text-muted-foreground">Richiedi interventi di riparazione al tuo rivenditore</p>
+            <h1 className="text-2xl font-bold text-white">Catalogo Servizi</h1>
+            <p className="text-white/80 text-sm">Richiedi interventi di riparazione al tuo rivenditore</p>
           </div>
         </div>
       </div>
