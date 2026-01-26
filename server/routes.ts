@@ -25301,6 +25301,12 @@ export function registerRoutes(app: Express): Server {
         });
         res.json(item);
       }
+      
+      // Ricalcola e aggiorna subtotal del carrello
+      const allItems = await storage.listCartItems(cart.id);
+      const subtotal = allItems.reduce((sum, i) => sum + (i.totalPrice || 0), 0);
+      await storage.updateCart(cart.id, { subtotal, total: subtotal });
+      
     } catch (error: any) {
       res.status(500).json({ error: error.message });
     }
@@ -25309,11 +25315,29 @@ export function registerRoutes(app: Express): Server {
   app.put("/api/cart/items/:itemId", async (req, res) => {
     try {
       const { quantity } = req.body;
+      const item = await storage.getCartItem(req.params.itemId);
+      if (!item) return res.status(404).json({ error: "Item non trovato" });
+      
       if (quantity < 1) {
         await storage.removeCartItem(req.params.itemId);
+        // Ricalcola subtotal dopo rimozione
+        const allItems = await storage.listCartItems(item.cartId);
+        const subtotal = allItems.reduce((sum, i) => sum + (i.totalPrice || 0), 0);
+        await storage.updateCart(item.cartId, { subtotal, total: subtotal });
         return res.json({ success: true, removed: true });
       }
-      const updated = await storage.updateCartItem(req.params.itemId, { quantity });
+      
+      const newTotalPrice = item.unitPrice * quantity;
+      const updated = await storage.updateCartItem(req.params.itemId, { 
+        quantity,
+        totalPrice: newTotalPrice
+      });
+      
+      // Ricalcola subtotal dopo update
+      const allItems = await storage.listCartItems(item.cartId);
+      const subtotal = allItems.reduce((sum, i) => sum + (i.totalPrice || 0), 0);
+      await storage.updateCart(item.cartId, { subtotal, total: subtotal });
+      
       res.json(updated);
     } catch (error: any) {
       res.status(500).json({ error: error.message });
@@ -25322,7 +25346,17 @@ export function registerRoutes(app: Express): Server {
 
   app.delete("/api/cart/items/:itemId", async (req, res) => {
     try {
+      const item = await storage.getCartItem(req.params.itemId);
+      if (!item) return res.status(404).json({ error: "Item non trovato" });
+      
+      const cartId = item.cartId;
       await storage.removeCartItem(req.params.itemId);
+      
+      // Ricalcola subtotal dopo rimozione
+      const allItems = await storage.listCartItems(cartId);
+      const subtotal = allItems.reduce((sum, i) => sum + (i.totalPrice || 0), 0);
+      await storage.updateCart(cartId, { subtotal, total: subtotal });
+      
       res.json({ success: true });
     } catch (error: any) {
       res.status(500).json({ error: error.message });
