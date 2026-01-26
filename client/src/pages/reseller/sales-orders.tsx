@@ -764,6 +764,56 @@ export default function ResellerSalesOrders() {
                   />
                 </div>
               )}
+              
+              {newStatus === 'shipped' && (
+                <div className="space-y-4 p-4 bg-muted/50 rounded-lg">
+                  <div className="flex items-center gap-2 text-sm font-medium">
+                    <Truck className="h-4 w-4" />
+                    Dati spedizione
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label>Corriere *</Label>
+                    <Select value={shippingCarrier} onValueChange={setShippingCarrier}>
+                      <SelectTrigger data-testid="select-carrier-list">
+                        <SelectValue placeholder="Seleziona corriere" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="dhl">DHL</SelectItem>
+                        <SelectItem value="ups">UPS</SelectItem>
+                        <SelectItem value="fedex">FedEx</SelectItem>
+                        <SelectItem value="gls">GLS</SelectItem>
+                        <SelectItem value="brt">BRT</SelectItem>
+                        <SelectItem value="sda">SDA</SelectItem>
+                        <SelectItem value="poste_italiane">Poste Italiane</SelectItem>
+                        <SelectItem value="other">Altro</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  {shippingCarrier === 'other' && (
+                    <div className="space-y-2">
+                      <Label>Nome corriere *</Label>
+                      <Input
+                        value={shippingCarrierName}
+                        onChange={(e) => setShippingCarrierName(e.target.value)}
+                        placeholder="Inserisci nome corriere..."
+                        data-testid="input-carrier-name-list"
+                      />
+                    </div>
+                  )}
+                  
+                  <div className="space-y-2">
+                    <Label>Numero tracking</Label>
+                    <Input
+                      value={shippingTrackingNumber}
+                      onChange={(e) => setShippingTrackingNumber(e.target.value)}
+                      placeholder="Inserisci numero tracking..."
+                      data-testid="input-tracking-number-list"
+                    />
+                  </div>
+                </div>
+              )}
             </div>
           )}
           <DialogFooter>
