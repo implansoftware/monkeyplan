@@ -161,7 +161,7 @@ export default function ShopCatalog() {
                       <p className="text-sm text-muted-foreground mb-2">{product.brand}</p>
                     )}
                     <p className="text-xl font-bold text-primary" data-testid={`text-product-price-${product.id}`}>
-                      {formatPrice(product.unitPrice || 0)}
+                      {formatPrice((product as any).shopPrice || product.unitPrice || 0)}
                     </p>
                   </CardContent>
                   <CardFooter className="p-4 pt-0">
@@ -206,7 +206,7 @@ export default function ShopCatalog() {
                     )}
                     <div className="flex items-center justify-between mt-2">
                       <p className="text-xl font-bold text-primary" data-testid={`text-product-price-${product.id}`}>
-                        {formatPrice(product.unitPrice || 0)}
+                        {formatPrice((product as any).shopPrice || product.unitPrice || 0)}
                       </p>
                       <Button 
                         size="sm"
