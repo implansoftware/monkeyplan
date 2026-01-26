@@ -25594,6 +25594,28 @@ export function registerRoutes(app: Express): Server {
         });
       }
       
+      // Deduct stock from reseller warehouse when shipped
+      if (status === 'shipped' && order.resellerId) {
+        const resellerWarehouse = await storage.getWarehouseByOwner('reseller', order.resellerId);
+        if (resellerWarehouse) {
+          const orderItems = await storage.listSalesOrderItems(req.params.id);
+          for (const item of orderItems) {
+            if (item.productId) {
+              await storage.updateWarehouseStockQuantity(resellerWarehouse.id, item.productId, -item.quantity);
+              await storage.createInventoryMovement({
+                productId: item.productId,
+                resellerId: order.resellerId,
+                type: 'out',
+                quantity: item.quantity,
+                reason: 'sale',
+                notes: `Vendita ordine ${order.orderNumber}`,
+                performedBy: req.user.id
+              });
+            }
+          }
+        }
+      }
+      
       // Auto-create invoice for resellers when order is delivered/completed
       let invoice = null;
       if ((status === 'delivered' || status === 'completed') && order.resellerId) {
