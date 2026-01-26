@@ -1,11 +1,12 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useQuery } from "@tanstack/react-query";
-import { Wrench, Ticket, CheckCircle, Clock, Building2, Store, Phone, MapPin, LayoutDashboard, Plus } from "lucide-react";
+import { Wrench, Ticket, CheckCircle, Clock, Building2, Store, Phone, MapPin, LayoutDashboard, Plus, ShoppingBag } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { Link } from "wouter";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid } from "recharts";
+import { useAuth } from "@/hooks/use-auth";
 
 type CustomerStats = {
   overview: {
@@ -46,6 +47,7 @@ type CustomerStats = {
 const COLORS = ['hsl(var(--chart-1))', 'hsl(var(--chart-2))', 'hsl(var(--chart-3))', 'hsl(var(--chart-4))'];
 
 export default function CustomerDashboard() {
+  const { user } = useAuth();
   const { data: stats, isLoading } = useQuery<CustomerStats>({
     queryKey: ["/api/stats"],
   });
@@ -156,6 +158,14 @@ export default function CustomerDashboard() {
                         <MapPin className="h-3.5 w-3.5" />
                         {stats.assignedReseller.address}
                       </p>
+                    )}
+                    {user?.resellerId && (
+                      <Link href={`/shop/${user.resellerId}`}>
+                        <Button size="sm" className="mt-3" data-testid="button-go-to-shop">
+                          <ShoppingBag className="h-4 w-4 mr-2" />
+                          Vai allo Shop
+                        </Button>
+                      </Link>
                     )}
                   </div>
                 </div>

@@ -550,6 +550,25 @@ export function AppSidebar() {
       }
     }
     
+    // Add dynamic Shop Online link for customers with a reseller
+    if (user?.role === "customer" && user?.resellerId) {
+      const ordiniIndex = baseItems.findIndex(item => item.url === "/customer/orders");
+      if (ordiniIndex !== -1) {
+        const shopItem = { 
+          title: "Shop Online", 
+          url: `/shop/${user.resellerId}`, 
+          icon: Store, 
+          group: "Acquisti" 
+        };
+        // Insert Shop Online before "Ordini"
+        return [
+          ...baseItems.slice(0, ordiniIndex),
+          shopItem,
+          ...baseItems.slice(ordiniIndex),
+        ];
+      }
+    }
+    
     return baseItems;
   }, [user, isReseller, isResellerStaff, isFranchisingOrGdo, hasFullAccess, canAccessModule, actingAs]);
   
