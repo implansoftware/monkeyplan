@@ -9,7 +9,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Smartphone, Plus, Search, Edit, Trash2, Tag, Globe, User } from "lucide-react";
+import { Smartphone, Plus, Search, Edit, Trash2, Tag, Globe, User, X } from "lucide-react";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
@@ -29,6 +29,7 @@ interface CustomBrand {
   updatedAt: string;
   isGlobal: boolean;
   isCustom: boolean;
+  marketCodes?: string[];
 }
 
 interface CustomModel {
@@ -45,6 +46,7 @@ interface CustomModel {
   updatedAt: string;
   isGlobal: boolean;
   isCustom: boolean;
+  marketCodes?: string[];
 }
 
 const brandFormSchema = z.object({
@@ -74,6 +76,8 @@ export default function DeviceCatalog() {
   const [selectedModel, setSelectedModel] = useState<CustomModel | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const { toast } = useToast();
+  const [modelMarketCodes, setModelMarketCodes] = useState<string[]>([]);
+  const [newMarketCode, setNewMarketCode] = useState("");
 
   const brandForm = useForm<BrandFormValues>({
     resolver: zodResolver(brandFormSchema),
@@ -286,6 +290,7 @@ export default function DeviceCatalog() {
     setIsEditing(false);
     setSelectedModel(null);
     modelForm.reset({ modelName: "", brandId: "", brandName: "", typeId: "" });
+    setModelMarketCodes([]);
     setModelDialogOpen(true);
   };
 
@@ -299,6 +304,7 @@ export default function DeviceCatalog() {
       brandName: model.brandName || "",
       typeId: model.typeId || "",
     });
+    setModelMarketCodes(model.marketCodes || []);
     setModelDialogOpen(true);
   };
 
@@ -312,9 +318,9 @@ export default function DeviceCatalog() {
 
   const handleModelSubmit = (data: ModelFormValues) => {
     if (isEditing && selectedModel) {
-      updateModelMutation.mutate({ id: selectedModel.id, data });
+      updateModelMutation.mutate({ id: selectedModel.id, data: { ...data, marketCodes: modelMarketCodes } });
     } else {
-      createModelMutation.mutate(data);
+      createModelMutation.mutate({ ...data, marketCodes: modelMarketCodes });
     }
   };
 
@@ -528,6 +534,7 @@ export default function DeviceCatalog() {
                 <Table>
                   <TableHeader>
                     <TableRow>
+                      <TableHead>Codice Mercato</TableHead>
                       <TableHead>Nome Modello</TableHead>
                       <TableHead>Brand</TableHead>
                       <TableHead>Tipo Dispositivo</TableHead>
@@ -538,6 +545,20 @@ export default function DeviceCatalog() {
                   <TableBody>
                     {filteredModels.map((model) => (
                       <TableRow key={model.id} data-testid={`row-model-${model.id}`}>
+                        <TableCell>
+                          {model.marketCodes && model.marketCodes.length > 0 ? (
+                            <div className="flex flex-wrap gap-1">
+                              {model.marketCodes.slice(0, 2).map((code, idx) => (
+                                <Badge key={idx} variant="outline" className="text-xs">{code}</Badge>
+                              ))}
+                              {model.marketCodes.length > 2 && (
+                                <Badge variant="secondary" className="text-xs">+{model.marketCodes.length - 2}</Badge>
+                              )}
+                            </div>
+                          ) : (
+                            <span className="text-muted-foreground">-</span>
+                          )}
+                        </TableCell>
                         <TableCell className="font-medium">{model.modelName}</TableCell>
                         <TableCell>{getBrandName(model)}</TableCell>
                         <TableCell>{getTypeName(model.typeId)}</TableCell>
@@ -739,6 +760,61 @@ export default function DeviceCatalog() {
                   </FormItem>
                 )}
               />
+
+              {/* Market Codes */}
+              {!isEditing || (selectedModel && !selectedModel.isGlobal) ? (
+                <div className="space-y-2">
+                  <Label>Codici Mercato</Label>
+                  <div className="flex flex-wrap gap-1 min-h-[32px] p-2 border rounded-md bg-muted/30">
+                    {modelMarketCodes.map((code, idx) => (
+                      <Badge key={idx} variant="secondary" className="gap-1">
+                        {code}
+                        <button
+                          type="button"
+                          onClick={() => setModelMarketCodes(prev => prev.filter((_, i) => i !== idx))}
+                          className="ml-1 hover:text-destructive"
+                        >
+                          <X className="h-3 w-3" />
+                        </button>
+                      </Badge>
+                    ))}
+                  </div>
+                  <div className="flex gap-2">
+                    <Input
+                      placeholder="es. A2633"
+                      value={newMarketCode}
+                      onChange={(e) => setNewMarketCode(e.target.value.toUpperCase())}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          e.preventDefault();
+                          const code = newMarketCode.trim();
+                          if (code && !modelMarketCodes.includes(code)) {
+                            setModelMarketCodes(prev => [...prev, code]);
+                            setNewMarketCode("");
+                          }
+                        }
+                      }}
+                      data-testid="input-model-market-code"
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="icon"
+                      onClick={() => {
+                        const code = newMarketCode.trim();
+                        if (code && !modelMarketCodes.includes(code)) {
+                          setModelMarketCodes(prev => [...prev, code]);
+                          setNewMarketCode("");
+                        }
+                      }}
+                      data-testid="button-add-market-code"
+                    >
+                      <Plus className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              ) : null}
+
               <DialogFooter>
                 <Button
                   type="button"
