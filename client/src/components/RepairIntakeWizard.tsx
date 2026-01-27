@@ -1247,6 +1247,30 @@ export function RepairIntakeWizard({
                   </p>
                 </div>
 
+                {/* Market Code Lookup - PRIMA di Tipo Dispositivo per auto-compilazione */}
+                <div className="space-y-2">
+                  <Label>Codice Mercato (opzionale)</Label>
+                  <div className="flex gap-2">
+                    <Input
+                      placeholder="es. A2633, SM-G998B"
+                      value={marketCodeInput}
+                      onChange={(e) => setMarketCodeInput(e.target.value.toUpperCase())}
+                      onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), lookupMarketCode())}
+                      data-testid="input-market-code-intake"
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={lookupMarketCode}
+                      disabled={marketCodeLoading || !marketCodeInput.trim()}
+                      data-testid="button-lookup-market-code-intake"
+                    >
+                      {marketCodeLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
+                    </Button>
+                  </div>
+                  <p className="text-xs text-muted-foreground">Inserisci il codice mercato per auto-compilare tipo, marca e modello</p>
+                </div>
+
                 {/* Device Type Selection */}
                 <FormField
                   control={form.control}
@@ -1507,31 +1531,6 @@ export function RepairIntakeWizard({
                     )}
                   />
                 )}
-
-
-                {/* Market Code Lookup */}
-                <div className="space-y-2">
-                  <Label>Codice Mercato (opzionale)</Label>
-                  <div className="flex gap-2">
-                    <Input
-                      placeholder="es. A2633, SM-G998B"
-                      value={marketCodeInput}
-                      onChange={(e) => setMarketCodeInput(e.target.value.toUpperCase())}
-                      onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), lookupMarketCode())}
-                      data-testid="input-market-code-intake"
-                    />
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={lookupMarketCode}
-                      disabled={marketCodeLoading || !marketCodeInput.trim()}
-                      data-testid="button-lookup-market-code-intake"
-                    >
-                      {marketCodeLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
-                    </Button>
-                  </div>
-                  <p className="text-xs text-muted-foreground">Inserisci il codice mercato per auto-compilare tipo, marca e modello</p>
-                </div>
 
                 {/* IMEI / Serial */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
