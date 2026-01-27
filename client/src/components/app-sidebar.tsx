@@ -48,6 +48,7 @@ import {
   ReceiptText,
   AlertTriangle,
   Link2,
+  Bell,
 } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { useState, Fragment, useMemo } from "react";
@@ -70,6 +71,8 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Link, useLocation } from "wouter";
 import { ContextSwitcher } from "@/components/ContextSwitcher";
+import { useNotifications } from "@/hooks/useNotifications";
+import { Badge } from "@/components/ui/badge";
 
 // Type for context response
 interface ActingAs {
@@ -243,6 +246,7 @@ const menuItems = {
     { title: "Guide", url: "/reseller/guide", icon: FileText, group: "Assistenza" },
     { title: "Richieste Remote", url: "/reseller/remote-requests", icon: Send, group: "Centri & Riparazioni" },
     { title: "Integrazioni", url: "/reseller/integrations", icon: Plug, group: "Account" },
+    { title: "Notifiche", url: "/reseller/notifications", icon: Bell, group: "Account" },
     { title: "Profilo", url: "/profile", icon: UserCircle, group: "Account" },
   ],
   repair_center: [
@@ -463,6 +467,9 @@ export function AppSidebar() {
     refetchInterval: 30000, // Refresh every 30 seconds
   });
   const pendingTicketsCount = ticketsSummary?.count || 0;
+
+  // Get notification count for badge
+  const { unreadCount: unreadNotificationsCount } = useNotifications();
 
   // Query configured integrations (only those with reseller credentials)
   const { data: configuredIntegrationCodes = [] } = useQuery<string[]>({
@@ -784,6 +791,7 @@ export function AppSidebar() {
                         const showRcRemoteBadge = item.url === "/repair-center/remote-requests" && rcPendingRemoteRequestsCount > 0;
                         const showServiceOrdersBadge = item.url === "/reseller/service-orders" && pendingServiceOrdersCount > 0;
                         const showTicketsBadge = item.url === "/reseller/tickets" && pendingTicketsCount > 0;
+                        const showNotificationsBadge = item.title === "Notifiche" && unreadNotificationsCount > 0;
                         return (
                           <SidebarMenuItem key={item.title}>
                             <SidebarMenuButton 
@@ -828,6 +836,14 @@ export function AppSidebar() {
                                     data-testid="badge-pending-service-orders"
                                   >
                                     {pendingServiceOrdersCount}
+                                  </span>
+                                )}
+                                {showNotificationsBadge && (
+                                  <span 
+                                    className="flex h-5 min-w-5 items-center justify-center rounded-full bg-destructive text-destructive-foreground text-xs font-medium px-1.5"
+                                    data-testid="badge-unread-notifications"
+                                  >
+                                    {unreadNotificationsCount > 9 ? '9+' : unreadNotificationsCount}
                                   </span>
                                 )}
                               </Link>

@@ -112,6 +112,7 @@ import ResellerCustomers from "@/pages/reseller/customers";
 import ResellerCustomerDetail from "@/pages/reseller/customer-detail";
 import ResellerTickets from "@/pages/reseller/tickets";
 import ResellerTicketDetail from "@/pages/reseller/ticket-detail";
+import ResellerNotifications from "@/pages/reseller/notifications";
 import ResellerInvoices from "@/pages/reseller/invoices";
 import ResellerSales from "@/pages/reseller/sales";
 import ResellerReports from "@/pages/reseller/reports";
@@ -397,6 +398,7 @@ function Router() {
       <ProtectedRoute path="/reseller/supplier-returns" component={ResellerSupplierReturns} allowedRoles={["reseller", "reseller_staff"]} />
       <ProtectedRoute path="/reseller/tickets" component={ResellerTickets} allowedRoles={["reseller", "reseller_staff"]} />
       <ProtectedRoute path="/reseller/tickets/:id" component={ResellerTicketDetail} allowedRoles={["reseller", "reseller_staff"]} />
+      <ProtectedRoute path="/reseller/notifications" component={ResellerNotifications} allowedRoles={["reseller", "reseller_staff"]} />
       <ProtectedRoute path="/reseller/guide" component={ResellerGuide} allowedRoles={["reseller", "reseller_staff"]} />
       <ProtectedRoute path="/reseller/pos" component={ResellerPosOverview} allowedRoles={["reseller", "reseller_staff", "sub_reseller"]} />
       <ProtectedRoute path="/reseller/pos/sales-history" component={ResellerPosSalesHistory} allowedRoles={["reseller", "reseller_staff", "sub_reseller"]} />
