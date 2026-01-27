@@ -12,10 +12,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
-import { Store, Search, ShoppingCart, Plus, Minus, Trash2, Send, Package, Users, Building2, ArrowRight } from "lucide-react";
+import { Store, Search, ShoppingCart, Plus, Minus, Trash2, Send, Package, Users, Building2, ArrowRight, Eye } from "lucide-react";
 import { Link } from "wouter";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { ProductDetailDialog } from "@/components/product-detail-dialog";
 
 interface MarketplaceCatalogItem {
   product: Product;
@@ -47,7 +48,14 @@ export default function ResellerMarketplace() {
   const [checkoutOpen, setCheckoutOpen] = useState(false);
   const [notes, setNotes] = useState("");
   const [paymentMethod, setPaymentMethod] = useState("bank_transfer");
+  const [detailProductId, setDetailProductId] = useState<string | null>(null);
+  const [detailOpen, setDetailOpen] = useState(false);
   const { toast } = useToast();
+
+  const openProductDetail = (productId: string) => {
+    setDetailProductId(productId);
+    setDetailOpen(true);
+  };
 
   const { data: catalog, isLoading } = useQuery<MarketplaceCatalogItem[]>({
     queryKey: ['/api/reseller/marketplace/catalog'],
@@ -262,22 +270,32 @@ export default function ResellerMarketplace() {
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 {products.map((item) => (
                   <Card key={item.product.id} className="rounded-2xl overflow-hidden">
-                    {item.product.imageUrl ? (
-                      <div className="aspect-square w-full bg-muted">
+                    <div 
+                      className="aspect-square w-full bg-muted cursor-pointer relative group"
+                      onClick={() => openProductDetail(item.product.id)}
+                      data-testid={`card-product-image-${item.product.id}`}
+                    >
+                      {item.product.imageUrl ? (
                         <img 
                           src={item.product.imageUrl} 
                           alt={item.product.name}
                           className="w-full h-full object-cover"
                         />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center">
+                          <Package className="h-12 w-12 text-muted-foreground/50" />
+                        </div>
+                      )}
+                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                        <Eye className="h-8 w-8 text-white" />
                       </div>
-                    ) : (
-                      <div className="aspect-square w-full bg-muted flex items-center justify-center">
-                        <Package className="h-12 w-12 text-muted-foreground/50" />
-                      </div>
-                    )}
+                    </div>
                     <CardHeader className="pb-2">
                       <div className="flex items-start justify-between gap-2">
-                        <div className="flex-1 min-w-0">
+                        <div 
+                          className="flex-1 min-w-0 cursor-pointer hover:text-primary transition-colors"
+                          onClick={() => openProductDetail(item.product.id)}
+                        >
                           <CardTitle className="text-base truncate">{item.product.name}</CardTitle>
                           {item.product.sku && (
                             <CardDescription className="text-xs">{item.product.sku}</CardDescription>
@@ -442,6 +460,12 @@ export default function ResellerMarketplace() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <ProductDetailDialog
+        open={detailOpen}
+        onOpenChange={setDetailOpen}
+        productId={detailProductId}
+      />
     </div>
   );
 }
