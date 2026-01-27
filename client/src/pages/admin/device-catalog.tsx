@@ -14,7 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { 
   Smartphone, Tablet, Laptop, Monitor, Tv, Watch, Gamepad2, Headphones, Printer,
-  Plus, Pencil, Trash2, Loader2, Search, ChevronRight, ChevronDown, Building2, Package
+  Plus, Pencil, Trash2, Loader2, Search, ChevronRight, ChevronDown, Building2, Package, X
 } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -52,7 +52,8 @@ export default function AdminDeviceCatalog() {
 
   const [modelDialogOpen, setModelDialogOpen] = useState(false);
   const [editingModel, setEditingModel] = useState<DeviceModel | null>(null);
-  const [modelForm, setModelForm] = useState({ modelName: "", brandId: "", typeId: "", marketCode: "" });
+  const [modelForm, setModelForm] = useState({ modelName: "", brandId: "", typeId: "", marketCodes: [] as string[] });
+  const [newMarketCode, setNewMarketCode] = useState("");
   const [deleteModelDialogOpen, setDeleteModelDialogOpen] = useState(false);
   const [modelToDelete, setModelToDelete] = useState<DeviceModel | null>(null);
   const [modelBrandFilter, setModelBrandFilter] = useState<string>("all");
@@ -181,13 +182,14 @@ export default function AdminDeviceCatalog() {
   });
 
   const createModelMutation = useMutation({
-    mutationFn: async (data: { modelName: string; brandId?: string; typeId?: string; marketCode?: string }) => {
+    mutationFn: async (data: { modelName: string; brandId?: string; typeId?: string; marketCodes?: string[] }) => {
       return apiRequest("POST", "/api/admin/device-models", data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/device-models"] });
       setModelDialogOpen(false);
-      setModelForm({ modelName: "", brandId: "", typeId: "", marketCode: "" });
+      setModelForm({ modelName: "", brandId: "", typeId: "", marketCodes: [] });
+      setNewMarketCode("");
       toast({ title: "Modello creato" });
     },
     onError: (error: any) => {
@@ -203,7 +205,8 @@ export default function AdminDeviceCatalog() {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/device-models"] });
       setModelDialogOpen(false);
       setEditingModel(null);
-      setModelForm({ modelName: "", brandId: "", typeId: "", marketCode: "" });
+      setModelForm({ modelName: "", brandId: "", typeId: "", marketCodes: [] });
+      setNewMarketCode("");
       toast({ title: "Modello aggiornato" });
     },
     onError: (error: any) => {
@@ -264,12 +267,13 @@ export default function AdminDeviceCatalog() {
         modelName: model.modelName, 
         brandId: model.brandId || "", 
         typeId: model.typeId || "",
-        marketCode: model.marketCode || ""
+        marketCodes: model.marketCodes || []
       });
     } else {
       setEditingModel(null);
-      setModelForm({ modelName: "", brandId: "", typeId: "", marketCode: "" });
+      setModelForm({ modelName: "", brandId: "", typeId: "", marketCodes: [] });
     }
+    setNewMarketCode("");
     setModelDialogOpen(true);
   };
 
@@ -556,7 +560,18 @@ export default function AdminDeviceCatalog() {
                         return (
                           <TableRow key={model.id} data-testid={`row-model-${model.id}`}>
                             <TableCell className="text-muted-foreground">
-                              {model.marketCode || "-"}
+                              {model.marketCodes && model.marketCodes.length > 0 ? (
+                                <div className="flex flex-wrap gap-1">
+                                  {model.marketCodes.slice(0, 3).map((code, idx) => (
+                                    <span key={idx} className="inline-flex items-center px-1.5 py-0.5 rounded text-xs bg-muted">
+                                      {code}
+                                    </span>
+                                  ))}
+                                  {model.marketCodes.length > 3 && (
+                                    <span className="text-xs text-muted-foreground">+{model.marketCodes.length - 3}</span>
+                                  )}
+                                </div>
+                              ) : "-"}
                             </TableCell>
                             <TableCell>
                               <span className="font-medium">{model.modelName}</span>
@@ -830,14 +845,70 @@ export default function AdminDeviceCatalog() {
               </Select>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="model-code">Codice Mercato</Label>
-              <Input
-                id="model-code"
-                value={modelForm.marketCode}
-                onChange={(e) => setModelForm({ ...modelForm, marketCode: e.target.value })}
-                placeholder="es. A2894, SM-S921B..."
-                data-testid="input-model-code"
-              />
+              <Label>Codici Mercato</Label>
+              {modelForm.marketCodes.length > 0 && (
+                <div className="flex flex-wrap gap-1 mb-2">
+                  {modelForm.marketCodes.map((code, idx) => (
+                    <span 
+                      key={idx} 
+                      className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-sm bg-muted"
+                    >
+                      {code}
+                      <button
+                        type="button"
+                        onClick={() => setModelForm({
+                          ...modelForm,
+                          marketCodes: modelForm.marketCodes.filter((_, i) => i !== idx)
+                        })}
+                        className="hover:text-destructive"
+                        data-testid={`button-remove-code-${idx}`}
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </span>
+                  ))}
+                </div>
+              )}
+              <div className="flex gap-2">
+                <Input
+                  id="model-code"
+                  value={newMarketCode}
+                  onChange={(e) => setNewMarketCode(e.target.value.toUpperCase())}
+                  placeholder="es. A2894, SM-S921B..."
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && newMarketCode.trim()) {
+                      e.preventDefault();
+                      if (!modelForm.marketCodes.includes(newMarketCode.trim())) {
+                        setModelForm({
+                          ...modelForm,
+                          marketCodes: [...modelForm.marketCodes, newMarketCode.trim()]
+                        });
+                      }
+                      setNewMarketCode("");
+                    }
+                  }}
+                  data-testid="input-model-code"
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon"
+                  onClick={() => {
+                    if (newMarketCode.trim() && !modelForm.marketCodes.includes(newMarketCode.trim())) {
+                      setModelForm({
+                        ...modelForm,
+                        marketCodes: [...modelForm.marketCodes, newMarketCode.trim()]
+                      });
+                      setNewMarketCode("");
+                    }
+                  }}
+                  disabled={!newMarketCode.trim()}
+                  data-testid="button-add-code"
+                >
+                  <Plus className="h-4 w-4" />
+                </Button>
+              </div>
+              <p className="text-xs text-muted-foreground">Premi Invio o + per aggiungere un codice</p>
             </div>
           </div>
           <DialogFooter>
@@ -849,7 +920,7 @@ export default function AdminDeviceCatalog() {
                 const payload: any = { modelName: modelForm.modelName };
                 if (modelForm.brandId) payload.brandId = modelForm.brandId;
                 if (modelForm.typeId) payload.typeId = modelForm.typeId;
-                if (modelForm.marketCode) payload.marketCode = modelForm.marketCode;
+                if (modelForm.marketCodes.length > 0) payload.marketCodes = modelForm.marketCodes;
                 
                 if (editingModel) {
                   updateModelMutation.mutate({ id: editingModel.id, data: payload });
