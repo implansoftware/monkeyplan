@@ -17880,7 +17880,7 @@ export function registerRoutes(app: Express): Server {
           dm.brand_id as "brandId",
           dm.type_id as "typeId",
           db.name as "brandName",
-          dt.type_name as "typeName"
+          dt.name as "typeName"
         FROM device_models dm
         LEFT JOIN device_brands db ON dm.brand_id = db.id
         LEFT JOIN device_types dt ON dm.type_id = dt.id
