@@ -17863,6 +17863,42 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+
+  // Lookup device by market code - returns type, brand, model info
+  app.get("/api/device-models/by-market-code", requireAuth, async (req, res) => {
+    try {
+      const code = (req.query.code as string)?.trim().toUpperCase();
+      if (!code) {
+        return res.status(400).json({ error: "Codice mercato richiesto" });
+      }
+      
+      // Search in market_codes array using ANY
+      const result = await db.execute(sql`
+        SELECT 
+          dm.id as "modelId",
+          dm.model_name as "modelName",
+          dm.brand_id as "brandId",
+          dm.type_id as "typeId",
+          db.brand_name as "brandName",
+          dt.type_name as "typeName"
+        FROM device_models dm
+        LEFT JOIN device_brands db ON dm.brand_id = db.id
+        LEFT JOIN device_types dt ON dm.type_id = dt.id
+        WHERE ${code} = ANY(dm.market_codes)
+        AND dm.is_active = true
+        LIMIT 1
+      `);
+      
+      if (result.rows.length === 0) {
+        return res.json(null);
+      }
+      
+      res.json(result.rows[0]);
+    } catch (error: any) {
+      console.error("Error looking up device by market code:", error);
+      res.status(500).send(error.message);
+    }
+  });
   // ============ ADMIN DEVICE CATALOG CRUD ============
 
   // List device types (admin only - includes inactive)

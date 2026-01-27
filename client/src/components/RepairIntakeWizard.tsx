@@ -192,6 +192,8 @@ export function RepairIntakeWizard({
   const [diagnosisDataRecoveryRequested, setDiagnosisDataRecoveryRequested] = useState(false);
   const [diagnosisSelectedFindingIds, setDiagnosisSelectedFindingIds] = useState<string[]>([]);
   const [diagnosisSelectedComponentIds, setDiagnosisSelectedComponentIds] = useState<string[]>([]);
+  const [marketCodeInput, setMarketCodeInput] = useState("");
+  const [marketCodeLoading, setMarketCodeLoading] = useState(false);
   const [diagnosisEstimatedTimeId, setDiagnosisEstimatedTimeId] = useState<string>("");
   const [diagnosisSkipPhotos, setDiagnosisSkipPhotos] = useState(true);
   const [diagnosisPhotoIds, setDiagnosisPhotoIds] = useState<string[]>([]);
@@ -275,6 +277,7 @@ export function RepairIntakeWizard({
       setQuoteDialogOpen(false);
       setCollectedDiagnosisData(null);
       setCollectedQuoteData(null);
+      setMarketCodeInput("");
       form.reset();
     }
   }, [open, form]);
@@ -783,6 +786,43 @@ export function RepairIntakeWizard({
     }
   };
 
+
+  // Lookup device by market code
+  const lookupMarketCode = async () => {
+    const code = marketCodeInput.trim();
+    if (!code) {
+      toast({ variant: "destructive", title: "Inserisci un codice mercato" });
+      return;
+    }
+    setMarketCodeLoading(true);
+    try {
+      const res = await fetch(`/api/device-models/by-market-code?code=${encodeURIComponent(code)}`);
+      if (!res.ok) throw new Error("Errore nella ricerca");
+      const data = await res.json();
+      if (!data) {
+        toast({ variant: "destructive", title: "Codice non trovato", description: `Nessun dispositivo con codice ${code}` });
+        return;
+      }
+      // Populate form fields
+      if (data.typeId) {
+        form.setValue("deviceType", data.typeId);
+        setSelectedTypeId(data.typeId);
+      }
+      if (data.brandId) {
+        form.setValue("deviceBrandId", data.brandId);
+        setSelectedBrandId(data.brandId);
+      }
+      if (data.modelId) {
+        form.setValue("deviceModelId", data.modelId);
+        form.setValue("deviceModel", data.modelName || "");
+      }
+      toast({ title: "Dispositivo trovato", description: `${data.typeName || ""} ${data.brandName || ""} ${data.modelName || ""}`.trim() });
+    } catch (error) {
+      toast({ variant: "destructive", title: "Errore", description: "Impossibile cercare il codice mercato" });
+    } finally {
+      setMarketCodeLoading(false);
+    }
+  };
   const handleSubmit = () => {
     form.handleSubmit((data) => {
       createMutation.mutate(data);
@@ -1468,6 +1508,31 @@ export function RepairIntakeWizard({
                   />
                 )}
 
+
+                {/* Market Code Lookup */}
+                <div className="space-y-2">
+                  <Label>Codice Mercato (opzionale)</Label>
+                  <div className="flex gap-2">
+                    <Input
+                      placeholder="es. A2633, SM-G998B"
+                      value={marketCodeInput}
+                      onChange={(e) => setMarketCodeInput(e.target.value.toUpperCase())}
+                      onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), lookupMarketCode())}
+                      data-testid="input-market-code-intake"
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={lookupMarketCode}
+                      disabled={marketCodeLoading || !marketCodeInput.trim()}
+                      data-testid="button-lookup-market-code-intake"
+                    >
+                      {marketCodeLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
+                    </Button>
+                  </div>
+                  <p className="text-xs text-muted-foreground">Inserisci il codice mercato per auto-compilare tipo, marca e modello</p>
+                </div>
+
                 {/* IMEI / Serial */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                   <FormField
@@ -1735,6 +1800,7 @@ export function RepairIntakeWizard({
                               className="text-destructive hover:text-destructive"
                               onClick={() => {
                                 setCollectedQuoteData(null);
+      setMarketCodeInput("");
                                 setCreateQuoteNow(false);
                               }}
                               data-testid="button-remove-quote"

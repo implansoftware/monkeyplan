@@ -35,7 +35,7 @@ import {
   Monitor, Battery, Volume2, Thermometer, Cpu, HardDrive, Usb, Wifi, Power, Zap, Fan, Bug, Settings, MoreHorizontal,
   Headphones, Keyboard, Mouse, Cable, BatteryCharging, Briefcase, Watch, Tablet, Laptop, Gamepad2, Printer,
   MonitorSmartphone, CircleDot, Square, Grid3X3, Link2, PenTool, PackageOpen, Shield, AlertTriangle, CircleSlash,
-  Bluetooth, PowerOff, PlugZap, MemoryStick, Disc, Server, Router, Fingerprint, Eye, Mic, Speaker, Vibrate, Tag, Tv
+  Bluetooth, PowerOff, PlugZap, MemoryStick, Disc, Server, Router, Fingerprint, Eye, Mic, Speaker, Vibrate, Tag, Tv, Search
 } from "lucide-react";
 import { 
   SiApple, SiSamsung, SiHuawei, SiXiaomi, SiSony, SiLg, SiLenovo, SiDell, SiHp, SiAsus,
@@ -271,6 +271,8 @@ export function AcceptanceWizardDialog({
   const [uploadSessionId] = useState(() => crypto.randomUUID());
   const [diagnosisUnrepairableReasonId, setDiagnosisUnrepairableReasonId] = useState<string>("");
   const [diagnosisSuggestedPromotionIds, setDiagnosisSuggestedPromotionIds] = useState<string[]>([]);
+  const [marketCodeInput, setMarketCodeInput] = useState("");
+  const [marketCodeLoading, setMarketCodeLoading] = useState(false);
   const [newCustomerData, setNewCustomerData] = useState({
     customerType: "private" as "private" | "company",
     fullName: "",
@@ -926,6 +928,43 @@ export function AcceptanceWizardDialog({
     }
   };
 
+
+  // Lookup device by market code
+  const lookupMarketCode = async () => {
+    const code = marketCodeInput.trim();
+    if (!code) {
+      toast({ variant: "destructive", title: "Inserisci un codice mercato" });
+      return;
+    }
+    setMarketCodeLoading(true);
+    try {
+      const res = await fetch(`/api/device-models/by-market-code?code=${encodeURIComponent(code)}`);
+      if (!res.ok) throw new Error("Errore nella ricerca");
+      const data = await res.json();
+      if (!data) {
+        toast({ variant: "destructive", title: "Codice non trovato", description: `Nessun dispositivo con codice ${code}` });
+        return;
+      }
+      // Populate form fields
+      if (data.typeId) {
+        form.setValue("deviceType", data.typeId);
+        setSelectedTypeId(data.typeId);
+      }
+      if (data.brandId) {
+        form.setValue("deviceBrandId", data.brandId);
+        setSelectedBrandId(data.brandId);
+      }
+      if (data.modelId) {
+        form.setValue("deviceModelId", data.modelId);
+        form.setValue("deviceModel", data.modelName || "");
+      }
+      toast({ title: "Dispositivo trovato", description: `${data.typeName || ""} ${data.brandName || ""} ${data.modelName || ""}`.trim() });
+    } catch (error) {
+      toast({ variant: "destructive", title: "Errore", description: "Impossibile cercare il codice mercato" });
+    } finally {
+      setMarketCodeLoading(false);
+    }
+  };
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     // Only submit if we're on the review step
@@ -984,6 +1023,7 @@ export function AcceptanceWizardDialog({
     setDiagnosisUnrepairableReasonId("");
     setDiagnosisSuggestedPromotionIds([]);
     setSelectedQuoteWarehouseId("");
+    setMarketCodeInput("");
     // Cleanup photo previews
     acceptancePhotos.forEach(photo => URL.revokeObjectURL(photo.preview));
     setAcceptancePhotos([]);
@@ -1724,6 +1764,31 @@ export function AcceptanceWizardDialog({
           );
         }}
       />
+
+
+      {/* Market Code Lookup */}
+      <div className="space-y-2">
+        <Label>Codice Mercato (opzionale)</Label>
+        <div className="flex gap-2">
+          <Input
+            placeholder="es. A2633, SM-G998B"
+            value={marketCodeInput}
+            onChange={(e) => setMarketCodeInput(e.target.value.toUpperCase())}
+            onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), lookupMarketCode())}
+            data-testid="input-market-code"
+          />
+          <Button
+            type="button"
+            variant="outline"
+            onClick={lookupMarketCode}
+            disabled={marketCodeLoading || !marketCodeInput.trim()}
+            data-testid="button-lookup-market-code"
+          >
+            {marketCodeLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
+          </Button>
+        </div>
+        <p className="text-xs text-muted-foreground">Inserisci il codice mercato per auto-compilare tipo, marca e modello</p>
+      </div>
 
       <Separator />
 
