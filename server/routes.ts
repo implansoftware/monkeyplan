@@ -5477,7 +5477,7 @@ export function registerRoutes(app: Express): Server {
   // ============================================================================
 
   // List all staff members for this reseller
-  app.get("/api/reseller/team", requireRole("reseller"), async (req, res) => {
+  app.get("/api/reseller/team", requireRole("reseller", "reseller_staff"), async (req, res) => {
     try {
       if (!req.user) return res.status(401).send("Non autorizzato");
       
