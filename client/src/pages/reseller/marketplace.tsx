@@ -465,6 +465,8 @@ export default function ResellerMarketplace() {
         open={detailOpen}
         onOpenChange={setDetailOpen}
         productId={detailProductId}
+        hideStock
+        hidePrices
       />
     </div>
   );

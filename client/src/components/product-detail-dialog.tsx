@@ -70,9 +70,11 @@ interface ProductDetailDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   productId: string | null;
+  hideStock?: boolean;
+  hidePrices?: boolean;
 }
 
-export function ProductDetailDialog({ open, onOpenChange, productId }: ProductDetailDialogProps) {
+export function ProductDetailDialog({ open, onOpenChange, productId, hideStock = false, hidePrices = false }: ProductDetailDialogProps) {
   const { data, isLoading } = useQuery<ProductDetails>({
     queryKey: ["/api/products", productId, "details"],
     queryFn: async () => {
@@ -315,56 +317,60 @@ export function ProductDetailDialog({ open, onOpenChange, productId }: ProductDe
                 </>
               )}
 
-              <Separator />
-              <div>
-                <h3 className="font-medium flex items-center gap-2 mb-3">
-                  <Warehouse className="h-4 w-4" />
-                  Stock Magazzino
-                </h3>
-                {data.stock && data.stock.length > 0 ? (
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Magazzino</TableHead>
-                        <TableHead>Tipo</TableHead>
-                        <TableHead className="text-right">Quantità</TableHead>
-                        <TableHead className="text-right">Min. Stock</TableHead>
-                        <TableHead>Posizione</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {data.stock.map((s) => (
-                        <TableRow key={s.warehouseId}>
-                          <TableCell className="font-medium">{s.warehouseName}</TableCell>
-                          <TableCell>
-                            <Badge variant="outline" className="text-xs">
-                              {OWNER_TYPE_LABELS[s.ownerType] || s.ownerType}
-                            </Badge>
-                          </TableCell>
-                          <TableCell className="text-right">
-                            <Badge variant={s.quantity > 0 ? (s.minStock && s.quantity <= s.minStock ? "destructive" : "default") : "secondary"}>
-                              {s.quantity}
-                            </Badge>
-                          </TableCell>
-                          <TableCell className="text-right text-muted-foreground">
-                            {s.minStock || "-"}
-                          </TableCell>
-                          <TableCell className="flex items-center gap-1 text-muted-foreground">
-                            {s.location ? (
-                              <>
-                                <MapPin className="h-3 w-3" />
-                                {s.location}
-                              </>
-                            ) : "-"}
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                ) : (
-                  <p className="text-sm text-muted-foreground">Nessuno stock registrato per questo prodotto.</p>
-                )}
-              </div>
+              {!hideStock && (
+                <>
+                  <Separator />
+                  <div>
+                    <h3 className="font-medium flex items-center gap-2 mb-3">
+                      <Warehouse className="h-4 w-4" />
+                      Stock Magazzino
+                    </h3>
+                    {data.stock && data.stock.length > 0 ? (
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Magazzino</TableHead>
+                            <TableHead>Tipo</TableHead>
+                            <TableHead className="text-right">Quantità</TableHead>
+                            <TableHead className="text-right">Min. Stock</TableHead>
+                            <TableHead>Posizione</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {data.stock.map((s) => (
+                            <TableRow key={s.warehouseId}>
+                              <TableCell className="font-medium">{s.warehouseName}</TableCell>
+                              <TableCell>
+                                <Badge variant="outline" className="text-xs">
+                                  {OWNER_TYPE_LABELS[s.ownerType] || s.ownerType}
+                                </Badge>
+                              </TableCell>
+                              <TableCell className="text-right">
+                                <Badge variant={s.quantity > 0 ? (s.minStock && s.quantity <= s.minStock ? "destructive" : "default") : "secondary"}>
+                                  {s.quantity}
+                                </Badge>
+                              </TableCell>
+                              <TableCell className="text-right text-muted-foreground">
+                                {s.minStock || "-"}
+                              </TableCell>
+                              <TableCell className="flex items-center gap-1 text-muted-foreground">
+                                {s.location ? (
+                                  <>
+                                    <MapPin className="h-3 w-3" />
+                                    {s.location}
+                                  </>
+                                ) : "-"}
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    ) : (
+                      <p className="text-sm text-muted-foreground">Nessuno stock registrato per questo prodotto.</p>
+                    )}
+                  </div>
+                </>
+              )}
 
               {data.compatibilities && data.compatibilities.length > 0 && (
                 <>
@@ -390,7 +396,7 @@ export function ProductDetailDialog({ open, onOpenChange, productId }: ProductDe
                 </>
               )}
 
-              {data.prices && data.prices.length > 0 && (
+              {!hidePrices && data.prices && data.prices.length > 0 && (
                 <>
                   <Separator />
                   <div>
