@@ -541,10 +541,10 @@ export default function AdminDeviceCatalog() {
                   <Table>
                     <TableHeader>
                       <TableRow>
+                        <TableHead>Codice Mercato</TableHead>
                         <TableHead>Modello</TableHead>
                         <TableHead>Marca</TableHead>
                         <TableHead>Tipo</TableHead>
-                        <TableHead>Codice</TableHead>
                         <TableHead>Stato</TableHead>
                         <TableHead className="text-right">Azioni</TableHead>
                       </TableRow>
@@ -555,6 +555,9 @@ export default function AdminDeviceCatalog() {
                         const type = deviceTypes.find(t => t.id === model.typeId);
                         return (
                           <TableRow key={model.id} data-testid={`row-model-${model.id}`}>
+                            <TableCell className="text-muted-foreground">
+                              {model.marketCode || "-"}
+                            </TableCell>
                             <TableCell>
                               <span className="font-medium">{model.modelName}</span>
                             </TableCell>
@@ -563,9 +566,6 @@ export default function AdminDeviceCatalog() {
                             </TableCell>
                             <TableCell>
                               {type?.name || model.deviceClass || "-"}
-                            </TableCell>
-                            <TableCell className="text-muted-foreground">
-                              {model.marketCode || "-"}
                             </TableCell>
                             <TableCell>
                               <Switch
