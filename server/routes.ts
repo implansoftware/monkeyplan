@@ -5955,8 +5955,18 @@ export function registerRoutes(app: Express): Server {
       const resellerId = req.user.role === 'reseller' ? req.user.id : req.user.resellerId;
       if (!resellerId) return res.status(400).send("Rivenditore non trovato");
       
-      const { modelName, brandId, typeId, photoUrl } = req.body;
+      const { modelName, brandId, typeId, photoUrl, marketCodes } = req.body;
       if (!modelName) return res.status(400).send("Nome modello obbligatorio");
+      
+      // Check for duplicate market codes
+      if (marketCodes && marketCodes.length > 0) {
+        const duplicateCheck = await checkMarketCodeDuplicates(marketCodes);
+        if (duplicateCheck.isDuplicate) {
+          return res.status(400).json({
+            error: `Codice mercato "${duplicateCheck.conflictingCode}" già assegnato al modello "${duplicateCheck.conflictingModel}"`
+          });
+        }
+      }
       
       // Inserisce direttamente in device_models con resellerId per compatibilità FK
       const model = await storage.createDeviceModel({
@@ -5965,6 +5975,7 @@ export function registerRoutes(app: Express): Server {
         typeId: typeId || null,
         resellerId, // Marca il modello come proprietà del reseller
         photoUrl: photoUrl || null,
+        marketCodes: marketCodes || null,
         isActive: true
       });
       
@@ -5974,7 +5985,6 @@ export function registerRoutes(app: Express): Server {
       res.status(400).send(error.message);
     }
   });
-
   // Update a custom model
   app.patch("/api/reseller/device-models/:id", requireRole("reseller", "reseller_staff"), async (req, res) => {
     try {
@@ -5990,7 +6000,18 @@ export function registerRoutes(app: Express): Server {
         return res.status(404).send("Modello non trovato");
       }
       
-      const { modelName, brandId, resellerBrandId, brandName, typeId, photoUrl, isActive } = req.body;
+      const { modelName, brandId, resellerBrandId, brandName, typeId, photoUrl, isActive, marketCodes } = req.body;
+      
+      // Check for duplicate market codes (excluding current model)
+      if (marketCodes && marketCodes.length > 0) {
+        const duplicateCheck = await checkMarketCodeDuplicates(marketCodes, modelId);
+        if (duplicateCheck.isDuplicate) {
+          return res.status(400).json({
+            error: `Codice mercato "${duplicateCheck.conflictingCode}" già assegnato al modello "${duplicateCheck.conflictingModel}"`
+          });
+        }
+      }
+      
       const updated = await storage.updateResellerDeviceModel(modelId, {
         ...(modelName !== undefined && { modelName }),
         ...(brandId !== undefined && { brandId }),
@@ -5998,7 +6019,8 @@ export function registerRoutes(app: Express): Server {
         ...(brandName !== undefined && { brandName }),
         ...(typeId !== undefined && { typeId }),
         ...(photoUrl !== undefined && { photoUrl }),
-        ...(isActive !== undefined && { isActive })
+        ...(isActive !== undefined && { isActive }),
+        ...(marketCodes !== undefined && { marketCodes })
       });
       
       setActivityEntity(res, { type: 'reseller_device_model', id: modelId });
@@ -6007,7 +6029,6 @@ export function registerRoutes(app: Express): Server {
       res.status(400).send(error.message);
     }
   });
-
   // Delete a custom model
   app.delete("/api/reseller/device-models/:id", requireRole("reseller", "reseller_staff"), async (req, res) => {
     try {
@@ -17864,6 +17885,43 @@ export function registerRoutes(app: Express): Server {
   });
 
 
+  // ============ MARKET CODE VALIDATION HELPER ============
+  
+  // Helper function to check for duplicate market codes
+  async function checkMarketCodeDuplicates(
+    codes: string[], 
+    excludeModelId?: string
+  ): Promise<{ isDuplicate: boolean; conflictingCode?: string; conflictingModel?: string }> {
+    if (!codes || codes.length === 0) {
+      return { isDuplicate: false };
+    }
+    
+    for (const code of codes) {
+      const upperCode = code.trim().toUpperCase();
+      if (!upperCode) continue;
+      
+      const result = await db.execute(sql`
+        SELECT dm.id, dm.model_name
+        FROM device_models dm
+        WHERE ${upperCode} = ANY(dm.market_codes)
+        ${excludeModelId ? sql`AND dm.id != ${excludeModelId}` : sql``}
+        LIMIT 1
+      `);
+      
+      if (result.rows.length > 0) {
+        const row = result.rows[0] as { id: string; model_name: string };
+        return {
+          isDuplicate: true,
+          conflictingCode: upperCode,
+          conflictingModel: row.model_name
+        };
+      }
+    }
+    
+    return { isDuplicate: false };
+  }
+
+
   // Lookup device by market code - returns type, brand, model info
   app.get("/api/device-models/by-market-code", requireAuth, async (req, res) => {
     try {
@@ -17872,7 +17930,7 @@ export function registerRoutes(app: Express): Server {
         return res.status(400).json({ error: "Codice mercato richiesto" });
       }
       
-      // Search in market_codes array using ANY
+      // Search in market_codes array using ANY - get ALL matches to detect conflicts
       const result = await db.execute(sql`
         SELECT 
           dm.id as "modelId",
@@ -17886,11 +17944,20 @@ export function registerRoutes(app: Express): Server {
         LEFT JOIN device_types dt ON dm.type_id = dt.id
         WHERE ${code} = ANY(dm.market_codes)
         AND dm.is_active = true
-        LIMIT 1
       `);
       
       if (result.rows.length === 0) {
         return res.json(null);
+      }
+      
+      // If multiple matches, signal conflict
+      if (result.rows.length > 1) {
+        const models = result.rows.map((r: any) => r.modelName).join(", ");
+        return res.status(409).json({
+          error: `Conflitto: codice mercato "${code}" assegnato a più dispositivi: ${models}`,
+          conflict: true,
+          matches: result.rows
+        });
       }
       
       res.json(result.rows[0]);
@@ -17899,8 +17966,6 @@ export function registerRoutes(app: Express): Server {
       res.status(500).send(error.message);
     }
   });
-  // ============ ADMIN DEVICE CATALOG CRUD ============
-
   // List device types (admin only - includes inactive)
   app.get("/api/admin/device-types", requireRole("admin"), async (req, res) => {
     try {
@@ -18004,6 +18069,17 @@ export function registerRoutes(app: Express): Server {
   app.post("/api/admin/device-models", requireRole("admin"), async (req, res) => {
     try {
       const validated = insertDeviceModelSchema.parse(req.body);
+      
+      // Check for duplicate market codes
+      if (validated.marketCodes && validated.marketCodes.length > 0) {
+        const duplicateCheck = await checkMarketCodeDuplicates(validated.marketCodes);
+        if (duplicateCheck.isDuplicate) {
+          return res.status(400).json({
+            error: `Codice mercato "${duplicateCheck.conflictingCode}" già assegnato al modello "${duplicateCheck.conflictingModel}"`
+          });
+        }
+      }
+      
       const deviceModel = await storage.createDeviceModel(validated);
       res.status(201).json(deviceModel);
     } catch (error: any) {
@@ -18011,10 +18087,22 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+
   // Update device model (admin only)
   app.patch("/api/admin/device-models/:id", requireRole("admin"), async (req, res) => {
     try {
       const updates = insertDeviceModelSchema.partial().parse(req.body);
+      
+      // Check for duplicate market codes (excluding current model)
+      if (updates.marketCodes && updates.marketCodes.length > 0) {
+        const duplicateCheck = await checkMarketCodeDuplicates(updates.marketCodes, req.params.id);
+        if (duplicateCheck.isDuplicate) {
+          return res.status(400).json({
+            error: `Codice mercato "${duplicateCheck.conflictingCode}" già assegnato al modello "${duplicateCheck.conflictingModel}"`
+          });
+        }
+      }
+      
       const deviceModel = await storage.updateDeviceModel(req.params.id, updates);
       res.json(deviceModel);
     } catch (error: any) {
