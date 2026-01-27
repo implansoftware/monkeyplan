@@ -781,9 +781,9 @@ export function AppSidebar() {
                     <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform duration-200 ${isOpen ? "" : "-rotate-90"}`} />
                   </SidebarMenuButton>
                 </CollapsibleTrigger>
-                <CollapsibleContent>
-                  <SidebarGroupContent>
-                    <SidebarMenu className="ml-7 mt-1.5 border-l border-sidebar-border/40 pl-0.5">
+                <CollapsibleContent className="overflow-visible">
+                  <SidebarGroupContent className="overflow-visible">
+                    <SidebarMenu className="ml-7 mt-1.5 border-l border-sidebar-border/40 pl-0.5 overflow-visible">
                       {groupItems.map((item) => {
                         const isActive = location === item.url || location.startsWith(item.url + "/");
                         const showTransferBadge = item.url === "/reseller/transfer-requests" && pendingTransferRequestsCount > 0;
@@ -797,7 +797,7 @@ export function AppSidebar() {
                             <SidebarMenuButton 
                               asChild 
                               isActive={isActive} 
-                              className={`pl-3 py-2 rounded-lg overflow-visible ${isActive ? "bg-gradient-to-r from-emerald-500/10 to-teal-500/10 text-emerald-600 dark:text-emerald-400 font-medium" : "text-muted-foreground hover-elevate"}`}
+                              className={`pl-3 py-2 rounded-lg !overflow-visible ${isActive ? "bg-gradient-to-r from-emerald-500/10 to-teal-500/10 text-emerald-600 dark:text-emerald-400 font-medium" : "text-muted-foreground hover-elevate"}`}
                             >
                               <Link 
                                 href={item.url} 
