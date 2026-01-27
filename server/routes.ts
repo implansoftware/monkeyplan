@@ -3813,7 +3813,7 @@ export function registerRoutes(app: Express): Server {
       const { startDate, endDate, status, centerId } = req.query;
 
       // Create workbook
-      const workbook = new ExcelJS.Workbook();
+      const workbook = new ExcelJSModule.default.Workbook();
       workbook.creator = 'MonkeyPlan Admin';
       workbook.created = new Date();
 
@@ -5028,7 +5028,7 @@ export function registerRoutes(app: Express): Server {
       const centerMap = new Map(repairCenters.map(c => [c.id, c.name]));
       
       // Create workbook
-      const workbook = new ExcelJS.Workbook();
+      const workbook = new ExcelJSModule.default.Workbook();
       workbook.creator = 'MonkeyPlan Reseller';
       workbook.created = new Date();
       
@@ -16000,8 +16000,8 @@ export function registerRoutes(app: Express): Server {
       
       // If Excel export requested
       if (req.query.format === 'excel') {
-        const ExcelJS = await import('exceljs');
-        const workbook = new ExcelJS.Workbook();
+        const ExcelJSModule = await import('exceljs');
+        const workbook = new ExcelJSModule.default.Workbook();
         const worksheet = workbook.addWorksheet('Riparazioni');
         
         worksheet.columns = [
@@ -16052,8 +16052,8 @@ export function registerRoutes(app: Express): Server {
       
       // If Excel export requested
       if (req.query.format === 'excel') {
-        const ExcelJS = await import('exceljs');
-        const workbook = new ExcelJS.Workbook();
+        const ExcelJSModule = await import('exceljs');
+        const workbook = new ExcelJSModule.default.Workbook();
         const worksheet = workbook.addWorksheet('Movimenti Inventario');
         
         worksheet.columns = [
@@ -18131,8 +18131,8 @@ export function registerRoutes(app: Express): Server {
         return res.status(400).json({ error: "File Excel richiesto" });
       }
 
-      const ExcelJS = await import('exceljs');
-      const workbook = new ExcelJS.Workbook();
+      const ExcelJSModule = await import('exceljs');
+      const workbook = new ExcelJSModule.default.Workbook();
       await workbook.xlsx.load(req.file.buffer);
       const worksheet = workbook.worksheets[0];
 
@@ -33507,7 +33507,7 @@ export function registerRoutes(app: Express): Server {
         
       } else if (format === 'xlsx') {
         // Generate XLSX
-        const workbook = new ExcelJS.Workbook();
+        const workbook = new ExcelJSModule.default.Workbook();
         workbook.creator = 'MonkeyPlan POS';
         workbook.created = new Date();
         
@@ -35181,7 +35181,7 @@ export function registerRoutes(app: Express): Server {
         res.setHeader('Content-Disposition', `attachment; filename="sessioni_rete_${new Date().toISOString().split('T')[0]}.csv"`);
         res.send('\ufeff' + csv);
       } else if (format === 'xlsx') {
-        const workbook = new ExcelJS.Workbook();
+        const workbook = new ExcelJSModule.default.Workbook();
         workbook.creator = 'MonkeyPlan POS';
         const worksheet = workbook.addWorksheet('Sessioni Rete');
         worksheet.addRow(stableHeaders);
@@ -35281,7 +35281,7 @@ export function registerRoutes(app: Express): Server {
         res.setHeader('Content-Disposition', `attachment; filename="vendite_rete_${new Date().toISOString().split('T')[0]}.csv"`);
         res.send('\ufeff' + csv);
       } else if (format === 'xlsx') {
-        const workbook = new ExcelJS.Workbook();
+        const workbook = new ExcelJSModule.default.Workbook();
         workbook.creator = 'MonkeyPlan POS';
         const worksheet = workbook.addWorksheet('Vendite Rete');
         worksheet.addRow(stableHeaders);
