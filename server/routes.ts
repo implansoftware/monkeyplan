@@ -28614,6 +28614,19 @@ export function registerRoutes(app: Express): Server {
         });
       }
       
+      
+      // Notify seller about new order
+      const buyer = await storage.getUser(req.user.id);
+      const buyerName = buyer?.fullName || buyer?.username || 'Rivenditore';
+      const itemCount = validatedItems.reduce((sum, i) => sum + i.quantity, 0);
+      
+      await storage.createNotification({
+        userId: sellerResellerId,
+        type: 'system',
+        title: 'Nuovo ordine Marketplace',
+        message: `${buyerName} ha effettuato un ordine di ${itemCount} prodotti per ${(subtotal / 100).toFixed(2)} €. Ordine #${order.orderNumber}`,
+        data: JSON.stringify({ orderId: order.id, orderNumber: order.orderNumber, buyerId: req.user.id }),
+      });
       const createdItems = await storage.listMarketplaceOrderItems(order.id);
       res.json({ ...order, items: createdItems });
     } catch (error: any) {
