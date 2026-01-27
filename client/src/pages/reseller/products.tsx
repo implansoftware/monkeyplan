@@ -535,8 +535,8 @@ export default function ResellerProducts() {
           id: c.id,
           deviceBrandId: c.deviceBrandId,
           deviceModelId: c.deviceModelId,
-          brandName: c.brandName,
-          modelName: c.modelName
+          brandName: c.deviceBrandName || c.brandName,
+          modelName: c.deviceModelName || c.modelName
         })));
       } else {
         setEditDeviceCompatibilities([]);
