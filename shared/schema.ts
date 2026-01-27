@@ -1497,7 +1497,7 @@ export const deviceModels = pgTable("device_models", {
   resellerId: varchar("reseller_id").references(() => users.id), // null = modello globale, valorizzato = modello custom del reseller
   brand: text("brand"), // Legacy text column (kept for backward compatibility)
   deviceClass: text("device_class"), // Legacy text column (kept for backward compatibility)
-  marketCode: text("market_code"), // Codice markettario
+  marketCodes: text("market_codes").array(), // Codici markettari (multipli per varianti regionali)
   photoUrl: text("photo_url"), // URL foto dispositivo (da API o manuale)
   isActive: boolean("is_active").notNull().default(true), // Soft delete flag
   createdAt: timestamp("created_at").notNull().defaultNow(),
