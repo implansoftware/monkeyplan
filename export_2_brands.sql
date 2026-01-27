@@ -1,0 +1,20 @@
+-- STEP 2: Device Brands
+INSERT INTO device_brands (id, name, is_active) VALUES ('79127b7e-4b20-47a9-99b2-c06bd6ac37ff', 'Dell', true) ON CONFLICT (id) DO NOTHING;
+INSERT INTO device_brands (id, name, is_active) VALUES ('7aabfa6e-34ff-4cc3-af18-f6e8f9b3351a', 'Samsung', true) ON CONFLICT (id) DO NOTHING;
+INSERT INTO device_brands (id, name, is_active) VALUES ('9058ab00-9307-4371-8930-8a822cc7082e', 'Huawei', true) ON CONFLICT (id) DO NOTHING;
+INSERT INTO device_brands (id, name, is_active) VALUES ('c9d61691-fe87-4617-9a0c-829dea058770', 'Google', true) ON CONFLICT (id) DO NOTHING;
+INSERT INTO device_brands (id, name, is_active) VALUES ('c939d4bd-c11e-42a2-b7d3-29ac6d77c336', 'OnePlus', true) ON CONFLICT (id) DO NOTHING;
+INSERT INTO device_brands (id, name, is_active) VALUES ('f8bba6d5-02e1-467d-a5cc-681dabe77e89', 'Lenovo', true) ON CONFLICT (id) DO NOTHING;
+INSERT INTO device_brands (id, name, is_active) VALUES ('5c5ebccc-71cd-44de-b8be-37af1b92a515', 'Motorola', true) ON CONFLICT (id) DO NOTHING;
+INSERT INTO device_brands (id, name, is_active) VALUES ('160062cd-5316-43cf-96de-69c595f6403a', 'realme', true) ON CONFLICT (id) DO NOTHING;
+INSERT INTO device_brands (id, name, is_active) VALUES ('ee33f1e3-c363-416d-a216-51e1ea12362c', 'OPPO', true) ON CONFLICT (id) DO NOTHING;
+INSERT INTO device_brands (id, name, is_active) VALUES ('d571bd0b-5d65-4770-8381-8f2c1d612302', 'vivo', true) ON CONFLICT (id) DO NOTHING;
+INSERT INTO device_brands (id, name, is_active) VALUES ('cbe016ed-2862-495f-9b8d-1c1db1341548', 'Sony', true) ON CONFLICT (id) DO NOTHING;
+INSERT INTO device_brands (id, name, is_active) VALUES ('ad777972-7eba-47f8-a471-c41659da0514', 'Apple', true) ON CONFLICT (id) DO NOTHING;
+INSERT INTO device_brands (id, name, is_active) VALUES ('7937fb6e-7866-45c2-b8a2-13963a0408eb', 'Xiaomi', true) ON CONFLICT (id) DO NOTHING;
+INSERT INTO device_brands (id, name, is_active) VALUES ('b3fc3d98-679d-4748-a37a-02852f6c31d3', 'Microsoft', true) ON CONFLICT (id) DO NOTHING;
+INSERT INTO device_brands (id, name, is_active) VALUES ('e918ff0b-5d39-483d-a905-0e353d1dba8a', 'Acer', true) ON CONFLICT (id) DO NOTHING;
+INSERT INTO device_brands (id, name, is_active) VALUES ('746e18aa-9e4b-4bf7-98ea-ad2cacd2a4dc', 'HP', true) ON CONFLICT (id) DO NOTHING;
+INSERT INTO device_brands (id, name, is_active) VALUES ('f31d071e-c5d7-4562-a4b0-21e1292e5484', 'ZTE', true) ON CONFLICT (id) DO NOTHING;
+INSERT INTO device_brands (id, name, is_active) VALUES ('050177fa-4bd0-4724-b0d7-c9de54932cd9', 'LG', true) ON CONFLICT (id) DO NOTHING;
+INSERT INTO device_brands (id, name, is_active) VALUES ('de941763-a469-42e1-8709-fbbc71444668', 'Asus', true) ON CONFLICT (id) DO NOTHING;
