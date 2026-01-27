@@ -14,7 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { 
   Smartphone, Tablet, Laptop, Monitor, Tv, Watch, Gamepad2, Headphones, Printer,
-  Plus, Pencil, Trash2, Loader2, Search, ChevronRight, ChevronDown, Building2, Package, X
+  Plus, Pencil, Trash2, Loader2, Search, ChevronRight, ChevronDown, Building2, Package, X, FileUp, CheckCircle2, AlertCircle
 } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -58,6 +58,12 @@ export default function AdminDeviceCatalog() {
   const [modelToDelete, setModelToDelete] = useState<DeviceModel | null>(null);
   const [modelBrandFilter, setModelBrandFilter] = useState<string>("all");
   const [modelTypeFilter, setModelTypeFilter] = useState<string>("all");
+
+  // Excel import state
+  const [importDialogOpen, setImportDialogOpen] = useState(false);
+  const [importFile, setImportFile] = useState<File | null>(null);
+  const [importing, setImporting] = useState(false);
+  const [importResult, setImportResult] = useState<{ imported: number; updated: number; skipped: number; errors: string[] } | null>(null);
 
   const { data: deviceTypes = [], isLoading: loadingTypes } = useQuery<DeviceType[]>({
     queryKey: ["/api/admin/device-types"],
@@ -277,6 +283,50 @@ export default function AdminDeviceCatalog() {
     setModelDialogOpen(true);
   };
 
+
+  const handleImportExcel = async () => {
+    if (!importFile) return;
+    
+    setImporting(true);
+    setImportResult(null);
+    
+    try {
+      const formData = new FormData();
+      formData.append("file", importFile);
+      
+      const response = await fetch("/api/admin/device-models/import-excel", {
+        method: "POST",
+        body: formData,
+        credentials: "include"
+      });
+      
+      const result = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(result.error || "Errore durante import");
+      }
+      
+      setImportResult(result);
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/device-models"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/device-types"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/device-brands"] });
+      
+      if (result.imported > 0 || result.updated > 0) {
+        toast({
+          title: "Importazione completata",
+          description: "Importati: " + result.imported + ", Aggiornati: " + result.updated + (result.skipped > 0 ? ", Saltati: " + result.skipped : "")
+        });
+      }
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Errore",
+        description: error.message
+      });
+    } finally {
+      setImporting(false);
+    }
+  };
   const filteredTypes = deviceTypes.filter(t => 
     t.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
@@ -531,10 +581,16 @@ export default function AdminDeviceCatalog() {
                     </SelectContent>
                   </Select>
                 </div>
-                <Button onClick={() => openModelDialog()} data-testid="button-add-model">
-                  <Plus className="h-4 w-4 mr-2" />
-                  Nuovo Modello
-                </Button>
+                <div className="flex gap-2">
+                  <Button variant="outline" onClick={() => setImportDialogOpen(true)} data-testid="button-import-excel">
+                    <FileUp className="h-4 w-4 mr-2" />
+                    Importa Excel
+                  </Button>
+                  <Button onClick={() => openModelDialog()} data-testid="button-add-model">
+                    <Plus className="h-4 w-4 mr-2" />
+                    Nuovo Modello
+                  </Button>
+                </div>
               </div>
               {loadingModels ? (
                 <div className="space-y-2">
@@ -961,6 +1017,90 @@ export default function AdminDeviceCatalog() {
             >
               {deleteModelMutation.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
               Elimina
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Import Excel Dialog */}
+      <Dialog open={importDialogOpen} onOpenChange={(open) => {
+        setImportDialogOpen(open);
+        if (!open) {
+          setImportFile(null);
+          setImportResult(null);
+        }
+      }}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Importa Dispositivi da Excel</DialogTitle>
+            <DialogDescription>
+              Carica un file Excel con colonne: BRAND, Tipo Dispositivo, Modello Commerciale, Modello Market
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>File Excel (.xlsx)</Label>
+              <Input
+                type="file"
+                accept=".xlsx,.xls"
+                onChange={(e) => {
+                  setImportFile(e.target.files?.[0] || null);
+                  setImportResult(null);
+                }}
+                data-testid="input-import-file"
+              />
+            </div>
+            
+            {importResult && (
+              <div className="space-y-2 p-4 rounded-lg bg-muted">
+                <div className="flex items-center gap-2">
+                  <CheckCircle2 className="h-5 w-5 text-green-500" />
+                  <span className="font-medium">Risultato Importazione</span>
+                </div>
+                <div className="grid grid-cols-3 gap-2 text-sm">
+                  <div className="text-center p-2 bg-green-500/10 rounded">
+                    <div className="font-bold text-green-600">{importResult.imported}</div>
+                    <div className="text-muted-foreground">Nuovi</div>
+                  </div>
+                  <div className="text-center p-2 bg-blue-500/10 rounded">
+                    <div className="font-bold text-blue-600">{importResult.updated}</div>
+                    <div className="text-muted-foreground">Aggiornati</div>
+                  </div>
+                  <div className="text-center p-2 bg-yellow-500/10 rounded">
+                    <div className="font-bold text-yellow-600">{importResult.skipped}</div>
+                    <div className="text-muted-foreground">Saltati</div>
+                  </div>
+                </div>
+                {importResult.errors.length > 0 && (
+                  <div className="mt-2">
+                    <div className="flex items-center gap-1 text-sm text-destructive mb-1">
+                      <AlertCircle className="h-4 w-4" />
+                      <span>Errori ({importResult.errors.length})</span>
+                    </div>
+                    <ScrollArea className="h-24 rounded border p-2">
+                      {importResult.errors.map((err, i) => (
+                        <div key={i} className="text-xs text-muted-foreground">{err}</div>
+                      ))}
+                    </ScrollArea>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setImportDialogOpen(false)}>
+              Chiudi
+            </Button>
+            <Button
+              onClick={handleImportExcel}
+              disabled={!importFile || importing}
+              data-testid="button-start-import"
+            >
+              {importing ? (
+                <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Importazione...</>
+              ) : (
+                <><FileUp className="h-4 w-4 mr-2" /> Importa</>
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>

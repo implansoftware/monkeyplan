@@ -115,6 +115,8 @@ const upload = multer({
       'application/pdf',
       'application/msword',
       'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      'application/vnd.ms-excel',
     ];
     
     if (allowedMimes.includes(file.mimetype)) {
@@ -18120,6 +18122,183 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+
+
+  // Import device models from Excel (admin only)
+  app.post("/api/admin/device-models/import-excel", requireRole("admin"), upload.single("file"), async (req, res) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({ error: "File Excel richiesto" });
+      }
+
+      const ExcelJS = require("exceljs");
+      const workbook = new ExcelJS.Workbook();
+      await workbook.xlsx.load(req.file.buffer);
+      const worksheet = workbook.worksheets[0];
+
+      if (!worksheet) {
+        return res.status(400).json({ error: "Nessun foglio trovato nel file Excel" });
+      }
+
+      // Get headers from first row
+      const headers: string[] = [];
+      worksheet.getRow(1).eachCell((cell: any, colNumber: number) => {
+        headers[colNumber - 1] = String(cell.value || "").toLowerCase().trim();
+      });
+
+      // Validate required headers
+      const requiredHeaders = ["brand", "tipo dispositivo", "modello commerciale", "modello market"];
+      const missingHeaders = requiredHeaders.filter(h => !headers.some(hdr => hdr.includes(h.split(" ")[0])));
+      if (missingHeaders.length > 0) {
+        return res.status(400).json({ 
+          error: "Intestazioni mancanti: " + missingHeaders.join(", ") + ". Richieste: BRAND, Tipo Dispositivo, Modello Commerciale, Modello Market"
+        });
+      }
+
+      // Find column indexes
+      const brandCol = headers.findIndex(h => h.includes("brand")) + 1;
+      const typeCol = headers.findIndex(h => h.includes("tipo")) + 1;
+      const modelCol = headers.findIndex(h => h.includes("modello commerciale") || h.includes("commerciale")) + 1;
+      const marketCol = headers.findIndex(h => h.includes("market")) + 1;
+
+      // Get existing types, brands, and models
+      const existingTypes = await storage.listDeviceTypes(false);
+      const existingBrands = await storage.listDeviceBrands(false);
+      const existingModels = await storage.listDeviceModels();
+
+      // Map for quick lookup (case-insensitive)
+      const typeMap = new Map<string, string>();
+      existingTypes.forEach(t => typeMap.set(t.name.toLowerCase(), t.id));
+      
+      const brandMap = new Map<string, string>();
+      existingBrands.forEach(b => brandMap.set(b.name.toLowerCase(), b.id));
+
+      // Process rows
+      let imported = 0;
+      let updated = 0;
+      let skipped = 0;
+      const errors: string[] = [];
+      const processedMarketCodes = new Set<string>();
+
+      for (let rowNum = 2; rowNum <= worksheet.rowCount; rowNum++) {
+        const row = worksheet.getRow(rowNum);
+        const brandName = String(row.getCell(brandCol).value || "").trim();
+        const typeName = String(row.getCell(typeCol).value || "").trim();
+        const modelName = String(row.getCell(modelCol).value || "").trim();
+        const marketCodesRaw = String(row.getCell(marketCol).value || "").trim();
+
+        if (!brandName || !modelName) {
+          continue; // Skip empty rows
+        }
+
+        // Parse market codes (comma-separated)
+        const marketCodes = marketCodesRaw
+          .split(",")
+          .map(c => c.trim().toUpperCase())
+          .filter(c => c.length > 0);
+
+        // Check for duplicate market codes in this import
+        const duplicateInImport = marketCodes.find(c => processedMarketCodes.has(c));
+        if (duplicateInImport) {
+          errors.push("Riga " + rowNum + ": Codice " + duplicateInImport + " gia presente in questo import");
+          skipped++;
+          continue;
+        }
+
+        // Check for duplicate market codes in database
+        if (marketCodes.length > 0) {
+          const duplicateCheck = await checkMarketCodeDuplicates(marketCodes);
+          if (duplicateCheck.isDuplicate) {
+            // Check if it's the same model (for update)
+            const existingModel = existingModels.find(m => 
+              m.modelName.toLowerCase() === modelName.toLowerCase() &&
+              brandMap.get(brandName.toLowerCase()) === m.brandId
+            );
+            if (!existingModel) {
+              errors.push("Riga " + rowNum + ": Codice " + duplicateCheck.conflictingCode + " gia assegnato a " + duplicateCheck.conflictingModel);
+              skipped++;
+              continue;
+            }
+          }
+        }
+
+        // Get or create device type
+        let typeId: string | null = null;
+        if (typeName) {
+          typeId = typeMap.get(typeName.toLowerCase()) || null;
+          if (!typeId) {
+            try {
+              const newType = await storage.createDeviceType({ name: typeName, isActive: true });
+              typeId = newType.id;
+              typeMap.set(typeName.toLowerCase(), typeId);
+            } catch (e: any) {
+              errors.push("Riga " + rowNum + ": Errore creazione tipo " + typeName + ": " + e.message);
+            }
+          }
+        }
+
+        // Get or create brand
+        let brandId: string | null = null;
+        brandId = brandMap.get(brandName.toLowerCase()) || null;
+        if (!brandId) {
+          try {
+            const newBrand = await storage.createDeviceBrand({ name: brandName, isActive: true });
+            brandId = newBrand.id;
+            brandMap.set(brandName.toLowerCase(), brandId);
+          } catch (e: any) {
+            errors.push("Riga " + rowNum + ": Errore creazione brand " + brandName + ": " + e.message);
+          }
+        }
+
+        // Check if model already exists (same name + brand)
+        const existingModel = existingModels.find(m => 
+          m.modelName.toLowerCase() === modelName.toLowerCase() &&
+          m.brandId === brandId
+        );
+
+        if (existingModel) {
+          // Update market codes if model exists
+          try {
+            await storage.updateDeviceModel(existingModel.id, {
+              marketCodes: marketCodes.length > 0 ? marketCodes : null,
+              typeId: typeId || existingModel.typeId
+            });
+            updated++;
+            marketCodes.forEach(c => processedMarketCodes.add(c));
+          } catch (e: any) {
+            errors.push("Riga " + rowNum + ": Errore aggiornamento " + modelName + ": " + e.message);
+            skipped++;
+          }
+        } else {
+          // Create new model
+          try {
+            await storage.createDeviceModel({
+              modelName,
+              brandId,
+              typeId,
+              marketCodes: marketCodes.length > 0 ? marketCodes : null,
+              isActive: true
+            });
+            imported++;
+            marketCodes.forEach(c => processedMarketCodes.add(c));
+          } catch (e: any) {
+            errors.push("Riga " + rowNum + ": Errore creazione " + modelName + ": " + e.message);
+            skipped++;
+          }
+        }
+      }
+
+      res.json({
+        imported,
+        updated,
+        skipped,
+        errors: errors.slice(0, 50)
+      });
+    } catch (error: any) {
+      console.error("Error importing Excel:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
   // ============ ISSUE TYPES ============
 
   // Get issue types (filtered by device type, includes "Altro" option)
