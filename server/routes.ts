@@ -18131,7 +18131,7 @@ export function registerRoutes(app: Express): Server {
         return res.status(400).json({ error: "File Excel richiesto" });
       }
 
-      const ExcelJS = require("exceljs");
+      const ExcelJS = await import('exceljs');
       const workbook = new ExcelJS.Workbook();
       await workbook.xlsx.load(req.file.buffer);
       const worksheet = workbook.worksheets[0];
