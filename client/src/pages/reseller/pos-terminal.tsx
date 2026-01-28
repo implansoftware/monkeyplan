@@ -854,11 +854,11 @@ export default function ResellerPosTerminal() {
                 </div>
               </div>
             </div>
-            <div className="flex flex-wrap items-center gap-2 flex-wrap">
+            <div className="flex flex-wrap items-center gap-2">
               <Select value={selectedRegisterId} onValueChange={setSelectedRegisterId}>
-                <SelectTrigger className="min-w-[180px] max-w-[280px] h-8 bg-white/20 backdrop-blur-sm text-white border-white/30" data-testid="select-register">
-                  <Store className="w-4 h-4 mr-1" />
-                  <SelectValue placeholder="Seleziona cassa" />
+                <SelectTrigger className="w-auto max-w-[140px] sm:max-w-[180px] h-8 bg-white/20 backdrop-blur-sm text-white border-white/30 truncate" data-testid="select-register">
+                  <Store className="w-4 h-4 mr-1 flex-shrink-0" />
+                  <SelectValue placeholder="Cassa" className="truncate" />
                 </SelectTrigger>
                 <SelectContent>
                   {registers.filter(r => r.isActive).map(reg => (
@@ -878,20 +878,20 @@ export default function ResellerPosTerminal() {
                 </Button>
               </Link>
               <Link href="/reseller/pos/sessions">
-                <Button variant="outline" size="sm" className="bg-white/20 backdrop-blur-sm text-white border-white/30 hover:bg-white/30" data-testid="button-session-history">
-                  <History className="w-4 h-4 mr-1" />
-                  Sessioni
+                <Button variant="outline" size="icon" className="h-8 w-8 sm:w-auto sm:px-3 bg-white/20 backdrop-blur-sm text-white border-white/30 hover:bg-white/30" data-testid="button-session-history">
+                  <History className="w-4 h-4 sm:mr-1" />
+                  <span className="hidden sm:inline">Sessioni</span>
                 </Button>
               </Link>
               <Button
                 variant="outline"
-                size="sm"
+                size="icon"
                 onClick={() => setCloseSessionDialog(true)}
-                className="bg-red-500/30 backdrop-blur-sm text-white border-red-300/50 hover:bg-red-500/50"
+                className="h-8 w-8 sm:w-auto sm:px-3 bg-red-500/30 backdrop-blur-sm text-white border-red-300/50 hover:bg-red-500/50"
                 data-testid="button-close-session"
               >
-                <X className="w-4 h-4 mr-1" />
-                Chiudi
+                <X className="w-4 h-4 sm:mr-1" />
+                <span className="hidden sm:inline">Chiudi</span>
               </Button>
             </div>
           </div>
