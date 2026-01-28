@@ -9862,6 +9862,53 @@ export function registerRoutes(app: Express): Server {
   });
 
   // ============ REPAIR ORDERS - ROLE-NEUTRAL DETAIL ============
+
+  // ============ DASHBOARD PREFERENCES ============
+
+  app.get("/api/dashboard-preferences", requireAuth, async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      // Normalize role: reseller_staff and sub_reseller use "reseller" layout
+      let role = req.user.role;
+      if (role === "reseller_staff" || role === "sub_reseller") {
+        role = "reseller";
+      }
+      if (role === "repair_center_staff") {
+        role = "repair_center";
+      }
+      
+      const pref = await storage.getDashboardPreference(req.user.id, role);
+      res.json(pref || null);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
+  app.put("/api/dashboard-preferences", requireAuth, async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const { layout } = req.body;
+      if (!layout || !layout.widgets) {
+        return res.status(400).send("Invalid layout format");
+      }
+      
+      // Normalize role: reseller_staff and sub_reseller use "reseller" layout
+      let role = req.user.role;
+      if (role === "reseller_staff" || role === "sub_reseller") {
+        role = "reseller";
+      }
+      if (role === "repair_center_staff") {
+        role = "repair_center";
+      }
+      
+      const pref = await storage.saveDashboardPreference(req.user.id, role, layout);
+      res.json(pref);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
   
   // Redirect endpoint for QR codes - returns the correct path based on user role
   app.get("/api/repair-orders/:id/redirect", requireAuth, async (req, res) => {
