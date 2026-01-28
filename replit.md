@@ -1,4 +1,4 @@
-# MonkeyPlan Beta v.23.5
+# MonkeyPlan Beta v.24
 
 ## Overview
 MonkeyPlan is an enterprise-level repair management platform designed to streamline device repair workflows, inventory, ticketing, and billing. It offers a full-stack TypeScript solution for administrators, resellers, repair centers, and customers, providing comprehensive repair order management, a real-time ticketing system, and robust inventory control across four distinct user roles. The platform's core purpose is to enhance efficiency and transparency in device repair processes with a business vision to dominate the repair management software market through its comprehensive features and user-friendly design.

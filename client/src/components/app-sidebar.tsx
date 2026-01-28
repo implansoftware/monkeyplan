@@ -675,7 +675,7 @@ export function AppSidebar() {
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-2">
                 <span className="font-bold text-sm tracking-tight">MonkeyPlan</span>
-                <span className="text-[10px] text-white font-semibold px-2 py-0.5 rounded-full bg-gradient-to-r from-emerald-500 to-teal-500 shadow-sm">Beta v.23.5</span>
+                <span className="text-[10px] text-white font-semibold px-2 py-0.5 rounded-full bg-gradient-to-r from-emerald-500 to-teal-500 shadow-sm">Beta v.24</span>
               </div>
               <div className="flex items-center gap-1.5 mt-0.5">
                 <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />

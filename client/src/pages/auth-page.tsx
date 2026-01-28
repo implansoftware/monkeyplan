@@ -192,7 +192,7 @@ export default function AuthPage() {
             <div>
               <span className="font-bold text-3xl tracking-tight">MonkeyPlan</span>
               <span className="ml-3 px-3 py-1 text-xs rounded-full bg-yellow-400/30 backdrop-blur-sm text-yellow-100 border border-yellow-300/30">
-                Beta v.23.5
+                Beta v.24
               </span>
             </div>
           </div>
