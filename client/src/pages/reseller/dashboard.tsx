@@ -263,7 +263,7 @@ export default function ResellerDashboard() {
                 </div>
               </div>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <DashboardCustomizer
                 role="reseller"
                 currentLayout={dashboardLayout}
@@ -272,7 +272,7 @@ export default function ResellerDashboard() {
               />
               <Button 
                 onClick={() => setAcceptanceDialogOpen(true)} 
-                className="bg-white/20 backdrop-blur-sm border border-white/30 text-white shadow-lg" 
+                className="bg-white/20 backdrop-blur-sm border border-white/30 text-white shadow-lg whitespace-nowrap" 
                 data-testid="button-new-repair"
               >
                 <PackageOpen className="h-4 w-4 mr-2" />
