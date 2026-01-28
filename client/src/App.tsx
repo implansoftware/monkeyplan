@@ -538,6 +538,7 @@ function Router() {
       {/* Shop routes (public) */}
       <Route path="/marketplace/:productId" component={MarketplaceProductDetail} />
       <Route path="/marketplace" component={ShopMarketplace} />
+      <Route path="/shop/:resellerId/products/:productId" component={MarketplaceProductDetail} />
       <Route path="/shop/:resellerId" component={ShopCatalog} />
       <Route path="/shop/:resellerId/cart" component={ShopCart} />
       <ProtectedRoute path="/shop/:resellerId/checkout" component={ShopCheckout} />

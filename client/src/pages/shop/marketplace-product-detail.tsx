@@ -52,7 +52,7 @@ function formatPrice(cents: number): string {
 }
 
 export default function MarketplaceProductDetail() {
-  const { productId } = useParams<{ productId: string }>();
+  const { productId, resellerId } = useParams<{ productId: string; resellerId?: string }>();
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const [selectedSeller, setSelectedSeller] = useState<ProductSeller | null>(null);
@@ -105,13 +105,16 @@ export default function MarketplaceProductDetail() {
     );
   }
 
+  const backUrl = resellerId ? `/shop/${resellerId}` : "/marketplace";
+  const backLabel = resellerId ? "Torna al Negozio" : "Torna al Marketplace";
+
   if (error || !data) {
     return (
       <div className="container mx-auto py-8 px-4">
-        <Link href="/marketplace">
+        <Link href={backUrl}>
           <Button variant="ghost" className="mb-6" data-testid="button-back">
             <ArrowLeft className="h-4 w-4 mr-2" />
-            Torna al Marketplace
+            {backLabel}
           </Button>
         </Link>
         <div className="text-center py-16">
@@ -130,10 +133,10 @@ export default function MarketplaceProductDetail() {
 
   return (
     <div className="container mx-auto py-8 px-4">
-      <Link href="/marketplace">
+      <Link href={backUrl}>
         <Button variant="ghost" className="mb-6" data-testid="button-back">
           <ArrowLeft className="h-4 w-4 mr-2" />
-          Torna al Marketplace
+          {backLabel}
         </Button>
       </Link>
 
