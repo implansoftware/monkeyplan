@@ -1059,7 +1059,7 @@ export default function ResellerServiceCatalog() {
               <p className="text-xs text-muted-foreground mb-2">
                 Seleziona per quale tipo/marca/modello di dispositivo è applicabile questo intervento
               </p>
-              <div className="grid grid-cols-3 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <Select 
                   value={itemDeviceTypeId} 
                   onValueChange={(v) => {

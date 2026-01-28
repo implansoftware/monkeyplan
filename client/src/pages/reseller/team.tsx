@@ -1071,7 +1071,7 @@ export default function ResellerTeam() {
                     </div>
                   </CardHeader>
                   <CardContent className="py-3">
-                    <div className="grid grid-cols-4 gap-3">
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                       {PERMISSION_ACTIONS.map((action) => {
                         const Icon = action.icon;
                         const isChecked = perms[action.id as keyof typeof perms] || false;

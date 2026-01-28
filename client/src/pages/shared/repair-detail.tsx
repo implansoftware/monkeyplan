@@ -1396,7 +1396,7 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
                                repairWarranty.status === 'declined' ? 'Rifiutata' : 'Scaduta'}
                             </Badge>
                           </div>
-                          <div className="grid grid-cols-3 gap-2 text-xs">
+                          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs">
                             <div>
                               <span className="text-muted-foreground">Durata:</span>
                               <p className="font-medium">{repairWarranty.durationMonthsSnapshot} mesi</p>

@@ -1057,7 +1057,7 @@ export default function AdminDeviceCatalog() {
                   <CheckCircle2 className="h-5 w-5 text-green-500" />
                   <span className="font-medium">Risultato Importazione</span>
                 </div>
-                <div className="grid grid-cols-3 gap-2 text-sm">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-sm">
                   <div className="text-center p-2 bg-green-500/10 rounded">
                     <div className="font-bold text-green-600">{importResult.imported}</div>
                     <div className="text-muted-foreground">Nuovi</div>

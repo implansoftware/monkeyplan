@@ -329,7 +329,7 @@ export default function AdminSuppliers() {
                       data-testid="input-supplier-address"
                     />
                   </div>
-                  <div className="grid grid-cols-3 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="city">Città</Label>
                       <Input

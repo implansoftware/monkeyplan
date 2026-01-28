@@ -1068,7 +1068,7 @@ export default function AdminUtilityPractices() {
                 <ClipboardList className="h-4 w-4" />
                 Tipo Pratica
               </h4>
-              <div className="grid grid-cols-3 gap-2">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                 <Button
                   type="button"
                   variant={selectedItemType === "service" ? "default" : "outline"}
@@ -1102,7 +1102,7 @@ export default function AdminUtilityPractices() {
               
               <div className="pt-2 border-t border-border/50">
                 <Label className="text-xs text-muted-foreground mb-2 block">Assegna a</Label>
-                <div className="grid grid-cols-3 gap-2">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                   <Button
                     type="button"
                     variant={assigneeType === "admin" ? "default" : "outline"}
@@ -1390,8 +1390,8 @@ export default function AdminUtilityPractices() {
                             <Trash2 className="h-4 w-4 text-destructive" />
                           </Button>
                         </div>
-                        <div className="grid grid-cols-3 gap-3">
-                          <div className="col-span-3">
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                          <div className="col-span-3 sm:col-span-3">
                             <Label className="text-xs">Prodotto</Label>
                             <Select
                               value={item.productId}
@@ -1635,7 +1635,7 @@ export default function AdminUtilityPractices() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-3 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div className="space-y-1">
                   {selectedPriceType === "mensile" ? (
                     <>

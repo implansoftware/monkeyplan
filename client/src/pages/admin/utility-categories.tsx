@@ -174,7 +174,7 @@ function IconPicker({ value, onChange }: { value: string; onChange: (value: stri
             <CommandEmpty>Nessuna icona trovata.</CommandEmpty>
             <CommandGroup>
               <ScrollArea className="h-[250px]">
-                <div className="grid grid-cols-4 gap-1 p-2">
+                <div className="grid grid-cols-3 sm:grid-cols-4 gap-1 p-2">
                   {filteredIcons.map((option) => {
                     const IconComp = option.icon;
                     const isSelected = value === option.value;
