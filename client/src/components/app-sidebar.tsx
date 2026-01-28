@@ -245,8 +245,8 @@ const menuItems = {
     { title: "Ticket", url: "/reseller/tickets", icon: Ticket, group: "Assistenza" },
     { title: "Guide", url: "/reseller/guide", icon: FileText, group: "Assistenza" },
     { title: "Richieste Remote", url: "/reseller/remote-requests", icon: Send, group: "Centri & Riparazioni" },
+    { title: "Notifiche", url: "/reseller/notifications", icon: Bell, group: "Sub-Reseller" },
     { title: "Integrazioni", url: "/reseller/integrations", icon: Plug, group: "Account" },
-    { title: "Notifiche", url: "/reseller/notifications", icon: Bell, group: "Account" },
     { title: "Profilo", url: "/profile", icon: UserCircle, group: "Account" },
   ],
   repair_center: [
@@ -793,7 +793,7 @@ export function AppSidebar() {
                         const showTicketsBadge = item.url === "/reseller/tickets" && pendingTicketsCount > 0;
                         const showNotificationsBadge = item.title === "Notifiche" && unreadNotificationsCount > 0;
                         return (
-                          <SidebarMenuItem key={item.title}>
+                          <SidebarMenuItem key={item.title} className="overflow-visible">
                             <SidebarMenuButton 
                               asChild 
                               isActive={isActive} 
