@@ -233,7 +233,7 @@ export default function ResellerSalesOrders() {
     
     return (
       <div className="space-y-6">
-        <div className="flex items-center gap-4">
+        <div className="flex flex-wrap items-center gap-4">
           <Button variant="ghost" onClick={() => setLocation('/reseller/sales-orders')} data-testid="button-back">
             <ArrowLeft className="mr-2 h-4 w-4" /> Torna agli ordini
           </Button>
@@ -245,7 +245,7 @@ export default function ResellerSalesOrders() {
             <div className="absolute -bottom-24 -left-24 w-64 h-64 bg-white/10 rounded-full blur-3xl animate-pulse delay-1000" />
           </div>
           <div className="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <div className="flex items-center gap-4">
+            <div className="flex flex-wrap items-center gap-4">
               <div className="h-12 w-12 rounded-xl bg-white/20 backdrop-blur-sm border border-white/30 flex items-center justify-center">
                 <FileText className="h-6 w-6 text-white" />
               </div>
@@ -268,7 +268,7 @@ export default function ResellerSalesOrders() {
         <div className="grid gap-6 md:grid-cols-2">
           <Card className="rounded-2xl">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
+              <CardTitle className="flex flex-wrap items-center gap-2">
                 <MapPin className="h-5 w-5" /> Indirizzo di spedizione
               </CardTitle>
             </CardHeader>
@@ -288,7 +288,7 @@ export default function ResellerSalesOrders() {
           
           <Card className="rounded-2xl">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
+              <CardTitle className="flex flex-wrap items-center gap-2">
                 <CreditCard className="h-5 w-5" /> Riepilogo pagamento
               </CardTitle>
             </CardHeader>
@@ -318,7 +318,7 @@ export default function ResellerSalesOrders() {
         
         <Card className="rounded-2xl">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
+            <CardTitle className="flex flex-wrap items-center gap-2">
               <Package className="h-5 w-5" /> Prodotti ordinati
             </CardTitle>
           </CardHeader>
@@ -339,7 +339,7 @@ export default function ResellerSalesOrders() {
                   {items.map((item) => (
                     <TableRow key={item.id}>
                       <TableCell>
-                        <div className="flex items-center gap-3">
+                        <div className="flex flex-wrap items-center gap-3">
                           {item.productImage ? (
                             <img 
                               src={item.productImage} 
@@ -373,7 +373,7 @@ export default function ResellerSalesOrders() {
         {payments.length > 0 && (
           <Card className="rounded-2xl">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
+              <CardTitle className="flex flex-wrap items-center gap-2">
                 <CreditCard className="h-5 w-5" /> Pagamenti
               </CardTitle>
             </CardHeader>
@@ -410,7 +410,7 @@ export default function ResellerSalesOrders() {
         {shipments.length > 0 && (
           <Card className="rounded-2xl">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
+              <CardTitle className="flex flex-wrap items-center gap-2">
                 <Truck className="h-5 w-5" /> Spedizioni
               </CardTitle>
             </CardHeader>
@@ -456,7 +456,7 @@ export default function ResellerSalesOrders() {
         {order.customerNotes && (
           <Card className="rounded-2xl">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
+              <CardTitle className="flex flex-wrap items-center gap-2">
                 <FileText className="h-5 w-5" /> Note cliente
               </CardTitle>
             </CardHeader>
@@ -518,7 +518,7 @@ export default function ResellerSalesOrders() {
                 
                 {newStatus === 'shipped' && (
                   <div className="space-y-4 p-4 bg-muted/50 rounded-lg">
-                    <div className="flex items-center gap-2 text-sm font-medium">
+                    <div className="flex flex-wrap items-center gap-2 text-sm font-medium">
                       <Truck className="h-4 w-4" />
                       Dati spedizione
                     </div>
@@ -612,7 +612,7 @@ export default function ResellerSalesOrders() {
           <div className="absolute -bottom-24 -left-24 w-64 h-64 bg-white/10 rounded-full blur-3xl animate-pulse delay-1000" />
         </div>
         <div className="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div className="flex items-center gap-4">
+          <div className="flex flex-wrap items-center gap-4">
             <div className="h-12 w-12 rounded-xl bg-white/20 backdrop-blur-sm border border-white/30 flex items-center justify-center">
               <ShoppingBag className="h-6 w-6 text-white" />
             </div>
@@ -637,7 +637,7 @@ export default function ResellerSalesOrders() {
         </div>
         
         <Select value={statusFilter} onValueChange={setStatusFilter}>
-          <SelectTrigger className="w-[180px]" data-testid="select-status-filter">
+          <SelectTrigger className="w-full sm:w-[180px]" data-testid="select-status-filter">
             <SelectValue placeholder="Tutti gli stati" />
           </SelectTrigger>
           <SelectContent>
@@ -767,7 +767,7 @@ export default function ResellerSalesOrders() {
               
               {newStatus === 'shipped' && (
                 <div className="space-y-4 p-4 bg-muted/50 rounded-lg">
-                  <div className="flex items-center gap-2 text-sm font-medium">
+                  <div className="flex flex-wrap items-center gap-2 text-sm font-medium">
                     <Truck className="h-4 w-4" />
                     Dati spedizione
                   </div>

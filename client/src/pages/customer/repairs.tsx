@@ -124,7 +124,7 @@ export default function CustomerRepairs() {
         <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl animate-pulse" />
         <div className="absolute bottom-0 left-0 w-48 h-48 bg-cyan-300/20 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
         <div className="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div className="flex items-center gap-4">
+          <div className="flex flex-wrap items-center gap-4">
             <div className="h-12 w-12 rounded-xl bg-white/20 backdrop-blur-sm border border-white/30 flex items-center justify-center">
               <Wrench className="h-6 w-6 text-white" />
             </div>
@@ -210,7 +210,7 @@ export default function CustomerRepairs() {
                       <CardContent className="p-6">
                         <div className="flex items-start justify-between gap-4 mb-4">
                           <div className="flex-1">
-                            <div className="flex items-center gap-2 mb-2 flex-wrap">
+                            <div className="flex flex-wrap items-center gap-2 mb-2 flex-wrap">
                               <span className="font-mono text-sm font-medium bg-muted px-2 py-1 rounded">
                                 #{repair.orderNumber}
                               </span>
@@ -276,8 +276,8 @@ export default function CustomerRepairs() {
 
                         <div className="border-t pt-4">
                           <div className="flex items-center justify-between gap-4 flex-wrap">
-                            <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                              <div className="flex items-center gap-1">
+                            <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
+                              <div className="flex flex-wrap items-center gap-1">
                                 <Calendar className="h-4 w-4" />
                                 {format(new Date(repair.createdAt), "d MMM yyyy", { locale: it })}
                               </div>
@@ -313,7 +313,7 @@ export default function CustomerRepairs() {
                   <Card key={repair.id} className="bg-muted/30" data-testid={`card-repair-completed-${repair.id}`}>
                     <CardContent className="p-4">
                       <div className="flex items-center justify-between gap-4">
-                        <div className="flex items-center gap-4 flex-1 min-w-0">
+                        <div className="flex flex-wrap items-center gap-4 flex-1 min-w-0">
                           <div className="shrink-0">
                             {["cancelled", "annullato"].includes(repair.status) ? (
                               <XCircle className="h-8 w-8 text-destructive" />
@@ -322,7 +322,7 @@ export default function CustomerRepairs() {
                             )}
                           </div>
                           <div className="min-w-0 flex-1">
-                            <div className="flex items-center gap-2 mb-1 flex-wrap">
+                            <div className="flex flex-wrap items-center gap-2 mb-1 flex-wrap">
                               <span className="font-mono text-sm">#{repair.orderNumber}</span>
                               {getStatusBadge(repair.status)}
                             </div>

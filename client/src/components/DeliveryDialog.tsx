@@ -265,7 +265,7 @@ export function DeliveryDialog({
           <Card className="relative overflow-hidden">
             <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/5 to-transparent pointer-events-none" />
             <CardContent className="relative pt-6 space-y-4">
-              <div className="flex items-center gap-3">
+              <div className="flex flex-wrap items-center gap-3">
                 <Badge variant="default" className="gap-1 bg-emerald-600">
                   <CheckCircle className="h-3 w-3" />
                   Consegnato
@@ -399,19 +399,19 @@ export function DeliveryDialog({
                     </FormControl>
                     <SelectContent>
                       <SelectItem value="in_store">
-                        <div className="flex items-center gap-2">
+                        <div className="flex flex-wrap items-center gap-2">
                           <Store className="h-4 w-4" />
                           Ritiro in Negozio
                         </div>
                       </SelectItem>
                       <SelectItem value="courier">
-                        <div className="flex items-center gap-2">
+                        <div className="flex flex-wrap items-center gap-2">
                           <Truck className="h-4 w-4" />
                           Spedizione Corriere
                         </div>
                       </SelectItem>
                       <SelectItem value="pickup">
-                        <div className="flex items-center gap-2">
+                        <div className="flex flex-wrap items-center gap-2">
                           <UserCheck className="h-4 w-4" />
                           Ritiro Cliente
                         </div>

@@ -241,7 +241,7 @@ export default function MobilesentrixSettingsPage() {
   return (
     <div className="p-6 space-y-6">
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
           <Settings className="h-8 w-8" />
           <div>
             <h1 className="text-2xl font-bold">Impostazioni MobileSentrix</h1>
@@ -263,13 +263,13 @@ export default function MobilesentrixSettingsPage() {
           <CardHeader>
             <div className="flex items-center justify-between">
               <div>
-                <CardTitle className="flex items-center gap-2">
+                <CardTitle className="flex flex-wrap items-center gap-2">
                   <Key className="h-5 w-5" />
                   Credenziali Configurate
                 </CardTitle>
                 <CardDescription>Le tue credenziali MobileSentrix sono salvate</CardDescription>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2">
                 {credential.accessToken ? (
                   <Badge className="bg-gradient-to-r from-blue-500 to-cyan-500 text-white">
                     <Shield className="h-3 w-3 mr-1" />
@@ -310,7 +310,7 @@ export default function MobilesentrixSettingsPage() {
               </div>
               <div className="space-y-2">
                 <Label>Consumer Secret</Label>
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2">
                   <Input
                     type={showSecret ? "text" : "password"}
                     value={credential.consumerSecret}
@@ -329,7 +329,7 @@ export default function MobilesentrixSettingsPage() {
               </div>
               <div className="space-y-2">
                 <Label>Ambiente</Label>
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2">
                   <Badge variant={credential.environment === "production" ? "default" : "outline"}>
                     {credential.environment === "production" ? "Produzione" : "Staging"}
                   </Badge>
@@ -340,7 +340,7 @@ export default function MobilesentrixSettingsPage() {
               </div>
               <div className="space-y-2">
                 <Label>Ultimo Test</Label>
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2">
                   {credential.testStatus === "success" ? (
                     <CheckCircle className="h-4 w-4 text-green-500" />
                   ) : credential.testStatus === "failed" ? (
@@ -356,7 +356,7 @@ export default function MobilesentrixSettingsPage() {
               </div>
               <div className="space-y-2">
                 <Label>Access Token</Label>
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2">
                   {credential.accessToken ? (
                     <>
                       <CheckCircle className="h-4 w-4 text-green-500" />
@@ -395,7 +395,7 @@ export default function MobilesentrixSettingsPage() {
               </Alert>
             )}
 
-            <div className="flex items-center gap-2 pt-4 border-t">
+            <div className="flex flex-wrap items-center gap-2 pt-4 border-t">
               {!credential.accessToken && (
                 <Button
                   variant="outline"
@@ -445,7 +445,7 @@ export default function MobilesentrixSettingsPage() {
       ) : (
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
+            <CardTitle className="flex flex-wrap items-center gap-2">
               <Key className="h-5 w-5" />
               Configura MobileSentrix
             </CardTitle>

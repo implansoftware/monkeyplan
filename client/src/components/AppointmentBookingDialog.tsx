@@ -209,7 +209,7 @@ export function AppointmentBookingDialog({
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
+            <DialogTitle className="flex flex-wrap items-center gap-2">
               <CalendarCheck className="h-5 w-5" />
               Appuntamento Consegna
             </DialogTitle>
@@ -284,7 +284,7 @@ export function AppointmentBookingDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
+          <DialogTitle className="flex flex-wrap items-center gap-2">
             <CalendarCheck className="h-5 w-5" />
             Prenota Appuntamento Consegna
           </DialogTitle>
@@ -371,7 +371,7 @@ export function AppointmentBookingDialog({
           <div className="mt-4 space-y-4">
             <Card className="bg-muted/50">
               <CardContent className="py-3">
-                <div className="flex items-center gap-4 text-sm">
+                <div className="flex flex-wrap items-center gap-4 text-sm">
                   <CheckCircle className="h-5 w-5 text-green-600" />
                   <div>
                     <span className="font-medium">

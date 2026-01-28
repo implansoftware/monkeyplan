@@ -182,7 +182,7 @@ export default function AdminUnrepairableReasons() {
   if (isLoading) {
     return (
       <div className="p-6 space-y-6">
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
           <AlertTriangle className="h-8 w-8 text-destructive" />
           <h1 className="text-2xl font-bold">Motivi Irriparabilità</h1>
         </div>
@@ -202,7 +202,7 @@ export default function AdminUnrepairableReasons() {
   return (
     <div className="p-6 space-y-6">
       <div className="flex items-center justify-between flex-wrap gap-4">
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
           <AlertTriangle className="h-8 w-8 text-destructive" />
           <div>
             <h1 className="text-2xl font-bold">Motivi Irriparabilità</h1>
@@ -220,13 +220,13 @@ export default function AdminUnrepairableReasons() {
       <Card>
         <CardHeader className="flex flex-row items-center justify-between gap-4 space-y-0">
           <CardTitle>Elenco Motivi ({reasons.length})</CardTitle>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <Filter className="h-4 w-4 text-muted-foreground" />
             <Select
               value={filterDeviceTypeId || "_all"}
               onValueChange={(v) => setFilterDeviceTypeId(v === "_all" ? "" : v)}
             >
-              <SelectTrigger className="w-[200px]" data-testid="filter-device-type">
+              <SelectTrigger className="w-full sm:w-[200px]" data-testid="filter-device-type">
                 <SelectValue placeholder="Tutti i tipi" />
               </SelectTrigger>
               <SelectContent>

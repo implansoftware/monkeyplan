@@ -65,7 +65,7 @@ export function InvoiceDetailDialog({ invoice, open, onOpenChange }: InvoiceDeta
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-lg">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
+          <DialogTitle className="flex flex-wrap items-center gap-2">
             <FileText className="h-5 w-5" />
             Fattura {invoice.invoiceNumber}
           </DialogTitle>
@@ -76,7 +76,7 @@ export function InvoiceDetailDialog({ invoice, open, onOpenChange }: InvoiceDeta
 
         <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <Calendar className="h-4 w-4 text-muted-foreground" />
               <span className="text-sm">Data emissione:</span>
               <span className="font-medium">
@@ -108,7 +108,7 @@ export function InvoiceDetailDialog({ invoice, open, onOpenChange }: InvoiceDeta
             </div>
             <div className="space-y-1">
               <p className="text-sm text-muted-foreground">Metodo Pagamento</p>
-              <div className="flex items-center gap-1">
+              <div className="flex flex-wrap items-center gap-1">
                 <CreditCard className="h-4 w-4 text-muted-foreground" />
                 <span className="capitalize">{invoice.paymentMethod?.replace("_", " ") || "N/D"}</span>
               </div>

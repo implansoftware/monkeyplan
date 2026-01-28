@@ -79,7 +79,7 @@ export default function AdminActivityLogs() {
         <CardContent className="space-y-4">
           <div className="flex gap-4 flex-wrap">
             <Select value={actionFilter} onValueChange={setActionFilter}>
-              <SelectTrigger className="w-[180px]" data-testid="select-action-filter">
+              <SelectTrigger className="w-full sm:w-[180px]" data-testid="select-action-filter">
                 <SelectValue placeholder="Azione" />
               </SelectTrigger>
               <SelectContent>
@@ -101,7 +101,7 @@ export default function AdminActivityLogs() {
             />
 
             <Select value={userIdFilter} onValueChange={setUserIdFilter}>
-              <SelectTrigger className="w-[200px]" data-testid="select-user-filter">
+              <SelectTrigger className="w-full sm:w-[200px]" data-testid="select-user-filter">
                 <SelectValue placeholder="Utente" />
               </SelectTrigger>
               <SelectContent>

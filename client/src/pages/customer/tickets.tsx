@@ -76,7 +76,7 @@ export default function CustomerTickets() {
         <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl animate-pulse" />
         <div className="absolute bottom-0 left-0 w-48 h-48 bg-cyan-300/20 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
         <div className="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div className="flex items-center gap-4">
+          <div className="flex flex-wrap items-center gap-4">
             <div className="h-12 w-12 rounded-xl bg-white/20 backdrop-blur-sm border border-white/30 flex items-center justify-center">
               <MessageSquare className="h-6 w-6 text-white" />
             </div>
@@ -169,7 +169,7 @@ export default function CustomerTickets() {
                 <CardContent className="p-4">
                   <div className="flex items-start justify-between gap-4">
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-2">
+                      <div className="flex flex-wrap items-center gap-2 mb-2">
                         <span className="font-mono text-sm text-muted-foreground">
                           #{ticket.ticketNumber}
                         </span>
@@ -181,7 +181,7 @@ export default function CustomerTickets() {
                         {ticket.description}
                       </p>
                     </div>
-                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                    <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
                       <Clock className="h-3 w-3" />
                       {formatDistanceToNow(new Date(ticket.createdAt), { addSuffix: true, locale: it })}
                     </div>

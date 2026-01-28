@@ -157,7 +157,7 @@ export default function ResellerWarrantyAnalytics() {
               <div className="space-y-4">
                 {stats.topProducts.map((product, index) => (
                   <div key={product.productName} className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
+                    <div className="flex flex-wrap items-center gap-3">
                       <Badge variant="outline" className="w-6 h-6 flex items-center justify-center p-0">
                         {index + 1}
                       </Badge>

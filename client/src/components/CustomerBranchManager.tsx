@@ -137,7 +137,7 @@ export function CustomerBranchManager({ customerId, customerName, readOnly = fal
     return (
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
+          <CardTitle className="flex flex-wrap items-center gap-2">
             <Building2 className="h-5 w-5" />
             Filiali
           </CardTitle>
@@ -156,7 +156,7 @@ export function CustomerBranchManager({ customerId, customerName, readOnly = fal
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-2">
-        <CardTitle className="flex items-center gap-2">
+        <CardTitle className="flex flex-wrap items-center gap-2">
           <Building2 className="h-5 w-5" />
           Filiali {customerName && `di ${customerName}`}
           <Badge variant="secondary">{branches.length}</Badge>
@@ -370,13 +370,13 @@ export function CustomerBranchManager({ customerId, customerName, readOnly = fal
                       <div className="space-y-1 text-sm">
                         <div>{branch.contactName}</div>
                         {branch.contactPhone && (
-                          <div className="flex items-center gap-1 text-muted-foreground">
+                          <div className="flex flex-wrap items-center gap-1 text-muted-foreground">
                             <Phone className="h-3 w-3" />
                             {branch.contactPhone}
                           </div>
                         )}
                         {branch.contactEmail && (
-                          <div className="flex items-center gap-1 text-muted-foreground">
+                          <div className="flex flex-wrap items-center gap-1 text-muted-foreground">
                             <Mail className="h-3 w-3" />
                             {branch.contactEmail}
                           </div>
@@ -395,7 +395,7 @@ export function CustomerBranchManager({ customerId, customerName, readOnly = fal
                   </TableCell>
                   {!readOnly && (
                     <TableCell>
-                      <div className="flex items-center gap-1">
+                      <div className="flex flex-wrap items-center gap-1">
                         <Button
                           variant="ghost"
                           size="icon"

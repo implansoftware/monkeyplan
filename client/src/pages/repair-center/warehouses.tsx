@@ -142,7 +142,7 @@ export default function RepairCenterWarehousesPage() {
         <div className="absolute top-1/2 left-1/3 w-48 h-48 rounded-full bg-emerald-300/20 blur-3xl animate-pulse" style={{ animationDelay: '2s' }} />
         
         <div className="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div className="flex items-center gap-4">
+          <div className="flex flex-wrap items-center gap-4">
             <div className="h-14 w-14 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center shadow-xl">
               <Warehouse className="h-7 w-7 text-white" />
             </div>
@@ -155,7 +155,7 @@ export default function RepairCenterWarehousesPage() {
               </p>
             </div>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <Dialog open={showMovementDialog} onOpenChange={setShowMovementDialog}>
               <DialogTrigger asChild>
                 <Button className="bg-white/20 backdrop-blur-sm text-white border-white/30 hover:bg-white/30 shadow-lg" variant="outline" data-testid="button-new-movement">
@@ -283,7 +283,7 @@ export default function RepairCenterWarehousesPage() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card>
           <CardContent className="pt-6">
-            <div className="flex items-center gap-4">
+            <div className="flex flex-wrap items-center gap-4">
               <div className="p-3 bg-primary/10 rounded-lg">
                 <Boxes className="h-6 w-6 text-primary" />
               </div>
@@ -296,7 +296,7 @@ export default function RepairCenterWarehousesPage() {
         </Card>
         <Card>
           <CardContent className="pt-6">
-            <div className="flex items-center gap-4">
+            <div className="flex flex-wrap items-center gap-4">
               <div className="p-3 bg-green-500/10 rounded-lg">
                 <TrendingUp className="h-6 w-6 text-green-500" />
               </div>
@@ -311,7 +311,7 @@ export default function RepairCenterWarehousesPage() {
         </Card>
         <Card>
           <CardContent className="pt-6">
-            <div className="flex items-center gap-4">
+            <div className="flex flex-wrap items-center gap-4">
               <div className="p-3 bg-orange-500/10 rounded-lg">
                 <TrendingDown className="h-6 w-6 text-orange-500" />
               </div>
@@ -339,7 +339,7 @@ export default function RepairCenterWarehousesPage() {
         </TabsList>
 
         <TabsContent value="stock" className="space-y-4">
-          <div className="flex items-center gap-4">
+          <div className="flex flex-wrap items-center gap-4">
             <div className="relative flex-1 max-w-sm">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
@@ -382,7 +382,7 @@ export default function RepairCenterWarehousesPage() {
                       filteredStock.map((item) => (
                         <tr key={item.id} className="border-b last:border-0 hover:bg-muted/50" data-testid={`row-stock-${item.id}`}>
                           <td className="p-4">
-                            <div className="flex items-center gap-3">
+                            <div className="flex flex-wrap items-center gap-3">
                               {item.product?.imageUrl ? (
                                 <img 
                                   src={item.product.imageUrl} 

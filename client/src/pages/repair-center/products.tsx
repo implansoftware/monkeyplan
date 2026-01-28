@@ -80,7 +80,7 @@ export default function RepairCenterProductsPage() {
         <div className="absolute top-1/2 left-1/3 w-48 h-48 rounded-full bg-emerald-300/20 blur-3xl animate-pulse" style={{ animationDelay: '2s' }} />
         
         <div className="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div className="flex items-center gap-4">
+          <div className="flex flex-wrap items-center gap-4">
             <div className="h-14 w-14 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center shadow-xl">
               <Package className="h-7 w-7 text-white" />
             </div>
@@ -95,7 +95,7 @@ export default function RepairCenterProductsPage() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card>
           <CardContent className="pt-6">
-            <div className="flex items-center gap-4">
+            <div className="flex flex-wrap items-center gap-4">
               <div className="p-3 bg-primary/10 rounded-lg">
                 <Package className="h-6 w-6 text-primary" />
               </div>
@@ -108,7 +108,7 @@ export default function RepairCenterProductsPage() {
         </Card>
         <Card>
           <CardContent className="pt-6">
-            <div className="flex items-center gap-4">
+            <div className="flex flex-wrap items-center gap-4">
               <div className="p-3 bg-green-500/10 rounded-lg">
                 <Boxes className="h-6 w-6 text-green-500" />
               </div>
@@ -121,7 +121,7 @@ export default function RepairCenterProductsPage() {
         </Card>
         <Card>
           <CardContent className="pt-6">
-            <div className="flex items-center gap-4">
+            <div className="flex flex-wrap items-center gap-4">
               <div className="p-3 bg-orange-500/10 rounded-lg">
                 <AlertTriangle className="h-6 w-6 text-orange-500" />
               </div>
@@ -146,7 +146,7 @@ export default function RepairCenterProductsPage() {
           />
         </div>
         <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-          <SelectTrigger className="w-[180px]" data-testid="select-category">
+          <SelectTrigger className="w-full sm:w-[180px]" data-testid="select-category">
             <Filter className="h-4 w-4 mr-2" />
             <SelectValue placeholder="Categoria" />
           </SelectTrigger>
@@ -185,7 +185,7 @@ export default function RepairCenterProductsPage() {
                   filteredProducts.map((product) => (
                     <tr key={product.id} className="border-b last:border-0 hover:bg-muted/50" data-testid={`row-product-${product.id}`}>
                       <td className="p-4">
-                        <div className="flex items-center gap-3">
+                        <div className="flex flex-wrap items-center gap-3">
                           {product.imageUrl ? (
                             <img 
                               src={product.imageUrl} 

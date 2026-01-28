@@ -226,7 +226,7 @@ export default function ResellerServiceOrders() {
         <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 animate-pulse" />
         <div className="absolute bottom-0 left-0 w-48 h-48 bg-cyan-300/20 rounded-full blur-3xl translate-y-1/2 -translate-x-1/2 animate-pulse" style={{ animationDelay: '1s' }} />
         <div className="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div className="flex items-center gap-3 mb-1">
+          <div className="flex flex-wrap items-center gap-3 mb-1">
             <div className="h-12 w-12 rounded-xl bg-white/20 backdrop-blur-sm border border-white/30 flex items-center justify-center">
               <Calendar className="h-6 w-6 text-white" />
             </div>
@@ -284,7 +284,7 @@ export default function ResellerServiceOrders() {
                     <TableRow key={order.id} data-testid={`row-order-${order.id}`}>
                       <TableCell className="font-medium">{order.orderNumber}</TableCell>
                       <TableCell>
-                        <div className="flex items-center gap-2">
+                        <div className="flex flex-wrap items-center gap-2">
                           <User className="w-4 h-4 text-muted-foreground" />
                           {order.customerName}
                         </div>
@@ -304,7 +304,7 @@ export default function ResellerServiceOrders() {
                       </TableCell>
                       <TableCell>
                         {order.deliveryMethod ? (
-                          <div className="flex items-center gap-1">
+                          <div className="flex flex-wrap items-center gap-1">
                             {order.deliveryMethod === "shipping" ? (
                               <><Truck className="w-3 h-3" /> Spedizione</>
                             ) : (
@@ -323,7 +323,7 @@ export default function ResellerServiceOrders() {
                       <TableCell>{formatPrice(order.priceCents)}</TableCell>
                       <TableCell>
                         <div className="flex flex-col gap-1">
-                          <div className="flex items-center gap-1 text-xs">
+                          <div className="flex flex-wrap items-center gap-1 text-xs">
                             {order.paymentMethod === "bank_transfer" ? (
                               <Building className="w-3 h-3" />
                             ) : (
@@ -342,7 +342,7 @@ export default function ResellerServiceOrders() {
                         </Badge>
                       </TableCell>
                       <TableCell>
-                        <div className="flex items-center gap-1">
+                        <div className="flex flex-wrap items-center gap-1">
                           <Button
                             variant="ghost"
                             size="icon"
@@ -497,18 +497,18 @@ export default function ResellerServiceOrders() {
               {selectedOrder.deliveryMethod && (
                 <div className="border-t pt-4">
                   <p className="text-muted-foreground text-sm mb-2">Metodo Consegna</p>
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-2">
                     {selectedOrder.deliveryMethod === "shipping" ? (
-                      <Badge variant="outline" className="flex items-center gap-1">
+                      <Badge variant="outline" className="flex flex-wrap items-center gap-1">
                         <Truck className="w-3 h-3" /> Spedizione
                       </Badge>
                     ) : (
-                      <Badge variant="outline" className="flex items-center gap-1">
+                      <Badge variant="outline" className="flex flex-wrap items-center gap-1">
                         <MapPin className="w-3 h-3" /> Consegna di persona
                       </Badge>
                     )}
                     {selectedOrder.deviceReceivedAt && (
-                      <Badge variant="default" className="flex items-center gap-1">
+                      <Badge variant="default" className="flex flex-wrap items-center gap-1">
                         <Check className="w-3 h-3" /> Ricevuto {format(new Date(selectedOrder.deviceReceivedAt), "dd/MM/yy HH:mm", { locale: it })}
                       </Badge>
                     )}

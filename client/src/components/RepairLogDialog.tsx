@@ -183,7 +183,7 @@ export function RepairLogDialog({
                         {getLogIcon(log.logType)}
                       </div>
                       <div className="flex-1 space-y-1">
-                        <div className="flex items-center gap-2">
+                        <div className="flex flex-wrap items-center gap-2">
                           <Badge variant={getLogBadgeVariant(log.logType)}>
                             {logTypeLabels[log.logType]?.label || log.logType}
                           </Badge>

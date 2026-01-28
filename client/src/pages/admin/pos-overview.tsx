@@ -240,7 +240,7 @@ export default function AdminPosOverview() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
+            <CardTitle className="flex flex-wrap items-center gap-2">
               <DollarSign className="h-5 w-5 text-blue-500" />
               Metodi di Pagamento
             </CardTitle>
@@ -249,7 +249,7 @@ export default function AdminPosOverview() {
             <div className="space-y-4">
               {stats?.paymentBreakdown && Object.entries(stats.paymentBreakdown).map(([method, amount]) => (
                 <div key={method} className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-2">
                     {getPaymentMethodIcon(method)}
                     <span className="text-sm font-medium">{getPaymentMethodLabel(method)}</span>
                   </div>
@@ -267,7 +267,7 @@ export default function AdminPosOverview() {
 
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
+            <CardTitle className="flex flex-wrap items-center gap-2">
               <Building2 className="h-5 w-5 text-cyan-500" />
               Top Rivenditori
             </CardTitle>
@@ -276,7 +276,7 @@ export default function AdminPosOverview() {
             <div className="space-y-4">
               {stats?.topResellers?.map((reseller, index) => (
                 <div key={reseller.id} className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-2">
                     <Badge variant="outline" className="w-6 h-6 p-0 flex items-center justify-center">
                       {index + 1}
                     </Badge>
@@ -304,7 +304,7 @@ export default function AdminPosOverview() {
 
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
+            <CardTitle className="flex flex-wrap items-center gap-2">
               <Users className="h-5 w-5 text-cyan-500" />
               Top Centri Riparazione
             </CardTitle>
@@ -313,7 +313,7 @@ export default function AdminPosOverview() {
             <div className="space-y-4">
               {stats?.topRepairCenters?.map((center, index) => (
                 <div key={center.id} className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-2">
                     <Badge variant="outline" className="w-6 h-6 p-0 flex items-center justify-center">
                       {index + 1}
                     </Badge>
@@ -342,7 +342,7 @@ export default function AdminPosOverview() {
 
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
+          <CardTitle className="flex flex-wrap items-center gap-2">
             <Receipt className="h-5 w-5 text-blue-500" />
             Ultime Transazioni Globali
           </CardTitle>
@@ -351,7 +351,7 @@ export default function AdminPosOverview() {
           <div className="space-y-3">
             {stats?.recentTransactions?.map((tx) => (
               <div key={tx.id} className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
-                <div className="flex items-center gap-3">
+                <div className="flex flex-wrap items-center gap-3">
                   {tx.type === "sale" ? (
                     <CheckCircle className="h-5 w-5 text-blue-500" />
                   ) : (
@@ -388,7 +388,7 @@ export default function AdminPosOverview() {
 
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
+          <CardTitle className="flex flex-wrap items-center gap-2">
             <Clock className="h-5 w-5 text-cyan-500" />
             Timeline Sessioni Cassa
           </CardTitle>
@@ -397,7 +397,7 @@ export default function AdminPosOverview() {
           <div className="space-y-3">
             {sessions?.map((session) => (
               <div key={session.id} className="flex items-center justify-between p-3 rounded-lg bg-muted/50" data-testid={`row-session-${session.id}`}>
-                <div className="flex items-center gap-3">
+                <div className="flex flex-wrap items-center gap-3">
                   {session.status === "open" ? (
                     <PlayCircle className="h-5 w-5 text-green-500" />
                   ) : (
@@ -415,7 +415,7 @@ export default function AdminPosOverview() {
                   </div>
                 </div>
                 <div className="text-right">
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-2">
                     {session.status === "open" ? (
                       <Badge variant="default" className="bg-green-500">Aperta</Badge>
                     ) : (

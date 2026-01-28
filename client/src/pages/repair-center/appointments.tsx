@@ -266,7 +266,7 @@ export default function RepairCenterAppointments() {
         <div className="absolute top-1/2 left-1/3 w-48 h-48 rounded-full bg-emerald-300/20 blur-3xl animate-pulse" style={{ animationDelay: '2s' }} />
         
         <div className="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div className="flex items-center gap-4">
+          <div className="flex flex-wrap items-center gap-4">
             <div className="h-14 w-14 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center shadow-xl">
               <CalendarIcon className="h-7 w-7 text-white" />
             </div>
@@ -354,7 +354,7 @@ export default function RepairCenterAppointments() {
                             }}
                             data-testid={`appointment-${appointment.id}`}
                           >
-                            <div className="flex items-center gap-3">
+                            <div className="flex flex-wrap items-center gap-3">
                               <div className="flex flex-col items-center justify-center w-14 h-14 rounded-md bg-muted text-center">
                                 <span className="text-lg font-bold">{appointment.startTime}</span>
                               </div>
@@ -441,10 +441,10 @@ export default function RepairCenterAppointments() {
               ) : (
                 <div className="space-y-4">
                   {localAvailability.sort((a, b) => a.weekday - b.weekday).map((day) => (
-                    <div key={day.weekday} className="flex items-center gap-4 py-2 border-b last:border-0">
+                    <div key={day.weekday} className="flex flex-wrap items-center gap-4 py-2 border-b last:border-0">
                       <div className="w-24 font-medium">{weekdayNames[day.weekday]}</div>
                       
-                      <div className="flex items-center gap-2">
+                      <div className="flex flex-wrap items-center gap-2">
                         <Switch
                           checked={!day.isClosed}
                           onCheckedChange={(checked) => updateLocalAvailability(day.weekday, "isClosed", !checked)}
@@ -458,7 +458,7 @@ export default function RepairCenterAppointments() {
 
                       {!day.isClosed && (
                         <>
-                          <div className="flex items-center gap-2">
+                          <div className="flex flex-wrap items-center gap-2">
                             <Input
                               type="time"
                               value={day.startTime}
@@ -478,7 +478,7 @@ export default function RepairCenterAppointments() {
                             />
                           </div>
                           
-                          <div className="flex items-center gap-2 ml-auto">
+                          <div className="flex flex-wrap items-center gap-2 ml-auto">
                             <Label className="text-xs text-muted-foreground">Slot:</Label>
                             <Select
                               value={String(day.slotDurationMinutes)}

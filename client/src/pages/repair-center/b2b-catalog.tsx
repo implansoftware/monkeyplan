@@ -147,7 +147,7 @@ export default function RepairCenterB2BCatalog() {
         <div className="absolute top-1/2 left-1/3 w-48 h-48 rounded-full bg-emerald-300/20 blur-3xl animate-pulse" style={{ animationDelay: '2s' }} />
         
         <div className="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div className="flex items-center gap-4">
+          <div className="flex flex-wrap items-center gap-4">
             <div className="h-14 w-14 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center shadow-xl">
               <ShoppingCart className="h-7 w-7 text-white" />
             </div>
@@ -156,7 +156,7 @@ export default function RepairCenterB2BCatalog() {
               <p className="text-emerald-100">Acquista prodotti dal magazzino del tuo rivenditore</p>
             </div>
           </div>
-          <div className="flex items-center gap-4">
+          <div className="flex flex-wrap items-center gap-4">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-white/70" />
               <Input
@@ -202,7 +202,7 @@ export default function RepairCenterB2BCatalog() {
                   <div className="flex items-start justify-between gap-2">
                     <div className="flex-1 min-w-0">
                       <CardTitle className="text-base truncate">{item.product.name}</CardTitle>
-                      <CardDescription className="flex items-center gap-2 flex-wrap">
+                      <CardDescription className="flex flex-wrap items-center gap-2 flex-wrap">
                         {item.product.sku && <span>{item.product.sku}</span>}
                         {item.product.category && (
                           <Badge variant="outline" className="text-xs">{item.product.category}</Badge>
@@ -237,7 +237,7 @@ export default function RepairCenterB2BCatalog() {
                 <CardFooter>
                   {inCart ? (
                     <div className="flex items-center justify-between w-full gap-2">
-                      <div className="flex items-center gap-1">
+                      <div className="flex flex-wrap items-center gap-1">
                         <Button 
                           size="icon" 
                           variant="outline"
@@ -295,7 +295,7 @@ export default function RepairCenterB2BCatalog() {
           <ScrollArea className="max-h-64">
             <div className="space-y-3">
               {cart.map((item) => (
-                <div key={item.productId} className="flex items-center gap-3 py-2 border-b">
+                <div key={item.productId} className="flex flex-wrap items-center gap-3 py-2 border-b">
                   <div className="h-12 w-12 rounded-md border bg-muted flex items-center justify-center overflow-hidden shrink-0">
                     {item.product.imageUrl ? (
                       <img src={item.product.imageUrl} alt={item.product.name} className="h-full w-full object-cover" />

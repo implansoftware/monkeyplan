@@ -232,7 +232,7 @@ export default function ProfilePage() {
         />
         
         <div className="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-3">
             <div className="h-12 w-12 rounded-2xl bg-white/20 backdrop-blur-sm border border-white/30 flex items-center justify-center">
               <UserCircle className="h-6 w-6 text-white" />
             </div>
@@ -264,7 +264,7 @@ export default function ProfilePage() {
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="space-y-4">
               <div className="grid gap-2">
-                <Label htmlFor="username" className="flex items-center gap-2">
+                <Label htmlFor="username" className="flex flex-wrap items-center gap-2">
                   <User className="h-4 w-4" />
                   Username
                 </Label>
@@ -294,7 +294,7 @@ export default function ProfilePage() {
               </div>
 
               <div className="grid gap-2">
-                <Label htmlFor="email" className="flex items-center gap-2">
+                <Label htmlFor="email" className="flex flex-wrap items-center gap-2">
                   <Mail className="h-4 w-4" />
                   Email
                 </Label>
@@ -311,7 +311,7 @@ export default function ProfilePage() {
               </div>
 
               <div className="grid gap-2">
-                <Label htmlFor="phone" className="flex items-center gap-2">
+                <Label htmlFor="phone" className="flex flex-wrap items-center gap-2">
                   <Phone className="h-4 w-4" />
                   Telefono
                 </Label>
@@ -327,7 +327,7 @@ export default function ProfilePage() {
               </div>
 
               <div className="grid gap-2">
-                <Label className="flex items-center gap-2">
+                <Label className="flex flex-wrap items-center gap-2">
                   <Shield className="h-4 w-4" />
                   Ruolo
                 </Label>
@@ -369,7 +369,7 @@ export default function ProfilePage() {
       {user.role === "reseller" && (
         <Card className="rounded-2xl">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
+            <CardTitle className="flex flex-wrap items-center gap-2">
               <Building2 className="h-5 w-5" />
               Logo Aziendale
             </CardTitle>
@@ -378,7 +378,7 @@ export default function ProfilePage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="flex items-center gap-6">
+            <div className="flex flex-wrap items-center gap-6">
               <Avatar className="h-24 w-24 rounded-lg border-2 border-dashed border-muted-foreground/25">
                 {user.logoUrl ? (
                   <AvatarImage src={user.logoUrl} alt="Logo aziendale" className="object-contain" />
@@ -436,7 +436,7 @@ export default function ProfilePage() {
           <CardHeader>
             <div className="flex items-center justify-between">
               <div>
-                <CardTitle className="flex items-center gap-2">
+                <CardTitle className="flex flex-wrap items-center gap-2">
                   <FileText className="h-5 w-5" />
                   Dati Fiscali e Fatturazione
                 </CardTitle>
@@ -489,7 +489,7 @@ export default function ProfilePage() {
                 </div>
 
                 <div className="grid gap-2 md:col-span-2">
-                  <Label htmlFor="indirizzo" className="flex items-center gap-2">
+                  <Label htmlFor="indirizzo" className="flex flex-wrap items-center gap-2">
                     <MapPin className="h-4 w-4" />
                     Indirizzo
                   </Label>
@@ -543,7 +543,7 @@ export default function ProfilePage() {
                 </div>
 
                 <div className="grid gap-2 md:col-span-2">
-                  <Label htmlFor="iban" className="flex items-center gap-2">
+                  <Label htmlFor="iban" className="flex flex-wrap items-center gap-2">
                     <CreditCard className="h-4 w-4" />
                     IBAN
                   </Label>

@@ -121,7 +121,7 @@ export default function RepairCenterCart() {
         <div className="absolute top-1/2 left-1/3 w-48 h-48 rounded-full bg-emerald-300/20 blur-3xl animate-pulse" style={{ animationDelay: '2s' }} />
         
         <div className="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div className="flex items-center gap-4">
+          <div className="flex flex-wrap items-center gap-4">
             <div className="h-14 w-14 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center shadow-xl">
               <ShoppingCart className="h-7 w-7 text-white" />
             </div>
@@ -174,8 +174,8 @@ export default function RepairCenterCart() {
                         {formatPrice(item.b2bPrice)} cad.
                       </p>
                     </div>
-                    <div className="flex items-center gap-4">
-                      <div className="flex items-center gap-2">
+                    <div className="flex flex-wrap items-center gap-4">
+                      <div className="flex flex-wrap items-center gap-2">
                         <Button 
                           size="icon" 
                           variant="outline"

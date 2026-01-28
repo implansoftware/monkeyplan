@@ -180,7 +180,7 @@ export default function CustomerSalesReturns() {
         <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl animate-pulse" />
         <div className="absolute bottom-0 left-0 w-48 h-48 bg-cyan-300/20 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
         <div className="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div className="flex items-center gap-4">
+          <div className="flex flex-wrap items-center gap-4">
             <div className="h-12 w-12 rounded-xl bg-white/20 backdrop-blur-sm border border-white/30 flex items-center justify-center">
               <RotateCcw className="h-6 w-6 text-white" />
             </div>
@@ -199,7 +199,7 @@ export default function CustomerSalesReturns() {
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
         <Card>
           <CardContent className="p-4">
-            <div className="flex items-center gap-3">
+            <div className="flex flex-wrap items-center gap-3">
               <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
                 <RotateCcw className="h-5 w-5 text-blue-600" />
               </div>
@@ -212,7 +212,7 @@ export default function CustomerSalesReturns() {
         </Card>
         <Card>
           <CardContent className="p-4">
-            <div className="flex items-center gap-3">
+            <div className="flex flex-wrap items-center gap-3">
               <div className="p-2 bg-yellow-100 dark:bg-yellow-900/30 rounded-lg">
                 <Clock className="h-5 w-5 text-yellow-600" />
               </div>
@@ -225,7 +225,7 @@ export default function CustomerSalesReturns() {
         </Card>
         <Card>
           <CardContent className="p-4">
-            <div className="flex items-center gap-3">
+            <div className="flex flex-wrap items-center gap-3">
               <div className="p-2 bg-green-100 dark:bg-green-900/30 rounded-lg">
                 <CheckCircle className="h-5 w-5 text-green-600" />
               </div>
@@ -238,7 +238,7 @@ export default function CustomerSalesReturns() {
         </Card>
         <Card>
           <CardContent className="p-4">
-            <div className="flex items-center gap-3">
+            <div className="flex flex-wrap items-center gap-3">
               <div className="p-2 bg-emerald-100 dark:bg-emerald-900/30 rounded-lg">
                 <DollarSign className="h-5 w-5 text-emerald-600" />
               </div>
@@ -277,7 +277,7 @@ export default function CustomerSalesReturns() {
               <CardContent className="p-6">
                 <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                   <div className="space-y-2">
-                    <div className="flex items-center gap-3">
+                    <div className="flex flex-wrap items-center gap-3">
                       <h3 className="font-semibold text-lg" data-testid={`text-return-number-${ret.id}`}>
                         {ret.returnNumber}
                       </h3>
@@ -322,7 +322,7 @@ export default function CustomerSalesReturns() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <Label className="text-muted-foreground text-sm">Stato</Label>
-                  <div className="flex items-center gap-2 mt-1">
+                  <div className="flex flex-wrap items-center gap-2 mt-1">
                     <Badge variant={statusColors[selectedReturn.status || 'requested']}>
                       {statusLabels[selectedReturn.status || '']}
                     </Badge>

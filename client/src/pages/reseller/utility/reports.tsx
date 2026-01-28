@@ -114,7 +114,7 @@ export default function ResellerUtilityReports() {
           <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
           <div className="absolute bottom-0 left-0 w-48 h-48 bg-white/10 rounded-full blur-3xl translate-y-1/2 -translate-x-1/2" />
           <div className="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <div className="flex items-center gap-4">
+            <div className="flex flex-wrap items-center gap-4">
               <Link href="/reseller/utility">
                 <Button variant="ghost" size="icon" className="text-white/80">
                   <ArrowLeft className="h-4 w-4" />
@@ -152,7 +152,7 @@ export default function ResellerUtilityReports() {
         <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
         <div className="absolute bottom-0 left-0 w-48 h-48 bg-white/10 rounded-full blur-3xl translate-y-1/2 -translate-x-1/2" />
         <div className="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div className="flex items-center gap-4">
+          <div className="flex flex-wrap items-center gap-4">
             <Link href="/reseller/utility">
               <Button variant="ghost" size="icon" className="text-white/80" data-testid="button-back">
                 <ArrowLeft className="h-4 w-4" />
@@ -349,7 +349,7 @@ export default function ResellerUtilityReports() {
                   const CategoryIcon = categoryIcons[Object.keys(categoryLabels).find(k => categoryLabels[k] === cat.name) || "altro"];
                   return (
                     <div key={cat.name} className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
+                      <div className="flex flex-wrap items-center gap-3">
                         <div 
                           className="w-8 h-8 rounded-full flex items-center justify-center"
                           style={{ backgroundColor: COLORS[index % COLORS.length] + "20" }}

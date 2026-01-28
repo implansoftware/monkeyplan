@@ -198,7 +198,7 @@ export default function AdminLeaveRequestsPage() {
                 {requests.map((req) => (
                   <TableRow key={req.id} data-testid={`row-leave-request-${req.id}`}>
                     <TableCell>
-                      <div className="flex items-center gap-2">
+                      <div className="flex flex-wrap items-center gap-2">
                         <User className="h-4 w-4 text-muted-foreground" />
                         <div>
                           <p className="font-medium">{req.user?.fullName || "N/A"}</p>
@@ -212,7 +212,7 @@ export default function AdminLeaveRequestsPage() {
                       </Badge>
                     </TableCell>
                     <TableCell>
-                      <div className="flex items-center gap-1 text-sm">
+                      <div className="flex flex-wrap items-center gap-1 text-sm">
                         <Clock className="h-3 w-3" />
                         {format(new Date(req.startDate), "dd/MM/yyyy", { locale: it })}
                         {" - "}

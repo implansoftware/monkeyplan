@@ -284,7 +284,7 @@ export default function AdminRepairCenters() {
           backgroundSize: '40px 40px'
         }} />
         <div className="relative z-10 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div className="flex items-center gap-4">
+          <div className="flex flex-wrap items-center gap-4">
             <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-white/20 backdrop-blur-sm border border-white/30">
               <Building className="h-7 w-7 text-white" />
             </div>
@@ -293,7 +293,7 @@ export default function AdminRepairCenters() {
               <p className="text-blue-100/80 mt-1">Gestisci tutti i centri della rete</p>
             </div>
           </div>
-          <div className="flex items-center gap-2 flex-wrap">
+          <div className="flex flex-wrap items-center gap-2 flex-wrap">
             {orphansData && orphansData.orphanCount > 0 && (
               <Button 
                 variant="outline" 
@@ -672,7 +672,7 @@ export default function AdminRepairCenters() {
       <AlertDialog open={backfillDialogOpen} onOpenChange={setBackfillDialogOpen}>
         <AlertDialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
           <AlertDialogHeader>
-            <AlertDialogTitle className="flex items-center gap-2">
+            <AlertDialogTitle className="flex flex-wrap items-center gap-2">
               <UserPlus className="h-5 w-5" />
               Centri senza Account
             </AlertDialogTitle>
@@ -746,7 +746,7 @@ export default function AdminRepairCenters() {
       <Card className="border-0 shadow-lg bg-white dark:bg-slate-800/50">
         <CardHeader>
           <div className="flex items-center justify-between gap-4 mb-4">
-            <div className="flex items-center gap-3">
+            <div className="flex flex-wrap items-center gap-3">
               <div className="p-2 rounded-xl bg-gradient-to-br from-blue-500 to-cyan-600">
                 <Building className="h-5 w-5 text-white" />
               </div>
@@ -794,7 +794,7 @@ export default function AdminRepairCenters() {
                     <TableRow key={center.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/30" data-testid={`row-center-${center.id}`}>
                       <TableCell className="font-medium">{center.name}</TableCell>
                       <TableCell>
-                        <div className="flex items-center gap-2 text-sm">
+                        <div className="flex flex-wrap items-center gap-2 text-sm">
                           <MapPin className="h-4 w-4 text-muted-foreground" />
                           <div>
                             <div>{center.city}</div>
@@ -813,11 +813,11 @@ export default function AdminRepairCenters() {
                       </TableCell>
                       <TableCell>
                         <div className="text-sm space-y-1">
-                          <div className="flex items-center gap-2">
+                          <div className="flex flex-wrap items-center gap-2">
                             <Phone className="h-3 w-3 text-muted-foreground" />
                             {center.phone}
                           </div>
-                          <div className="flex items-center gap-2">
+                          <div className="flex flex-wrap items-center gap-2">
                             <Mail className="h-3 w-3 text-muted-foreground" />
                             {center.email}
                           </div>
@@ -908,7 +908,7 @@ export default function AdminRepairCenters() {
       <Dialog open={resetPasswordDialogOpen} onOpenChange={setResetPasswordDialogOpen}>
         <DialogContent data-testid="dialog-reset-password">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
+            <DialogTitle className="flex flex-wrap items-center gap-2">
               <KeyRound className="h-5 w-5" />
               Reset Password
             </DialogTitle>

@@ -744,7 +744,7 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
     
     if (severity === 'late') {
       return (
-        <div className="flex items-center gap-2 text-sm text-destructive">
+        <div className="flex flex-wrap items-center gap-2 text-sm text-destructive">
           <AlertCircle className="h-4 w-4" />
           <span>Scaduto - {phaseLabel}: {timeStr}</span>
         </div>
@@ -753,7 +753,7 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
     
     if (severity === 'urgent') {
       return (
-        <div className="flex items-center gap-2 text-sm text-orange-600">
+        <div className="flex flex-wrap items-center gap-2 text-sm text-orange-600">
           <Clock className="h-4 w-4" />
           <span>Urgente - {phaseLabel}: {timeStr}</span>
         </div>
@@ -761,7 +761,7 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
     }
     
     return (
-      <div className="flex items-center gap-2 text-sm text-green-600">
+      <div className="flex flex-wrap items-center gap-2 text-sm text-green-600">
         <Clock className="h-4 w-4" />
         <span>In Tempo - {phaseLabel}: {timeStr}</span>
       </div>
@@ -771,7 +771,7 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
   if (isLoading) {
     return (
       <div className="space-y-6 p-6">
-        <div className="flex items-center gap-4">
+        <div className="flex flex-wrap items-center gap-4">
           <Skeleton className="h-10 w-10" />
           <Skeleton className="h-8 w-64" />
         </div>
@@ -818,7 +818,7 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
                 <ArrowLeft className="h-5 w-5" />
               </Button>
               <div>
-                <div className="flex items-center gap-3 mb-2">
+                <div className="flex flex-wrap items-center gap-3 mb-2">
                   <div className="h-12 w-12 rounded-xl bg-primary text-primary-foreground flex items-center justify-center shadow-lg shadow-primary/25">
                     <Wrench className="h-6 w-6" />
                   </div>
@@ -833,7 +833,7 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
                 </div>
               </div>
             </div>
-            <div className="flex items-center gap-3 flex-wrap">
+            <div className="flex flex-wrap items-center gap-3 flex-wrap">
               {getStatusBadge(repair.status)}
               {getSLADisplay()}
             </div>
@@ -948,7 +948,7 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
 
               {canManageWorkflow && (
                 <div className="mt-6 pt-6 border-t space-y-4">
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-2">
                     <div className="h-6 w-6 rounded-md bg-amber-500/10 flex items-center justify-center">
                       <AlertTriangle className="h-3.5 w-3.5 text-amber-600" />
                     </div>
@@ -988,7 +988,7 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
                     <div className="bg-muted/50 rounded-lg p-4 space-y-3">
                       {repair.skipDiagnosis ? (
                         <div className="space-y-2">
-                          <div className="flex items-center gap-2 text-sm text-amber-600 dark:text-amber-400">
+                          <div className="flex flex-wrap items-center gap-2 text-sm text-amber-600 dark:text-amber-400">
                             <SkipForward className="h-4 w-4" />
                             <span>Diagnosi saltata{repair.skipDiagnosisReason ? `: ${repair.skipDiagnosisReason}` : ''}</span>
                           </div>
@@ -1087,7 +1087,7 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
                   {(repair.status === 'preventivo_accettato' || (repair.quoteBypassReason && repair.status === 'in_diagnosi')) && (
                     <div className="bg-muted/50 rounded-lg p-4 space-y-3">
                       {repair.quoteBypassReason && (
-                        <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
+                        <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground mb-2">
                           {repair.quoteBypassReason === 'garanzia' ? (
                             <><Shield className="h-4 w-4" /> Riparazione in Garanzia</>
                           ) : (
@@ -1252,7 +1252,7 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
                       {/* Show existing appointment if booked */}
                       {appointment && (
                         <div className="bg-green-50 dark:bg-green-950 rounded-lg p-3 border border-green-200 dark:border-green-800 space-y-2">
-                          <div className="flex items-center gap-2 text-sm text-green-700 dark:text-green-300">
+                          <div className="flex flex-wrap items-center gap-2 text-sm text-green-700 dark:text-green-300">
                             <CalendarCheck className="h-4 w-4" />
                             <span className="font-medium">Appuntamento prenotato dal cliente</span>
                           </div>
@@ -1298,7 +1298,7 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
                         ACCESSORI CONSIGLIATI PER IL CLIENTE
                       </p>
                       {accessoriesLoading && (
-                        <div className="flex items-center gap-2 text-sm text-muted-foreground p-3">
+                        <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground p-3">
                           <Loader2 className="h-4 w-4 animate-spin" />
                           Caricamento accessori compatibili...
                         </div>
@@ -1312,7 +1312,7 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
                         {suggestedAccessories.slice(0, 4).map((accessory) => (
                           <div
                             key={accessory.id}
-                            className="flex items-center gap-3 p-3 rounded-lg border bg-card hover-elevate"
+                            className="flex flex-wrap items-center gap-3 p-3 rounded-lg border bg-card hover-elevate"
                             data-testid={`card-suggested-accessory-${accessory.id}`}
                           >
                             {accessory.imageUrl ? (
@@ -1328,7 +1328,7 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
                             )}
                             <div className="flex-1 min-w-0">
                               <p className="font-medium text-sm truncate">{accessory.name}</p>
-                              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                              <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
                                 {accessory.specs?.accessoryType && (
                                   <Badge variant="secondary" className="text-xs">
                                     {accessory.specs.accessoryType}
@@ -1364,7 +1364,7 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
                       </p>
                       
                       {warrantyLoading && (
-                        <div className="flex items-center gap-2 text-sm text-muted-foreground p-3">
+                        <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground p-3">
                           <Loader2 className="h-4 w-4 animate-spin" />
                           Caricamento...
                         </div>
@@ -1380,7 +1380,7 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
                             : 'bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800'
                         }`}>
                           <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-2">
+                            <div className="flex flex-wrap items-center gap-2">
                               <Shield className={`h-4 w-4 ${
                                 repairWarranty.status === 'accepted' ? 'text-emerald-600' :
                                 repairWarranty.status === 'declined' ? 'text-red-600' : 'text-blue-600'
@@ -1457,7 +1457,7 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
                       {!warrantyLoading && !repairWarranty && (
                         <>
                           {warrantyProductsLoading && (
-                            <div className="flex items-center gap-2 text-sm text-muted-foreground p-3">
+                            <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground p-3">
                               <Loader2 className="h-4 w-4 animate-spin" />
                               Caricamento prodotti garanzia...
                             </div>
@@ -1471,14 +1471,14 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
                             {warrantyProducts.map((product) => (
                               <div
                                 key={product.id}
-                                className="flex items-center gap-3 p-3 rounded-lg border bg-card hover-elevate"
+                                className="flex flex-wrap items-center gap-3 p-3 rounded-lg border bg-card hover-elevate"
                                 data-testid={`card-warranty-product-${product.id}`}
                               >
                                 <div className="h-10 w-10 rounded-lg bg-emerald-100 dark:bg-emerald-900 flex items-center justify-center">
                                   <Shield className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
                                 </div>
                                 <div className="flex-1 min-w-0">
-                                  <div className="flex items-center gap-2">
+                                  <div className="flex flex-wrap items-center gap-2">
                                     <p className="font-medium text-sm">{product.name}</p>
                                     {!product.resellerId && (
                                       <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950 dark:text-blue-300 dark:border-blue-800">
@@ -1486,14 +1486,14 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
                                       </Badge>
                                     )}
                                   </div>
-                                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                                  <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
                                     <Badge variant="secondary" className="text-xs">
                                       {product.durationMonths} mesi
                                     </Badge>
                                     <span className="capitalize">{product.coverageType}</span>
                                   </div>
                                 </div>
-                                <div className="flex items-center gap-3">
+                                <div className="flex flex-wrap items-center gap-3">
                                   <p className="font-bold text-sm">
                                     {(product.priceInCents / 100).toLocaleString('it-IT', { style: 'currency', currency: 'EUR' })}
                                   </p>
@@ -1545,7 +1545,7 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
               {user?.role === 'customer' && repair.status === 'preventivo_emesso' && quote && (
                 <div className="mt-4 pt-4 border-t">
                   <div className="bg-amber-50 dark:bg-amber-950 rounded-lg p-4 space-y-4">
-                    <div className="flex items-center gap-2">
+                    <div className="flex flex-wrap items-center gap-2">
                       <Receipt className="h-5 w-5 text-amber-600 dark:text-amber-400" />
                       <p className="font-medium text-amber-800 dark:text-amber-200">
                         Preventivo in attesa di risposta
@@ -1599,7 +1599,7 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
               {user?.role === 'customer' && repair.status === 'pronto_ritiro' && (
                 <div className="mt-4 pt-4 border-t">
                   <div className="bg-green-50 dark:bg-green-950 rounded-lg p-4 space-y-4">
-                    <div className="flex items-center gap-2">
+                    <div className="flex flex-wrap items-center gap-2">
                       <PackageCheck className="h-5 w-5 text-green-600 dark:text-green-400" />
                       <p className="font-medium text-green-800 dark:text-green-200">
                         Il tuo dispositivo è pronto per il ritiro!
@@ -1610,7 +1610,7 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
                     </p>
                     {appointment ? (
                       <div className="bg-white dark:bg-gray-900 rounded-lg p-3 border space-y-2">
-                        <div className="flex items-center gap-2 text-sm">
+                        <div className="flex flex-wrap items-center gap-2 text-sm">
                           <CalendarCheck className="h-4 w-4 text-primary" />
                           <span className="font-medium">Appuntamento prenotato</span>
                         </div>
@@ -1978,7 +1978,7 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
                   </div>
                 )}
                 {diagnosis.requiresExternalParts && (
-                  <div className="flex items-center gap-2 text-amber-600 dark:text-amber-400">
+                  <div className="flex flex-wrap items-center gap-2 text-amber-600 dark:text-amber-400">
                     <Package className="h-4 w-4" />
                     <span className="text-sm">Richiede ricambi esterni</span>
                   </div>
@@ -2016,7 +2016,7 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
                   {suggestedDevices.map((device) => (
                     <div
                       key={device.id}
-                      className="flex items-center gap-3 p-3 rounded-lg border bg-green-500/5 border-green-500/20"
+                      className="flex flex-wrap items-center gap-3 p-3 rounded-lg border bg-green-500/5 border-green-500/20"
                       data-testid={`suggested-device-${device.id}`}
                     >
                       {device.imageUrl && (
@@ -2051,7 +2051,7 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
-                <div className="flex items-center gap-2 mb-3">
+                <div className="flex flex-wrap items-center gap-2 mb-3">
                   <span className="text-sm font-medium">Esito Complessivo:</span>
                   <Badge variant={testChecklist.overallResult ? 'default' : 'destructive'}>
                     {testChecklist.overallResult ? 'Superato' : 'Non Superato'}
@@ -2200,7 +2200,7 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
                           <div className="mt-2 space-y-2">
                             {parts.map((part: { name: string; quantity: number; unitPrice: number }, idx: number) => (
                               <div key={idx} className="flex justify-between items-center text-sm bg-muted/50 rounded px-2 py-1">
-                                <div className="flex items-center gap-2">
+                                <div className="flex flex-wrap items-center gap-2">
                                   <span>{part.name}</span>
                                   {part.quantity > 1 && (
                                     <Badge variant="outline" className="text-xs">x{part.quantity}</Badge>
@@ -2429,7 +2429,7 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
                 data-testid="input-skip-diagnosis-reason"
               />
             </div>
-            <div className="flex items-center gap-2 p-3 bg-amber-500/10 border border-amber-500/20 rounded-lg">
+            <div className="flex flex-wrap items-center gap-2 p-3 bg-amber-500/10 border border-amber-500/20 rounded-lg">
               <AlertTriangle className="h-4 w-4 text-amber-500 flex-shrink-0" />
               <p className="text-sm text-amber-600 dark:text-amber-400">
                 Saltando la diagnosi, il preventivo verrà creato senza dati diagnostici.

@@ -110,13 +110,13 @@ export default function RepairCenterUtilityReports() {
   if (isLoading) {
     return (
       <div className="p-6 space-y-6">
-        <div className="flex items-center gap-4 mb-6">
+        <div className="flex flex-wrap items-center gap-4 mb-6">
           <Link href="/repair-center/utility">
             <Button variant="ghost" size="icon">
               <ArrowLeft className="h-4 w-4" />
             </Button>
           </Link>
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-3">
             <PieChart className="h-8 w-8 text-primary" />
             <div>
               <h1 className="text-2xl font-bold">Report Utility</h1>
@@ -148,7 +148,7 @@ export default function RepairCenterUtilityReports() {
         <div className="absolute top-1/2 left-1/3 w-48 h-48 rounded-full bg-emerald-300/20 blur-3xl animate-pulse" style={{ animationDelay: '2s' }} />
         
         <div className="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div className="flex items-center gap-4">
+          <div className="flex flex-wrap items-center gap-4">
             <Link href="/repair-center/utility">
               <Button variant="outline" size="icon" className="bg-white/20 backdrop-blur-sm text-white border-white/30 hover:bg-white/30 shadow-lg" data-testid="button-back">
                 <ArrowLeft className="h-4 w-4" />
@@ -162,7 +162,7 @@ export default function RepairCenterUtilityReports() {
               <p className="text-emerald-100">Analisi e statistiche anno {selectedYear}</p>
             </div>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <Select
               value={selectedYear.toString()}
               onValueChange={(v) => setSelectedYear(parseInt(v))}
@@ -347,7 +347,7 @@ export default function RepairCenterUtilityReports() {
                   const CategoryIcon = categoryIcons[Object.keys(categoryLabels).find(k => categoryLabels[k] === cat.name) || "altro"];
                   return (
                     <div key={cat.name} className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
+                      <div className="flex flex-wrap items-center gap-3">
                         <div 
                           className="w-8 h-8 rounded-full flex items-center justify-center"
                           style={{ backgroundColor: COLORS[index % COLORS.length] + "20" }}

@@ -225,7 +225,7 @@ export default function ResellerPosOverview() {
         <div className="absolute top-1/2 left-1/3 w-48 h-48 rounded-full bg-emerald-300/20 blur-3xl animate-pulse" style={{ animationDelay: '2s' }} />
         
         <div className="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-3">
             <div className="h-12 w-12 rounded-2xl bg-white/20 backdrop-blur-sm border border-white/30 flex items-center justify-center">
               <Store className="h-6 w-6 text-white" />
             </div>
@@ -238,7 +238,7 @@ export default function ResellerPosOverview() {
               </p>
             </div>
           </div>
-          <div className="flex items-center gap-2 flex-wrap">
+          <div className="flex flex-wrap items-center gap-2 flex-wrap">
             <Select value={repairCenterFilter} onValueChange={setRepairCenterFilter}>
               <SelectTrigger className="w-48 bg-white/20 backdrop-blur-sm border-white/30 text-white" data-testid="select-repair-center">
                 <SelectValue placeholder="Tutti i centri" />
@@ -335,7 +335,7 @@ export default function ResellerPosOverview() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card className="rounded-2xl">
           <CardHeader className="bg-gradient-to-r from-emerald-50 to-teal-50 dark:from-emerald-950/20 dark:to-teal-950/20 rounded-t-2xl">
-            <CardTitle className="flex items-center gap-2">
+            <CardTitle className="flex flex-wrap items-center gap-2">
               <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center">
                 <DollarSign className="h-4 w-4 text-white" />
               </div>
@@ -346,7 +346,7 @@ export default function ResellerPosOverview() {
             <div className="space-y-4">
               {stats?.paymentBreakdown && Object.entries(stats.paymentBreakdown).map(([method, amount]) => (
                 <div key={method} className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-2">
                     {getPaymentMethodIcon(method)}
                     <span className="text-sm font-medium">{getPaymentMethodLabel(method)}</span>
                   </div>
@@ -364,7 +364,7 @@ export default function ResellerPosOverview() {
 
         <Card className="rounded-2xl">
           <CardHeader className="bg-gradient-to-r from-teal-50 to-cyan-50 dark:from-teal-950/20 dark:to-cyan-950/20 rounded-t-2xl">
-            <CardTitle className="flex items-center gap-2">
+            <CardTitle className="flex flex-wrap items-center gap-2">
               <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-teal-500 to-cyan-500 flex items-center justify-center">
                 <Users className="h-4 w-4 text-white" />
               </div>
@@ -375,7 +375,7 @@ export default function ResellerPosOverview() {
             <div className="space-y-4">
               {stats?.topRepairCenters?.map((center, index) => (
                 <div key={center.id} className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-2">
                     <Badge variant="outline" className="w-6 h-6 p-0 flex items-center justify-center">
                       {index + 1}
                     </Badge>
@@ -399,7 +399,7 @@ export default function ResellerPosOverview() {
 
       <Card className="rounded-2xl">
         <CardHeader className="bg-gradient-to-r from-cyan-50 to-teal-50 dark:from-cyan-950/20 dark:to-teal-950/20 rounded-t-2xl">
-          <CardTitle className="flex items-center gap-2">
+          <CardTitle className="flex flex-wrap items-center gap-2">
             <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-cyan-500 to-teal-500 flex items-center justify-center">
               <Store className="h-4 w-4 text-white" />
             </div>
@@ -418,7 +418,7 @@ export default function ResellerPosOverview() {
               {registerStats.map((reg) => (
                 <div key={reg.id} className="p-4 rounded-lg border bg-card" data-testid={`card-register-${reg.id}`}>
                   <div className="flex items-center justify-between mb-3">
-                    <div className="flex items-center gap-2">
+                    <div className="flex flex-wrap items-center gap-2">
                       <Store className="h-4 w-4 text-teal-500" />
                       <span className="font-medium">{reg.name}</span>
                       {reg.isDefault && <Badge variant="secondary" className="text-xs">Default</Badge>}
@@ -460,7 +460,7 @@ export default function ResellerPosOverview() {
 
       <Card className="rounded-2xl">
         <CardHeader className="bg-gradient-to-r from-emerald-50 to-teal-50 dark:from-emerald-950/20 dark:to-teal-950/20 rounded-t-2xl">
-          <CardTitle className="flex items-center gap-2">
+          <CardTitle className="flex flex-wrap items-center gap-2">
             <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center">
               <Receipt className="h-4 w-4 text-white" />
             </div>
@@ -471,7 +471,7 @@ export default function ResellerPosOverview() {
           <div className="space-y-3">
             {stats?.recentTransactions?.map((tx) => (
               <div key={tx.id} className="flex items-center justify-between p-3 rounded-lg bg-muted/50 hover-elevate cursor-pointer" onClick={() => setSelectedTxId(tx.id.toString())} data-testid={`row-transaction-${tx.id}`}>
-                <div className="flex items-center gap-3">
+                <div className="flex flex-wrap items-center gap-3">
                   {tx.type === "completed" ? (
                     <CheckCircle className="h-5 w-5 text-emerald-500" />
                   ) : (
@@ -484,7 +484,7 @@ export default function ResellerPosOverview() {
                     </div>
                   </div>
                 </div>
-                <div className="flex items-center gap-3">
+                <div className="flex flex-wrap items-center gap-3">
                   <div className="text-right">
                     <div className={`font-bold ${tx.type === "refunded" ? "text-teal-600" : ""}`}>
                       {tx.type === "refunded" ? "-" : ""}{formatCurrency(tx.totalAmount)}
@@ -508,7 +508,7 @@ export default function ResellerPosOverview() {
 
       <Card className="rounded-2xl">
         <CardHeader className="bg-gradient-to-r from-teal-50 to-cyan-50 dark:from-teal-950/20 dark:to-cyan-950/20 rounded-t-2xl">
-          <CardTitle className="flex items-center gap-2">
+          <CardTitle className="flex flex-wrap items-center gap-2">
             <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-teal-500 to-cyan-500 flex items-center justify-center">
               <Clock className="h-4 w-4 text-white" />
             </div>
@@ -519,7 +519,7 @@ export default function ResellerPosOverview() {
           <div className="space-y-3">
             {sessions?.map((session) => (
               <div key={session.id} className="flex items-center justify-between p-3 rounded-lg bg-muted/50" data-testid={`row-session-${session.id}`}>
-                <div className="flex items-center gap-3">
+                <div className="flex flex-wrap items-center gap-3">
                   {session.status === "open" ? (
                     <PlayCircle className="h-5 w-5 text-green-500" />
                   ) : (
@@ -536,7 +536,7 @@ export default function ResellerPosOverview() {
                   </div>
                 </div>
                 <div className="text-right">
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-2">
                     {session.status === "open" ? (
                       <Badge variant="default" className="bg-green-500">Aperta</Badge>
                     ) : (
@@ -567,7 +567,7 @@ export default function ResellerPosOverview() {
       <Dialog open={!!selectedTxId} onOpenChange={(open) => !open && setSelectedTxId(null)}>
         <DialogContent className="max-w-lg">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
+            <DialogTitle className="flex flex-wrap items-center gap-2">
               <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center">
                 <Receipt className="h-4 w-4 text-white" />
               </div>

@@ -479,7 +479,7 @@ export default function SupplierOrdersPage() {
           backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23000' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
         }} />
         <div className="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div className="flex items-center gap-3 mb-1">
+          <div className="flex flex-wrap items-center gap-3 mb-1">
             <div className="h-10 w-10 rounded-xl bg-primary text-primary-foreground flex items-center justify-center shadow-lg shadow-primary/25">
               <Truck className="h-5 w-5" />
             </div>
@@ -509,7 +509,7 @@ export default function SupplierOrdersPage() {
         </div>
         
         <Select value={filterStatus} onValueChange={setFilterStatus}>
-          <SelectTrigger className="w-[180px]" data-testid="select-filter-status">
+          <SelectTrigger className="w-full sm:w-[180px]" data-testid="select-filter-status">
             <SelectValue placeholder="Stato" />
           </SelectTrigger>
           <SelectContent>
@@ -521,7 +521,7 @@ export default function SupplierOrdersPage() {
         </Select>
         
         <Select value={filterSupplier} onValueChange={setFilterSupplier}>
-          <SelectTrigger className="w-[200px]" data-testid="select-filter-supplier">
+          <SelectTrigger className="w-full sm:w-[200px]" data-testid="select-filter-supplier">
             <SelectValue placeholder="Fornitore" />
           </SelectTrigger>
           <SelectContent>
@@ -533,7 +533,7 @@ export default function SupplierOrdersPage() {
         </Select>
         
         <Select value={filterOwnerType} onValueChange={setFilterOwnerType}>
-          <SelectTrigger className="w-[180px]" data-testid="select-filter-owner-type">
+          <SelectTrigger className="w-full sm:w-[180px]" data-testid="select-filter-owner-type">
             <SelectValue placeholder="Tipo Proprietario" />
           </SelectTrigger>
           <SelectContent>
@@ -542,7 +542,7 @@ export default function SupplierOrdersPage() {
               const OwnerIcon = config.icon;
               return (
                 <SelectItem key={key} value={key}>
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-2">
                     <OwnerIcon className="h-4 w-4" />
                     {config.label}
                   </div>
@@ -556,7 +556,7 @@ export default function SupplierOrdersPage() {
       {/* Orders List */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
+          <CardTitle className="flex flex-wrap items-center gap-2">
             <ShoppingCart className="h-5 w-5" />
             Lista Ordini
           </CardTitle>
@@ -611,13 +611,13 @@ export default function SupplierOrdersPage() {
                         {order.orderNumber}
                       </TableCell>
                       <TableCell>
-                        <div className="flex items-center gap-2">
+                        <div className="flex flex-wrap items-center gap-2">
                           <Building2 className="h-4 w-4 text-muted-foreground" />
                           {supplier?.name || "-"}
                         </div>
                       </TableCell>
                       <TableCell>
-                        <div className="flex items-center gap-2">
+                        <div className="flex flex-wrap items-center gap-2">
                           <OwnerIcon className="h-4 w-4 text-muted-foreground" />
                           <span>{getOwnerName(order)}</span>
                         </div>
@@ -633,7 +633,7 @@ export default function SupplierOrdersPage() {
                       </TableCell>
                       <TableCell>
                         {order.expectedDelivery ? (
-                          <div className="flex items-center gap-1 text-sm">
+                          <div className="flex flex-wrap items-center gap-1 text-sm">
                             <Calendar className="h-3 w-3" />
                             {formatDate(order.expectedDelivery)}
                           </div>
@@ -750,25 +750,25 @@ export default function SupplierOrdersPage() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="admin">
-                    <div className="flex items-center gap-2">
+                    <div className="flex flex-wrap items-center gap-2">
                       <Shield className="h-4 w-4" />
                       <span>Admin (Piattaforma)</span>
                     </div>
                   </SelectItem>
                   <SelectItem value="reseller">
-                    <div className="flex items-center gap-2">
+                    <div className="flex flex-wrap items-center gap-2">
                       <Users className="h-4 w-4" />
                       <span>Reseller</span>
                     </div>
                   </SelectItem>
                   <SelectItem value="sub_reseller">
-                    <div className="flex items-center gap-2">
+                    <div className="flex flex-wrap items-center gap-2">
                       <Store className="h-4 w-4" />
                       <span>Sub-Reseller</span>
                     </div>
                   </SelectItem>
                   <SelectItem value="repair_center">
-                    <div className="flex items-center gap-2">
+                    <div className="flex flex-wrap items-center gap-2">
                       <Wrench className="h-4 w-4" />
                       <span>Centro Riparazione</span>
                     </div>
@@ -878,7 +878,7 @@ export default function SupplierOrdersPage() {
           {selectedOrder && (
             <>
               <DialogHeader>
-                <DialogTitle className="flex items-center gap-3">
+                <DialogTitle className="flex flex-wrap items-center gap-3">
                   <span>Ordine {selectedOrder.orderNumber}</span>
                   <Badge className={STATUS_CONFIG[selectedOrder.status]?.color}>
                     {STATUS_CONFIG[selectedOrder.status]?.label}
@@ -1140,7 +1140,7 @@ export default function SupplierOrdersPage() {
               <Select value={itemFormData.productId} onValueChange={handleProductSelect}>
                 <SelectTrigger data-testid="select-item-product">
                   {itemFormData.productId && itemFormData.productId !== "__none__" ? (
-                    <div className="flex items-center gap-2">
+                    <div className="flex flex-wrap items-center gap-2">
                       {(() => {
                         const selectedProduct = products.find(p => p.id === itemFormData.productId);
                         return selectedProduct ? (
@@ -1164,7 +1164,7 @@ export default function SupplierOrdersPage() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="__none__">
-                    <div className="flex items-center gap-2">
+                    <div className="flex flex-wrap items-center gap-2">
                       <div className="h-8 w-8 rounded-full bg-muted flex items-center justify-center">
                         <XCircle className="h-4 w-4 text-muted-foreground" />
                       </div>
@@ -1173,7 +1173,7 @@ export default function SupplierOrdersPage() {
                   </SelectItem>
                   {products.map(p => (
                     <SelectItem key={p.id} value={p.id} data-testid={`select-item-product-${p.id}`}>
-                      <div className="flex items-center gap-2">
+                      <div className="flex flex-wrap items-center gap-2">
                         <Avatar className="h-8 w-8">
                           <AvatarImage src={p.imageUrl || undefined} alt={p.name} />
                           <AvatarFallback className="bg-muted">

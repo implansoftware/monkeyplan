@@ -367,7 +367,7 @@ export default function SubResellers() {
         />
         
         <div className="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div className="flex items-center gap-3 mb-1">
+          <div className="flex flex-wrap items-center gap-3 mb-1">
             <div className="h-12 w-12 rounded-2xl bg-white/20 backdrop-blur-sm border border-white/30 flex items-center justify-center">
               <Network className="h-6 w-6 text-white" />
             </div>
@@ -390,7 +390,7 @@ export default function SubResellers() {
       <div className="grid gap-4 md:grid-cols-4">
         <Card className="overflow-hidden rounded-2xl">
           <CardContent className="p-5">
-            <div className="flex items-center gap-4">
+            <div className="flex flex-wrap items-center gap-4">
               <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-blue-500/10">
                 <Store className="h-6 w-6 text-blue-600" />
               </div>
@@ -409,7 +409,7 @@ export default function SubResellers() {
 
         <Card className="overflow-hidden rounded-2xl">
           <CardContent className="p-5">
-            <div className="flex items-center gap-4">
+            <div className="flex flex-wrap items-center gap-4">
               <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-emerald-500/10">
                 <Users className="h-6 w-6 text-emerald-600" />
               </div>
@@ -428,7 +428,7 @@ export default function SubResellers() {
 
         <Card className="overflow-hidden rounded-2xl">
           <CardContent className="p-5">
-            <div className="flex items-center gap-4">
+            <div className="flex flex-wrap items-center gap-4">
               <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-amber-500/10">
                 <Building className="h-6 w-6 text-amber-600" />
               </div>
@@ -447,7 +447,7 @@ export default function SubResellers() {
 
         <Card className="overflow-hidden rounded-2xl">
           <CardContent className="p-5">
-            <div className="flex items-center gap-4">
+            <div className="flex flex-wrap items-center gap-4">
               <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-violet-500/10">
                 <Network className="h-6 w-6 text-violet-600" />
               </div>
@@ -474,7 +474,7 @@ export default function SubResellers() {
             <CardHeader className="pb-4">
               <div className="flex items-center justify-between gap-4 flex-wrap">
                 <div>
-                  <CardTitle className="flex items-center gap-2 text-lg">
+                  <CardTitle className="flex flex-wrap items-center gap-2 text-lg">
                     <Store className="h-5 w-5 text-primary" />
                     Elenco Sub-Reseller
                   </CardTitle>
@@ -629,7 +629,7 @@ export default function SubResellers() {
       }}>
         <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto" data-testid="dialog-subreseller-form">
           <DialogHeader className="pb-2">
-            <DialogTitle className="flex items-center gap-2 text-xl">
+            <DialogTitle className="flex flex-wrap items-center gap-2 text-xl">
               <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-primary/80 text-primary-foreground">
                 {editingReseller ? <Pencil className="h-5 w-5" /> : <Plus className="h-5 w-5" />}
               </div>
@@ -785,7 +785,7 @@ export default function SubResellers() {
                   <div className="flex items-center justify-between">
                     <p className="text-sm text-muted-foreground">Dati fiscali e fatturazione (opzionali).</p>
                     {!editingReseller && (
-                      <div className="flex items-center gap-2">
+                      <div className="flex flex-wrap items-center gap-2">
                         <Checkbox
                           id="useParentData"
                           checked={useParentData}
@@ -985,7 +985,7 @@ const SubResellerDetailDialog = ({ open, onOpenChange, reseller }: SubResellerDe
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto" data-testid="dialog-subreseller-detail">
         <DialogHeader className="pb-2">
-          <DialogTitle className="flex items-center gap-2 text-xl">
+          <DialogTitle className="flex flex-wrap items-center gap-2 text-xl">
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 text-white">
               <Eye className="h-5 w-5" />
             </div>
@@ -1005,7 +1005,7 @@ const SubResellerDetailDialog = ({ open, onOpenChange, reseller }: SubResellerDe
         ) : data ? (
           <div className="space-y-5">
             <div className="flex items-center justify-between p-4 rounded-xl bg-gradient-to-r from-primary/10 via-primary/5 to-transparent">
-              <div className="flex items-center gap-3">
+              <div className="flex flex-wrap items-center gap-3">
                 <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/20 text-primary font-bold text-lg">
                   {data.fullName.charAt(0).toUpperCase()}
                 </div>
@@ -1152,7 +1152,7 @@ const SubResellerDetailDialog = ({ open, onOpenChange, reseller }: SubResellerDe
               {ecommerce ? (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="p-3 rounded-lg bg-violet-500/5 border border-violet-500/10">
-                    <div className="flex items-center gap-2 mb-1">
+                    <div className="flex flex-wrap items-center gap-2 mb-1">
                       <Package className="h-4 w-4 text-violet-600" />
                       <span className="text-xs text-muted-foreground">Prodotti</span>
                     </div>
@@ -1160,7 +1160,7 @@ const SubResellerDetailDialog = ({ open, onOpenChange, reseller }: SubResellerDe
                     <p className="text-xs text-muted-foreground">pubblicati/assegnati</p>
                   </div>
                   <div className="p-3 rounded-lg bg-blue-500/5 border border-blue-500/10">
-                    <div className="flex items-center gap-2 mb-1">
+                    <div className="flex flex-wrap items-center gap-2 mb-1">
                       <ShoppingCart className="h-4 w-4 text-blue-600" />
                       <span className="text-xs text-muted-foreground">Ordini</span>
                     </div>
@@ -1170,14 +1170,14 @@ const SubResellerDetailDialog = ({ open, onOpenChange, reseller }: SubResellerDe
                     )}
                   </div>
                   <div className="p-3 rounded-lg bg-emerald-500/5 border border-emerald-500/10">
-                    <div className="flex items-center gap-2 mb-1">
+                    <div className="flex flex-wrap items-center gap-2 mb-1">
                       <DollarSign className="h-4 w-4 text-emerald-600" />
                       <span className="text-xs text-muted-foreground">Fatturato</span>
                     </div>
                     <p className="text-lg font-bold">{formatPrice(ecommerce.totalRevenue)}</p>
                   </div>
                   <div className="p-3 rounded-lg bg-muted/50 border">
-                    <div className="flex items-center gap-2 mb-1">
+                    <div className="flex flex-wrap items-center gap-2 mb-1">
                       <TrendingUp className="h-4 w-4 text-muted-foreground" />
                       <span className="text-xs text-muted-foreground">Ultimo Ordine</span>
                     </div>

@@ -855,7 +855,7 @@ export function AccessoryWizard({
                       <Label className="text-sm font-medium">Compatibilità selezionate:</Label>
                       <div className="flex flex-wrap gap-2">
                         {compatibilities.map((compat, index) => (
-                          <Badge key={index} variant="secondary" className="flex items-center gap-1">
+                          <Badge key={index} variant="secondary" className="flex flex-wrap items-center gap-1">
                             {compat.deviceBrandName}{compat.deviceModelName ? ` - ${compat.deviceModelName}` : " (tutti i modelli)"}
                             <X className="h-3 w-3 cursor-pointer" onClick={() => removeCompatibility(index)} />
                           </Badge>
@@ -883,7 +883,7 @@ export function AccessoryWizard({
 
                 <Card>
                   <CardContent className="p-4 space-y-3">
-                    <div className="flex items-center gap-4">
+                    <div className="flex flex-wrap items-center gap-4">
                       {imagePreview && (
                         <img src={imagePreview} alt="Preview" className="w-20 h-20 object-cover rounded-lg" />
                       )}

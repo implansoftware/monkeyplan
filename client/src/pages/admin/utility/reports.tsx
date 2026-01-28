@@ -112,13 +112,13 @@ export default function AdminUtilityReports() {
   if (isLoading) {
     return (
       <div className="p-6 space-y-6">
-        <div className="flex items-center gap-4 mb-6">
+        <div className="flex flex-wrap items-center gap-4 mb-6">
           <Link href="/admin/utility">
             <Button variant="ghost" size="icon">
               <ArrowLeft className="h-4 w-4" />
             </Button>
           </Link>
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-3">
             <PieChart className="h-8 w-8 text-primary" />
             <div>
               <h1 className="text-2xl font-bold">Report Utility</h1>
@@ -145,13 +145,13 @@ export default function AdminUtilityReports() {
   return (
     <div className="p-6 space-y-6">
       <div className="flex items-center justify-between gap-4 mb-6 flex-wrap">
-        <div className="flex items-center gap-4">
+        <div className="flex flex-wrap items-center gap-4">
           <Link href="/admin/utility">
             <Button variant="ghost" size="icon" data-testid="button-back">
               <ArrowLeft className="h-4 w-4" />
             </Button>
           </Link>
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-3">
             <PieChart className="h-8 w-8 text-primary" />
             <div>
               <h1 className="text-2xl font-bold">Report Utility</h1>
@@ -343,7 +343,7 @@ export default function AdminUtilityReports() {
                   const CategoryIcon = categoryIcons[Object.keys(categoryLabels).find(k => categoryLabels[k] === cat.name) || "altro"];
                   return (
                     <div key={cat.name} className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
+                      <div className="flex flex-wrap items-center gap-3">
                         <div 
                           className="w-8 h-8 rounded-full flex items-center justify-center"
                           style={{ backgroundColor: COLORS[index % COLORS.length] + "20" }}

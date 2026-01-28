@@ -185,7 +185,7 @@ export default function AdminTransferRequestsPage() {
           backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23000' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
         }} />
         <div className="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div className="flex items-center gap-3 mb-1">
+          <div className="flex flex-wrap items-center gap-3 mb-1">
             <div className="h-10 w-10 rounded-xl bg-primary text-primary-foreground flex items-center justify-center shadow-lg shadow-primary/25">
               <Inbox className="h-5 w-5" />
             </div>
@@ -194,7 +194,7 @@ export default function AdminTransferRequestsPage() {
               <p className="text-sm text-muted-foreground">Gestisci tutte le richieste di interscambio prodotti</p>
             </div>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             {pendingCount > 0 && (
               <Badge className="bg-yellow-500/20 text-yellow-700" data-testid="badge-pending-count">
                 {pendingCount} in attesa
@@ -211,7 +211,7 @@ export default function AdminTransferRequestsPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
+          <CardTitle className="flex flex-wrap items-center gap-2">
             <Inbox className="h-5 w-5" />
             Filtri
           </CardTitle>
@@ -275,7 +275,7 @@ export default function AdminTransferRequestsPage() {
                 <CardContent className="p-4">
                   <div className="flex items-start justify-between gap-4">
                     <div className="flex-1 space-y-2">
-                      <div className="flex items-center gap-2 flex-wrap">
+                      <div className="flex flex-wrap items-center gap-2 flex-wrap">
                         <span className="font-mono font-semibold" data-testid={`text-request-number-${request.id}`}>
                           {request.requestNumber}
                         </span>
@@ -283,22 +283,22 @@ export default function AdminTransferRequestsPage() {
                           <StatusIcon className="h-3 w-3 mr-1" />
                           {statusConfig[request.status]?.label}
                         </Badge>
-                        <Badge variant="outline" className="flex items-center gap-1">
+                        <Badge variant="outline" className="flex flex-wrap items-center gap-1">
                           <TypeIcon className="h-3 w-3" />
                           {TypeInfo?.label}
                         </Badge>
                       </div>
                       
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-2 text-sm">
-                        <div className="flex items-center gap-1 text-muted-foreground">
+                        <div className="flex flex-wrap items-center gap-1 text-muted-foreground">
                           <User className="h-4 w-4" />
                           <span>Da: {request.requesterName || "N/D"}</span>
                         </div>
-                        <div className="flex items-center gap-1 text-muted-foreground">
+                        <div className="flex flex-wrap items-center gap-1 text-muted-foreground">
                           <Warehouse className="h-4 w-4" />
                           <span>Sorgente: {request.sourceWarehouseName || "N/D"}</span>
                         </div>
-                        <div className="flex items-center gap-1 text-muted-foreground">
+                        <div className="flex flex-wrap items-center gap-1 text-muted-foreground">
                           <Warehouse className="h-4 w-4" />
                           <span>Dest: {request.requesterWarehouseName || "N/D"}</span>
                         </div>

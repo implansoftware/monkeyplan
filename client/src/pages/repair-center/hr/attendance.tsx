@@ -190,7 +190,7 @@ export default function RepairCenterHrAttendance() {
         <div className="absolute top-1/2 left-1/3 w-48 h-48 rounded-full bg-emerald-300/20 blur-3xl animate-pulse" style={{ animationDelay: '2s' }} />
         
         <div className="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div className="flex items-center gap-4">
+          <div className="flex flex-wrap items-center gap-4">
             <div className="h-14 w-14 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center shadow-xl">
               <Clock className="h-7 w-7 text-white" />
             </div>
@@ -199,7 +199,7 @@ export default function RepairCenterHrAttendance() {
               <p className="text-emerald-100">Timbrature e registrazione orari</p>
             </div>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <Link href="/repair-center/hr">
               <Button variant="outline" className="bg-white/20 backdrop-blur-sm text-white border-white/30 hover:bg-white/30 shadow-lg">
                 <ArrowLeft className="h-4 w-4 mr-2" />
@@ -237,13 +237,13 @@ export default function RepairCenterHrAttendance() {
       <Card>
         <CardHeader className="flex flex-col gap-4">
           <div className="flex flex-row items-center justify-between gap-2 flex-wrap">
-            <CardTitle className="flex items-center gap-2">
+            <CardTitle className="flex flex-wrap items-center gap-2">
               <CalendarIcon className="h-5 w-5 text-muted-foreground" />
               {isToday ? "Timbrature di Oggi" : "Timbrature del Giorno"}
             </CardTitle>
             <div className="flex gap-2 items-center">
               <Select value={selectedUser} onValueChange={setSelectedUser}>
-                <SelectTrigger className="w-[180px]">
+                <SelectTrigger className="w-full sm:w-[180px]">
                   <SelectValue placeholder="Tutti gli utenti" />
                 </SelectTrigger>
                 <SelectContent>
@@ -261,7 +261,7 @@ export default function RepairCenterHrAttendance() {
               </Button>
             </div>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <Button size="icon" variant="ghost" onClick={goToPreviousDay} data-testid="button-prev-day">
               <ChevronLeft className="h-4 w-4" />
             </Button>

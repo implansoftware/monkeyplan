@@ -398,7 +398,7 @@ export default function ResellerRepairCenters() {
         <div className="absolute bottom-0 right-0 w-64 h-64 rounded-full bg-cyan-300/20 blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
         <div className="absolute top-1/2 left-1/3 w-48 h-48 rounded-full bg-emerald-300/20 blur-3xl animate-pulse" style={{ animationDelay: '2s' }} />
         <div className="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-3">
             <div className="h-12 w-12 rounded-2xl bg-white/20 backdrop-blur-sm border border-white/30 flex items-center justify-center">
               <Building className="h-6 w-6 text-white" />
             </div>
@@ -435,7 +435,7 @@ export default function ResellerRepairCenters() {
                 <Accordion type="multiple" defaultValue={["info", "address", "fiscal", "config"]} className="w-full">
                   <AccordionItem value="info">
                     <AccordionTrigger className="text-sm font-medium">
-                      <div className="flex items-center gap-2">
+                      <div className="flex flex-wrap items-center gap-2">
                         <Building className="h-4 w-4" />
                         Info Base
                       </div>
@@ -475,7 +475,7 @@ export default function ResellerRepairCenters() {
 
                   <AccordionItem value="address">
                     <AccordionTrigger className="text-sm font-medium">
-                      <div className="flex items-center gap-2">
+                      <div className="flex flex-wrap items-center gap-2">
                         <MapPin className="h-4 w-4" />
                         Indirizzo
                       </div>
@@ -536,7 +536,7 @@ export default function ResellerRepairCenters() {
 
                   <AccordionItem value="fiscal">
                     <AccordionTrigger className="text-sm font-medium">
-                      <div className="flex items-center gap-2">
+                      <div className="flex flex-wrap items-center gap-2">
                         <FileText className="h-4 w-4" />
                         Dati Fiscali
                       </div>
@@ -609,7 +609,7 @@ export default function ResellerRepairCenters() {
 
                   <AccordionItem value="config">
                     <AccordionTrigger className="text-sm font-medium">
-                      <div className="flex items-center gap-2">
+                      <div className="flex flex-wrap items-center gap-2">
                         <Settings className="h-4 w-4" />
                         Configurazione
                       </div>
@@ -823,7 +823,7 @@ export default function ResellerRepairCenters() {
                     <div className="space-y-4">
                       <div className="flex items-center justify-between">
                         <p className="text-sm text-muted-foreground">Dati fiscali e fatturazione (opzionali).</p>
-                        <div className="flex items-center gap-2">
+                        <div className="flex flex-wrap items-center gap-2">
                           <Checkbox 
                             id="useMyFiscalData" 
                             checked={useMyFiscalData}
@@ -1112,7 +1112,7 @@ export default function ResellerRepairCenters() {
                   <TableRow key={center.id} data-testid={`row-center-${center.id}`}>
                     <TableCell className="font-medium" data-testid={`text-name-${center.id}`}>{center.name}</TableCell>
                     <TableCell data-testid={`text-location-${center.id}`}>
-                      <div className="flex items-center gap-2 text-sm">
+                      <div className="flex flex-wrap items-center gap-2 text-sm">
                         <MapPin className="h-4 w-4 text-muted-foreground" />
                         <div>
                           <div>{center.city}</div>
@@ -1122,11 +1122,11 @@ export default function ResellerRepairCenters() {
                     </TableCell>
                     <TableCell data-testid={`text-contacts-${center.id}`}>
                       <div className="text-sm space-y-1">
-                        <div className="flex items-center gap-2">
+                        <div className="flex flex-wrap items-center gap-2">
                           <Phone className="h-3 w-3 text-muted-foreground" />
                           {center.phone}
                         </div>
-                        <div className="flex items-center gap-2">
+                        <div className="flex flex-wrap items-center gap-2">
                           <Mail className="h-3 w-3 text-muted-foreground" />
                           {center.email}
                         </div>
@@ -1224,7 +1224,7 @@ export default function ResellerRepairCenters() {
         <Card className="rounded-2xl">
           <CardHeader>
             <div className="flex items-center justify-between gap-4 flex-wrap">
-              <div className="flex items-center gap-3">
+              <div className="flex flex-wrap items-center gap-3">
                 <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
                   <Network className="h-5 w-5 text-primary" />
                 </div>
@@ -1235,12 +1235,12 @@ export default function ResellerRepairCenters() {
                   </p>
                 </div>
               </div>
-              <div className="flex items-center gap-2">
-                <Badge variant="secondary" className="flex items-center gap-1">
+              <div className="flex flex-wrap items-center gap-2">
+                <Badge variant="secondary" className="flex flex-wrap items-center gap-1">
                   <Users className="h-3 w-3" />
                   {subResellersCenters.length} Rivenditori
                 </Badge>
-                <Badge variant="outline" className="flex items-center gap-1">
+                <Badge variant="outline" className="flex flex-wrap items-center gap-1">
                   <Building className="h-3 w-3" />
                   {totalNetworkCenters} Centri
                 </Badge>
@@ -1271,7 +1271,7 @@ export default function ResellerRepairCenters() {
                     <div className="border rounded-lg">
                       <CollapsibleTrigger asChild>
                         <div className="flex items-center justify-between p-4 cursor-pointer hover-elevate rounded-lg" data-testid={`subreseller-toggle-${srData.subReseller.id}`}>
-                          <div className="flex items-center gap-3">
+                          <div className="flex flex-wrap items-center gap-3">
                             <div className="flex h-9 w-9 items-center justify-center rounded-full bg-muted">
                               <Users className="h-4 w-4 text-muted-foreground" />
                             </div>
@@ -1280,7 +1280,7 @@ export default function ResellerRepairCenters() {
                               <div className="text-sm text-muted-foreground">{srData.subReseller.email}</div>
                             </div>
                           </div>
-                          <div className="flex items-center gap-2">
+                          <div className="flex flex-wrap items-center gap-2">
                             <Badge variant="outline">
                               {srData.repairCenters.length} {srData.repairCenters.length === 1 ? 'Centro' : 'Centri'}
                             </Badge>
@@ -1311,7 +1311,7 @@ export default function ResellerRepairCenters() {
                                       {center.name}
                                     </TableCell>
                                     <TableCell>
-                                      <div className="flex items-center gap-2 text-sm">
+                                      <div className="flex flex-wrap items-center gap-2 text-sm">
                                         <MapPin className="h-4 w-4 text-muted-foreground" />
                                         <div>
                                           <div>{center.city}</div>
@@ -1321,11 +1321,11 @@ export default function ResellerRepairCenters() {
                                     </TableCell>
                                     <TableCell>
                                       <div className="text-sm space-y-1">
-                                        <div className="flex items-center gap-2">
+                                        <div className="flex flex-wrap items-center gap-2">
                                           <Phone className="h-3 w-3 text-muted-foreground" />
                                           {center.phone}
                                         </div>
-                                        <div className="flex items-center gap-2">
+                                        <div className="flex flex-wrap items-center gap-2">
                                           <Mail className="h-3 w-3 text-muted-foreground" />
                                           {center.email}
                                         </div>
@@ -1359,7 +1359,7 @@ export default function ResellerRepairCenters() {
       }}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto" data-testid="dialog-center-detail">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-3">
+            <DialogTitle className="flex flex-wrap items-center gap-3">
               <div className="h-10 w-10 rounded-xl bg-primary text-primary-foreground flex items-center justify-center">
                 <Building className="h-5 w-5" />
               </div>
@@ -1381,15 +1381,15 @@ export default function ResellerRepairCenters() {
           ) : centerDetail ? (
             <Tabs defaultValue="anagrafica" className="w-full">
               <TabsList className="grid w-full grid-cols-3">
-                <TabsTrigger value="anagrafica" className="flex items-center gap-2" data-testid="tab-anagrafica">
+                <TabsTrigger value="anagrafica" className="flex flex-wrap items-center gap-2" data-testid="tab-anagrafica">
                   <FileText className="h-4 w-4" />
                   Anagrafica
                 </TabsTrigger>
-                <TabsTrigger value="statistiche" className="flex items-center gap-2" data-testid="tab-statistiche">
+                <TabsTrigger value="statistiche" className="flex flex-wrap items-center gap-2" data-testid="tab-statistiche">
                   <BarChart3 className="h-4 w-4" />
                   Statistiche
                 </TabsTrigger>
-                <TabsTrigger value="riparazioni" className="flex items-center gap-2" data-testid="tab-riparazioni">
+                <TabsTrigger value="riparazioni" className="flex flex-wrap items-center gap-2" data-testid="tab-riparazioni">
                   <Wrench className="h-4 w-4" />
                   Riparazioni
                 </TabsTrigger>
@@ -1401,7 +1401,7 @@ export default function ResellerRepairCenters() {
                   {/* Contatti */}
                   <Card>
                     <CardHeader className="pb-3">
-                      <div className="flex items-center gap-2">
+                      <div className="flex flex-wrap items-center gap-2">
                         <div className="h-8 w-8 rounded-lg bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
                           <Phone className="h-4 w-4 text-blue-600 dark:text-blue-400" />
                         </div>
@@ -1409,11 +1409,11 @@ export default function ResellerRepairCenters() {
                       </div>
                     </CardHeader>
                     <CardContent className="space-y-3 text-sm">
-                      <div className="flex items-center gap-2">
+                      <div className="flex flex-wrap items-center gap-2">
                         <Mail className="h-4 w-4 text-muted-foreground" />
                         <span>{centerDetail.center.email}</span>
                       </div>
-                      <div className="flex items-center gap-2">
+                      <div className="flex flex-wrap items-center gap-2">
                         <Phone className="h-4 w-4 text-muted-foreground" />
                         <span>{centerDetail.center.phone}</span>
                       </div>
@@ -1423,7 +1423,7 @@ export default function ResellerRepairCenters() {
                   {/* Indirizzo */}
                   <Card>
                     <CardHeader className="pb-3">
-                      <div className="flex items-center gap-2">
+                      <div className="flex flex-wrap items-center gap-2">
                         <div className="h-8 w-8 rounded-lg bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center">
                           <MapPin className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
                         </div>
@@ -1439,7 +1439,7 @@ export default function ResellerRepairCenters() {
                   {/* Dati Fiscali */}
                   <Card className="md:col-span-2">
                     <CardHeader className="pb-3">
-                      <div className="flex items-center gap-2">
+                      <div className="flex flex-wrap items-center gap-2">
                         <div className="h-8 w-8 rounded-lg bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center">
                           <FileText className="h-4 w-4 text-amber-600 dark:text-amber-400" />
                         </div>
@@ -1545,7 +1545,7 @@ export default function ResellerRepairCenters() {
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <Card>
                     <CardContent className="pt-4 pb-3">
-                      <div className="flex items-center gap-3">
+                      <div className="flex flex-wrap items-center gap-3">
                         <div className="h-10 w-10 rounded-lg bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
                           <Euro className="h-5 w-5 text-green-600 dark:text-green-400" />
                         </div>
@@ -1559,7 +1559,7 @@ export default function ResellerRepairCenters() {
 
                   <Card>
                     <CardContent className="pt-4 pb-3">
-                      <div className="flex items-center gap-3">
+                      <div className="flex flex-wrap items-center gap-3">
                         <div className="h-10 w-10 rounded-lg bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
                           <Users className="h-5 w-5 text-blue-600 dark:text-blue-400" />
                         </div>
@@ -1573,7 +1573,7 @@ export default function ResellerRepairCenters() {
 
                   <Card>
                     <CardContent className="pt-4 pb-3">
-                      <div className="flex items-center gap-3">
+                      <div className="flex flex-wrap items-center gap-3">
                         <div className="h-10 w-10 rounded-lg bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center">
                           <User2 className="h-5 w-5 text-purple-600 dark:text-purple-400" />
                         </div>
@@ -1595,7 +1595,7 @@ export default function ResellerRepairCenters() {
                     <Wrench className="h-4 w-4" />
                     Riparazioni ({repairsData?.total || 0})
                   </h4>
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-2">
                     <Select value={repairsStatusFilter} onValueChange={(v) => { setRepairsStatusFilter(v); setRepairsPage(0); }}>
                       <SelectTrigger className="w-48" data-testid="select-repair-status-filter">
                         <SelectValue placeholder="Filtra per stato" />
@@ -1689,7 +1689,7 @@ export default function ResellerRepairCenters() {
                         <p className="text-sm text-muted-foreground">
                           Pagina {repairsPage + 1} di {Math.ceil(repairsData.total / 20)}
                         </p>
-                        <div className="flex items-center gap-2">
+                        <div className="flex flex-wrap items-center gap-2">
                           <Button
                             variant="outline"
                             size="sm"
@@ -1730,7 +1730,7 @@ export default function ResellerRepairCenters() {
       <AlertDialog open={resetPasswordDialogOpen} onOpenChange={setResetPasswordDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle className="flex items-center gap-2">
+            <AlertDialogTitle className="flex flex-wrap items-center gap-2">
               <KeyRound className="h-5 w-5" />
               Reimposta Password
             </AlertDialogTitle>

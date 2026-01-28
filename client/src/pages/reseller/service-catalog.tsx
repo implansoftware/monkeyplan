@@ -500,7 +500,7 @@ export default function ResellerServiceCatalog() {
         <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
         <div className="absolute bottom-0 left-0 w-48 h-48 bg-cyan-300/20 rounded-full blur-2xl translate-y-1/2 -translate-x-1/4" />
         <div className="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-3">
             <div className="h-12 w-12 rounded-xl bg-white/20 backdrop-blur-sm border border-white/30 flex items-center justify-center">
               <Euro className="h-6 w-6 text-white" />
             </div>
@@ -523,7 +523,7 @@ export default function ResellerServiceCatalog() {
       {/* Le Mie Voci Section */}
       <Card className="rounded-2xl">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-lg">
+          <CardTitle className="flex flex-wrap items-center gap-2 text-lg">
             <Tag className="h-5 w-5" />
             Le Mie Voci
           </CardTitle>
@@ -668,14 +668,14 @@ export default function ResellerServiceCatalog() {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="reseller">
-                        <div className="flex items-center gap-2">
+                        <div className="flex flex-wrap items-center gap-2">
                           <Tag className="h-4 w-4" />
                           <span>Prezzi Rivenditore (miei)</span>
                         </div>
                       </SelectItem>
                       {catalogData?.repairCenters.map(center => (
                         <SelectItem key={center.id} value={center.id}>
-                          <div className="flex items-center gap-2">
+                          <div className="flex flex-wrap items-center gap-2">
                             <Building2 className="h-4 w-4" />
                             <span>{center.name}</span>
                           </div>
@@ -716,19 +716,19 @@ export default function ResellerServiceCatalog() {
                     <SelectContent>
                       <SelectItem value="all">Tutte</SelectItem>
                       <SelectItem value="global">
-                        <div className="flex items-center gap-1.5">
+                        <div className="flex flex-wrap items-center gap-1.5">
                           <Globe className="h-3.5 w-3.5 text-blue-500" />
                           Globale
                         </div>
                       </SelectItem>
                       <SelectItem value="mine">
-                        <div className="flex items-center gap-1.5">
+                        <div className="flex flex-wrap items-center gap-1.5">
                           <User className="h-3.5 w-3.5 text-green-500" />
                           Mio
                         </div>
                       </SelectItem>
                       <SelectItem value="reseller">
-                        <div className="flex items-center gap-1.5">
+                        <div className="flex flex-wrap items-center gap-1.5">
                           <Users className="h-3.5 w-3.5 text-orange-500" />
                           Reseller
                         </div>
@@ -830,7 +830,7 @@ export default function ResellerServiceCatalog() {
                             <TableCell>
                               <Tooltip>
                                 <TooltipTrigger>
-                                  <div className="flex items-center gap-1.5">
+                                  <div className="flex flex-wrap items-center gap-1.5">
                                     <OwnerIcon className={`h-4 w-4 ${ownership.color}`} />
                                     <span className="text-xs">{ownership.label}</span>
                                   </div>

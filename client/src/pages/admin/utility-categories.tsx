@@ -155,7 +155,7 @@ function IconPicker({ value, onChange }: { value: string; onChange: (value: stri
           className="w-full justify-between"
           data-testid="button-icon-picker"
         >
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <SelectedIcon className="h-4 w-4" />
             <span>{selectedOption?.label || "Seleziona icona"}</span>
           </div>
@@ -349,7 +349,7 @@ export default function AdminUtilityCategories() {
   if (isLoading) {
     return (
       <div className="p-6">
-        <div className="flex items-center gap-3 mb-6">
+        <div className="flex flex-wrap items-center gap-3 mb-6">
           <FolderOpen className="h-8 w-8 text-primary" />
           <div>
             <h1 className="text-2xl font-bold">Catalogo Categorie Utility</h1>
@@ -368,7 +368,7 @@ export default function AdminUtilityCategories() {
   return (
     <div className="p-6 space-y-6">
       <div className="flex items-center justify-between gap-4 flex-wrap">
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
           <FolderOpen className="h-8 w-8 text-primary" />
           <div>
             <h1 className="text-2xl font-bold">Catalogo Categorie Utility</h1>
@@ -412,7 +412,7 @@ export default function AdminUtilityCategories() {
                   return (
                     <TableRow key={category.id} data-testid={`row-category-${category.id}`}>
                       <TableCell>
-                        <div className="flex items-center gap-1 text-muted-foreground">
+                        <div className="flex flex-wrap items-center gap-1 text-muted-foreground">
                           <GripVertical className="h-4 w-4" />
                           {category.sortOrder}
                         </div>

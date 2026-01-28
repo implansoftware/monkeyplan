@@ -188,7 +188,7 @@ export default function HrSickLeave() {
         <div className="absolute bottom-0 left-0 w-48 h-48 bg-white/10 rounded-full blur-3xl translate-y-1/2 -translate-x-1/2" />
         <div className="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <div className="flex items-center gap-3 mb-2">
+            <div className="flex flex-wrap items-center gap-3 mb-2">
               <div className="h-12 w-12 rounded-lg bg-white/20 backdrop-blur-sm border border-white/30 flex items-center justify-center">
                 <Thermometer className="h-6 w-6 text-white" />
               </div>
@@ -247,7 +247,7 @@ export default function HrSickLeave() {
         <CardHeader>
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
-              <CardTitle className="flex items-center gap-2">
+              <CardTitle className="flex flex-wrap items-center gap-2">
                 <FileText className="h-5 w-5 text-muted-foreground" />
                 Registro Malattie
               </CardTitle>
@@ -308,7 +308,7 @@ export default function HrSickLeave() {
                       <TableCell>{sl.inpsProtocol || '-'}</TableCell>
                       <TableCell>
                         {sl.certificateUploaded ? (
-                          <div className="flex items-center gap-2">
+                          <div className="flex flex-wrap items-center gap-2">
                             <Badge variant="default" className="bg-green-600">
                               <Check className="h-3 w-3 mr-1" />
                               Caricato
@@ -442,7 +442,7 @@ export default function HrSickLeave() {
             </div>
             <div className="space-y-2">
               <Label>Certificato Medico (opzionale)</Label>
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2">
                 <input
                   type="file"
                   ref={fileInputRef}

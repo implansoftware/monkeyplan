@@ -110,7 +110,7 @@ export default function ResellerB2BReturns() {
                 {ret.requestedAt && format(new Date(ret.requestedAt), "d MMMM yyyy", { locale: it })}
               </CardDescription>
             </div>
-            <Badge variant={status.variant} className="flex items-center gap-1">
+            <Badge variant={status.variant} className="flex flex-wrap items-center gap-1">
               <StatusIcon className="h-3 w-3" />
               {status.label}
             </Badge>
@@ -150,7 +150,7 @@ export default function ResellerB2BReturns() {
         <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 animate-pulse" />
         <div className="absolute bottom-0 left-0 w-48 h-48 bg-white/10 rounded-full blur-3xl translate-y-1/2 -translate-x-1/2 animate-pulse" />
         <div className="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div className="flex items-center gap-3 mb-1">
+          <div className="flex flex-wrap items-center gap-3 mb-1">
             <div className="h-12 w-12 rounded-xl bg-white/20 backdrop-blur-sm border border-white/30 flex items-center justify-center">
               <RotateCcw className="h-6 w-6 text-white" />
             </div>
@@ -261,7 +261,7 @@ export default function ResellerB2BReturns() {
                       {selectedReturn.items?.map((item) => (
                         <TableRow key={item.id}>
                           <TableCell>
-                            <div className="flex items-center gap-2">
+                            <div className="flex flex-wrap items-center gap-2">
                               <Package className="w-8 h-8 text-muted-foreground" />
                               <div>
                                 <div className="font-medium">{item.productName}</div>

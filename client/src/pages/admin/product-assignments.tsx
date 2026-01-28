@@ -179,7 +179,7 @@ export default function AdminProductAssignments() {
                 {filteredProducts.map((product) => (
                   <TableRow key={product.id} data-testid={`row-product-${product.id}`}>
                     <TableCell>
-                      <div className="flex items-center gap-3">
+                      <div className="flex flex-wrap items-center gap-3">
                         {product.imageUrl ? (
                           <img src={product.imageUrl} alt={product.name} className="w-10 h-10 object-cover rounded" />
                         ) : (
@@ -258,7 +258,7 @@ export default function AdminProductAssignments() {
                           key={item.reseller.id}
                           className="flex items-center justify-between p-2 rounded hover-elevate"
                         >
-                          <div className="flex items-center gap-2">
+                          <div className="flex flex-wrap items-center gap-2">
                             <div>
                               <p className="font-medium">{item.reseller.fullName || item.reseller.username}</p>
                               <p className="text-sm text-muted-foreground">{item.reseller.email}</p>
@@ -297,7 +297,7 @@ export default function AdminProductAssignments() {
                       {unassignedResellers.map((item) => (
                         <div
                           key={item.reseller.id}
-                          className="flex items-center gap-3 p-2 rounded hover-elevate cursor-pointer"
+                          className="flex flex-wrap items-center gap-3 p-2 rounded hover-elevate cursor-pointer"
                           onClick={() => toggleReseller(item.reseller.id)}
                         >
                           <Checkbox

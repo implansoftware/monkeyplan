@@ -92,7 +92,7 @@ export default function SalesHistoryPage() {
         <div className="absolute top-1/2 left-1/3 w-48 h-48 rounded-full bg-emerald-300/20 blur-3xl animate-pulse" style={{ animationDelay: '2s' }} />
         
         <div className="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div className="flex items-center gap-4">
+          <div className="flex flex-wrap items-center gap-4">
             <div className="h-14 w-14 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center shadow-xl">
               <FileText className="h-7 w-7 text-white" />
             </div>
@@ -101,7 +101,7 @@ export default function SalesHistoryPage() {
               <p className="text-emerald-100">Tutte le transazioni effettuate dal POS</p>
             </div>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-3">
             <div className="text-right">
               <p className="text-xs text-emerald-100">Totale incassato</p>
               <p className="text-lg font-bold text-white">{formatCurrency(totalRevenue)}</p>
@@ -127,7 +127,7 @@ export default function SalesHistoryPage() {
               />
             </div>
             <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-[180px]" data-testid="select-status-filter">
+              <SelectTrigger className="w-full sm:w-[180px]" data-testid="select-status-filter">
                 <SelectValue placeholder="Stato" />
               </SelectTrigger>
               <SelectContent>
@@ -174,7 +174,7 @@ export default function SalesHistoryPage() {
                       </TableCell>
                       <TableCell>
                         {tx.registerName ? (
-                          <div className="flex items-center gap-1">
+                          <div className="flex flex-wrap items-center gap-1">
                             <Store className="h-3.5 w-3.5 text-muted-foreground" />
                             <span>{tx.registerName}</span>
                           </div>
@@ -183,7 +183,7 @@ export default function SalesHistoryPage() {
                         )}
                       </TableCell>
                       <TableCell>
-                        <div className="flex items-center gap-1">
+                        <div className="flex flex-wrap items-center gap-1">
                           <Package className="h-3.5 w-3.5 text-muted-foreground" />
                           <span>{tx.itemCount}</span>
                         </div>
@@ -202,7 +202,7 @@ export default function SalesHistoryPage() {
                         )}
                       </TableCell>
                       <TableCell>
-                        <div className="flex items-center gap-2">
+                        <div className="flex flex-wrap items-center gap-2">
                           {getStatusBadge(tx.status)}
                           {tx.hasInvoice && (
                             <span title="Fattura emessa">

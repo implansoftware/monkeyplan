@@ -50,7 +50,7 @@ export default function DiagnosisList() {
   if (isLoading) {
     return (
       <div className="p-6 space-y-4">
-        <div className="flex items-center gap-2 mb-6">
+        <div className="flex flex-wrap items-center gap-2 mb-6">
           <Stethoscope className="h-6 w-6" />
           <h1 className="text-2xl font-bold">Diagnosi</h1>
         </div>
@@ -66,7 +66,7 @@ export default function DiagnosisList() {
   return (
     <div className="p-6 space-y-4">
       <div className="flex items-center justify-between gap-4 flex-wrap mb-4">
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <Stethoscope className="h-6 w-6" />
           <h1 className="text-2xl font-bold">Diagnosi</h1>
         </div>
@@ -146,7 +146,7 @@ export default function DiagnosisList() {
       )}
 
       {hasActiveFilters && (
-        <div className="flex items-center gap-2 flex-wrap text-sm text-muted-foreground">
+        <div className="flex flex-wrap items-center gap-2 flex-wrap text-sm text-muted-foreground">
           <span>Filtri attivi:</span>
           {search && (
             <Badge variant="secondary">
@@ -195,9 +195,9 @@ export default function DiagnosisList() {
                     </span>
                     <span>{diagnosis.deviceType} - {diagnosis.deviceModel}</span>
                   </CardTitle>
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-2">
                     {diagnosis.requiresExternalParts && (
-                      <Badge variant="outline" className="flex items-center gap-1">
+                      <Badge variant="outline" className="flex flex-wrap items-center gap-1">
                         <Package className="h-3 w-3" />
                         Ricambi esterni
                       </Badge>
@@ -226,9 +226,9 @@ export default function DiagnosisList() {
                     </div>
                   )}
 
-                  <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                  <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
                       {diagnosis.estimatedRepairTime && (
-                        <span className="flex items-center gap-1">
+                        <span className="flex flex-wrap items-center gap-1">
                           <Clock className="h-4 w-4" />
                           {diagnosis.estimatedRepairTime} min
                         </span>

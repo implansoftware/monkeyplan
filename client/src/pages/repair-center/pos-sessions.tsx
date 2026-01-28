@@ -173,7 +173,7 @@ export default function PosSessionsPage() {
   if (isLoading) {
     return (
       <div className="p-6 space-y-6">
-        <div className="flex items-center gap-4">
+        <div className="flex flex-wrap items-center gap-4">
           <Skeleton className="h-10 w-10" />
           <Skeleton className="h-8 w-64" />
         </div>
@@ -195,7 +195,7 @@ export default function PosSessionsPage() {
         <div className="absolute top-1/2 left-1/3 w-48 h-48 rounded-full bg-emerald-300/20 blur-3xl animate-pulse" style={{ animationDelay: '2s' }} />
         
         <div className="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div className="flex items-center gap-4">
+          <div className="flex flex-wrap items-center gap-4">
             <Link href="/repair-center/pos">
               <Button variant="outline" size="icon" className="bg-white/20 backdrop-blur-sm text-white border-white/30 hover:bg-white/30 shadow-lg" data-testid="button-back">
                 <ArrowLeft className="h-5 w-5" />
@@ -209,7 +209,7 @@ export default function PosSessionsPage() {
               <p className="text-emerald-100">Cronologia aperture e chiusure cassa</p>
             </div>
           </div>
-          <div className="flex items-center gap-2 flex-wrap">
+          <div className="flex flex-wrap items-center gap-2 flex-wrap">
             {registers.length > 1 && (
               <Select value={selectedRegisterId} onValueChange={setSelectedRegisterId}>
                 <SelectTrigger className="w-48 bg-white/20 backdrop-blur-sm text-white border-white/30" data-testid="select-register-filter">
@@ -313,7 +313,7 @@ export default function PosSessionsPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
+          <CardTitle className="flex flex-wrap items-center gap-2">
             <Clock className="h-5 w-5 text-cyan-500" />
             Timeline Sessioni
           </CardTitle>
@@ -338,13 +338,13 @@ export default function PosSessionsPage() {
                       </div>
                     )}
                     <div>
-                      <div className="flex items-center gap-2 flex-wrap">
+                      <div className="flex flex-wrap items-center gap-2 flex-wrap">
                         {session.status === "open" ? (
                           <Badge variant="default" className="bg-green-500">Aperta</Badge>
                         ) : (
                           <Badge variant="secondary">Chiusa</Badge>
                         )}
-                        <Badge variant="outline" className="flex items-center gap-1">
+                        <Badge variant="outline" className="flex flex-wrap items-center gap-1">
                           <Store className="w-3 h-3" />
                           {getRegisterName(session.registerId)}
                         </Badge>
@@ -402,19 +402,19 @@ export default function PosSessionsPage() {
                 {session.status === "closed" && (session.totalCashSales || session.totalCardSales || session.totalRefunds) && (
                   <div className="mt-3 pt-3 border-t flex items-center gap-4 flex-wrap text-sm">
                     {session.totalCashSales !== null && session.totalCashSales > 0 && (
-                      <div className="flex items-center gap-1">
+                      <div className="flex flex-wrap items-center gap-1">
                         <Banknote className="h-4 w-4 text-green-600" />
                         <span>Contanti: {formatCurrency(session.totalCashSales)}</span>
                       </div>
                     )}
                     {session.totalCardSales !== null && session.totalCardSales > 0 && (
-                      <div className="flex items-center gap-1">
+                      <div className="flex flex-wrap items-center gap-1">
                         <Receipt className="h-4 w-4 text-blue-600" />
                         <span>Carta: {formatCurrency(session.totalCardSales)}</span>
                       </div>
                     )}
                     {session.totalRefunds !== null && session.totalRefunds > 0 && (
-                      <div className="flex items-center gap-1 text-destructive">
+                      <div className="flex flex-wrap items-center gap-1 text-destructive">
                         <AlertTriangle className="h-4 w-4" />
                         <span>Rimborsi: {formatCurrency(session.totalRefunds)}</span>
                       </div>

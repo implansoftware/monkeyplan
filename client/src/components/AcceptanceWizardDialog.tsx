@@ -1196,7 +1196,7 @@ export function AcceptanceWizardDialog({
                 <div className="space-y-2">
                   <Label>Tipo Cliente *</Label>
                   <div className="flex gap-4">
-                    <label className="flex items-center gap-2 cursor-pointer">
+                    <label className="flex flex-wrap items-center gap-2 cursor-pointer">
                       <input
                         type="radio"
                         name="customerType"
@@ -1207,7 +1207,7 @@ export function AcceptanceWizardDialog({
                       />
                       <span>Privato</span>
                     </label>
-                    <label className="flex items-center gap-2 cursor-pointer">
+                    <label className="flex flex-wrap items-center gap-2 cursor-pointer">
                       <input
                         type="radio"
                         name="customerType"
@@ -1629,7 +1629,7 @@ export function AcceptanceWizardDialog({
                   const TypeIcon = getDeviceTypeIcon(type.name);
                   return (
                     <SelectItem key={type.id} value={type.name}>
-                      <span className="flex items-center gap-2">
+                      <span className="flex flex-wrap items-center gap-2">
                         <TypeIcon className="h-5 w-5 text-primary" />
                         <span className="font-medium">{type.name}</span>
                       </span>
@@ -1991,25 +1991,25 @@ export function AcceptanceWizardDialog({
               </FormControl>
               <SelectContent>
                 <SelectItem value="ottimo">
-                  <span className="flex items-center gap-2">
+                  <span className="flex flex-wrap items-center gap-2">
                     <CheckCircle2 className="h-5 w-5 text-green-500" />
                     <span className="font-medium">Ottimo - Nessun difetto visibile</span>
                   </span>
                 </SelectItem>
                 <SelectItem value="buono">
-                  <span className="flex items-center gap-2">
+                  <span className="flex flex-wrap items-center gap-2">
                     <CircleDot className="h-5 w-5 text-blue-500" />
                     <span className="font-medium">Buono - Minimi segni di usura</span>
                   </span>
                 </SelectItem>
                 <SelectItem value="discreto">
-                  <span className="flex items-center gap-2">
+                  <span className="flex flex-wrap items-center gap-2">
                     <AlertTriangle className="h-5 w-5 text-amber-500" />
                     <span className="font-medium">Discreto - Segni di usura evidenti</span>
                   </span>
                 </SelectItem>
                 <SelectItem value="scadente">
-                  <span className="flex items-center gap-2">
+                  <span className="flex flex-wrap items-center gap-2">
                     <AlertCircle className="h-5 w-5 text-red-500" />
                     <span className="font-medium">Scadente - Danni estetici significativi</span>
                   </span>
@@ -2135,7 +2135,7 @@ export function AcceptanceWizardDialog({
 
       {/* Photo Upload Section - Inverted logic: photos required by default */}
       <div className="space-y-3">
-        <Label className="flex items-center gap-2">
+        <Label className="flex flex-wrap items-center gap-2">
           <Camera className="h-4 w-4" />
           Foto del dispositivo
         </Label>
@@ -2163,7 +2163,7 @@ export function AcceptanceWizardDialog({
         {/* Show photo upload only if photos are required (aestheticPhotosMandatory = true) */}
         {form.watch("acceptance.aestheticPhotosMandatory") && (
           <div className="border rounded-md p-3 space-y-3">
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <Button
                 type="button"
                 variant="outline"
@@ -2432,7 +2432,7 @@ export function AcceptanceWizardDialog({
     <div className="space-y-6">
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
+          <CardTitle className="flex flex-wrap items-center gap-2">
             <FileText className="h-5 w-5" />
             Preventivo Riparazione
           </CardTitle>
@@ -2459,7 +2459,7 @@ export function AcceptanceWizardDialog({
               {/* Risultati Diagnosi (Findings) */}
               {diagnosticFindings.length > 0 && (
                 <div className="space-y-3">
-                  <Label className="flex items-center gap-2">
+                  <Label className="flex flex-wrap items-center gap-2">
                     <AlertCircle className="h-4 w-4" />
                     Risultati Diagnosi
                   </Label>
@@ -2717,15 +2717,15 @@ export function AcceptanceWizardDialog({
             <div className="space-y-4 pt-4 border-t">
               {/* Parts Section */}
               <div className="space-y-3">
-                <Label className="flex items-center gap-2">
+                <Label className="flex flex-wrap items-center gap-2">
                   <Package className="h-4 w-4" />
                   Ricambi e Servizi
                 </Label>
                 
                 {/* Warehouse selection */}
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2">
                   <Select value={selectedQuoteWarehouseId} onValueChange={setSelectedQuoteWarehouseId}>
-                    <SelectTrigger className="w-[200px]" data-testid="select-quote-warehouse">
+                    <SelectTrigger className="w-full sm:w-[200px]" data-testid="select-quote-warehouse">
                       <Warehouse className="h-4 w-4 mr-2" />
                       <SelectValue placeholder="Seleziona magazzino" />
                     </SelectTrigger>
@@ -2872,7 +2872,7 @@ export function AcceptanceWizardDialog({
                 
                 {wantAddLaborCost && (
                   <div className="space-y-2 pl-6">
-                    <Label className="flex items-center gap-2">
+                    <Label className="flex flex-wrap items-center gap-2">
                       <Calculator className="h-4 w-4" />
                       Costo Manodopera (€)
                     </Label>
@@ -3022,19 +3022,19 @@ export function AcceptanceWizardDialog({
             
             <div className="flex flex-col gap-1 mt-2">
               {!formData.acceptance.aestheticPhotosMandatory && (
-                <div className="flex items-center gap-2 text-xs">
+                <div className="flex flex-wrap items-center gap-2 text-xs">
                   <AlertCircle className="w-4 h-4 text-orange-500" />
                   <span>Foto non caricate (scelta utente)</span>
                 </div>
               )}
               {formData.acceptance.accessoriesRemoved && (
-                <div className="flex items-center gap-2 text-xs">
+                <div className="flex flex-wrap items-center gap-2 text-xs">
                   <CheckCircle2 className="w-4 h-4 text-green-500" />
                   <span>Accessori rimossi</span>
                 </div>
               )}
               {formData.acceptance.hasLockCode && (
-                <div className="flex items-center gap-2 text-xs">
+                <div className="flex flex-wrap items-center gap-2 text-xs">
                   <AlertCircle className="w-4 h-4 text-blue-500" />
                   <span>Codice di blocco fornito</span>
                 </div>
@@ -3082,7 +3082,7 @@ export function AcceptanceWizardDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent ref={dialogContentRef} className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
+          <DialogTitle className="flex flex-wrap items-center gap-2">
             <Smartphone className="w-5 h-5" />
             Accettazione dispositivo - {step === "device-info" ? "Passo 1/4" : step === "acceptance-checks" ? "Passo 2/4" : step === "quote" ? "Passo 3/4" : "Passo 4/4"}
           </DialogTitle>

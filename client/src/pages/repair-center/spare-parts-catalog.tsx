@@ -114,7 +114,7 @@ export default function RepairCenterSparePartsCatalog() {
         <div className="absolute top-1/2 left-1/3 w-48 h-48 rounded-full bg-emerald-300/20 blur-3xl animate-pulse" style={{ animationDelay: '2s' }} />
         
         <div className="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div className="flex items-center gap-4">
+          <div className="flex flex-wrap items-center gap-4">
             <div className="h-14 w-14 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center shadow-xl">
               <Package className="h-7 w-7 text-white" />
             </div>
@@ -123,7 +123,7 @@ export default function RepairCenterSparePartsCatalog() {
               <p className="text-emerald-100">Ricambi disponibili dal tuo rivenditore</p>
             </div>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             {cartItemCount > 0 && (
               <Button variant="outline" className="bg-white/20 backdrop-blur-sm text-white border-white/30 hover:bg-white/30 shadow-lg" onClick={() => window.location.href = '/repair-center/b2b-catalog'} data-testid="button-view-cart">
                 <ShoppingCart className="h-4 w-4 mr-2" />
@@ -148,7 +148,7 @@ export default function RepairCenterSparePartsCatalog() {
               />
             </div>
             <Select value={typeFilter} onValueChange={setTypeFilter}>
-              <SelectTrigger className="w-[200px]" data-testid="select-type-filter">
+              <SelectTrigger className="w-full sm:w-[200px]" data-testid="select-type-filter">
                 <SelectValue placeholder="Tipo ricambio" />
               </SelectTrigger>
               <SelectContent>
@@ -159,7 +159,7 @@ export default function RepairCenterSparePartsCatalog() {
               </SelectContent>
             </Select>
             <Select value={brandFilter} onValueChange={setBrandFilter}>
-              <SelectTrigger className="w-[180px]" data-testid="select-brand-filter">
+              <SelectTrigger className="w-full sm:w-[180px]" data-testid="select-brand-filter">
                 <SelectValue placeholder="Marca" />
               </SelectTrigger>
               <SelectContent>
@@ -203,7 +203,7 @@ export default function RepairCenterSparePartsCatalog() {
                     return (
                       <TableRow key={part.id} data-testid={`row-part-${part.id}`}>
                         <TableCell>
-                          <div className="flex items-center gap-3">
+                          <div className="flex flex-wrap items-center gap-3">
                             {part.imageUrl ? (
                               <img 
                                 src={part.imageUrl} 
@@ -301,7 +301,7 @@ export default function RepairCenterSparePartsCatalog() {
       <Dialog open={detailDialogOpen} onOpenChange={setDetailDialogOpen}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
+            <DialogTitle className="flex flex-wrap items-center gap-2">
               <Wrench className="h-5 w-5" />
               {selectedPart?.name}
             </DialogTitle>

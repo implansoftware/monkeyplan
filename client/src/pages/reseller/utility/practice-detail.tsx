@@ -355,7 +355,7 @@ export default function ResellerUtilityPracticeDetail() {
   return (
     <div className="p-6 space-y-6">
       <div className="flex items-center justify-between gap-4">
-        <div className="flex items-center gap-4">
+        <div className="flex flex-wrap items-center gap-4">
           <Link href="/reseller/utility/practices">
             <Button variant="ghost" size="icon" data-testid="button-back">
               <ArrowLeft className="h-5 w-5" />
@@ -370,7 +370,7 @@ export default function ResellerUtilityPracticeDetail() {
             </p>
           </div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <Badge className={statusColors[practice.status as PracticeStatus]} data-testid="badge-status">
             {statusLabels[practice.status as PracticeStatus]}
           </Badge>
@@ -390,23 +390,23 @@ export default function ResellerUtilityPracticeDetail() {
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
         <TabsList className="grid w-full grid-cols-5" data-testid="tabs-practice">
-          <TabsTrigger value="panoramica" className="flex items-center gap-2" data-testid="tab-panoramica">
+          <TabsTrigger value="panoramica" className="flex flex-wrap items-center gap-2" data-testid="tab-panoramica">
             <FileText className="h-4 w-4" />
             Panoramica
           </TabsTrigger>
-          <TabsTrigger value="attivita" className="flex items-center gap-2" data-testid="tab-attivita">
+          <TabsTrigger value="attivita" className="flex flex-wrap items-center gap-2" data-testid="tab-attivita">
             <CheckSquare className="h-4 w-4" />
             Attività ({completedTasks}/{totalTasks})
           </TabsTrigger>
-          <TabsTrigger value="documenti" className="flex items-center gap-2" data-testid="tab-documenti">
+          <TabsTrigger value="documenti" className="flex flex-wrap items-center gap-2" data-testid="tab-documenti">
             <Upload className="h-4 w-4" />
             Documenti ({documents.length})
           </TabsTrigger>
-          <TabsTrigger value="cronologia" className="flex items-center gap-2" data-testid="tab-cronologia">
+          <TabsTrigger value="cronologia" className="flex flex-wrap items-center gap-2" data-testid="tab-cronologia">
             <Clock className="h-4 w-4" />
             Cronologia
           </TabsTrigger>
-          <TabsTrigger value="note" className="flex items-center gap-2" data-testid="tab-note">
+          <TabsTrigger value="note" className="flex flex-wrap items-center gap-2" data-testid="tab-note">
             <MessageSquare className="h-4 w-4" />
             Note ({notes.length})
           </TabsTrigger>
@@ -419,7 +419,7 @@ export default function ResellerUtilityPracticeDetail() {
                 <CardTitle className="text-lg">Informazioni Cliente</CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2">
                   <UserIcon className="h-4 w-4 text-muted-foreground" />
                   <span className="font-medium" data-testid="text-customer-name">{customer?.fullName || "-"}</span>
                 </div>
@@ -462,7 +462,7 @@ export default function ResellerUtilityPracticeDetail() {
                     </div>
                     <div>
                       <p className="text-sm text-muted-foreground">Servizio</p>
-                      <div className="flex items-center gap-2">
+                      <div className="flex flex-wrap items-center gap-2">
                         <p className="font-medium" data-testid="text-service-name">
                           {(practice as any).customServiceName || service?.name || "-"}
                         </p>
@@ -649,13 +649,13 @@ export default function ResellerUtilityPracticeDetail() {
                           {task.description && (
                             <p className="text-sm text-muted-foreground mt-1">{task.description}</p>
                           )}
-                          <div className="flex items-center gap-4 mt-2 text-xs text-muted-foreground">
-                            <span className="flex items-center gap-1">
+                          <div className="flex flex-wrap items-center gap-4 mt-2 text-xs text-muted-foreground">
+                            <span className="flex flex-wrap items-center gap-1">
                               <StatusIcon className="h-3 w-3" />
                               {taskStatusLabels[task.status as TaskStatus]}
                             </span>
                             {task.dueDate && (
-                              <span className="flex items-center gap-1">
+                              <span className="flex flex-wrap items-center gap-1">
                                 <Calendar className="h-3 w-3" />
                                 {formatDateShort(task.dueDate)}
                               </span>
@@ -715,13 +715,13 @@ export default function ResellerUtilityPracticeDetail() {
                   {documents.map((doc) => (
                     <div 
                       key={doc.id} 
-                      className="flex items-center gap-3 p-4 hover:bg-muted/50"
+                      className="flex flex-wrap items-center gap-3 p-4 hover:bg-muted/50"
                       data-testid={`document-item-${doc.id}`}
                     >
                       <FileText className="h-8 w-8 text-muted-foreground" />
                       <div className="flex-1 min-w-0">
                         <p className="font-medium truncate">{doc.fileName}</p>
-                        <div className="flex items-center gap-2 mt-1">
+                        <div className="flex flex-wrap items-center gap-2 mt-1">
                           <Badge variant="outline">{documentCategoryLabels[doc.category] || doc.category}</Badge>
                           <span className="text-xs text-muted-foreground">
                             {formatDate(doc.createdAt)}
@@ -778,8 +778,8 @@ export default function ResellerUtilityPracticeDetail() {
                 ) : (
                   <div className="divide-y">
                     {stateHistory.map((entry) => (
-                      <div key={entry.id} className="flex items-center gap-3 p-4">
-                        <div className="flex items-center gap-2">
+                      <div key={entry.id} className="flex flex-wrap items-center gap-3 p-4">
+                        <div className="flex flex-wrap items-center gap-2">
                           <Badge className={statusColors[(entry.fromStatus as PracticeStatus) || "bozza"]} variant="outline">
                             {statusLabels[(entry.fromStatus as PracticeStatus) || "bozza"]}
                           </Badge>
@@ -823,7 +823,7 @@ export default function ResellerUtilityPracticeDetail() {
                             {event.description && (
                               <p className="text-sm text-muted-foreground mt-1">{event.description}</p>
                             )}
-                            <div className="flex items-center gap-2 mt-2 text-xs text-muted-foreground">
+                            <div className="flex flex-wrap items-center gap-2 mt-2 text-xs text-muted-foreground">
                               <span>{formatDate(event.createdAt)}</span>
                               <span>•</span>
                               <span>{users.find(u => u.id === event.createdBy)?.fullName || "Sistema"}</span>
@@ -867,7 +867,7 @@ export default function ResellerUtilityPracticeDetail() {
                     >
                       <div className="flex items-start justify-between gap-4">
                         <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-2">
+                          <div className="flex flex-wrap items-center gap-2 mb-2">
                             <Badge variant={note.visibility === "internal" ? "secondary" : "outline"}>
                               {note.visibility === "internal" ? "Interna" : "Cliente"}
                             </Badge>

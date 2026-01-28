@@ -219,14 +219,14 @@ export default function MobilesentrixCatalogPage() {
   return (
     <div className="p-6 space-y-6">
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
           <Package className="h-8 w-8" />
           <div>
             <h1 className="text-2xl font-bold">Catalogo MobileSentrix</h1>
             <p className="text-muted-foreground">Sfoglia e cerca ricambi dal catalogo MobileSentrix</p>
           </div>
         </div>
-        <div className="flex items-center gap-4">
+        <div className="flex flex-wrap items-center gap-4">
           <Link href="/reseller/mobilesentrix/cart">
             <Button variant="outline" className="relative" data-testid="button-view-cart">
               <ShoppingCart className="h-4 w-4 mr-2" />
@@ -248,14 +248,14 @@ export default function MobilesentrixCatalogPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
+          <CardTitle className="flex flex-wrap items-center gap-2">
             <Filter className="h-5 w-5" />
             Cerca e Filtra Prodotti
           </CardTitle>
           <CardDescription>Usa la ricerca o i filtri per trovare prodotti nel catalogo MobileSentrix</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="flex items-center gap-4">
+          <div className="flex flex-wrap items-center gap-4">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input

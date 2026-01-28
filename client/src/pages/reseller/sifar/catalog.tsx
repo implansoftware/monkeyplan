@@ -182,14 +182,14 @@ export default function SifarCatalogPage() {
   return (
     <div className="p-6 space-y-6">
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
           <Package className="h-8 w-8" />
           <div>
             <h1 className="text-2xl font-bold">Catalogo SIFAR</h1>
             <p className="text-muted-foreground">Sfoglia e ordina ricambi dal catalogo SIFAR</p>
           </div>
         </div>
-        <div className="flex items-center gap-4">
+        <div className="flex flex-wrap items-center gap-4">
           <Link href="/reseller/sifar/cart">
             <Button variant="outline" data-testid="button-view-cart">
               <ShoppingCart className="h-4 w-4 mr-2" />
@@ -211,7 +211,7 @@ export default function SifarCatalogPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
+          <CardTitle className="flex flex-wrap items-center gap-2">
             <Search className="h-5 w-5" />
             Cerca Ricambi
           </CardTitle>
@@ -290,7 +290,7 @@ export default function SifarCatalogPage() {
       {selectedModel && (
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
+            <CardTitle className="flex flex-wrap items-center gap-2">
               <Package className="h-5 w-5" />
               Articoli Disponibili
             </CardTitle>
@@ -365,7 +365,7 @@ export default function SifarCatalogPage() {
                         </div>
                       </div>
                       <div className="flex items-center justify-between mt-3">
-                        <div className="flex items-center gap-2">
+                        <div className="flex flex-wrap items-center gap-2">
                           {article.disponibile ? (
                             <Badge variant="outline" className="text-green-600 border-green-600">
                               <Check className="h-3 w-3 mr-1" />
@@ -387,7 +387,7 @@ export default function SifarCatalogPage() {
                             </span>
                           )}
                         </div>
-                        <div className="flex items-center gap-2">
+                        <div className="flex flex-wrap items-center gap-2">
                           <div className="flex items-center border rounded-md">
                             <Button
                               variant="ghost"

@@ -275,7 +275,7 @@ export default function TrovausatiValutatorePage() {
           backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23000' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
         }} />
         <div className="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div className="flex items-center gap-3 mb-1">
+          <div className="flex flex-wrap items-center gap-3 mb-1">
             <div className="h-10 w-10 rounded-xl bg-primary text-primary-foreground flex items-center justify-center shadow-lg shadow-primary/25">
               <Tag className="h-5 w-5" />
             </div>
@@ -315,11 +315,11 @@ export default function TrovausatiValutatorePage() {
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList>
-          <TabsTrigger value="valutazione" className="flex items-center gap-2" data-testid="tab-valutazione">
+          <TabsTrigger value="valutazione" className="flex flex-wrap items-center gap-2" data-testid="tab-valutazione">
             <Euro className="h-4 w-4" />
             Valutazione
           </TabsTrigger>
-          <TabsTrigger value="coupon" className="flex items-center gap-2" data-testid="tab-coupon">
+          <TabsTrigger value="coupon" className="flex flex-wrap items-center gap-2" data-testid="tab-coupon">
             <Ticket className="h-4 w-4" />
             Coupon GDS
           </TabsTrigger>
@@ -329,7 +329,7 @@ export default function TrovausatiValutatorePage() {
           <div className="grid gap-6 md:grid-cols-2">
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
+                <CardTitle className="flex flex-wrap items-center gap-2">
                   <Search className="h-5 w-5" />
                   Cerca Dispositivo
                 </CardTitle>
@@ -383,7 +383,7 @@ export default function TrovausatiValutatorePage() {
 
                 {selectedModel && (
                   <div className="p-3 bg-muted rounded-lg">
-                    <div className="flex items-center gap-2">
+                    <div className="flex flex-wrap items-center gap-2">
                       <Smartphone className="h-5 w-5" />
                       <div>
                         <p className="font-medium">{selectedModel.brand} {selectedModel.model}</p>
@@ -412,7 +412,7 @@ export default function TrovausatiValutatorePage() {
 
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
+                <CardTitle className="flex flex-wrap items-center gap-2">
                   <Euro className="h-5 w-5" />
                   Risultato Valutazione
                 </CardTitle>
@@ -510,13 +510,13 @@ export default function TrovausatiValutatorePage() {
             <CardHeader>
               <div className="flex items-center justify-between">
                 <div>
-                  <CardTitle className="flex items-center gap-2">
+                  <CardTitle className="flex flex-wrap items-center gap-2">
                     <Ticket className="h-5 w-5" />
                     Coupon Emessi
                   </CardTitle>
                   <CardDescription>Gestisci i coupon GDS emessi</CardDescription>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2">
                   <Select value={couponStatusFilter} onValueChange={setCouponStatusFilter}>
                     <SelectTrigger className="w-32" data-testid="select-coupon-status">
                       <SelectValue placeholder="Stato" />
@@ -556,12 +556,12 @@ export default function TrovausatiValutatorePage() {
                     >
                       <CardContent className="p-4">
                         <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-3">
+                          <div className="flex flex-wrap items-center gap-3">
                             <div className="p-2 bg-muted rounded-lg">
                               <QrCode className="h-6 w-6" />
                             </div>
                             <div>
-                              <div className="flex items-center gap-2">
+                              <div className="flex flex-wrap items-center gap-2">
                                 <span className="font-mono font-semibold">
                                   {coupon.attributes.coupon_code}
                                 </span>
@@ -660,7 +660,7 @@ export default function TrovausatiValutatorePage() {
           {selectedCoupon && (
             <>
               <DialogHeader>
-                <DialogTitle className="flex items-center gap-2">
+                <DialogTitle className="flex flex-wrap items-center gap-2">
                   <Ticket className="h-5 w-5" />
                   Dettaglio Coupon
                 </DialogTitle>
@@ -671,7 +671,7 @@ export default function TrovausatiValutatorePage() {
                     <div className="p-4 bg-muted rounded-lg inline-block mb-2">
                       <QrCode className="h-16 w-16" />
                     </div>
-                    <div className="flex items-center gap-2 justify-center">
+                    <div className="flex flex-wrap items-center gap-2 justify-center">
                       <span className="font-mono text-2xl font-bold">
                         {selectedCoupon.attributes.coupon_code}
                       </span>

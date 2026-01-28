@@ -176,7 +176,7 @@ export default function ResellerTickets() {
         />
         
         <div className="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div className="flex items-center gap-3 mb-1">
+          <div className="flex flex-wrap items-center gap-3 mb-1">
             <div className="h-12 w-12 rounded-2xl bg-white/20 backdrop-blur-sm border border-white/30 flex items-center justify-center">
               <Ticket className="h-6 w-6 text-white" />
             </div>
@@ -211,13 +211,13 @@ export default function ResellerTickets() {
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="admin">
-                          <div className="flex items-center gap-2">
+                          <div className="flex flex-wrap items-center gap-2">
                             <Building2 className="h-4 w-4" />
                             Amministrazione
                           </div>
                         </SelectItem>
                         <SelectItem value="repair_center">
-                          <div className="flex items-center gap-2">
+                          <div className="flex flex-wrap items-center gap-2">
                             <Users className="h-4 w-4" />
                             Centro Riparazione
                           </div>
@@ -306,14 +306,14 @@ export default function ResellerTickets() {
 
       <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as "customers" | "internal")}>
         <TabsList>
-          <TabsTrigger value="customers" className="flex items-center gap-2" data-testid="tab-customer-tickets">
+          <TabsTrigger value="customers" className="flex flex-wrap items-center gap-2" data-testid="tab-customer-tickets">
             <UserCircle className="h-4 w-4" />
             Ticket Clienti
             {customerTickets.length > 0 && (
               <Badge variant="secondary" className="ml-1">{customerTickets.length}</Badge>
             )}
           </TabsTrigger>
-          <TabsTrigger value="internal" className="flex items-center gap-2" data-testid="tab-internal-tickets">
+          <TabsTrigger value="internal" className="flex flex-wrap items-center gap-2" data-testid="tab-internal-tickets">
             <MessageSquare className="h-4 w-4" />
             Ticket Interni
             {internalTickets.length > 0 && (
@@ -354,7 +354,7 @@ export default function ResellerTickets() {
 
       <Card className="rounded-2xl">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
+          <CardTitle className="flex flex-wrap items-center gap-2">
             {activeTab === "customers" ? (
               <>
                 <UserCircle className="h-5 w-5" />
@@ -415,7 +415,7 @@ export default function ResellerTickets() {
                 >
                   <div className="flex items-start justify-between gap-4">
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-2 flex-wrap">
+                      <div className="flex flex-wrap items-center gap-2 mb-2 flex-wrap">
                         <span className="font-mono text-sm text-muted-foreground">
                           #{ticket.ticketNumber}
                         </span>
@@ -438,7 +438,7 @@ export default function ResellerTickets() {
                       </p>
                     </div>
                     <div className="text-right text-sm text-muted-foreground whitespace-nowrap">
-                      <div className="flex items-center gap-1">
+                      <div className="flex flex-wrap items-center gap-1">
                         <Clock className="h-3 w-3" />
                         {format(new Date(ticket.createdAt), "dd MMM yyyy", { locale: it })}
                       </div>

@@ -182,7 +182,7 @@ export default function AdminDashboard() {
         }} />
         
         <div className="relative z-10 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div className="flex items-center gap-4">
+          <div className="flex flex-wrap items-center gap-4">
             <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-white/20 backdrop-blur-sm border border-white/30">
               <LayoutDashboard className="h-7 w-7 text-white" />
             </div>
@@ -191,7 +191,7 @@ export default function AdminDashboard() {
               <p className="text-blue-100/80 mt-1">Panoramica completa della piattaforma MonkeyPlan Beta v.24</p>
             </div>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-3">
             <div className="px-4 py-2 rounded-xl bg-white/10 backdrop-blur-sm border border-white/20 text-white text-sm font-medium">
               <Activity className="inline-block h-4 w-4 mr-2 text-emerald-300" />
               Sistema Attivo
@@ -425,7 +425,7 @@ export default function AdminDashboard() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <Card className="border-0 shadow-lg bg-white dark:bg-slate-800/50" data-testid="card-stats-ecommerce">
           <CardHeader className="pb-4">
-            <CardTitle className="flex items-center gap-3 text-slate-900 dark:text-white">
+            <CardTitle className="flex flex-wrap items-center gap-3 text-slate-900 dark:text-white">
               <div className="p-2 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600">
                 <ShoppingCart className="h-5 w-5 text-white" />
               </div>
@@ -463,7 +463,7 @@ export default function AdminDashboard() {
 
         <Card className="border-0 shadow-lg bg-white dark:bg-slate-800/50" data-testid="card-stats-interscambio">
           <CardHeader className="pb-4">
-            <CardTitle className="flex items-center gap-3 text-slate-900 dark:text-white">
+            <CardTitle className="flex flex-wrap items-center gap-3 text-slate-900 dark:text-white">
               <div className="p-2 rounded-xl bg-gradient-to-br from-violet-500 to-purple-600">
                 <ArrowLeftRight className="h-5 w-5 text-white" />
               </div>
@@ -506,7 +506,7 @@ export default function AdminDashboard() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card className="border-0 shadow-lg bg-white dark:bg-slate-800/50" data-testid="card-latest-customers">
           <CardHeader>
-            <CardTitle className="flex items-center gap-3 text-slate-900 dark:text-white">
+            <CardTitle className="flex flex-wrap items-center gap-3 text-slate-900 dark:text-white">
               <div className="p-2 rounded-xl bg-gradient-to-br from-cyan-500 to-blue-600">
                 <UserPlus className="h-5 w-5 text-white" />
               </div>
@@ -556,7 +556,7 @@ export default function AdminDashboard() {
 
         <Card className="border-0 shadow-lg bg-white dark:bg-slate-800/50" data-testid="card-latest-resellers">
           <CardHeader>
-            <CardTitle className="flex items-center gap-3 text-slate-900 dark:text-white">
+            <CardTitle className="flex flex-wrap items-center gap-3 text-slate-900 dark:text-white">
               <div className="p-2 rounded-xl bg-gradient-to-br from-violet-500 to-purple-600">
                 <Store className="h-5 w-5 text-white" />
               </div>
@@ -613,7 +613,7 @@ export default function AdminDashboard() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card className="border-0 shadow-lg bg-white dark:bg-slate-800/50">
           <CardHeader>
-            <CardTitle className="flex items-center gap-3 text-slate-900 dark:text-white">
+            <CardTitle className="flex flex-wrap items-center gap-3 text-slate-900 dark:text-white">
               <div className="p-2 rounded-xl bg-gradient-to-br from-cyan-500 to-teal-600">
                 <Ticket className="h-5 w-5 text-white" />
               </div>
@@ -660,7 +660,7 @@ export default function AdminDashboard() {
 
         <Card className="border-0 shadow-lg bg-white dark:bg-slate-800/50">
           <CardHeader>
-            <CardTitle className="flex items-center gap-3 text-slate-900 dark:text-white">
+            <CardTitle className="flex flex-wrap items-center gap-3 text-slate-900 dark:text-white">
               <div className="p-2 rounded-xl bg-gradient-to-br from-violet-500 to-purple-600">
                 <ChartBar className="h-5 w-5 text-white" />
               </div>
@@ -706,7 +706,7 @@ export default function AdminDashboard() {
       {utilityChartData.length > 0 && (
         <Card className="border-0 shadow-lg bg-white dark:bg-slate-800/50">
           <CardHeader>
-            <CardTitle className="flex items-center gap-3 text-slate-900 dark:text-white">
+            <CardTitle className="flex flex-wrap items-center gap-3 text-slate-900 dark:text-white">
               <div className="p-2 rounded-xl bg-gradient-to-br from-amber-500 to-orange-600">
                 <FileCheck className="h-5 w-5 text-white" />
               </div>
@@ -741,7 +741,7 @@ export default function AdminDashboard() {
       {/* Top Products */}
       <Card className="border-0 shadow-lg bg-white dark:bg-slate-800/50">
         <CardHeader>
-          <CardTitle className="flex items-center gap-3 text-slate-900 dark:text-white">
+          <CardTitle className="flex flex-wrap items-center gap-3 text-slate-900 dark:text-white">
             <div className="p-2 rounded-xl bg-gradient-to-br from-emerald-500 to-green-600">
               <Package className="h-5 w-5 text-white" />
             </div>

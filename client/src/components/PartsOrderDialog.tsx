@@ -345,14 +345,14 @@ export function PartsOrderDialog({
 
         <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as "order" | "existing")}>
           <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="order" className="flex items-center gap-2" data-testid="tab-new-order">
+            <TabsTrigger value="order" className="flex flex-wrap items-center gap-2" data-testid="tab-new-order">
               <ShoppingCart className="h-4 w-4" />
               Nuovo Ordine
               {cart.length > 0 && (
                 <Badge variant="secondary" className="ml-1">{cart.length}</Badge>
               )}
             </TabsTrigger>
-            <TabsTrigger value="existing" className="flex items-center gap-2" data-testid="tab-existing">
+            <TabsTrigger value="existing" className="flex flex-wrap items-center gap-2" data-testid="tab-existing">
               <FileText className="h-4 w-4" />
               Ordini Esistenti
               {purchaseOrders.length > 0 && (
@@ -383,7 +383,7 @@ export function PartsOrderDialog({
                       className="flex items-center justify-between p-3 border rounded-lg bg-background"
                       data-testid={`quote-part-${index}`}
                     >
-                      <div className="flex items-center gap-3">
+                      <div className="flex flex-wrap items-center gap-3">
                         {part.imageUrl ? (
                           <img 
                             src={part.imageUrl} 
@@ -449,7 +449,7 @@ export function PartsOrderDialog({
                       className="flex items-center justify-between p-3 border rounded-lg"
                       data-testid={`cart-item-${item.id}`}
                     >
-                      <div className="flex items-center gap-3">
+                      <div className="flex flex-wrap items-center gap-3">
                         <div className="w-10 h-10 bg-muted rounded-md flex items-center justify-center flex-shrink-0">
                           <Package className="h-5 w-5 text-muted-foreground" />
                         </div>
@@ -460,7 +460,7 @@ export function PartsOrderDialog({
                           </span>
                         </div>
                       </div>
-                      <div className="flex items-center gap-2">
+                      <div className="flex flex-wrap items-center gap-2">
                         <span className="font-medium">
                           {formatCurrency(item.unitCost * item.quantity)}
                         </span>
@@ -657,7 +657,7 @@ export function PartsOrderDialog({
                   <Card key={po.id} data-testid={`purchase-order-${po.id}`}>
                     <CardHeader className="pb-3">
                       <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
+                        <div className="flex flex-wrap items-center gap-3">
                           <CardTitle className="text-base font-semibold">
                             {po.orderNumber}
                           </CardTitle>
@@ -698,14 +698,14 @@ export function PartsOrderDialog({
                             className="flex items-center justify-between py-2 px-3 bg-muted/50 rounded-md"
                             data-testid={`part-order-${item.id}`}
                           >
-                            <div className="flex items-center gap-2">
+                            <div className="flex flex-wrap items-center gap-2">
                               <Package className="h-4 w-4 text-muted-foreground" />
                               <span className="font-medium">{item.partName}</span>
                               <span className="text-sm text-muted-foreground">
                                 x{item.quantity}
                               </span>
                             </div>
-                            <div className="flex items-center gap-2">
+                            <div className="flex flex-wrap items-center gap-2">
                               <span className="text-sm">{formatCurrency(item.unitCost)}</span>
                               {getStatusBadge(item.status)}
                               {item.status === "ordered" && (

@@ -337,7 +337,7 @@ export function QuoteFormDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-3xl max-h-[90vh] overflow-hidden flex flex-col">
         <DialogHeader className="flex-shrink-0 pb-2">
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-3">
             <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center">
               <FileText className="h-5 w-5 text-primary" />
             </div>
@@ -390,7 +390,7 @@ export function QuoteFormDialog({
                       <div className="text-sm text-muted-foreground">
                         Cerca ricambi disponibili nel tuo magazzino
                       </div>
-                      <div className="flex items-center gap-2">
+                      <div className="flex flex-wrap items-center gap-2">
                         <Select value={selectedWarehouseId} onValueChange={setSelectedWarehouseId}>
                           <SelectTrigger className="w-full" data-testid="select-warehouse">
                             <Warehouse className="h-4 w-4 mr-2 text-muted-foreground" />
@@ -555,15 +555,15 @@ export function QuoteFormDialog({
                             </Button>
                           </div>
                           
-                          <div className="flex items-center gap-3">
+                          <div className="flex flex-wrap items-center gap-3">
                             {getSourceBadge(field.source)}
-                            <div className="flex items-center gap-2 ml-auto">
+                            <div className="flex flex-wrap items-center gap-2 ml-auto">
                               <FormField
                                 control={form.control}
                                 name={`parts.${index}.quantity`}
                                 render={({ field: qtyField }) => (
                                   <FormItem className="space-y-0">
-                                    <div className="flex items-center gap-1">
+                                    <div className="flex flex-wrap items-center gap-1">
                                       <span className="text-xs text-muted-foreground">Qtà:</span>
                                       <FormControl>
                                         <Input
@@ -584,7 +584,7 @@ export function QuoteFormDialog({
                                 name={`parts.${index}.unitPrice`}
                                 render={({ field: priceField }) => (
                                   <FormItem className="space-y-0">
-                                    <div className="flex items-center gap-1">
+                                    <div className="flex flex-wrap items-center gap-1">
                                       <FormControl>
                                         <Input
                                           {...priceField}
@@ -673,7 +673,7 @@ export function QuoteFormDialog({
                       name="laborCost"
                       render={({ field }) => (
                         <FormItem>
-                          <div className="flex items-center gap-2">
+                          <div className="flex flex-wrap items-center gap-2">
                             <FormControl>
                               <Input
                                 {...field}
@@ -698,7 +698,7 @@ export function QuoteFormDialog({
               <Collapsible open={showAdvanced} onOpenChange={setShowAdvanced}>
                 <CollapsibleTrigger asChild>
                   <Button variant="ghost" className="w-full justify-between" type="button">
-                    <span className="flex items-center gap-2 text-sm">
+                    <span className="flex flex-wrap items-center gap-2 text-sm">
                       <StickyNote className="h-4 w-4" />
                       Opzioni Avanzate
                     </span>
@@ -712,7 +712,7 @@ export function QuoteFormDialog({
                       name="validUntil"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel className="flex items-center gap-2">
+                          <FormLabel className="flex flex-wrap items-center gap-2">
                             <Calendar className="h-4 w-4" />
                             Valido Fino Al
                           </FormLabel>
@@ -737,7 +737,7 @@ export function QuoteFormDialog({
                       name="notes"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel className="flex items-center gap-2">
+                          <FormLabel className="flex flex-wrap items-center gap-2">
                             <StickyNote className="h-4 w-4" />
                             Note
                           </FormLabel>

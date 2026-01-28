@@ -421,7 +421,7 @@ export default function ResellerPosRegistersPage() {
         <div className="absolute top-1/2 left-1/3 w-48 h-48 rounded-full bg-white/10 blur-3xl animate-pulse" style={{ animationDelay: '2s' }} />
         
         <div className="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div className="flex items-center gap-4">
+          <div className="flex flex-wrap items-center gap-4">
             <Link href="/reseller/pos">
               <Button variant="ghost" size="icon" className="bg-white/20 backdrop-blur-sm border border-white/30 text-white" data-testid="button-back">
                 <ArrowLeft className="h-5 w-5" />
@@ -439,9 +439,9 @@ export default function ResellerPosRegistersPage() {
               </p>
             </div>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <Select value={centerFilter} onValueChange={setCenterFilter}>
-              <SelectTrigger className="w-[200px] bg-white/20 backdrop-blur-sm border-white/30 text-white" data-testid="select-center-filter">
+              <SelectTrigger className="w-full sm:w-[200px] bg-white/20 backdrop-blur-sm border-white/30 text-white" data-testid="select-center-filter">
                 <SelectValue placeholder="Filtra per centro" />
               </SelectTrigger>
               <SelectContent>
@@ -531,7 +531,7 @@ export default function ResellerPosRegistersPage() {
                     <TableCell className="font-medium">{register.name}</TableCell>
                     {centerFilter === "all" && (
                       <TableCell>
-                        <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                        <div className="flex flex-wrap items-center gap-1 text-sm text-muted-foreground">
                           <Building2 className="h-3 w-3" />
                           {register.repairCenterName || "-"}
                         </div>
@@ -714,7 +714,7 @@ export default function ResellerPosRegistersPage() {
       <AlertDialog open={!!deleteRegister} onOpenChange={() => setDeleteRegister(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle className="flex items-center gap-2">
+            <AlertDialogTitle className="flex flex-wrap items-center gap-2">
               <AlertTriangle className="h-5 w-5 text-destructive" />
               Eliminare questa cassa?
             </AlertDialogTitle>
@@ -741,7 +741,7 @@ export default function ResellerPosRegistersPage() {
       <Dialog open={openSessionDialog.open} onOpenChange={(open) => !open && setOpenSessionDialog({ register: null as any, open: false })}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
+            <DialogTitle className="flex flex-wrap items-center gap-2">
               <PlayCircle className="h-5 w-5 text-green-500" />
               Apri Cassa
             </DialogTitle>
@@ -817,7 +817,7 @@ export default function ResellerPosRegistersPage() {
       <Dialog open={closeSessionDialog.open} onOpenChange={(open) => !open && setCloseSessionDialog({ session: null as any, register: null as any, open: false })}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
+            <DialogTitle className="flex flex-wrap items-center gap-2">
               <StopCircle className="h-5 w-5 text-red-500" />
               Chiudi Cassa
             </DialogTitle>

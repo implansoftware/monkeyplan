@@ -227,13 +227,13 @@ export default function AdminTransferRequestsOverviewPage() {
       <Card key={request.id} className="hover-elevate" data-testid={`card-admin-transfer-${request.id}`}>
         <CardContent className="pt-4">
           <div className="flex items-start justify-between gap-4 flex-wrap">
-            <div className="flex items-center gap-3">
+            <div className="flex flex-wrap items-center gap-3">
               <div className="p-2 rounded-lg bg-purple-100 dark:bg-purple-900/30">
                 <Package className="h-5 w-5 text-purple-600" />
               </div>
               <div>
                 <p className="font-medium font-mono">{request.requestNumber}</p>
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
                   <TypeIcon className="h-3 w-3" />
                   <span>{request.requesterName || typeLabel}</span>
                   <span className="text-xs">→</span>
@@ -241,7 +241,7 @@ export default function AdminTransferRequestsOverviewPage() {
                 </div>
               </div>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               {renderStatusBadge(request.status)}
             </div>
           </div>
@@ -340,7 +340,7 @@ export default function AdminTransferRequestsOverviewPage() {
           backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23000' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
         }} />
         <div className="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div className="flex items-center gap-3 mb-1">
+          <div className="flex flex-wrap items-center gap-3 mb-1">
             <div className="h-10 w-10 rounded-xl bg-primary text-primary-foreground flex items-center justify-center shadow-lg shadow-primary/25">
               <Package className="h-5 w-5" />
             </div>
@@ -355,7 +355,7 @@ export default function AdminTransferRequestsOverviewPage() {
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card>
           <CardContent className="pt-4">
-            <div className="flex items-center gap-3">
+            <div className="flex flex-wrap items-center gap-3">
               <div className="p-2 rounded-lg bg-yellow-100 dark:bg-yellow-900/30">
                 <Clock className="h-5 w-5 text-yellow-600" />
               </div>
@@ -368,7 +368,7 @@ export default function AdminTransferRequestsOverviewPage() {
         </Card>
         <Card>
           <CardContent className="pt-4">
-            <div className="flex items-center gap-3">
+            <div className="flex flex-wrap items-center gap-3">
               <div className="p-2 rounded-lg bg-blue-100 dark:bg-blue-900/30">
                 <CheckCircle className="h-5 w-5 text-blue-600" />
               </div>
@@ -381,7 +381,7 @@ export default function AdminTransferRequestsOverviewPage() {
         </Card>
         <Card>
           <CardContent className="pt-4">
-            <div className="flex items-center gap-3">
+            <div className="flex flex-wrap items-center gap-3">
               <div className="p-2 rounded-lg bg-purple-100 dark:bg-purple-900/30">
                 <Truck className="h-5 w-5 text-purple-600" />
               </div>
@@ -394,7 +394,7 @@ export default function AdminTransferRequestsOverviewPage() {
         </Card>
         <Card>
           <CardContent className="pt-4">
-            <div className="flex items-center gap-3">
+            <div className="flex flex-wrap items-center gap-3">
               <div className="p-2 rounded-lg bg-green-100 dark:bg-green-900/30">
                 <History className="h-5 w-5 text-green-600" />
               </div>
@@ -407,7 +407,7 @@ export default function AdminTransferRequestsOverviewPage() {
         </Card>
       </div>
 
-      <div className="flex items-center gap-4 flex-wrap">
+      <div className="flex flex-wrap items-center gap-4 flex-wrap">
         <div className="relative flex-1 min-w-[200px]">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
@@ -419,7 +419,7 @@ export default function AdminTransferRequestsOverviewPage() {
           />
         </div>
         <Select value={statusFilter} onValueChange={setStatusFilter}>
-          <SelectTrigger className="w-[180px]" data-testid="select-admin-status-filter">
+          <SelectTrigger className="w-full sm:w-[180px]" data-testid="select-admin-status-filter">
             <SelectValue placeholder="Filtra per stato" />
           </SelectTrigger>
           <SelectContent>
@@ -484,7 +484,7 @@ export default function AdminTransferRequestsOverviewPage() {
       <Dialog open={showDetailsDialog} onOpenChange={setShowDetailsDialog}>
         <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
+            <DialogTitle className="flex flex-wrap items-center gap-2">
               <Package className="h-5 w-5" />
               Dettagli Richiesta {selectedRequest?.requestNumber}
             </DialogTitle>

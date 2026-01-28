@@ -33,7 +33,7 @@ function GuideSection({ icon: Icon, title, description, features }: GuideSection
   return (
     <Card className="rounded-2xl" data-testid={`card-guide-${title.toLowerCase().replace(/\s+/g, '-')}`}>
       <CardHeader>
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
           <div className="p-2 rounded-md bg-primary/10">
             <Icon className="h-5 w-5 text-primary" />
           </div>
@@ -296,7 +296,7 @@ export default function ResellerGuide() {
         />
         
         <div className="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div className="flex items-center gap-3 mb-1">
+          <div className="flex flex-wrap items-center gap-3 mb-1">
             <div className="h-12 w-12 rounded-2xl bg-white/20 backdrop-blur-sm border border-white/30 flex items-center justify-center">
               <FileText className="h-6 w-6 text-white" />
             </div>

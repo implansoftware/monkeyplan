@@ -193,14 +193,14 @@ export default function MarketplaceProductDetail() {
             )}
           </div>
 
-          <div className="flex items-center gap-4 text-sm">
-            <div className="flex items-center gap-1">
+          <div className="flex flex-wrap items-center gap-4 text-sm">
+            <div className="flex flex-wrap items-center gap-1">
               <Box className="h-4 w-4 text-muted-foreground" />
               <span className={totalStock > 0 ? 'text-green-600' : 'text-red-600'}>
                 {totalStock > 0 ? `${totalStock} disponibili` : 'Non disponibile'}
               </span>
             </div>
-            <div className="flex items-center gap-1">
+            <div className="flex flex-wrap items-center gap-1">
               <Truck className="h-4 w-4 text-muted-foreground" />
               <span>Spedizione rapida</span>
             </div>
@@ -261,7 +261,7 @@ export default function MarketplaceProductDetail() {
                 >
                   <CardContent className="p-4">
                     <div className="flex items-center justify-between gap-2">
-                      <div className="flex items-center gap-3">
+                      <div className="flex flex-wrap items-center gap-3">
                         <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
                           <Store className="h-5 w-5 text-primary" />
                         </div>
@@ -272,7 +272,7 @@ export default function MarketplaceProductDetail() {
                               <Badge variant="secondary" className="ml-2 text-xs">Ufficiale</Badge>
                             )}
                           </p>
-                          <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                          <div className="flex flex-wrap items-center gap-1 text-sm text-muted-foreground">
                             <Check className="h-3 w-3 text-green-600" />
                             {seller.resellerId === 'admin' ? 'Negozio ufficiale' : 'Venditore verificato'}
                           </div>

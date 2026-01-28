@@ -734,16 +734,16 @@ export default function ResellerPosTerminal() {
     return (
       <div className="flex flex-col items-center justify-center min-h-[80vh] p-4 gap-4">
         {/* Selettore Cassa */}
-        <div className="flex items-center gap-2 mb-4">
+        <div className="flex flex-wrap items-center gap-2 mb-4">
           <Select value={selectedRegisterId} onValueChange={setSelectedRegisterId}>
-            <SelectTrigger className="w-[220px] h-10" data-testid="select-register-closed">
+            <SelectTrigger className="w-full sm:w-[220px] h-10" data-testid="select-register-closed">
               <Store className="w-4 h-4 mr-2" />
               <SelectValue placeholder="Seleziona cassa" />
             </SelectTrigger>
             <SelectContent>
               {registers.filter(r => r.isActive).map(reg => (
                 <SelectItem key={reg.id} value={reg.id} data-testid={`select-register-closed-${reg.id}`}>
-                  <span className="flex items-center gap-2">
+                  <span className="flex flex-wrap items-center gap-2">
                     <span className={`w-2 h-2 rounded-full ${reg.id === selectedRegisterId && currentSession ? "bg-green-500" : "bg-gray-300"}`} />
                     {reg.name} {reg.isDefault && "(Default)"}
                     {reg.id === selectedRegisterId && currentSession && <span className="text-xs text-green-600 ml-1">Aperta</span>}
@@ -842,19 +842,19 @@ export default function ResellerPosTerminal() {
           <div className="absolute top-1/2 left-1/3 w-48 h-48 rounded-full bg-emerald-300/20 blur-3xl animate-pulse" style={{ animationDelay: '2s' }} />
           
           <div className="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-            <div className="flex items-center gap-3">
+            <div className="flex flex-wrap items-center gap-3">
               <div className="h-12 w-12 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center shadow-xl">
                 <CreditCard className="h-6 w-6 text-white" />
               </div>
               <div>
                 <h1 className="text-xl sm:text-2xl font-bold text-white tracking-tight">POS</h1>
-                <div className="flex items-center gap-2 text-emerald-100 text-sm">
+                <div className="flex flex-wrap items-center gap-2 text-emerald-100 text-sm">
                   <div className="w-2 h-2 rounded-full bg-green-300 animate-pulse" />
                   {selectedRegister?.name || "Cassa"} • dalle {format(new Date(currentSession.openedAt), "HH:mm", { locale: it })}
                 </div>
               </div>
             </div>
-            <div className="flex items-center gap-2 flex-wrap">
+            <div className="flex flex-wrap items-center gap-2 flex-wrap">
               <Select value={selectedRegisterId} onValueChange={setSelectedRegisterId}>
                 <SelectTrigger className="min-w-[180px] max-w-[280px] h-8 bg-white/20 backdrop-blur-sm text-white border-white/30" data-testid="select-register">
                   <Store className="w-4 h-4 mr-1" />
@@ -863,7 +863,7 @@ export default function ResellerPosTerminal() {
                 <SelectContent>
                   {registers.filter(r => r.isActive).map(reg => (
                     <SelectItem key={reg.id} value={reg.id} data-testid={`select-register-${reg.id}`}>
-                      <span className="flex items-center gap-2">
+                      <span className="flex flex-wrap items-center gap-2">
                         <span className={`w-2 h-2 rounded-full ${reg.id === selectedRegisterId && currentSession ? "bg-green-500" : "bg-gray-300"}`} />
                         {reg.name} {reg.isDefault && "(Default)"}
                         {reg.id === selectedRegisterId && currentSession && <Badge variant="secondary" className="text-xs bg-green-100 text-green-700 ml-1">Aperta</Badge>}
@@ -899,7 +899,7 @@ export default function ResellerPosTerminal() {
 
         <Card className="flex-1 flex flex-col overflow-hidden">
           <CardHeader className="pb-2">
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <div className="relative flex-1">
                 <QrCode className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
                 <Input
@@ -1144,7 +1144,7 @@ export default function ResellerPosTerminal() {
 
       <Card className="w-full lg:w-96 flex flex-col">
         <CardHeader className="pb-2">
-          <CardTitle className="flex items-center gap-2">
+          <CardTitle className="flex flex-wrap items-center gap-2">
             <ShoppingCart className="w-5 h-5" />
             Carrello
             {cart.length > 0 && (
@@ -1172,7 +1172,7 @@ export default function ResellerPosTerminal() {
                     <div className="flex items-start gap-2 mb-2">
                       <ProductImage category={item.category} imageUrl={item.imageUrl} size="sm" />
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2">
+                        <div className="flex flex-wrap items-center gap-2">
                           <div className="font-medium text-sm line-clamp-1">{item.name}</div>
                           {item.isService && (
                             <Badge variant="outline" className="text-[10px] px-1 py-0 h-4 border-indigo-500 text-indigo-600 dark:text-indigo-400">
@@ -1199,7 +1199,7 @@ export default function ResellerPosTerminal() {
                       </div>
                     )}
                     <div className="flex items-center justify-between gap-2">
-                      <div className="flex items-center gap-1">
+                      <div className="flex flex-wrap items-center gap-1">
                         <Button
                           variant="ghost"
                           size="icon"
@@ -1311,7 +1311,7 @@ export default function ResellerPosTerminal() {
               })}
             </div>
 
-            <div className="flex items-center gap-2 flex-wrap">
+            <div className="flex flex-wrap items-center gap-2 flex-wrap">
               <span className="text-sm text-muted-foreground">Cliente:</span>
               {(["guest", "existing", "new"] as const).map((type) => {
                 const labels = { guest: "Ospite", existing: "Esistente", new: "Nuovo" };
@@ -1409,7 +1409,7 @@ export default function ResellerPosTerminal() {
 
             {selectedPayment === "cash" && (
               <div className="space-y-2">
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2">
                   <Input
                     type="number"
                     placeholder="0.00"
@@ -1581,7 +1581,7 @@ export default function ResellerPosTerminal() {
       <Dialog open={tempProductDialog} onOpenChange={setTempProductDialog}>
         <DialogContent className="max-w-sm">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
+            <DialogTitle className="flex flex-wrap items-center gap-2">
               <Package className="w-5 h-5" />
               Aggiungi Prodotto Temporaneo
             </DialogTitle>

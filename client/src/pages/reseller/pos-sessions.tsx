@@ -207,7 +207,7 @@ export default function ResellerPosSessions() {
         <div className="absolute top-1/2 left-1/3 w-48 h-48 rounded-full bg-white/10 blur-3xl animate-pulse" style={{ animationDelay: '2s' }} />
         
         <div className="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-3">
             <div className="h-12 w-12 rounded-2xl bg-white/20 backdrop-blur-sm border border-white/30 flex items-center justify-center">
               <Clock className="h-6 w-6 text-white" />
             </div>
@@ -257,7 +257,7 @@ export default function ResellerPosSessions() {
               />
             </div>
             <Select value={repairCenterFilter} onValueChange={setRepairCenterFilter}>
-              <SelectTrigger className="w-[200px]" data-testid="select-repair-center">
+              <SelectTrigger className="w-full sm:w-[200px]" data-testid="select-repair-center">
                 <Building2 className="w-4 h-4 mr-2" />
                 <SelectValue placeholder="Centro Riparazione" />
               </SelectTrigger>
@@ -269,7 +269,7 @@ export default function ResellerPosSessions() {
               </SelectContent>
             </Select>
             <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-[150px]" data-testid="select-status">
+              <SelectTrigger className="w-full sm:w-[150px]" data-testid="select-status">
                 <SelectValue placeholder="Stato" />
               </SelectTrigger>
               <SelectContent>
@@ -353,7 +353,7 @@ export default function ResellerPosSessions() {
       <Dialog open={!!selectedSessionId} onOpenChange={(open) => !open && setSelectedSessionId(null)}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
+            <DialogTitle className="flex flex-wrap items-center gap-2">
               <Clock className="w-5 h-5" />
               Dettaglio Sessione
             </DialogTitle>
@@ -449,7 +449,7 @@ export default function ResellerPosSessions() {
       <Dialog open={!!selectedTransactionId} onOpenChange={(open) => !open && setSelectedTransactionId(null)}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
+            <DialogTitle className="flex flex-wrap items-center gap-2">
               <Receipt className="w-5 h-5" />
               Dettaglio Transazione
             </DialogTitle>

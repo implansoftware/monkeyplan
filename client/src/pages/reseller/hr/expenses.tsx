@@ -272,7 +272,7 @@ export default function HrExpenses() {
         <div className="absolute bottom-0 left-0 w-48 h-48 bg-white/10 rounded-full blur-3xl translate-y-1/2 -translate-x-1/2" />
         <div className="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <div className="flex items-center gap-3 mb-2">
+            <div className="flex flex-wrap items-center gap-3 mb-2">
               <div className="h-12 w-12 rounded-lg bg-white/20 backdrop-blur-sm border border-white/30 flex items-center justify-center">
                 <Receipt className="h-6 w-6 text-white" />
               </div>
@@ -342,7 +342,7 @@ export default function HrExpenses() {
         <CardHeader>
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
-              <CardTitle className="flex items-center gap-2">
+              <CardTitle className="flex flex-wrap items-center gap-2">
                 <FileText className="h-5 w-5 text-muted-foreground" />
                 Note Spese
               </CardTitle>
@@ -405,7 +405,7 @@ export default function HrExpenses() {
                         }
                       </TableCell>
                       <TableCell>
-                        <div className="flex items-center gap-1">
+                        <div className="flex flex-wrap items-center gap-1">
                           {report.receiptUrl ? (
                             <>
                               <Button
@@ -592,7 +592,7 @@ export default function HrExpenses() {
             </div>
             <div className="space-y-2">
               <Label>Allegato (opzionale)</Label>
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2">
                 <Input
                   type="file"
                   accept="image/*,.pdf,.doc,.docx"

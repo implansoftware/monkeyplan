@@ -63,7 +63,7 @@ export default function AdminUtility() {
   if (isLoading) {
     return (
       <div className="p-6 space-y-6">
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
           <Zap className="h-8 w-8 text-primary" />
           <h1 className="text-2xl font-bold">Modulo Utility</h1>
         </div>
@@ -88,7 +88,7 @@ export default function AdminUtility() {
   return (
     <div className="p-6 space-y-6">
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
           <Zap className="h-8 w-8 text-primary" />
           <div>
             <h1 className="text-2xl font-bold">Modulo Utility</h1>
@@ -166,7 +166,7 @@ export default function AdminUtility() {
             <div className="space-y-3">
               {Object.entries(summary?.byCategory || {}).map(([cat, data]) => (
                 <div key={cat} className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-2">
                     <Badge variant="outline">{categoryLabels[cat] || cat}</Badge>
                     <span className="text-sm text-muted-foreground">
                       {data.count} pratiche

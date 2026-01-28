@@ -122,7 +122,7 @@ export default function ResellerSupplierReturns() {
         />
         
         <div className="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-3">
             <div className="h-12 w-12 rounded-2xl bg-white/20 backdrop-blur-sm border border-white/30 flex items-center justify-center">
               <RotateCcw className="h-6 w-6 text-white" />
             </div>
@@ -139,11 +139,11 @@ export default function ResellerSupplierReturns() {
 
       <Card className="rounded-2xl">
         <CardHeader className="flex flex-row items-center justify-between gap-4 space-y-0 pb-4">
-          <CardTitle className="flex items-center gap-2">
+          <CardTitle className="flex flex-wrap items-center gap-2">
             <RotateCcw className="h-5 w-5" />
             Resi a Fornitori
           </CardTitle>
-          <div className="flex items-center gap-4">
+          <div className="flex flex-wrap items-center gap-4">
             <div className="relative w-64">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
@@ -211,7 +211,7 @@ export default function ResellerSupplierReturns() {
                       {ret.returnNumber}
                     </TableCell>
                     <TableCell>
-                      <div className="flex items-center gap-2">
+                      <div className="flex flex-wrap items-center gap-2">
                         <Truck className="h-4 w-4 text-muted-foreground" />
                         <span data-testid={`text-return-supplier-${ret.id}`}>
                           {ret.supplier?.name || "-"}
@@ -219,7 +219,7 @@ export default function ResellerSupplierReturns() {
                       </div>
                     </TableCell>
                     <TableCell>
-                      <div className="flex items-center gap-2">
+                      <div className="flex flex-wrap items-center gap-2">
                         <Building2 className="h-4 w-4 text-muted-foreground" />
                         <div>
                           <div className="font-medium" data-testid={`text-return-center-${ret.id}`}>
@@ -248,7 +248,7 @@ export default function ResellerSupplierReturns() {
                       {ret.rmaNumber || "-"}
                     </TableCell>
                     <TableCell data-testid={`text-return-date-${ret.id}`}>
-                      <div className="flex items-center gap-1 text-muted-foreground">
+                      <div className="flex flex-wrap items-center gap-1 text-muted-foreground">
                         <Calendar className="h-3 w-3" />
                         {format(new Date(ret.createdAt), "dd MMM yyyy", { locale: it })}
                       </div>

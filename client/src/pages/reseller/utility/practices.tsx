@@ -616,7 +616,7 @@ export default function ResellerUtilityPractices() {
           backgroundSize: '60px 60px'
         }} />
         <div className="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div className="flex items-center gap-4">
+          <div className="flex flex-wrap items-center gap-4">
             <Link href="/reseller/utility">
               <Button variant="ghost" size="icon" className="bg-white/20 backdrop-blur-sm border border-white/30 text-white" data-testid="button-back">
                 <ArrowLeft className="h-4 w-4" />
@@ -635,8 +635,8 @@ export default function ResellerUtilityPractices() {
 
       <Card className="rounded-2xl">
         <CardHeader className="flex flex-row items-center justify-between gap-2 flex-wrap">
-          <div className="flex items-center gap-2 flex-wrap">
-            <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2 flex-wrap">
+            <div className="flex flex-wrap items-center gap-2">
               <Search className="h-4 w-4 text-muted-foreground" />
               <Input
                 placeholder="Cerca per numero pratica..."
@@ -702,7 +702,7 @@ export default function ResellerUtilityPractices() {
                       </TableCell>
                       <TableCell>
                         {customer ? (
-                          <div className="flex items-center gap-1">
+                          <div className="flex flex-wrap items-center gap-1">
                             <UserIcon className="h-3 w-3 text-muted-foreground" />
                             {customer.fullName}
                           </div>
@@ -718,7 +718,7 @@ export default function ResellerUtilityPractices() {
                       <TableCell>
                         {(itemType === "service" || itemType === "service_with_products") && (service || (practice as any).customServiceName) ? (
                           <div className="flex flex-col">
-                            <div className="flex items-center gap-1">
+                            <div className="flex flex-wrap items-center gap-1">
                               <span className="font-medium text-sm">
                                 {(practice as any).customServiceName || service?.name}
                               </span>
@@ -734,7 +734,7 @@ export default function ResellerUtilityPractices() {
                                 {(practice as any).practiceProducts.slice(0, 2).map((pp: any, idx: number) => {
                                   const prod = products.find(p => p.id === pp.productId);
                                   return (
-                                    <div key={idx} className="flex items-center gap-1">
+                                    <div key={idx} className="flex flex-wrap items-center gap-1">
                                       <Package className="h-3 w-3 text-muted-foreground" />
                                       <span className="text-xs">{prod?.name || "Prodotto"} x{pp.quantity}</span>
                                     </div>
@@ -755,7 +755,7 @@ export default function ResellerUtilityPractices() {
                                 {(practice as any).practiceProducts.slice(0, 2).map((pp: any, idx: number) => {
                                   const prod = products.find(p => p.id === pp.productId);
                                   return (
-                                    <div key={idx} className="flex items-center gap-1">
+                                    <div key={idx} className="flex flex-wrap items-center gap-1">
                                       <Package className="h-3 w-3 text-muted-foreground" />
                                       <span className="text-sm">{prod?.name || "Prodotto"} x{pp.quantity}</span>
                                     </div>
@@ -768,7 +768,7 @@ export default function ResellerUtilityPractices() {
                                 )}
                               </>
                             ) : product ? (
-                              <div className="flex items-center gap-2">
+                              <div className="flex flex-wrap items-center gap-2">
                                 <Package className="h-4 w-4 text-muted-foreground" />
                                 <span className="font-medium text-sm">{product.name}</span>
                               </div>

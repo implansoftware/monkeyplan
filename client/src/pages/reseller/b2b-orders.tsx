@@ -191,18 +191,18 @@ export default function ResellerB2BOrders() {
               </CardDescription>
             </div>
             <div className="flex flex-col gap-1 items-end">
-              <Badge variant={status.variant} className="flex items-center gap-1">
+              <Badge variant={status.variant} className="flex flex-wrap items-center gap-1">
                 <StatusIcon className="h-3 w-3" />
                 {status.label}
               </Badge>
               {hasActiveReturn && (
-                <Badge variant="outline" className="flex items-center gap-1 text-orange-600 border-orange-300">
+                <Badge variant="outline" className="flex flex-wrap items-center gap-1 text-orange-600 border-orange-300">
                   <RotateCcw className="h-3 w-3" />
                   Reso in corso
                 </Badge>
               )}
               {hasCompletedReturn && !hasActiveReturn && (
-                <Badge variant="outline" className="flex items-center gap-1 text-green-600 border-green-300">
+                <Badge variant="outline" className="flex flex-wrap items-center gap-1 text-green-600 border-green-300">
                   <CheckCircle className="h-3 w-3" />
                   Reso completato
                 </Badge>
@@ -249,7 +249,7 @@ export default function ResellerB2BOrders() {
         <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 animate-pulse" />
         <div className="absolute bottom-0 left-0 w-48 h-48 bg-white/10 rounded-full blur-3xl translate-y-1/2 -translate-x-1/2 animate-pulse" style={{ animationDelay: '1s' }} />
         <div className="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div className="flex items-center gap-3 mb-1">
+          <div className="flex flex-wrap items-center gap-3 mb-1">
             <div className="h-12 w-12 rounded-xl bg-white/20 backdrop-blur-sm border border-white/30 flex items-center justify-center">
               <ShoppingBag className="h-6 w-6 text-white" />
             </div>
@@ -352,7 +352,7 @@ export default function ResellerB2BOrders() {
                     {selectedOrder.items?.map((item) => (
                       <TableRow key={item.id}>
                         <TableCell>
-                          <div className="flex items-center gap-2">
+                          <div className="flex flex-wrap items-center gap-2">
                             {item.product?.imageUrl ? (
                               <img src={item.product.imageUrl} alt="" className="w-8 h-8 object-cover rounded" />
                             ) : (
@@ -545,7 +545,7 @@ export default function ResellerB2BOrders() {
                     {selectedOrder?.items?.map((item) => (
                       <TableRow key={item.id}>
                         <TableCell>
-                          <div className="flex items-center gap-2">
+                          <div className="flex flex-wrap items-center gap-2">
                             {item.product?.imageUrl ? (
                               <img src={item.product.imageUrl} alt="" className="w-8 h-8 object-cover rounded" />
                             ) : (

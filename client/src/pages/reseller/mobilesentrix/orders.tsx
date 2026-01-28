@@ -143,14 +143,14 @@ export default function MobilesentrixOrdersPage() {
   return (
     <div className="p-6 space-y-6">
       <div className="flex items-center justify-between flex-wrap gap-4">
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
           <Package className="h-8 w-8" />
           <div>
             <h1 className="text-2xl font-bold">I Miei Ordini MobileSentrix</h1>
             <p className="text-muted-foreground">Storico degli ordini effettuati su MobileSentrix</p>
           </div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <Link href="/reseller/mobilesentrix/catalog">
             <Button variant="outline" data-testid="button-back-catalog">
               <ArrowLeft className="h-4 w-4 mr-2" />
@@ -191,27 +191,27 @@ export default function MobilesentrixOrdersPage() {
                 <CardContent className="p-6">
                   <div className="flex items-start justify-between flex-wrap gap-4">
                     <div className="space-y-2">
-                      <div className="flex items-center gap-3">
+                      <div className="flex flex-wrap items-center gap-3">
                         <h3 className="font-semibold text-lg">
                           Ordine #{order.orderNumber || order.mobilesentrixOrderId}
                         </h3>
-                        <Badge variant={config.variant} className="flex items-center gap-1">
+                        <Badge variant={config.variant} className="flex flex-wrap items-center gap-1">
                           <StatusIcon className="h-3 w-3" />
                           {config.label}
                         </Badge>
                       </div>
-                      <div className="flex items-center gap-4 text-sm text-muted-foreground flex-wrap">
+                      <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground flex-wrap">
                         <span>
                           {format(new Date(order.createdAt), "d MMMM yyyy, HH:mm", { locale: it })}
                         </span>
                         {order.shippingMethod && (
-                          <span className="flex items-center gap-1">
+                          <span className="flex flex-wrap items-center gap-1">
                             <Truck className="h-3 w-3" />
                             {order.shippingMethod}
                           </span>
                         )}
                         {order.trackingNumber && (
-                          <span className="flex items-center gap-1">
+                          <span className="flex flex-wrap items-center gap-1">
                             <ExternalLink className="h-3 w-3" />
                             Tracking: {order.trackingNumber}
                           </span>
@@ -238,7 +238,7 @@ export default function MobilesentrixOrdersPage() {
       <Dialog open={!!selectedOrderId} onOpenChange={(open) => !open && setSelectedOrderId(null)}>
         <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
+            <DialogTitle className="flex flex-wrap items-center gap-2">
               <Package className="h-5 w-5" />
               Dettagli Ordine #{orderDetails?.increment_id || selectedOrderId}
             </DialogTitle>
@@ -285,7 +285,7 @@ export default function MobilesentrixOrdersPage() {
 
               <div className="grid md:grid-cols-2 gap-4">
                 <div className="p-4 border rounded-md">
-                  <div className="flex items-center gap-2 mb-2">
+                  <div className="flex flex-wrap items-center gap-2 mb-2">
                     <Truck className="h-4 w-4" />
                     <h4 className="font-semibold">Spedizione</h4>
                   </div>
@@ -297,7 +297,7 @@ export default function MobilesentrixOrdersPage() {
                   )}
                 </div>
                 <div className="p-4 border rounded-md">
-                  <div className="flex items-center gap-2 mb-2">
+                  <div className="flex flex-wrap items-center gap-2 mb-2">
                     <CreditCard className="h-4 w-4" />
                     <h4 className="font-semibold">Pagamento</h4>
                   </div>
@@ -307,7 +307,7 @@ export default function MobilesentrixOrdersPage() {
 
               {shippingAddress && (
                 <div className="p-4 border rounded-md">
-                  <div className="flex items-center gap-2 mb-2">
+                  <div className="flex flex-wrap items-center gap-2 mb-2">
                     <MapPin className="h-4 w-4" />
                     <h4 className="font-semibold">Indirizzo di Spedizione</h4>
                   </div>

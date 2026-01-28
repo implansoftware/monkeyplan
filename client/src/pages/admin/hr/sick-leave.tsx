@@ -192,13 +192,13 @@ export default function AdminSickLeavePage() {
                   return (
                     <TableRow key={sl.id} data-testid={`row-sick-leave-${sl.id}`}>
                       <TableCell>
-                        <div className="flex items-center gap-2">
+                        <div className="flex flex-wrap items-center gap-2">
                           <User className="h-4 w-4 text-muted-foreground" />
                           <p className="font-medium">{sl.user?.fullName || "N/A"}</p>
                         </div>
                       </TableCell>
                       <TableCell>
-                        <div className="flex items-center gap-1 text-sm">
+                        <div className="flex flex-wrap items-center gap-1 text-sm">
                           <Clock className="h-3 w-3" />
                           {format(new Date(sl.startDate), "dd/MM/yyyy", { locale: it })}
                           {sl.endDate && (

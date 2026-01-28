@@ -215,7 +215,7 @@ export default function TrovausatiMarketplacePage() {
           backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23000' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
         }} />
         <div className="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div className="flex items-center gap-3 mb-1">
+          <div className="flex flex-wrap items-center gap-3 mb-1">
             <div className="h-10 w-10 rounded-xl bg-primary text-primary-foreground flex items-center justify-center shadow-lg shadow-primary/25">
               <ShoppingBag className="h-5 w-5" />
             </div>
@@ -243,11 +243,11 @@ export default function TrovausatiMarketplacePage() {
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList>
-          <TabsTrigger value="products" className="flex items-center gap-2" data-testid="tab-products">
+          <TabsTrigger value="products" className="flex flex-wrap items-center gap-2" data-testid="tab-products">
             <Package className="h-4 w-4" />
             Prodotti
           </TabsTrigger>
-          <TabsTrigger value="orders" className="flex items-center gap-2" data-testid="tab-orders">
+          <TabsTrigger value="orders" className="flex flex-wrap items-center gap-2" data-testid="tab-orders">
             <Truck className="h-4 w-4" />
             I Miei Ordini
           </TabsTrigger>
@@ -256,7 +256,7 @@ export default function TrovausatiMarketplacePage() {
         <TabsContent value="products" className="space-y-4">
           <Card>
             <CardHeader>
-              <div className="flex items-center gap-4">
+              <div className="flex flex-wrap items-center gap-4">
                 <div className="flex-1">
                   <div className="relative">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -312,7 +312,7 @@ export default function TrovausatiMarketplacePage() {
                         <p className="text-sm text-muted-foreground truncate">
                           {product.attributes.color}
                         </p>
-                        <div className="flex items-center gap-2 mt-2 text-xs text-muted-foreground">
+                        <div className="flex flex-wrap items-center gap-2 mt-2 text-xs text-muted-foreground">
                           <Battery className="h-3 w-3" />
                           <span>{product.attributes.battery_perc}%</span>
                           <Monitor className="h-3 w-3 ml-2" />
@@ -387,7 +387,7 @@ export default function TrovausatiMarketplacePage() {
         <TabsContent value="orders" className="space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
+              <CardTitle className="flex flex-wrap items-center gap-2">
                 <Truck className="h-5 w-5" />
                 Storico Ordini
               </CardTitle>
@@ -410,7 +410,7 @@ export default function TrovausatiMarketplacePage() {
                       <CardContent className="p-4">
                         <div className="flex items-center justify-between">
                           <div>
-                            <div className="flex items-center gap-2">
+                            <div className="flex flex-wrap items-center gap-2">
                               <span className="font-semibold">Ordine #{order.id}</span>
                               {getStatusBadge(order.attributes.status)}
                             </div>
@@ -464,20 +464,20 @@ export default function TrovausatiMarketplacePage() {
                   )}
                 </div>
                 <div className="space-y-4">
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-2">
                     {getConditionBadge(selectedProduct.attributes.condition)}
                   </div>
                   <div className="space-y-2">
-                    <div className="flex items-center gap-2">
+                    <div className="flex flex-wrap items-center gap-2">
                       <Battery className="h-4 w-4 text-muted-foreground" />
                       <span>Batteria: {selectedProduct.attributes.battery_perc}% - {selectedProduct.attributes.battery_condition}</span>
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex flex-wrap items-center gap-2">
                       <Monitor className="h-4 w-4 text-muted-foreground" />
                       <span>Schermo: {selectedProduct.attributes.screen_condition}</span>
                     </div>
                     {selectedProduct.attributes.warranty && (
-                      <div className="flex items-center gap-2">
+                      <div className="flex flex-wrap items-center gap-2">
                         <CheckCircle className="h-4 w-4 text-muted-foreground" />
                         <span>Garanzia: {selectedProduct.attributes.warranty}</span>
                       </div>
@@ -529,7 +529,7 @@ export default function TrovausatiMarketplacePage() {
       <Dialog open={showCart} onOpenChange={setShowCart}>
         <DialogContent className="max-w-lg">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
+            <DialogTitle className="flex flex-wrap items-center gap-2">
               <ShoppingCart className="h-5 w-5" />
               Carrello ({cart.length})
             </DialogTitle>
@@ -546,7 +546,7 @@ export default function TrovausatiMarketplacePage() {
                   {cart.map((product) => (
                     <div 
                       key={product.id} 
-                      className="flex items-center gap-3 p-3 border rounded-lg"
+                      className="flex flex-wrap items-center gap-3 p-3 border rounded-lg"
                       data-testid={`cart-item-${product.id}`}
                     >
                       <div className="w-12 h-12 bg-muted rounded overflow-hidden flex-shrink-0">

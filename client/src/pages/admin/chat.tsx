@@ -108,7 +108,7 @@ export default function AdminChat() {
 
         <Card className="lg:col-span-3">
           <CardHeader className="border-b">
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <MessageSquare className="h-5 w-5" />
               <CardTitle className="text-base">Chat Generale</CardTitle>
             </div>

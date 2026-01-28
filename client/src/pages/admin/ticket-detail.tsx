@@ -98,7 +98,7 @@ function AttachmentList({ attachments }: { attachments?: TicketAttachment[] }) {
           href={att.url}
           target="_blank"
           rel="noopener noreferrer"
-          className="flex items-center gap-2 p-2 rounded border bg-muted/50 hover:bg-muted text-sm"
+          className="flex flex-wrap items-center gap-2 p-2 rounded border bg-muted/50 hover:bg-muted text-sm"
           data-testid={`attachment-${idx}`}
         >
           {getFileIcon(att.mimeType)}
@@ -308,12 +308,12 @@ function TicketDetailManageView({ basePath }: { basePath: string }) {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-4">
+      <div className="flex flex-wrap items-center gap-4">
         <Button variant="ghost" size="icon" onClick={() => setLocation(basePath)} data-testid="button-back">
           <ArrowLeft className="h-4 w-4" />
         </Button>
         <div className="flex-1">
-          <div className="flex items-center gap-2 mb-1">
+          <div className="flex flex-wrap items-center gap-2 mb-1">
             <span className="font-mono text-sm text-muted-foreground">#{ticket.ticketNumber}</span>
             {getStatusBadge(ticket.status)}
             {getPriorityBadge(ticket.priority)}
@@ -369,7 +369,7 @@ function TicketDetailManageView({ basePath }: { basePath: string }) {
                     {messages.map((msg) => (
                       <div key={msg.id} className={`border rounded-lg p-4 space-y-2 ${msg.isInternal ? 'border-amber-500/50 bg-amber-500/5' : ''}`} data-testid={`message-${msg.id}`}>
                         <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-2 text-sm">
+                          <div className="flex flex-wrap items-center gap-2 text-sm">
                             {msg.isInternal ? <UserCog className="h-4 w-4 text-amber-600" /> : <User className="h-4 w-4 text-muted-foreground" />}
                             <span className="font-medium">{msg.userId === ticket.customerId ? "Cliente" : "Staff"}</span>
                             {msg.isInternal && <Badge variant="outline" className="text-xs border-amber-500 text-amber-700">Nota interna</Badge>}
@@ -392,14 +392,14 @@ function TicketDetailManageView({ basePath }: { basePath: string }) {
                     <div className="flex items-center justify-between">
                       <Label>Scrivi una risposta</Label>
                       {canUseInternalNotes && (
-                        <div className="flex items-center gap-2">
+                        <div className="flex flex-wrap items-center gap-2">
                           <Switch checked={isInternalNote} onCheckedChange={setIsInternalNote} data-testid="switch-internal-note" />
                           <Label className="text-sm cursor-pointer">Nota interna</Label>
                         </div>
                       )}
                     </div>
                     {isInternalNote && canUseInternalNotes && (
-                      <div className="flex items-center gap-2 text-sm text-amber-700 bg-amber-500/10 p-2 rounded">
+                      <div className="flex flex-wrap items-center gap-2 text-sm text-amber-700 bg-amber-500/10 p-2 rounded">
                         <AlertCircle className="h-4 w-4" />
                         <span>Le note interne sono visibili solo allo staff</span>
                       </div>
@@ -410,7 +410,7 @@ function TicketDetailManageView({ basePath }: { basePath: string }) {
                       <div className="space-y-1">
                         <Label className="text-xs text-muted-foreground">Allegati selezionati:</Label>
                         {selectedFiles.map((file, idx) => (
-                          <div key={idx} className="flex items-center gap-2 p-2 rounded border bg-muted/50 text-sm">
+                          <div key={idx} className="flex flex-wrap items-center gap-2 p-2 rounded border bg-muted/50 text-sm">
                             {getFileIcon(file.type)}
                             <span className="flex-1 truncate">{file.name}</span>
                             <span className="text-xs text-muted-foreground">{formatFileSize(file.size)}</span>
@@ -422,7 +422,7 @@ function TicketDetailManageView({ basePath }: { basePath: string }) {
                       </div>
                     )}
                     
-                    <div className="flex items-center gap-2">
+                    <div className="flex flex-wrap items-center gap-2">
                       <input
                         ref={fileInputRef}
                         type="file"
@@ -683,12 +683,12 @@ function TicketDetailReadView({ basePath }: { basePath: string }) {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-4">
+      <div className="flex flex-wrap items-center gap-4">
         <Button variant="ghost" size="icon" onClick={() => setLocation(basePath)} data-testid="button-back">
           <ArrowLeft className="h-4 w-4" />
         </Button>
         <div className="flex-1">
-          <div className="flex items-center gap-2 mb-1">
+          <div className="flex flex-wrap items-center gap-2 mb-1">
             <span className="font-mono text-sm text-muted-foreground">#{ticket.ticketNumber}</span>
             {getStatusBadge(ticket.status)}
             {getPriorityBadge(ticket.priority)}
@@ -744,7 +744,7 @@ function TicketDetailReadView({ basePath }: { basePath: string }) {
                     {messages.map((msg) => (
                       <div key={msg.id} className={`border rounded-lg p-4 space-y-2 ${msg.isInternal ? 'border-amber-500/50 bg-amber-500/5' : ''}`} data-testid={`message-${msg.id}`}>
                         <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-2 text-sm">
+                          <div className="flex flex-wrap items-center gap-2 text-sm">
                             {msg.isInternal ? <UserCog className="h-4 w-4 text-amber-600" /> : <User className="h-4 w-4 text-muted-foreground" />}
                             <span className="font-medium">{msg.userId === ticket.customerId ? "Cliente" : "Staff"}</span>
                             {msg.isInternal && <Badge variant="outline" className="text-xs border-amber-500 text-amber-700">Nota interna</Badge>}
@@ -771,7 +771,7 @@ function TicketDetailReadView({ basePath }: { basePath: string }) {
                       <div className="space-y-1">
                         <Label className="text-xs text-muted-foreground">Allegati selezionati:</Label>
                         {selectedFiles.map((file, idx) => (
-                          <div key={idx} className="flex items-center gap-2 p-2 rounded border bg-muted/50 text-sm">
+                          <div key={idx} className="flex flex-wrap items-center gap-2 p-2 rounded border bg-muted/50 text-sm">
                             {getFileIcon(file.type)}
                             <span className="flex-1 truncate">{file.name}</span>
                             <span className="text-xs text-muted-foreground">{formatFileSize(file.size)}</span>
@@ -783,7 +783,7 @@ function TicketDetailReadView({ basePath }: { basePath: string }) {
                       </div>
                     )}
                     
-                    <div className="flex items-center gap-2">
+                    <div className="flex flex-wrap items-center gap-2">
                       <input
                         ref={fileInputRef}
                         type="file"

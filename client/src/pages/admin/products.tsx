@@ -877,7 +877,7 @@ export default function AdminProducts() {
           backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23000' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
         }} />
         <div className="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div className="flex items-center gap-3 mb-1">
+          <div className="flex flex-wrap items-center gap-3 mb-1">
             <div className="h-10 w-10 rounded-xl bg-primary text-primary-foreground flex items-center justify-center shadow-lg shadow-primary/25">
               <Package className="h-5 w-5" />
             </div>
@@ -920,7 +920,7 @@ export default function AdminProducts() {
           </DialogTrigger>
           <DialogContent className="max-w-2xl max-h-[90vh]">
             <DialogHeader>
-              <DialogTitle className="flex items-center gap-2">
+              <DialogTitle className="flex flex-wrap items-center gap-2">
                 <Package className="h-5 w-5" />
                 Crea Nuovo Prodotto
               </DialogTitle>
@@ -1109,7 +1109,7 @@ export default function AdminProducts() {
                               
                               return (
                                 <div key={brand.id} className="border rounded-md">
-                                  <div className="flex items-center gap-2 p-2 hover-elevate">
+                                  <div className="flex flex-wrap items-center gap-2 p-2 hover-elevate">
                                     <Checkbox
                                       checked={hasAnyCompatibility}
                                       onCheckedChange={() => toggleBrandCompatibility(brand.id, false)}
@@ -1118,7 +1118,7 @@ export default function AdminProducts() {
                                     <button
                                       type="button"
                                       onClick={() => toggleBrandExpansion(brand.id)}
-                                      className="flex items-center gap-1 flex-1 text-left"
+                                      className="flex flex-wrap items-center gap-1 flex-1 text-left"
                                     >
                                       <ChevronDown className={`h-4 w-4 transition-transform ${isExpanded ? 'rotate-0' : '-rotate-90'}`} />
                                       <span className="font-medium">{brand.name}</span>
@@ -1142,7 +1142,7 @@ export default function AdminProducts() {
                                       {models.map((model) => {
                                         const isModelSelected = deviceCompatibilities.some(c => c.deviceBrandId === brand.id && c.deviceModelId === model.id);
                                         return (
-                                          <div key={model.id} className="flex items-center gap-2 p-1 hover-elevate rounded">
+                                          <div key={model.id} className="flex flex-wrap items-center gap-2 p-1 hover-elevate rounded">
                                             <Checkbox
                                               checked={isModelSelected || hasBrandOnlyCompatibility}
                                               disabled={hasBrandOnlyCompatibility}
@@ -1355,7 +1355,7 @@ export default function AdminProducts() {
                           {initialStock.map(stock => {
                             const wh = warehouses.find(w => w.id === stock.warehouseId);
                             return (
-                              <div key={stock.warehouseId} className="flex items-center gap-3 p-3 border rounded-md">
+                              <div key={stock.warehouseId} className="flex flex-wrap items-center gap-3 p-3 border rounded-md">
                                 <Warehouse className="h-4 w-4 text-muted-foreground" />
                                 <div className="flex-1">
                                   <span className="font-medium">{wh?.name || "Magazzino"}</span>
@@ -1422,7 +1422,7 @@ export default function AdminProducts() {
         }}>
           <DialogContent className="max-w-2xl max-h-[90vh]">
             <DialogHeader>
-              <DialogTitle className="flex items-center gap-2">
+              <DialogTitle className="flex flex-wrap items-center gap-2">
                 <Pencil className="h-5 w-5" />
                 Modifica Prodotto
               </DialogTitle>
@@ -1603,7 +1603,7 @@ export default function AdminProducts() {
                         />
                       </div>
 
-                      <div className="flex items-center gap-2">
+                      <div className="flex flex-wrap items-center gap-2">
                         <Label htmlFor="edit-isActive">Stato Prodotto</Label>
                         <Select name="isActive" defaultValue={editingProduct.isActive ? "true" : "false"}>
                           <SelectTrigger className="w-40" data-testid="edit-select-is-active">
@@ -1698,7 +1698,7 @@ export default function AdminProducts() {
                                   
                                   return (
                                     <div key={brand.id} className="border rounded-md">
-                                      <div className="flex items-center gap-2 p-2 hover-elevate">
+                                      <div className="flex flex-wrap items-center gap-2 p-2 hover-elevate">
                                         <Checkbox
                                           checked={hasAnyCompatibility}
                                           onCheckedChange={() => toggleBrandCompatibility(brand.id, true)}
@@ -1707,7 +1707,7 @@ export default function AdminProducts() {
                                         <button
                                           type="button"
                                           onClick={() => toggleBrandExpansion(brand.id)}
-                                          className="flex items-center gap-1 flex-1 text-left"
+                                          className="flex flex-wrap items-center gap-1 flex-1 text-left"
                                         >
                                           <ChevronDown className={`h-4 w-4 transition-transform ${isExpanded ? 'rotate-0' : '-rotate-90'}`} />
                                           <span className="font-medium">{brand.name}</span>
@@ -1731,7 +1731,7 @@ export default function AdminProducts() {
                                           {models.map((model) => {
                                             const isModelSelected = editDeviceCompatibilities.some(c => c.deviceBrandId === brand.id && c.deviceModelId === model.id);
                                             return (
-                                              <div key={model.id} className="flex items-center gap-2 p-1 hover-elevate rounded">
+                                              <div key={model.id} className="flex flex-wrap items-center gap-2 p-1 hover-elevate rounded">
                                                 <Checkbox
                                                   checked={isModelSelected || hasBrandOnlyCompatibility}
                                                   disabled={hasBrandOnlyCompatibility}
@@ -1845,11 +1845,11 @@ export default function AdminProducts() {
                           {productSuppliers.map((ps) => (
                             <div 
                               key={ps.id} 
-                              className="flex items-center gap-3 p-3 border rounded-lg"
+                              className="flex flex-wrap items-center gap-3 p-3 border rounded-lg"
                               data-testid={`row-product-supplier-${ps.id}`}
                             >
                               <div className="flex-1">
-                                <div className="flex items-center gap-2">
+                                <div className="flex flex-wrap items-center gap-2">
                                   <span className="font-medium">
                                     {suppliers.find(s => s.id === ps.supplierId)?.name || ps.supplierName}
                                   </span>
@@ -1863,7 +1863,7 @@ export default function AdminProducts() {
                                     <Badge variant="secondary">Inattivo</Badge>
                                   )}
                                 </div>
-                                <div className="flex items-center gap-4 text-sm text-muted-foreground mt-1">
+                                <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground mt-1">
                                   {ps.supplierCode && (
                                     <span>Cod: {ps.supplierCode}</span>
                                   )}
@@ -1880,7 +1880,7 @@ export default function AdminProducts() {
                                   )}
                                 </div>
                               </div>
-                              <div className="flex items-center gap-1">
+                              <div className="flex flex-wrap items-center gap-1">
                                 <Button
                                   type="button"
                                   variant="ghost"
@@ -2012,7 +2012,7 @@ export default function AdminProducts() {
                               />
                             </div>
 
-                            <div className="flex items-center gap-2">
+                            <div className="flex flex-wrap items-center gap-2">
                               <Label>Fornitore Preferito</Label>
                               <Select 
                                 name="isPreferred" 
@@ -2023,13 +2023,13 @@ export default function AdminProducts() {
                                 </SelectTrigger>
                                 <SelectContent>
                                   <SelectItem value="true">
-                                    <div className="flex items-center gap-1">
+                                    <div className="flex flex-wrap items-center gap-1">
                                       <Star className="h-3 w-3" />
                                       Si
                                     </div>
                                   </SelectItem>
                                   <SelectItem value="false">
-                                    <div className="flex items-center gap-1">
+                                    <div className="flex flex-wrap items-center gap-1">
                                       <StarOff className="h-3 w-3" />
                                       No
                                     </div>
@@ -2079,7 +2079,7 @@ export default function AdminProducts() {
 
                       <div className="space-y-3">
                         <div className="flex items-center justify-between gap-2 flex-wrap">
-                          <Label className="flex items-center gap-2">
+                          <Label className="flex flex-wrap items-center gap-2">
                             <Warehouse className="h-4 w-4" />
                             Quantità per Magazzino
                           </Label>
@@ -2173,7 +2173,7 @@ export default function AdminProducts() {
                                       {updateStockMutation.isPending ? "..." : "Salva"}
                                     </Button>
                                   </div>
-                                  <div className="flex items-center gap-3">
+                                  <div className="flex flex-wrap items-center gap-3">
                                     <div className="flex-1">
                                       <Label className="text-xs text-muted-foreground">Quantità</Label>
                                       <Input
@@ -2269,14 +2269,14 @@ export default function AdminProducts() {
                   <TableHead>Condizione</TableHead>
                   <TableHead>Vendita</TableHead>
                   <TableHead>
-                    <div className="flex items-center gap-1">
+                    <div className="flex flex-wrap items-center gap-1">
                       <Warehouse className="h-4 w-4" />
                       Giacenze
                     </div>
                   </TableHead>
                   <TableHead>Compatibilità</TableHead>
                   <TableHead>
-                    <div className="flex items-center gap-1">
+                    <div className="flex flex-wrap items-center gap-1">
                       <Store className="h-4 w-4" />
                       Shop
                     </div>
@@ -2407,7 +2407,7 @@ export default function AdminProducts() {
                     <TableCell>
                       <Tooltip>
                         <TooltipTrigger asChild>
-                          <div className="flex items-center gap-2">
+                          <div className="flex flex-wrap items-center gap-2">
                             <Switch
                               checked={product.isVisibleInShop ?? true}
                               onCheckedChange={(checked) => 
@@ -2489,7 +2489,7 @@ export default function AdminProducts() {
       <Dialog open={resellerPricesDialogOpen} onOpenChange={setResellerPricesDialogOpen}>
         <DialogContent className="max-w-3xl">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
+            <DialogTitle className="flex flex-wrap items-center gap-2">
               <Users className="h-5 w-5" />
               Prezzi Personalizzati per Reseller
             </DialogTitle>
@@ -2536,7 +2536,7 @@ export default function AdminProducts() {
                       </TableCell>
                       <TableCell className="text-right">
                         <form
-                          className="flex items-center gap-2 justify-end"
+                          className="flex flex-wrap items-center gap-2 justify-end"
                           onSubmit={(e) => {
                             e.preventDefault();
                             const formData = new FormData(e.currentTarget);
@@ -2552,7 +2552,7 @@ export default function AdminProducts() {
                             }
                           }}
                         >
-                          <div className="flex items-center gap-1">
+                          <div className="flex flex-wrap items-center gap-1">
                             <span className="text-muted-foreground">€</span>
                             <Input
                               type="number"
@@ -2577,7 +2577,7 @@ export default function AdminProducts() {
                       </TableCell>
                       <TableCell className="text-right">
                         {rp.customPrice && (
-                          <div className="flex items-center gap-2 justify-end">
+                          <div className="flex flex-wrap items-center gap-2 justify-end">
                             <Badge variant="secondary" className="text-xs">
                               Personalizzato
                             </Badge>

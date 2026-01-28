@@ -285,7 +285,7 @@ export default function PosTransactionDetailPage() {
         <div className="absolute top-1/2 left-1/3 w-48 h-48 rounded-full bg-emerald-300/20 blur-3xl animate-pulse" style={{ animationDelay: '2s' }} />
         
         <div className="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div className="flex items-center gap-4">
+          <div className="flex flex-wrap items-center gap-4">
             <Button variant="outline" size="icon" className="bg-white/20 backdrop-blur-sm text-white border-white/30 hover:bg-white/30 shadow-lg" onClick={() => navigate("/repair-center/pos")} data-testid="button-back">
               <ArrowLeft className="w-5 h-5" />
             </Button>
@@ -299,7 +299,7 @@ export default function PosTransactionDetailPage() {
               </p>
             </div>
           </div>
-          <div className="flex items-center gap-2 flex-wrap">
+          <div className="flex flex-wrap items-center gap-2 flex-wrap">
             <Badge className={`${statusInfo.variant === 'destructive' ? 'bg-red-500/80' : statusInfo.variant === 'secondary' ? 'bg-white/30' : 'bg-white/20'} backdrop-blur-sm text-white border-white/30`}>{statusInfo.label}</Badge>
             {transaction.status === "completed" && (
               <>
@@ -364,7 +364,7 @@ export default function PosTransactionDetailPage() {
             <CardTitle className="text-sm font-medium text-muted-foreground">Pagamento</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="flex items-center gap-2 text-lg font-semibold">
+            <div className="flex flex-wrap items-center gap-2 text-lg font-semibold">
               <PaymentIcon className="w-5 h-5" />
               {paymentMethodLabels[transaction.paymentMethod]?.label}
             </div>
@@ -382,7 +382,7 @@ export default function PosTransactionDetailPage() {
             <CardTitle className="text-sm font-medium text-muted-foreground">Operatore</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="flex items-center gap-2 text-lg font-semibold">
+            <div className="flex flex-wrap items-center gap-2 text-lg font-semibold">
               <User className="w-5 h-5" />
               {operator?.fullName || "N/D"}
             </div>
@@ -401,7 +401,7 @@ export default function PosTransactionDetailPage() {
           <CardContent>
             {customer ? (
               <>
-                <div className="flex items-center gap-2 text-lg font-semibold">
+                <div className="flex flex-wrap items-center gap-2 text-lg font-semibold">
                   <User className="w-5 h-5" />
                   {customer.fullName}
                 </div>
@@ -420,20 +420,20 @@ export default function PosTransactionDetailPage() {
       {transaction.invoiceRequested && (
         <Card className={transaction.invoiceId ? "border-primary" : "border-amber-500"}>
           <CardHeader className="pb-2">
-            <CardTitle className="flex items-center gap-2">
+            <CardTitle className="flex flex-wrap items-center gap-2">
               <FileText className="w-5 h-5" />
               Fattura
             </CardTitle>
           </CardHeader>
           <CardContent>
             {transaction.invoiceId ? (
-              <div className="flex items-center gap-2 text-primary">
+              <div className="flex flex-wrap items-center gap-2 text-primary">
                 <CheckCircle className="w-5 h-5" />
                 <span className="font-medium">Fattura emessa</span>
               </div>
             ) : (
               <div className="flex items-center justify-between flex-wrap gap-3">
-                <div className="flex items-center gap-2 text-amber-600">
+                <div className="flex flex-wrap items-center gap-2 text-amber-600">
                   <Clock className="w-5 h-5" />
                   <span className="font-medium">Fattura richiesta - In attesa di emissione</span>
                 </div>
@@ -453,7 +453,7 @@ export default function PosTransactionDetailPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
+          <CardTitle className="flex flex-wrap items-center gap-2">
             <Package className="w-5 h-5" />
             Prodotti ({items.length})
           </CardTitle>
@@ -509,7 +509,7 @@ export default function PosTransactionDetailPage() {
       {transaction.status === "refunded" && (
         <Card className="border-destructive">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-destructive">
+            <CardTitle className="flex flex-wrap items-center gap-2 text-destructive">
               <RotateCcw className="w-5 h-5" />
               Rimborso
             </CardTitle>
@@ -541,7 +541,7 @@ export default function PosTransactionDetailPage() {
       <Dialog open={voidDialogOpen} onOpenChange={setVoidDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
+            <DialogTitle className="flex flex-wrap items-center gap-2">
               <Ban className="w-5 h-5 text-destructive" />
               Annulla vendita
             </DialogTitle>
@@ -585,7 +585,7 @@ export default function PosTransactionDetailPage() {
       <Dialog open={refundDialogOpen} onOpenChange={setRefundDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
+            <DialogTitle className="flex flex-wrap items-center gap-2">
               <RotateCcw className="w-5 h-5" />
               Effettua reso
             </DialogTitle>

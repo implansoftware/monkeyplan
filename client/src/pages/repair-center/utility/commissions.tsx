@@ -105,7 +105,7 @@ export default function RepairCenterUtilityCommissions() {
         <div className="absolute top-1/2 left-1/3 w-48 h-48 rounded-full bg-emerald-300/20 blur-3xl animate-pulse" style={{ animationDelay: '2s' }} />
         
         <div className="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div className="flex items-center gap-4">
+          <div className="flex flex-wrap items-center gap-4">
             <Link href="/repair-center/utility">
               <Button variant="outline" size="icon" className="bg-white/20 backdrop-blur-sm text-white border-white/30 hover:bg-white/30 shadow-lg" data-testid="button-back">
                 <ArrowLeft className="h-4 w-4" />
@@ -167,8 +167,8 @@ export default function RepairCenterUtilityCommissions() {
 
       <Card>
         <CardHeader className="flex flex-row items-center justify-between gap-2 flex-wrap">
-          <div className="flex items-center gap-2 flex-wrap">
-            <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2 flex-wrap">
+            <div className="flex flex-wrap items-center gap-2">
               <Search className="h-4 w-4 text-muted-foreground" />
               <Input
                 placeholder="Cerca per pratica..."
@@ -237,7 +237,7 @@ export default function RepairCenterUtilityCommissions() {
                         {practice?.practiceNumber || commission.practiceId.slice(0, 8)}
                       </TableCell>
                       <TableCell>
-                        <div className="flex items-center gap-1">
+                        <div className="flex flex-wrap items-center gap-1">
                           <Calendar className="h-3 w-3 text-muted-foreground" />
                           {months.find(m => m.value === commission.periodMonth)?.label} {commission.periodYear}
                         </div>

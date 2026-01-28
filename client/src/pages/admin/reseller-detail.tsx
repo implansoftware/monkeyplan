@@ -133,7 +133,7 @@ export default function AdminResellerDetail() {
           </Link>
           
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <div className="flex items-center gap-4">
+            <div className="flex flex-wrap items-center gap-4">
               <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-white/20 backdrop-blur-sm border border-white/30">
                 <Store className="h-8 w-8 text-white" />
               </div>
@@ -183,7 +183,7 @@ export default function AdminResellerDetail() {
       <div className="grid gap-6 md:grid-cols-2">
         <Card className="border-0 shadow-lg bg-white dark:bg-slate-800/50">
           <CardHeader className="pb-4">
-            <CardTitle className="flex items-center gap-3 text-slate-900 dark:text-white">
+            <CardTitle className="flex flex-wrap items-center gap-3 text-slate-900 dark:text-white">
               <div className="p-2 rounded-xl bg-gradient-to-br from-blue-500 to-cyan-600">
                 <Store className="h-5 w-5 text-white" />
               </div>
@@ -219,7 +219,7 @@ export default function AdminResellerDetail() {
 
         <Card className="border-0 shadow-lg bg-white dark:bg-slate-800/50">
           <CardHeader className="pb-4">
-            <CardTitle className="flex items-center gap-3 text-slate-900 dark:text-white">
+            <CardTitle className="flex flex-wrap items-center gap-3 text-slate-900 dark:text-white">
               <div className="p-2 rounded-xl bg-gradient-to-br from-amber-500 to-orange-600">
                 <FileText className="h-5 w-5 text-white" />
               </div>
@@ -518,7 +518,7 @@ export default function AdminResellerDetail() {
       <Dialog open={resetPasswordDialogOpen} onOpenChange={setResetPasswordDialogOpen}>
         <DialogContent className="max-w-md" data-testid="dialog-reset-password">
           <DialogHeader className="pb-4">
-            <div className="flex items-center gap-3">
+            <div className="flex flex-wrap items-center gap-3">
               <div className="p-2 rounded-xl bg-gradient-to-br from-amber-500 to-orange-600">
                 <KeyRound className="h-5 w-5 text-white" />
               </div>

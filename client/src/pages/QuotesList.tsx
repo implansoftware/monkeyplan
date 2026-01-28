@@ -70,7 +70,7 @@ export default function QuotesList() {
   if (isLoading) {
     return (
       <div className="p-6 space-y-4">
-        <div className="flex items-center gap-2 mb-6">
+        <div className="flex flex-wrap items-center gap-2 mb-6">
           <FileText className="h-6 w-6" />
           <h1 className="text-2xl font-bold">Preventivi</h1>
         </div>
@@ -86,7 +86,7 @@ export default function QuotesList() {
   return (
     <div className="p-6 space-y-4">
       <div className="flex items-center justify-between gap-4 flex-wrap mb-4">
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <FileText className="h-6 w-6" />
           <h1 className="text-2xl font-bold">Preventivi</h1>
         </div>
@@ -183,7 +183,7 @@ export default function QuotesList() {
       )}
 
       {hasActiveFilters && (
-        <div className="flex items-center gap-2 flex-wrap text-sm text-muted-foreground">
+        <div className="flex flex-wrap items-center gap-2 flex-wrap text-sm text-muted-foreground">
           <span>Filtri attivi:</span>
           {search && (
             <Badge variant="secondary">
@@ -237,7 +237,7 @@ export default function QuotesList() {
                     </span>
                     <span>#{quote.orderNumber}</span>
                   </CardTitle>
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-2">
                     <Badge className={quoteStatusColors[quote.quoteStatus] || quoteStatusColors.draft}>
                       {quoteStatusLabels[quote.quoteStatus] || quote.quoteStatus}
                     </Badge>
@@ -246,15 +246,15 @@ export default function QuotesList() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
-                  <div className="flex items-center gap-4 text-sm">
+                  <div className="flex flex-wrap items-center gap-4 text-sm">
                     <span className="text-muted-foreground">
                       {quote.deviceType} - {quote.deviceModel}
                     </span>
                   </div>
 
                   <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-4 text-sm">
-                      <span className="flex items-center gap-1 font-semibold">
+                    <div className="flex flex-wrap items-center gap-4 text-sm">
+                      <span className="flex flex-wrap items-center gap-1 font-semibold">
                         <Euro className="h-4 w-4" />
                         {quote.totalAmount ? (Number(quote.totalAmount) / 100).toFixed(2) : "0.00"}
                       </span>
@@ -281,12 +281,12 @@ export default function QuotesList() {
                     </div>
                   )}
 
-                  <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                  <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
                       <span>
                         Creato: {quote.createdAt && format(new Date(quote.createdAt), "dd MMM yyyy", { locale: it })}
                       </span>
                       {quote.validUntil && (
-                        <span className="flex items-center gap-1">
+                        <span className="flex flex-wrap items-center gap-1">
                           <Calendar className="h-4 w-4" />
                           Valido fino: {format(new Date(quote.validUntil), "dd MMM yyyy", { locale: it })}
                         </span>

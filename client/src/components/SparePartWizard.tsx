@@ -665,7 +665,7 @@ export function SparePartWizard({
 
                 <Card>
                   <CardContent className="p-4 space-y-3">
-                    <div className="flex items-center gap-4">
+                    <div className="flex flex-wrap items-center gap-4">
                       {imagePreview && (
                         <img src={imagePreview} alt="Preview" className="w-20 h-20 object-cover rounded-lg" />
                       )}

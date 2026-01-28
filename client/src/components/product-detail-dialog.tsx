@@ -91,7 +91,7 @@ export function ProductDetailDialog({ open, onOpenChange, productId, hideStock =
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-3xl max-h-[90vh]">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
+          <DialogTitle className="flex flex-wrap items-center gap-2">
             <Info className="h-5 w-5" />
             Dettagli Prodotto
           </DialogTitle>
@@ -143,12 +143,12 @@ export function ProductDetailDialog({ open, onOpenChange, productId, hideStock =
                       {data.product.isActive ? "Attivo" : "Inattivo"}
                     </Badge>
                   </div>
-                  <div className="flex items-center gap-4 mt-3">
-                    <div className="flex items-center gap-1">
+                  <div className="flex flex-wrap items-center gap-4 mt-3">
+                    <div className="flex flex-wrap items-center gap-1">
                       <Tag className="h-4 w-4 text-muted-foreground" />
                       <span className="font-medium">{(Number(data.product.unitPrice || 0) / 100).toFixed(2)} €</span>
                     </div>
-                    <div className="flex items-center gap-1">
+                    <div className="flex flex-wrap items-center gap-1">
                       <Warehouse className="h-4 w-4 text-muted-foreground" />
                       <span className="font-medium">{totalStock} unità</span>
                     </div>
@@ -183,7 +183,7 @@ export function ProductDetailDialog({ open, onOpenChange, productId, hideStock =
                             </div>
                           )}
                           {specsConfig.storage && specs.storage && (
-                            <div className="flex items-center gap-1">
+                            <div className="flex flex-wrap items-center gap-1">
                               <HardDrive className="h-4 w-4 text-muted-foreground" />
                               <span>{specs.storage}</span>
                             </div>
@@ -195,7 +195,7 @@ export function ProductDetailDialog({ open, onOpenChange, productId, hideStock =
                             </div>
                           )}
                           {specsConfig.batteryHealth && specs.batteryHealth && (
-                            <div className="flex items-center gap-1">
+                            <div className="flex flex-wrap items-center gap-1">
                               <Battery className="h-4 w-4 text-muted-foreground" />
                               <span>{specs.batteryHealth}%</span>
                             </div>
@@ -227,7 +227,7 @@ export function ProductDetailDialog({ open, onOpenChange, productId, hideStock =
                             </div>
                           )}
                           {specsConfig.originalBox && specs.originalBox !== undefined && (
-                            <div className="flex items-center gap-1">
+                            <div className="flex flex-wrap items-center gap-1">
                               {specs.originalBox ? (
                                 <CheckCircle className="h-4 w-4 text-green-500" />
                               ) : (
@@ -353,7 +353,7 @@ export function ProductDetailDialog({ open, onOpenChange, productId, hideStock =
                               <TableCell className="text-right text-muted-foreground">
                                 {s.minStock || "-"}
                               </TableCell>
-                              <TableCell className="flex items-center gap-1 text-muted-foreground">
+                              <TableCell className="flex flex-wrap items-center gap-1 text-muted-foreground">
                                 {s.location ? (
                                   <>
                                     <MapPin className="h-3 w-3" />

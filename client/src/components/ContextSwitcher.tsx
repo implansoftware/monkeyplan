@@ -168,7 +168,7 @@ export function ContextSwitcher() {
         </SelectTrigger>
         <SelectContent>
           <SelectItem value="all" data-testid="select-context-all">
-            <div className="flex items-center gap-2 whitespace-nowrap">
+            <div className="flex flex-wrap items-center gap-2 whitespace-nowrap">
               <Store className="h-3.5 w-3.5 flex-shrink-0 text-muted-foreground" />
               <span>Tutti i miei dati</span>
             </div>
@@ -185,7 +185,7 @@ export function ContextSwitcher() {
                   value={`reseller:${reseller.id}`}
                   data-testid={`select-context-reseller-${reseller.id}`}
                 >
-                  <div className="flex items-center gap-2 whitespace-nowrap">
+                  <div className="flex flex-wrap items-center gap-2 whitespace-nowrap">
                     <Store className="h-3.5 w-3.5 flex-shrink-0 text-muted-foreground" />
                     <span className="truncate">{reseller.name}</span>
                   </div>
@@ -205,7 +205,7 @@ export function ContextSwitcher() {
                   value={`repair_center:${center.id}`}
                   data-testid={`select-context-center-${center.id}`}
                 >
-                  <div className="flex items-center gap-2 whitespace-nowrap">
+                  <div className="flex flex-wrap items-center gap-2 whitespace-nowrap">
                     <Building className="h-3.5 w-3.5 flex-shrink-0 text-muted-foreground" />
                     <span className="truncate">{center.name}</span>
                   </div>

@@ -519,7 +519,7 @@ export function UtilityPracticeWizard({ open, onOpenChange, onSuccess }: Utility
                 <SelectContent>
                   {subResellers.map((sub: any) => (
                     <SelectItem key={sub.id} value={sub.id} data-testid={`select-subreseller-${sub.id}`}>
-                      <div className="flex items-center gap-2">
+                      <div className="flex flex-wrap items-center gap-2">
                         <Building2 className="h-4 w-4" />
                         <span>{sub.fullName || sub.username}</span>
                       </div>
@@ -541,7 +541,7 @@ export function UtilityPracticeWizard({ open, onOpenChange, onSuccess }: Utility
                 <SelectContent>
                   {repairCenters.map((center: any) => (
                     <SelectItem key={center.id} value={center.id} data-testid={`select-repaircenter-${center.id}`}>
-                      <div className="flex items-center gap-2">
+                      <div className="flex flex-wrap items-center gap-2">
                         <Building2 className="h-4 w-4" />
                         <span>{center.name}</span>
                       </div>
@@ -726,7 +726,7 @@ export function UtilityPracticeWizard({ open, onOpenChange, onSuccess }: Utility
                             }}
                             data-testid={`card-supplier-${supplier.id}`}
                           >
-                            <div className="flex items-center gap-2">
+                            <div className="flex flex-wrap items-center gap-2">
                               <Building2 className="h-4 w-4 text-muted-foreground flex-shrink-0" />
                               <span className="text-sm font-medium truncate">{supplier.name}</span>
                             </div>
@@ -1248,7 +1248,7 @@ export function UtilityPracticeWizard({ open, onOpenChange, onSuccess }: Utility
       <div className="space-y-4">
         <Card>
           <CardContent className="p-4 space-y-3">
-            <div className="flex items-center gap-2 text-muted-foreground mb-2">
+            <div className="flex flex-wrap items-center gap-2 text-muted-foreground mb-2">
               <ClipboardList className="h-4 w-4" />
               <span className="text-sm font-medium">Tipo Pratica</span>
             </div>
@@ -1262,7 +1262,7 @@ export function UtilityPracticeWizard({ open, onOpenChange, onSuccess }: Utility
         {(selectedItemType === "service" || selectedItemType === "service_with_products") && (
           <Card>
             <CardContent className="p-4 space-y-3">
-              <div className="flex items-center gap-2 text-muted-foreground mb-2">
+              <div className="flex flex-wrap items-center gap-2 text-muted-foreground mb-2">
                 <Building2 className="h-4 w-4" />
                 <span className="text-sm font-medium">Fornitore e Servizio</span>
               </div>
@@ -1285,7 +1285,7 @@ export function UtilityPracticeWizard({ open, onOpenChange, onSuccess }: Utility
         {practiceProducts.length > 0 && (
           <Card>
             <CardContent className="p-4 space-y-3">
-              <div className="flex items-center gap-2 text-muted-foreground mb-2">
+              <div className="flex flex-wrap items-center gap-2 text-muted-foreground mb-2">
                 <Package className="h-4 w-4" />
                 <span className="text-sm font-medium">Prodotti ({practiceProducts.length})</span>
               </div>
@@ -1311,7 +1311,7 @@ export function UtilityPracticeWizard({ open, onOpenChange, onSuccess }: Utility
 
         <Card>
           <CardContent className="p-4 space-y-3">
-            <div className="flex items-center gap-2 text-muted-foreground mb-2">
+            <div className="flex flex-wrap items-center gap-2 text-muted-foreground mb-2">
               <User className="h-4 w-4" />
               <span className="text-sm font-medium">Cliente</span>
             </div>
@@ -1328,7 +1328,7 @@ export function UtilityPracticeWizard({ open, onOpenChange, onSuccess }: Utility
 
         <Card>
           <CardContent className="p-4 space-y-3">
-            <div className="flex items-center gap-2 text-muted-foreground mb-2">
+            <div className="flex flex-wrap items-center gap-2 text-muted-foreground mb-2">
               <Euro className="h-4 w-4" />
               <span className="text-sm font-medium">Prezzo</span>
             </div>

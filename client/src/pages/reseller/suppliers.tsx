@@ -289,7 +289,7 @@ export default function ResellerSuppliers() {
         <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
         <div className="absolute bottom-0 left-0 w-48 h-48 bg-white/10 rounded-full blur-3xl translate-y-1/2 -translate-x-1/2" />
         <div className="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div className="flex items-center gap-3 mb-1">
+          <div className="flex flex-wrap items-center gap-3 mb-1">
             <div className="h-12 w-12 rounded-xl bg-white/20 backdrop-blur-sm border border-white/30 flex items-center justify-center">
               <Truck className="h-6 w-6 text-white" />
             </div>
@@ -298,7 +298,7 @@ export default function ResellerSuppliers() {
               <p className="text-sm text-white/80">Gestisci fornitori manuali e integrazioni API</p>
             </div>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <Badge variant="secondary" className="gap-1 bg-white/20 text-white border-white/30">
               <Globe className="h-3 w-3" />
               {globalSuppliers.length} globali
@@ -319,7 +319,7 @@ export default function ResellerSuppliers() {
 
       {externalIntegrations.length > 0 && (
         <div className="space-y-4">
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <Zap className="h-5 w-5 text-primary" />
             <h2 className="text-lg font-semibold">Integrazioni API</h2>
             <Badge variant="secondary">{externalIntegrations.length}</Badge>
@@ -373,7 +373,7 @@ export default function ResellerSuppliers() {
                         )}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 flex-wrap">
+                        <div className="flex flex-wrap items-center gap-2 flex-wrap">
                           <CardTitle className="text-base font-semibold">
                             {integration.name}
                           </CardTitle>
@@ -393,17 +393,17 @@ export default function ResellerSuppliers() {
                     {isSifar ? (
                       isConfigured ? (
                         <div className="space-y-4">
-                          <div className="flex items-center gap-6 text-sm text-muted-foreground">
-                            <div className="flex items-center gap-1">
+                          <div className="flex flex-wrap items-center gap-6 text-sm text-muted-foreground">
+                            <div className="flex flex-wrap items-center gap-1">
                               <Package className="h-4 w-4" />
                               <span>Ambiente: <Badge variant="outline" className="ml-1" data-testid="text-sifar-environment">{sifarCredential?.environment}</Badge></span>
                             </div>
-                            <div className="flex items-center gap-1">
+                            <div className="flex flex-wrap items-center gap-1">
                               <MapPin className="h-4 w-4" />
                               <span data-testid="text-sifar-store-count">{sifarStoreCount} {sifarStoreCount === 1 ? 'punto vendita' : 'punti vendita'}</span>
                             </div>
                           </div>
-                          <div className="flex items-center gap-2 flex-wrap">
+                          <div className="flex flex-wrap items-center gap-2 flex-wrap">
                             <Link href="/reseller/sifar/catalog">
                               <Button variant="default" size="sm" data-testid="button-sifar-catalog">
                                 <Package className="h-4 w-4 mr-2" />
@@ -443,17 +443,17 @@ export default function ResellerSuppliers() {
                     ) : isTrovausati ? (
                       isConfigured ? (
                         <div className="space-y-4">
-                          <div className="flex items-center gap-6 text-sm text-muted-foreground">
-                            <div className="flex items-center gap-1">
+                          <div className="flex flex-wrap items-center gap-6 text-sm text-muted-foreground">
+                            <div className="flex flex-wrap items-center gap-1">
                               <Package className="h-4 w-4" />
                               <span>Tipo: <Badge variant="outline" className="ml-1" data-testid="text-trovausati-type">{trovausatiCredential?.apiType === 'resellers' ? 'Rivenditori' : 'Negozi/GDS'}</Badge></span>
                             </div>
-                            <div className="flex items-center gap-1">
+                            <div className="flex flex-wrap items-center gap-1">
                               <MapPin className="h-4 w-4" />
                               <span data-testid="text-trovausati-shop-count">{trovausatiShopCount} {trovausatiShopCount === 1 ? 'negozio' : 'negozi'}</span>
                             </div>
                           </div>
-                          <div className="flex items-center gap-2 flex-wrap">
+                          <div className="flex flex-wrap items-center gap-2 flex-wrap">
                             <Link href="/reseller/trovausati/settings">
                               <Button variant="ghost" size="sm" data-testid="button-trovausati-settings">
                                 <Settings className="h-4 w-4 mr-2" />
@@ -481,13 +481,13 @@ export default function ResellerSuppliers() {
                     ) : isFoneday ? (
                       isConfigured ? (
                         <div className="space-y-3">
-                          <div className="flex items-center gap-2 p-2 rounded-lg bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-800">
+                          <div className="flex flex-wrap items-center gap-2 p-2 rounded-lg bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-800">
                             <CheckCircle className="h-4 w-4 text-green-600 dark:text-green-400 flex-shrink-0" />
                             <p className="text-xs text-green-800 dark:text-green-200">
                               Credenziali API configurate correttamente.
                             </p>
                           </div>
-                          <div className="flex items-center gap-2 flex-wrap">
+                          <div className="flex flex-wrap items-center gap-2 flex-wrap">
                             <Link href="/reseller/foneday/catalog">
                               <Button variant="default" size="sm" data-testid="button-foneday-catalog">
                                 <Package className="h-4 w-4 mr-2" />
@@ -527,13 +527,13 @@ export default function ResellerSuppliers() {
                     ) : isMobilesentrix ? (
                       isConfigured ? (
                         <div className="space-y-3">
-                          <div className="flex items-center gap-2 p-2 rounded-lg bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-800">
+                          <div className="flex flex-wrap items-center gap-2 p-2 rounded-lg bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-800">
                             <CheckCircle className="h-4 w-4 text-green-600 dark:text-green-400 flex-shrink-0" />
                             <p className="text-xs text-green-800 dark:text-green-200">
                               Credenziali API configurate correttamente.
                             </p>
                           </div>
-                          <div className="flex items-center gap-2 flex-wrap">
+                          <div className="flex flex-wrap items-center gap-2 flex-wrap">
                             <Link href="/reseller/mobilesentrix/catalog">
                               <Button variant="default" size="sm" data-testid="button-mobilesentrix-catalog">
                                 <Package className="h-4 w-4 mr-2" />
@@ -566,7 +566,7 @@ export default function ResellerSuppliers() {
                       )
                     ) : (
                       <div className="space-y-3">
-                        <div className="flex items-center gap-2 p-3 rounded-lg bg-muted/50 border border-dashed">
+                        <div className="flex flex-wrap items-center gap-2 p-3 rounded-lg bg-muted/50 border border-dashed">
                           <Info className="h-4 w-4 text-muted-foreground flex-shrink-0" />
                           <p className="text-xs text-muted-foreground">
                             Questa integrazione sarà disponibile a breve.
@@ -598,7 +598,7 @@ export default function ResellerSuppliers() {
 
       <Card className="rounded-2xl">
         <CardHeader className="flex flex-row items-center justify-between gap-4 space-y-0 pb-4">
-          <CardTitle className="flex items-center gap-2">
+          <CardTitle className="flex flex-wrap items-center gap-2">
             <Truck className="h-5 w-5" />
             Elenco Fornitori
           </CardTitle>
@@ -659,13 +659,13 @@ export default function ResellerSuppliers() {
                     <TableCell>
                       <div className="flex flex-col gap-1 text-sm">
                         {supplier.email && (
-                          <div className="flex items-center gap-1 text-muted-foreground">
+                          <div className="flex flex-wrap items-center gap-1 text-muted-foreground">
                             <Mail className="h-3 w-3" />
                             <span data-testid={`text-supplier-email-${supplier.id}`}>{supplier.email}</span>
                           </div>
                         )}
                         {supplier.phone && (
-                          <div className="flex items-center gap-1 text-muted-foreground">
+                          <div className="flex flex-wrap items-center gap-1 text-muted-foreground">
                             <Phone className="h-3 w-3" />
                             <span data-testid={`text-supplier-phone-${supplier.id}`}>{supplier.phone}</span>
                           </div>
@@ -674,7 +674,7 @@ export default function ResellerSuppliers() {
                     </TableCell>
                     <TableCell>
                       {supplier.city && (
-                        <div className="flex items-center gap-1 text-muted-foreground">
+                        <div className="flex flex-wrap items-center gap-1 text-muted-foreground">
                           <MapPin className="h-3 w-3" />
                           <span data-testid={`text-supplier-city-${supplier.id}`}>{supplier.city}</span>
                         </div>
@@ -690,7 +690,7 @@ export default function ResellerSuppliers() {
                     </TableCell>
                     <TableCell>
                       {supplier.isOwn && (
-                        <div className="flex items-center gap-1">
+                        <div className="flex flex-wrap items-center gap-1">
                           <Button
                             size="icon"
                             variant="ghost"

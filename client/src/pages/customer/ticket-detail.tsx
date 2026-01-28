@@ -67,7 +67,7 @@ function AttachmentList({ attachments }: { attachments?: TicketAttachment[] }) {
           href={att.url}
           target="_blank"
           rel="noopener noreferrer"
-          className="flex items-center gap-2 p-2 rounded border bg-muted/30 hover:bg-muted/50 transition-colors text-sm"
+          className="flex flex-wrap items-center gap-2 p-2 rounded border bg-muted/30 hover:bg-muted/50 transition-colors text-sm"
           data-testid={`attachment-${idx}`}
         >
           {getFileIcon(att.mimeType)}
@@ -199,7 +199,7 @@ export default function CustomerTicketDetail() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-4">
+      <div className="flex flex-wrap items-center gap-4">
         <Button
           variant="ghost"
           size="icon"
@@ -209,7 +209,7 @@ export default function CustomerTicketDetail() {
           <ArrowLeft className="h-4 w-4" />
         </Button>
         <div className="flex-1">
-          <div className="flex items-center gap-2 mb-1">
+          <div className="flex flex-wrap items-center gap-2 mb-1">
             <span className="font-mono text-sm text-muted-foreground">
               #{ticket.ticketNumber}
             </span>
@@ -270,7 +270,7 @@ export default function CustomerTicketDetail() {
                     className="border rounded-lg p-4 space-y-2"
                     data-testid={`message-${msg.id}`}
                   >
-                    <div className="flex items-center gap-2 text-sm">
+                    <div className="flex flex-wrap items-center gap-2 text-sm">
                       <User className="h-4 w-4 text-muted-foreground" />
                       <span className="font-medium">
                         {msg.userId === ticket.customerId ? "Tu" : "Assistenza"}

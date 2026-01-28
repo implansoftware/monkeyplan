@@ -224,7 +224,7 @@ export default function ResellerPosTransactionDetail() {
   return (
     <div className="p-6 space-y-6">
       <div className="flex items-center justify-between flex-wrap gap-4">
-        <div className="flex items-center gap-4">
+        <div className="flex flex-wrap items-center gap-4">
           <Link href="/reseller/pos/sales-history">
             <Button variant="ghost" size="sm" data-testid="button-back">
               <ArrowLeft className="w-4 h-4 mr-2" />
@@ -239,7 +239,7 @@ export default function ResellerPosTransactionDetail() {
             <p className="text-muted-foreground">Dettaglio transazione POS</p>
           </div>
         </div>
-        <div className="flex items-center gap-2 flex-wrap">
+        <div className="flex flex-wrap items-center gap-2 flex-wrap">
           {getStatusBadge(transaction.status)}
           {transaction.status === "completed" && (
             <>
@@ -282,7 +282,7 @@ export default function ResellerPosTransactionDetail() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <Card className="lg:col-span-2">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
+            <CardTitle className="flex flex-wrap items-center gap-2">
               <Package className="w-5 h-5" />
               Articoli
             </CardTitle>

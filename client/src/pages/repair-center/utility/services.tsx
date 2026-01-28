@@ -139,7 +139,7 @@ export default function RepairCenterUtilityServices() {
       <Card className={`hover-elevate transition-all ${featured ? 'border-primary/50 bg-primary/5' : ''}`} data-testid={`card-service-${service.id}`}>
         <CardHeader className="pb-3">
           <div className="flex items-start justify-between gap-2">
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <div className={`p-2 rounded-lg ${categoryColors[service.category]}`}>
                 <CategoryIcon className="h-4 w-4" />
               </div>
@@ -158,7 +158,7 @@ export default function RepairCenterUtilityServices() {
         </CardHeader>
         <CardContent className="pb-3">
           <div className="space-y-3">
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
               <Building2 className="h-3.5 w-3.5" />
               {supplier?.name || "Fornitore"}
             </div>
@@ -184,7 +184,7 @@ export default function RepairCenterUtilityServices() {
             </div>
 
             <div className="p-3 rounded-lg bg-green-500/10 border border-green-500/20">
-              <div className="flex items-center gap-2 mb-1">
+              <div className="flex flex-wrap items-center gap-2 mb-1">
                 <TrendingUp className="h-4 w-4 text-green-600 dark:text-green-400" />
                 <span className="text-sm font-medium text-green-700 dark:text-green-300">La tua commissione</span>
               </div>
@@ -195,7 +195,7 @@ export default function RepairCenterUtilityServices() {
                 <span className="text-xs text-muted-foreground">per attivazione</span>
               </div>
               {service.commissionPercent && (
-                <div className="flex items-center gap-1 mt-1 text-xs text-green-600 dark:text-green-400">
+                <div className="flex flex-wrap items-center gap-1 mt-1 text-xs text-green-600 dark:text-green-400">
                   <Percent className="h-3 w-3" />
                   {service.commissionPercent}% {service.monthlyPriceCents ? "del canone mensile" : "del costo attivazione"}
                 </div>
@@ -222,7 +222,7 @@ export default function RepairCenterUtilityServices() {
         <div className="absolute top-1/2 left-1/3 w-48 h-48 rounded-full bg-emerald-300/20 blur-3xl animate-pulse" style={{ animationDelay: '2s' }} />
         
         <div className="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div className="flex items-center gap-4">
+          <div className="flex flex-wrap items-center gap-4">
             <Link href="/repair-center/utility">
               <Button variant="outline" size="icon" className="bg-white/20 backdrop-blur-sm text-white border-white/30 hover:bg-white/30 shadow-lg" data-testid="button-back">
                 <ArrowLeft className="h-4 w-4" />
@@ -305,7 +305,7 @@ export default function RepairCenterUtilityServices() {
 
       {topCommissionServices.length > 0 && (
         <div className="space-y-4">
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <Trophy className="h-5 w-5 text-yellow-500" />
             <h2 className="text-lg font-semibold">I Più Redditizi</h2>
             <Badge variant="secondary" className="ml-2">Top Commissioni</Badge>
@@ -321,8 +321,8 @@ export default function RepairCenterUtilityServices() {
       <Card>
         <CardHeader>
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-            <div className="flex items-center gap-2 flex-wrap flex-1">
-              <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2 flex-wrap flex-1">
+              <div className="flex flex-wrap items-center gap-2">
                 <Search className="h-4 w-4 text-muted-foreground" />
                 <Input
                   placeholder="Cerca per nome o codice..."
@@ -415,7 +415,7 @@ export default function RepairCenterUtilityServices() {
                       </TableCell>
                       <TableCell>
                         {supplier ? (
-                          <div className="flex items-center gap-1">
+                          <div className="flex flex-wrap items-center gap-1">
                             <Building2 className="h-3 w-3 text-muted-foreground" />
                             {supplier.name}
                           </div>

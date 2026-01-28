@@ -103,7 +103,7 @@ export default function HrCalendar() {
         <div className="absolute bottom-0 left-0 w-48 h-48 bg-white/10 rounded-full blur-3xl translate-y-1/2 -translate-x-1/2" />
         <div className="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <div className="flex items-center gap-3 mb-2">
+            <div className="flex flex-wrap items-center gap-3 mb-2">
               <div className="h-12 w-12 rounded-lg bg-white/20 backdrop-blur-sm border border-white/30 flex items-center justify-center">
                 <Calendar className="h-6 w-6 text-white" />
               </div>
@@ -143,15 +143,15 @@ export default function HrCalendar() {
         </div>
 
         {entities.length > 0 && (
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <Filter className="h-4 w-4 text-muted-foreground" />
             <Select value={selectedEntity} onValueChange={setSelectedEntity} data-testid="select-entity-filter">
-              <SelectTrigger className="w-[250px]" data-testid="trigger-entity-filter">
+              <SelectTrigger className="w-full sm:w-[250px]" data-testid="trigger-entity-filter">
                 <SelectValue placeholder="Filtra per entità" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all" data-testid="option-all">
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-2">
                     <Users className="h-4 w-4" />
                     Tutti (gerarchia completa)
                   </div>
@@ -161,7 +161,7 @@ export default function HrCalendar() {
                     <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">Sub-Reseller</div>
                     {entities.filter(e => e.type === "reseller").map(entity => (
                       <SelectItem key={entity.id} value={`reseller:${entity.id}`} data-testid={`option-reseller-${entity.id}`}>
-                        <div className="flex items-center gap-2">
+                        <div className="flex flex-wrap items-center gap-2">
                           <Building2 className="h-4 w-4 text-blue-500" />
                           {entity.name}
                         </div>
@@ -174,7 +174,7 @@ export default function HrCalendar() {
                     <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">Centri Riparazione</div>
                     {entities.filter(e => e.type === "repair_center").map(entity => (
                       <SelectItem key={entity.id} value={`repair_center:${entity.id}`} data-testid={`option-repair-center-${entity.id}`}>
-                        <div className="flex items-center gap-2">
+                        <div className="flex flex-wrap items-center gap-2">
                           <Wrench className="h-4 w-4 text-orange-500" />
                           {entity.name}
                         </div>
@@ -191,7 +191,7 @@ export default function HrCalendar() {
       <Card className="rounded-2xl" data-testid="card-calendar">
         <CardHeader>
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <Button variant="outline" size="icon" onClick={goToPreviousMonth} data-testid="button-prev-month">
                 <ChevronLeft className="h-4 w-4" />
               </Button>

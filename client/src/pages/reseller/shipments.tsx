@@ -182,7 +182,7 @@ export default function ResellerShipments() {
         <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 animate-pulse" />
         <div className="absolute bottom-0 left-0 w-48 h-48 bg-white/10 rounded-full blur-3xl translate-y-1/2 -translate-x-1/2 animate-pulse" />
         <div className="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div className="flex items-center gap-4">
+          <div className="flex flex-wrap items-center gap-4">
             <div className="h-12 w-12 rounded-xl bg-white/20 backdrop-blur-sm border border-white/30 flex items-center justify-center">
               <Truck className="h-6 w-6 text-white" />
             </div>
@@ -211,7 +211,7 @@ export default function ResellerShipments() {
         </div>
         
         <Select value={statusFilter} onValueChange={setStatusFilter}>
-          <SelectTrigger className="w-[180px]" data-testid="select-status-filter">
+          <SelectTrigger className="w-full sm:w-[180px]" data-testid="select-status-filter">
             <SelectValue placeholder="Tutti gli stati" />
           </SelectTrigger>
           <SelectContent>
@@ -439,7 +439,7 @@ export default function ResellerShipments() {
                           <CheckCircle className="h-5 w-5 text-primary" />
                         </div>
                         <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-1">
+                          <div className="flex flex-wrap items-center gap-2 mb-1">
                             <Badge variant="secondary">
                               {statusLabels[event.status] || event.status}
                             </Badge>

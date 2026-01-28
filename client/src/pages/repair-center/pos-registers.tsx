@@ -223,7 +223,7 @@ export default function PosRegistersPage() {
         <div className="absolute top-1/2 left-1/3 w-48 h-48 rounded-full bg-emerald-300/20 blur-3xl animate-pulse" style={{ animationDelay: '2s' }} />
         
         <div className="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div className="flex items-center gap-4">
+          <div className="flex flex-wrap items-center gap-4">
             <Link href="/repair-center/pos">
               <Button variant="outline" size="icon" className="bg-white/20 backdrop-blur-sm text-white border-white/30 hover:bg-white/30 shadow-lg" data-testid="button-back">
                 <ArrowLeft className="h-5 w-5" />
@@ -237,7 +237,7 @@ export default function PosRegistersPage() {
               <p className="text-emerald-100">Configura i registri di cassa per il tuo punto vendita</p>
             </div>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <Button onClick={openCreateDialog} className="bg-white/20 backdrop-blur-sm text-white border-white/30 hover:bg-white/30 shadow-lg" variant="outline" data-testid="button-add-register">
               <Plus className="h-4 w-4 mr-2" />
               Nuova Cassa
@@ -447,7 +447,7 @@ export default function PosRegistersPage() {
       <AlertDialog open={!!deleteRegister} onOpenChange={() => setDeleteRegister(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle className="flex items-center gap-2">
+            <AlertDialogTitle className="flex flex-wrap items-center gap-2">
               <AlertTriangle className="h-5 w-5 text-destructive" />
               Eliminare questa cassa?
             </AlertDialogTitle>

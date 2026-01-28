@@ -700,7 +700,7 @@ export default function SmartphoneCatalog() {
         />
         
         <div className="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div className="flex items-center gap-3 mb-1">
+          <div className="flex flex-wrap items-center gap-3 mb-1">
             <div className="h-12 w-12 rounded-2xl bg-white/20 backdrop-blur-sm border border-white/30 flex items-center justify-center">
               <Smartphone className="h-6 w-6 text-white" />
             </div>
@@ -719,7 +719,7 @@ export default function SmartphoneCatalog() {
       <Card className="rounded-2xl">
         <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-4">
           <CardTitle>Lista Dispositivi ({filteredSmartphones.length})</CardTitle>
-          <div className="flex items-center gap-2 flex-wrap">
+          <div className="flex flex-wrap items-center gap-2 flex-wrap">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
@@ -888,7 +888,7 @@ export default function SmartphoneCatalog() {
                         )}
                       </TableCell>
                       <TableCell>
-                        <div className="flex items-center gap-1">
+                        <div className="flex flex-wrap items-center gap-1">
                           {(smartphone as any).isOwn ? (
                             <>
                               <Button
@@ -1244,7 +1244,7 @@ export default function SmartphoneCatalog() {
                       <Label>Accessori Inclusi</Label>
                       <div className="flex flex-wrap gap-4">
                         {ACCESSORY_OPTIONS.map((acc) => (
-                          <div key={acc} className="flex items-center gap-2">
+                          <div key={acc} className="flex flex-wrap items-center gap-2">
                             <Checkbox
                               id={`acc-${acc}`}
                               checked={formData.accessories.includes(acc)}
@@ -1388,7 +1388,7 @@ export default function SmartphoneCatalog() {
                     value=""
                     onValueChange={(val) => addEditStock(val)}
                   >
-                    <SelectTrigger className="w-[200px]" data-testid="select-add-warehouse">
+                    <SelectTrigger className="w-full sm:w-[200px]" data-testid="select-add-warehouse">
                       <SelectValue placeholder="Aggiungi magazzino..." />
                     </SelectTrigger>
                     <SelectContent>
@@ -1396,7 +1396,7 @@ export default function SmartphoneCatalog() {
                         .filter(w => !editStock.find(s => s.warehouseId === w.id))
                         .map(w => (
                           <SelectItem key={w.id} value={w.id} data-testid={`option-warehouse-${w.id}`}>
-                            <div className="flex items-center gap-2">
+                            <div className="flex flex-wrap items-center gap-2">
                               {w.ownerType === 'reseller' && <User className="h-3 w-3 text-blue-500" />}
                               {w.ownerType === 'sub_reseller' && <Store className="h-3 w-3 text-green-500" />}
                               {w.ownerType === 'repair_center' && <WrenchIcon className="h-3 w-3 text-orange-500" />}
@@ -1422,10 +1422,10 @@ export default function SmartphoneCatalog() {
                     {editStock.map((stock) => (
                       <div 
                         key={stock.warehouseId} 
-                        className="flex items-center gap-3 p-2 rounded-md border bg-muted/30"
+                        className="flex flex-wrap items-center gap-3 p-2 rounded-md border bg-muted/30"
                         data-testid={`stock-row-${stock.warehouseId}`}
                       >
-                        <div className="flex items-center gap-2 flex-1 min-w-0">
+                        <div className="flex flex-wrap items-center gap-2 flex-1 min-w-0">
                           {stock.ownerType === 'reseller' && <User className="h-4 w-4 text-blue-500 shrink-0" />}
                           {stock.ownerType === 'sub_reseller' && <Store className="h-4 w-4 text-green-500 shrink-0" />}
                           {stock.ownerType === 'repair_center' && <WrenchIcon className="h-4 w-4 text-orange-500 shrink-0" />}
@@ -1434,7 +1434,7 @@ export default function SmartphoneCatalog() {
                             <p className="text-xs text-muted-foreground truncate">{stock.ownerName}</p>
                           </div>
                         </div>
-                        <div className="flex items-center gap-2">
+                        <div className="flex flex-wrap items-center gap-2">
                           <Button
                             type="button"
                             variant="outline"
@@ -1598,7 +1598,7 @@ export default function SmartphoneCatalog() {
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
-            <div className="flex items-center gap-4">
+            <div className="flex flex-wrap items-center gap-4">
               {buyProduct?.imageUrl ? (
                 <img src={buyProduct.imageUrl} alt={buyProduct.name} className="h-16 w-16 object-cover rounded-md" />
               ) : (
@@ -1681,7 +1681,7 @@ export default function SmartphoneCatalog() {
       <Dialog open={marketplaceDialogOpen} onOpenChange={setMarketplaceDialogOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
+            <DialogTitle className="flex flex-wrap items-center gap-2">
               <Store className="h-5 w-5" />
               Impostazioni Marketplace P2P
             </DialogTitle>
@@ -1718,7 +1718,7 @@ export default function SmartphoneCatalog() {
                 <>
                   <div className="space-y-2">
                     <Label htmlFor="marketplace-smartphone-price">Prezzo Marketplace (opzionale)</Label>
-                    <div className="flex items-center gap-2">
+                    <div className="flex flex-wrap items-center gap-2">
                       <span className="text-muted-foreground">€</span>
                       <Input
                         id="marketplace-smartphone-price"

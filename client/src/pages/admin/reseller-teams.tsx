@@ -42,7 +42,7 @@ export default function AdminResellerTeams() {
         }} />
         
         <div className="relative z-10 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div className="flex items-center gap-4">
+          <div className="flex flex-wrap items-center gap-4">
             <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-white/20 backdrop-blur-sm border border-white/30">
               <UsersRound className="h-7 w-7 text-white" />
             </div>
@@ -99,7 +99,7 @@ export default function AdminResellerTeams() {
       {/* Table Card */}
       <Card className="border-0 shadow-lg bg-white dark:bg-slate-800/50">
         <CardHeader className="pb-4">
-          <CardTitle className="flex items-center gap-3 text-slate-900 dark:text-white">
+          <CardTitle className="flex flex-wrap items-center gap-3 text-slate-900 dark:text-white">
             <div className="p-2 rounded-xl bg-gradient-to-br from-blue-500 to-cyan-600">
               <UsersRound className="h-5 w-5 text-white" />
             </div>

@@ -170,7 +170,7 @@ function KanbanCard({ repair, onClick, formatCurrency }: KanbanCardProps) {
           </div>
         )}
 
-        <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+        <div className="flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
           <Smartphone className="h-3 w-3 flex-shrink-0" />
           <span className="truncate">
             {repair.brand || repair.deviceType} {repair.deviceModel}
@@ -189,7 +189,7 @@ function KanbanCard({ repair, onClick, formatCurrency }: KanbanCardProps) {
           ) : (
             <span className="text-xs text-muted-foreground">N/D</span>
           )}
-          <div className="flex items-center gap-1 text-xs text-muted-foreground">
+          <div className="flex flex-wrap items-center gap-1 text-xs text-muted-foreground">
             <Calendar className="h-3 w-3" />
             {repair.createdAt && format(new Date(repair.createdAt), "d MMM yyyy", { locale: it })}
           </div>

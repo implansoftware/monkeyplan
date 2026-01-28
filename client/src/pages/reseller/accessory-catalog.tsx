@@ -706,7 +706,7 @@ export default function AccessoryCatalog() {
         <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
         <div className="absolute bottom-0 left-0 w-48 h-48 bg-cyan-300/20 rounded-full blur-2xl translate-y-1/2 -translate-x-1/4" />
         <div className="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-3">
             <div className="h-12 w-12 rounded-xl bg-white/20 backdrop-blur-sm border border-white/30 flex items-center justify-center">
               <Package className="h-6 w-6 text-white" />
             </div>
@@ -725,7 +725,7 @@ export default function AccessoryCatalog() {
       <Card className="rounded-2xl">
         <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-4">
           <CardTitle>Lista Accessori ({filteredAccessories.length})</CardTitle>
-          <div className="flex items-center gap-2 flex-wrap">
+          <div className="flex flex-wrap items-center gap-2 flex-wrap">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
@@ -813,7 +813,7 @@ export default function AccessoryCatalog() {
                           <BarcodeDisplay value={accessory.barcode || ""} size="sm" />
                         </TableCell>
                         <TableCell>
-                          <div className="flex items-center gap-2">
+                          <div className="flex flex-wrap items-center gap-2">
                             <TypeIcon className="h-4 w-4 text-muted-foreground" />
                             <span>{typeInfo?.label || accessory.specs?.accessoryType}</span>
                           </div>
@@ -884,7 +884,7 @@ export default function AccessoryCatalog() {
                           )}
                         </TableCell>
                         <TableCell>
-                          <div className="flex items-center gap-1">
+                          <div className="flex flex-wrap items-center gap-1">
                             <Button
                               variant="ghost"
                               size="icon"
@@ -1075,7 +1075,7 @@ export default function AccessoryCatalog() {
                         
                         return (
                           <div key={brand.id} className="border rounded-md">
-                            <div className="flex items-center gap-2 p-2 hover-elevate">
+                            <div className="flex flex-wrap items-center gap-2 p-2 hover-elevate">
                               <Checkbox
                                 checked={hasAnyCompatibility}
                                 onCheckedChange={() => toggleBrandCompatibility(brand.id)}
@@ -1084,7 +1084,7 @@ export default function AccessoryCatalog() {
                               <button
                                 type="button"
                                 onClick={() => toggleBrandExpansion(brand.id)}
-                                className="flex items-center gap-1 flex-1 text-left"
+                                className="flex flex-wrap items-center gap-1 flex-1 text-left"
                               >
                                 <ChevronDown className={`h-4 w-4 transition-transform ${isExpanded ? 'rotate-0' : '-rotate-90'}`} />
                                 <span className="font-medium">{brand.name}</span>
@@ -1108,7 +1108,7 @@ export default function AccessoryCatalog() {
                                 {models.map((model) => {
                                   const isModelSelected = deviceCompatibilities.some(c => c.deviceBrandId === brand.id && c.deviceModelId === model.id);
                                   return (
-                                    <div key={model.id} className="flex items-center gap-2 p-1 hover-elevate rounded">
+                                    <div key={model.id} className="flex flex-wrap items-center gap-2 p-1 hover-elevate rounded">
                                       <Checkbox
                                         checked={isModelSelected || hasBrandOnlyCompatibility}
                                         disabled={hasBrandOnlyCompatibility}
@@ -1314,7 +1314,7 @@ export default function AccessoryCatalog() {
                     value=""
                     onValueChange={(val) => addEditStock(val)}
                   >
-                    <SelectTrigger className="w-[200px]" data-testid="select-add-warehouse">
+                    <SelectTrigger className="w-full sm:w-[200px]" data-testid="select-add-warehouse">
                       <SelectValue placeholder="Aggiungi magazzino..." />
                     </SelectTrigger>
                     <SelectContent>
@@ -1322,7 +1322,7 @@ export default function AccessoryCatalog() {
                         .filter(w => !editStock.find(s => s.warehouseId === w.id))
                         .map(w => (
                           <SelectItem key={w.id} value={w.id} data-testid={`option-warehouse-${w.id}`}>
-                            <div className="flex items-center gap-2">
+                            <div className="flex flex-wrap items-center gap-2">
                               {w.ownerType === 'reseller' && <User className="h-3 w-3 text-blue-500" />}
                               {w.ownerType === 'sub_reseller' && <Store className="h-3 w-3 text-green-500" />}
                               {w.ownerType === 'repair_center' && <WrenchIcon className="h-3 w-3 text-orange-500" />}
@@ -1348,10 +1348,10 @@ export default function AccessoryCatalog() {
                     {editStock.map((stock) => (
                       <div 
                         key={stock.warehouseId} 
-                        className="flex items-center gap-3 p-2 rounded-md border bg-muted/30"
+                        className="flex flex-wrap items-center gap-3 p-2 rounded-md border bg-muted/30"
                         data-testid={`stock-row-${stock.warehouseId}`}
                       >
-                        <div className="flex items-center gap-2 flex-1 min-w-0">
+                        <div className="flex flex-wrap items-center gap-2 flex-1 min-w-0">
                           {stock.ownerType === 'reseller' && <User className="h-4 w-4 text-blue-500 shrink-0" />}
                           {stock.ownerType === 'sub_reseller' && <Store className="h-4 w-4 text-green-500 shrink-0" />}
                           {stock.ownerType === 'repair_center' && <WrenchIcon className="h-4 w-4 text-orange-500 shrink-0" />}
@@ -1360,7 +1360,7 @@ export default function AccessoryCatalog() {
                             <p className="text-xs text-muted-foreground truncate">{stock.ownerName}</p>
                           </div>
                         </div>
-                        <div className="flex items-center gap-2">
+                        <div className="flex flex-wrap items-center gap-2">
                           <Button
                             type="button"
                             variant="outline"
@@ -1539,7 +1539,7 @@ export default function AccessoryCatalog() {
       <Dialog open={marketplaceDialogOpen} onOpenChange={setMarketplaceDialogOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
+            <DialogTitle className="flex flex-wrap items-center gap-2">
               <Store className="h-5 w-5" />
               Impostazioni Marketplace P2P
             </DialogTitle>
@@ -1576,7 +1576,7 @@ export default function AccessoryCatalog() {
                 <>
                   <div className="space-y-2">
                     <Label htmlFor="marketplace-accessory-price">Prezzo Marketplace (opzionale)</Label>
-                    <div className="flex items-center gap-2">
+                    <div className="flex flex-wrap items-center gap-2">
                       <span className="text-muted-foreground">€</span>
                       <Input
                         id="marketplace-accessory-price"

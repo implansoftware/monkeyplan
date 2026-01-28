@@ -178,7 +178,7 @@ export default function AdminUtilityServices() {
           backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23000' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
         }} />
         <div className="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-3">
             <Link href="/admin/utility">
               <Button variant="ghost" size="icon" data-testid="button-back">
                 <ArrowLeft className="h-4 w-4" />
@@ -197,8 +197,8 @@ export default function AdminUtilityServices() {
 
       <Card>
         <CardHeader className="flex flex-row items-center justify-between gap-2 flex-wrap">
-          <div className="flex items-center gap-2 flex-wrap">
-            <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2 flex-wrap">
+            <div className="flex flex-wrap items-center gap-2">
               <Search className="h-4 w-4 text-muted-foreground" />
               <Input
                 placeholder="Cerca per nome o codice..."
@@ -279,7 +279,7 @@ export default function AdminUtilityServices() {
                       </TableCell>
                       <TableCell>
                         {supplier ? (
-                          <div className="flex items-center gap-1">
+                          <div className="flex flex-wrap items-center gap-1">
                             <Building2 className="h-3 w-3 text-muted-foreground" />
                             {supplier.name}
                           </div>
@@ -302,7 +302,7 @@ export default function AdminUtilityServices() {
                             <span>{service.commissionPercent}%</span>
                           )}
                           {service.commissionFixed && (
-                            <span className="flex items-center gap-1">
+                            <span className="flex flex-wrap items-center gap-1">
                               <Euro className="h-3 w-3" />
                               {formatCurrency(service.commissionFixed)}
                             </span>
@@ -513,7 +513,7 @@ export default function AdminUtilityServices() {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="contractMonths">Durata Contratto (mesi)</Label>
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2">
                   <Clock className="h-4 w-4 text-muted-foreground" />
                   <Input
                     id="contractMonths"
@@ -527,7 +527,7 @@ export default function AdminUtilityServices() {
               </div>
               <div className="space-y-2">
                 <Label>Stato</Label>
-                <div className="flex items-center gap-2 h-9">
+                <div className="flex flex-wrap items-center gap-2 h-9">
                   <Switch
                     checked={isActive}
                     onCheckedChange={setIsActive}

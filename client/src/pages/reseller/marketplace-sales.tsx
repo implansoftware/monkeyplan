@@ -182,7 +182,7 @@ export default function ResellerMarketplaceSales() {
         <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl animate-pulse" />
         <div className="absolute bottom-0 left-0 w-48 h-48 bg-cyan-300/20 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
         <div className="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div className="flex items-center gap-3 mb-1">
+          <div className="flex flex-wrap items-center gap-3 mb-1">
             <div className="h-12 w-12 rounded-xl bg-white/20 backdrop-blur-sm border border-white/30 flex items-center justify-center">
               <TrendingUp className="h-6 w-6 text-white" />
             </div>
@@ -239,7 +239,7 @@ export default function ResellerMarketplaceSales() {
                   <TableCell>{format(new Date(order.createdAt), 'dd MMM yyyy', { locale: it })}</TableCell>
                   <TableCell>{formatPrice(order.total)}</TableCell>
                   <TableCell>
-                    <div className="flex items-center gap-2">
+                    <div className="flex flex-wrap items-center gap-2">
                       {getStatusIcon(order.status)}
                       {getStatusBadge(order.status)}
                     </div>
@@ -274,7 +274,7 @@ export default function ResellerMarketplaceSales() {
           {selectedOrder && (
             <div className="space-y-4">
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2">
                   {getStatusIcon(selectedOrder.status)}
                   {getStatusBadge(selectedOrder.status)}
                 </div>
@@ -295,7 +295,7 @@ export default function ResellerMarketplaceSales() {
               <div className="space-y-2">
                 <h4 className="font-medium">Prodotti</h4>
                 {selectedOrder.items.map((item) => (
-                  <div key={item.id} className="flex items-center gap-3 p-2 bg-muted/50 rounded">
+                  <div key={item.id} className="flex flex-wrap items-center gap-3 p-2 bg-muted/50 rounded">
                     <div className="w-10 h-10 rounded overflow-hidden bg-muted flex-shrink-0 flex items-center justify-center">
                       {item.productImageUrl ? (
                         <img 

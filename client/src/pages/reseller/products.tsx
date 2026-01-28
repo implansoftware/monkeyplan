@@ -915,7 +915,7 @@ export default function ResellerProducts() {
         <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
         <div className="absolute bottom-0 left-0 w-48 h-48 bg-white/10 rounded-full blur-3xl translate-y-1/2 -translate-x-1/2" />
         <div className="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div className="flex items-center gap-3 mb-1">
+          <div className="flex flex-wrap items-center gap-3 mb-1">
             <div className="h-12 w-12 rounded-xl bg-white/20 backdrop-blur-sm border border-white/30 flex items-center justify-center">
               <Package className="h-6 w-6 text-white" />
             </div>
@@ -945,7 +945,7 @@ export default function ResellerProducts() {
           />
         </div>
         <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-          <SelectTrigger className="w-[180px]" data-testid="select-category">
+          <SelectTrigger className="w-full sm:w-[180px]" data-testid="select-category">
             <Tag className="h-4 w-4 mr-2" />
             <SelectValue placeholder="Categoria" />
           </SelectTrigger>
@@ -959,7 +959,7 @@ export default function ResellerProducts() {
           </SelectContent>
         </Select>
         <Select value={brandFilter} onValueChange={setBrandFilter}>
-          <SelectTrigger className="w-[150px]" data-testid="select-brand">
+          <SelectTrigger className="w-full sm:w-[150px]" data-testid="select-brand">
             <SelectValue placeholder="Marca" />
           </SelectTrigger>
           <SelectContent>
@@ -972,7 +972,7 @@ export default function ResellerProducts() {
           </SelectContent>
         </Select>
         <Select value={ownershipFilter} onValueChange={setOwnershipFilter}>
-          <SelectTrigger className="w-[150px]" data-testid="select-ownership">
+          <SelectTrigger className="w-full sm:w-[150px]" data-testid="select-ownership">
             <SelectValue placeholder="Tipo" />
           </SelectTrigger>
           <SelectContent>
@@ -997,7 +997,7 @@ export default function ResellerProducts() {
       ) : (
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
+            <CardTitle className="flex flex-wrap items-center gap-2">
               <Package className="h-5 w-5" />
               Prodotti ({filteredProducts.length})
             </CardTitle>
@@ -1277,7 +1277,7 @@ export default function ResellerProducts() {
       }}>
         <DialogContent className="max-w-2xl max-h-[90vh]">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
+            <DialogTitle className="flex flex-wrap items-center gap-2">
               <Plus className="h-5 w-5" />
               Nuovo Prodotto
             </DialogTitle>
@@ -1368,7 +1368,7 @@ export default function ResellerProducts() {
 
                   <div className="space-y-2">
                     <Label>Immagine Prodotto</Label>
-                    <div className="flex items-center gap-4">
+                    <div className="flex flex-wrap items-center gap-4">
                       <div className="w-16 h-16 rounded-lg border flex items-center justify-center bg-muted">
                         {pendingImagePreview ? (
                           <img 
@@ -1543,7 +1543,7 @@ export default function ResellerProducts() {
                         {initialStock.map(stock => {
                           const warehouse = accessibleWarehouses.find(w => w.id === stock.warehouseId);
                           return (
-                            <div key={stock.warehouseId} className="flex items-center gap-3 p-3 border rounded-md">
+                            <div key={stock.warehouseId} className="flex flex-wrap items-center gap-3 p-3 border rounded-md">
                               <Warehouse className="h-4 w-4 text-muted-foreground" />
                               <span className="flex-1 font-medium">{warehouse?.name || "Magazzino"}</span>
                               <Input
@@ -1627,7 +1627,7 @@ export default function ResellerProducts() {
                         
                         return (
                           <div key={brand.id} className="border-b last:border-b-0">
-                            <div className="flex items-center gap-2 p-2 hover:bg-muted/50">
+                            <div className="flex flex-wrap items-center gap-2 p-2 hover:bg-muted/50">
                               <Button
                                 type="button"
                                 variant="ghost"
@@ -1654,7 +1654,7 @@ export default function ResellerProducts() {
                                 {models.map(model => {
                                   const isChecked = deviceCompatibilities.some(c => c.deviceBrandId === brand.id && c.deviceModelId === model.id);
                                   return (
-                                    <div key={model.id} className="flex items-center gap-2 py-1">
+                                    <div key={model.id} className="flex flex-wrap items-center gap-2 py-1">
                                       <Checkbox
                                         checked={isChecked || hasAllModels}
                                         disabled={hasAllModels}
@@ -1734,7 +1734,7 @@ export default function ResellerProducts() {
       }}>
         <DialogContent className="max-w-2xl max-h-[90vh]">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
+            <DialogTitle className="flex flex-wrap items-center gap-2">
               <Pencil className="h-5 w-5" />
               Modifica Prodotto
             </DialogTitle>
@@ -2037,7 +2037,7 @@ export default function ResellerProducts() {
                                 return 'Centro';
                               };
                               return (
-                                <div key={stock.warehouseId} className="flex items-center gap-3 p-3 border rounded-md">
+                                <div key={stock.warehouseId} className="flex flex-wrap items-center gap-3 p-3 border rounded-md">
                                   {getOwnerTypeIcon()}
                                   <div className="flex-1">
                                     <span className="font-medium">{stock.warehouseName}</span>
@@ -2137,7 +2137,7 @@ export default function ResellerProducts() {
                             
                             return (
                               <div key={brand.id} className="border-b last:border-b-0">
-                                <div className="flex items-center gap-2 p-2 hover:bg-muted/50">
+                                <div className="flex flex-wrap items-center gap-2 p-2 hover:bg-muted/50">
                                   <Button
                                     type="button"
                                     variant="ghost"
@@ -2164,7 +2164,7 @@ export default function ResellerProducts() {
                                     {models.map(model => {
                                       const isChecked = editDeviceCompatibilities.some(c => c.deviceBrandId === brand.id && c.deviceModelId === model.id);
                                       return (
-                                        <div key={model.id} className="flex items-center gap-2 py-1">
+                                        <div key={model.id} className="flex flex-wrap items-center gap-2 py-1">
                                           <Checkbox
                                             checked={isChecked || hasAllModels}
                                             disabled={hasAllModels}
@@ -2237,7 +2237,7 @@ export default function ResellerProducts() {
       }}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
+            <DialogTitle className="flex flex-wrap items-center gap-2">
               <Warehouse className="h-5 w-5" />
               Gestione Stock
             </DialogTitle>
@@ -2264,7 +2264,7 @@ export default function ResellerProducts() {
                 <div className="space-y-3">
                   {warehouseStocks.map(warehouse => (
                     <div key={warehouse.warehouseId} className="flex items-center justify-between gap-4 p-3 rounded-lg border">
-                      <div className="flex items-center gap-3 flex-1">
+                      <div className="flex flex-wrap items-center gap-3 flex-1">
                         <div className={`p-2 rounded-lg ${
                           warehouse.ownerType === 'reseller' ? 'bg-blue-100 dark:bg-blue-900' :
                           warehouse.ownerType === 'sub_reseller' ? 'bg-purple-100 dark:bg-purple-900' :
@@ -2346,7 +2346,7 @@ export default function ResellerProducts() {
       <Dialog open={marketplaceDialogOpen} onOpenChange={setMarketplaceDialogOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
+            <DialogTitle className="flex flex-wrap items-center gap-2">
               <Store className="h-5 w-5" />
               Impostazioni Marketplace P2P
             </DialogTitle>
@@ -2383,7 +2383,7 @@ export default function ResellerProducts() {
                 <>
                   <div className="space-y-2">
                     <Label htmlFor="marketplace-price">Prezzo Marketplace (opzionale)</Label>
-                    <div className="flex items-center gap-2">
+                    <div className="flex flex-wrap items-center gap-2">
                       <span className="text-muted-foreground">€</span>
                       <Input
                         id="marketplace-price"

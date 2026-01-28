@@ -78,7 +78,7 @@ export default function ShopCatalog() {
         </div>
         
         <Select value={typeFilter} onValueChange={setTypeFilter}>
-          <SelectTrigger className="w-[180px]" data-testid="select-type-filter">
+          <SelectTrigger className="w-full sm:w-[180px]" data-testid="select-type-filter">
             <Filter className="mr-2 h-4 w-4" />
             <SelectValue placeholder="Tipo prodotto" />
           </SelectTrigger>

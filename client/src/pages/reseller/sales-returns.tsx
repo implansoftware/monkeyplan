@@ -192,7 +192,7 @@ export default function ResellerSalesReturns() {
         <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 animate-pulse" />
         <div className="absolute bottom-0 left-0 w-48 h-48 bg-white/10 rounded-full blur-3xl translate-y-1/2 -translate-x-1/2 animate-pulse" />
         <div className="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div className="flex items-center gap-4">
+          <div className="flex flex-wrap items-center gap-4">
             <div className="h-12 w-12 rounded-xl bg-white/20 backdrop-blur-sm border border-white/30 flex items-center justify-center">
               <PackageX className="h-6 w-6 text-white" />
             </div>
@@ -207,7 +207,7 @@ export default function ResellerSalesReturns() {
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card className="rounded-2xl">
           <CardContent className="p-4">
-            <div className="flex items-center gap-3">
+            <div className="flex flex-wrap items-center gap-3">
               <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
                 <RotateCcw className="h-5 w-5 text-blue-600" />
               </div>
@@ -220,7 +220,7 @@ export default function ResellerSalesReturns() {
         </Card>
         <Card className="rounded-2xl">
           <CardContent className="p-4">
-            <div className="flex items-center gap-3">
+            <div className="flex flex-wrap items-center gap-3">
               <div className="p-2 bg-yellow-100 dark:bg-yellow-900/30 rounded-lg">
                 <Clock className="h-5 w-5 text-yellow-600" />
               </div>
@@ -233,7 +233,7 @@ export default function ResellerSalesReturns() {
         </Card>
         <Card className="rounded-2xl">
           <CardContent className="p-4">
-            <div className="flex items-center gap-3">
+            <div className="flex flex-wrap items-center gap-3">
               <div className="p-2 bg-green-100 dark:bg-green-900/30 rounded-lg">
                 <CheckCircle className="h-5 w-5 text-green-600" />
               </div>
@@ -246,7 +246,7 @@ export default function ResellerSalesReturns() {
         </Card>
         <Card className="rounded-2xl">
           <CardContent className="p-4">
-            <div className="flex items-center gap-3">
+            <div className="flex flex-wrap items-center gap-3">
               <div className="p-2 bg-emerald-100 dark:bg-emerald-900/30 rounded-lg">
                 <DollarSign className="h-5 w-5 text-emerald-600" />
               </div>
@@ -273,7 +273,7 @@ export default function ResellerSalesReturns() {
               />
             </div>
             <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-[200px]" data-testid="select-status">
+              <SelectTrigger className="w-full sm:w-[200px]" data-testid="select-status">
                 <SelectValue placeholder="Filtra per stato" />
               </SelectTrigger>
               <SelectContent>

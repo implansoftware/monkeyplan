@@ -235,7 +235,7 @@ export default function ResellerSales() {
           <div className="absolute -bottom-24 -left-24 w-64 h-64 bg-white/10 rounded-full blur-3xl animate-pulse delay-1000" />
         </div>
         <div className="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div className="flex items-center gap-4">
+          <div className="flex flex-wrap items-center gap-4">
             <div className="h-12 w-12 rounded-xl bg-white/20 backdrop-blur-sm border border-white/30 flex items-center justify-center">
               <TrendingUp className="h-6 w-6 text-white" />
             </div>
@@ -273,7 +273,7 @@ export default function ResellerSales() {
       <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
         <Card className="rounded-2xl">
           <CardContent className="pt-6">
-            <div className="flex items-center gap-3">
+            <div className="flex flex-wrap items-center gap-3">
               <div className="p-2 bg-primary/10 rounded-lg">
                 <Euro className="h-5 w-5 text-primary" />
               </div>
@@ -290,7 +290,7 @@ export default function ResellerSales() {
         
         <Card className="rounded-2xl">
           <CardContent className="pt-6">
-            <div className="flex items-center gap-3">
+            <div className="flex flex-wrap items-center gap-3">
               <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
                 <ShoppingCart className="h-5 w-5 text-blue-600" />
               </div>
@@ -307,7 +307,7 @@ export default function ResellerSales() {
         
         <Card className="rounded-2xl">
           <CardContent className="pt-6">
-            <div className="flex items-center gap-3">
+            <div className="flex flex-wrap items-center gap-3">
               <div className="p-2 bg-green-100 dark:bg-green-900/30 rounded-lg">
                 <Store className="h-5 w-5 text-green-600" />
               </div>
@@ -324,7 +324,7 @@ export default function ResellerSales() {
         
         <Card className="rounded-2xl">
           <CardContent className="pt-6">
-            <div className="flex items-center gap-3">
+            <div className="flex flex-wrap items-center gap-3">
               <div className="p-2 bg-yellow-100 dark:bg-yellow-900/30 rounded-lg">
                 <Zap className="h-5 w-5 text-yellow-600" />
               </div>
@@ -341,7 +341,7 @@ export default function ResellerSales() {
         
         <Card className="rounded-2xl">
           <CardContent className="pt-6">
-            <div className="flex items-center gap-3">
+            <div className="flex flex-wrap items-center gap-3">
               <div className="p-2 bg-purple-100 dark:bg-purple-900/30 rounded-lg">
                 <Briefcase className="h-5 w-5 text-purple-600" />
               </div>
@@ -360,7 +360,7 @@ export default function ResellerSales() {
       <Card className="rounded-2xl">
         <CardContent className="pt-6">
           <div className="flex flex-wrap items-center gap-3 mb-4">
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <Filter className="h-4 w-4 text-muted-foreground" />
               <span className="text-sm font-medium">Filtri:</span>
             </div>
@@ -377,7 +377,7 @@ export default function ResellerSales() {
             </div>
             
             <Select value={sourceFilter} onValueChange={setSourceFilter}>
-              <SelectTrigger className="w-[140px]" data-testid="select-source-filter">
+              <SelectTrigger className="w-full sm:w-[140px]" data-testid="select-source-filter">
                 <SelectValue placeholder="Fonte" />
               </SelectTrigger>
               <SelectContent>
@@ -391,7 +391,7 @@ export default function ResellerSales() {
             
             {repairCenters.length > 0 && (
               <Select value={repairCenterFilter} onValueChange={setRepairCenterFilter}>
-                <SelectTrigger className="w-[180px]" data-testid="select-repair-center-filter">
+                <SelectTrigger className="w-full sm:w-[180px]" data-testid="select-repair-center-filter">
                   <SelectValue placeholder="Centro Riparazione" />
                 </SelectTrigger>
                 <SelectContent>
@@ -405,7 +405,7 @@ export default function ResellerSales() {
             
             {subResellers.length > 0 && (
               <Select value={subResellerFilter} onValueChange={setSubResellerFilter}>
-                <SelectTrigger className="w-[180px]" data-testid="select-sub-reseller-filter">
+                <SelectTrigger className="w-full sm:w-[180px]" data-testid="select-sub-reseller-filter">
                   <SelectValue placeholder="Sub-Reseller" />
                 </SelectTrigger>
                 <SelectContent>

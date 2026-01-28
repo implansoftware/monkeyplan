@@ -341,14 +341,14 @@ export default function CustomerServiceCatalog() {
               >
                 <div className="flex items-center space-x-2">
                   <RadioGroupItem value="in_person" id="in_person" data-testid="radio-pay-in-person" />
-                  <Label htmlFor="in_person" className="flex items-center gap-2 cursor-pointer">
+                  <Label htmlFor="in_person" className="flex flex-wrap items-center gap-2 cursor-pointer">
                     <Banknote className="w-4 h-4" />
                     Pagamento di persona
                   </Label>
                 </div>
                 <div className="flex items-center space-x-2">
                   <RadioGroupItem value="bank_transfer" id="bank_transfer" data-testid="radio-pay-transfer" />
-                  <Label htmlFor="bank_transfer" className="flex items-center gap-2 cursor-pointer">
+                  <Label htmlFor="bank_transfer" className="flex flex-wrap items-center gap-2 cursor-pointer">
                     <Building className="w-4 h-4" />
                     Bonifico bancario
                   </Label>

@@ -215,7 +215,7 @@ export default function AdminRepairCenterDetail() {
             </Button>
           </Link>
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <div className="flex items-center gap-4">
+            <div className="flex flex-wrap items-center gap-4">
               <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-white/20 backdrop-blur-sm border border-white/30">
                 <Store className="h-7 w-7 text-white" />
               </div>
@@ -227,7 +227,7 @@ export default function AdminRepairCenterDetail() {
                 </p>
               </div>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <Button variant="outline" size="sm" onClick={() => { setNewPassword(""); setResetPasswordDialogOpen(true); }} className="bg-white/10 border-white/30 text-white hover:bg-white/20 rounded-xl" data-testid="button-reset-password">
                 <KeyRound className="h-4 w-4 mr-2" />
                 Reset Password
@@ -306,7 +306,7 @@ export default function AdminRepairCenterDetail() {
       <div className="grid gap-6 md:grid-cols-2">
         <Card className="border-0 shadow-lg bg-white dark:bg-slate-800/50">
           <CardHeader>
-            <CardTitle className="flex items-center gap-3">
+            <CardTitle className="flex flex-wrap items-center gap-3">
               <div className="p-2 rounded-xl bg-gradient-to-br from-blue-500 to-cyan-600">
                 <Store className="h-5 w-5 text-white" />
               </div>
@@ -350,7 +350,7 @@ export default function AdminRepairCenterDetail() {
             {reseller && (
               <div className="pt-4 border-t border-slate-200 dark:border-slate-700">
                 <p className="text-xs text-slate-500 uppercase tracking-wide mb-2">Rivenditore di appartenenza</p>
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2">
                   <Building2 className="h-4 w-4 text-slate-400" />
                   <Link href={`/admin/resellers/${reseller.id}`}>
                     <span className="font-semibold text-blue-600 hover:underline cursor-pointer" data-testid="link-reseller">
@@ -363,7 +363,7 @@ export default function AdminRepairCenterDetail() {
             {subReseller && (
               <div className="pt-4 border-t border-slate-200 dark:border-slate-700">
                 <p className="text-xs text-slate-500 uppercase tracking-wide mb-2">Sub-Reseller di riferimento</p>
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2">
                   <Users className="h-4 w-4 text-slate-400" />
                   <Link href={`/admin/resellers/${subReseller.id}`}>
                     <span className="font-semibold text-blue-600 hover:underline cursor-pointer" data-testid="link-sub-reseller">
@@ -382,7 +382,7 @@ export default function AdminRepairCenterDetail() {
         {(center.ragioneSociale || center.partitaIva) && (
           <Card className="border-0 shadow-lg bg-white dark:bg-slate-800/50">
             <CardHeader>
-              <CardTitle className="flex items-center gap-3">
+              <CardTitle className="flex flex-wrap items-center gap-3">
                 <div className="p-2 rounded-xl bg-gradient-to-br from-blue-500 to-cyan-600">
                   <FileText className="h-5 w-5 text-white" />
                 </div>
@@ -721,7 +721,7 @@ export default function AdminRepairCenterDetail() {
       <Dialog open={resetPasswordDialogOpen} onOpenChange={setResetPasswordDialogOpen}>
         <DialogContent className="sm:max-w-md" data-testid="dialog-reset-password">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-3">
+            <DialogTitle className="flex flex-wrap items-center gap-3">
               <div className="p-2 rounded-xl bg-gradient-to-br from-blue-500 to-cyan-600">
                 <KeyRound className="h-5 w-5 text-white" />
               </div>

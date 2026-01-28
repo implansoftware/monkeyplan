@@ -174,7 +174,7 @@ export default function DeviceCompatibilities() {
           <div className="absolute -bottom-24 -left-24 w-64 h-64 bg-white/10 rounded-full blur-3xl animate-pulse delay-1000" />
         </div>
         <div className="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div className="flex items-center gap-4">
+          <div className="flex flex-wrap items-center gap-4">
             <div className="h-12 w-12 rounded-xl bg-white/20 backdrop-blur-sm border border-white/30 flex items-center justify-center">
               <Link2 className="h-6 w-6 text-white" />
             </div>
@@ -212,7 +212,7 @@ export default function DeviceCompatibilities() {
               />
             </div>
             <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-              <SelectTrigger className="w-[180px]" data-testid="select-category-filter">
+              <SelectTrigger className="w-full sm:w-[180px]" data-testid="select-category-filter">
                 <Filter className="h-4 w-4 mr-2" />
                 <SelectValue placeholder="Categoria" />
               </SelectTrigger>
@@ -253,7 +253,7 @@ export default function DeviceCompatibilities() {
                 {filteredProducts.map((product) => (
                   <TableRow key={product.id} data-testid={`row-product-${product.id}`}>
                     <TableCell>
-                      <div className="flex items-center gap-3">
+                      <div className="flex flex-wrap items-center gap-3">
                         {product.imageUrl ? (
                           <img
                             src={product.imageUrl}
@@ -315,7 +315,7 @@ export default function DeviceCompatibilities() {
       }}>
         <DialogContent className="max-w-3xl max-h-[90vh]">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
+            <DialogTitle className="flex flex-wrap items-center gap-2">
               <Link2 className="h-5 w-5" />
               Compatibilità: {selectedProduct?.name}
             </DialogTitle>
@@ -339,7 +339,7 @@ export default function DeviceCompatibilities() {
 
                   return (
                     <div key={brand.id} className="border rounded-lg p-4">
-                      <div className="flex items-center gap-3 mb-3">
+                      <div className="flex flex-wrap items-center gap-3 mb-3">
                         <Checkbox
                           checked={brandSelected}
                           onCheckedChange={() => toggleBrandCompatibility(brand.id)}
@@ -356,7 +356,7 @@ export default function DeviceCompatibilities() {
                       {!brandSelected && brandModels.length > 0 && (
                         <div className="ml-6 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
                           {brandModels.map((model) => (
-                            <div key={model.id} className="flex items-center gap-2">
+                            <div key={model.id} className="flex flex-wrap items-center gap-2">
                               <Checkbox
                                 checked={isModelSelected(brand.id, model.id)}
                                 onCheckedChange={() => toggleModelCompatibility(brand.id, model.id)}

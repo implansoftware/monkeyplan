@@ -131,7 +131,7 @@ export default function RepairCenterSmartphoneCatalog() {
         <div className="absolute top-1/2 left-1/3 w-48 h-48 rounded-full bg-emerald-300/20 blur-3xl animate-pulse" style={{ animationDelay: '2s' }} />
         
         <div className="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div className="flex items-center gap-4">
+          <div className="flex flex-wrap items-center gap-4">
             <div className="h-14 w-14 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center shadow-xl">
               <Smartphone className="h-7 w-7 text-white" />
             </div>
@@ -140,7 +140,7 @@ export default function RepairCenterSmartphoneCatalog() {
               <p className="text-emerald-100">Dispositivi disponibili dal tuo rivenditore</p>
             </div>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             {cartItemCount > 0 && (
               <Button variant="outline" className="bg-white/20 backdrop-blur-sm text-white border-white/30 hover:bg-white/30 shadow-lg" onClick={() => window.location.href = '/repair-center/cart'} data-testid="button-view-cart">
                 <ShoppingCart className="h-4 w-4 mr-2" />
@@ -165,7 +165,7 @@ export default function RepairCenterSmartphoneCatalog() {
               />
             </div>
             <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-              <SelectTrigger className="w-[180px]" data-testid="select-category-filter">
+              <SelectTrigger className="w-full sm:w-[180px]" data-testid="select-category-filter">
                 <SelectValue placeholder="Categoria" />
               </SelectTrigger>
               <SelectContent>
@@ -176,7 +176,7 @@ export default function RepairCenterSmartphoneCatalog() {
               </SelectContent>
             </Select>
             <Select value={brandFilter} onValueChange={setBrandFilter}>
-              <SelectTrigger className="w-[180px]" data-testid="select-brand-filter">
+              <SelectTrigger className="w-full sm:w-[180px]" data-testid="select-brand-filter">
                 <SelectValue placeholder="Marca" />
               </SelectTrigger>
               <SelectContent>
@@ -187,7 +187,7 @@ export default function RepairCenterSmartphoneCatalog() {
               </SelectContent>
             </Select>
             <Select value={gradeFilter} onValueChange={setGradeFilter}>
-              <SelectTrigger className="w-[180px]" data-testid="select-grade-filter">
+              <SelectTrigger className="w-full sm:w-[180px]" data-testid="select-grade-filter">
                 <SelectValue placeholder="Grado" />
               </SelectTrigger>
               <SelectContent>
@@ -230,7 +230,7 @@ export default function RepairCenterSmartphoneCatalog() {
                   {filteredSmartphones.map(phone => (
                     <TableRow key={phone.id} data-testid={`row-smartphone-${phone.id}`}>
                       <TableCell>
-                        <div className="flex items-center gap-3">
+                        <div className="flex flex-wrap items-center gap-3">
                           {phone.imageUrl ? (
                             <img 
                               src={phone.imageUrl} 
@@ -350,7 +350,7 @@ export default function RepairCenterSmartphoneCatalog() {
       <Dialog open={detailDialogOpen} onOpenChange={setDetailDialogOpen}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
+            <DialogTitle className="flex flex-wrap items-center gap-2">
               <Smartphone className="h-5 w-5" />
               Dettagli Smartphone
             </DialogTitle>
@@ -470,7 +470,7 @@ export default function RepairCenterSmartphoneCatalog() {
                 <p className="text-lg font-bold mt-2">{formatPrice(selectedPhone.b2bPrice)}</p>
                 <p className="text-sm text-muted-foreground">Disponibili: {selectedPhone.resellerStock}</p>
               </div>
-              <div className="flex items-center gap-4">
+              <div className="flex flex-wrap items-center gap-4">
                 <span className="text-sm font-medium">Quantità:</span>
                 <Input 
                   type="number" 

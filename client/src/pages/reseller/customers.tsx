@@ -217,7 +217,7 @@ export default function ResellerCustomers() {
         
         <div className="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <div className="flex items-center gap-3 mb-1">
+            <div className="flex flex-wrap items-center gap-3 mb-1">
               <div className="h-12 w-12 rounded-2xl bg-white/20 backdrop-blur-sm border border-white/30 flex items-center justify-center">
                 <Users className="h-6 w-6 text-white" />
               </div>
@@ -252,7 +252,7 @@ export default function ResellerCustomers() {
               <div>
                 <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1">Totale Clienti</p>
                 <p className="text-3xl font-bold tabular-nums">{customers.length}</p>
-                <div className="flex items-center gap-1 mt-1">
+                <div className="flex flex-wrap items-center gap-1 mt-1">
                   <TrendingUp className="h-3 w-3 text-emerald-500" />
                   <span className="text-xs text-emerald-600 dark:text-emerald-400 font-medium">+12% questo mese</span>
                 </div>
@@ -305,15 +305,15 @@ export default function ResellerCustomers() {
       <Card className="overflow-hidden rounded-2xl">
         <CardHeader className="pb-4 border-b bg-muted/30">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <div className="flex items-center gap-3">
+            <div className="flex flex-wrap items-center gap-3">
               <CardTitle className="text-base font-semibold">Elenco Clienti</CardTitle>
               <Badge variant="secondary" className="font-normal">
                 {filteredCustomers.length} risultati
               </Badge>
             </div>
-            <div className="flex items-center gap-3">
+            <div className="flex flex-wrap items-center gap-3">
               {/* Filter Pills */}
-              <div className="flex items-center gap-1 p-1 bg-muted rounded-lg">
+              <div className="flex flex-wrap items-center gap-1 p-1 bg-muted rounded-lg">
                 <Button
                   variant={activeFilter === "all" ? "default" : "ghost"}
                   size="sm"
@@ -414,12 +414,12 @@ export default function ResellerCustomers() {
                         </TableCell>
                         <TableCell>
                           <div className="space-y-0.5">
-                            <div className="flex items-center gap-1.5 text-sm">
+                            <div className="flex flex-wrap items-center gap-1.5 text-sm">
                               <Mail className="h-3 w-3 text-muted-foreground" />
                               <span className="truncate max-w-[200px]">{customer.email}</span>
                             </div>
                             {customer.phone && (
-                              <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                              <div className="flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
                                 <Phone className="h-3 w-3" />
                                 <span>{customer.phone}</span>
                               </div>
@@ -539,7 +539,7 @@ export default function ResellerCustomers() {
                   </div>
                   <div className="space-y-2">
                     <Label>Stato</Label>
-                    <div className="flex items-center gap-2 pt-2">
+                    <div className="flex flex-wrap items-center gap-2 pt-2">
                       <Switch
                         checked={editForm.isActive}
                         onCheckedChange={(checked) => setEditForm(prev => ({ ...prev, isActive: checked }))}
@@ -551,7 +551,7 @@ export default function ResellerCustomers() {
                 </div>
                 
                 <div className="pt-4 border-t">
-                  <Label className="flex items-center gap-2 mb-3">
+                  <Label className="flex flex-wrap items-center gap-2 mb-3">
                     <Wrench className="h-4 w-4" />
                     Centri Riparazione Assegnati
                   </Label>

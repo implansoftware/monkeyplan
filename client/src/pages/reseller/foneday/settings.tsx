@@ -105,7 +105,7 @@ export default function FonedaySettingsPage() {
   return (
     <div className="p-6 space-y-6">
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
           <Settings className="h-8 w-8" />
           <div>
             <h1 className="text-2xl font-bold">Impostazioni Foneday</h1>
@@ -127,7 +127,7 @@ export default function FonedaySettingsPage() {
           <CardHeader>
             <div className="flex items-center justify-between">
               <div>
-                <CardTitle className="flex items-center gap-2">
+                <CardTitle className="flex flex-wrap items-center gap-2">
                   <Key className="h-5 w-5" />
                   Credenziali Configurate
                 </CardTitle>
@@ -142,7 +142,7 @@ export default function FonedaySettingsPage() {
             <div className="grid gap-4 md:grid-cols-2">
               <div className="space-y-2">
                 <Label>Token API</Label>
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2">
                   <Input
                     type={showToken ? "text" : "password"}
                     value={credential.apiToken}
@@ -161,7 +161,7 @@ export default function FonedaySettingsPage() {
               </div>
               <div className="space-y-2">
                 <Label>Ultimo Test</Label>
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2">
                   {credential.testStatus === "success" ? (
                     <CheckCircle className="h-4 w-4 text-green-500" />
                   ) : credential.testStatus === "error" ? (
@@ -177,7 +177,7 @@ export default function FonedaySettingsPage() {
               </div>
             </div>
 
-            <div className="flex items-center gap-2 pt-4 border-t">
+            <div className="flex flex-wrap items-center gap-2 pt-4 border-t">
               <Button
                 variant="outline"
                 onClick={() => testMutation.mutate()}
@@ -216,7 +216,7 @@ export default function FonedaySettingsPage() {
       ) : (
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
+            <CardTitle className="flex flex-wrap items-center gap-2">
               <Key className="h-5 w-5" />
               Configura Foneday
             </CardTitle>

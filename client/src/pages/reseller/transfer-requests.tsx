@@ -335,19 +335,19 @@ export default function TransferRequestsPage() {
       <Card key={request.id} className="rounded-2xl hover-elevate" data-testid={`card-transfer-${request.id}`}>
         <CardContent className="pt-4">
           <div className="flex items-start justify-between gap-4 flex-wrap">
-            <div className="flex items-center gap-3">
+            <div className="flex flex-wrap items-center gap-3">
               <div className="p-2 rounded-lg bg-purple-100 dark:bg-purple-900/30">
                 <Package className="h-5 w-5 text-purple-600" />
               </div>
               <div>
                 <p className="font-medium font-mono">{request.requestNumber}</p>
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
                   <TypeIcon className="h-3 w-3" />
                   <span>{request.requester?.fullName || typeLabel}</span>
                 </div>
               </div>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               {renderStatusBadge(request.status)}
             </div>
           </div>
@@ -469,7 +469,7 @@ export default function TransferRequestsPage() {
         />
         
         <div className="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div className="flex items-center gap-3 mb-1">
+          <div className="flex flex-wrap items-center gap-3 mb-1">
             <div className="h-12 w-12 rounded-2xl bg-white/20 backdrop-blur-sm border border-white/30 flex items-center justify-center">
               <ArrowRightLeft className="h-6 w-6 text-white" />
             </div>
@@ -490,7 +490,7 @@ export default function TransferRequestsPage() {
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card className="rounded-2xl">
           <CardContent className="pt-4">
-            <div className="flex items-center gap-3">
+            <div className="flex flex-wrap items-center gap-3">
               <div className="p-2 rounded-lg bg-yellow-100 dark:bg-yellow-900/30">
                 <Inbox className="h-5 w-5 text-yellow-600" />
               </div>
@@ -503,7 +503,7 @@ export default function TransferRequestsPage() {
         </Card>
         <Card className="rounded-2xl">
           <CardContent className="pt-4">
-            <div className="flex items-center gap-3">
+            <div className="flex flex-wrap items-center gap-3">
               <div className="p-2 rounded-lg bg-blue-100 dark:bg-blue-900/30">
                 <CheckCircle className="h-5 w-5 text-blue-600" />
               </div>
@@ -516,7 +516,7 @@ export default function TransferRequestsPage() {
         </Card>
         <Card className="rounded-2xl">
           <CardContent className="pt-4">
-            <div className="flex items-center gap-3">
+            <div className="flex flex-wrap items-center gap-3">
               <div className="p-2 rounded-lg bg-purple-100 dark:bg-purple-900/30">
                 <Truck className="h-5 w-5 text-purple-600" />
               </div>
@@ -529,7 +529,7 @@ export default function TransferRequestsPage() {
         </Card>
         <Card className="rounded-2xl">
           <CardContent className="pt-4">
-            <div className="flex items-center gap-3">
+            <div className="flex flex-wrap items-center gap-3">
               <div className="p-2 rounded-lg bg-green-100 dark:bg-green-900/30">
                 <History className="h-5 w-5 text-green-600" />
               </div>
@@ -542,7 +542,7 @@ export default function TransferRequestsPage() {
         </Card>
       </div>
 
-      <div className="flex items-center gap-4 flex-wrap">
+      <div className="flex flex-wrap items-center gap-4 flex-wrap">
         <div className="relative flex-1 min-w-[200px]">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
@@ -554,7 +554,7 @@ export default function TransferRequestsPage() {
           />
         </div>
         <Select value={statusFilter} onValueChange={setStatusFilter}>
-          <SelectTrigger className="w-[180px]" data-testid="select-status-filter">
+          <SelectTrigger className="w-full sm:w-[180px]" data-testid="select-status-filter">
             <SelectValue placeholder="Filtra per stato" />
           </SelectTrigger>
           <SelectContent>
@@ -691,7 +691,7 @@ export default function TransferRequestsPage() {
                 {selectedRequest.ddtNumber && (
                   <div className="col-span-2">
                     <Label className="text-muted-foreground">DDT</Label>
-                    <div className="flex items-center gap-2 mt-1">
+                    <div className="flex flex-wrap items-center gap-2 mt-1">
                       <span className="font-mono">{selectedRequest.ddtNumber}</span>
                       <Button size="sm" variant="outline" onClick={() => downloadDDT(selectedRequest.id)}>
                         <Download className="h-4 w-4 mr-1" />
@@ -1013,7 +1013,7 @@ export default function TransferRequestsPage() {
 
           <div className="flex items-center justify-center gap-2 py-2">
             {[1, 2, 3].map((step) => (
-              <div key={step} className="flex items-center gap-2">
+              <div key={step} className="flex flex-wrap items-center gap-2">
                 <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
                   wizardStep === step 
                     ? "bg-primary text-primary-foreground" 
@@ -1031,7 +1031,7 @@ export default function TransferRequestsPage() {
           <div className="flex-1 overflow-y-auto space-y-4 py-4">
             {wizardStep === 1 && (
               <div className="space-y-4">
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2">
                   <div className="relative flex-1">
                     <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     <Input
@@ -1043,7 +1043,7 @@ export default function TransferRequestsPage() {
                     />
                   </div>
                   <Select value={productTypeFilter} onValueChange={setProductTypeFilter}>
-                    <SelectTrigger className="w-[160px]" data-testid="select-product-type">
+                    <SelectTrigger className="w-full sm:w-[160px]" data-testid="select-product-type">
                       <SelectValue placeholder="Tipo" />
                     </SelectTrigger>
                     <SelectContent>
@@ -1093,7 +1093,7 @@ export default function TransferRequestsPage() {
                           data-testid={`card-product-${item.product.id}`}
                         >
                           <CardContent className="p-3">
-                            <div className="flex items-center gap-3">
+                            <div className="flex flex-wrap items-center gap-3">
                               <div className="w-10 h-10 rounded bg-muted flex items-center justify-center overflow-hidden">
                                 {item.product.imageUrl ? (
                                   <img 
@@ -1107,7 +1107,7 @@ export default function TransferRequestsPage() {
                               </div>
                               <div className="flex-1 min-w-0">
                                 <p className="font-medium truncate">{item.product.name}</p>
-                                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
                                   <span>{item.product.sku}</span>
                                   {item.product.brand && <span>| {item.product.brand}</span>}
                                 </div>
@@ -1134,7 +1134,7 @@ export default function TransferRequestsPage() {
               <div className="space-y-4">
                 <Card className="bg-muted/50">
                   <CardContent className="p-3">
-                    <div className="flex items-center gap-3">
+                    <div className="flex flex-wrap items-center gap-3">
                       <div className="w-10 h-10 rounded bg-muted flex items-center justify-center overflow-hidden">
                         {selectedProduct.product.imageUrl ? (
                           <img 
@@ -1167,7 +1167,7 @@ export default function TransferRequestsPage() {
                     >
                       <CardContent className="p-3">
                         <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-3">
+                          <div className="flex flex-wrap items-center gap-3">
                             <Warehouse className="h-5 w-5 text-muted-foreground" />
                             <div>
                               <p className="font-medium">{wh.warehouseName}</p>
@@ -1189,7 +1189,7 @@ export default function TransferRequestsPage() {
               <div className="space-y-4">
                 <Card className="bg-muted/50">
                   <CardContent className="p-4 space-y-3">
-                    <div className="flex items-center gap-3">
+                    <div className="flex flex-wrap items-center gap-3">
                       <div className="w-10 h-10 rounded bg-muted flex items-center justify-center overflow-hidden">
                         {selectedProduct.product.imageUrl ? (
                           <img 
@@ -1206,7 +1206,7 @@ export default function TransferRequestsPage() {
                         <p className="text-sm text-muted-foreground">{selectedProduct.product.sku}</p>
                       </div>
                     </div>
-                    <div className="flex items-center gap-3">
+                    <div className="flex flex-wrap items-center gap-3">
                       <Warehouse className="h-5 w-5 text-muted-foreground" />
                       <div>
                         <p className="font-medium">

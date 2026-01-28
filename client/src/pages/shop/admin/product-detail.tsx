@@ -138,14 +138,14 @@ export default function ProductDetail() {
 
   return (
     <div className="container py-6 space-y-6" data-testid="page-product-detail">
-      <div className="flex items-center gap-4">
+      <div className="flex flex-wrap items-center gap-4">
         <Link href={getBackPath()}>
           <Button variant="ghost" size="icon" data-testid="button-back">
             <ArrowLeft className="h-5 w-5" />
           </Button>
         </Link>
         <div className="flex-1">
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-3">
             {getProductIcon()}
             <h1 className="text-2xl font-bold" data-testid="text-product-name">{product.name}</h1>
             <Badge variant="secondary" data-testid="badge-product-type">
@@ -169,7 +169,7 @@ export default function ProductDetail() {
         <div className="lg:col-span-2 space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
+              <CardTitle className="flex flex-wrap items-center gap-2">
                 <Tag className="h-5 w-5" />
                 Informazioni Base
               </CardTitle>
@@ -225,7 +225,7 @@ export default function ProductDetail() {
             <TabsContent value="specs">
               <Card>
                 <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
+                  <CardTitle className="flex flex-wrap items-center gap-2">
                     <Settings className="h-5 w-5" />
                     Specifiche Tecniche
                   </CardTitle>
@@ -355,7 +355,7 @@ export default function ProductDetail() {
             <TabsContent value="resellers">
               <Card>
                 <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
+                  <CardTitle className="flex flex-wrap items-center gap-2">
                     <Users className="h-5 w-5" />
                     Rivenditori Assegnati
                   </CardTitle>
@@ -420,7 +420,7 @@ export default function ProductDetail() {
         <div className="space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
+              <CardTitle className="flex flex-wrap items-center gap-2">
                 <Euro className="h-5 w-5" />
                 Prezzi
               </CardTitle>

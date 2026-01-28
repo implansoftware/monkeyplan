@@ -152,7 +152,7 @@ export default function RepairCenterDashboard() {
         <div className="absolute top-1/2 left-1/3 w-48 h-48 rounded-full bg-emerald-300/20 blur-3xl animate-pulse" style={{ animationDelay: '2s' }} />
         
         <div className="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div className="flex items-center gap-4">
+          <div className="flex flex-wrap items-center gap-4">
             <div className="h-14 w-14 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center shadow-xl">
               <LayoutDashboard className="h-7 w-7 text-white" />
             </div>
@@ -185,7 +185,7 @@ export default function RepairCenterDashboard() {
 
       {/* Assigned Reseller Banner */}
       {stats?.assignedReseller && (
-        <div className="flex items-center gap-4 p-4 rounded-xl border bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30 border-blue-200/50 dark:border-blue-800/50">
+        <div className="flex flex-wrap items-center gap-4 p-4 rounded-xl border bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30 border-blue-200/50 dark:border-blue-800/50">
           <Avatar className="h-12 w-12 rounded-lg border-2 border-blue-200 dark:border-blue-700">
             {stats.assignedReseller.logoUrl ? (
               <AvatarImage src={stats.assignedReseller.logoUrl} alt={stats.assignedReseller.ragioneSociale || stats.assignedReseller.fullName || ''} className="object-contain" />
@@ -259,7 +259,7 @@ export default function RepairCenterDashboard() {
                     {stats?.overview?.activeRepairs ?? 0}
                   </p>
                 )}
-                <div className="flex items-center gap-1 mt-1">
+                <div className="flex flex-wrap items-center gap-1 mt-1">
                   <TrendingUp className="h-3 w-3 text-emerald-500" />
                   <span className="text-xs text-emerald-600 dark:text-emerald-400 font-medium">
                     {stats?.overview?.totalRepairs ?? 0} totali
@@ -357,7 +357,7 @@ export default function RepairCenterDashboard() {
         <Link href="/repair-center/repairs" className="block group">
           <Card className="h-full transition-all hover:shadow-md hover:border-primary/50" data-testid="card-completed-repairs">
             <CardContent className="pt-4 pb-3">
-              <div className="flex items-center gap-3">
+              <div className="flex flex-wrap items-center gap-3">
                 <div className="h-9 w-9 rounded-lg bg-green-500/10 flex items-center justify-center">
                   <Package className="h-4 w-4 text-green-500" />
                 </div>
@@ -378,7 +378,7 @@ export default function RepairCenterDashboard() {
         <Link href="/repair-center/b2b-orders" className="block group">
           <Card className="h-full transition-all hover:shadow-md hover:border-primary/50" data-testid="card-b2b">
             <CardContent className="pt-4 pb-3">
-              <div className="flex items-center gap-3">
+              <div className="flex flex-wrap items-center gap-3">
                 <div className="h-9 w-9 rounded-lg bg-orange-500/10 flex items-center justify-center">
                   <ShoppingCart className="h-4 w-4 text-orange-500" />
                 </div>
@@ -399,7 +399,7 @@ export default function RepairCenterDashboard() {
         <Link href="/repair-center/tickets" className="block group">
           <Card className="h-full transition-all hover:shadow-md hover:border-primary/50" data-testid="card-tickets">
             <CardContent className="pt-4 pb-3">
-              <div className="flex items-center gap-3">
+              <div className="flex flex-wrap items-center gap-3">
                 <div className="h-9 w-9 rounded-lg bg-violet-500/10 flex items-center justify-center">
                   <Ticket className="h-4 w-4 text-violet-500" />
                 </div>
@@ -420,7 +420,7 @@ export default function RepairCenterDashboard() {
         <Link href="/repair-center/customers" className="block group">
           <Card className="h-full transition-all hover:shadow-md hover:border-primary/50" data-testid="card-customers-link">
             <CardContent className="pt-4 pb-3">
-              <div className="flex items-center gap-3">
+              <div className="flex flex-wrap items-center gap-3">
                 <div className="h-9 w-9 rounded-lg bg-cyan-500/10 flex items-center justify-center">
                   <Users className="h-4 w-4 text-cyan-500" />
                 </div>
@@ -600,7 +600,7 @@ export default function RepairCenterDashboard() {
                   </ResponsiveContainer>
                   <div className="flex flex-wrap justify-center gap-x-4 gap-y-1 mt-2">
                     {pieData.map((entry, index) => (
-                      <div key={entry.name} className="flex items-center gap-1.5 text-xs">
+                      <div key={entry.name} className="flex flex-wrap items-center gap-1.5 text-xs">
                         <div 
                           className="h-2.5 w-2.5 rounded-full" 
                           style={{ backgroundColor: CHART_COLORS[index % CHART_COLORS.length] }}
@@ -649,7 +649,7 @@ export default function RepairCenterDashboard() {
                     >
                       <div className={`w-1 h-10 rounded-full ${repair.status === 'consegnato' ? 'bg-slate-400' : 'bg-primary'}`} />
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2">
+                        <div className="flex flex-wrap items-center gap-2">
                           <span className="font-mono text-xs text-muted-foreground">{repair.orderNumber || repair.id.substring(0, 8)}</span>
                           {getStatusBadge(repair.status)}
                         </div>

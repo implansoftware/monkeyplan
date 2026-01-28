@@ -180,7 +180,7 @@ export default function RepairCenterSettings() {
         <div className="absolute top-1/2 left-1/3 w-48 h-48 rounded-full bg-emerald-300/20 blur-3xl animate-pulse" style={{ animationDelay: '2s' }} />
         
         <div className="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div className="flex items-center gap-4">
+          <div className="flex flex-wrap items-center gap-4">
             <div className="h-14 w-14 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center shadow-xl">
               <Settings className="h-7 w-7 text-white" />
             </div>
@@ -575,7 +575,7 @@ export default function RepairCenterSettings() {
                         {isOpen && (
                           <div className="ml-0 md:ml-32 space-y-3">
                             <div className="flex flex-wrap items-center gap-3">
-                              <div className="flex items-center gap-2 bg-muted/50 px-3 py-2 rounded-md">
+                              <div className="flex flex-wrap items-center gap-2 bg-muted/50 px-3 py-2 rounded-md">
                                 <span className="text-xs text-muted-foreground font-medium w-16">Mattina</span>
                                 <FormField
                                   control={form.control}
@@ -608,7 +608,7 @@ export default function RepairCenterSettings() {
                                   )}
                                 />
                               </div>
-                              <div className="flex items-center gap-2 bg-muted/50 px-3 py-2 rounded-md">
+                              <div className="flex flex-wrap items-center gap-2 bg-muted/50 px-3 py-2 rounded-md">
                                 <span className="text-xs text-muted-foreground font-medium w-16">Pomeriggio</span>
                                 <FormField
                                   control={form.control}

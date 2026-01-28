@@ -62,19 +62,19 @@ export function AdminEntityFilterSelector({
           setSelectedEntityId("");
         }}
       >
-        <SelectTrigger className="w-[200px]" data-testid="select-admin-entity-type">
+        <SelectTrigger className="w-full sm:w-[200px]" data-testid="select-admin-entity-type">
           <SelectValue />
         </SelectTrigger>
         <SelectContent>
           <SelectItem value="all">
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <Globe className="h-4 w-4" />
               <span>Tutte le Entità</span>
             </div>
           </SelectItem>
           {resellers.length > 0 && (
             <SelectItem value="reseller">
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2">
                 <Building2 className="h-4 w-4" />
                 <span>Reseller ({resellers.length})</span>
               </div>
@@ -82,7 +82,7 @@ export function AdminEntityFilterSelector({
           )}
           {subResellers.length > 0 && (
             <SelectItem value="sub-reseller">
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2">
                 <Users className="h-4 w-4" />
                 <span>Sub-Reseller ({subResellers.length})</span>
               </div>
@@ -90,7 +90,7 @@ export function AdminEntityFilterSelector({
           )}
           {repairCenters.length > 0 && (
             <SelectItem value="repair-center">
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2">
                 <Store className="h-4 w-4" />
                 <span>Centri Riparazione ({repairCenters.length})</span>
               </div>
@@ -104,13 +104,13 @@ export function AdminEntityFilterSelector({
           value={selectedEntityId}
           onValueChange={setSelectedEntityId}
         >
-          <SelectTrigger className="w-[250px]" data-testid="select-admin-entity-id">
+          <SelectTrigger className="w-full sm:w-[250px]" data-testid="select-admin-entity-id">
             <SelectValue placeholder="Seleziona entità..." />
           </SelectTrigger>
           <SelectContent>
             {entityType === "reseller" && resellers.map(r => (
               <SelectItem key={r.id} value={r.id}>
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2">
                   <Building2 className="h-4 w-4 text-blue-500" />
                   <span>{r.name}</span>
                 </div>
@@ -119,7 +119,7 @@ export function AdminEntityFilterSelector({
             {entityType === "sub-reseller" && subResellers.map(sr => (
               <SelectItem key={sr.id} value={sr.id}>
                 <div className="flex flex-col">
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-2">
                     <Users className="h-4 w-4 text-purple-500" />
                     <span>{sr.name}</span>
                   </div>
@@ -134,7 +134,7 @@ export function AdminEntityFilterSelector({
             {entityType === "repair-center" && repairCenters.map(rc => (
               <SelectItem key={rc.id} value={rc.id}>
                 <div className="flex flex-col">
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-2">
                     <Store className="h-4 w-4 text-green-500" />
                     <span>{rc.name}</span>
                   </div>

@@ -212,7 +212,7 @@ export default function AdminSalesOrders() {
       <div className="grid gap-4 md:grid-cols-4">
         <Card>
           <CardContent className="p-4">
-            <div className="flex items-center gap-3">
+            <div className="flex flex-wrap items-center gap-3">
               <div className="p-2 bg-primary/10 rounded-lg">
                 <ShoppingBag className="h-5 w-5 text-primary" />
               </div>
@@ -225,7 +225,7 @@ export default function AdminSalesOrders() {
         </Card>
         <Card>
           <CardContent className="p-4">
-            <div className="flex items-center gap-3">
+            <div className="flex flex-wrap items-center gap-3">
               <div className="p-2 bg-yellow-100 dark:bg-yellow-900/30 rounded-lg">
                 <AlertCircle className="h-5 w-5 text-yellow-600" />
               </div>
@@ -238,7 +238,7 @@ export default function AdminSalesOrders() {
         </Card>
         <Card>
           <CardContent className="p-4">
-            <div className="flex items-center gap-3">
+            <div className="flex flex-wrap items-center gap-3">
               <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
                 <Package className="h-5 w-5 text-blue-600" />
               </div>
@@ -251,7 +251,7 @@ export default function AdminSalesOrders() {
         </Card>
         <Card>
           <CardContent className="p-4">
-            <div className="flex items-center gap-3">
+            <div className="flex flex-wrap items-center gap-3">
               <div className="p-2 bg-green-100 dark:bg-green-900/30 rounded-lg">
                 <TrendingUp className="h-5 w-5 text-green-600" />
               </div>
@@ -277,7 +277,7 @@ export default function AdminSalesOrders() {
         </div>
         
         <Select value={resellerFilter} onValueChange={setResellerFilter}>
-          <SelectTrigger className="w-[200px]" data-testid="select-reseller-filter">
+          <SelectTrigger className="w-full sm:w-[200px]" data-testid="select-reseller-filter">
             <Store className="mr-2 h-4 w-4" />
             <SelectValue placeholder="Tutti i reseller" />
           </SelectTrigger>
@@ -292,7 +292,7 @@ export default function AdminSalesOrders() {
         </Select>
         
         <Select value={statusFilter} onValueChange={setStatusFilter}>
-          <SelectTrigger className="w-[180px]" data-testid="select-status-filter">
+          <SelectTrigger className="w-full sm:w-[180px]" data-testid="select-status-filter">
             <SelectValue placeholder="Tutti gli stati" />
           </SelectTrigger>
           <SelectContent>

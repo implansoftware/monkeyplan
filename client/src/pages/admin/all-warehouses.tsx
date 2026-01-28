@@ -214,7 +214,7 @@ export default function AllWarehousesPage() {
           backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23000' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
         }} />
         <div className="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div className="flex items-center gap-3 mb-1">
+          <div className="flex flex-wrap items-center gap-3 mb-1">
             <div className="h-10 w-10 rounded-xl bg-primary text-primary-foreground flex items-center justify-center shadow-lg shadow-primary/25">
               <Building2 className="h-5 w-5" />
             </div>
@@ -231,7 +231,7 @@ export default function AllWarehousesPage() {
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card>
           <CardContent className="pt-6">
-            <div className="flex items-center gap-4">
+            <div className="flex flex-wrap items-center gap-4">
               <div className="p-3 bg-primary/10 rounded-lg">
                 <Warehouse className="h-6 w-6 text-primary" />
               </div>
@@ -244,7 +244,7 @@ export default function AllWarehousesPage() {
         </Card>
         <Card>
           <CardContent className="pt-6">
-            <div className="flex items-center gap-4">
+            <div className="flex flex-wrap items-center gap-4">
               <div className="p-3 bg-blue-500/10 rounded-lg">
                 <Package className="h-6 w-6 text-blue-500" />
               </div>
@@ -257,7 +257,7 @@ export default function AllWarehousesPage() {
         </Card>
         <Card>
           <CardContent className="pt-6">
-            <div className="flex items-center gap-4">
+            <div className="flex flex-wrap items-center gap-4">
               <div className="p-3 bg-green-500/10 rounded-lg">
                 <Boxes className="h-6 w-6 text-green-500" />
               </div>
@@ -270,7 +270,7 @@ export default function AllWarehousesPage() {
         </Card>
         <Card>
           <CardContent className="pt-6">
-            <div className="flex items-center gap-4">
+            <div className="flex flex-wrap items-center gap-4">
               <div className="p-3 bg-purple-500/10 rounded-lg">
                 <User className="h-6 w-6 text-purple-500" />
               </div>
@@ -288,7 +288,7 @@ export default function AllWarehousesPage() {
       <Card>
         <CardHeader>
           <div className="flex flex-col md:flex-row gap-4 justify-between">
-            <CardTitle className="flex items-center gap-2">
+            <CardTitle className="flex flex-wrap items-center gap-2">
               <Warehouse className="h-5 w-5" />
               Lista Magazzini
             </CardTitle>
@@ -351,7 +351,7 @@ export default function AllWarehousesPage() {
                       </Badge>
                     </TableCell>
                     <TableCell>
-                      <div className="flex items-center gap-2">
+                      <div className="flex flex-wrap items-center gap-2">
                         <User className="h-4 w-4 text-muted-foreground" />
                         <div>
                           <p className="text-sm font-medium">
@@ -365,7 +365,7 @@ export default function AllWarehousesPage() {
                     </TableCell>
                     <TableCell>
                       {wh.address ? (
-                        <div className="flex items-center gap-1 text-sm">
+                        <div className="flex flex-wrap items-center gap-1 text-sm">
                           <MapPin className="h-3 w-3 text-muted-foreground" />
                           {wh.address}
                         </div>
@@ -411,7 +411,7 @@ export default function AllWarehousesPage() {
       <Dialog open={detailDialogOpen} onOpenChange={(open) => { setDetailDialogOpen(open); if (!open) setStockSearchTerm(""); }}>
         <DialogContent className="max-w-4xl max-h-[85vh]">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
+            <DialogTitle className="flex flex-wrap items-center gap-2">
               <Warehouse className="h-5 w-5" />
               {selectedWarehouse?.name}
             </DialogTitle>
@@ -420,17 +420,17 @@ export default function AllWarehousesPage() {
           {selectedWarehouse && (
             <div className="space-y-4">
               <div className="flex flex-wrap gap-4 text-sm">
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2">
                   <Badge className={OWNER_TYPE_LABELS[selectedWarehouse.ownerType]?.color || ""}>
                     {OWNER_TYPE_LABELS[selectedWarehouse.ownerType]?.label}
                   </Badge>
                 </div>
-                <div className="flex items-center gap-1">
+                <div className="flex flex-wrap items-center gap-1">
                   <User className="h-4 w-4 text-muted-foreground" />
                   <span>{selectedWarehouse.owner?.fullName || selectedWarehouse.owner?.username}</span>
                 </div>
                 {selectedWarehouse.address && (
-                  <div className="flex items-center gap-1">
+                  <div className="flex flex-wrap items-center gap-1">
                     <MapPin className="h-4 w-4 text-muted-foreground" />
                     <span>{selectedWarehouse.address}</span>
                   </div>
@@ -619,7 +619,7 @@ export default function AllWarehousesPage() {
       <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
+            <DialogTitle className="flex flex-wrap items-center gap-2">
               <Pencil className="h-5 w-5" />
               Modifica Magazzino
             </DialogTitle>
@@ -678,7 +678,7 @@ export default function AllWarehousesPage() {
       <Dialog open={transferDialogOpen} onOpenChange={setTransferDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
+            <DialogTitle className="flex flex-wrap items-center gap-2">
               <ArrowLeftRight className="h-5 w-5" />
               Trasferisci Prodotto
             </DialogTitle>

@@ -143,7 +143,7 @@ export function SearchableProductCombobox({
                       className="cursor-pointer"
                       data-testid={`product-item-${product.id}`}
                     >
-                      <div className="flex items-center gap-2 w-full">
+                      <div className="flex flex-wrap items-center gap-2 w-full">
                         <div className="w-8 h-8 flex-shrink-0 rounded border overflow-hidden">
                           {product.imageUrl ? (
                             <img

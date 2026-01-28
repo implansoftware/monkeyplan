@@ -280,7 +280,7 @@ export default function AdminCustomers() {
         }} />
         
         <div className="relative z-10 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div className="flex items-center gap-4">
+          <div className="flex flex-wrap items-center gap-4">
             <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-white/20 backdrop-blur-sm border border-white/30">
               <Users className="h-7 w-7 text-white" />
             </div>
@@ -513,7 +513,7 @@ export default function AdminCustomers() {
       <Dialog open={!!editingCustomer} onOpenChange={(open) => !open && setEditingCustomer(null)}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-3 text-xl">
+            <DialogTitle className="flex flex-wrap items-center gap-3 text-xl">
               <div className="p-2 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600">
                 <Pencil className="h-5 w-5 text-white" />
               </div>

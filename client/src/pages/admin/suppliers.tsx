@@ -179,7 +179,7 @@ export default function AdminSuppliers() {
           backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23000' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
         }} />
         <div className="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div className="flex items-center gap-3 mb-1">
+          <div className="flex flex-wrap items-center gap-3 mb-1">
             <div className="h-10 w-10 rounded-xl bg-primary text-primary-foreground flex items-center justify-center shadow-lg shadow-primary/25">
               <Truck className="h-5 w-5" />
             </div>
@@ -376,19 +376,19 @@ export default function AdminSuppliers() {
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="email">
-                          <div className="flex items-center gap-2">
+                          <div className="flex flex-wrap items-center gap-2">
                             <Mail className="h-4 w-4" />
                             Email
                           </div>
                         </SelectItem>
                         <SelectItem value="api">
-                          <div className="flex items-center gap-2">
+                          <div className="flex flex-wrap items-center gap-2">
                             <Code className="h-4 w-4" />
                             API
                           </div>
                         </SelectItem>
                         <SelectItem value="whatsapp">
-                          <div className="flex items-center gap-2">
+                          <div className="flex flex-wrap items-center gap-2">
                             <MessageCircle className="h-4 w-4" />
                             WhatsApp
                           </div>
@@ -398,7 +398,7 @@ export default function AdminSuppliers() {
                   </div>
 
                   <div className="border rounded-lg p-4 space-y-4">
-                    <div className="flex items-center gap-2 text-sm font-medium">
+                    <div className="flex flex-wrap items-center gap-2 text-sm font-medium">
                       <Code className="h-4 w-4" />
                       Configurazione API (se canale = API)
                     </div>
@@ -432,7 +432,7 @@ export default function AdminSuppliers() {
                   </div>
 
                   <div className="border rounded-lg p-4 space-y-4">
-                    <div className="flex items-center gap-2 text-sm font-medium">
+                    <div className="flex flex-wrap items-center gap-2 text-sm font-medium">
                       <Mail className="h-4 w-4" />
                       Template Email
                     </div>
@@ -622,13 +622,13 @@ export default function AdminSuppliers() {
                       <TableCell>
                         <div className="text-sm space-y-1">
                           {supplier.email && (
-                            <div className="flex items-center gap-2">
+                            <div className="flex flex-wrap items-center gap-2">
                               <Mail className="h-3 w-3 text-muted-foreground" />
                               {supplier.email}
                             </div>
                           )}
                           {supplier.phone && (
-                            <div className="flex items-center gap-2">
+                            <div className="flex flex-wrap items-center gap-2">
                               <Phone className="h-3 w-3 text-muted-foreground" />
                               {supplier.phone}
                             </div>
@@ -642,7 +642,7 @@ export default function AdminSuppliers() {
                         </Badge>
                       </TableCell>
                       <TableCell>
-                        <div className="flex items-center gap-1 text-sm">
+                        <div className="flex flex-wrap items-center gap-1 text-sm">
                           <Truck className="h-4 w-4 text-muted-foreground" />
                           {supplier.deliveryDays || 3}gg
                         </div>

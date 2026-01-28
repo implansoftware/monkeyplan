@@ -147,7 +147,7 @@ export default function ResellerB2BCatalog() {
         <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl animate-pulse" />
         <div className="absolute bottom-0 left-0 w-48 h-48 bg-cyan-300/20 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
         <div className="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div className="flex items-center gap-4">
+          <div className="flex flex-wrap items-center gap-4">
             <div className="h-12 w-12 rounded-xl bg-white/20 backdrop-blur-sm border border-white/30 flex items-center justify-center">
               <Building2 className="h-6 w-6 text-white" />
             </div>
@@ -156,7 +156,7 @@ export default function ResellerB2BCatalog() {
               <p className="text-white/80 text-sm">Ordina prodotti direttamente dall'Admin (fornitore centrale)</p>
             </div>
           </div>
-          <div className="flex items-center gap-4">
+          <div className="flex flex-wrap items-center gap-4">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
@@ -227,7 +227,7 @@ export default function ResellerB2BCatalog() {
                   <div className="flex items-start justify-between gap-2">
                     <div className="flex-1 min-w-0">
                       <CardTitle className="text-base truncate">{item.product.name}</CardTitle>
-                      <CardDescription className="flex items-center gap-2 flex-wrap">
+                      <CardDescription className="flex flex-wrap items-center gap-2 flex-wrap">
                         {item.product.sku && <span>{item.product.sku}</span>}
                         {item.product.category && (
                           <Badge variant="outline" className="text-xs">{item.product.category}</Badge>
@@ -268,7 +268,7 @@ export default function ResellerB2BCatalog() {
                 <CardFooter>
                   {inCart ? (
                     <div className="flex items-center justify-between w-full gap-2">
-                      <div className="flex items-center gap-1">
+                      <div className="flex flex-wrap items-center gap-1">
                         <Button 
                           size="icon" 
                           variant="outline"
@@ -319,7 +319,7 @@ export default function ResellerB2BCatalog() {
       <Dialog open={checkoutOpen} onOpenChange={setCheckoutOpen}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
+            <DialogTitle className="flex flex-wrap items-center gap-2">
               <ShoppingCart className="h-5 w-5" />
               Riepilogo Ordine B2B
             </DialogTitle>
@@ -343,7 +343,7 @@ export default function ResellerB2BCatalog() {
                 {cart.map((item) => (
                   <TableRow key={item.productId} data-testid={`row-cart-${item.productId}`}>
                     <TableCell>
-                      <div className="flex items-center gap-3">
+                      <div className="flex flex-wrap items-center gap-3">
                         {item.product.imageUrl ? (
                           <img 
                             src={item.product.imageUrl} 

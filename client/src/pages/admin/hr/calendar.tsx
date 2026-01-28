@@ -177,7 +177,7 @@ export default function AdminCalendarPage() {
           <CardContent>
             <div className="flex flex-wrap gap-4">
               {Object.entries(eventTypeLabels).map(([key, label]) => (
-                <div key={key} className="flex items-center gap-2">
+                <div key={key} className="flex flex-wrap items-center gap-2">
                   <div className={`w-4 h-4 rounded ${eventTypeColors[key]}`} />
                   <span className="text-sm">{label}</span>
                 </div>

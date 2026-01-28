@@ -432,7 +432,7 @@ export default function ResellerTeam() {
         />
         <div className="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <div className="flex items-center gap-3 mb-1">
+            <div className="flex flex-wrap items-center gap-3 mb-1">
               <div className="h-12 w-12 rounded-2xl bg-white/20 backdrop-blur-sm border border-white/30 flex items-center justify-center">
                 <Users className="h-6 w-6 text-white" />
               </div>
@@ -470,7 +470,7 @@ export default function ResellerTeam() {
               <div>
                 <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1">Totale Membri</p>
                 <p className="text-3xl font-bold tabular-nums">{staffMembers.length}</p>
-                <div className="flex items-center gap-1 mt-1">
+                <div className="flex flex-wrap items-center gap-1 mt-1">
                   <TrendingUp className="h-3 w-3 text-emerald-500" />
                   <span className="text-xs text-emerald-600 dark:text-emerald-400 font-medium">Team attivo</span>
                 </div>
@@ -523,7 +523,7 @@ export default function ResellerTeam() {
       <Card className="overflow-hidden rounded-2xl">
         <CardContent className="py-4">
           <div className="flex flex-col sm:flex-row sm:items-center gap-4">
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <Label className="text-sm font-medium whitespace-nowrap">Visualizza team di:</Label>
             </div>
             <div className="flex flex-wrap items-center gap-3">
@@ -533,14 +533,14 @@ export default function ResellerTeam() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="own">
-                    <div className="flex items-center gap-2">
+                    <div className="flex flex-wrap items-center gap-2">
                       <Users className="h-4 w-4" />
                       <span>Il mio team</span>
                     </div>
                   </SelectItem>
                   {subResellers.length > 0 && (
                     <SelectItem value="sub-reseller">
-                      <div className="flex items-center gap-2">
+                      <div className="flex flex-wrap items-center gap-2">
                         <Store className="h-4 w-4" />
                         <span>Sub-Reseller</span>
                       </div>
@@ -548,7 +548,7 @@ export default function ResellerTeam() {
                   )}
                   {repairCenters.length > 0 && (
                     <SelectItem value="repair-center">
-                      <div className="flex items-center gap-2">
+                      <div className="flex flex-wrap items-center gap-2">
                         <Building2 className="h-4 w-4" />
                         <span>Centro Riparazione</span>
                       </div>
@@ -601,7 +601,7 @@ export default function ResellerTeam() {
       <Card className="overflow-hidden">
         <CardHeader className="pb-4 border-b bg-muted/30">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <div className="flex items-center gap-3">
+            <div className="flex flex-wrap items-center gap-3">
               <CardTitle className="text-base font-semibold">
                 {entityType === "own" ? "Membri del Team" : `Team: ${getSelectedEntityName()}`}
               </CardTitle>
@@ -609,9 +609,9 @@ export default function ResellerTeam() {
                 {filteredMembers.length} risultati
               </Badge>
             </div>
-            <div className="flex items-center gap-3">
+            <div className="flex flex-wrap items-center gap-3">
               {/* Filter Pills */}
-              <div className="flex items-center gap-1 p-1 bg-muted rounded-lg">
+              <div className="flex flex-wrap items-center gap-1 p-1 bg-muted rounded-lg">
                 <Button
                   variant={activeFilter === "all" ? "default" : "ghost"}
                   size="sm"
@@ -701,7 +701,7 @@ export default function ResellerTeam() {
                       <TableCell className="pl-6 relative">
                         <div className={`absolute left-0 top-2 bottom-2 w-1 rounded-r-full ${member.isActive ? 'bg-emerald-500' : 'bg-slate-300 dark:bg-slate-600'}`} />
                         <div>
-                          <div className="flex items-center gap-2">
+                          <div className="flex flex-wrap items-center gap-2">
                             <p className="font-medium" data-testid={`text-name-${member.id}`}>
                               {member.fullName}
                             </p>
@@ -1056,7 +1056,7 @@ export default function ResellerTeam() {
                   <CardHeader className="py-3 bg-muted/30">
                     <div className="flex items-center justify-between">
                       <div 
-                        className="flex items-center gap-3 cursor-pointer"
+                        className="flex flex-wrap items-center gap-3 cursor-pointer"
                         onClick={() => toggleAllForModule(mod.id, !allChecked)}
                       >
                         <Checkbox

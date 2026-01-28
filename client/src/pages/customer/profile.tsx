@@ -116,7 +116,7 @@ export default function CustomerProfile() {
         <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl animate-pulse" />
         <div className="absolute bottom-0 left-0 w-48 h-48 bg-cyan-300/20 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
         <div className="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div className="flex items-center gap-4">
+          <div className="flex flex-wrap items-center gap-4">
             <div className="h-12 w-12 rounded-xl bg-white/20 backdrop-blur-sm border border-white/30 flex items-center justify-center">
               <User className="h-6 w-6 text-white" />
             </div>
@@ -124,7 +124,7 @@ export default function CustomerProfile() {
               <h1 className="text-2xl font-bold text-white" data-testid="text-profile-title">
                 {displayUser?.fullName || displayUser?.username}
               </h1>
-              <div className="flex items-center gap-2 mt-1">
+              <div className="flex flex-wrap items-center gap-2 mt-1">
                 <Badge variant="secondary" className="bg-white/20 text-white border-white/30" data-testid="badge-role">Cliente</Badge>
                 {displayUser?.isActive ? (
                   <Badge variant="default" className="bg-green-400/80 text-white" data-testid="badge-status">Attivo</Badge>
@@ -140,7 +140,7 @@ export default function CustomerProfile() {
       <Card>
         <CardHeader className="flex flex-row items-center justify-between gap-4">
           <div>
-            <CardTitle className="flex items-center gap-2">
+            <CardTitle className="flex flex-wrap items-center gap-2">
               <User className="h-5 w-5" />
               Dati Personali
             </CardTitle>
@@ -220,21 +220,21 @@ export default function CustomerProfile() {
             </form>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="flex items-center gap-3">
+              <div className="flex flex-wrap items-center gap-3">
                 <User className="h-4 w-4 text-muted-foreground" />
                 <div>
                   <p className="text-sm text-muted-foreground">Nome</p>
                   <p className="font-medium" data-testid="text-fullname">{displayUser?.fullName || "-"}</p>
                 </div>
               </div>
-              <div className="flex items-center gap-3">
+              <div className="flex flex-wrap items-center gap-3">
                 <Mail className="h-4 w-4 text-muted-foreground" />
                 <div>
                   <p className="text-sm text-muted-foreground">Email</p>
                   <p className="font-medium" data-testid="text-email">{displayUser?.email || "-"}</p>
                 </div>
               </div>
-              <div className="flex items-center gap-3">
+              <div className="flex flex-wrap items-center gap-3">
                 <Phone className="h-4 w-4 text-muted-foreground" />
                 <div>
                   <p className="text-sm text-muted-foreground">Telefono</p>
@@ -249,7 +249,7 @@ export default function CustomerProfile() {
       <Card>
         <CardHeader className="flex flex-row items-center justify-between gap-4">
           <div>
-            <CardTitle className="flex items-center gap-2">
+            <CardTitle className="flex flex-wrap items-center gap-2">
               <Building2 className="h-5 w-5" />
               Dati Fiscali
             </CardTitle>
@@ -397,28 +397,28 @@ export default function CustomerProfile() {
             </form>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="flex items-center gap-3">
+              <div className="flex flex-wrap items-center gap-3">
                 <Building2 className="h-4 w-4 text-muted-foreground" />
                 <div>
                   <p className="text-sm text-muted-foreground">Ragione Sociale</p>
                   <p className="font-medium" data-testid="text-ragione-sociale">{displayUser?.ragioneSociale || "-"}</p>
                 </div>
               </div>
-              <div className="flex items-center gap-3">
+              <div className="flex flex-wrap items-center gap-3">
                 <FileText className="h-4 w-4 text-muted-foreground" />
                 <div>
                   <p className="text-sm text-muted-foreground">Partita IVA</p>
                   <p className="font-medium" data-testid="text-partita-iva">{displayUser?.partitaIva || "-"}</p>
                 </div>
               </div>
-              <div className="flex items-center gap-3">
+              <div className="flex flex-wrap items-center gap-3">
                 <FileText className="h-4 w-4 text-muted-foreground" />
                 <div>
                   <p className="text-sm text-muted-foreground">Codice Fiscale</p>
                   <p className="font-medium" data-testid="text-codice-fiscale">{displayUser?.codiceFiscale || "-"}</p>
                 </div>
               </div>
-              <div className="flex items-center gap-3">
+              <div className="flex flex-wrap items-center gap-3">
                 <MapPin className="h-4 w-4 text-muted-foreground" />
                 <div>
                   <p className="text-sm text-muted-foreground">Indirizzo</p>
@@ -429,14 +429,14 @@ export default function CustomerProfile() {
                   </p>
                 </div>
               </div>
-              <div className="flex items-center gap-3">
+              <div className="flex flex-wrap items-center gap-3">
                 <Mail className="h-4 w-4 text-muted-foreground" />
                 <div>
                   <p className="text-sm text-muted-foreground">PEC</p>
                   <p className="font-medium" data-testid="text-pec">{displayUser?.pec || "-"}</p>
                 </div>
               </div>
-              <div className="flex items-center gap-3">
+              <div className="flex flex-wrap items-center gap-3">
                 <FileText className="h-4 w-4 text-muted-foreground" />
                 <div>
                   <p className="text-sm text-muted-foreground">Codice Univoco SDI</p>

@@ -210,7 +210,7 @@ export default function IncomingTransferRequestsPage() {
         />
         
         <div className="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div className="flex items-center gap-3 mb-1">
+          <div className="flex flex-wrap items-center gap-3 mb-1">
             <div className="h-12 w-12 rounded-2xl bg-white/20 backdrop-blur-sm border border-white/30 flex items-center justify-center">
               <Inbox className="h-6 w-6 text-white" />
             </div>
@@ -219,7 +219,7 @@ export default function IncomingTransferRequestsPage() {
               <p className="text-sm text-white/80">Gestisci le richieste dai centri riparazione e sub-reseller</p>
             </div>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-3">
             {pendingCount > 0 && (
               <Badge variant="outline" className="bg-white/20 border-white/30 text-white">
                 {pendingCount} in attesa
@@ -234,7 +234,7 @@ export default function IncomingTransferRequestsPage() {
         </div>
       </div>
 
-      <div className="flex items-center gap-4 flex-wrap">
+      <div className="flex flex-wrap items-center gap-4 flex-wrap">
         <div className="relative flex-1 min-w-[200px]">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
@@ -246,7 +246,7 @@ export default function IncomingTransferRequestsPage() {
           />
         </div>
         <Select value={statusFilter} onValueChange={setStatusFilter}>
-          <SelectTrigger className="w-[180px]" data-testid="select-status-filter">
+          <SelectTrigger className="w-full sm:w-[180px]" data-testid="select-status-filter">
             <SelectValue placeholder="Filtra per stato" />
           </SelectTrigger>
           <SelectContent>
@@ -257,7 +257,7 @@ export default function IncomingTransferRequestsPage() {
           </SelectContent>
         </Select>
         <Select value={typeFilter} onValueChange={setTypeFilter}>
-          <SelectTrigger className="w-[180px]" data-testid="select-type-filter">
+          <SelectTrigger className="w-full sm:w-[180px]" data-testid="select-type-filter">
             <SelectValue placeholder="Filtra per tipo" />
           </SelectTrigger>
           <SelectContent>
@@ -284,7 +284,7 @@ export default function IncomingTransferRequestsPage() {
               <Card key={request.id} className="rounded-2xl" data-testid={`card-request-${request.id}`}>
                 <CardHeader className="pb-2">
                   <div className="flex items-center justify-between flex-wrap gap-2">
-                    <div className="flex items-center gap-3">
+                    <div className="flex flex-wrap items-center gap-3">
                       <CardTitle className="text-lg">{request.requestNumber}</CardTitle>
                       <Badge className={statusConfig[request.status]?.color}>
                         <StatusIcon className="h-3 w-3 mr-1" />
@@ -295,7 +295,7 @@ export default function IncomingTransferRequestsPage() {
                         {TypeInfo?.label}
                       </Badge>
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex flex-wrap items-center gap-2">
                       {request.status === 'pending' && (
                         <Button
                           size="sm"
@@ -421,7 +421,7 @@ export default function IncomingTransferRequestsPage() {
                       {selectedRequest.items.map((item) => (
                         <tr key={item.id} className="border-t">
                           <td className="p-2">
-                            <div className="flex items-center gap-2">
+                            <div className="flex flex-wrap items-center gap-2">
                               <div className="w-10 h-10 rounded bg-muted flex items-center justify-center overflow-hidden flex-shrink-0">
                                 {item.product?.imageUrl ? (
                                   <img 
@@ -471,7 +471,7 @@ export default function IncomingTransferRequestsPage() {
                 <Label>Quantità Approvate:</Label>
                 <div className="mt-2 space-y-2">
                   {selectedRequest.items.map((item, index) => (
-                    <div key={item.id} className="flex items-center gap-3 p-3 border rounded-md">
+                    <div key={item.id} className="flex flex-wrap items-center gap-3 p-3 border rounded-md">
                       <div className="w-10 h-10 rounded bg-muted flex items-center justify-center overflow-hidden flex-shrink-0">
                         {item.product?.imageUrl ? (
                           <img 
@@ -610,7 +610,7 @@ export default function IncomingTransferRequestsPage() {
                 </p>
                 <div className="space-y-2 max-h-60 overflow-y-auto">
                   {selectedRequest.items.map((item, index) => (
-                    <div key={item.id} className="flex items-center gap-3 p-3 border rounded-md">
+                    <div key={item.id} className="flex flex-wrap items-center gap-3 p-3 border rounded-md">
                       <div className="w-10 h-10 rounded bg-muted flex items-center justify-center overflow-hidden flex-shrink-0">
                         {item.product?.imageUrl ? (
                           <img 

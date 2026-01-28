@@ -136,7 +136,7 @@ export default function ResellerCustomerDetail() {
           </Button>
         </Link>
         <div className="flex-1">
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-3">
             <h1 className="text-2xl font-semibold tracking-tight" data-testid="text-customer-name">
               {customer.fullName}
             </h1>
@@ -156,7 +156,7 @@ export default function ResellerCustomerDetail() {
       <div className="grid grid-cols-1 sm:grid-cols-2 sm:grid-cols-4 gap-4">
         <Card>
           <CardContent className="pt-4 pb-3">
-            <div className="flex items-center gap-3">
+            <div className="flex flex-wrap items-center gap-3">
               <div className="h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center">
                 <Wrench className="h-4 w-4 text-primary" />
               </div>
@@ -169,7 +169,7 @@ export default function ResellerCustomerDetail() {
         </Card>
         <Card>
           <CardContent className="pt-4 pb-3">
-            <div className="flex items-center gap-3">
+            <div className="flex flex-wrap items-center gap-3">
               <div className="h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center">
                 <ShoppingCart className="h-4 w-4 text-primary" />
               </div>
@@ -182,7 +182,7 @@ export default function ResellerCustomerDetail() {
         </Card>
         <Card>
           <CardContent className="pt-4 pb-3">
-            <div className="flex items-center gap-3">
+            <div className="flex flex-wrap items-center gap-3">
               <div className="h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center">
                 <Zap className="h-4 w-4 text-primary" />
               </div>
@@ -195,7 +195,7 @@ export default function ResellerCustomerDetail() {
         </Card>
         <Card>
           <CardContent className="pt-4 pb-3">
-            <div className="flex items-center gap-3">
+            <div className="flex flex-wrap items-center gap-3">
               <div className="h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center">
                 <FileText className="h-4 w-4 text-primary" />
               </div>
@@ -217,18 +217,18 @@ export default function ResellerCustomerDetail() {
             <CardTitle className="text-sm font-medium">Contatti</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
-            <div className="flex items-center gap-3">
+            <div className="flex flex-wrap items-center gap-3">
               <Mail className="h-4 w-4 text-muted-foreground shrink-0" />
               <span className="text-sm" data-testid="text-customer-email">{customer.email}</span>
             </div>
             {customer.phone && (
-              <div className="flex items-center gap-3">
+              <div className="flex flex-wrap items-center gap-3">
                 <Phone className="h-4 w-4 text-muted-foreground shrink-0" />
                 <span className="text-sm" data-testid="text-customer-phone">{customer.phone}</span>
               </div>
             )}
             {subReseller && (
-              <div className="flex items-center gap-3 pt-2 border-t">
+              <div className="flex flex-wrap items-center gap-3 pt-2 border-t">
                 <UserCheck className="h-4 w-4 text-muted-foreground shrink-0" />
                 <div>
                   <p className="text-xs text-muted-foreground">Sub-Reseller</p>
@@ -589,7 +589,7 @@ function CustomerEditForm({
     <form onSubmit={handleSubmit} className="space-y-6">
       {/* Account Section */}
       <div className="space-y-4">
-        <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+        <div className="flex flex-wrap items-center gap-2 text-sm font-medium text-muted-foreground">
           <UserIcon className="h-4 w-4" />
           Dati Account
         </div>
@@ -639,7 +639,7 @@ function CustomerEditForm({
           </div>
         </div>
         <div className="space-y-2">
-          <Label htmlFor="password" className="flex items-center gap-2">
+          <Label htmlFor="password" className="flex flex-wrap items-center gap-2">
             <Key className="h-3 w-3" />
             Nuova Password (lascia vuoto per non cambiare)
           </Label>
@@ -665,12 +665,12 @@ function CustomerEditForm({
 
       {/* Billing Section */}
       <div className="space-y-4 pt-4 border-t">
-        <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+        <div className="flex flex-wrap items-center gap-2 text-sm font-medium text-muted-foreground">
           <CreditCard className="h-4 w-4" />
           Dati Fatturazione
         </div>
         <div className="flex gap-4">
-          <Label className="flex items-center gap-2 cursor-pointer">
+          <Label className="flex flex-wrap items-center gap-2 cursor-pointer">
             <input
               type="radio"
               name="customerType"
@@ -680,7 +680,7 @@ function CustomerEditForm({
             />
             Privato
           </Label>
-          <Label className="flex items-center gap-2 cursor-pointer">
+          <Label className="flex flex-wrap items-center gap-2 cursor-pointer">
             <input
               type="radio"
               name="customerType"
@@ -761,7 +761,7 @@ function CustomerEditForm({
 
       {/* Address Section */}
       <div className="space-y-4 pt-4 border-t">
-        <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+        <div className="flex flex-wrap items-center gap-2 text-sm font-medium text-muted-foreground">
           <MapPin className="h-4 w-4" />
           Indirizzo
         </div>

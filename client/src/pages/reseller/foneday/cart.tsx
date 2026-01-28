@@ -219,7 +219,7 @@ export default function FonedayCartPage() {
   return (
     <div className="p-6 space-y-6">
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
           <ShoppingCart className="h-8 w-8" />
           <div>
             <h1 className="text-2xl font-bold">Carrello Foneday</h1>
@@ -278,8 +278,8 @@ export default function FonedayCartPage() {
                       )}
                       <p className="text-sm font-medium mt-1">{formatPrice(item.price)}</p>
                     </div>
-                    <div className="flex items-center gap-4">
-                      <div className="flex items-center gap-2">
+                    <div className="flex flex-wrap items-center gap-4">
+                      <div className="flex flex-wrap items-center gap-2">
                         <Button
                           variant="outline"
                           size="icon"

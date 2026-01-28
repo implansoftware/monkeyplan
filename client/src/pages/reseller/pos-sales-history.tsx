@@ -168,7 +168,7 @@ export default function ResellerPosSalesHistory() {
         <div className="absolute top-1/2 left-1/3 w-48 h-48 rounded-full bg-emerald-300/20 blur-3xl animate-pulse" style={{ animationDelay: '2s' }} />
         
         <div className="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-3">
             <div className="h-12 w-12 rounded-2xl bg-white/20 backdrop-blur-sm border border-white/30 flex items-center justify-center">
               <History className="h-6 w-6 text-white" />
             </div>
@@ -204,7 +204,7 @@ export default function ResellerPosSalesHistory() {
 
       <Card className="rounded-2xl">
         <CardHeader className="bg-gradient-to-r from-emerald-50 to-teal-50 dark:from-emerald-950/20 dark:to-teal-950/20 rounded-t-2xl">
-          <CardTitle className="flex items-center gap-2 text-lg">
+          <CardTitle className="flex flex-wrap items-center gap-2 text-lg">
             <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center">
               <Search className="h-4 w-4 text-white" />
             </div>
@@ -223,7 +223,7 @@ export default function ResellerPosSalesHistory() {
               />
             </div>
             <Select value={repairCenterFilter} onValueChange={setRepairCenterFilter}>
-              <SelectTrigger className="w-[200px]" data-testid="select-repair-center">
+              <SelectTrigger className="w-full sm:w-[200px]" data-testid="select-repair-center">
                 <Building2 className="w-4 h-4 mr-2" />
                 <SelectValue placeholder="Centro Riparazione" />
               </SelectTrigger>
@@ -235,7 +235,7 @@ export default function ResellerPosSalesHistory() {
               </SelectContent>
             </Select>
             <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-[180px]" data-testid="select-status">
+              <SelectTrigger className="w-full sm:w-[180px]" data-testid="select-status">
                 <SelectValue placeholder="Stato" />
               </SelectTrigger>
               <SelectContent>
@@ -251,7 +251,7 @@ export default function ResellerPosSalesHistory() {
 
       <Card className="rounded-2xl">
         <CardHeader className="bg-gradient-to-r from-teal-50 to-cyan-50 dark:from-teal-950/20 dark:to-cyan-950/20 rounded-t-2xl">
-          <CardTitle className="flex items-center gap-2 text-lg">
+          <CardTitle className="flex flex-wrap items-center gap-2 text-lg">
             <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-teal-500 to-cyan-500 flex items-center justify-center">
               <Receipt className="h-4 w-4 text-white" />
             </div>
@@ -292,7 +292,7 @@ export default function ResellerPosSalesHistory() {
                       <TableCell>{tx.registerName || "-"}</TableCell>
                       <TableCell>{format(new Date(tx.createdAt), "dd/MM/yyyy HH:mm", { locale: it })}</TableCell>
                       <TableCell>
-                        <div className="flex items-center gap-1">
+                        <div className="flex flex-wrap items-center gap-1">
                           {getPaymentMethodIcon(tx.paymentMethod)}
                           {getPaymentMethodLabel(tx.paymentMethod)}
                         </div>

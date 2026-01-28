@@ -786,7 +786,7 @@ export default function AdminAccessoryCatalog() {
           backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23000' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
         }} />
         <div className="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div className="flex items-center gap-3 mb-1">
+          <div className="flex flex-wrap items-center gap-3 mb-1">
             <div className="h-10 w-10 rounded-xl bg-primary text-primary-foreground flex items-center justify-center shadow-lg shadow-primary/25">
               <ShoppingBag className="h-5 w-5" />
             </div>
@@ -805,7 +805,7 @@ export default function AdminAccessoryCatalog() {
       <Card>
         <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-4">
           <CardTitle>Lista Accessori ({filteredAccessories.length})</CardTitle>
-          <div className="flex items-center gap-2 flex-wrap">
+          <div className="flex flex-wrap items-center gap-2 flex-wrap">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
@@ -891,7 +891,7 @@ export default function AdminAccessoryCatalog() {
                         {assignmentsByProductId[accessory.id]?.length > 0 ? (
                           <div className="flex flex-col gap-1">
                             {assignmentsByProductId[accessory.id].map((assignment) => (
-                              <div key={assignment.id} className="flex items-center gap-1 text-sm">
+                              <div key={assignment.id} className="flex flex-wrap items-center gap-1 text-sm">
                                 <Store className="h-3 w-3 text-muted-foreground" />
                                 <span>{assignment.reseller?.fullName || assignment.reseller?.username}</span>
                                 <span className="text-xs text-muted-foreground">€{(assignment.priceCents / 100).toFixed(2)}</span>
@@ -946,7 +946,7 @@ export default function AdminAccessoryCatalog() {
                         </div>
                       </TableCell>
                       <TableCell>
-                        <div className="flex items-center gap-1">
+                        <div className="flex flex-wrap items-center gap-1">
                           <Button
                             variant="ghost"
                             size="icon"
@@ -1096,7 +1096,7 @@ export default function AdminAccessoryCatalog() {
               </div>
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <Checkbox
                 id="isUniversal"
                 checked={formData.isUniversal}
@@ -1149,7 +1149,7 @@ export default function AdminAccessoryCatalog() {
                         
                         return (
                           <div key={brand.id} className="border rounded-md">
-                            <div className="flex items-center gap-2 p-2 hover-elevate">
+                            <div className="flex flex-wrap items-center gap-2 p-2 hover-elevate">
                               <Checkbox
                                 checked={hasAnyCompatibility}
                                 onCheckedChange={() => toggleBrandCompatibility(brand.id)}
@@ -1158,7 +1158,7 @@ export default function AdminAccessoryCatalog() {
                               <button
                                 type="button"
                                 onClick={() => toggleBrandExpansion(brand.id)}
-                                className="flex items-center gap-1 flex-1 text-left"
+                                className="flex flex-wrap items-center gap-1 flex-1 text-left"
                               >
                                 <ChevronDown className={`h-4 w-4 transition-transform ${isExpanded ? 'rotate-0' : '-rotate-90'}`} />
                                 <span className="font-medium">{brand.name}</span>
@@ -1182,7 +1182,7 @@ export default function AdminAccessoryCatalog() {
                                 {models.map((model) => {
                                   const isModelSelected = deviceCompatibilities.some(c => c.deviceBrandId === brand.id && c.deviceModelId === model.id);
                                   return (
-                                    <div key={model.id} className="flex items-center gap-2 p-1 hover-elevate rounded">
+                                    <div key={model.id} className="flex flex-wrap items-center gap-2 p-1 hover-elevate rounded">
                                       <Checkbox
                                         checked={isModelSelected || hasBrandOnlyCompatibility}
                                         disabled={hasBrandOnlyCompatibility}
@@ -1281,7 +1281,7 @@ export default function AdminAccessoryCatalog() {
 
             <div className="space-y-3 p-3 bg-muted/50 rounded-lg">
               <div className="flex items-center justify-between">
-                <Label className="flex items-center gap-2">
+                <Label className="flex flex-wrap items-center gap-2">
                   <Warehouse className="h-4 w-4" />
                   {editingAccessory ? "Gestione stock" : "Quantità iniziali per magazzino"}
                 </Label>
@@ -1377,7 +1377,7 @@ export default function AdminAccessoryCatalog() {
                               {updateStockMutation.isPending ? "..." : "Salva"}
                             </Button>
                           </div>
-                          <div className="flex items-center gap-3">
+                          <div className="flex flex-wrap items-center gap-3">
                             <div className="flex-1">
                               <Label className="text-xs text-muted-foreground">Quantità</Label>
                               <Input
@@ -1416,7 +1416,7 @@ export default function AdminAccessoryCatalog() {
                       return (
                         <div key={stock.warehouseId} className="p-3 border rounded-md space-y-2">
                           <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-2">
+                            <div className="flex flex-wrap items-center gap-2">
                               <Warehouse className="h-4 w-4 text-muted-foreground" />
                               <span className="font-medium">{wh?.name || "Magazzino"}</span>
                               {wh && (
@@ -1435,7 +1435,7 @@ export default function AdminAccessoryCatalog() {
                               <X className="h-4 w-4" />
                             </Button>
                           </div>
-                          <div className="flex items-center gap-3">
+                          <div className="flex flex-wrap items-center gap-3">
                             <div className="flex-1">
                               <Label className="text-xs text-muted-foreground">Quantità</Label>
                               <Input
@@ -1683,7 +1683,7 @@ export default function AdminAccessoryCatalog() {
       <Dialog open={assignDialogOpen} onOpenChange={(open) => { setAssignDialogOpen(open); if (!open) { setSelectedResellerId(""); setAssignPrice(""); setAssignCostPrice(""); } }}>
         <DialogContent className="max-w-lg">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
+            <DialogTitle className="flex flex-wrap items-center gap-2">
               <UserPlus className="h-5 w-5" />
               Assegna a Rivenditore
             </DialogTitle>

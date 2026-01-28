@@ -100,7 +100,7 @@ export default function ResellerRemoteRequests() {
         <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 animate-pulse" />
         <div className="absolute bottom-0 left-0 w-48 h-48 bg-cyan-300/20 rounded-full blur-3xl translate-y-1/2 -translate-x-1/2 animate-pulse" style={{ animationDelay: '1s' }} />
         <div className="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div className="flex items-center gap-3 mb-1">
+          <div className="flex flex-wrap items-center gap-3 mb-1">
             <div className="h-12 w-12 rounded-xl bg-white/20 backdrop-blur-sm border border-white/30 flex items-center justify-center">
               <Truck className="h-6 w-6 text-white" />
             </div>
@@ -253,13 +253,13 @@ export default function ResellerRemoteRequests() {
                   <Card key={request.id} className="rounded-2xl" data-testid={`card-assigned-${request.id}`}>
                     <CardHeader className="py-4">
                       <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
+                        <div className="flex flex-wrap items-center gap-3">
                           <CardTitle className="text-base">{request.requestNumber}</CardTitle>
                           <Badge {...statusLabels[request.status]}>
                             {statusLabels[request.status]?.label}
                           </Badge>
                         </div>
-                        <div className="flex items-center gap-4 text-sm">
+                        <div className="flex flex-wrap items-center gap-4 text-sm">
                           <span>{request.brand} {request.model}</span>
                           <span className="text-muted-foreground">
                             <Building2 className="h-4 w-4 inline mr-1" />
@@ -285,13 +285,13 @@ export default function ResellerRemoteRequests() {
                   <Card key={request.id} className="rounded-2xl" data-testid={`card-active-${request.id}`}>
                     <CardHeader className="py-4">
                       <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
+                        <div className="flex flex-wrap items-center gap-3">
                           <CardTitle className="text-base">{request.requestNumber}</CardTitle>
                           <Badge {...statusLabels[request.status]}>
                             {statusLabels[request.status]?.label}
                           </Badge>
                         </div>
-                        <div className="flex items-center gap-4 text-sm">
+                        <div className="flex flex-wrap items-center gap-4 text-sm">
                           <span>{request.brand} {request.model}</span>
                           <span className="text-muted-foreground">
                             <Building2 className="h-4 w-4 inline mr-1" />
@@ -317,7 +317,7 @@ export default function ResellerRemoteRequests() {
                   <Card key={request.id} className="rounded-2xl opacity-75" data-testid={`card-completed-${request.id}`}>
                     <CardHeader className="py-4">
                       <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
+                        <div className="flex flex-wrap items-center gap-3">
                           <CardTitle className="text-base">{request.requestNumber}</CardTitle>
                           <Badge {...statusLabels[request.status]}>
                             {statusLabels[request.status]?.label}

@@ -180,7 +180,7 @@ export default function ResellerUtilityCommissions() {
         <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
         <div className="absolute bottom-0 left-0 w-48 h-48 bg-white/10 rounded-full blur-3xl translate-y-1/2 -translate-x-1/2" />
         <div className="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-3">
             <Link href="/reseller/utility">
               <Button variant="ghost" size="icon" className="text-white/80" data-testid="button-back">
                 <ArrowLeft className="h-4 w-4" />
@@ -242,8 +242,8 @@ export default function ResellerUtilityCommissions() {
 
       <Card className="rounded-2xl">
         <CardHeader className="flex flex-row items-center justify-between gap-2 flex-wrap">
-          <div className="flex items-center gap-2 flex-wrap">
-            <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2 flex-wrap">
+            <div className="flex flex-wrap items-center gap-2">
               <Search className="h-4 w-4 text-muted-foreground" />
               <Input
                 placeholder="Cerca per pratica..."
@@ -313,7 +313,7 @@ export default function ResellerUtilityCommissions() {
                         {practice?.practiceNumber || commission.practiceId.slice(0, 8)}
                       </TableCell>
                       <TableCell>
-                        <div className="flex items-center gap-1">
+                        <div className="flex flex-wrap items-center gap-1">
                           <Calendar className="h-3 w-3 text-muted-foreground" />
                           {months.find(m => m.value === commission.periodMonth)?.label} {commission.periodYear}
                         </div>

@@ -152,7 +152,7 @@ export default function SibillSettingsPage() {
   return (
     <div className="p-6 space-y-6">
       <div className="flex items-center justify-between flex-wrap gap-4">
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
           <div className="h-12 w-24 flex items-center justify-center bg-white dark:bg-gray-100 rounded-lg p-1">
             <img src={sibillLogo} alt="Sibill" className="max-h-8 max-w-full object-contain" />
           </div>
@@ -177,13 +177,13 @@ export default function SibillSettingsPage() {
             <CardHeader>
               <div className="flex items-center justify-between flex-wrap gap-4">
                 <div>
-                  <CardTitle className="flex items-center gap-2">
+                  <CardTitle className="flex flex-wrap items-center gap-2">
                     <Key className="h-5 w-5" />
                     Credenziali Configurate
                   </CardTitle>
                   <CardDescription>Le tue credenziali Sibill sono salvate</CardDescription>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2">
                   <Badge variant="outline">
                     {credential.environment === "production" ? "Produzione" : "Sviluppo"}
                   </Badge>
@@ -197,7 +197,7 @@ export default function SibillSettingsPage() {
               <div className="grid gap-4 md:grid-cols-2">
                 <div className="space-y-2">
                   <Label>Token API</Label>
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-2">
                     <Input
                       type={showToken ? "text" : "password"}
                       value={credential.apiKey}
@@ -216,7 +216,7 @@ export default function SibillSettingsPage() {
                 </div>
                 <div className="space-y-2">
                   <Label>Ultimo Test</Label>
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-2">
                     {credential.testStatus === "success" ? (
                       <CheckCircle className="h-4 w-4 text-green-500" />
                     ) : credential.testStatus === "error" ? (
@@ -295,7 +295,7 @@ export default function SibillSettingsPage() {
           {companies && companies.length > 0 && (
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
+                <CardTitle className="flex flex-wrap items-center gap-2">
                   <Building2 className="h-5 w-5" />
                   Aziende Collegate
                 </CardTitle>
@@ -329,7 +329,7 @@ export default function SibillSettingsPage() {
       ) : (
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
+            <CardTitle className="flex flex-wrap items-center gap-2">
               <Key className="h-5 w-5" />
               Configura Sibill
             </CardTitle>

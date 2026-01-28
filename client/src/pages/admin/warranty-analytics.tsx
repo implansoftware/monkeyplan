@@ -43,7 +43,7 @@ export default function AdminWarrantyAnalytics() {
 
   return (
     <div className="container mx-auto p-6 space-y-6">
-      <div className="flex items-center gap-3">
+      <div className="flex flex-wrap items-center gap-3">
         <BarChart3 className="h-8 w-8 text-primary" />
         <h1 className="text-2xl font-bold">Analytics Garanzie</h1>
       </div>
@@ -136,7 +136,7 @@ export default function AdminWarrantyAnalytics() {
               <div className="space-y-4">
                 {stats.topProducts.map((product, index) => (
                   <div key={product.productName} className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
+                    <div className="flex flex-wrap items-center gap-3">
                       <Badge variant="outline" className="w-6 h-6 flex items-center justify-center p-0">
                         {index + 1}
                       </Badge>

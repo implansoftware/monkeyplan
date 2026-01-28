@@ -184,7 +184,7 @@ export default function ResellerMarketplace() {
         <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl animate-pulse" />
         <div className="absolute bottom-0 left-0 w-48 h-48 bg-cyan-300/20 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
         <div className="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div className="flex items-center gap-3 mb-1">
+          <div className="flex flex-wrap items-center gap-3 mb-1">
             <div className="h-12 w-12 rounded-xl bg-white/20 backdrop-blur-sm border border-white/30 flex items-center justify-center">
               <Store className="h-6 w-6 text-white" />
             </div>
@@ -193,7 +193,7 @@ export default function ResellerMarketplace() {
               <p className="text-sm text-white/80">Acquista prodotti pubblicati da altri rivenditori della rete</p>
             </div>
           </div>
-          <div className="flex items-center gap-4">
+          <div className="flex flex-wrap items-center gap-4">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
@@ -261,7 +261,7 @@ export default function ResellerMarketplace() {
         <div className="space-y-8">
           {Object.entries(groupedBySeller).map(([sellerId, { sellerName, products }]) => (
             <div key={sellerId}>
-              <div className="flex items-center gap-2 mb-4">
+              <div className="flex flex-wrap items-center gap-2 mb-4">
                 <Users className="h-5 w-5 text-muted-foreground" />
                 <h2 className="text-lg font-semibold">{sellerName}</h2>
                 <Badge variant="outline">{products.length} prodotti</Badge>
@@ -376,7 +376,7 @@ export default function ResellerMarketplace() {
                     )}
                     <p className="text-sm text-muted-foreground">{formatPrice(item.unitPrice)} / pz</p>
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-2">
                     <Button 
                       size="icon" 
                       variant="outline"

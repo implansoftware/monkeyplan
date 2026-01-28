@@ -606,7 +606,7 @@ export function RepairOrderDetailDrawer({
                   {/* Next Action - The Main CTA */}
                   {canManageWorkflow && (
                   <div className="space-y-3">
-                    <div className="flex items-center gap-2">
+                    <div className="flex flex-wrap items-center gap-2">
                       <AlertCircle className="h-4 w-4 text-primary" />
                       <span className="font-semibold text-sm">PROSSIMO PASSO</span>
                     </div>
@@ -840,18 +840,18 @@ export function RepairOrderDetailDrawer({
                       <div className="bg-green-500/10 border border-green-500/20 rounded-lg p-4 space-y-3">
                         {appointment && appointment.status !== 'cancelled' ? (
                           <>
-                            <div className="flex items-center gap-2 text-green-600 dark:text-green-400">
+                            <div className="flex flex-wrap items-center gap-2 text-green-600 dark:text-green-400">
                               <CalendarCheck className="h-4 w-4" />
                               <span className="font-medium text-sm">Appuntamento Prenotato</span>
                             </div>
                             <div className="bg-white dark:bg-gray-800 rounded-md p-3 space-y-2">
-                              <div className="flex items-center gap-2 text-sm">
+                              <div className="flex flex-wrap items-center gap-2 text-sm">
                                 <Calendar className="h-4 w-4 text-muted-foreground" />
                                 <span className="font-medium">
                                   {format(new Date(appointment.date), "EEEE d MMMM yyyy", { locale: it })}
                                 </span>
                               </div>
-                              <div className="flex items-center gap-2 text-sm">
+                              <div className="flex flex-wrap items-center gap-2 text-sm">
                                 <Clock className="h-4 w-4 text-muted-foreground" />
                                 <span>Ore {appointment.startTime} - {appointment.endTime}</span>
                               </div>
@@ -1011,7 +1011,7 @@ export function RepairOrderDetailDrawer({
 
             {/* Device Info */}
             <div className="space-y-3">
-              <div className="flex items-center gap-2 font-medium">
+              <div className="flex flex-wrap items-center gap-2 font-medium">
                 <Wrench className="h-4 w-4" />
                 Dispositivo
               </div>
@@ -1080,7 +1080,7 @@ export function RepairOrderDetailDrawer({
             {customer && (
               <>
                 <div className="space-y-3">
-                  <div className="flex items-center gap-2 font-medium">
+                  <div className="flex flex-wrap items-center gap-2 font-medium">
                     <User className="h-4 w-4" />
                     Cliente
                   </div>
@@ -1135,7 +1135,7 @@ export function RepairOrderDetailDrawer({
             {(user?.role === 'reseller' || user?.role === 'admin') && (
               <>
                 <div className="space-y-3">
-                  <div className="flex items-center gap-2 font-medium">
+                  <div className="flex flex-wrap items-center gap-2 font-medium">
                     <Building2 className="h-4 w-4" />
                     Centro di Riparazione
                   </div>
@@ -1161,7 +1161,7 @@ export function RepairOrderDetailDrawer({
                       </SelectContent>
                     </Select>
                     {updateRepairCenterMutation.isPending && (
-                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
                         <Loader2 className="h-3 w-3 animate-spin" />
                         Aggiornamento in corso...
                       </div>
@@ -1176,7 +1176,7 @@ export function RepairOrderDetailDrawer({
             {acceptance && (
               <>
                 <div className="space-y-3">
-                  <div className="flex items-center gap-2 font-medium">
+                  <div className="flex flex-wrap items-center gap-2 font-medium">
                     <ClipboardCheck className="h-4 w-4" />
                     Dati Accettazione
                   </div>
@@ -1266,7 +1266,7 @@ export function RepairOrderDetailDrawer({
               <>
                 <Separator />
                 <div className="space-y-3">
-                  <div className="flex items-center gap-2 font-medium">
+                  <div className="flex flex-wrap items-center gap-2 font-medium">
                     <Receipt className="h-4 w-4" />
                     Preventivo
                   </div>
@@ -1368,7 +1368,7 @@ export function RepairOrderDetailDrawer({
               <>
                 <Separator />
                 <div className="space-y-3">
-                  <div className="flex items-center gap-2 font-medium">
+                  <div className="flex flex-wrap items-center gap-2 font-medium">
                     <FileText className="h-4 w-4" />
                     Note
                   </div>
@@ -1383,7 +1383,7 @@ export function RepairOrderDetailDrawer({
 
             {/* Dates */}
             <div className="space-y-3">
-              <div className="flex items-center gap-2 font-medium">
+              <div className="flex flex-wrap items-center gap-2 font-medium">
                 <Calendar className="h-4 w-4" />
                 Date
               </div>
@@ -1409,13 +1409,13 @@ export function RepairOrderDetailDrawer({
             {(diagnosis?.outcome === 'irriparabile' || diagnosis?.outcome === 'non_conveniente' || dataRecoveryJob) && (
               <>
                 <div className="space-y-3">
-                  <div className="flex items-center gap-2 font-medium">
+                  <div className="flex flex-wrap items-center gap-2 font-medium">
                     <HardDrive className="h-4 w-4 text-blue-500" />
                     Recupero Dati
                   </div>
                   
                   {dataRecoveryLoading ? (
-                    <div className="flex items-center gap-2 text-muted-foreground">
+                    <div className="flex flex-wrap items-center gap-2 text-muted-foreground">
                       <Loader2 className="h-4 w-4 animate-spin" />
                       Caricamento...
                     </div>
@@ -1423,7 +1423,7 @@ export function RepairOrderDetailDrawer({
                     <Card className="border-blue-200 dark:border-blue-800 bg-blue-50/50 dark:bg-blue-900/20">
                       <CardContent className="p-4 space-y-3">
                         <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-2">
+                          <div className="flex flex-wrap items-center gap-2">
                             {dataRecoveryJob.handlingType === 'internal' ? (
                               <User className="h-4 w-4 text-green-500" />
                             ) : (
@@ -1468,7 +1468,7 @@ export function RepairOrderDetailDrawer({
                             <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Timeline</p>
                             <div className="space-y-1">
                               {dataRecoveryJob.events.slice(0, 3).map((event: any) => (
-                                <div key={event.id} className="flex items-center gap-2 text-xs">
+                                <div key={event.id} className="flex flex-wrap items-center gap-2 text-xs">
                                   <Clock className="h-3 w-3 text-muted-foreground" />
                                   <span className="text-muted-foreground">
                                     {format(new Date(event.createdAt), "dd/MM HH:mm")}
@@ -1539,7 +1539,7 @@ export function RepairOrderDetailDrawer({
 
             {/* Attachments */}
             <div className="space-y-3">
-              <div className="flex items-center gap-2 font-medium">
+              <div className="flex flex-wrap items-center gap-2 font-medium">
                 <Paperclip className="h-4 w-4" />
                 Allegati
               </div>
@@ -1640,7 +1640,7 @@ export function RepairOrderDetailDrawer({
                           ? 'bg-amber-500/10 border border-amber-500/30' 
                           : 'bg-blue-500/10 border border-blue-500/30'
                       }`}>
-                        <div className="flex items-center gap-2 font-medium mb-1">
+                        <div className="flex flex-wrap items-center gap-2 font-medium mb-1">
                           {diagnosis?.requiresExternalParts ? (
                             <>
                               <Package className="h-4 w-4 text-amber-500" />

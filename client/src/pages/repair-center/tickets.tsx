@@ -155,7 +155,7 @@ export default function RepairCenterTickets() {
         <div className="absolute top-1/2 left-1/3 w-48 h-48 rounded-full bg-emerald-300/20 blur-3xl animate-pulse" style={{ animationDelay: '2s' }} />
         
         <div className="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div className="flex items-center gap-4">
+          <div className="flex flex-wrap items-center gap-4">
             <div className="h-14 w-14 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center shadow-xl">
               <MessageSquare className="h-7 w-7 text-white" />
             </div>
@@ -164,7 +164,7 @@ export default function RepairCenterTickets() {
               <p className="text-emerald-100">Comunica con Admin e Rivenditori</p>
             </div>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
           <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
             <DialogTrigger asChild>
               <Button className="bg-white/20 backdrop-blur-sm text-white border-white/30 hover:bg-white/30 shadow-lg" variant="outline" data-testid="button-new-ticket">
@@ -188,13 +188,13 @@ export default function RepairCenterTickets() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="admin">
-                      <div className="flex items-center gap-2">
+                      <div className="flex flex-wrap items-center gap-2">
                         <Building2 className="h-4 w-4" />
                         Amministrazione
                       </div>
                     </SelectItem>
                     <SelectItem value="reseller">
-                      <div className="flex items-center gap-2">
+                      <div className="flex flex-wrap items-center gap-2">
                         <Users className="h-4 w-4" />
                         Rivenditore
                       </div>
@@ -312,7 +312,7 @@ export default function RepairCenterTickets() {
 
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
+          <CardTitle className="flex flex-wrap items-center gap-2">
             <MessageSquare className="h-5 w-5" />
             Ticket Interni ({filteredTickets.length})
           </CardTitle>
@@ -354,7 +354,7 @@ export default function RepairCenterTickets() {
                 >
                   <div className="flex items-start justify-between gap-4">
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-2 flex-wrap">
+                      <div className="flex flex-wrap items-center gap-2 mb-2 flex-wrap">
                         <span className="font-mono text-sm text-muted-foreground">
                           #{ticket.ticketNumber}
                         </span>
@@ -370,7 +370,7 @@ export default function RepairCenterTickets() {
                       </p>
                     </div>
                     <div className="text-right text-sm text-muted-foreground whitespace-nowrap">
-                      <div className="flex items-center gap-1">
+                      <div className="flex flex-wrap items-center gap-1">
                         <Clock className="h-3 w-3" />
                         {format(new Date(ticket.createdAt), "dd MMM yyyy", { locale: it })}
                       </div>

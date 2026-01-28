@@ -702,7 +702,7 @@ export function DiagnosisFormDialog({
                     if (!hasOther) return <></>;
                     return (
                       <FormItem>
-                        <FormLabel className="flex items-center gap-1">
+                        <FormLabel className="flex flex-wrap items-center gap-1">
                           <AlertCircle className="h-4 w-4 text-orange-500" />
                           Descrivi altro problema *
                         </FormLabel>
@@ -787,7 +787,7 @@ export function DiagnosisFormDialog({
                     if (!hasOther) return <></>;
                     return (
                       <FormItem>
-                        <FormLabel className="flex items-center gap-1">
+                        <FormLabel className="flex flex-wrap items-center gap-1">
                           <AlertCircle className="h-4 w-4 text-orange-500" />
                           Descrivi altro componente *
                         </FormLabel>
@@ -872,7 +872,7 @@ export function DiagnosisFormDialog({
                 />
 
                 <div className="space-y-3">
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-2">
                     <Camera className="h-4 w-4" />
                     <span className="text-sm font-medium">Foto Diagnosi</span>
                   </div>
@@ -1068,7 +1068,7 @@ export function DiagnosisFormDialog({
                             {field.value && <span className="text-primary-foreground text-xs">✓</span>}
                           </div>
                           <div className="space-y-1 leading-none flex-1">
-                            <div className="flex items-center gap-2">
+                            <div className="flex flex-wrap items-center gap-2">
                               <Database className="h-5 w-5 text-blue-500" />
                               <FormLabel className="cursor-pointer font-semibold">Il cliente ha dati importanti sul dispositivo</FormLabel>
                             </div>
@@ -1096,7 +1096,7 @@ export function DiagnosisFormDialog({
                               {field.value && <span className="text-white text-xs">✓</span>}
                             </div>
                             <div className="space-y-1 leading-none flex-1">
-                              <div className="flex items-center gap-2">
+                              <div className="flex flex-wrap items-center gap-2">
                                 <HardDrive className="h-5 w-5 text-blue-600" />
                                 <FormLabel className="cursor-pointer font-semibold text-blue-700 dark:text-blue-300">Richiedi Recupero Dati</FormLabel>
                               </div>
@@ -1186,7 +1186,7 @@ export function DiagnosisFormDialog({
                         name="unrepairableReasonOther"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel className="flex items-center gap-1">
+                            <FormLabel className="flex flex-wrap items-center gap-1">
                               <AlertCircle className="h-4 w-4 text-red-500" />
                               Descrivi il motivo *
                             </FormLabel>
@@ -1219,7 +1219,7 @@ export function DiagnosisFormDialog({
                             {field.value && <span className="text-primary-foreground text-xs">✓</span>}
                           </div>
                           <div className="space-y-1 leading-none flex-1">
-                            <div className="flex items-center gap-2">
+                            <div className="flex flex-wrap items-center gap-2">
                               <Database className="h-5 w-5 text-blue-500" />
                               <FormLabel className="cursor-pointer font-semibold">Il cliente ha dati importanti sul dispositivo</FormLabel>
                             </div>
@@ -1247,7 +1247,7 @@ export function DiagnosisFormDialog({
                               {field.value && <span className="text-white text-xs">✓</span>}
                             </div>
                             <div className="space-y-1 leading-none flex-1">
-                              <div className="flex items-center gap-2">
+                              <div className="flex flex-wrap items-center gap-2">
                                 <HardDrive className="h-5 w-5 text-blue-600" />
                                 <FormLabel className="cursor-pointer font-semibold text-blue-700 dark:text-blue-300">Richiedi Recupero Dati</FormLabel>
                               </div>
@@ -1267,7 +1267,7 @@ export function DiagnosisFormDialog({
                       render={({ field }) => (
                         <FormItem>
                           <div className="bg-emerald-500/10 p-3 rounded-lg border border-emerald-500/30 mt-4">
-                            <div className="flex items-center gap-2 mb-2">
+                            <div className="flex flex-wrap items-center gap-2 mb-2">
                               <Smartphone className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
                               <FormLabel className="font-semibold text-emerald-700 dark:text-emerald-300">
                                 Suggerisci Smartphone Sostitutivi

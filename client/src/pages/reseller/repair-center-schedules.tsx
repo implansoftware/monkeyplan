@@ -220,7 +220,7 @@ export default function ResellerRepairCenterSchedules() {
 
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
+          <CardTitle className="flex flex-wrap items-center gap-2">
             <Building className="h-5 w-5" />
             Seleziona Centro Riparazione
           </CardTitle>
@@ -247,7 +247,7 @@ export default function ResellerRepairCenterSchedules() {
       {selectedCenterId && (
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
+            <CardTitle className="flex flex-wrap items-center gap-2">
               <Clock className="h-5 w-5" />
               {selectedCenter?.name}
             </CardTitle>
@@ -328,7 +328,7 @@ export default function ResellerRepairCenterSchedules() {
 
                           {editingAvailability ? (
                             <>
-                              <div className="flex items-center gap-2">
+                              <div className="flex flex-wrap items-center gap-2">
                                 <Switch
                                   checked={!day.isClosed}
                                   onCheckedChange={(checked) => 
@@ -343,7 +343,7 @@ export default function ResellerRepairCenterSchedules() {
 
                               {!day.isClosed && (
                                 <>
-                                  <div className="flex items-center gap-2">
+                                  <div className="flex flex-wrap items-center gap-2">
                                     <Label className="text-xs">Dalle</Label>
                                     <Input
                                       type="time"
@@ -355,7 +355,7 @@ export default function ResellerRepairCenterSchedules() {
                                       data-testid={`input-start-time-${day.weekday}`}
                                     />
                                   </div>
-                                  <div className="flex items-center gap-2">
+                                  <div className="flex flex-wrap items-center gap-2">
                                     <Label className="text-xs">Alle</Label>
                                     <Input
                                       type="time"
@@ -367,7 +367,7 @@ export default function ResellerRepairCenterSchedules() {
                                       data-testid={`input-end-time-${day.weekday}`}
                                     />
                                   </div>
-                                  <div className="flex items-center gap-2">
+                                  <div className="flex flex-wrap items-center gap-2">
                                     <Label className="text-xs">Slot (min)</Label>
                                     <Input
                                       type="number"
@@ -381,7 +381,7 @@ export default function ResellerRepairCenterSchedules() {
                                       data-testid={`input-slot-duration-${day.weekday}`}
                                     />
                                   </div>
-                                  <div className="flex items-center gap-2">
+                                  <div className="flex flex-wrap items-center gap-2">
                                     <Label className="text-xs">Capacità</Label>
                                     <Input
                                       type="number"
@@ -403,7 +403,7 @@ export default function ResellerRepairCenterSchedules() {
                               {day.isClosed ? (
                                 <Badge variant="secondary">Chiuso</Badge>
                               ) : (
-                                <div className="flex items-center gap-4 text-sm">
+                                <div className="flex flex-wrap items-center gap-4 text-sm">
                                   <span>{day.startTime} - {day.endTime}</span>
                                   <span className="text-muted-foreground">
                                     Slot: {day.slotDurationMinutes} min
@@ -448,7 +448,7 @@ export default function ResellerRepairCenterSchedules() {
                         key={blackout.id}
                         className="flex items-center justify-between p-3 rounded-lg border"
                       >
-                        <div className="flex items-center gap-4">
+                        <div className="flex flex-wrap items-center gap-4">
                           <CalendarIcon className="h-4 w-4 text-muted-foreground" />
                           <span className="font-medium">
                             {format(new Date(blackout.date), "EEEE d MMMM yyyy", { locale: it })}

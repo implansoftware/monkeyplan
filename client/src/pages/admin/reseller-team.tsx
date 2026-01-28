@@ -353,7 +353,7 @@ export default function AdminResellerTeam() {
             </Button>
           </Link>
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <div className="flex items-center gap-4">
+            <div className="flex flex-wrap items-center gap-4">
               <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-white/20 backdrop-blur-sm border border-white/30">
                 <Users className="h-7 w-7 text-white" />
               </div>
@@ -375,7 +375,7 @@ export default function AdminResellerTeam() {
 
       <Card className="border-0 shadow-lg bg-white dark:bg-slate-800/50">
         <CardHeader>
-          <CardTitle className="flex items-center gap-3">
+          <CardTitle className="flex flex-wrap items-center gap-3">
             <div className="p-2 rounded-xl bg-gradient-to-br from-blue-500 to-cyan-600">
               <Search className="h-5 w-5 text-white" />
             </div>
@@ -398,7 +398,7 @@ export default function AdminResellerTeam() {
 
       <Card className="border-0 shadow-lg bg-white dark:bg-slate-800/50">
         <CardHeader>
-          <CardTitle className="flex items-center gap-3">
+          <CardTitle className="flex flex-wrap items-center gap-3">
             <div className="p-2 rounded-xl bg-gradient-to-br from-blue-500 to-cyan-600">
               <Users className="h-5 w-5 text-white" />
             </div>
@@ -471,7 +471,7 @@ export default function AdminResellerTeam() {
                       </TableCell>
                       <TableCell className="text-slate-500">{format(new Date(member.createdAt), "dd/MM/yyyy")}</TableCell>
                       <TableCell>
-                        <div className="flex items-center gap-1">
+                        <div className="flex flex-wrap items-center gap-1">
                           <Button
                             variant="ghost"
                             size="icon"
@@ -519,7 +519,7 @@ export default function AdminResellerTeam() {
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-3">
+            <DialogTitle className="flex flex-wrap items-center gap-3">
               <div className="p-2 rounded-xl bg-gradient-to-br from-blue-500 to-cyan-600">
                 <Users className="h-5 w-5 text-white" />
               </div>
@@ -699,7 +699,7 @@ export default function AdminResellerTeam() {
       <Dialog open={permissionsDialogOpen} onOpenChange={setPermissionsDialogOpen}>
         <DialogContent className="max-w-4xl max-h-[80vh] overflow-hidden flex flex-col">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-3">
+            <DialogTitle className="flex flex-wrap items-center gap-3">
               <div className="p-2 rounded-xl bg-gradient-to-br from-blue-500 to-cyan-600">
                 <UserCog className="h-5 w-5 text-white" />
               </div>
@@ -787,7 +787,7 @@ export default function AdminResellerTeam() {
       <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-3">
+            <DialogTitle className="flex flex-wrap items-center gap-3">
               <div className="p-2 rounded-xl bg-gradient-to-br from-red-500 to-red-600">
                 <Trash2 className="h-5 w-5 text-white" />
               </div>

@@ -243,7 +243,7 @@ export default function ResellerRepairs() {
           }}
         />
         <div className="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-3">
             <div className="h-12 w-12 rounded-2xl bg-white/20 backdrop-blur-sm border border-white/30 flex items-center justify-center">
               <Wrench className="h-6 w-6 text-white" />
             </div>
@@ -254,7 +254,7 @@ export default function ResellerRepairs() {
               </p>
             </div>
           </div>
-          <div className="flex items-center gap-3 flex-wrap">
+          <div className="flex flex-wrap items-center gap-3 flex-wrap">
             <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as "table" | "kanban")}>
               <TabsList>
                 <TabsTrigger value="table" className="gap-2" data-testid="toggle-table-view">
@@ -394,25 +394,25 @@ export default function ResellerRepairs() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">
-                  <span className="flex items-center gap-2">
+                  <span className="flex flex-wrap items-center gap-2">
                     <Clock className="h-3 w-3" />
                     Tutti SLA
                   </span>
                 </SelectItem>
                 <SelectItem value="in_time">
-                  <span className="flex items-center gap-2">
+                  <span className="flex flex-wrap items-center gap-2">
                     <Clock className="h-3 w-3 text-green-500" />
                     In Tempo
                   </span>
                 </SelectItem>
                 <SelectItem value="late">
-                  <span className="flex items-center gap-2">
+                  <span className="flex flex-wrap items-center gap-2">
                     <AlertTriangle className="h-3 w-3 text-yellow-500" />
                     In Ritardo
                   </span>
                 </SelectItem>
                 <SelectItem value="urgent">
-                  <span className="flex items-center gap-2">
+                  <span className="flex flex-wrap items-center gap-2">
                     <AlertCircle className="h-3 w-3 text-red-500" />
                     Urgente
                   </span>
@@ -425,14 +425,14 @@ export default function ResellerRepairs() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">
-                  <span className="flex items-center gap-2">
+                  <span className="flex flex-wrap items-center gap-2">
                     <Building className="h-3 w-3" />
                     Tutti i centri
                   </span>
                 </SelectItem>
                 {repairCenters.map((center) => (
                   <SelectItem key={center.id} value={center.id}>
-                    <span className="flex items-center gap-2">
+                    <span className="flex flex-wrap items-center gap-2">
                       <Building className="h-3 w-3" />
                       {center.name}
                     </span>
@@ -631,7 +631,7 @@ export default function ResellerRepairs() {
             <div className="text-sm text-muted-foreground">
               Pagina {page} di {totalPages} ({total} risultati)
             </div>
-            <div className="flex items-center gap-1">
+            <div className="flex flex-wrap items-center gap-1">
               <Button
                 variant="outline"
                 size="icon"

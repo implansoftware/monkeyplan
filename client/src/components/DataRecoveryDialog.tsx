@@ -124,7 +124,7 @@ export function DataRecoveryDialog({
 
         <ScrollArea className="flex-1 pr-4">
           <div className="space-y-6">
-            <div className="flex items-center gap-3 p-4 bg-emerald-50 dark:bg-emerald-900/20 rounded-lg border border-emerald-200 dark:border-emerald-800">
+            <div className="flex flex-wrap items-center gap-3 p-4 bg-emerald-50 dark:bg-emerald-900/20 rounded-lg border border-emerald-200 dark:border-emerald-800">
               <User className="h-8 w-8 text-emerald-600 dark:text-emerald-400" />
               <div>
                 <h3 className="font-semibold">Recupero Dati Interno</h3>
@@ -136,12 +136,12 @@ export function DataRecoveryDialog({
 
             <div className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="technician" className="flex items-center gap-1">
+                <Label htmlFor="technician" className="flex flex-wrap items-center gap-1">
                   <User className="h-4 w-4" />
                   Tecnico Assegnato *
                 </Label>
                 {staffLoading ? (
-                  <div className="flex items-center gap-2 text-muted-foreground">
+                  <div className="flex flex-wrap items-center gap-2 text-muted-foreground">
                     <Loader2 className="h-4 w-4 animate-spin" />
                     Caricamento tecnici...
                   </div>
@@ -162,7 +162,7 @@ export function DataRecoveryDialog({
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="notes" className="flex items-center gap-1">
+                <Label htmlFor="notes" className="flex flex-wrap items-center gap-1">
                   Note Interne (opzionale)
                 </Label>
                 <Textarea

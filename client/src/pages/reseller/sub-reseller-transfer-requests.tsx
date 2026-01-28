@@ -224,7 +224,7 @@ export default function SubResellerTransferRequestsPage() {
         />
         
         <div className="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div className="flex items-center gap-3 mb-1">
+          <div className="flex flex-wrap items-center gap-3 mb-1">
             <div className="h-12 w-12 rounded-2xl bg-white/20 backdrop-blur-sm border border-white/30 flex items-center justify-center">
               <Send className="h-6 w-6 text-white" />
             </div>
@@ -256,7 +256,7 @@ export default function SubResellerTransferRequestsPage() {
 
             <div className="flex items-center justify-center gap-2 py-2">
               {[1, 2, 3].map((step) => (
-                <div key={step} className="flex items-center gap-2">
+                <div key={step} className="flex flex-wrap items-center gap-2">
                   <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
                     wizardStep === step 
                       ? "bg-primary text-primary-foreground" 
@@ -274,7 +274,7 @@ export default function SubResellerTransferRequestsPage() {
             <div className="flex-1 overflow-y-auto space-y-4 py-4">
               {wizardStep === 1 && (
                 <div className="space-y-4">
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-2">
                     <div className="relative flex-1">
                       <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                       <Input
@@ -286,7 +286,7 @@ export default function SubResellerTransferRequestsPage() {
                       />
                     </div>
                     <Select value={productTypeFilter} onValueChange={setProductTypeFilter}>
-                      <SelectTrigger className="w-[160px]" data-testid="select-product-type">
+                      <SelectTrigger className="w-full sm:w-[160px]" data-testid="select-product-type">
                         <SelectValue placeholder="Tipo" />
                       </SelectTrigger>
                       <SelectContent>
@@ -336,7 +336,7 @@ export default function SubResellerTransferRequestsPage() {
                             data-testid={`card-product-${item.product.id}`}
                           >
                             <CardContent className="p-3">
-                              <div className="flex items-center gap-3">
+                              <div className="flex flex-wrap items-center gap-3">
                                 <div className="w-10 h-10 rounded bg-muted flex items-center justify-center overflow-hidden">
                                   {item.product.imageUrl ? (
                                     <img 
@@ -350,7 +350,7 @@ export default function SubResellerTransferRequestsPage() {
                                 </div>
                                 <div className="flex-1 min-w-0">
                                   <p className="font-medium truncate">{item.product.name}</p>
-                                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                  <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
                                     <span>{item.product.sku}</span>
                                     {item.product.brand && <span>| {item.product.brand}</span>}
                                   </div>
@@ -377,7 +377,7 @@ export default function SubResellerTransferRequestsPage() {
                 <div className="space-y-4">
                   <Card className="bg-muted/50">
                     <CardContent className="p-3">
-                      <div className="flex items-center gap-3">
+                      <div className="flex flex-wrap items-center gap-3">
                         <div className="w-10 h-10 rounded bg-muted flex items-center justify-center overflow-hidden">
                           {selectedProduct.product.imageUrl ? (
                             <img 
@@ -410,7 +410,7 @@ export default function SubResellerTransferRequestsPage() {
                       >
                         <CardContent className="p-3">
                           <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-3">
+                            <div className="flex flex-wrap items-center gap-3">
                               <Warehouse className="h-5 w-5 text-muted-foreground" />
                               <div>
                                 <p className="font-medium">{wh.warehouseName}</p>
@@ -432,7 +432,7 @@ export default function SubResellerTransferRequestsPage() {
                 <div className="space-y-4">
                   <Card className="bg-muted/50">
                     <CardContent className="p-4 space-y-3">
-                      <div className="flex items-center gap-3">
+                      <div className="flex flex-wrap items-center gap-3">
                         <div className="w-10 h-10 rounded bg-muted flex items-center justify-center overflow-hidden">
                           {selectedProduct.product.imageUrl ? (
                             <img 
@@ -449,7 +449,7 @@ export default function SubResellerTransferRequestsPage() {
                           <p className="text-sm text-muted-foreground">{selectedProduct.product.sku}</p>
                         </div>
                       </div>
-                      <div className="flex items-center gap-3">
+                      <div className="flex flex-wrap items-center gap-3">
                         <Warehouse className="h-5 w-5 text-muted-foreground" />
                         <div>
                           <p className="font-medium">
@@ -540,7 +540,7 @@ export default function SubResellerTransferRequestsPage() {
           </DialogContent>
         </Dialog>
 
-      <div className="flex items-center gap-4 flex-wrap">
+      <div className="flex flex-wrap items-center gap-4 flex-wrap">
         <div className="relative flex-1 min-w-[200px]">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
@@ -552,7 +552,7 @@ export default function SubResellerTransferRequestsPage() {
           />
         </div>
         <Select value={statusFilter} onValueChange={setStatusFilter}>
-          <SelectTrigger className="w-[180px]" data-testid="select-status-filter">
+          <SelectTrigger className="w-full sm:w-[180px]" data-testid="select-status-filter">
             <SelectValue placeholder="Filtra per stato" />
           </SelectTrigger>
           <SelectContent>
@@ -579,14 +579,14 @@ export default function SubResellerTransferRequestsPage() {
               <Card key={request.id} className="rounded-2xl" data-testid={`card-request-${request.id}`}>
                 <CardHeader className="pb-2">
                   <div className="flex items-center justify-between flex-wrap gap-2">
-                    <div className="flex items-center gap-3">
+                    <div className="flex flex-wrap items-center gap-3">
                       <CardTitle className="text-lg">{request.requestNumber}</CardTitle>
                       <Badge className={statusConfig[request.status]?.color}>
                         <StatusIcon className="h-3 w-3 mr-1" />
                         {statusConfig[request.status]?.label}
                       </Badge>
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex flex-wrap items-center gap-2">
                       {request.status === 'pending' && (
                         <Button
                           variant="outline"
@@ -683,7 +683,7 @@ export default function SubResellerTransferRequestsPage() {
                   {selectedRequest.items.map((item) => (
                     <div key={item.id} className="flex items-center justify-between p-2 bg-muted/50 rounded">
                       <span>{item.product?.name || "Prodotto"}</span>
-                      <div className="flex items-center gap-4 text-sm">
+                      <div className="flex flex-wrap items-center gap-4 text-sm">
                         <span>Richiesti: {item.requestedQuantity}</span>
                         {item.approvedQuantity !== null && <span>Approvati: {item.approvedQuantity}</span>}
                         {item.shippedQuantity !== null && <span>Spediti: {item.shippedQuantity}</span>}
@@ -709,7 +709,7 @@ export default function SubResellerTransferRequestsPage() {
                 Conferma la quantità ricevuta per ogni articolo:
               </p>
               {selectedRequest.items.map((item, index) => (
-                <div key={item.id} className="flex items-center gap-4 p-3 border rounded">
+                <div key={item.id} className="flex flex-wrap items-center gap-4 p-3 border rounded">
                   <div className="flex-1">
                     <p className="font-medium">{item.product?.name}</p>
                     <p className="text-sm text-muted-foreground">

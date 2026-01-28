@@ -350,7 +350,7 @@ export default function DeviceCatalog() {
         <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
         <div className="absolute bottom-0 left-0 w-48 h-48 bg-cyan-300/20 rounded-full blur-2xl translate-y-1/2 -translate-x-1/4" />
         <div className="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-3">
             <div className="h-12 w-12 rounded-xl bg-white/20 backdrop-blur-sm border border-white/30 flex items-center justify-center">
               <Smartphone className="h-6 w-6 text-white" />
             </div>
@@ -393,7 +393,7 @@ export default function DeviceCatalog() {
               </Button>
             </CardHeader>
             <CardContent>
-              <div className="flex items-center gap-2 mb-4">
+              <div className="flex flex-wrap items-center gap-2 mb-4">
                 <div className="relative flex-1 max-w-sm">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input
@@ -497,7 +497,7 @@ export default function DeviceCatalog() {
               </Button>
             </CardHeader>
             <CardContent>
-              <div className="flex items-center gap-2 mb-4 flex-wrap">
+              <div className="flex flex-wrap items-center gap-2 mb-4 flex-wrap">
                 <div className="relative flex-1 max-w-sm">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input
@@ -509,7 +509,7 @@ export default function DeviceCatalog() {
                   />
                 </div>
                 <Select value={originFilter} onValueChange={setOriginFilter}>
-                  <SelectTrigger className="w-[160px]" data-testid="select-origin-filter">
+                  <SelectTrigger className="w-full sm:w-[160px]" data-testid="select-origin-filter">
                     <SelectValue placeholder="Origine" />
                   </SelectTrigger>
                   <SelectContent>

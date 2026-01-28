@@ -129,13 +129,13 @@ export default function AdminUtilitySuppliers() {
 
   return (
     <div className="p-6 space-y-6">
-      <div className="flex items-center gap-4 mb-6">
+      <div className="flex flex-wrap items-center gap-4 mb-6">
         <Link href="/admin/utility">
           <Button variant="ghost" size="icon" data-testid="button-back">
             <ArrowLeft className="h-4 w-4" />
           </Button>
         </Link>
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
           <Building2 className="h-8 w-8 text-primary" />
           <div>
             <h1 className="text-2xl font-bold">Fornitori Utility</h1>
@@ -400,7 +400,7 @@ export default function AdminUtilitySuppliers() {
               />
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <Switch
                 id="isActive"
                 name="isActive"

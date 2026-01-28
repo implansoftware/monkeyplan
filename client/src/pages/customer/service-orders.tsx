@@ -343,14 +343,14 @@ export default function CustomerServiceOrders() {
             >
               <div className="flex items-center space-x-2">
                 <RadioGroupItem value="in_person" id="in_person" data-testid="radio-in-person" />
-                <Label htmlFor="in_person" className="flex items-center gap-2 cursor-pointer">
+                <Label htmlFor="in_person" className="flex flex-wrap items-center gap-2 cursor-pointer">
                   <MapPin className="w-4 h-4" />
                   Consegna di persona
                 </Label>
               </div>
               <div className="flex items-center space-x-2">
                 <RadioGroupItem value="shipping" id="shipping" data-testid="radio-shipping" />
-                <Label htmlFor="shipping" className="flex items-center gap-2 cursor-pointer">
+                <Label htmlFor="shipping" className="flex flex-wrap items-center gap-2 cursor-pointer">
                   <Truck className="w-4 h-4" />
                   Spedizione
                 </Label>

@@ -58,7 +58,7 @@ export default function ResellerUtility() {
             backgroundSize: '60px 60px'
           }} />
           <div className="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <div className="flex items-center gap-4">
+            <div className="flex flex-wrap items-center gap-4">
               <div className="h-12 w-12 rounded-2xl bg-white/20 backdrop-blur-sm border border-white/30 flex items-center justify-center">
                 <Zap className="h-6 w-6 text-white" />
               </div>
@@ -96,7 +96,7 @@ export default function ResellerUtility() {
           backgroundSize: '60px 60px'
         }} />
         <div className="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div className="flex items-center gap-4">
+          <div className="flex flex-wrap items-center gap-4">
             <div className="h-12 w-12 rounded-2xl bg-white/20 backdrop-blur-sm border border-white/30 flex items-center justify-center">
               <Zap className="h-6 w-6 text-white" />
             </div>
@@ -162,7 +162,7 @@ export default function ResellerUtility() {
             <div className="space-y-3">
               {Object.entries(summary?.byCategory || {}).map(([cat, data]) => (
                 <div key={cat} className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-2">
                     <Badge variant="outline">{categoryLabels[cat] || cat}</Badge>
                     <span className="text-sm text-muted-foreground">
                       {data.count} pratiche

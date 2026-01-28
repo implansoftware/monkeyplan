@@ -95,7 +95,7 @@ export default function AdminRCB2BOrders() {
                 <TableRow key={order.id} data-testid={`row-order-${order.id}`}>
                   <TableCell className="font-medium">{order.orderNumber}</TableCell>
                   <TableCell>
-                    <div className="flex items-center gap-2">
+                    <div className="flex flex-wrap items-center gap-2">
                       <Building className="h-4 w-4 text-muted-foreground" />
                       <div>
                         <div className="font-medium">{order.repairCenter?.name || "N/D"}</div>
@@ -104,7 +104,7 @@ export default function AdminRCB2BOrders() {
                     </div>
                   </TableCell>
                   <TableCell>
-                    <div className="flex items-center gap-2">
+                    <div className="flex flex-wrap items-center gap-2">
                       <Store className="h-4 w-4 text-muted-foreground" />
                       <div>
                         <div className="font-medium">{order.reseller?.fullName || "N/D"}</div>
@@ -151,7 +151,7 @@ export default function AdminRCB2BOrders() {
           backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23000' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
         }} />
         <div className="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div className="flex items-center gap-3 mb-1">
+          <div className="flex flex-wrap items-center gap-3 mb-1">
             <div className="h-10 w-10 rounded-xl bg-primary text-primary-foreground flex items-center justify-center shadow-lg shadow-primary/25">
               <Building className="h-5 w-5" />
             </div>
@@ -169,7 +169,7 @@ export default function AdminRCB2BOrders() {
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card>
           <CardContent className="pt-6">
-            <div className="flex items-center gap-4">
+            <div className="flex flex-wrap items-center gap-4">
               <div className="p-3 bg-yellow-100 dark:bg-yellow-900/20 rounded-full">
                 <Clock className="h-6 w-6 text-yellow-600" />
               </div>
@@ -182,7 +182,7 @@ export default function AdminRCB2BOrders() {
         </Card>
         <Card>
           <CardContent className="pt-6">
-            <div className="flex items-center gap-4">
+            <div className="flex flex-wrap items-center gap-4">
               <div className="p-3 bg-blue-100 dark:bg-blue-900/20 rounded-full">
                 <CheckCircle className="h-6 w-6 text-blue-600" />
               </div>
@@ -195,7 +195,7 @@ export default function AdminRCB2BOrders() {
         </Card>
         <Card>
           <CardContent className="pt-6">
-            <div className="flex items-center gap-4">
+            <div className="flex flex-wrap items-center gap-4">
               <div className="p-3 bg-purple-100 dark:bg-purple-900/20 rounded-full">
                 <Truck className="h-6 w-6 text-purple-600" />
               </div>
@@ -208,7 +208,7 @@ export default function AdminRCB2BOrders() {
         </Card>
         <Card>
           <CardContent className="pt-6">
-            <div className="flex items-center gap-4">
+            <div className="flex flex-wrap items-center gap-4">
               <div className="p-3 bg-green-100 dark:bg-green-900/20 rounded-full">
                 <PackageCheck className="h-6 w-6 text-green-600" />
               </div>
@@ -262,7 +262,7 @@ export default function AdminRCB2BOrders() {
       <Dialog open={detailOpen} onOpenChange={setDetailOpen}>
         <DialogContent className="max-w-3xl">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
+            <DialogTitle className="flex flex-wrap items-center gap-2">
               <Package className="h-5 w-5" />
               Ordine {selectedOrder?.orderNumber}
             </DialogTitle>
@@ -276,7 +276,7 @@ export default function AdminRCB2BOrders() {
                 <div className="space-y-4">
                   <div>
                     <Label className="text-muted-foreground">Centro Riparazione</Label>
-                    <div className="flex items-center gap-2 mt-1">
+                    <div className="flex flex-wrap items-center gap-2 mt-1">
                       <Building className="h-4 w-4" />
                       <span className="font-medium">{selectedOrder.repairCenter?.name}</span>
                     </div>
@@ -284,7 +284,7 @@ export default function AdminRCB2BOrders() {
                   </div>
                   <div>
                     <Label className="text-muted-foreground">Reseller Fornitore</Label>
-                    <div className="flex items-center gap-2 mt-1">
+                    <div className="flex flex-wrap items-center gap-2 mt-1">
                       <Store className="h-4 w-4" />
                       <span className="font-medium">{selectedOrder.reseller?.fullName}</span>
                     </div>

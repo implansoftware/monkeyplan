@@ -69,11 +69,11 @@ function AnimatedMonkeyMascot() {
       </div>
       
       <div className="mt-6 flex items-center gap-3">
-        <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-white/15 backdrop-blur-sm border border-white/25">
+        <div className="flex flex-wrap items-center gap-2 px-4 py-2 rounded-full bg-white/15 backdrop-blur-sm border border-white/25">
           <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
           <span className="text-sm text-white font-medium">Online</span>
         </div>
-        <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-white/15 backdrop-blur-sm border border-white/25">
+        <div className="flex flex-wrap items-center gap-2 px-4 py-2 rounded-full bg-white/15 backdrop-blur-sm border border-white/25">
           <BarChart3 className="w-4 h-4 text-yellow-300" />
           <span className="text-sm text-white font-medium">10K+ riparazioni</span>
         </div>
@@ -185,7 +185,7 @@ export default function AuthPage() {
         />
         
         <div className="relative z-10 flex flex-col justify-between p-12 text-white w-full">
-          <div className="flex items-center gap-4">
+          <div className="flex flex-wrap items-center gap-4">
             <div className="w-14 h-14 rounded-2xl bg-white/20 backdrop-blur-sm border border-white/30 flex items-center justify-center">
               <Wrench className="w-7 h-7 text-white" />
             </div>
@@ -214,7 +214,7 @@ export default function AuthPage() {
           
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="p-4 rounded-2xl bg-white/10 backdrop-blur-sm border border-white/20">
-              <div className="flex items-center gap-3 mb-2">
+              <div className="flex flex-wrap items-center gap-3 mb-2">
                 <div className="p-2 rounded-xl bg-yellow-400/30">
                   <Zap className="h-5 w-5 text-yellow-200" />
                 </div>
@@ -224,7 +224,7 @@ export default function AuthPage() {
             </div>
             
             <div className="p-4 rounded-2xl bg-white/10 backdrop-blur-sm border border-white/20">
-              <div className="flex items-center gap-3 mb-2">
+              <div className="flex flex-wrap items-center gap-3 mb-2">
                 <div className="p-2 rounded-xl bg-emerald-400/30">
                   <Shield className="h-5 w-5 text-emerald-200" />
                 </div>
@@ -234,7 +234,7 @@ export default function AuthPage() {
             </div>
             
             <div className="p-4 rounded-2xl bg-white/10 backdrop-blur-sm border border-white/20">
-              <div className="flex items-center gap-3 mb-2">
+              <div className="flex flex-wrap items-center gap-3 mb-2">
                 <div className="p-2 rounded-xl bg-orange-400/30">
                   <BarChart3 className="h-5 w-5 text-orange-200" />
                 </div>
@@ -244,7 +244,7 @@ export default function AuthPage() {
             </div>
             
             <div className="p-4 rounded-2xl bg-white/10 backdrop-blur-sm border border-white/20">
-              <div className="flex items-center gap-3 mb-2">
+              <div className="flex flex-wrap items-center gap-3 mb-2">
                 <div className="p-2 rounded-xl bg-cyan-400/30">
                   <Smartphone className="h-5 w-5 text-cyan-200" />
                 </div>
@@ -351,12 +351,12 @@ export default function AuthPage() {
                     data-testid="button-login"
                   >
                     {loginMutation.isPending ? (
-                      <span className="flex items-center gap-2">
+                      <span className="flex flex-wrap items-center gap-2">
                         <span className="h-5 w-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
                         Accesso in corso...
                       </span>
                     ) : (
-                      <span className="flex items-center gap-2">
+                      <span className="flex flex-wrap items-center gap-2">
                         Accedi
                         <ArrowRight className="h-5 w-5" />
                       </span>
@@ -365,11 +365,11 @@ export default function AuthPage() {
                 </form>
 
                 <div className="flex items-center justify-center gap-8 pt-4 text-sm text-slate-500 dark:text-slate-400">
-                  <span className="flex items-center gap-2">
+                  <span className="flex flex-wrap items-center gap-2">
                     <Shield className="h-4 w-4 text-emerald-500" />
                     Connessione sicura
                   </span>
-                  <span className="flex items-center gap-2">
+                  <span className="flex flex-wrap items-center gap-2">
                     <Zap className="h-4 w-4 text-orange-500" />
                     Supporto 24/7
                   </span>
@@ -455,12 +455,12 @@ export default function AuthPage() {
                     data-testid="button-customer-register"
                   >
                     {registerMutation.isPending ? (
-                      <span className="flex items-center gap-2">
+                      <span className="flex flex-wrap items-center gap-2">
                         <span className="h-5 w-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
                         Registrazione...
                       </span>
                     ) : (
-                      <span className="flex items-center gap-2">
+                      <span className="flex flex-wrap items-center gap-2">
                         Crea Account
                         <ArrowRight className="h-5 w-5" />
                       </span>
@@ -629,12 +629,12 @@ export default function AuthPage() {
                         data-testid="button-reseller-register"
                       >
                         {resellerRegisterMutation.isPending ? (
-                          <span className="flex items-center gap-2">
+                          <span className="flex flex-wrap items-center gap-2">
                             <span className="h-5 w-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
                             Invio richiesta...
                           </span>
                         ) : (
-                          <span className="flex items-center gap-2">
+                          <span className="flex flex-wrap items-center gap-2">
                             Richiedi Accesso Business
                             <ArrowRight className="h-5 w-5" />
                           </span>

@@ -442,7 +442,7 @@ export default function AdminResellers() {
           backgroundSize: '40px 40px'
         }} />
         <div className="relative z-10 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div className="flex items-center gap-4">
+          <div className="flex flex-wrap items-center gap-4">
             <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-white/20 backdrop-blur-sm border border-white/30">
               <Store className="h-7 w-7 text-white" />
             </div>
@@ -562,7 +562,7 @@ export default function AdminResellers() {
                     {editingReseller && (
                       <div className="space-y-2 pt-2 border-t">
                         <Label>Logo Aziendale</Label>
-                        <div className="flex items-center gap-4">
+                        <div className="flex flex-wrap items-center gap-4">
                           <Avatar className="h-16 w-16 border">
                             {resellers.find(r => r.id === editingReseller.id)?.logoUrl ? (
                               <AvatarImage 
@@ -815,7 +815,7 @@ export default function AdminResellers() {
                           {availableRepairCenters.map((center) => (
                             <div 
                               key={center.id} 
-                              className="flex items-center gap-3 p-2 hover:bg-muted/50 rounded-md cursor-pointer"
+                              className="flex flex-wrap items-center gap-3 p-2 hover:bg-muted/50 rounded-md cursor-pointer"
                               onClick={() => {
                                 setSelectedRepairCenterIds(prev => 
                                   prev.includes(center.id) 
@@ -898,7 +898,7 @@ export default function AdminResellers() {
 
       <Card className="border-0 shadow-lg bg-white dark:bg-slate-800/50">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-slate-900 dark:text-white">
+          <CardTitle className="flex flex-wrap items-center gap-2 text-slate-900 dark:text-white">
             <Store className="h-5 w-5" />
             Elenco Rivenditori
           </CardTitle>
@@ -947,7 +947,7 @@ export default function AdminResellers() {
                 {filteredResellers.map((reseller) => (
                   <TableRow key={reseller.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/30" data-testid={`row-reseller-${reseller.id}`}>
                     <TableCell className="font-medium text-slate-900 dark:text-white" data-testid={`text-fullName-${reseller.id}`}>
-                      <div className="flex items-center gap-3">
+                      <div className="flex flex-wrap items-center gap-3">
                         <Avatar className="h-8 w-8">
                           {reseller.logoUrl ? (
                             <AvatarImage src={reseller.logoUrl} alt={reseller.fullName} className="object-contain" />
@@ -1008,7 +1008,7 @@ export default function AdminResellers() {
                       )}
                     </TableCell>
                     <TableCell data-testid={`badge-status-${reseller.id}`}>
-                      <div className="flex items-center gap-2">
+                      <div className="flex flex-wrap items-center gap-2">
                         <Switch
                           checked={reseller.isActive}
                           onCheckedChange={(checked) => 
@@ -1143,7 +1143,7 @@ export default function AdminResellers() {
       <Dialog open={resetPasswordDialogOpen} onOpenChange={setResetPasswordDialogOpen}>
         <DialogContent data-testid="dialog-reset-password">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
+            <DialogTitle className="flex flex-wrap items-center gap-2">
               <KeyRound className="h-5 w-5" />
               Reset Password
             </DialogTitle>
@@ -1219,7 +1219,7 @@ const SubResellersDialog = ({ open, onOpenChange, reseller }: SubResellersDialog
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl" data-testid="dialog-sub-resellers">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
+          <DialogTitle className="flex flex-wrap items-center gap-2">
             <UsersRound className="h-5 w-5" />
             Sub-Reseller di {reseller?.fullName}
           </DialogTitle>
@@ -1251,7 +1251,7 @@ const SubResellersDialog = ({ open, onOpenChange, reseller }: SubResellersDialog
                   {subResellers.map((sub) => (
                     <TableRow key={sub.id} data-testid={`row-sub-reseller-${sub.id}`}>
                       <TableCell className="font-medium">
-                        <div className="flex items-center gap-2">
+                        <div className="flex flex-wrap items-center gap-2">
                           <Avatar className="h-7 w-7">
                             {sub.logoUrl ? (
                               <AvatarImage src={sub.logoUrl} alt={sub.fullName} className="object-contain" />

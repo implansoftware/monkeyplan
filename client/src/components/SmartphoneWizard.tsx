@@ -848,7 +848,7 @@ export function SmartphoneWizard({
                     control={form.control}
                     name="originalBox"
                     render={({ field }) => (
-                      <FormItem className="flex items-center gap-2">
+                      <FormItem className="flex flex-wrap items-center gap-2">
                         <FormControl>
                           <Checkbox 
                             checked={field.value} 
@@ -871,7 +871,7 @@ export function SmartphoneWizard({
                         <FormLabel>Accessori Inclusi</FormLabel>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                           {ACCESSORY_OPTIONS.map(acc => (
-                            <div key={acc} className="flex items-center gap-2">
+                            <div key={acc} className="flex flex-wrap items-center gap-2">
                               <Checkbox
                                 checked={field.value?.includes(acc)}
                                 onCheckedChange={(checked) => {
@@ -1202,7 +1202,7 @@ export function SmartphoneWizard({
 
                 <Card>
                   <CardContent className="p-4 space-y-3">
-                    <div className="flex items-center gap-4">
+                    <div className="flex flex-wrap items-center gap-4">
                       {imagePreview && (
                         <img src={imagePreview} alt="Preview" className="w-20 h-20 object-cover rounded-lg" />
                       )}

@@ -66,19 +66,19 @@ export function EntityFilterSelector({
           setSelectedEntityId("");
         }}
       >
-        <SelectTrigger className="w-[180px]" data-testid="select-entity-type">
+        <SelectTrigger className="w-full sm:w-[180px]" data-testid="select-entity-type">
           <SelectValue />
         </SelectTrigger>
         <SelectContent>
           <SelectItem value="own">
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <Users className="h-4 w-4" />
               <span>Il mio Team</span>
             </div>
           </SelectItem>
           {subResellers.length > 0 && (
             <SelectItem value="sub-reseller">
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2">
                 <Building2 className="h-4 w-4" />
                 <span>Sub-Reseller</span>
               </div>
@@ -86,7 +86,7 @@ export function EntityFilterSelector({
           )}
           {showRepairCenters && repairCenters.length > 0 && (
             <SelectItem value="repair-center">
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2">
                 <Store className="h-4 w-4" />
                 <span>Centro Riparazione</span>
               </div>
@@ -100,7 +100,7 @@ export function EntityFilterSelector({
           value={selectedEntityId}
           onValueChange={setSelectedEntityId}
         >
-          <SelectTrigger className="w-[220px]" data-testid="select-sub-reseller">
+          <SelectTrigger className="w-full sm:w-[220px]" data-testid="select-sub-reseller">
             <SelectValue placeholder="Seleziona sub-reseller..." />
           </SelectTrigger>
           <SelectContent>
@@ -118,7 +118,7 @@ export function EntityFilterSelector({
           value={selectedEntityId}
           onValueChange={setSelectedEntityId}
         >
-          <SelectTrigger className="w-[220px]" data-testid="select-repair-center">
+          <SelectTrigger className="w-full sm:w-[220px]" data-testid="select-repair-center">
             <SelectValue placeholder="Seleziona centro..." />
           </SelectTrigger>
           <SelectContent>

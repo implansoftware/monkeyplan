@@ -396,7 +396,7 @@ export function StaffWizard({
                   }}
                   data-testid={`wizard-checkbox-center-${center.id}`}
                 />
-                <div className="flex items-center gap-2 flex-1">
+                <div className="flex flex-wrap items-center gap-2 flex-1">
                   <Store className="w-4 h-4 text-muted-foreground" />
                   <span className="font-medium">{center.name}</span>
                 </div>
@@ -486,7 +486,7 @@ export function StaffWizard({
         <div className="space-y-4">
           <Card>
             <CardContent className="pt-4">
-              <div className="flex items-center gap-2 mb-3">
+              <div className="flex flex-wrap items-center gap-2 mb-3">
                 <User className="w-4 h-4 text-primary" />
                 <span className="font-medium">Dati Collaboratore</span>
               </div>
@@ -509,7 +509,7 @@ export function StaffWizard({
 
           <Card>
             <CardContent className="pt-4">
-              <div className="flex items-center gap-2 mb-3">
+              <div className="flex flex-wrap items-center gap-2 mb-3">
                 <Store className="w-4 h-4 text-primary" />
                 <span className="font-medium">Centri Assegnati</span>
                 <Badge variant="secondary" className="ml-auto">
@@ -530,7 +530,7 @@ export function StaffWizard({
 
           <Card>
             <CardContent className="pt-4">
-              <div className="flex items-center gap-2 mb-3">
+              <div className="flex flex-wrap items-center gap-2 mb-3">
                 <Shield className="w-4 h-4 text-primary" />
                 <span className="font-medium">Permessi</span>
                 <Badge variant="secondary" className="ml-auto">

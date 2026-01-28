@@ -88,7 +88,7 @@ export default function RepairCenterSupplierOrders() {
         <div className="absolute top-1/2 left-1/3 w-48 h-48 rounded-full bg-emerald-300/20 blur-3xl animate-pulse" style={{ animationDelay: '2s' }} />
         
         <div className="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div className="flex items-center gap-4">
+          <div className="flex flex-wrap items-center gap-4">
             <div className="h-14 w-14 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center shadow-xl">
               <ClipboardList className="h-7 w-7 text-white" />
             </div>
@@ -97,7 +97,7 @@ export default function RepairCenterSupplierOrders() {
               <p className="text-emerald-100">Gestione ordini a fornitori</p>
             </div>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <Badge className="bg-white/20 backdrop-blur-sm text-white border-white/30" data-testid="badge-orders-count">
               {orders.length} ordini
             </Badge>
@@ -107,11 +107,11 @@ export default function RepairCenterSupplierOrders() {
 
       <Card>
         <CardHeader className="flex flex-row items-center justify-between gap-4 space-y-0 pb-4">
-          <CardTitle className="flex items-center gap-2">
+          <CardTitle className="flex flex-wrap items-center gap-2">
             <ShoppingCart className="h-5 w-5" />
             I Miei Ordini
           </CardTitle>
-          <div className="flex items-center gap-4">
+          <div className="flex flex-wrap items-center gap-4">
             <div className="relative w-64">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
@@ -164,7 +164,7 @@ export default function RepairCenterSupplierOrders() {
                       {order.orderNumber}
                     </TableCell>
                     <TableCell>
-                      <div className="flex items-center gap-2">
+                      <div className="flex flex-wrap items-center gap-2">
                         <Truck className="h-4 w-4 text-muted-foreground" />
                         <span data-testid={`text-order-supplier-${order.id}`}>
                           {order.supplier?.name || "-"}
@@ -180,14 +180,14 @@ export default function RepairCenterSupplierOrders() {
                       {formatCurrency(order.totalAmount)}
                     </TableCell>
                     <TableCell data-testid={`text-order-date-${order.id}`}>
-                      <div className="flex items-center gap-1 text-muted-foreground">
+                      <div className="flex flex-wrap items-center gap-1 text-muted-foreground">
                         <Calendar className="h-3 w-3" />
                         {format(new Date(order.createdAt), "dd MMM yyyy", { locale: it })}
                       </div>
                     </TableCell>
                     <TableCell data-testid={`text-order-delivery-${order.id}`}>
                       {order.expectedDelivery ? (
-                        <div className="flex items-center gap-1 text-muted-foreground">
+                        <div className="flex flex-wrap items-center gap-1 text-muted-foreground">
                           <Calendar className="h-3 w-3" />
                           {format(new Date(order.expectedDelivery), "dd MMM yyyy", { locale: it })}
                         </div>

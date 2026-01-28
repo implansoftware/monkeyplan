@@ -128,7 +128,7 @@ export function BarcodeDisplay({
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogTrigger asChild>
           <button
-            className="flex items-center gap-2 px-2 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors font-mono text-slate-700 dark:text-slate-300 cursor-pointer"
+            className="flex flex-wrap items-center gap-2 px-2 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors font-mono text-slate-700 dark:text-slate-300 cursor-pointer"
             data-testid="button-view-barcode"
           >
             <Barcode className="h-4 w-4 text-blue-600" />
@@ -137,7 +137,7 @@ export function BarcodeDisplay({
         </DialogTrigger>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
+            <DialogTitle className="flex flex-wrap items-center gap-2">
               <Barcode className="h-5 w-5 text-blue-600" />
               Barcode Prodotto
             </DialogTitle>
@@ -167,7 +167,7 @@ export function BarcodeDisplay({
               </p>
             </div>
             
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               {copyable && (
                 <Button
                   variant="outline"

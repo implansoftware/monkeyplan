@@ -145,7 +145,7 @@ function IntegrationCard({ integration }: { integration: IntegrationSummary }) {
       
       <CardHeader className="pb-3">
         <div className="flex items-start justify-between gap-4">
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-3">
             {INTEGRATION_LOGOS[integration.code] || (
               <div className="h-10 w-10 rounded-lg bg-muted flex items-center justify-center">
                 <Plug className="h-5 w-5 text-muted-foreground" />
@@ -274,7 +274,7 @@ export default function IntegrationsPage() {
         />
         
         <div className="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-3">
             <div className="h-12 w-12 rounded-2xl bg-white/20 backdrop-blur-sm border border-white/30 flex items-center justify-center">
               <Plug className="h-6 w-6 text-white" />
             </div>
@@ -285,8 +285,8 @@ export default function IntegrationsPage() {
               </p>
             </div>
           </div>
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2 text-sm">
+          <div className="flex flex-wrap items-center gap-4">
+            <div className="flex flex-wrap items-center gap-2 text-sm">
               <Badge variant="outline" className="bg-white/10 border-white/30 text-white">{configuredCount} configurate</Badge>
               <Badge className="bg-white/20 text-white border-white/30">{activeCount} attive</Badge>
             </div>

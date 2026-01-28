@@ -213,7 +213,7 @@ export default function AdminExpensesPage() {
             Visualizzazione globale di tutte le note spese
           </p>
         </div>
-        <div className="flex items-center gap-4">
+        <div className="flex flex-wrap items-center gap-4">
           <div className="text-right">
             <p className="text-sm text-muted-foreground">Totale</p>
             <p className="text-xl font-bold flex items-center gap-1">
@@ -265,7 +265,7 @@ export default function AdminExpensesPage() {
                 {reports.map((rep) => (
                   <TableRow key={rep.id} data-testid={`row-expense-${rep.id}`}>
                     <TableCell>
-                      <div className="flex items-center gap-2">
+                      <div className="flex flex-wrap items-center gap-2">
                         <User className="h-4 w-4 text-muted-foreground" />
                         <p className="font-medium">{rep.user?.fullName || "N/A"}</p>
                       </div>
@@ -283,7 +283,7 @@ export default function AdminExpensesPage() {
                       </span>
                     </TableCell>
                     <TableCell>
-                      <div className="flex items-center gap-1 text-sm">
+                      <div className="flex flex-wrap items-center gap-1 text-sm">
                         <Clock className="h-3 w-3" />
                         {format(new Date(rep.createdAt), "dd/MM/yyyy", { locale: it })}
                       </div>
@@ -299,7 +299,7 @@ export default function AdminExpensesPage() {
                       </span>
                     </TableCell>
                     <TableCell>
-                      <div className="flex items-center gap-1">
+                      <div className="flex flex-wrap items-center gap-1">
                         {rep.receiptUrl ? (
                           <>
                             <Button

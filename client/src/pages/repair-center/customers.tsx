@@ -61,7 +61,7 @@ export default function RepairCenterCustomers() {
         <div className="absolute top-1/2 left-1/3 w-48 h-48 rounded-full bg-emerald-300/20 blur-3xl animate-pulse" style={{ animationDelay: '2s' }} />
         
         <div className="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div className="flex items-center gap-4">
+          <div className="flex flex-wrap items-center gap-4">
             <div className="h-14 w-14 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center shadow-xl">
               <Users className="h-7 w-7 text-white" />
             </div>
@@ -79,7 +79,7 @@ export default function RepairCenterCustomers() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card>
           <CardContent className="pt-6">
-            <div className="flex items-center gap-4">
+            <div className="flex flex-wrap items-center gap-4">
               <div className="p-3 bg-primary/10 rounded-full">
                 <Users className="h-6 w-6 text-primary" />
               </div>
@@ -92,7 +92,7 @@ export default function RepairCenterCustomers() {
         </Card>
         <Card>
           <CardContent className="pt-6">
-            <div className="flex items-center gap-4">
+            <div className="flex flex-wrap items-center gap-4">
               <div className="p-3 bg-green-100 dark:bg-green-900/20 rounded-full">
                 <CheckCircle className="h-6 w-6 text-green-600" />
               </div>
@@ -105,7 +105,7 @@ export default function RepairCenterCustomers() {
         </Card>
         <Card>
           <CardContent className="pt-6">
-            <div className="flex items-center gap-4">
+            <div className="flex flex-wrap items-center gap-4">
               <div className="p-3 bg-yellow-100 dark:bg-yellow-900/20 rounded-full">
                 <Clock className="h-6 w-6 text-yellow-600" />
               </div>
@@ -165,7 +165,7 @@ export default function RepairCenterCustomers() {
                   {filteredCustomers.map(customer => (
                     <TableRow key={customer.id} data-testid={`row-customer-${customer.id}`}>
                       <TableCell>
-                        <div className="flex items-center gap-3">
+                        <div className="flex flex-wrap items-center gap-3">
                           <Avatar>
                             <AvatarFallback className="bg-primary/10 text-primary">
                               {getInitials(customer.fullName)}
@@ -179,12 +179,12 @@ export default function RepairCenterCustomers() {
                       </TableCell>
                       <TableCell>
                         <div className="space-y-1">
-                          <div className="flex items-center gap-2 text-sm">
+                          <div className="flex flex-wrap items-center gap-2 text-sm">
                             <Mail className="h-3 w-3 text-muted-foreground" />
                             {customer.email}
                           </div>
                           {customer.phone && (
-                            <div className="flex items-center gap-2 text-sm">
+                            <div className="flex flex-wrap items-center gap-2 text-sm">
                               <Phone className="h-3 w-3 text-muted-foreground" />
                               {customer.phone}
                             </div>
@@ -239,7 +239,7 @@ export default function RepairCenterCustomers() {
       <Dialog open={detailDialogOpen} onOpenChange={setDetailDialogOpen}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
+            <DialogTitle className="flex flex-wrap items-center gap-2">
               <User className="h-5 w-5" />
               Dettagli Cliente
             </DialogTitle>
@@ -273,18 +273,18 @@ export default function RepairCenterCustomers() {
                 <div>
                   <h4 className="font-semibold mb-3">Contatti</h4>
                   <div className="space-y-2 text-sm">
-                    <div className="flex items-center gap-2">
+                    <div className="flex flex-wrap items-center gap-2">
                       <Mail className="h-4 w-4 text-muted-foreground" />
                       <span>{selectedCustomer.email}</span>
                     </div>
                     {selectedCustomer.phone && (
-                      <div className="flex items-center gap-2">
+                      <div className="flex flex-wrap items-center gap-2">
                         <Phone className="h-4 w-4 text-muted-foreground" />
                         <span>{selectedCustomer.phone}</span>
                       </div>
                     )}
                     {selectedCustomer.indirizzo && (
-                      <div className="flex items-center gap-2">
+                      <div className="flex flex-wrap items-center gap-2">
                         <MapPin className="h-4 w-4 text-muted-foreground" />
                         <span>
                           {selectedCustomer.indirizzo}

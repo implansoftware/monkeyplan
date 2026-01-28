@@ -222,7 +222,7 @@ export default function TrovausatiSettingsPage() {
           backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23000' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
         }} />
         <div className="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div className="flex items-center gap-3 mb-1">
+          <div className="flex flex-wrap items-center gap-3 mb-1">
             <div className="h-10 w-10 rounded-xl bg-primary text-primary-foreground flex items-center justify-center shadow-lg shadow-primary/25">
               <Settings className="h-5 w-5" />
             </div>
@@ -237,7 +237,7 @@ export default function TrovausatiSettingsPage() {
       {!credential ? (
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
+            <CardTitle className="flex flex-wrap items-center gap-2">
               <Key className="h-5 w-5" />
               Configurazione Iniziale
             </CardTitle>
@@ -255,7 +255,7 @@ export default function TrovausatiSettingsPage() {
 
             <div className="grid gap-6 md:grid-cols-2">
               <div className="space-y-4 p-4 border rounded-lg">
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2">
                   <ShoppingBag className="h-5 w-5 text-blue-600" />
                   <h3 className="font-semibold">Marketplace B2B</h3>
                 </div>
@@ -276,7 +276,7 @@ export default function TrovausatiSettingsPage() {
               </div>
 
               <div className="space-y-4 p-4 border rounded-lg">
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2">
                   <Tag className="h-5 w-5 text-green-600" />
                   <h3 className="font-semibold">Valutatore / Negozi</h3>
                 </div>
@@ -323,12 +323,12 @@ export default function TrovausatiSettingsPage() {
       ) : (
         <Tabs defaultValue="marketplace" className="space-y-6">
           <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="marketplace" className="flex items-center gap-2" data-testid="tab-marketplace">
+            <TabsTrigger value="marketplace" className="flex flex-wrap items-center gap-2" data-testid="tab-marketplace">
               <ShoppingBag className="h-4 w-4" />
               Marketplace B2B
               {hasMarketplaceKey && <Badge variant={credential.isActive ? "default" : "secondary"} className="ml-1 text-xs">{credential.isActive ? "ON" : "OFF"}</Badge>}
             </TabsTrigger>
-            <TabsTrigger value="valutatore" className="flex items-center gap-2" data-testid="tab-valutatore">
+            <TabsTrigger value="valutatore" className="flex flex-wrap items-center gap-2" data-testid="tab-valutatore">
               <Tag className="h-4 w-4" />
               Valutatore
               {hasStoresKey && <Badge variant={credential.storesIsActive ? "default" : "secondary"} className="ml-1 text-xs">{credential.storesIsActive ? "ON" : "OFF"}</Badge>}
@@ -339,12 +339,12 @@ export default function TrovausatiSettingsPage() {
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-2">
                     <ShoppingBag className="h-5 w-5 text-blue-600" />
                     API Marketplace B2B
                   </div>
                   {hasMarketplaceKey && (
-                    <div className="flex items-center gap-2">
+                    <div className="flex flex-wrap items-center gap-2">
                       <span className="text-sm text-muted-foreground">Attivo</span>
                       <Switch
                         checked={credential.isActive}
@@ -439,12 +439,12 @@ export default function TrovausatiSettingsPage() {
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-2">
                     <Tag className="h-5 w-5 text-green-600" />
                     API Valutatore / Negozi
                   </div>
                   {hasStoresKey && (
-                    <div className="flex items-center gap-2">
+                    <div className="flex flex-wrap items-center gap-2">
                       <span className="text-sm text-muted-foreground">Attivo</span>
                       <Switch
                         checked={credential.storesIsActive}
@@ -539,7 +539,7 @@ export default function TrovausatiSettingsPage() {
                 <CardHeader>
                   <div className="flex items-center justify-between">
                     <div>
-                      <CardTitle className="flex items-center gap-2">
+                      <CardTitle className="flex flex-wrap items-center gap-2">
                         <Store className="h-5 w-5" />
                         Negozi TrovaUsati
                       </CardTitle>
@@ -619,7 +619,7 @@ export default function TrovausatiSettingsPage() {
                           className="flex items-center justify-between p-3 border rounded-md"
                           data-testid={`shop-item-${shop.id}`}
                         >
-                          <div className="flex items-center gap-3">
+                          <div className="flex flex-wrap items-center gap-3">
                             <Store className="h-5 w-5 text-muted-foreground" />
                             <div>
                               <div className="font-medium">
@@ -658,7 +658,7 @@ export default function TrovausatiSettingsPage() {
       {credential && (
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
+            <CardTitle className="flex flex-wrap items-center gap-2">
               <ExternalLink className="h-5 w-5" />
               Link Rapidi
             </CardTitle>

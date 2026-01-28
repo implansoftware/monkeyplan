@@ -102,7 +102,7 @@ export default function CustomerWarranties() {
               <Card key={warranty.id} data-testid={`card-warranty-${warranty.id}`}>
                 <CardHeader className="pb-3">
                   <div className="flex items-center justify-between gap-4 flex-wrap">
-                    <div className="flex items-center gap-3">
+                    <div className="flex flex-wrap items-center gap-3">
                       <div className={`h-10 w-10 rounded-lg flex items-center justify-center ${active ? 'bg-emerald-100 dark:bg-emerald-900' : 'bg-muted'}`}>
                         <Shield className={`h-5 w-5 ${active ? 'text-emerald-600 dark:text-emerald-400' : 'text-muted-foreground'}`} />
                       </div>
@@ -154,7 +154,7 @@ export default function CustomerWarranties() {
                   )}
 
                   {invoice && (
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
                       <FileText className="h-4 w-4" />
                       Fattura: {invoice.invoiceNumber}
                     </div>

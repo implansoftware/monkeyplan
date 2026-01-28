@@ -71,7 +71,7 @@ export function OperationalTaskList({ maxItems = 8 }: OperationalTaskListProps) 
         </CardHeader>
         <CardContent className="space-y-3">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="flex items-center gap-3 p-3 rounded-lg border">
+            <div key={i} className="flex flex-wrap items-center gap-3 p-3 rounded-lg border">
               <Skeleton className="h-9 w-9 rounded-lg" />
               <div className="flex-1 space-y-2">
                 <Skeleton className="h-4 w-3/4" />
@@ -117,7 +117,7 @@ export function OperationalTaskList({ maxItems = 8 }: OperationalTaskListProps) 
             <ListTodo className="h-5 w-5" />
             Attività Operative
           </CardTitle>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             {highPriorityCount > 0 && (
               <Badge 
                 className="font-normal border-0"
@@ -156,7 +156,7 @@ export function OperationalTaskList({ maxItems = 8 }: OperationalTaskListProps) 
               </div>
               
               <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 mb-0.5">
+                <div className="flex flex-wrap items-center gap-2 mb-0.5">
                   <p className="font-medium text-sm truncate" data-testid={`task-title-${task.id}`}>
                     {task.title}
                   </p>

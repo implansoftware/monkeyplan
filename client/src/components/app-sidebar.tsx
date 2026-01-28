@@ -642,7 +642,7 @@ export function AppSidebar() {
     <Sidebar>
       <SidebarHeader className="px-3 py-4">
         {parentReseller?.logoUrl ? (
-          <div className="flex items-center gap-3 p-3 rounded-2xl bg-gradient-to-br from-emerald-500/10 via-teal-500/5 to-cyan-500/10 border border-emerald-500/20 backdrop-blur-sm">
+          <div className="flex flex-wrap items-center gap-3 p-3 rounded-2xl bg-gradient-to-br from-emerald-500/10 via-teal-500/5 to-cyan-500/10 border border-emerald-500/20 backdrop-blur-sm">
             <div className="relative">
               <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/30 to-teal-500/20 rounded-xl blur-sm" />
               <Avatar className="relative h-11 w-11 rounded-xl shadow-lg ring-2 ring-emerald-500/30">
@@ -656,7 +656,7 @@ export function AppSidebar() {
               <span className="font-bold text-sm block truncate">
                 {parentReseller.ragioneSociale || parentReseller.fullName}
               </span>
-              <div className="flex items-center gap-1.5 mt-0.5">
+              <div className="flex flex-wrap items-center gap-1.5 mt-0.5">
                 <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
                 <p className="text-xs text-muted-foreground capitalize">
                   {user.role.replace("_", " ")}
@@ -665,7 +665,7 @@ export function AppSidebar() {
             </div>
           </div>
         ) : (
-          <div className="flex items-center gap-3 p-3 rounded-2xl bg-gradient-to-br from-emerald-500/10 via-teal-500/5 to-cyan-500/10 border border-emerald-500/20 backdrop-blur-sm">
+          <div className="flex flex-wrap items-center gap-3 p-3 rounded-2xl bg-gradient-to-br from-emerald-500/10 via-teal-500/5 to-cyan-500/10 border border-emerald-500/20 backdrop-blur-sm">
             <div className="relative">
               <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/40 to-teal-500/20 rounded-xl blur-sm" />
               <div className="relative flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-500 to-teal-500 text-white shadow-lg ring-2 ring-emerald-500/30">
@@ -673,11 +673,11 @@ export function AppSidebar() {
               </div>
             </div>
             <div className="min-w-0 flex-1">
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2">
                 <span className="font-bold text-sm tracking-tight">MonkeyPlan</span>
                 <span className="text-[10px] text-white font-semibold px-2 py-0.5 rounded-full bg-gradient-to-r from-emerald-500 to-teal-500 shadow-sm">Beta v.24</span>
               </div>
-              <div className="flex items-center gap-1.5 mt-0.5">
+              <div className="flex flex-wrap items-center gap-1.5 mt-0.5">
                 <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
                 <p className="text-xs text-muted-foreground capitalize">
                   {user.role.replace("_", " ")}
@@ -919,7 +919,7 @@ export function AppSidebar() {
       </SidebarContent>
 
       <SidebarFooter className="px-3 py-3">
-        <div className="flex items-center gap-3 p-3 rounded-2xl bg-gradient-to-br from-emerald-500/5 via-teal-500/5 to-cyan-500/5 border border-emerald-500/10 backdrop-blur-sm">
+        <div className="flex flex-wrap items-center gap-3 p-3 rounded-2xl bg-gradient-to-br from-emerald-500/5 via-teal-500/5 to-cyan-500/5 border border-emerald-500/10 backdrop-blur-sm">
           <div className="relative">
             <Avatar className="h-10 w-10 shadow-md ring-2 ring-emerald-500/20">
               <AvatarFallback className="text-xs font-bold bg-gradient-to-br from-emerald-500/30 to-teal-500/20 text-emerald-700 dark:text-emerald-300">

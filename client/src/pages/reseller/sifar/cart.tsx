@@ -183,13 +183,13 @@ export default function SifarCartPage() {
 
   return (
     <div className="p-6 space-y-6">
-      <div className="flex items-center gap-4">
+      <div className="flex flex-wrap items-center gap-4">
         <Link href="/reseller/sifar/catalog">
           <Button variant="ghost" size="icon">
             <ArrowLeft className="h-5 w-5" />
           </Button>
         </Link>
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
           <ShoppingCart className="h-8 w-8" />
           <div>
             <h1 className="text-2xl font-bold">Carrello SIFAR</h1>
@@ -217,7 +217,7 @@ export default function SifarCartPage() {
           <Card>
             <CardHeader>
               <div className="flex items-center justify-between">
-                <CardTitle className="flex items-center gap-2">
+                <CardTitle className="flex flex-wrap items-center gap-2">
                   <Package className="h-5 w-5" />
                   Articoli nel Carrello
                 </CardTitle>
@@ -275,7 +275,7 @@ export default function SifarCartPage() {
                           </Badge>
                         )}
                       </div>
-                      <div className="flex items-center gap-4">
+                      <div className="flex flex-wrap items-center gap-4">
                         <div className="flex items-center border rounded-md">
                           <Button
                             variant="ghost"
@@ -335,7 +335,7 @@ export default function SifarCartPage() {
         <div className="space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
+              <CardTitle className="flex flex-wrap items-center gap-2">
                 <Truck className="h-5 w-5" />
                 Riepilogo Ordine
               </CardTitle>

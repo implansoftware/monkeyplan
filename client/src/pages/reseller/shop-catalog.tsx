@@ -106,7 +106,7 @@ export default function ResellerShopCatalog() {
   const ProductRow = ({ item }: { item: CatalogProduct }) => (
     <TableRow data-testid={`row-product-${item.product.id}`}>
       <TableCell>
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
           {item.product.imageUrl ? (
             <img src={item.product.imageUrl} alt={item.product.name} className="w-10 h-10 object-cover rounded" />
           ) : (
@@ -116,7 +116,7 @@ export default function ResellerShopCatalog() {
           )}
           <div>
             <p className="font-medium">{item.product.name}</p>
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               {item.product.brand && <span className="text-sm text-muted-foreground">{item.product.brand}</span>}
               {item.isOwn ? (
                 <Badge variant="outline">Proprio</Badge>
@@ -144,7 +144,7 @@ export default function ResellerShopCatalog() {
         </div>
       </TableCell>
       <TableCell>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <Warehouse className="h-4 w-4 text-muted-foreground" />
           <span className="font-medium" data-testid={`text-stock-${item.product.id}`}>
             {item.availableQuantity ?? 0}
@@ -152,7 +152,7 @@ export default function ResellerShopCatalog() {
         </div>
       </TableCell>
       <TableCell>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <Switch
             checked={isProductPublished(item)}
             onCheckedChange={(checked) => togglePublishMutation.mutate({
@@ -189,7 +189,7 @@ export default function ResellerShopCatalog() {
         <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 animate-pulse" />
         <div className="absolute bottom-0 left-0 w-48 h-48 bg-white/10 rounded-full blur-3xl translate-y-1/2 -translate-x-1/2 animate-pulse" />
         <div className="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div className="flex items-center gap-4">
+          <div className="flex flex-wrap items-center gap-4">
             <div className="h-12 w-12 rounded-xl bg-white/20 backdrop-blur-sm border border-white/30 flex items-center justify-center">
               <Store className="h-6 w-6 text-white" />
             </div>

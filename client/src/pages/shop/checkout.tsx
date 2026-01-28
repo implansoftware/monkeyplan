@@ -126,7 +126,7 @@ export default function ShopCheckout() {
   
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-4">
+      <div className="flex flex-wrap items-center gap-4">
         <Button variant="ghost" size="icon" onClick={() => setLocation(`/shop/${resellerId}/cart`)}>
           <ArrowLeft className="h-5 w-5" />
         </Button>
@@ -140,7 +140,7 @@ export default function ShopCheckout() {
         <div className="lg:col-span-2 space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
+              <CardTitle className="flex flex-wrap items-center gap-2">
                 <MapPin className="h-5 w-5" />
                 Indirizzo di spedizione
               </CardTitle>
@@ -269,7 +269,7 @@ export default function ShopCheckout() {
           
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
+              <CardTitle className="flex flex-wrap items-center gap-2">
                 <Truck className="h-5 w-5" />
                 Metodo di consegna
               </CardTitle>
@@ -303,7 +303,7 @@ export default function ShopCheckout() {
           
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
+              <CardTitle className="flex flex-wrap items-center gap-2">
                 <CreditCard className="h-5 w-5" />
                 Metodo di pagamento
               </CardTitle>

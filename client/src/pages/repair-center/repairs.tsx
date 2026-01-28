@@ -211,7 +211,7 @@ export default function RepairCenterRepairs() {
         <div className="absolute top-1/2 left-1/3 w-48 h-48 rounded-full bg-emerald-300/20 blur-3xl animate-pulse" style={{ animationDelay: '2s' }} />
         
         <div className="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div className="flex items-center gap-4">
+          <div className="flex flex-wrap items-center gap-4">
             <div className="h-14 w-14 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center shadow-xl">
               <Wrench className="h-7 w-7 text-white" />
             </div>
@@ -220,7 +220,7 @@ export default function RepairCenterRepairs() {
               <p className="text-emerald-100">Gestisci tutte le riparazioni assegnate al tuo centro</p>
             </div>
           </div>
-          <div className="flex items-center gap-2 flex-wrap">
+          <div className="flex flex-wrap items-center gap-2 flex-wrap">
             <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as "table" | "kanban")}>
               <TabsList className="bg-white/20 backdrop-blur-sm border-white/30">
                 <TabsTrigger value="table" className="gap-2 data-[state=active]:bg-white/30 text-white" data-testid="toggle-table-view">
@@ -358,25 +358,25 @@ export default function RepairCenterRepairs() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">
-                  <span className="flex items-center gap-2">
+                  <span className="flex flex-wrap items-center gap-2">
                     <Clock className="h-3 w-3" />
                     Tutti SLA
                   </span>
                 </SelectItem>
                 <SelectItem value="in_time">
-                  <span className="flex items-center gap-2">
+                  <span className="flex flex-wrap items-center gap-2">
                     <Clock className="h-3 w-3 text-green-500" />
                     In Tempo
                   </span>
                 </SelectItem>
                 <SelectItem value="late">
-                  <span className="flex items-center gap-2">
+                  <span className="flex flex-wrap items-center gap-2">
                     <AlertTriangle className="h-3 w-3 text-yellow-500" />
                     In Ritardo
                   </span>
                 </SelectItem>
                 <SelectItem value="urgent">
-                  <span className="flex items-center gap-2">
+                  <span className="flex flex-wrap items-center gap-2">
                     <AlertCircle className="h-3 w-3 text-red-500" />
                     Urgente
                   </span>
@@ -559,7 +559,7 @@ export default function RepairCenterRepairs() {
             <div className="text-sm text-muted-foreground">
               Pagina {page} di {totalPages} ({total} risultati)
             </div>
-            <div className="flex items-center gap-1">
+            <div className="flex flex-wrap items-center gap-1">
               <Button
                 variant="outline"
                 size="icon"

@@ -249,7 +249,7 @@ export default function ResellerDashboard() {
         <div className="relative flex flex-col gap-4">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
-              <div className="flex items-center gap-3 mb-1">
+              <div className="flex flex-wrap items-center gap-3 mb-1">
                 <div className="h-12 w-12 rounded-2xl bg-white/20 backdrop-blur-sm border border-white/30 flex items-center justify-center">
                   <LayoutDashboard className="h-6 w-6 text-white" />
                 </div>
@@ -285,7 +285,7 @@ export default function ResellerDashboard() {
           <div className="flex flex-wrap items-center gap-3 pt-3 border-t border-white/20">
             <TooltipUI>
               <TooltipTrigger asChild>
-                <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-white/15 backdrop-blur-sm border border-white/25 text-sm" data-testid="pill-repairs">
+                <div className="flex flex-wrap items-center gap-2 px-4 py-2 rounded-full bg-white/15 backdrop-blur-sm border border-white/25 text-sm" data-testid="pill-repairs">
                   <Wrench className="h-3.5 w-3.5 text-white" />
                   <span className="font-semibold tabular-nums text-white">{stats?.overview?.activeRepairs ?? 0}</span>
                   <span className="text-white/80 text-xs">riparazioni</span>
@@ -296,7 +296,7 @@ export default function ResellerDashboard() {
             
             <TooltipUI>
               <TooltipTrigger asChild>
-                <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-white/15 backdrop-blur-sm border border-white/25 text-sm" data-testid="pill-revenue">
+                <div className="flex flex-wrap items-center gap-2 px-4 py-2 rounded-full bg-white/15 backdrop-blur-sm border border-white/25 text-sm" data-testid="pill-revenue">
                   <Euro className="h-3.5 w-3.5 text-yellow-300" />
                   <span className="font-semibold tabular-nums text-white">{formatCurrency(todayRevenue)}</span>
                   <span className="text-white/80 text-xs">totale</span>
@@ -308,7 +308,7 @@ export default function ResellerDashboard() {
             {totalUrgencies > 0 && (
               <TooltipUI>
                 <TooltipTrigger asChild>
-                  <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-orange-400/30 backdrop-blur-sm border border-orange-300/30 text-sm" data-testid="pill-urgencies">
+                  <div className="flex flex-wrap items-center gap-2 px-4 py-2 rounded-full bg-orange-400/30 backdrop-blur-sm border border-orange-300/30 text-sm" data-testid="pill-urgencies">
                     <AlertTriangle className="h-3.5 w-3.5 text-orange-200" />
                     <span className="font-semibold tabular-nums text-white">{totalUrgencies}</span>
                     <span className="text-orange-100 text-xs">urgenze</span>
@@ -323,7 +323,7 @@ export default function ResellerDashboard() {
 
       {/* Parent Reseller Banner */}
       {parentReseller && (
-        <div className="flex items-center gap-4 p-4 rounded-xl border bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30 border-blue-200/50 dark:border-blue-800/50">
+        <div className="flex flex-wrap items-center gap-4 p-4 rounded-xl border bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30 border-blue-200/50 dark:border-blue-800/50">
           <Avatar className="h-12 w-12 rounded-lg border-2 border-blue-200 dark:border-blue-700">
             {parentReseller.logoUrl ? (
               <AvatarImage src={parentReseller.logoUrl} alt={parentReseller.ragioneSociale || parentReseller.fullName} className="object-contain" />
@@ -346,7 +346,7 @@ export default function ResellerDashboard() {
       {isWidgetVisible("urgent-actions") && (diagnosisPendingRepairs.length > 0 || (stats?.warehouse?.lowStockItems || 0) > 0 || (stats?.b2b?.pendingOrders || 0) > 0 || overdueInvoices.length > 0 || quotePendingRepairs.length > 0) && (
         <Card className="border-amber-200 dark:border-amber-800 bg-gradient-to-r from-amber-50/50 to-orange-50/50 dark:from-amber-950/20 dark:to-orange-950/20" data-testid="card-urgent-actions">
           <CardHeader className="pb-3">
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <div className="h-8 w-8 rounded-lg bg-amber-500/10 flex items-center justify-center">
                 <AlertTriangle className="h-4 w-4 text-amber-600" />
               </div>
@@ -360,7 +360,7 @@ export default function ResellerDashboard() {
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
               {diagnosisPendingRepairs.length > 0 && (
                 <Link href="/reseller/repairs?status=in_diagnosi" className="block" data-testid="link-urgent-diagnosi">
-                  <div className="flex items-center gap-3 p-3 rounded-lg bg-red-50 dark:bg-red-950/30 border border-red-200/50 dark:border-red-800/50 hover-elevate">
+                  <div className="flex flex-wrap items-center gap-3 p-3 rounded-lg bg-red-50 dark:bg-red-950/30 border border-red-200/50 dark:border-red-800/50 hover-elevate">
                     <div className="h-10 w-10 rounded-full bg-red-100 dark:bg-red-900/50 flex items-center justify-center shrink-0">
                       <Stethoscope className="h-5 w-5 text-red-600 dark:text-red-400" />
                     </div>
@@ -375,7 +375,7 @@ export default function ResellerDashboard() {
               
               {quotePendingRepairs.length > 0 && (
                 <Link href="/reseller/repairs?status=preventivo_emesso" className="block" data-testid="link-urgent-preventivi">
-                  <div className="flex items-center gap-3 p-3 rounded-lg bg-amber-50 dark:bg-amber-950/30 border border-amber-200/50 dark:border-amber-800/50 hover-elevate">
+                  <div className="flex flex-wrap items-center gap-3 p-3 rounded-lg bg-amber-50 dark:bg-amber-950/30 border border-amber-200/50 dark:border-amber-800/50 hover-elevate">
                     <div className="h-10 w-10 rounded-full bg-amber-100 dark:bg-amber-900/50 flex items-center justify-center shrink-0">
                       <ClipboardList className="h-5 w-5 text-amber-600 dark:text-amber-400" />
                     </div>
@@ -390,7 +390,7 @@ export default function ResellerDashboard() {
               
               {(stats?.warehouse?.lowStockItems || 0) > 0 && (
                 <Link href="/reseller/products?lowStock=true" className="block" data-testid="link-urgent-lowstock">
-                  <div className="flex items-center gap-3 p-3 rounded-lg bg-orange-50 dark:bg-orange-950/30 border border-orange-200/50 dark:border-orange-800/50 hover-elevate">
+                  <div className="flex flex-wrap items-center gap-3 p-3 rounded-lg bg-orange-50 dark:bg-orange-950/30 border border-orange-200/50 dark:border-orange-800/50 hover-elevate">
                     <div className="h-10 w-10 rounded-full bg-orange-100 dark:bg-orange-900/50 flex items-center justify-center shrink-0">
                       <PackageX className="h-5 w-5 text-orange-600 dark:text-orange-400" />
                     </div>
@@ -405,7 +405,7 @@ export default function ResellerDashboard() {
               
               {(stats?.b2b?.pendingOrders || 0) > 0 && (
                 <Link href="/reseller/rc-b2b-orders" className="block" data-testid="link-urgent-b2b">
-                  <div className="flex items-center gap-3 p-3 rounded-lg bg-blue-50 dark:bg-blue-950/30 border border-blue-200/50 dark:border-blue-800/50 hover-elevate">
+                  <div className="flex flex-wrap items-center gap-3 p-3 rounded-lg bg-blue-50 dark:bg-blue-950/30 border border-blue-200/50 dark:border-blue-800/50 hover-elevate">
                     <div className="h-10 w-10 rounded-full bg-blue-100 dark:bg-blue-900/50 flex items-center justify-center shrink-0">
                       <ShoppingCart className="h-5 w-5 text-blue-600 dark:text-blue-400" />
                     </div>
@@ -420,7 +420,7 @@ export default function ResellerDashboard() {
               
               {overdueInvoices.length > 0 && (
                 <Link href="/reseller/invoices?status=overdue" className="block" data-testid="link-urgent-invoices">
-                  <div className="flex items-center gap-3 p-3 rounded-lg bg-red-50 dark:bg-red-950/30 border border-red-200/50 dark:border-red-800/50 hover-elevate">
+                  <div className="flex flex-wrap items-center gap-3 p-3 rounded-lg bg-red-50 dark:bg-red-950/30 border border-red-200/50 dark:border-red-800/50 hover-elevate">
                     <div className="h-10 w-10 rounded-full bg-red-100 dark:bg-red-900/50 flex items-center justify-center shrink-0">
                       <AlertCircle className="h-5 w-5 text-red-600 dark:text-red-400" />
                     </div>
@@ -453,7 +453,7 @@ export default function ResellerDashboard() {
                         {stats?.overview?.activeRepairs ?? 0}
                       </p>
                     )}
-                    <div className="flex items-center gap-1 mt-1">
+                    <div className="flex flex-wrap items-center gap-1 mt-1">
                       <TrendingUp className="h-3 w-3 text-emerald-500" />
                       <span className="text-xs text-emerald-600 dark:text-emerald-400 font-medium">
                         {stats?.overview?.totalRepairs ?? 0} totali
@@ -550,7 +550,7 @@ export default function ResellerDashboard() {
             <Link key="stats-tickets" href="/reseller/transfer-requests" className="block group">
               <Card className="h-full border-0 bg-gradient-to-br from-violet-50 to-purple-50 dark:from-violet-950/40 dark:to-purple-950/40 hover-elevate" data-testid="card-interscambio">
                 <CardContent className="pt-4 pb-3">
-                  <div className="flex items-center gap-3">
+                  <div className="flex flex-wrap items-center gap-3">
                     <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-violet-500 to-purple-500 flex items-center justify-center shadow-lg shadow-violet-500/30">
                       <ArrowRightLeft className="h-5 w-5 text-white" />
                     </div>
@@ -570,7 +570,7 @@ export default function ResellerDashboard() {
             <Link key="stats-b2b-orders" href="/reseller/b2b-orders" className="block group">
               <Card className="h-full border-0 bg-gradient-to-br from-orange-50 to-amber-50 dark:from-orange-950/40 dark:to-amber-950/40 hover-elevate" data-testid="card-b2b">
                 <CardContent className="pt-4 pb-3">
-                  <div className="flex items-center gap-3">
+                  <div className="flex flex-wrap items-center gap-3">
                     <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-orange-500 to-amber-500 flex items-center justify-center shadow-lg shadow-orange-500/30">
                       <ShoppingCart className="h-5 w-5 text-white" />
                     </div>
@@ -590,7 +590,7 @@ export default function ResellerDashboard() {
             <Link key="stats-pos" href="/reseller/utility/practices" className="block group">
               <Card className="h-full border-0 bg-gradient-to-br from-yellow-50 to-amber-50 dark:from-yellow-950/40 dark:to-amber-950/40 hover-elevate" data-testid="card-utility">
                 <CardContent className="pt-4 pb-3">
-                  <div className="flex items-center gap-3">
+                  <div className="flex flex-wrap items-center gap-3">
                     <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-yellow-500 to-orange-400 flex items-center justify-center shadow-lg shadow-yellow-500/30">
                       <Zap className="h-5 w-5 text-white" />
                     </div>
@@ -610,7 +610,7 @@ export default function ResellerDashboard() {
             <Link key="stats-network" href="/reseller/repair-centers" className="block group">
               <Card className="h-full border-0 bg-gradient-to-br from-cyan-50 to-teal-50 dark:from-cyan-950/40 dark:to-teal-950/40 hover-elevate" data-testid="card-network-stats">
                 <CardContent className="pt-4 pb-3">
-                  <div className="flex items-center gap-3">
+                  <div className="flex flex-wrap items-center gap-3">
                     <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-cyan-500 to-teal-500 flex items-center justify-center shadow-lg shadow-cyan-500/30">
                       <Network className="h-5 w-5 text-white" />
                     </div>
@@ -637,7 +637,7 @@ export default function ResellerDashboard() {
       <Card className="overflow-hidden rounded-2xl border-0 shadow-lg" data-testid="card-sales-overview">
         <CardHeader className="pb-3 border-b bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
+            <div className="flex flex-wrap items-center gap-3">
               <div className="h-10 w-10 rounded-xl bg-white/20 backdrop-blur-sm border border-white/30 flex items-center justify-center">
                 <TrendingUp className="h-5 w-5 text-white" />
               </div>
@@ -657,7 +657,7 @@ export default function ResellerDashboard() {
         <CardContent className="pt-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
             <div className="col-span-2 lg:col-span-1 p-4 rounded-xl bg-gradient-to-br from-primary/5 to-primary/10 border border-primary/20">
-              <div className="flex items-center gap-2 mb-2">
+              <div className="flex flex-wrap items-center gap-2 mb-2">
                 <Euro className="h-4 w-4 text-primary" />
                 <span className="text-xs font-medium text-muted-foreground">Totale</span>
               </div>
@@ -674,7 +674,7 @@ export default function ResellerDashboard() {
                     ? 'bg-muted/30 border-border/50'
                     : 'bg-blue-50 dark:bg-blue-950/30 border-blue-200/50 dark:border-blue-800/50'
               }`}>
-              <div className="flex items-center gap-2 mb-1">
+              <div className="flex flex-wrap items-center gap-2 mb-1">
                 <ShoppingCart className={`h-3 w-3 ${(salesData?.summary?.bySource?.ecommerce || 0) === 0 ? 'text-muted-foreground/50' : 'text-blue-600'}`} />
                 <span className="text-xs text-muted-foreground">E-commerce</span>
                 {dominantSalesSource === 'ecommerce' && <Badge variant="secondary" className="text-[10px] px-1.5 py-0 h-4">Top</Badge>}
@@ -692,7 +692,7 @@ export default function ResellerDashboard() {
                     ? 'bg-muted/30 border-border/50'
                     : 'bg-green-50 dark:bg-green-950/30 border-green-200/50 dark:border-green-800/50'
               }`}>
-              <div className="flex items-center gap-2 mb-1">
+              <div className="flex flex-wrap items-center gap-2 mb-1">
                 <Store className={`h-3 w-3 ${(salesData?.summary?.bySource?.pos || 0) === 0 ? 'text-muted-foreground/50' : 'text-green-600'}`} />
                 <span className="text-xs text-muted-foreground">POS</span>
                 {dominantSalesSource === 'pos' && <Badge variant="secondary" className="text-[10px] px-1.5 py-0 h-4">Top</Badge>}
@@ -710,7 +710,7 @@ export default function ResellerDashboard() {
                     ? 'bg-muted/30 border-border/50'
                     : 'bg-yellow-50 dark:bg-yellow-950/30 border-yellow-200/50 dark:border-yellow-800/50'
               }`}>
-              <div className="flex items-center gap-2 mb-1">
+              <div className="flex flex-wrap items-center gap-2 mb-1">
                 <Zap className={`h-3 w-3 ${(salesData?.summary?.bySource?.utility || 0) === 0 ? 'text-muted-foreground/50' : 'text-yellow-600'}`} />
                 <span className="text-xs text-muted-foreground">Utility</span>
                 {dominantSalesSource === 'utility' && <Badge variant="secondary" className="text-[10px] px-1.5 py-0 h-4">Top</Badge>}
@@ -728,7 +728,7 @@ export default function ResellerDashboard() {
                     ? 'bg-muted/30 border-border/50'
                     : 'bg-purple-50 dark:bg-purple-950/30 border-purple-200/50 dark:border-purple-800/50'
               }`}>
-              <div className="flex items-center gap-2 mb-1">
+              <div className="flex flex-wrap items-center gap-2 mb-1">
                 <Briefcase className={`h-3 w-3 ${(salesData?.summary?.bySource?.b2b || 0) === 0 ? 'text-muted-foreground/50' : 'text-purple-600'}`} />
                 <span className="text-xs text-muted-foreground">B2B</span>
                 {dominantSalesSource === 'b2b' && <Badge variant="secondary" className="text-[10px] px-1.5 py-0 h-4">Top</Badge>}
@@ -747,7 +747,7 @@ export default function ResellerDashboard() {
       {isWidgetVisible("management-quick-actions") && (
       <Card className="overflow-hidden rounded-2xl">
         <CardHeader className="pb-3 border-b bg-gradient-to-r from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800">
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-3">
             <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-slate-600 to-slate-700 flex items-center justify-center">
               <Zap className="h-4 w-4 text-white" />
             </div>
@@ -888,7 +888,7 @@ export default function ResellerDashboard() {
           {isWidgetVisible("chart-repairs-status") && (
             <Card className="overflow-hidden rounded-2xl">
               <CardHeader className="pb-2 border-b bg-gradient-to-r from-teal-50 to-cyan-50 dark:from-teal-950/30 dark:to-cyan-950/30">
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2">
                   <div className="h-7 w-7 rounded-lg bg-gradient-to-br from-teal-500 to-cyan-500 flex items-center justify-center">
                     <BarChart3 className="h-3.5 w-3.5 text-white" />
                   </div>
@@ -929,7 +929,7 @@ export default function ResellerDashboard() {
           {isWidgetVisible("chart-work-status") && (
             <Card className="overflow-hidden rounded-2xl">
               <CardHeader className="pb-2 border-b bg-gradient-to-r from-violet-50 to-purple-50 dark:from-violet-950/30 dark:to-purple-950/30">
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2">
                   <div className="h-7 w-7 rounded-lg bg-gradient-to-br from-violet-500 to-purple-500 flex items-center justify-center">
                     <PieChartIcon className="h-3.5 w-3.5 text-white" />
                   </div>
@@ -969,7 +969,7 @@ export default function ResellerDashboard() {
                     </ResponsiveContainer>
                     <div className="flex flex-wrap justify-center gap-x-4 gap-y-1 mt-2">
                       {pieData.map((entry, index) => (
-                        <div key={entry.name} className="flex items-center gap-1.5 text-xs">
+                        <div key={entry.name} className="flex flex-wrap items-center gap-1.5 text-xs">
                           <div 
                             className="h-2.5 w-2.5 rounded-full" 
                             style={{ backgroundColor: CHART_COLORS[index % CHART_COLORS.length] }}
@@ -993,7 +993,7 @@ export default function ResellerDashboard() {
         {isWidgetVisible("activity-recent-repairs") && (
           <Card className="overflow-hidden rounded-2xl">
             <CardHeader className="flex flex-row items-center justify-between gap-1 pb-3 border-b bg-gradient-to-r from-emerald-50 to-teal-50 dark:from-emerald-950/30 dark:to-teal-950/30">
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2">
                 <div className="h-7 w-7 rounded-lg bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center">
                   <Wrench className="h-3.5 w-3.5 text-white" />
                 </div>
@@ -1023,7 +1023,7 @@ export default function ResellerDashboard() {
                       >
                         <div className={`w-1 h-10 rounded-full ${repair.status === 'consegnato' ? 'bg-slate-400' : 'bg-primary'}`} />
                         <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2">
+                          <div className="flex flex-wrap items-center gap-2">
                             <span className="font-mono text-xs text-muted-foreground">{repair.orderNumber || repair.id.substring(0, 8)}</span>
                             {getStatusBadge(repair.status)}
                           </div>

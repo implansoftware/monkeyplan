@@ -147,7 +147,7 @@ export default function RepairCenterSuppliers() {
         <div className="absolute top-1/2 left-1/3 w-48 h-48 rounded-full bg-emerald-300/20 blur-3xl animate-pulse" style={{ animationDelay: '2s' }} />
         
         <div className="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div className="flex items-center gap-4">
+          <div className="flex flex-wrap items-center gap-4">
             <div className="h-14 w-14 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center shadow-xl">
               <Truck className="h-7 w-7 text-white" />
             </div>
@@ -156,7 +156,7 @@ export default function RepairCenterSuppliers() {
               <p className="text-emerald-100">Visualizza i fornitori disponibili</p>
             </div>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <Badge className="bg-white/20 backdrop-blur-sm text-white border-white/30">
               <Globe className="h-3 w-3 mr-1" />
               {globalSuppliers.length} globali
@@ -171,7 +171,7 @@ export default function RepairCenterSuppliers() {
 
       {externalIntegrations.length > 0 && (
         <div className="space-y-4">
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <Zap className="h-5 w-5 text-primary" />
             <h2 className="text-lg font-semibold">Integrazioni API</h2>
             <Badge variant="secondary">{externalIntegrations.length}</Badge>
@@ -240,7 +240,7 @@ export default function RepairCenterSuppliers() {
                         )}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 flex-wrap">
+                        <div className="flex flex-wrap items-center gap-2 flex-wrap">
                           <CardTitle className="text-base font-semibold">
                             {integration.name}
                           </CardTitle>
@@ -259,17 +259,17 @@ export default function RepairCenterSuppliers() {
                   <CardContent className="pt-0">
                     {isSifar && isConfigured && (
                       <div className="space-y-4">
-                        <div className="flex items-center gap-6 text-sm text-muted-foreground">
-                          <div className="flex items-center gap-1">
+                        <div className="flex flex-wrap items-center gap-6 text-sm text-muted-foreground">
+                          <div className="flex flex-wrap items-center gap-1">
                             <Package className="h-4 w-4" />
                             <span>Ambiente: <Badge variant="outline" className="ml-1" data-testid="text-sifar-environment">{sifarCredential?.environment}</Badge></span>
                           </div>
-                          <div className="flex items-center gap-1">
+                          <div className="flex flex-wrap items-center gap-1">
                             <MapPin className="h-4 w-4" />
                             <span data-testid="text-sifar-store-count">{sifarStoreCount} {sifarStoreCount === 1 ? 'punto vendita' : 'punti vendita'}</span>
                           </div>
                         </div>
-                        <div className="flex items-center gap-2 flex-wrap">
+                        <div className="flex flex-wrap items-center gap-2 flex-wrap">
                           <Link href="/repair-center/sifar/catalog">
                             <Button variant="default" size="sm" data-testid="button-sifar-catalog">
                               <Package className="h-4 w-4 mr-2" />
@@ -287,13 +287,13 @@ export default function RepairCenterSuppliers() {
                     )}
                     {isFoneday && isConfigured && (
                       <div className="space-y-3">
-                        <div className="flex items-center gap-2 p-2 rounded-lg bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-800">
+                        <div className="flex flex-wrap items-center gap-2 p-2 rounded-lg bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-800">
                           <CheckCircle className="h-4 w-4 text-green-600 dark:text-green-400 flex-shrink-0" />
                           <p className="text-xs text-green-800 dark:text-green-200">
                             Integrazione attiva tramite il rivenditore.
                           </p>
                         </div>
-                        <div className="flex items-center gap-2 flex-wrap">
+                        <div className="flex flex-wrap items-center gap-2 flex-wrap">
                           <Link href="/repair-center/foneday/catalog">
                             <Button variant="default" size="sm" data-testid="button-foneday-catalog">
                               <Package className="h-4 w-4 mr-2" />
@@ -311,17 +311,17 @@ export default function RepairCenterSuppliers() {
                     )}
                     {isTrovausati && isConfigured && (
                       <div className="space-y-4">
-                        <div className="flex items-center gap-6 text-sm text-muted-foreground">
-                          <div className="flex items-center gap-1">
+                        <div className="flex flex-wrap items-center gap-6 text-sm text-muted-foreground">
+                          <div className="flex flex-wrap items-center gap-1">
                             <Package className="h-4 w-4" />
                             <span>Tipo: <Badge variant="outline" className="ml-1" data-testid="text-trovausati-type">{trovausatiCredential?.apiType === 'resellers' ? 'Rivenditori' : 'Negozi/GDS'}</Badge></span>
                           </div>
-                          <div className="flex items-center gap-1">
+                          <div className="flex flex-wrap items-center gap-1">
                             <MapPin className="h-4 w-4" />
                             <span data-testid="text-trovausati-shop-count">{trovausatiShopCount} {trovausatiShopCount === 1 ? 'negozio' : 'negozi'}</span>
                           </div>
                         </div>
-                        <div className="flex items-center gap-2 p-2 rounded-lg bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-800">
+                        <div className="flex flex-wrap items-center gap-2 p-2 rounded-lg bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-800">
                           <CheckCircle className="h-4 w-4 text-green-600 dark:text-green-400 flex-shrink-0" />
                           <p className="text-xs text-green-800 dark:text-green-200">
                             Integrazione attiva tramite il rivenditore.
@@ -331,13 +331,13 @@ export default function RepairCenterSuppliers() {
                     )}
                     {isMobilesentrix && isConfigured && (
                       <div className="space-y-3">
-                        <div className="flex items-center gap-2 p-2 rounded-lg bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-800">
+                        <div className="flex flex-wrap items-center gap-2 p-2 rounded-lg bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-800">
                           <CheckCircle className="h-4 w-4 text-green-600 dark:text-green-400 flex-shrink-0" />
                           <p className="text-xs text-green-800 dark:text-green-200">
                             Integrazione attiva tramite il rivenditore.
                           </p>
                         </div>
-                        <div className="flex items-center gap-2 flex-wrap">
+                        <div className="flex flex-wrap items-center gap-2 flex-wrap">
                           <Link href="/repair-center/mobilesentrix/catalog">
                             <Button variant="default" size="sm" data-testid="button-mobilesentrix-catalog">
                               <Package className="h-4 w-4 mr-2" />
@@ -365,7 +365,7 @@ export default function RepairCenterSuppliers() {
 
       <Card>
         <CardHeader className="flex flex-row items-center justify-between gap-4 space-y-0 pb-4">
-          <CardTitle className="flex items-center gap-2">
+          <CardTitle className="flex flex-wrap items-center gap-2">
             <Truck className="h-5 w-5" />
             Elenco Fornitori
           </CardTitle>
@@ -411,13 +411,13 @@ export default function RepairCenterSuppliers() {
                     <TableCell>
                       <div className="space-y-1">
                         {supplier.email && (
-                          <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                          <div className="flex flex-wrap items-center gap-1 text-sm text-muted-foreground">
                             <Mail className="h-3 w-3" />
                             {supplier.email}
                           </div>
                         )}
                         {supplier.phone && (
-                          <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                          <div className="flex flex-wrap items-center gap-1 text-sm text-muted-foreground">
                             <Phone className="h-3 w-3" />
                             {supplier.phone}
                           </div>
@@ -426,7 +426,7 @@ export default function RepairCenterSuppliers() {
                     </TableCell>
                     <TableCell>
                       {supplier.city && (
-                        <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                        <div className="flex flex-wrap items-center gap-1 text-sm text-muted-foreground">
                           <MapPin className="h-3 w-3" />
                           {supplier.city}
                         </div>

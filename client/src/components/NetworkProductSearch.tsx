@@ -190,7 +190,7 @@ export function NetworkProductSearch({
                       className="cursor-pointer"
                       data-testid={`network-product-item-${product.id}-${index}`}
                     >
-                      <div className="flex items-center gap-2 w-full">
+                      <div className="flex flex-wrap items-center gap-2 w-full">
                         <div className="w-8 h-8 flex-shrink-0 rounded border overflow-hidden">
                           {product.imageUrl ? (
                             <img
@@ -208,12 +208,12 @@ export function NetworkProductSearch({
                           <span className="truncate font-medium text-sm">
                             {product.name}
                           </span>
-                          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                          <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
                             <span className="truncate">{product.sku}</span>
                             <span>-</span>
                             <span>{formatCurrency(product.unitPrice)}</span>
                           </div>
-                          <div className="flex items-center gap-2 mt-0.5">
+                          <div className="flex flex-wrap items-center gap-2 mt-0.5">
                             {product.source === "network" ? (
                               <Badge variant="outline" className="text-xs h-5 px-1.5">
                                 <Building className="h-3 w-3 mr-1" />

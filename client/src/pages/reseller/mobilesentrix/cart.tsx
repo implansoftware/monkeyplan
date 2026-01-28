@@ -158,14 +158,14 @@ export default function MobilesentrixCartPage() {
   return (
     <div className="p-6 space-y-6">
       <div className="flex items-center justify-between flex-wrap gap-4">
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
           <ShoppingCart className="h-8 w-8" />
           <div>
             <h1 className="text-2xl font-bold">Carrello MobileSentrix</h1>
             <p className="text-muted-foreground">{totalItems} prodott{totalItems === 1 ? "o" : "i"} nel carrello</p>
           </div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <Link href="/reseller/mobilesentrix/catalog">
             <Button variant="outline" data-testid="button-back-catalog">
               <ArrowLeft className="h-4 w-4 mr-2" />
@@ -218,7 +218,7 @@ export default function MobilesentrixCartPage() {
                       <p className="font-semibold mt-1">{formatPrice(item.price)}</p>
                     </div>
                     <div className="flex flex-col items-end gap-2">
-                      <div className="flex items-center gap-1">
+                      <div className="flex flex-wrap items-center gap-1">
                         <Button
                           size="icon"
                           variant="outline"
@@ -294,7 +294,7 @@ export default function MobilesentrixCartPage() {
                 </div>
                 
                 <div className="space-y-2">
-                  <Label className="flex items-center gap-2">
+                  <Label className="flex flex-wrap items-center gap-2">
                     <Truck className="h-4 w-4" />
                     Metodo di Spedizione
                   </Label>

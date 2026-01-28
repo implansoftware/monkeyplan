@@ -130,7 +130,7 @@ export default function SifarSettingsPage() {
 
   return (
     <div className="p-6 space-y-6">
-      <div className="flex items-center gap-3">
+      <div className="flex flex-wrap items-center gap-3">
         <Settings className="h-8 w-8" />
         <div>
           <h1 className="text-2xl font-bold">Configurazione SIFAR</h1>
@@ -140,7 +140,7 @@ export default function SifarSettingsPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
+          <CardTitle className="flex flex-wrap items-center gap-2">
             <Key className="h-5 w-5" />
             Credenziali API
           </CardTitle>
@@ -220,7 +220,7 @@ export default function SifarSettingsPage() {
         <>
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
+              <CardTitle className="flex flex-wrap items-center gap-2">
                 <RefreshCcw className="h-5 w-5" />
                 Test Connessione
               </CardTitle>
@@ -265,7 +265,7 @@ export default function SifarSettingsPage() {
             <CardHeader>
               <div className="flex items-center justify-between">
                 <div>
-                  <CardTitle className="flex items-center gap-2">
+                  <CardTitle className="flex flex-wrap items-center gap-2">
                     <Store className="h-5 w-5" />
                     Punti Vendita
                   </CardTitle>
@@ -345,7 +345,7 @@ export default function SifarSettingsPage() {
                       className="flex items-center justify-between p-3 border rounded-md"
                       data-testid={`store-item-${store.id}`}
                     >
-                      <div className="flex items-center gap-3">
+                      <div className="flex flex-wrap items-center gap-3">
                         <Store className="h-5 w-5 text-muted-foreground" />
                         <div>
                           <div className="font-medium">

@@ -69,7 +69,7 @@ export default function PublicTrack() {
         <Card className="mb-6">
           <CardHeader className="pb-3">
             <div className="flex items-center justify-between gap-4 flex-wrap">
-              <CardTitle className="flex items-center gap-2">
+              <CardTitle className="flex flex-wrap items-center gap-2">
                 <StatusIcon className="h-5 w-5" />
                 Stato Attuale
               </CardTitle>

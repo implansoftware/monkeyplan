@@ -99,7 +99,7 @@ export default function ResellerSupplierOrders() {
         <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
         <div className="absolute bottom-0 left-0 w-48 h-48 bg-white/10 rounded-full blur-3xl translate-y-1/2 -translate-x-1/2" />
         <div className="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-3">
             <div className="h-12 w-12 rounded-xl bg-white/20 backdrop-blur-sm border border-white/30 flex items-center justify-center">
               <ShoppingCart className="h-6 w-6 text-white" />
             </div>
@@ -116,11 +116,11 @@ export default function ResellerSupplierOrders() {
 
       <Card className="rounded-2xl">
         <CardHeader className="flex flex-row items-center justify-between gap-4 space-y-0 pb-4">
-          <CardTitle className="flex items-center gap-2">
+          <CardTitle className="flex flex-wrap items-center gap-2">
             <ShoppingCart className="h-5 w-5" />
             Ordini Fornitori
           </CardTitle>
-          <div className="flex items-center gap-4">
+          <div className="flex flex-wrap items-center gap-4">
             <div className="relative w-64">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
@@ -187,7 +187,7 @@ export default function ResellerSupplierOrders() {
                       {order.orderNumber}
                     </TableCell>
                     <TableCell>
-                      <div className="flex items-center gap-2">
+                      <div className="flex flex-wrap items-center gap-2">
                         <Truck className="h-4 w-4 text-muted-foreground" />
                         <span data-testid={`text-order-supplier-${order.id}`}>
                           {order.supplier?.name || "-"}
@@ -195,7 +195,7 @@ export default function ResellerSupplierOrders() {
                       </div>
                     </TableCell>
                     <TableCell>
-                      <div className="flex items-center gap-2">
+                      <div className="flex flex-wrap items-center gap-2">
                         <Building2 className="h-4 w-4 text-muted-foreground" />
                         <div>
                           <div className="font-medium" data-testid={`text-order-center-${order.id}`}>
@@ -216,14 +216,14 @@ export default function ResellerSupplierOrders() {
                       {formatCurrency(order.totalAmount)}
                     </TableCell>
                     <TableCell data-testid={`text-order-date-${order.id}`}>
-                      <div className="flex items-center gap-1 text-muted-foreground">
+                      <div className="flex flex-wrap items-center gap-1 text-muted-foreground">
                         <Calendar className="h-3 w-3" />
                         {format(new Date(order.createdAt), "dd MMM yyyy", { locale: it })}
                       </div>
                     </TableCell>
                     <TableCell data-testid={`text-order-delivery-${order.id}`}>
                       {order.expectedDelivery ? (
-                        <div className="flex items-center gap-1 text-muted-foreground">
+                        <div className="flex flex-wrap items-center gap-1 text-muted-foreground">
                           <Calendar className="h-3 w-3" />
                           {format(new Date(order.expectedDelivery), "dd MMM yyyy", { locale: it })}
                         </div>

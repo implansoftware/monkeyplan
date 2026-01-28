@@ -205,7 +205,7 @@ export function DiagnosisPhotoUploader({
           </div>
         ) : (
           <div className="flex flex-col items-center gap-3">
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <Camera className="h-10 w-10 text-muted-foreground" />
               <Upload className="h-8 w-8 text-muted-foreground" />
             </div>

@@ -1724,7 +1724,7 @@ export function RepairIntakeWizard({
                     {/* Diagnosis Section */}
                     <div className="space-y-3">
                       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                        <div className="flex items-center gap-3">
+                        <div className="flex flex-wrap items-center gap-3">
                           <div className="relative h-10 w-10 flex-shrink-0 rounded-xl bg-violet-500/10 flex items-center justify-center">
                             <Stethoscope className="h-5 w-5 text-violet-600 dark:text-violet-400" />
                             {collectedDiagnosisData && (
@@ -1740,7 +1740,7 @@ export function RepairIntakeWizard({
                             </p>
                           </div>
                         </div>
-                        <div className="flex items-center gap-2 flex-shrink-0">
+                        <div className="flex flex-wrap items-center gap-2 flex-shrink-0">
                           {collectedDiagnosisData && (
                             <Button
                               type="button"
@@ -1774,7 +1774,7 @@ export function RepairIntakeWizard({
                     {/* Quote Section */}
                     <div className="space-y-3">
                       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                        <div className="flex items-center gap-3">
+                        <div className="flex flex-wrap items-center gap-3">
                           <div className="relative h-10 w-10 flex-shrink-0 rounded-xl bg-blue-500/10 flex items-center justify-center">
                             <FileText className="h-5 w-5 text-blue-600 dark:text-blue-400" />
                             {collectedQuoteData && (
@@ -1790,7 +1790,7 @@ export function RepairIntakeWizard({
                             </p>
                           </div>
                         </div>
-                        <div className="flex items-center gap-2 flex-shrink-0">
+                        <div className="flex flex-wrap items-center gap-2 flex-shrink-0">
                           {collectedQuoteData && (
                             <Button
                               type="button"

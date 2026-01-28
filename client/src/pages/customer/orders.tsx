@@ -80,7 +80,7 @@ export default function CustomerOrders() {
         <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl animate-pulse" />
         <div className="absolute bottom-0 left-0 w-48 h-48 bg-cyan-300/20 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
         <div className="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div className="flex items-center gap-4">
+          <div className="flex flex-wrap items-center gap-4">
             <div className="h-12 w-12 rounded-xl bg-white/20 backdrop-blur-sm border border-white/30 flex items-center justify-center">
               <Package className="h-6 w-6 text-white" />
             </div>
@@ -112,7 +112,7 @@ export default function CustomerOrders() {
               <CardContent className="p-6">
                 <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                   <div className="space-y-2">
-                    <div className="flex items-center gap-3">
+                    <div className="flex flex-wrap items-center gap-3">
                       <h3 className="font-semibold text-lg" data-testid={`text-order-number-${order.id}`}>
                         {order.orderNumber}
                       </h3>
@@ -122,11 +122,11 @@ export default function CustomerOrders() {
                     </div>
                     
                     <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
-                      <div className="flex items-center gap-1">
+                      <div className="flex flex-wrap items-center gap-1">
                         <Calendar className="h-4 w-4" />
                         <span>{formatDate(order.createdAt)}</span>
                       </div>
-                      <div className="flex items-center gap-1">
+                      <div className="flex flex-wrap items-center gap-1">
                         <CreditCard className="h-4 w-4" />
                         <span data-testid={`text-order-total-${order.id}`}>{formatPrice(order.total)}</span>
                       </div>

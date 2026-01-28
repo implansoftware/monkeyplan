@@ -49,7 +49,7 @@ export default function RepairCenterUtility() {
   if (isLoading) {
     return (
       <div className="p-6 space-y-6">
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
           <Zap className="h-8 w-8 text-primary" />
           <h1 className="text-2xl font-bold">Utility</h1>
         </div>
@@ -77,7 +77,7 @@ export default function RepairCenterUtility() {
         <div className="absolute top-1/2 left-1/3 w-48 h-48 rounded-full bg-emerald-300/20 blur-3xl animate-pulse" style={{ animationDelay: '2s' }} />
         
         <div className="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div className="flex items-center gap-4">
+          <div className="flex flex-wrap items-center gap-4">
             <div className="h-14 w-14 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center shadow-xl">
               <Zap className="h-7 w-7 text-white" />
             </div>
@@ -143,7 +143,7 @@ export default function RepairCenterUtility() {
             <div className="space-y-3">
               {Object.entries(summary?.byCategory || {}).map(([cat, data]) => (
                 <div key={cat} className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-2">
                     <Badge variant="outline">{categoryLabels[cat] || cat}</Badge>
                     <span className="text-sm text-muted-foreground">
                       {data.count} pratiche

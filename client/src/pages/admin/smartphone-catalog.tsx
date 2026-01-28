@@ -787,7 +787,7 @@ export default function AdminSmartphoneCatalog() {
           backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23000' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
         }} />
         <div className="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div className="flex items-center gap-3 mb-1">
+          <div className="flex flex-wrap items-center gap-3 mb-1">
             <div className="h-10 w-10 rounded-xl bg-primary text-primary-foreground flex items-center justify-center shadow-lg shadow-primary/25">
               <Smartphone className="h-5 w-5" />
             </div>
@@ -806,7 +806,7 @@ export default function AdminSmartphoneCatalog() {
       <Card>
         <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-4">
           <CardTitle>Lista Dispositivi ({filteredSmartphones.length})</CardTitle>
-          <div className="flex items-center gap-2 flex-wrap">
+          <div className="flex flex-wrap items-center gap-2 flex-wrap">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
@@ -964,7 +964,7 @@ export default function AdminSmartphoneCatalog() {
                         </div>
                       </TableCell>
                       <TableCell>
-                        <div className="flex items-center gap-1">
+                        <div className="flex flex-wrap items-center gap-1">
                           <Button
                             variant="ghost"
                             size="icon"
@@ -1256,7 +1256,7 @@ export default function AdminSmartphoneCatalog() {
 
             <div className="space-y-3 p-3 bg-muted/50 rounded-lg">
               <div className="flex items-center justify-between">
-                <Label className="flex items-center gap-2">
+                <Label className="flex flex-wrap items-center gap-2">
                   <Warehouse className="h-4 w-4" />
                   {editingSmartphone ? "Gestione stock" : "Quantità iniziali per magazzino"}
                 </Label>
@@ -1352,7 +1352,7 @@ export default function AdminSmartphoneCatalog() {
                               {updateStockMutation.isPending ? "..." : "Salva"}
                             </Button>
                           </div>
-                          <div className="flex items-center gap-3">
+                          <div className="flex flex-wrap items-center gap-3">
                             <div className="flex-1">
                               <Label className="text-xs text-muted-foreground">Quantità</Label>
                               <Input
@@ -1391,7 +1391,7 @@ export default function AdminSmartphoneCatalog() {
                       return (
                         <div key={stock.warehouseId} className="p-3 border rounded-md space-y-2">
                           <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-2">
+                            <div className="flex flex-wrap items-center gap-2">
                               <Warehouse className="h-4 w-4 text-muted-foreground" />
                               <span className="font-medium">{wh?.name || "Magazzino"}</span>
                               {wh && (
@@ -1410,7 +1410,7 @@ export default function AdminSmartphoneCatalog() {
                               <X className="h-4 w-4" />
                             </Button>
                           </div>
-                          <div className="flex items-center gap-3">
+                          <div className="flex flex-wrap items-center gap-3">
                             <div className="flex-1">
                               <Label className="text-xs text-muted-foreground">Quantità</Label>
                               <Input
@@ -1439,7 +1439,7 @@ export default function AdminSmartphoneCatalog() {
               )}
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <Checkbox
                 id="originalBox"
                 checked={formData.originalBox}
@@ -1453,7 +1453,7 @@ export default function AdminSmartphoneCatalog() {
               <Label>Accessori Inclusi</Label>
               <div className="flex flex-wrap gap-4">
                 {ACCESSORY_OPTIONS.map((acc) => (
-                  <div key={acc} className="flex items-center gap-2">
+                  <div key={acc} className="flex flex-wrap items-center gap-2">
                     <Checkbox
                       id={`acc-${acc}`}
                       checked={formData.accessories.includes(acc)}
@@ -1572,7 +1572,7 @@ export default function AdminSmartphoneCatalog() {
 
               {editingSmartphone && (
               <div className="space-y-3 border-t pt-4">
-                <Label className="flex items-center gap-2">
+                <Label className="flex flex-wrap items-center gap-2">
                   <Link2 className="h-4 w-4" />
                   Compatibilità Dispositivi
                 </Label>
@@ -1714,7 +1714,7 @@ export default function AdminSmartphoneCatalog() {
       <Dialog open={assignDialogOpen} onOpenChange={(open) => { setAssignDialogOpen(open); if (!open) { setSelectedResellerId(""); setAssignPrice(""); setAssignCostPrice(""); } }}>
         <DialogContent className="max-w-lg">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
+            <DialogTitle className="flex flex-wrap items-center gap-2">
               <Users className="h-5 w-5" />
               Assegna a Rivenditore
             </DialogTitle>

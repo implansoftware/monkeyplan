@@ -338,7 +338,7 @@ export function TestChecklistDialog({
                   control={form.control}
                   name="overallResult"
                   render={({ field }) => (
-                    <FormItem className="flex items-center gap-3">
+                    <FormItem className="flex flex-wrap items-center gap-3">
                       <FormControl>
                         <Checkbox
                           checked={field.value ?? false}

@@ -151,7 +151,7 @@ export default function AdminB2BOrders() {
       >
         <TableCell className="font-medium">{order.orderNumber}</TableCell>
         <TableCell>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <UserIcon className="h-4 w-4 text-muted-foreground" />
             <div>
               <div>{order.reseller?.fullName || "—"}</div>
@@ -168,7 +168,7 @@ export default function AdminB2BOrders() {
           {paymentMethodLabels[order.paymentMethod || 'bank_transfer']}
         </TableCell>
         <TableCell>
-          <Badge variant={status.variant} className="flex items-center gap-1 w-fit">
+          <Badge variant={status.variant} className="flex flex-wrap items-center gap-1 w-fit">
             <StatusIcon className="h-3 w-3" />
             {status.label}
           </Badge>
@@ -297,7 +297,7 @@ export default function AdminB2BOrders() {
                   <div>
                     <DialogTitle>Ordine {selectedOrder.orderNumber}</DialogTitle>
                     <DialogDescription>
-                      <span className="flex items-center gap-2 mt-1">
+                      <span className="flex flex-wrap items-center gap-2 mt-1">
                         <UserIcon className="h-4 w-4" />
                         {selectedOrder.reseller?.fullName} ({selectedOrder.reseller?.email})
                       </span>
@@ -323,7 +323,7 @@ export default function AdminB2BOrders() {
                     {selectedOrder.items?.map((item) => (
                       <TableRow key={item.id}>
                         <TableCell>
-                          <div className="flex items-center gap-2">
+                          <div className="flex flex-wrap items-center gap-2">
                             {item.product?.imageUrl ? (
                               <img src={item.product.imageUrl} alt="" className="w-10 h-10 object-cover rounded" />
                             ) : (

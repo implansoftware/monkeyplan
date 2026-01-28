@@ -177,7 +177,7 @@ export default function RepairCenterMarketplace() {
         <div className="absolute top-1/2 left-1/3 w-48 h-48 rounded-full bg-emerald-300/20 blur-3xl animate-pulse" style={{ animationDelay: '2s' }} />
         
         <div className="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div className="flex items-center gap-4">
+          <div className="flex flex-wrap items-center gap-4">
             <div className="h-14 w-14 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center shadow-xl">
               <Store className="h-7 w-7 text-white" />
             </div>
@@ -186,7 +186,7 @@ export default function RepairCenterMarketplace() {
               <p className="text-emerald-100">Acquista prodotti da tutti i rivenditori</p>
             </div>
           </div>
-          <div className="flex items-center gap-4">
+          <div className="flex flex-wrap items-center gap-4">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-white/70" />
               <Input
@@ -229,7 +229,7 @@ export default function RepairCenterMarketplace() {
         <div className="space-y-8">
           {Object.entries(groupedBySeller).map(([sellerId, { sellerName, products }]) => (
             <div key={sellerId}>
-              <div className="flex items-center gap-2 mb-4">
+              <div className="flex flex-wrap items-center gap-2 mb-4">
                 <Users className="h-5 w-5 text-muted-foreground" />
                 <h2 className="text-lg font-semibold">{sellerName}</h2>
                 <Badge variant="outline">{products.length} prodotti</Badge>
@@ -316,7 +316,7 @@ export default function RepairCenterMarketplace() {
             <div className="space-y-2">
               {cart.map(item => (
                 <div key={item.productId} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
-                  <div className="flex items-center gap-3 flex-1">
+                  <div className="flex flex-wrap items-center gap-3 flex-1">
                     {item.product.imageUrl ? (
                       <img 
                         src={item.product.imageUrl} 
@@ -333,7 +333,7 @@ export default function RepairCenterMarketplace() {
                       <p className="text-sm text-muted-foreground">{formatPrice(item.unitPrice)} / pz</p>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-2">
                     <Button 
                       size="icon" 
                       variant="outline"

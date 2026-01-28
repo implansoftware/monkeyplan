@@ -310,7 +310,7 @@ export default function SupplierReturnsPage() {
         </div>
         
         <Select value={filterStatus} onValueChange={setFilterStatus}>
-          <SelectTrigger className="w-[180px]" data-testid="select-filter-status">
+          <SelectTrigger className="w-full sm:w-[180px]" data-testid="select-filter-status">
             <SelectValue placeholder="Stato" />
           </SelectTrigger>
           <SelectContent>
@@ -322,7 +322,7 @@ export default function SupplierReturnsPage() {
         </Select>
         
         <Select value={filterSupplier} onValueChange={setFilterSupplier}>
-          <SelectTrigger className="w-[200px]" data-testid="select-filter-supplier">
+          <SelectTrigger className="w-full sm:w-[200px]" data-testid="select-filter-supplier">
             <SelectValue placeholder="Fornitore" />
           </SelectTrigger>
           <SelectContent>
@@ -337,7 +337,7 @@ export default function SupplierReturnsPage() {
       {/* Returns List */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
+          <CardTitle className="flex flex-wrap items-center gap-2">
             <Undo2 className="h-5 w-5" />
             Lista Resi
           </CardTitle>
@@ -390,7 +390,7 @@ export default function SupplierReturnsPage() {
                         {ret.returnNumber}
                       </TableCell>
                       <TableCell>
-                        <div className="flex items-center gap-2">
+                        <div className="flex flex-wrap items-center gap-2">
                           <Building2 className="h-4 w-4 text-muted-foreground" />
                           {supplier?.name || "-"}
                         </div>
@@ -633,7 +633,7 @@ export default function SupplierReturnsPage() {
           {selectedReturn && (
             <>
               <DialogHeader>
-                <DialogTitle className="flex items-center gap-3">
+                <DialogTitle className="flex flex-wrap items-center gap-3">
                   <span>Reso {selectedReturn.returnNumber}</span>
                   <Badge className={STATUS_CONFIG[selectedReturn.status]?.color}>
                     {STATUS_CONFIG[selectedReturn.status]?.label}

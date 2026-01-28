@@ -116,7 +116,7 @@ export default function RepairCenterB2BOrders() {
         <div className="absolute top-1/2 left-1/3 w-48 h-48 rounded-full bg-emerald-300/20 blur-3xl animate-pulse" style={{ animationDelay: '2s' }} />
         
         <div className="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div className="flex items-center gap-4">
+          <div className="flex flex-wrap items-center gap-4">
             <div className="h-14 w-14 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center shadow-xl">
               <Package className="h-7 w-7 text-white" />
             </div>
@@ -168,7 +168,7 @@ export default function RepairCenterB2BOrders() {
                       {format(new Date(order.createdAt), "dd MMM yyyy", { locale: it })}
                     </TableCell>
                     <TableCell>
-                      <div className="flex items-center gap-2">
+                      <div className="flex flex-wrap items-center gap-2">
                         {getStatusIcon(order.status)}
                         {getStatusBadge(order.status)}
                       </div>
@@ -197,7 +197,7 @@ export default function RepairCenterB2BOrders() {
         {selectedOrder && (
           <DialogContent className="max-w-2xl">
             <DialogHeader>
-              <DialogTitle className="flex items-center gap-2">
+              <DialogTitle className="flex flex-wrap items-center gap-2">
                 Ordine {selectedOrder.orderNumber}
                 {getStatusBadge(selectedOrder.status)}
               </DialogTitle>
@@ -222,7 +222,7 @@ export default function RepairCenterB2BOrders() {
                     return (
                       <TableRow key={item.id}>
                         <TableCell>
-                          <div className="flex items-center gap-3">
+                          <div className="flex flex-wrap items-center gap-3">
                             {imageUrl ? (
                               <img 
                                 src={imageUrl} 

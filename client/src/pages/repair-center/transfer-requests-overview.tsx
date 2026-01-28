@@ -256,7 +256,7 @@ export default function RepairCenterTransferRequestsOverviewPage() {
       <Card key={request.id} className="hover-elevate" data-testid={`card-rc-transfer-${request.id}`}>
         <CardContent className="pt-4">
           <div className="flex items-start justify-between gap-4 flex-wrap">
-            <div className="flex items-center gap-3">
+            <div className="flex flex-wrap items-center gap-3">
               <div className="p-2 rounded-lg bg-purple-100 dark:bg-purple-900/30">
                 <Package className="h-5 w-5 text-purple-600" />
               </div>
@@ -267,7 +267,7 @@ export default function RepairCenterTransferRequestsOverviewPage() {
                 </div>
               </div>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               {renderStatusBadge(request.status)}
             </div>
           </div>
@@ -375,7 +375,7 @@ export default function RepairCenterTransferRequestsOverviewPage() {
         <div className="absolute top-1/2 left-1/3 w-48 h-48 rounded-full bg-emerald-300/20 blur-3xl animate-pulse" style={{ animationDelay: '2s' }} />
         
         <div className="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div className="flex items-center gap-4">
+          <div className="flex flex-wrap items-center gap-4">
             <div className="h-14 w-14 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center shadow-xl">
               <ArrowLeftRight className="h-7 w-7 text-white" />
             </div>
@@ -386,7 +386,7 @@ export default function RepairCenterTransferRequestsOverviewPage() {
               </p>
             </div>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <Button className="bg-white/20 backdrop-blur-sm text-white border-white/30 hover:bg-white/30 shadow-lg" variant="outline" onClick={() => setShowNewRequestDialog(true)} data-testid="button-rc-new-request">
               <Plus className="h-4 w-4 mr-2" />
               Nuova Richiesta
@@ -398,7 +398,7 @@ export default function RepairCenterTransferRequestsOverviewPage() {
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card>
           <CardContent className="pt-4">
-            <div className="flex items-center gap-3">
+            <div className="flex flex-wrap items-center gap-3">
               <div className="p-2 rounded-lg bg-yellow-100 dark:bg-yellow-900/30">
                 <Clock className="h-5 w-5 text-yellow-600" />
               </div>
@@ -411,7 +411,7 @@ export default function RepairCenterTransferRequestsOverviewPage() {
         </Card>
         <Card>
           <CardContent className="pt-4">
-            <div className="flex items-center gap-3">
+            <div className="flex flex-wrap items-center gap-3">
               <div className="p-2 rounded-lg bg-blue-100 dark:bg-blue-900/30">
                 <CheckCircle className="h-5 w-5 text-blue-600" />
               </div>
@@ -424,7 +424,7 @@ export default function RepairCenterTransferRequestsOverviewPage() {
         </Card>
         <Card>
           <CardContent className="pt-4">
-            <div className="flex items-center gap-3">
+            <div className="flex flex-wrap items-center gap-3">
               <div className="p-2 rounded-lg bg-purple-100 dark:bg-purple-900/30">
                 <Truck className="h-5 w-5 text-purple-600" />
               </div>
@@ -437,7 +437,7 @@ export default function RepairCenterTransferRequestsOverviewPage() {
         </Card>
         <Card>
           <CardContent className="pt-4">
-            <div className="flex items-center gap-3">
+            <div className="flex flex-wrap items-center gap-3">
               <div className="p-2 rounded-lg bg-green-100 dark:bg-green-900/30">
                 <History className="h-5 w-5 text-green-600" />
               </div>
@@ -450,7 +450,7 @@ export default function RepairCenterTransferRequestsOverviewPage() {
         </Card>
       </div>
 
-      <div className="flex items-center gap-4 flex-wrap">
+      <div className="flex flex-wrap items-center gap-4 flex-wrap">
         <div className="relative flex-1 min-w-[200px]">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
@@ -462,7 +462,7 @@ export default function RepairCenterTransferRequestsOverviewPage() {
           />
         </div>
         <Select value={statusFilter} onValueChange={setStatusFilter}>
-          <SelectTrigger className="w-[180px]" data-testid="select-rc-status-filter">
+          <SelectTrigger className="w-full sm:w-[180px]" data-testid="select-rc-status-filter">
             <SelectValue placeholder="Filtra per stato" />
           </SelectTrigger>
           <SelectContent>
@@ -527,7 +527,7 @@ export default function RepairCenterTransferRequestsOverviewPage() {
       <Dialog open={showDetailsDialog} onOpenChange={setShowDetailsDialog}>
         <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
+            <DialogTitle className="flex flex-wrap items-center gap-2">
               <Package className="h-5 w-5" />
               Dettagli Richiesta {selectedRequest?.requestNumber}
             </DialogTitle>
@@ -592,7 +592,7 @@ export default function RepairCenterTransferRequestsOverviewPage() {
                       {selectedRequest.items.map((item) => (
                         <tr key={item.id} className="border-t">
                           <td className="p-2">
-                            <div className="flex items-center gap-3">
+                            <div className="flex flex-wrap items-center gap-3">
                               {item.product?.imageUrl ? (
                                 <img 
                                   src={item.product.imageUrl} 
@@ -651,7 +651,7 @@ export default function RepairCenterTransferRequestsOverviewPage() {
                     {selectedRequest.items.map((item, idx) => (
                       <tr key={item.id} className="border-t">
                         <td className="p-2">
-                          <div className="flex items-center gap-3">
+                          <div className="flex flex-wrap items-center gap-3">
                             {item.product?.imageUrl ? (
                               <img 
                                 src={item.product.imageUrl} 
@@ -723,7 +723,7 @@ export default function RepairCenterTransferRequestsOverviewPage() {
 
           <div className="flex items-center justify-center gap-2 py-2">
             {[1, 2, 3].map((step) => (
-              <div key={step} className="flex items-center gap-2">
+              <div key={step} className="flex flex-wrap items-center gap-2">
                 <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
                   wizardStep === step 
                     ? "bg-primary text-primary-foreground" 
@@ -741,7 +741,7 @@ export default function RepairCenterTransferRequestsOverviewPage() {
           <div className="flex-1 overflow-y-auto space-y-4 py-4">
             {wizardStep === 1 && (
               <div className="space-y-4">
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2">
                   <div className="relative flex-1">
                     <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     <Input
@@ -753,7 +753,7 @@ export default function RepairCenterTransferRequestsOverviewPage() {
                     />
                   </div>
                   <Select value={productTypeFilter} onValueChange={setProductTypeFilter}>
-                    <SelectTrigger className="w-[160px]" data-testid="select-rc-product-type">
+                    <SelectTrigger className="w-full sm:w-[160px]" data-testid="select-rc-product-type">
                       <SelectValue placeholder="Tipo" />
                     </SelectTrigger>
                     <SelectContent>
@@ -803,7 +803,7 @@ export default function RepairCenterTransferRequestsOverviewPage() {
                           data-testid={`card-rc-product-${item.product.id}`}
                         >
                           <CardContent className="p-3">
-                            <div className="flex items-center gap-3">
+                            <div className="flex flex-wrap items-center gap-3">
                               <div className="w-10 h-10 rounded bg-muted flex items-center justify-center overflow-hidden">
                                 {item.product.imageUrl ? (
                                   <img 
@@ -817,7 +817,7 @@ export default function RepairCenterTransferRequestsOverviewPage() {
                               </div>
                               <div className="flex-1 min-w-0">
                                 <p className="font-medium truncate">{item.product.name}</p>
-                                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
                                   <span>{item.product.sku}</span>
                                   {item.product.brand && <span>| {item.product.brand}</span>}
                                 </div>
@@ -844,7 +844,7 @@ export default function RepairCenterTransferRequestsOverviewPage() {
               <div className="space-y-4">
                 <Card className="bg-muted/50">
                   <CardContent className="p-3">
-                    <div className="flex items-center gap-3">
+                    <div className="flex flex-wrap items-center gap-3">
                       <div className="w-10 h-10 rounded bg-muted flex items-center justify-center overflow-hidden">
                         {selectedProduct.product.imageUrl ? (
                           <img 
@@ -877,7 +877,7 @@ export default function RepairCenterTransferRequestsOverviewPage() {
                     >
                       <CardContent className="p-3">
                         <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-3">
+                          <div className="flex flex-wrap items-center gap-3">
                             <Warehouse className="h-5 w-5 text-muted-foreground" />
                             <div>
                               <p className="font-medium">{wh.warehouseName}</p>
@@ -899,7 +899,7 @@ export default function RepairCenterTransferRequestsOverviewPage() {
               <div className="space-y-4">
                 <Card className="bg-muted/50">
                   <CardContent className="p-4 space-y-3">
-                    <div className="flex items-center gap-3">
+                    <div className="flex flex-wrap items-center gap-3">
                       <div className="w-10 h-10 rounded bg-muted flex items-center justify-center overflow-hidden">
                         {selectedProduct.product.imageUrl ? (
                           <img 
@@ -916,7 +916,7 @@ export default function RepairCenterTransferRequestsOverviewPage() {
                         <p className="text-sm text-muted-foreground">{selectedProduct.product.sku}</p>
                       </div>
                     </div>
-                    <div className="flex items-center gap-3">
+                    <div className="flex flex-wrap items-center gap-3">
                       <Warehouse className="h-5 w-5 text-muted-foreground" />
                       <div>
                         <p className="font-medium">

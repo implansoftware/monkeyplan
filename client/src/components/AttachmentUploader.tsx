@@ -320,7 +320,7 @@ export function AttachmentUploader({
       {canUpload && (
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
+            <CardTitle className="flex flex-wrap items-center gap-2">
               <Upload className="h-5 w-5" />
               Carica Allegati
             </CardTitle>
@@ -372,7 +372,7 @@ export function AttachmentUploader({
                     key={index} 
                     className="flex items-center justify-between p-3 bg-muted rounded-lg"
                   >
-                    <div className="flex items-center gap-3">
+                    <div className="flex flex-wrap items-center gap-3">
                       {getFileIcon(file.type)}
                       <div>
                         <p className="font-medium text-sm">{file.name}</p>
@@ -419,7 +419,7 @@ export function AttachmentUploader({
       {/* Attachments List */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
+          <CardTitle className="flex flex-wrap items-center gap-2">
             <FileText className="h-5 w-5" />
             Allegati ({attachments.length})
           </CardTitle>
@@ -475,7 +475,7 @@ export function AttachmentUploader({
                             <p className="font-medium truncate" data-testid={`text-filename-${attachment.id}`}>
                               {attachment.fileName}
                             </p>
-                            <div className="flex items-center gap-2 mt-1 flex-wrap">
+                            <div className="flex flex-wrap items-center gap-2 mt-1 flex-wrap">
                               <Badge variant="secondary" className="text-xs">
                                 {formatFileSize(attachment.fileSize)}
                               </Badge>
@@ -496,7 +496,7 @@ export function AttachmentUploader({
                           </div>
 
                           {/* Actions */}
-                          <div className="flex items-center gap-2 flex-shrink-0">
+                          <div className="flex flex-wrap items-center gap-2 flex-shrink-0">
                             <Button
                               size="sm"
                               variant="outline"

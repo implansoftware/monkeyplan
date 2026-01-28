@@ -167,7 +167,7 @@ export function DashboardCustomizer({
                         </div>
                       </div>
 
-                      <div className="flex items-center gap-2">
+                      <div className="flex flex-wrap items-center gap-2">
                         {widget.visible ? (
                           <Eye className="h-4 w-4 text-green-500" />
                         ) : (

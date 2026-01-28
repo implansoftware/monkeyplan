@@ -326,7 +326,7 @@ export default function ResellerAppointments() {
         
         <div className="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <div className="flex items-center gap-3 mb-1">
+            <div className="flex flex-wrap items-center gap-3 mb-1">
               <div className="h-12 w-12 rounded-2xl bg-white/20 backdrop-blur-sm border border-white/30 flex items-center justify-center">
                 <CalendarCheck className="h-6 w-6 text-white" />
               </div>
@@ -338,7 +338,7 @@ export default function ResellerAppointments() {
               </div>
             </div>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-3">
             <Select value={selectedCenterId} onValueChange={setSelectedCenterId}>
               <SelectTrigger className="w-full sm:w-56 bg-white/20 backdrop-blur-sm border-white/30 text-white" data-testid="select-repair-center">
                 <Building className="h-4 w-4 mr-2" />
@@ -499,7 +499,7 @@ export default function ResellerAppointments() {
                               }}
                               data-testid={`appointment-${appointment.id}`}
                             >
-                              <div className="flex items-center gap-3">
+                              <div className="flex flex-wrap items-center gap-3">
                                 <div className="flex flex-col items-center justify-center w-14 h-14 rounded-md bg-muted text-center">
                                   <span className="text-lg font-bold">{appointment.startTime}</span>
                                 </div>
@@ -601,7 +601,7 @@ export default function ResellerAppointments() {
                       <div key={day.weekday} className="flex flex-wrap items-center gap-4 py-2 border-b last:border-0">
                         <div className="w-24 font-medium">{weekdayNames[day.weekday]}</div>
                         
-                        <div className="flex items-center gap-2">
+                        <div className="flex flex-wrap items-center gap-2">
                           <Switch
                             checked={!day.isClosed}
                             onCheckedChange={(checked) => updateLocalAvailability(day.weekday, "isClosed", !checked)}
@@ -615,7 +615,7 @@ export default function ResellerAppointments() {
 
                         {!day.isClosed && (
                           <>
-                            <div className="flex items-center gap-2">
+                            <div className="flex flex-wrap items-center gap-2">
                               <Input
                                 type="time"
                                 value={day.startTime}
@@ -635,7 +635,7 @@ export default function ResellerAppointments() {
                               />
                             </div>
                             
-                            <div className="flex items-center gap-2 ml-auto">
+                            <div className="flex flex-wrap items-center gap-2 ml-auto">
                               <Label className="text-xs text-muted-foreground">Slot:</Label>
                               <Select
                                 value={String(day.slotDurationMinutes)}
@@ -799,7 +799,7 @@ export default function ResellerAppointments() {
             <div className="space-y-4">
               {selectedAppointment.repairOrder && (
                 <div className="p-3 rounded-lg bg-muted/50 space-y-2">
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-2">
                     <Wrench className="h-4 w-4 text-muted-foreground" />
                     <span className="font-semibold">Ordine {selectedAppointment.repairOrder.orderNumber}</span>
                   </div>
@@ -832,19 +832,19 @@ export default function ResellerAppointments() {
 
               {selectedAppointment.customer && (
                 <div className="p-3 rounded-lg bg-muted/50 space-y-1">
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-2">
                     <User className="h-4 w-4 text-muted-foreground" />
                     <span className="font-semibold">{selectedAppointment.customer.fullName || "Cliente"}</span>
                   </div>
                   <div className="text-sm space-y-0.5">
                     {selectedAppointment.customer.phone && (
-                      <div className="flex items-center gap-2">
+                      <div className="flex flex-wrap items-center gap-2">
                         <Phone className="h-3 w-3 text-muted-foreground" />
                         <span>{selectedAppointment.customer.phone}</span>
                       </div>
                     )}
                     {selectedAppointment.customer.email && (
-                      <div className="flex items-center gap-2">
+                      <div className="flex flex-wrap items-center gap-2">
                         <Mail className="h-3 w-3 text-muted-foreground" />
                         <span>{selectedAppointment.customer.email}</span>
                       </div>

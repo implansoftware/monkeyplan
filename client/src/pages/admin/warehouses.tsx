@@ -218,7 +218,7 @@ export default function WarehousesPage() {
         />
         
         <div className="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div className="flex items-center gap-3 mb-1">
+          <div className="flex flex-wrap items-center gap-3 mb-1">
             <div className="h-12 w-12 rounded-2xl bg-white/20 backdrop-blur-sm border border-white/30 flex items-center justify-center">
               <Warehouse className="h-6 w-6 text-white" />
             </div>
@@ -363,7 +363,7 @@ export default function WarehousesPage() {
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card className="rounded-2xl">
           <CardContent className="pt-6">
-            <div className="flex items-center gap-4">
+            <div className="flex flex-wrap items-center gap-4">
               <div className="p-3 bg-primary/10 rounded-lg">
                 <Boxes className="h-6 w-6 text-primary" />
               </div>
@@ -376,7 +376,7 @@ export default function WarehousesPage() {
         </Card>
         <Card className="rounded-2xl">
           <CardContent className="pt-6">
-            <div className="flex items-center gap-4">
+            <div className="flex flex-wrap items-center gap-4">
               <div className="p-3 bg-green-500/10 rounded-lg">
                 <TrendingUp className="h-6 w-6 text-green-500" />
               </div>
@@ -391,7 +391,7 @@ export default function WarehousesPage() {
         </Card>
         <Card className="rounded-2xl">
           <CardContent className="pt-6">
-            <div className="flex items-center gap-4">
+            <div className="flex flex-wrap items-center gap-4">
               <div className="p-3 bg-orange-500/10 rounded-lg">
                 <TrendingDown className="h-6 w-6 text-orange-500" />
               </div>
@@ -419,7 +419,7 @@ export default function WarehousesPage() {
         </TabsList>
 
         <TabsContent value="stock" className="space-y-4">
-          <div className="flex items-center gap-4">
+          <div className="flex flex-wrap items-center gap-4">
             <div className="relative flex-1 max-w-sm">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
@@ -462,7 +462,7 @@ export default function WarehousesPage() {
                       filteredStock.map((item) => (
                         <tr key={item.id} className="border-b last:border-0 hover:bg-muted/50" data-testid={`row-stock-${item.id}`}>
                           <td className="p-4">
-                            <div className="flex items-center gap-3">
+                            <div className="flex flex-wrap items-center gap-3">
                               {item.product?.imageUrl ? (
                                 <img 
                                   src={item.product.imageUrl} 

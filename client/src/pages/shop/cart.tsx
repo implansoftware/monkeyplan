@@ -97,7 +97,7 @@ export default function ShopCart() {
   
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-4">
+      <div className="flex flex-wrap items-center gap-4">
         <Button variant="ghost" size="icon" onClick={() => setLocation(`/shop/${resellerId}`)}>
           <ArrowLeft className="h-5 w-5" />
         </Button>
@@ -162,7 +162,7 @@ export default function ShopCart() {
                         <Trash2 className="h-4 w-4 text-destructive" />
                       </Button>
                       
-                      <div className="flex items-center gap-2">
+                      <div className="flex flex-wrap items-center gap-2">
                         <Button
                           variant="outline"
                           size="icon"

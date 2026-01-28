@@ -207,19 +207,19 @@ export function CustomerWizardDialog({ open, onOpenChange, onSuccess }: Customer
             <p className="text-sm text-slate-500 mb-4">Cliente privato</p>
           </div>
           <ul className="text-sm text-slate-500 space-y-2">
-            <li className="flex items-center gap-2">
+            <li className="flex flex-wrap items-center gap-2">
               <CheckCircle2 className="h-4 w-4 text-emerald-500" />
               Nome completo
             </li>
-            <li className="flex items-center gap-2">
+            <li className="flex flex-wrap items-center gap-2">
               <CheckCircle2 className="h-4 w-4 text-emerald-500" />
               Email e telefono
             </li>
-            <li className="flex items-center gap-2">
+            <li className="flex flex-wrap items-center gap-2">
               <CheckCircle2 className="h-4 w-4 text-emerald-500" />
               Indirizzo
             </li>
-            <li className="flex items-center gap-2">
+            <li className="flex flex-wrap items-center gap-2">
               <CheckCircle2 className="h-4 w-4 text-slate-300" />
               IBAN (opzionale)
             </li>
@@ -239,19 +239,19 @@ export function CustomerWizardDialog({ open, onOpenChange, onSuccess }: Customer
             <p className="text-sm text-slate-500 mb-4">Cliente aziendale</p>
           </div>
           <ul className="text-sm text-slate-500 space-y-2">
-            <li className="flex items-center gap-2">
+            <li className="flex flex-wrap items-center gap-2">
               <CheckCircle2 className="h-4 w-4 text-emerald-500" />
               Ragione sociale
             </li>
-            <li className="flex items-center gap-2">
+            <li className="flex flex-wrap items-center gap-2">
               <CheckCircle2 className="h-4 w-4 text-emerald-500" />
               P.IVA / C.F.
             </li>
-            <li className="flex items-center gap-2">
+            <li className="flex flex-wrap items-center gap-2">
               <CheckCircle2 className="h-4 w-4 text-emerald-500" />
               PEC o Codice Univoco
             </li>
-            <li className="flex items-center gap-2">
+            <li className="flex flex-wrap items-center gap-2">
               <CheckCircle2 className="h-4 w-4 text-slate-300" />
               IBAN (opzionale)
             </li>
@@ -823,7 +823,7 @@ export function CustomerWizardDialog({ open, onOpenChange, onSuccess }: Customer
     return (
       <div className="space-y-6 py-4">
         <div className="rounded-2xl bg-slate-50 dark:bg-slate-800/30 p-6 space-y-5">
-          <div className="flex items-center gap-3 pb-4 border-b border-slate-200 dark:border-slate-700">
+          <div className="flex flex-wrap items-center gap-3 pb-4 border-b border-slate-200 dark:border-slate-700">
             <div className={`p-2 rounded-xl ${customerType === "private" ? "bg-gradient-to-br from-cyan-500 to-blue-600" : "bg-gradient-to-br from-violet-500 to-purple-600"}`}>
               {customerType === "private" ? <User className="h-5 w-5 text-white" /> : <Building2 className="h-5 w-5 text-white" />}
             </div>
@@ -961,7 +961,7 @@ export function CustomerWizardDialog({ open, onOpenChange, onSuccess }: Customer
 
         {createdCustomer && (
           <div className="rounded-2xl bg-gradient-to-r from-emerald-50 to-green-50 dark:from-emerald-900/20 dark:to-green-900/20 border border-emerald-200 dark:border-emerald-800 p-6">
-            <div className="flex items-center gap-3 mb-4">
+            <div className="flex flex-wrap items-center gap-3 mb-4">
               <div className="p-2 rounded-xl bg-gradient-to-br from-emerald-500 to-green-600">
                 <CheckCircle2 className="h-5 w-5 text-white" />
               </div>
@@ -1027,7 +1027,7 @@ export function CustomerWizardDialog({ open, onOpenChange, onSuccess }: Customer
     <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader className="pb-4 border-b border-slate-200 dark:border-slate-700">
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-3">
             <div className={`p-2 rounded-xl ${
               step === "type" ? "bg-gradient-to-br from-blue-500 to-indigo-600" :
               step === "details" ? (customerType === "private" ? "bg-gradient-to-br from-cyan-500 to-blue-600" : "bg-gradient-to-br from-violet-500 to-purple-600") :

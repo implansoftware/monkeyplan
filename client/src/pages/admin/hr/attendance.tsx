@@ -223,7 +223,7 @@ export default function AdminAttendancePage() {
             Visualizzazione globale di tutte le timbrature
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           {entityType !== "all" && selectedEntityId && (
             <Button onClick={() => setCreateDialogOpen(true)} data-testid="button-create-clock-event">
               <Plus className="h-4 w-4 mr-2" />
@@ -245,7 +245,7 @@ export default function AdminAttendancePage() {
             selectedEntityId={selectedEntityId}
             setSelectedEntityId={setSelectedEntityId}
           />
-          <div className="flex items-center gap-2 pt-2 border-t">
+          <div className="flex flex-wrap items-center gap-2 pt-2 border-t">
             <CalendarIcon className="h-5 w-5 text-muted-foreground" />
             <span className="font-medium">{isToday ? "Oggi" : "Data selezionata"}:</span>
             <Button size="icon" variant="ghost" onClick={goToPreviousDay} data-testid="button-prev-day">
@@ -309,14 +309,14 @@ export default function AdminAttendancePage() {
                 {events.map((evt) => (
                   <TableRow key={evt.id} data-testid={`row-clock-event-${evt.id}`}>
                     <TableCell>
-                      <div className="flex items-center gap-2">
+                      <div className="flex flex-wrap items-center gap-2">
                         <User className="h-4 w-4 text-muted-foreground" />
                         <p className="font-medium">{evt.user?.fullName || "N/A"}</p>
                       </div>
                     </TableCell>
                     <TableCell>
                       <Badge className={typeColors[evt.eventType] || "bg-gray-100 text-gray-800"}>
-                        <span className="flex items-center gap-1">
+                        <span className="flex flex-wrap items-center gap-1">
                           {typeIcons[evt.eventType]}
                           {typeLabels[evt.eventType] || evt.eventType}
                         </span>

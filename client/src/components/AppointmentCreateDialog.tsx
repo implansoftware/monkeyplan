@@ -162,7 +162,7 @@ export function AppointmentCreateDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
+          <DialogTitle className="flex flex-wrap items-center gap-2">
             <CalendarCheck className="h-5 w-5" />
             Nuovo Appuntamento Consegna
           </DialogTitle>
@@ -190,7 +190,7 @@ export function AppointmentCreateDialog({
                     const customer = customers.find(c => c.id === repair.customerId);
                     return (
                       <SelectItem key={repair.id} value={repair.id}>
-                        <div className="flex items-center gap-2">
+                        <div className="flex flex-wrap items-center gap-2">
                           <Wrench className="h-4 w-4" />
                           <span className="font-mono">{repair.orderNumber}</span>
                           {customer && (
@@ -210,7 +210,7 @@ export function AppointmentCreateDialog({
           {selectedOrder && (
             <Card className="bg-muted/30">
               <CardContent className="py-3">
-                <div className="flex items-center gap-3">
+                <div className="flex flex-wrap items-center gap-3">
                   <div className="p-2 bg-background rounded-lg">
                     <Wrench className="h-4 w-4" />
                   </div>
@@ -221,7 +221,7 @@ export function AppointmentCreateDialog({
                     </p>
                   </div>
                   {selectedCustomer && (
-                    <div className="flex items-center gap-2 text-sm">
+                    <div className="flex flex-wrap items-center gap-2 text-sm">
                       <UserIcon className="h-4 w-4" />
                       <span>{selectedCustomer.fullName || selectedCustomer.username}</span>
                     </div>
@@ -311,7 +311,7 @@ export function AppointmentCreateDialog({
             <div className="space-y-4">
               <Card className="bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800">
                 <CardContent className="py-3">
-                  <div className="flex items-center gap-4 text-sm">
+                  <div className="flex flex-wrap items-center gap-4 text-sm">
                     <CheckCircle className="h-5 w-5 text-green-600" />
                     <div>
                       <span className="font-medium">

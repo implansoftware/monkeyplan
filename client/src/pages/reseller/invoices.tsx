@@ -174,7 +174,7 @@ export default function ResellerInvoices() {
           <div className="absolute -bottom-24 -left-24 w-64 h-64 bg-white/10 rounded-full blur-3xl animate-pulse delay-1000" />
         </div>
         <div className="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div className="flex items-center gap-4">
+          <div className="flex flex-wrap items-center gap-4">
             <div className="h-12 w-12 rounded-xl bg-white/20 backdrop-blur-sm border border-white/30 flex items-center justify-center">
               <FileText className="h-6 w-6 text-white" />
             </div>
@@ -202,7 +202,7 @@ export default function ResellerInvoices() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card className="rounded-2xl">
           <CardContent className="pt-6">
-            <div className="flex items-center gap-3">
+            <div className="flex flex-wrap items-center gap-3">
               <div className="p-2 bg-primary/10 rounded-lg">
                 <Euro className="h-5 w-5 text-primary" />
               </div>
@@ -215,7 +215,7 @@ export default function ResellerInvoices() {
         </Card>
         <Card className="rounded-2xl">
           <CardContent className="pt-6">
-            <div className="flex items-center gap-3">
+            <div className="flex flex-wrap items-center gap-3">
               <div className="p-2 bg-green-100 dark:bg-green-900/30 rounded-lg">
                 <Euro className="h-5 w-5 text-green-600" />
               </div>
@@ -228,7 +228,7 @@ export default function ResellerInvoices() {
         </Card>
         <Card className="rounded-2xl">
           <CardContent className="pt-6">
-            <div className="flex items-center gap-3">
+            <div className="flex flex-wrap items-center gap-3">
               <div className="p-2 bg-yellow-100 dark:bg-yellow-900/30 rounded-lg">
                 <Euro className="h-5 w-5 text-yellow-600" />
               </div>
@@ -271,7 +271,7 @@ export default function ResellerInvoices() {
                     />
                   </div>
                   <Select value={statusFilter} onValueChange={setStatusFilter}>
-                    <SelectTrigger className="w-[180px]" data-testid="select-status-filter">
+                    <SelectTrigger className="w-full sm:w-[180px]" data-testid="select-status-filter">
                       <SelectValue placeholder="Stato" />
                     </SelectTrigger>
                     <SelectContent>
@@ -283,7 +283,7 @@ export default function ResellerInvoices() {
                     </SelectContent>
                   </Select>
                   <Select value={sourceFilter} onValueChange={setSourceFilter}>
-                    <SelectTrigger className="w-[180px]" data-testid="select-source-filter">
+                    <SelectTrigger className="w-full sm:w-[180px]" data-testid="select-source-filter">
                       <SelectValue placeholder="Fonte" />
                     </SelectTrigger>
                     <SelectContent>
@@ -400,7 +400,7 @@ export default function ResellerInvoices() {
           <TabsContent value="sibill">
             <Card className="rounded-2xl">
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
+                <CardTitle className="flex flex-wrap items-center gap-2">
                   <Building2 className="h-5 w-5" />
                   Documenti Sibill
                 </CardTitle>
@@ -483,7 +483,7 @@ export default function ResellerInvoices() {
       <Dialog open={!!selectedSibillDoc} onOpenChange={(open) => !open && setSelectedSibillDoc(null)}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
+            <DialogTitle className="flex flex-wrap items-center gap-2">
               <FileText className="h-5 w-5" />
               Dettagli Documento Sibill
             </DialogTitle>

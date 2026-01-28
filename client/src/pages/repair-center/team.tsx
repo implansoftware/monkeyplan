@@ -192,7 +192,7 @@ export default function RepairCenterTeam() {
         <div className="absolute top-1/2 left-1/3 w-48 h-48 rounded-full bg-emerald-300/20 blur-3xl animate-pulse" style={{ animationDelay: '2s' }} />
         
         <div className="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div className="flex items-center gap-4">
+          <div className="flex flex-wrap items-center gap-4">
             <div className="h-14 w-14 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center shadow-xl">
               <Users className="h-7 w-7 text-white" />
             </div>
@@ -201,7 +201,7 @@ export default function RepairCenterTeam() {
               <p className="text-emerald-100">Gestisci i membri del tuo team</p>
             </div>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <Button onClick={handleOpenCreate} className="bg-white/20 backdrop-blur-sm text-white border-white/30 hover:bg-white/30 shadow-lg" variant="outline" data-testid="button-create-member">
               <Plus className="h-4 w-4 mr-2" />
               Nuovo Membro
@@ -213,7 +213,7 @@ export default function RepairCenterTeam() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card className="hover-elevate cursor-pointer" onClick={() => setActiveFilter("all")} data-testid="card-stat-total">
           <CardContent className="pt-6">
-            <div className="flex items-center gap-4">
+            <div className="flex flex-wrap items-center gap-4">
               <div className="p-3 rounded-full bg-primary/10">
                 <Users className="h-6 w-6 text-primary" />
               </div>
@@ -226,7 +226,7 @@ export default function RepairCenterTeam() {
         </Card>
         <Card className="hover-elevate cursor-pointer" onClick={() => setActiveFilter("active")} data-testid="card-stat-active">
           <CardContent className="pt-6">
-            <div className="flex items-center gap-4">
+            <div className="flex flex-wrap items-center gap-4">
               <div className="p-3 rounded-full bg-green-500/10">
                 <UserCheck className="h-6 w-6 text-green-500" />
               </div>
@@ -239,7 +239,7 @@ export default function RepairCenterTeam() {
         </Card>
         <Card className="hover-elevate cursor-pointer" onClick={() => setActiveFilter("inactive")} data-testid="card-stat-inactive">
           <CardContent className="pt-6">
-            <div className="flex items-center gap-4">
+            <div className="flex flex-wrap items-center gap-4">
               <div className="p-3 rounded-full bg-amber-500/10">
                 <AlertTriangle className="h-6 w-6 text-amber-500" />
               </div>
@@ -304,7 +304,7 @@ export default function RepairCenterTeam() {
                   return (
                     <TableRow key={member.id} data-testid={`row-member-${member.id}`}>
                       <TableCell className="font-medium">
-                        <div className="flex items-center gap-2">
+                        <div className="flex flex-wrap items-center gap-2">
                           {member.fullName}
                           {isOwner && (
                             <Badge variant="outline" className="text-xs bg-primary/10 text-primary border-primary/30">
@@ -317,7 +317,7 @@ export default function RepairCenterTeam() {
                       <TableCell>{member.email}</TableCell>
                       <TableCell>{member.phone || "-"}</TableCell>
                       <TableCell>
-                        <div className="flex items-center gap-2">
+                        <div className="flex flex-wrap items-center gap-2">
                           <Switch
                             checked={member.isActive}
                             onCheckedChange={(checked) =>

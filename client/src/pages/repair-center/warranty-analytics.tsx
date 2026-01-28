@@ -50,7 +50,7 @@ export default function RepairCenterWarrantyAnalytics() {
         <div className="absolute top-1/2 left-1/3 w-48 h-48 rounded-full bg-emerald-300/20 blur-3xl animate-pulse" style={{ animationDelay: '2s' }} />
         
         <div className="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div className="flex items-center gap-4">
+          <div className="flex flex-wrap items-center gap-4">
             <div className="h-14 w-14 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center shadow-xl">
               <Shield className="h-7 w-7 text-white" />
             </div>
@@ -150,7 +150,7 @@ export default function RepairCenterWarrantyAnalytics() {
               <div className="space-y-4">
                 {stats.topProducts.map((product, index) => (
                   <div key={product.productName} className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
+                    <div className="flex flex-wrap items-center gap-3">
                       <Badge variant="outline" className="w-6 h-6 flex items-center justify-center p-0">
                         {index + 1}
                       </Badge>
