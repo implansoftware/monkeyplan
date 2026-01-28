@@ -41,7 +41,6 @@ import {
   Loader2,
   CheckCircle2,
   AlertCircle,
-  ClipboardPaste,
   X,
   Search,
 } from "lucide-react";
@@ -118,8 +117,6 @@ export function UtilityPracticeWizard({ open, onOpenChange, onSuccess }: Utility
   const [selectedStatus, setSelectedStatus] = useState<string>("bozza");
   const [notes, setNotes] = useState("");
   
-  const [showImportField, setShowImportField] = useState(false);
-  const [importText, setImportText] = useState("");
   
   // Sub-reseller and repair center selection (for franchising/gdo resellers)
   const [selectedResellerId, setSelectedResellerId] = useState("");
@@ -237,8 +234,6 @@ export function UtilityPracticeWizard({ open, onOpenChange, onSuccess }: Utility
     setSupplierReference("");
     setSelectedStatus("bozza");
     setNotes("");
-    setShowImportField(false);
-    setImportText("");
     setTargetType("self");
     setSelectedResellerId("");
     setSelectedRepairCenterId("");
@@ -265,196 +260,6 @@ export function UtilityPracticeWizard({ open, onOpenChange, onSuccess }: Utility
       toast({ title: "Errore", description: error.message, variant: "destructive" });
     },
   });
-
-  const parseImportText = (text: string) => {
-    const result: {
-      supplierName: string | null;
-      serviceName: string | null;
-      customerName: string | null;
-      customerEmail: string | null;
-      customerPhone: string | null;
-      supplierReference: string | null;
-    } = {
-      supplierName: null,
-      serviceName: null,
-      customerName: null,
-      customerEmail: null,
-      customerPhone: null,
-      supplierReference: null,
-    };
-    
-    const normalizedText = text.toLowerCase();
-    
-    const knownSuppliers = [
-      { keywords: ['fastweb'], name: 'Fastweb' },
-      { keywords: ['tim', 'telecom italia'], name: 'TIM' },
-      { keywords: ['vodafone'], name: 'Vodafone' },
-      { keywords: ['wind', 'windtre', 'wind tre'], name: 'WindTre' },
-      { keywords: ['iliad'], name: 'Iliad' },
-      { keywords: ['enel', 'enel energia'], name: 'Enel Energia' },
-      { keywords: ['eni', 'eni gas', 'eni luce'], name: 'Eni' },
-      { keywords: ['a2a'], name: 'A2A' },
-      { keywords: ['edison'], name: 'Edison' },
-      { keywords: ['sorgenia'], name: 'Sorgenia' },
-      { keywords: ['acea'], name: 'Acea' },
-      { keywords: ['hera'], name: 'Hera' },
-      { keywords: ['iren'], name: 'Iren' },
-      { keywords: ['sky'], name: 'Sky' },
-      { keywords: ['dazn'], name: 'DAZN' },
-      { keywords: ['ho.', 'ho mobile'], name: 'ho. Mobile' },
-      { keywords: ['kena', 'kena mobile'], name: 'Kena Mobile' },
-      { keywords: ['poste mobile', 'postemobile'], name: 'PosteMobile' },
-      { keywords: ['very mobile', 'verymobile'], name: 'Very Mobile' },
-    ];
-    
-    for (const supplier of knownSuppliers) {
-      for (const keyword of supplier.keywords) {
-        if (normalizedText.includes(keyword)) {
-          result.supplierName = supplier.name;
-          break;
-        }
-      }
-      if (result.supplierName) break;
-    }
-    
-    const emailMatch = text.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/);
-    if (emailMatch) {
-      result.customerEmail = emailMatch[0].toLowerCase();
-    }
-    
-    const phonePatterns = [
-      /(?:\+39\s?)?(?:3[0-9]{2}[\s.-]?[0-9]{6,7})/g,
-      /(?:\+39\s?)?(?:0[0-9]{1,4}[\s.-]?[0-9]{5,8})/g,
-    ];
-    for (const pattern of phonePatterns) {
-      const phoneMatch = text.match(pattern);
-      if (phoneMatch) {
-        result.customerPhone = phoneMatch[0].replace(/[\s.-]/g, '');
-        break;
-      }
-    }
-    
-    const namePatterns = [
-      /(?:cliente|intestatario|nominativo|titolare|contraente)[:\s]+([A-Za-zÀ-ÿ\s]+?)(?:\n|,|;|$)/i,
-      /(?:sig\.?|signor|signora)[:\s]+([A-Za-zÀ-ÿ\s]+?)(?:\n|,|;|$)/i,
-    ];
-    for (const pattern of namePatterns) {
-      const match = text.match(pattern);
-      if (match && match[1]) {
-        const name = match[1].trim();
-        if (name.length >= 3 && name.length <= 100) {
-          result.customerName = name;
-          break;
-        }
-      }
-    }
-    
-    const servicePatterns = [
-      /(?:offerta|piano|tariffa|promozione)[:\s]+([^\n]+)/i,
-    ];
-    for (const pattern of servicePatterns) {
-      const match = text.match(pattern);
-      if (match && match[1]) {
-        const service = match[1].trim();
-        if (service.length >= 3 && service.length <= 200) {
-          result.serviceName = service;
-          break;
-        }
-      }
-    }
-    
-    const refPatterns = [
-      /(?:codice\s*(?:pratica|preventivo|contratto|ordine)|pratica\s*n[.°]?|contratto\s*n[.°]?|rif\.?)[:\s]*([A-Z0-9.\-\/]+)/i,
-      /(?:FWD|PDA|CRM|ID)[.:\s]*([A-Z0-9.\-\/]+)/i,
-    ];
-    for (const pattern of refPatterns) {
-      const match = text.match(pattern);
-      if (match && match[1]) {
-        const ref = match[1].trim();
-        if (ref.length >= 3 && ref.length <= 50) {
-          result.supplierReference = ref;
-          break;
-        }
-      }
-    }
-    
-    return result;
-  };
-
-  const handleImportText = () => {
-    if (!importText.trim()) {
-      toast({ title: "Nessun testo", description: "Incolla il testo dal documento", variant: "destructive" });
-      return;
-    }
-    
-    const parsed = parseImportText(importText);
-    let importedFields: string[] = [];
-    
-    if (parsed.supplierName) {
-      const matchedSupplier = suppliers.find(s => 
-        s.isActive && s.name.toLowerCase().includes(parsed.supplierName!.toLowerCase())
-      );
-      if (matchedSupplier) {
-        setSelectedSupplierId(matchedSupplier.id);
-        setUseTemporarySupplier(false);
-        importedFields.push(`Fornitore: ${matchedSupplier.name}`);
-      } else {
-        setUseTemporarySupplier(true);
-        setTemporarySupplierName(parsed.supplierName);
-        importedFields.push(`Fornitore (temp): ${parsed.supplierName}`);
-      }
-    }
-    
-    if (parsed.serviceName) {
-      setUseCustomService(true);
-      setCustomServiceName(parsed.serviceName);
-      importedFields.push(`Servizio (temp): ${parsed.serviceName}`);
-    }
-    
-    if (parsed.customerName) {
-      const matchedCustomer = customerUsers.find(c => 
-        c.fullName?.toLowerCase().includes(parsed.customerName!.toLowerCase())
-      );
-      if (matchedCustomer) {
-        setSelectedCustomerId(matchedCustomer.id);
-        setUseTemporaryCustomer(false);
-        importedFields.push(`Cliente: ${matchedCustomer.fullName}`);
-      } else {
-        setUseTemporaryCustomer(true);
-        setTemporaryCustomerName(parsed.customerName);
-        importedFields.push(`Cliente (temp): ${parsed.customerName}`);
-      }
-    }
-    
-    if (parsed.customerEmail && useTemporaryCustomer) {
-      setTemporaryCustomerEmail(parsed.customerEmail);
-    }
-    
-    if (parsed.customerPhone && useTemporaryCustomer) {
-      setTemporaryCustomerPhone(parsed.customerPhone);
-    }
-    
-    if (parsed.supplierReference) {
-      setSupplierReference(parsed.supplierReference);
-      importedFields.push(`Rif. Fornitore: ${parsed.supplierReference}`);
-    }
-    
-    if (importedFields.length > 0) {
-      toast({
-        title: "Dati importati",
-        description: importedFields.join(", "),
-      });
-    } else {
-      toast({
-        title: "Nessun dato riconosciuto",
-        description: "Non sono stati trovati dati riconoscibili nel testo",
-        variant: "destructive",
-      });
-    }
-    
-    setShowImportField(false);
-    setImportText("");
-  };
 
   const addProduct = () => {
     setPracticeProducts([...practiceProducts, { productId: "", quantity: 1, unitPriceCents: 0 }]);
@@ -754,61 +559,6 @@ export function UtilityPracticeWizard({ open, onOpenChange, onSuccess }: Utility
         <p className="text-sm text-muted-foreground">Seleziona una delle opzioni seguenti</p>
       </div>
       
-      {!showImportField && (
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          onClick={() => setShowImportField(true)}
-          className="w-full mb-4"
-          data-testid="button-show-import"
-        >
-          <ClipboardPaste className="h-4 w-4 mr-2" />
-          Importa da testo (copia/incolla)
-        </Button>
-      )}
-      
-      {showImportField && (
-        <Card className="mb-4">
-          <CardContent className="p-4 space-y-3">
-            <div className="flex items-center justify-between">
-              <Label className="text-sm font-medium">Incolla il testo dal documento</Label>
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                onClick={() => {
-                  setShowImportField(false);
-                  setImportText("");
-                }}
-                data-testid="button-close-import"
-              >
-                <X className="h-4 w-4" />
-              </Button>
-            </div>
-            <Textarea
-              placeholder="Seleziona tutto il testo dal PDF (Ctrl+A), copia (Ctrl+C) e incolla qui (Ctrl+V)..."
-              value={importText}
-              onChange={(e) => setImportText(e.target.value)}
-              rows={4}
-              className="text-xs"
-              data-testid="input-import-text"
-            />
-            <Button
-              type="button"
-              size="sm"
-              onClick={handleImportText}
-              disabled={!importText.trim()}
-              className="w-full"
-              data-testid="button-import-text"
-            >
-              <ClipboardPaste className="h-4 w-4 mr-2" />
-              Analizza e Importa
-            </Button>
-          </CardContent>
-        </Card>
-      )}
-
       <div className="grid gap-4">
         <Card
           className={`cursor-pointer transition-all hover-elevate ${
