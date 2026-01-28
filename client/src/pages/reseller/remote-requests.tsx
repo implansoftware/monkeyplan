@@ -116,7 +116,7 @@ export default function ResellerRemoteRequests() {
         </div>
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
         <Card className="rounded-2xl">
           <CardHeader className="pb-2">
             <CardDescription>In Attesa</CardDescription>
@@ -184,7 +184,7 @@ export default function ResellerRemoteRequests() {
                       </div>
                     </CardHeader>
                     <CardContent>
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
                         <div>
                           <p className="text-sm text-muted-foreground">Dispositivo</p>
                           <p className="font-medium">{request.deviceType}</p>

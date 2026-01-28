@@ -359,7 +359,7 @@ export default function ResellerShipments() {
           
           {selectedShipment && (
             <div className="space-y-6">
-              <div className="grid grid-cols-2 gap-4 text-sm">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
                 <div>
                   <span className="text-muted-foreground">Corriere:</span>{" "}
                   {carriers.find(c => c.value === selectedShipment.carrier)?.label}
@@ -382,7 +382,7 @@ export default function ResellerShipments() {
               
               <div className="space-y-4">
                 <h4 className="font-semibold">Aggiungi evento</h4>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label>Stato</Label>
                     <Select

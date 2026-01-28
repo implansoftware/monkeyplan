@@ -280,7 +280,7 @@ export default function CustomerRemoteRequests() {
               </DialogDescription>
             </DialogHeader>
             <form onSubmit={handleCreateRequest} className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="deviceType">Tipo Dispositivo</Label>
                   <Select
@@ -347,7 +347,7 @@ export default function CustomerRemoteRequests() {
                   </SelectContent>
                 </Select>
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="imei">IMEI (opzionale)</Label>
                   <Input
@@ -510,7 +510,7 @@ export default function CustomerRemoteRequests() {
                 </div>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
                   <div>
                     <p className="text-sm text-muted-foreground">Dispositivo</p>
                     <p className="font-medium">{request.deviceType}</p>

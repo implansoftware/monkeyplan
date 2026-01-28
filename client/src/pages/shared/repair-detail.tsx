@@ -1708,7 +1708,7 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
               </CardTitle>
             </CardHeader>
             <CardContent className="relative space-y-4">
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="bg-muted/30 rounded-lg p-3">
                   <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Tipo</span>
                   <p className="font-semibold mt-1">{repair.deviceType}</p>
@@ -1727,7 +1727,7 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
                 <p className="font-medium mt-1 text-sm">{repair.issueDescription}</p>
               </div>
               {(repair.imei || repair.serial) && (
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {repair.imei && (
                     <div className="bg-muted/30 rounded-lg p-3">
                       <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">IMEI</span>
@@ -2058,7 +2058,7 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
                   </Badge>
                 </div>
                 
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                   {[
                     { key: 'displayTest', label: 'Display' },
                     { key: 'touchTest', label: 'Touch' },
@@ -2465,7 +2465,7 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <Button
                 variant={skipQuoteReason === 'garanzia' ? 'default' : 'outline'}
                 onClick={() => setSkipQuoteReason('garanzia')}

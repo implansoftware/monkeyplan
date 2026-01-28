@@ -585,7 +585,7 @@ export function SmartphoneWizard({
                   )}
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <FormField
                     control={form.control}
                     name="name"
@@ -624,7 +624,7 @@ export function SmartphoneWizard({
                   />
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <FormField
                     control={form.control}
                     name="brand"
@@ -703,7 +703,7 @@ export function SmartphoneWizard({
                   <p className="text-sm text-muted-foreground">Dettagli tecnici e identificativi</p>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {specsConfig.storage && (
                     <FormField
                       control={form.control}
@@ -756,7 +756,7 @@ export function SmartphoneWizard({
                 </div>
 
                 {(specsConfig.batteryHealth || specsConfig.networkLock) && (
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     {specsConfig.batteryHealth && (
                       <FormField
                         control={form.control}
@@ -809,7 +809,7 @@ export function SmartphoneWizard({
                   </div>
                 )}
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {specsConfig.imei && (
                     <FormField
                       control={form.control}
@@ -869,7 +869,7 @@ export function SmartphoneWizard({
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Accessori Inclusi</FormLabel>
-                        <div className="grid grid-cols-2 gap-2">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                           {ACCESSORY_OPTIONS.map(acc => (
                             <div key={acc} className="flex items-center gap-2">
                               <Checkbox
@@ -921,7 +921,7 @@ export function SmartphoneWizard({
                   <p className="text-sm text-muted-foreground">Configura prezzi e disponibilità</p>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <FormField
                     control={form.control}
                     name="unitPrice"
@@ -1220,7 +1220,7 @@ export function SmartphoneWizard({
                     </div>
 
                     {(values.imei || values.imei2) && (
-                      <div className="grid grid-cols-2 gap-4 pt-4 border-t">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4 border-t">
                         {values.imei && (
                           <div>
                             <Label className="text-xs text-muted-foreground">IMEI</Label>
@@ -1236,7 +1236,7 @@ export function SmartphoneWizard({
                       </div>
                     )}
 
-                    <div className="grid grid-cols-2 gap-4 pt-4 border-t">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4 border-t">
                       <div>
                         <Label className="text-xs text-muted-foreground">Grado</Label>
                         <p className="font-medium">{values.grade}</p>
@@ -1251,7 +1251,7 @@ export function SmartphoneWizard({
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-4 pt-4 border-t">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4 border-t">
                       <div>
                         <Label className="text-xs text-muted-foreground">Prezzo Vendita</Label>
                         <p className="font-semibold text-lg text-primary">€{values.unitPrice || "0"}</p>

@@ -204,7 +204,7 @@ export default function ShopCheckout() {
                           </FormItem>
                         )}
                       />
-                      <div className="grid grid-cols-2 gap-4">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <FormField
                           control={addAddressForm.control}
                           name="city"
@@ -230,7 +230,7 @@ export default function ShopCheckout() {
                           )}
                         />
                       </div>
-                      <div className="grid grid-cols-2 gap-4">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <FormField
                           control={addAddressForm.control}
                           name="postalCode"

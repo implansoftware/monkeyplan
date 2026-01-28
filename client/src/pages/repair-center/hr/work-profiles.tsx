@@ -197,7 +197,7 @@ export default function RepairCenterHrWorkProfiles() {
               <label className="text-sm font-medium">Nome Profilo</label>
               <Input value={newProfile.name} onChange={(e) => setNewProfile({ ...newProfile, name: e.target.value })} placeholder="Es. Full-time" />
             </div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="text-sm font-medium">Ore Settimanali</label>
                 <Input type="number" value={newProfile.weeklyHours} onChange={(e) => setNewProfile({ ...newProfile, weeklyHours: e.target.value })} />

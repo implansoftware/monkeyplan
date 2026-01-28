@@ -714,7 +714,7 @@ export default function SubResellers() {
                       data-testid="input-email" 
                     />
                   </div>
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="phone">Telefono</Label>
                       <Input 
@@ -799,7 +799,7 @@ export default function SubResellers() {
                       </div>
                     )}
                   </div>
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div className="space-y-2">
                       <Label htmlFor="ragioneSociale">Ragione Sociale</Label>
                       <Input 
@@ -845,7 +845,7 @@ export default function SubResellers() {
                         data-testid="input-citta" 
                       />
                     </div>
-                    <div className="grid grid-cols-2 gap-2">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                       <div className="space-y-2">
                         <Label htmlFor="cap">CAP</Label>
                         <Input 
@@ -1022,7 +1022,7 @@ const SubResellerDetailDialog = ({ open, onOpenChange, reseller }: SubResellerDe
               </Badge>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-1">
                 <Label className="text-xs text-muted-foreground">Username</Label>
                 <p className="text-sm font-medium">{data.username}</p>
@@ -1052,7 +1052,7 @@ const SubResellerDetailDialog = ({ open, onOpenChange, reseller }: SubResellerDe
                 </div>
                 Dati Fiscali
               </h4>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-1">
                   <Label className="text-xs text-muted-foreground">Ragione Sociale</Label>
                   <p className="text-sm font-medium">{data.ragioneSociale || "-"}</p>
@@ -1083,7 +1083,7 @@ const SubResellerDetailDialog = ({ open, onOpenChange, reseller }: SubResellerDe
                 </div>
                 Indirizzo
               </h4>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="col-span-2 space-y-1">
                   <Label className="text-xs text-muted-foreground">Via/Indirizzo</Label>
                   <p className="text-sm font-medium">{data.indirizzo || "-"}</p>
@@ -1110,7 +1110,7 @@ const SubResellerDetailDialog = ({ open, onOpenChange, reseller }: SubResellerDe
                 </div>
                 Statistiche
               </h4>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="p-4 rounded-lg bg-blue-500/5 border border-blue-500/10 flex items-center gap-3">
                   <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-500/10">
                     <Users className="h-5 w-5 text-blue-600" />
@@ -1150,7 +1150,7 @@ const SubResellerDetailDialog = ({ open, onOpenChange, reseller }: SubResellerDe
                 )}
               </div>
               {ecommerce ? (
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="p-3 rounded-lg bg-violet-500/5 border border-violet-500/10">
                     <div className="flex items-center gap-2 mb-1">
                       <Package className="h-4 w-4 text-violet-600" />

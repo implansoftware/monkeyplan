@@ -432,7 +432,7 @@ export default function AdminRepairCenters() {
                         data-testid="input-address"
                       />
                     </div>
-                    <div className="grid grid-cols-2 gap-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <div className="space-y-2">
                         <Label htmlFor="city" className="text-slate-700 dark:text-slate-300">Città *</Label>
                         <Input 
@@ -443,7 +443,7 @@ export default function AdminRepairCenters() {
                           data-testid="input-city" 
                         />
                       </div>
-                      <div className="grid grid-cols-2 gap-2">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                         <div className="space-y-2">
                           <Label htmlFor="cap" className="text-slate-700 dark:text-slate-300">CAP</Label>
                           <Input 
@@ -474,7 +474,7 @@ export default function AdminRepairCenters() {
                 {wizardStep === 3 && (
                   <div className="space-y-4">
                     <p className="text-sm text-muted-foreground">Dati fiscali e fatturazione (opzionali).</p>
-                    <div className="grid grid-cols-2 gap-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <div className="space-y-2">
                         <Label htmlFor="ragioneSociale" className="text-slate-700 dark:text-slate-300">Ragione Sociale</Label>
                         <Input 

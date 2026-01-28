@@ -272,7 +272,7 @@ export default function AdminRCB2BOrders() {
           </DialogHeader>
           {selectedOrder && (
             <div className="space-y-6">
-              <div className="grid grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                 <div className="space-y-4">
                   <div>
                     <Label className="text-muted-foreground">Centro Riparazione</Label>

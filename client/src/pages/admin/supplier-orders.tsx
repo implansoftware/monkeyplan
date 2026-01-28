@@ -1017,7 +1017,7 @@ export default function SupplierOrdersPage() {
                   </TabsContent>
                   
                   <TabsContent value="info" className="space-y-4">
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <Label>Fornitore</Label>
                         <div className="p-3 bg-muted rounded-md">
@@ -1041,7 +1041,7 @@ export default function SupplierOrdersPage() {
                     
                     <Separator />
                     
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <Label>Creato il</Label>
                         <div className="text-sm">{formatDate(selectedOrder.createdAt)}</div>
@@ -1068,7 +1068,7 @@ export default function SupplierOrdersPage() {
                   </TabsContent>
                   
                   <TabsContent value="tracking" className="space-y-4">
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <Label htmlFor="expectedDelivery">Consegna Prevista</Label>
                         <Input
@@ -1206,7 +1206,7 @@ export default function SupplierOrdersPage() {
               />
             </div>
             
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="supplierCode">Codice Fornitore</Label>
                 <Input

@@ -525,7 +525,7 @@ export function AccessoryWizard({
                   )}
                 />
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <FormField
                     control={form.control}
                     name="brand"
@@ -573,7 +573,7 @@ export function AccessoryWizard({
                   />
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <FormField
                     control={form.control}
                     name="condition"
@@ -645,7 +645,7 @@ export function AccessoryWizard({
                   <p className="text-sm text-muted-foreground">Configura prezzi e disponibilità</p>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <FormField
                     control={form.control}
                     name="unitPrice"
@@ -899,7 +899,7 @@ export function AccessoryWizard({
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-4 pt-4 border-t">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4 border-t">
                       <div>
                         <Label className="text-xs text-muted-foreground">Colore</Label>
                         <p className="font-medium">{values.color || "-"}</p>
@@ -915,7 +915,7 @@ export function AccessoryWizard({
                       <Badge className="mt-1">{values.isUniversal ? "Sì" : "No"}</Badge>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-4 pt-4 border-t">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4 border-t">
                       <div>
                         <Label className="text-xs text-muted-foreground">Prezzo Vendita</Label>
                         <p className="font-semibold text-lg text-primary">€{values.unitPrice || "0"}</p>

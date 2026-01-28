@@ -268,7 +268,7 @@ export function StaffWizard({
       </div>
 
       <Form {...form}>
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <FormField
             control={form.control}
             name="fullName"
@@ -490,7 +490,7 @@ export function StaffWizard({
                 <User className="w-4 h-4 text-primary" />
                 <span className="font-medium">Dati Collaboratore</span>
               </div>
-              <div className="grid grid-cols-2 gap-2 text-sm">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm">
                 <div className="text-muted-foreground">Nome:</div>
                 <div className="font-medium">{values.fullName}</div>
                 <div className="text-muted-foreground">Email:</div>

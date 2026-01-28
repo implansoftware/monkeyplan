@@ -343,7 +343,7 @@ export default function RepairCenterAccessoryCatalog() {
                 </div>
               </div>
               
-              <div className="grid grid-cols-2 gap-4 border-t pt-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 border-t pt-4">
                 <div>
                   <h4 className="font-semibold mb-2">Specifiche</h4>
                   <div className="space-y-1 text-sm">

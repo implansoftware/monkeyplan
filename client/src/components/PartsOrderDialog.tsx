@@ -496,7 +496,7 @@ export function PartsOrderDialog({
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <Card 
                       className={`relative overflow-hidden cursor-pointer transition-all ${
                         destinationType === "external_supplier" 
@@ -594,7 +594,7 @@ export function PartsOrderDialog({
                     </div>
                   )}
 
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                       <label className="text-sm font-medium flex items-center gap-1">
                         <Calendar className="h-4 w-4" />

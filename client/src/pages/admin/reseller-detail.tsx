@@ -191,7 +191,7 @@ export default function AdminResellerDetail() {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="p-4 bg-slate-50 dark:bg-slate-800/30 rounded-xl">
                 <p className="text-xs text-slate-500 uppercase tracking-wide mb-1">Username</p>
                 <p className="font-semibold text-slate-900 dark:text-white font-mono" data-testid="text-reseller-username">{reseller.username}</p>
@@ -234,7 +234,7 @@ export default function AdminResellerDetail() {
               </p>
             </div>
             
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="p-3 bg-slate-50 dark:bg-slate-800/30 rounded-xl">
                 <p className="text-xs text-slate-500 uppercase tracking-wide mb-1">Partita IVA</p>
                 <p className="font-mono text-sm text-slate-900 dark:text-white" data-testid="text-reseller-piva">

@@ -361,7 +361,7 @@ export default function AdminUtilityServices() {
             </DialogDescription>
           </DialogHeader>
           <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="supplierId">Fornitore *</Label>
                 <Select 
@@ -399,7 +399,7 @@ export default function AdminUtilityServices() {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="code">Codice *</Label>
                 <Input
@@ -436,7 +436,7 @@ export default function AdminUtilityServices() {
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="monthlyPriceCents">Prezzo Mensile (EUR)</Label>
                 <Input
@@ -510,7 +510,7 @@ export default function AdminUtilityServices() {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="contractMonths">Durata Contratto (mesi)</Label>
                 <div className="flex items-center gap-2">

@@ -383,7 +383,7 @@ export default function FonedayCartPage() {
                           data-testid="input-shipping-address2"
                         />
                       </div>
-                      <div className="grid grid-cols-2 gap-2">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                         <div>
                           <Label>Città *</Label>
                           <Input

@@ -253,7 +253,7 @@ export default function RepairCenterHrSickLeave() {
                 </SelectContent>
               </Select>
             </div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="text-sm font-medium">Data Inizio</label>
                 <Input type="date" value={newSickLeave.startDate} onChange={(e) => setNewSickLeave({ ...newSickLeave, startDate: e.target.value })} />
@@ -327,7 +327,7 @@ export default function RepairCenterHrSickLeave() {
             <DialogDescription>Modifica i dati della malattia di {editingSickLeave?.user?.fullName}</DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="text-sm font-medium">Data Inizio</label>
                 <Input type="date" value={editForm.startDate} onChange={(e) => setEditForm({ ...editForm, startDate: e.target.value })} />

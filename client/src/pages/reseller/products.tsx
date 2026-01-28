@@ -1304,7 +1304,7 @@ export default function ResellerProducts() {
                 </TabsList>
 
                 <TabsContent value="info" className="space-y-4 mt-4 data-[state=inactive]:hidden" forceMount>
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="name">Nome Prodotto *</Label>
                       <Input id="name" name="name" required data-testid="input-create-name" />
@@ -1315,7 +1315,7 @@ export default function ResellerProducts() {
                     </div>
                   </div>
                   
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="category">Categoria *</Label>
                       <Select name="category" defaultValue="altro">
@@ -1344,7 +1344,7 @@ export default function ResellerProducts() {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="condition">Condizione *</Label>
                       <Select name="condition" defaultValue="nuovo">
@@ -1421,7 +1421,7 @@ export default function ResellerProducts() {
                 </TabsContent>
 
                 <TabsContent value="pricing" className="space-y-4 mt-4 data-[state=inactive]:hidden" forceMount>
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="costPrice">Prezzo Acquisto (€)</Label>
                       <Input 
@@ -1451,7 +1451,7 @@ export default function ResellerProducts() {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="warrantyMonths">Garanzia (mesi)</Label>
                       <Input 
@@ -1818,7 +1818,7 @@ export default function ResellerProducts() {
                       </div>
                     </div>
                     <Separator />
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <Label htmlFor="edit-name">Nome Prodotto *</Label>
                         <Input 
@@ -1835,7 +1835,7 @@ export default function ResellerProducts() {
                       </div>
                     </div>
                     
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <Label htmlFor="edit-category">Categoria *</Label>
                         <Select name="category" defaultValue={editingProduct.category}>
@@ -1864,7 +1864,7 @@ export default function ResellerProducts() {
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <Label htmlFor="edit-condition">Condizione *</Label>
                         <Select name="condition" defaultValue={editingProduct.condition}>
@@ -1894,7 +1894,7 @@ export default function ResellerProducts() {
                   </TabsContent>
 
                   <TabsContent value="pricing" className="space-y-4 mt-4 data-[state=inactive]:hidden" forceMount>
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <Label htmlFor="edit-costPrice">Prezzo Acquisto (EUR)</Label>
                         <Input 
@@ -1926,7 +1926,7 @@ export default function ResellerProducts() {
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <Label htmlFor="edit-warrantyMonths">Garanzia (mesi)</Label>
                         <Input 
@@ -1960,7 +1960,7 @@ export default function ResellerProducts() {
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <Label htmlFor="edit-minStock">Stock Minimo</Label>
                         <Input 

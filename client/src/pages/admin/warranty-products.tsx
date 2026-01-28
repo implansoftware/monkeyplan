@@ -298,7 +298,7 @@ export default function AdminWarrantyProducts() {
                 data-testid="input-warranty-description"
               />
             </div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="durationMonths">Durata (mesi) *</Label>
                 <Input
@@ -346,7 +346,7 @@ export default function AdminWarrantyProducts() {
                 </SelectContent>
               </Select>
             </div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="maxClaimAmount">Massimale Rimborso (EUR)</Label>
                 <Input

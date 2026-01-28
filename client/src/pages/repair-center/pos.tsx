@@ -725,7 +725,7 @@ export default function PosPage() {
           </CardHeader>
           <CardContent className="space-y-4">
             {dailyStats && (
-              <div className="grid grid-cols-2 gap-2 text-sm">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm">
                 <div className="bg-muted/50 rounded p-2">
                   <div className="text-muted-foreground">Vendite Oggi</div>
                   <div className="font-semibold">{formatCurrency(dailyStats.totalSales)}</div>
@@ -935,7 +935,7 @@ export default function PosPage() {
                 </div>
                 <ScrollArea className="h-[calc(100%-3rem)]">
                   {productsLoading ? (
-                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
                       {[1,2,3,4,5,6,7,8].map(i => <Skeleton key={i} className="h-24 w-full" />)}
                     </div>
                   ) : filteredProducts.length === 0 ? (
@@ -945,7 +945,7 @@ export default function PosPage() {
                       <span className="text-sm">Aggiungi prodotti dal gestionale</span>
                     </div>
                   ) : (
-                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
                       {filteredProducts.map((product) => {
                         const isOutOfStock = product.availableQuantity !== undefined && product.availableQuantity <= 0;
                         const price = product.sellingPrice || product.unitPrice || 0;
@@ -1009,7 +1009,7 @@ export default function PosPage() {
                 </div>
                 <ScrollArea className="h-[calc(100%-3rem)]">
                   {servicesLoading ? (
-                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
                       {[1,2,3,4,5,6,7,8].map(i => <Skeleton key={i} className="h-24 w-full" />)}
                     </div>
                   ) : filteredServices.length === 0 ? (
@@ -1019,7 +1019,7 @@ export default function PosPage() {
                       <span className="text-sm">Configura il catalogo interventi</span>
                     </div>
                   ) : (
-                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
                       {filteredServices.map((service) => (
                         <button
                           key={service.id}
@@ -1466,7 +1466,7 @@ export default function PosPage() {
           </DialogHeader>
           
           <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-4 text-sm">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
               <div className="p-3 rounded bg-muted/50">
                 <div className="text-muted-foreground">Fondo Iniziale</div>
                 <div className="font-semibold">{formatCurrency(currentSession?.openingCash || 0)}</div>

@@ -105,7 +105,7 @@ export default function RepairCenterHrDashboard() {
         </div>
       </div>
 
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <Card className="relative overflow-hidden" data-testid="card-pending-leave">
           <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/5 to-transparent" />
           <CardContent className="relative pt-5 pb-4">

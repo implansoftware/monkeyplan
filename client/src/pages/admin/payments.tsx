@@ -448,7 +448,7 @@ export default function AdminPayments() {
             const orderType = paymentAny.orderType || 'b2c';
             return (
             <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <Label className="text-muted-foreground">Tipo Ordine</Label>
                   <div className="mt-1">

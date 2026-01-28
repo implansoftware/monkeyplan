@@ -258,7 +258,7 @@ export default function AdminSettings() {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4 text-sm">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
                 <div>
                   <p className="text-muted-foreground">Tariffa Oraria</p>
                   <p className="font-semibold">{displayRate} EUR</p>
@@ -339,7 +339,7 @@ export default function AdminSettings() {
                       </div>
                     </div>
                     
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <Label className="flex items-center gap-2">
                           <div className="w-3 h-3 rounded-full bg-yellow-500" />

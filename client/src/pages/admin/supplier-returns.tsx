@@ -649,7 +649,7 @@ export default function SupplierReturnsPage() {
                   </TabsList>
                   
                   <TabsContent value="info" className="space-y-4">
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <Label>Fornitore</Label>
                         <div className="p-3 bg-muted rounded-md">
@@ -664,7 +664,7 @@ export default function SupplierReturnsPage() {
                       </div>
                     </div>
                     
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <Label>Motivo Reso</Label>
                         <div className="p-3 bg-muted rounded-md flex items-center gap-2">
@@ -693,7 +693,7 @@ export default function SupplierReturnsPage() {
                     
                     <Separator />
                     
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <Label>Valore Reso</Label>
                         <div className="p-3 bg-muted rounded-md text-lg font-bold">
@@ -741,7 +741,7 @@ export default function SupplierReturnsPage() {
                     
                     <Separator />
                     
-                    <div className="grid grid-cols-2 gap-4 text-sm">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
                       <div className="space-y-2">
                         <Label>Creato il</Label>
                         <div>{formatDate(selectedReturn.createdAt)}</div>
@@ -801,7 +801,7 @@ export default function SupplierReturnsPage() {
                     
                     <Separator />
                     
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <Label htmlFor="trackingCarrier">Corriere</Label>
                         <Input

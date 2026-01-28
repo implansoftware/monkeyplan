@@ -259,7 +259,7 @@ export function TestChecklistDialog({
                 </div>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {testItems.map((item) => {
                     const Icon = item.icon;
                     const value = watchedValues[item.key as keyof TestChecklistFormData];

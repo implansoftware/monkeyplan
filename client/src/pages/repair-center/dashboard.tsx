@@ -244,7 +244,7 @@ export default function RepairCenterDashboard() {
       )}
 
       {/* Main KPI Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {isWidgetVisible("stats-repairs") && (
         <Card className="relative overflow-hidden group hover:shadow-md transition-shadow" data-testid="card-kpi-repairs">
           <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent" />
@@ -352,7 +352,7 @@ export default function RepairCenterDashboard() {
       </div>
 
       {/* Secondary Metrics */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {isWidgetVisible("stats-completed") && (
         <Link href="/repair-center/repairs" className="block group">
           <Card className="h-full transition-all hover:shadow-md hover:border-primary/50" data-testid="card-completed-repairs">
@@ -488,7 +488,7 @@ export default function RepairCenterDashboard() {
               </Button>
             </Link>
           </div>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-3 pt-3 border-t">
+          <div className="grid grid-cols-1 sm:grid-cols-2 sm:grid-cols-4 gap-2 mt-3 pt-3 border-t">
             <Link href="/repair-center/tickets">
               <Button variant="ghost" size="sm" className="w-full h-auto py-2 flex flex-col items-center gap-1 text-muted-foreground hover:text-foreground" data-testid="button-quick-tickets">
                 <Ticket className="h-4 w-4" />

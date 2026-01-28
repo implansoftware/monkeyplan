@@ -633,7 +633,7 @@ export function UtilityPracticeWizard({ open, onOpenChange, onSuccess }: Utility
             <div className="space-y-4">
               <div className="space-y-2">
                 <Label>Fornitore</Label>
-                <div className="grid grid-cols-2 gap-2 mb-2">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-2">
                   <Button
                     type="button"
                     variant={!useTemporarySupplier ? "default" : "outline"}
@@ -711,7 +711,7 @@ export function UtilityPracticeWizard({ open, onOpenChange, onSuccess }: Utility
                       />
                     </div>
                     <ScrollArea className="h-[180px] rounded-md border p-2">
-                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 sm:grid-cols-3 gap-2">
                         {suppliers
                           .filter(s => s.isActive && (supplierSearchQuery === "" || s.name.toLowerCase().includes(supplierSearchQuery.toLowerCase())))
                           .map((supplier) => (
@@ -750,7 +750,7 @@ export function UtilityPracticeWizard({ open, onOpenChange, onSuccess }: Utility
 
               <div className="space-y-2">
                 <Label>Servizio</Label>
-                <div className="grid grid-cols-2 gap-2 mb-2">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-2">
                   <Button
                     type="button"
                     variant={!useCustomService ? "default" : "outline"}
@@ -918,7 +918,7 @@ export function UtilityPracticeWizard({ open, onOpenChange, onSuccess }: Utility
         <p className="text-sm text-muted-foreground">Seleziona un cliente esistente o inserisci i dati manualmente</p>
       </div>
 
-      <div className="grid grid-cols-2 gap-2">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
         <Button
           type="button"
           variant={!useTemporaryCustomer ? "default" : "outline"}
@@ -1000,7 +1000,7 @@ export function UtilityPracticeWizard({ open, onOpenChange, onSuccess }: Utility
                 );
               })()}
             </div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <Label className="text-sm">Email</Label>
                 <Input
@@ -1123,7 +1123,7 @@ export function UtilityPracticeWizard({ open, onOpenChange, onSuccess }: Utility
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           {selectedPriceType === "mensile" && (
             <div className="space-y-2">
               <Label>Prezzo Mensile (EUR) *</Label>
@@ -1198,7 +1198,7 @@ export function UtilityPracticeWizard({ open, onOpenChange, onSuccess }: Utility
 
         <Separator />
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="space-y-2">
             <Label>Rif. Fornitore</Label>
             <Input
@@ -1266,7 +1266,7 @@ export function UtilityPracticeWizard({ open, onOpenChange, onSuccess }: Utility
                 <Building2 className="h-4 w-4" />
                 <span className="text-sm font-medium">Fornitore e Servizio</span>
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <p className="text-xs text-muted-foreground">Fornitore</p>
                   <p className="font-medium">{getSelectedSupplierName() || "-"}</p>
@@ -1332,7 +1332,7 @@ export function UtilityPracticeWizard({ open, onOpenChange, onSuccess }: Utility
               <Euro className="h-4 w-4" />
               <span className="text-sm font-medium">Prezzo</span>
             </div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <p className="text-xs text-muted-foreground">Tipo</p>
                 <p className="font-medium">

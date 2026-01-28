@@ -925,7 +925,7 @@ export default function RepairCenterUtilityPractices() {
 
             {(selectedItemType === "service" || selectedItemType === "service_with_products") && (
               <div className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label>Fornitore *</Label>
                     <div className="flex gap-2 mb-2">
@@ -1275,7 +1275,7 @@ export default function RepairCenterUtilityPractices() {
                       );
                     })()}
                   </div>
-                  <div className="grid grid-cols-2 gap-2">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                     <div>
                       <Label className="text-xs">Email</Label>
                       <Input
@@ -1330,7 +1330,7 @@ export default function RepairCenterUtilityPractices() {
               )}
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="supplierReference">Riferimento Fornitore</Label>
                 <Input

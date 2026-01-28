@@ -193,7 +193,7 @@ export function CustomerWizardDialog({ open, onOpenChange, onSuccess }: Customer
         <p className="text-sm text-slate-500 mt-1">Seleziona il profilo che meglio rappresenta il nuovo cliente</p>
       </div>
       
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div
           className="group cursor-pointer rounded-2xl border-2 border-slate-200 dark:border-slate-700 p-6 transition-all hover:border-blue-500 hover:shadow-lg hover:shadow-blue-500/10"
           onClick={() => handleTypeSelect("private")}
@@ -281,7 +281,7 @@ export function CustomerWizardDialog({ open, onOpenChange, onSuccess }: Customer
                 )}
               />
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <FormField
                   control={form.control as any}
                   name="vatNumber"
@@ -311,7 +311,7 @@ export function CustomerWizardDialog({ open, onOpenChange, onSuccess }: Customer
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <FormField
                   control={form.control as any}
                   name="pec"
@@ -360,7 +360,7 @@ export function CustomerWizardDialog({ open, onOpenChange, onSuccess }: Customer
 
           <div className="h-px bg-gradient-to-r from-transparent via-slate-200 dark:via-slate-700 to-transparent" />
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <FormField
               control={form.control as any}
               name="username"
@@ -394,7 +394,7 @@ export function CustomerWizardDialog({ open, onOpenChange, onSuccess }: Customer
 
           <div className="h-px bg-gradient-to-r from-transparent via-slate-200 dark:via-slate-700 to-transparent" />
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <FormField
               control={form.control as any}
               name="email"
@@ -836,7 +836,7 @@ export function CustomerWizardDialog({ open, onOpenChange, onSuccess }: Customer
           </div>
 
           {values.customerType === "company" ? (
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="col-span-2">
                 <p className="text-xs text-slate-500 uppercase tracking-wide mb-1">Ragione Sociale</p>
                 <p className="font-semibold text-slate-900 dark:text-white" data-testid="text-review-company-name">{values.companyName}</p>
@@ -869,7 +869,7 @@ export function CustomerWizardDialog({ open, onOpenChange, onSuccess }: Customer
 
           <div className="h-px bg-gradient-to-r from-transparent via-slate-200 dark:via-slate-700 to-transparent" />
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <p className="text-xs text-slate-500 uppercase tracking-wide mb-1">Email</p>
               <p className="text-slate-900 dark:text-white flex items-center gap-2" data-testid="text-review-email">
@@ -898,7 +898,7 @@ export function CustomerWizardDialog({ open, onOpenChange, onSuccess }: Customer
             )}
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <p className="text-xs text-slate-500 uppercase tracking-wide mb-1">IBAN</p>
               {!values.showIban || !values.iban ? (

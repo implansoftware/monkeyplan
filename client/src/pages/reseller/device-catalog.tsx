@@ -367,7 +367,7 @@ export default function DeviceCatalog() {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-2 max-w-md">
+        <TabsList className="grid w-full grid-cols-1 sm:grid-cols-2 max-w-md">
           <TabsTrigger value="brands" data-testid="tab-brands">
             <Tag className="h-4 w-4 mr-2" />
             Brand

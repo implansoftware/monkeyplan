@@ -631,7 +631,7 @@ export default function AdminServiceCatalog() {
           </DialogHeader>
 
           <div className="space-y-4 py-4">
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="code">Codice</Label>
                 <Input
@@ -702,7 +702,7 @@ export default function AdminServiceCatalog() {
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="price">Prezzo Base (€)</Label>
                 <div className="relative">

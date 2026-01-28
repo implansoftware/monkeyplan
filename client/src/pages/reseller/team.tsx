@@ -848,7 +848,7 @@ export default function ResellerTeam() {
 
           <Form {...form}>
             <form onSubmit={form.handleSubmit(handleSubmit)} className="p-6 space-y-4">
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <FormField
                   control={form.control}
                   name="fullName"
@@ -986,7 +986,7 @@ export default function ResellerTeam() {
                   <p className="text-sm text-muted-foreground">
                     Seleziona i moduli a cui il collaboratore avrà accesso
                   </p>
-                  <div className="grid grid-cols-2 gap-2 max-h-48 overflow-y-auto">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-48 overflow-y-auto">
                     {MODULES.map((mod) => {
                       const hasAny = localPermissions[mod.id]?.canRead || 
                         localPermissions[mod.id]?.canCreate || 
@@ -1071,7 +1071,7 @@ export default function ResellerTeam() {
                     </div>
                   </CardHeader>
                   <CardContent className="py-3">
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
                       {PERMISSION_ACTIONS.map((action) => {
                         const Icon = action.icon;
                         const isChecked = perms[action.id as keyof typeof perms] || false;

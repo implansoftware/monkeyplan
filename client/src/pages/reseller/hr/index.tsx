@@ -138,7 +138,7 @@ export default function HrDashboard() {
         </div>
       </div>
 
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <Card className="relative overflow-hidden rounded-2xl hover-elevate" data-testid="card-pending-leave">
           <div className="absolute inset-0 bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-emerald-950/40 dark:to-teal-950/40" />
           <CardContent className="relative pt-5 pb-4">

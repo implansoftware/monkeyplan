@@ -306,7 +306,7 @@ export default function RepairCenterB2BReturns() {
           </DialogHeader>
           {selectedReturn && (
             <div className="space-y-6">
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <Label className="text-muted-foreground">Stato</Label>
                   <Badge className={statusLabels[selectedReturn.status]?.color || ""}>

@@ -212,7 +212,7 @@ export default function AuthPage() {
             </div>
           </div>
           
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="p-4 rounded-2xl bg-white/10 backdrop-blur-sm border border-white/20">
               <div className="flex items-center gap-3 mb-2">
                 <div className="p-2 rounded-xl bg-yellow-400/30">
@@ -421,7 +421,7 @@ export default function AuthPage() {
                       />
                     </div>
                   </div>
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div className="space-y-2">
                       <Label htmlFor="customer-username" className="text-slate-700 dark:text-slate-300">Username</Label>
                       <Input
@@ -514,7 +514,7 @@ export default function AuthPage() {
                     </div>
 
                     <form onSubmit={handleResellerRegister} className="space-y-3">
-                      <div className="grid grid-cols-2 gap-3">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <div className="space-y-1.5">
                           <Label htmlFor="reseller-fullname" className="text-xs text-slate-600 dark:text-slate-400">Referente</Label>
                           <div className="relative">
@@ -561,7 +561,7 @@ export default function AuthPage() {
                         </div>
                       </div>
                       
-                      <div className="grid grid-cols-2 gap-3">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <div className="space-y-1.5">
                           <Label htmlFor="reseller-partita-iva" className="text-xs text-slate-600 dark:text-slate-400">Partita IVA</Label>
                           <div className="relative">
@@ -594,7 +594,7 @@ export default function AuthPage() {
                         </div>
                       </div>
                       
-                      <div className="grid grid-cols-2 gap-3">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <div className="space-y-1.5">
                           <Label htmlFor="reseller-username" className="text-xs text-slate-600 dark:text-slate-400">Username</Label>
                           <Input

@@ -649,7 +649,7 @@ export function DiagnosisFormDialog({
                                 <h4 className="text-sm font-semibold text-muted-foreground border-b pb-1">
                                   {categoryLabels[category] || category}
                                 </h4>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                                <div className="grid grid-cols-1 md:grid-cols-1 sm:grid-cols-2 gap-2">
                                   {findings.map((finding) => {
                                     const isSelected = selectedIds.includes(finding.id);
                                     const FindingIcon = getFindingIcon(finding.name);
@@ -737,7 +737,7 @@ export function DiagnosisFormDialog({
                           Seleziona i componenti che necessitano riparazione o sostituzione
                         </FormDescription>
                         <ScrollArea className="h-[220px] border rounded-md p-3">
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                          <div className="grid grid-cols-1 md:grid-cols-1 sm:grid-cols-2 gap-2">
                             {damagedComponentTypes.map((component) => {
                               const isSelected = selectedIds.includes(component.id);
                               const ComponentIcon = getComponentIcon(component.name);
@@ -1016,7 +1016,7 @@ export function DiagnosisFormDialog({
                             <FormDescription>
                               Seleziona le promozioni da proporre al cliente
                             </FormDescription>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                            <div className="grid grid-cols-1 md:grid-cols-1 sm:grid-cols-2 gap-2">
                               {promotions.map((promo) => {
                                 const isSelected = selectedIds.includes(promo.id);
                                 const PromoIcon = getPromotionIcon(promo.icon || "Gift");

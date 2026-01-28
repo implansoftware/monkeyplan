@@ -178,7 +178,7 @@ export default function AdminExternalIntegrations() {
                 </TabsList>
 
                 <TabsContent value="general" className="space-y-4 mt-4" forceMount hidden={activeTab !== "general"}>
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="code">Codice *</Label>
                       <Input 
@@ -217,7 +217,7 @@ export default function AdminExternalIntegrations() {
                     />
                   </div>
 
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="logoUrl">URL Logo</Label>
                       <Input 

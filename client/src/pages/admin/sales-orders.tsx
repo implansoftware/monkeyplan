@@ -395,7 +395,7 @@ export default function AdminSalesOrders() {
           {selectedOrder && (
             <ScrollArea className="max-h-[60vh]">
               <div className="space-y-6 pr-4">
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <Label className="text-muted-foreground">Stato</Label>
                     <div className="mt-1">

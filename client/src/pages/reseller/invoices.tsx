@@ -495,7 +495,7 @@ export default function ResellerInvoices() {
 
           {selectedSibillDoc && (
             <div className="space-y-6">
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <p className="text-sm text-muted-foreground">Numero Documento</p>
                   <p className="font-mono font-medium">{selectedSibillDoc.documentNumber || "-"}</p>
@@ -526,7 +526,7 @@ export default function ResellerInvoices() {
 
               <div>
                 <h4 className="font-medium mb-3">Controparte</h4>
-                <div className="grid grid-cols-2 gap-4 bg-muted/50 rounded-lg p-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-muted/50 rounded-lg p-4">
                   <div>
                     <p className="text-sm text-muted-foreground">Nome / Ragione Sociale</p>
                     <p className="font-medium">{selectedSibillDoc.counterpartyName || "-"}</p>
@@ -540,7 +540,7 @@ export default function ResellerInvoices() {
 
               <Separator />
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <p className="text-sm text-muted-foreground">Importo Totale</p>
                   <p className="text-2xl font-bold text-primary">

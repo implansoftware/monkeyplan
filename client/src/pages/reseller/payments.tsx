@@ -307,7 +307,7 @@ export default function ResellerPayments() {
           </DialogHeader>
           <ScrollArea className="max-h-[60vh]">
             <div className="space-y-4 p-1">
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <Label className="text-muted-foreground">Importo</Label>
                   <p className="text-2xl font-bold">{formatPrice(selectedPayment?.amount || 0)}</p>
@@ -320,7 +320,7 @@ export default function ResellerPayments() {
                 </div>
               </div>
               
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <Label className="text-muted-foreground">Metodo</Label>
                   <p className="font-medium">
@@ -333,7 +333,7 @@ export default function ResellerPayments() {
                 </div>
               </div>
               
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <Label className="text-muted-foreground">ID Ordine</Label>
                   <p className="font-mono text-sm">{selectedPayment?.orderId?.slice(0, 12)}...</p>

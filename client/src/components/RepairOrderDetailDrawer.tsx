@@ -644,7 +644,7 @@ export function RepairOrderDetailDrawer({
                             </>
                           )}
                         </p>
-                        <div className="grid grid-cols-2 gap-2">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                           <Button
                             variant="outline"
                             onClick={() => setDiagnosisDialogOpen(true)}
@@ -687,7 +687,7 @@ export function RepairOrderDetailDrawer({
                         <p className="text-sm">
                           Preventivo inviato al cliente. <strong>Registra la risposta del cliente</strong> o modifica il preventivo.
                         </p>
-                        <div className="grid grid-cols-2 gap-2">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                           <Button
                             onClick={() => updateQuoteStatusMutation.mutate('accepted')}
                             disabled={updateQuoteStatusMutation.isPending}
@@ -726,7 +726,7 @@ export function RepairOrderDetailDrawer({
                         <p className="text-sm">
                           Preventivo accettato dal cliente. <strong>Ordina i ricambi</strong> se necessario, oppure <strong>avvia la riparazione</strong>.
                         </p>
-                        <div className="grid grid-cols-2 gap-2">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                           <Button
                             variant="outline"
                             onClick={() => setPartsDialogOpen(true)}
@@ -755,7 +755,7 @@ export function RepairOrderDetailDrawer({
                         <p className="text-sm">
                           In attesa dei ricambi. Quando arrivano, <strong>registra la ricezione</strong> e poi <strong>avvia la riparazione</strong>.
                         </p>
-                        <div className="grid grid-cols-2 gap-2">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                           <Button
                             variant="outline"
                             onClick={() => setPartsDialogOpen(true)}
@@ -784,7 +784,7 @@ export function RepairOrderDetailDrawer({
                         <p className="text-sm">
                           Riparazione in corso. <strong>Registra le attività</strong> svolte. Quando finisci, <strong>esegui il collaudo</strong>.
                         </p>
-                        <div className="grid grid-cols-2 gap-2">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                           <Button
                             variant="outline"
                             onClick={() => setLogsDialogOpen(true)}
@@ -812,7 +812,7 @@ export function RepairOrderDetailDrawer({
                         <p className="text-sm">
                           Collaudo in corso. <strong>Completa tutti i test</strong>. Quando tutto funziona, <strong>segna come pronto</strong>.
                         </p>
-                        <div className="grid grid-cols-2 gap-2">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                           <Button
                             variant="outline"
                             onClick={() => setTestDialogOpen(true)}
@@ -861,7 +861,7 @@ export function RepairOrderDetailDrawer({
                                 </div>
                               )}
                             </div>
-                            <div className="grid grid-cols-2 gap-2">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                               <Button
                                 variant="outline"
                                 onClick={() => setAppointmentDialogOpen(true)}
@@ -886,7 +886,7 @@ export function RepairOrderDetailDrawer({
                             <p className="text-sm">
                               Dispositivo pronto per il ritiro. <strong>Prenota un appuntamento</strong> o <strong>completa la consegna</strong> quando il cliente arriva.
                             </p>
-                            <div className="grid grid-cols-2 gap-2">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                               <Button
                                 variant="outline"
                                 onClick={() => {
@@ -1016,7 +1016,7 @@ export function RepairOrderDetailDrawer({
                 Dispositivo
               </div>
               <div className="grid gap-3">
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
                     <p className="text-sm text-muted-foreground">Tipo</p>
                     <p className="text-sm font-medium" data-testid="text-device-type">{repair.deviceType}</p>
@@ -1034,7 +1034,7 @@ export function RepairOrderDetailDrawer({
                 </div>
                 {/* IMEI/Seriale */}
                 {(repair.imei || repair.serial || repair.imeiNotReadable || repair.imeiNotPresent || repair.serialOnly) && (
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     {repair.imei && (
                       <div>
                         <p className="text-sm text-muted-foreground">IMEI</p>
@@ -1085,7 +1085,7 @@ export function RepairOrderDetailDrawer({
                     Cliente
                   </div>
                   <div className="grid gap-3">
-                    <div className="grid grid-cols-2 gap-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <div>
                         <p className="text-sm text-muted-foreground">Nome</p>
                         <p className="text-sm font-medium" data-testid="text-customer-name">{customer.fullName || customer.username}</p>
@@ -1110,7 +1110,7 @@ export function RepairOrderDetailDrawer({
                       </div>
                     )}
                     {(customer.fiscalCode || customer.vatNumber) && (
-                      <div className="grid grid-cols-2 gap-3">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         {customer.fiscalCode && (
                           <div>
                             <p className="text-sm text-muted-foreground">Codice Fiscale</p>
@@ -1668,7 +1668,7 @@ export function RepairOrderDetailDrawer({
                       <p className="text-sm text-muted-foreground">
                         Scegli il motivo:
                       </p>
-                      <div className="grid grid-cols-2 gap-3">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <Button
                           variant={skipQuoteReason === 'garanzia' ? 'default' : 'outline'}
                           className="h-24 flex flex-col gap-2"

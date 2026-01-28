@@ -94,7 +94,7 @@ export default function ResellerCustomerDetail() {
     return (
       <div className="space-y-6" data-testid="page-customer-detail-loading">
         <Skeleton className="h-8 w-64" />
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
           {[1, 2, 3, 4].map((i) => (
             <Skeleton key={i} className="h-20" />
           ))}
@@ -153,7 +153,7 @@ export default function ResellerCustomerDetail() {
       </div>
 
       {/* Stats Row */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 sm:grid-cols-4 gap-4">
         <Card>
           <CardContent className="pt-4 pb-3">
             <div className="flex items-center gap-3">
@@ -257,7 +257,7 @@ export default function ResellerCustomerDetail() {
                   <p data-testid="text-billing-company">{billingData.companyName}</p>
                 </div>
               )}
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {billingData.fiscalCode && (
                   <div>
                     <p className="text-xs text-muted-foreground">C.F.</p>
@@ -282,7 +282,7 @@ export default function ResellerCustomerDetail() {
                 </div>
               )}
               {(billingData.pec || billingData.codiceUnivoco) && (
-                <div className="grid grid-cols-2 gap-3 pt-2 border-t">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 border-t">
                   {billingData.pec && (
                     <div>
                       <p className="text-xs text-muted-foreground">PEC</p>
@@ -593,7 +593,7 @@ function CustomerEditForm({
           <UserIcon className="h-4 w-4" />
           Dati Account
         </div>
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="space-y-2">
             <Label htmlFor="fullName">Nome Completo *</Label>
             <Input
@@ -615,7 +615,7 @@ function CustomerEditForm({
             />
           </div>
         </div>
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="space-y-2">
             <Label htmlFor="email">Email *</Label>
             <Input
@@ -703,7 +703,7 @@ function CustomerEditForm({
                 data-testid="input-edit-companyName"
               />
             </div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="vatNumber">P.IVA</Label>
                 <Input
@@ -723,7 +723,7 @@ function CustomerEditForm({
                 />
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="pec">PEC</Label>
                 <Input

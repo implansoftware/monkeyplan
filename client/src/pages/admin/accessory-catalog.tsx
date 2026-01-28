@@ -1002,7 +1002,7 @@ export default function AdminAccessoryCatalog() {
           </DialogHeader>
 
           <div className="grid gap-4 py-4">
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="name">Nome prodotto *</Label>
                 <Input
@@ -1067,7 +1067,7 @@ export default function AdminAccessoryCatalog() {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="color">Colore</Label>
                 <Select value={formData.color} onValueChange={(v) => setFormData({ ...formData, color: v })}>
@@ -1220,7 +1220,7 @@ export default function AdminAccessoryCatalog() {
               </div>
             )}
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="unitPrice">Prezzo vendita</Label>
                 <Input
@@ -1741,7 +1741,7 @@ export default function AdminAccessoryCatalog() {
                 </Select>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="assignPrice">Prezzo vendita (€) *</Label>
                   <Input

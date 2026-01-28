@@ -1247,7 +1247,7 @@ export function AcceptanceWizardDialog({
                 )}
 
                 {/* Email e Telefono */}
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div className="space-y-1">
                     <Label htmlFor="new-customer-email">Email *</Label>
                     <Input
@@ -1330,7 +1330,7 @@ export function AcceptanceWizardDialog({
                 {newCustomerData.customerType === "company" && (
                   <>
                     <Separator />
-                    <div className="grid grid-cols-2 gap-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <div className="space-y-1">
                         <Label htmlFor="new-customer-vat">Partita IVA</Label>
                         <Input
@@ -1352,7 +1352,7 @@ export function AcceptanceWizardDialog({
                         />
                       </div>
                     </div>
-                    <div className="grid grid-cols-2 gap-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <div className="space-y-1">
                         <Label htmlFor="new-customer-pec">PEC *</Label>
                         <Input
@@ -1395,7 +1395,7 @@ export function AcceptanceWizardDialog({
                 {user?.role !== "repair_center" && (
                   <>
                     <Separator />
-                    <div className="grid grid-cols-2 gap-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <div className="space-y-1">
                         <Label htmlFor="new-customer-username">Username *</Label>
                         <Input
@@ -2466,7 +2466,7 @@ export function AcceptanceWizardDialog({
                   {Object.entries(findingsByCategory).map(([category, findings]) => (
                     <div key={category} className="space-y-2">
                       <p className="text-sm font-medium text-muted-foreground">{categoryLabels[category] || category}</p>
-                      <div className="grid grid-cols-2 gap-2">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                         {findings.map((finding) => (
                           <div key={finding.id} className="flex items-center space-x-2">
                             <Checkbox
@@ -2494,7 +2494,7 @@ export function AcceptanceWizardDialog({
               {damagedComponentTypes.length > 0 && (
                 <div className="space-y-2">
                   <Label>Componenti Danneggiati</Label>
-                  <div className="grid grid-cols-2 gap-2">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                     {damagedComponentTypes.map((comp) => (
                       <div key={comp.id} className="flex items-center space-x-2">
                         <Checkbox
@@ -2544,7 +2544,7 @@ export function AcceptanceWizardDialog({
                 )}
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label>Esito Diagnosi</Label>
                   <Select value={diagnosisOutcome} onValueChange={(v: any) => {
@@ -2602,7 +2602,7 @@ export function AcceptanceWizardDialog({
               {diagnosisOutcome === "non_conveniente" && promotions.length > 0 && (
                 <div className="space-y-2">
                   <Label>Promozioni Suggerite</Label>
-                  <div className="grid grid-cols-2 gap-2">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                     {promotions.map((promo) => (
                       <div key={promo.id} className="flex items-center space-x-2">
                         <Checkbox
@@ -2943,7 +2943,7 @@ export function AcceptanceWizardDialog({
             <CardTitle className="text-base">Informazioni dispositivo</CardTitle>
           </CardHeader>
           <CardContent className="space-y-2 text-sm">
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
               <div className="text-muted-foreground">Tipo:</div>
               <div className="font-medium" data-testid="text-review-device-type">{formData.deviceType || "-"}</div>
               
@@ -2999,7 +2999,7 @@ export function AcceptanceWizardDialog({
               </div>
             )}
             
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
               <div className="text-muted-foreground">Condizioni estetiche:</div>
               <div className="font-medium capitalize" data-testid="text-review-aesthetic">
                 {formData.acceptance.aestheticCondition || "-"}

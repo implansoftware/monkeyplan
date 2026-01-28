@@ -365,7 +365,7 @@ export default function ResellerPosSessions() {
             </div>
           ) : sessionDetail ? (
             <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <p className="text-sm text-muted-foreground">Centro</p>
                   <p className="font-medium">{sessionDetail.session.repairCenterName}</p>
@@ -462,7 +462,7 @@ export default function ResellerPosSessions() {
             </div>
           ) : transactionDetail ? (
             <div className="space-y-6">
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <p className="text-sm text-muted-foreground">Numero</p>
                   <p className="font-mono font-medium">{transactionDetail.transaction.transactionNumber}</p>

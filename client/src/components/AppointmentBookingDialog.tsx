@@ -293,7 +293,7 @@ export function AppointmentBookingDialog({
           </DialogDescription>
         </DialogHeader>
         
-        <div className="grid md:grid-cols-2 gap-6">
+        <div className="grid md:grid-cols-1 sm:grid-cols-2 gap-6">
           <div>
             <h4 className="text-sm font-medium mb-3 flex items-center gap-2">
               <CalendarIcon className="h-4 w-4" />
@@ -346,7 +346,7 @@ export function AppointmentBookingDialog({
                 {slotsData?.reason || "Nessuno slot disponibile in questa data"}
               </div>
             ) : (
-              <div className="grid grid-cols-2 gap-2 max-h-[300px] overflow-y-auto pr-1">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-[300px] overflow-y-auto pr-1">
                 {slotsData.slots.map((slot) => (
                   <Button
                     key={slot.startTime}

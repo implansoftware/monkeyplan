@@ -311,7 +311,7 @@ export default function RepairCenterSparePartsCatalog() {
           </DialogHeader>
           {selectedPart && (
             <div className="space-y-6">
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <Label className="text-muted-foreground">Prezzo B2B</Label>
                   <p className="text-2xl font-bold text-primary">{formatPrice(selectedPart.b2bPrice)}</p>
@@ -369,7 +369,7 @@ export default function RepairCenterSparePartsCatalog() {
           </DialogHeader>
           {selectedPart && (
             <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <Label>Prezzo unitario</Label>
                   <p className="text-lg font-bold">{formatPrice(selectedPart.b2bPrice)}</p>

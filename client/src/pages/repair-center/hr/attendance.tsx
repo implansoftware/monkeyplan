@@ -215,7 +215,7 @@ export default function RepairCenterHrAttendance() {
           <CardTitle>Timbrature Rapide</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
             {Object.entries(eventTypeLabels).map(([key, { label, icon: Icon, color }]) => (
               <Button
                 key={key}

@@ -1195,7 +1195,7 @@ export default function AdminSmartphoneCatalog() {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="unitPrice">Prezzo vendita</Label>
                 <Input
@@ -1772,7 +1772,7 @@ export default function AdminSmartphoneCatalog() {
                 </Select>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="assignPrice">Prezzo vendita (€) *</Label>
                   <Input

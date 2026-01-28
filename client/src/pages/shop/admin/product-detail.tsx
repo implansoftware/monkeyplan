@@ -175,7 +175,7 @@ export default function ProductDetail() {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
                 <div>
                   <p className="text-sm text-muted-foreground">Categoria</p>
                   <p className="font-medium" data-testid="text-category">{product.category || "N/D"}</p>
@@ -232,7 +232,7 @@ export default function ProductDetail() {
                 </CardHeader>
                 <CardContent>
                   {product.productType === "dispositivo" && specs && "storage" in specs ? (
-                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
                       <div>
                         <p className="text-sm text-muted-foreground">Storage</p>
                         <p className="font-medium" data-testid="text-storage">
@@ -277,7 +277,7 @@ export default function ProductDetail() {
                       )}
                     </div>
                   ) : product.productType === "accessorio" && specs && "accessoryType" in specs ? (
-                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
                       <div>
                         <p className="text-sm text-muted-foreground">Tipo</p>
                         <p className="font-medium" data-testid="text-accessory-type">

@@ -434,12 +434,12 @@ export default function AdminDashboard() {
           </CardHeader>
           <CardContent>
             {isLoading ? (
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <Skeleton className="h-20 w-full" />
                 <Skeleton className="h-20 w-full" />
               </div>
             ) : (
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="text-center p-4 bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-xl">
                   <div className="text-2xl font-bold text-blue-600">{stats?.ecommerceStats?.totalOrders ?? 0}</div>
                   <div className="text-xs text-slate-500 mt-1">Ordini Totali</div>
@@ -472,14 +472,14 @@ export default function AdminDashboard() {
           </CardHeader>
           <CardContent>
             {isLoading ? (
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+              <div className="grid grid-cols-1 sm:grid-cols-2 sm:grid-cols-4 gap-2">
                 <Skeleton className="h-16 w-full" />
                 <Skeleton className="h-16 w-full" />
                 <Skeleton className="h-16 w-full" />
                 <Skeleton className="h-16 w-full" />
               </div>
             ) : (
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+              <div className="grid grid-cols-1 sm:grid-cols-2 sm:grid-cols-4 gap-2">
                 <div className="text-center p-3 bg-slate-50 dark:bg-slate-700/50 rounded-xl">
                   <div className="text-xl font-bold text-slate-900 dark:text-white">{stats?.transferRequestStats?.total ?? 0}</div>
                   <div className="text-xs text-slate-500">Totali</div>

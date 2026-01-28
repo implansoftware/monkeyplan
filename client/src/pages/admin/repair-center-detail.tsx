@@ -314,7 +314,7 @@ export default function AdminRepairCenterDetail() {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="p-4 bg-slate-50 dark:bg-slate-800/30 rounded-xl">
                 <p className="text-xs text-slate-500 uppercase tracking-wide mb-1">Indirizzo</p>
                 <p className="font-semibold text-slate-900 dark:text-white flex items-center gap-2" data-testid="text-center-address">
@@ -390,7 +390,7 @@ export default function AdminRepairCenterDetail() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {center.ragioneSociale && (
                   <div className="p-4 bg-slate-50 dark:bg-slate-800/30 rounded-xl">
                     <p className="text-xs text-slate-500 uppercase tracking-wide mb-1">Ragione Sociale</p>

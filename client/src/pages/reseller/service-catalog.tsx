@@ -1002,7 +1002,7 @@ export default function ResellerServiceCatalog() {
           </DialogHeader>
           
           <div className="space-y-4 py-4">
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="itemCode">Codice *</Label>
                 <Input
@@ -1121,7 +1121,7 @@ export default function ResellerServiceCatalog() {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="itemPrice">Prezzo (EUR) *</Label>
                 <div className="relative">

@@ -224,7 +224,7 @@ export default function MarketplaceProductDetail() {
                 <CardTitle className="text-lg">Specifiche Tecniche</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-2 gap-2 text-sm">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm">
                   {product.productType === 'dispositivo' && specs && (
                     <>
                       {specs.storage && <><span className="text-muted-foreground">Memoria:</span><span>{specs.storage}</span></>}

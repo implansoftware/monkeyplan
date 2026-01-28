@@ -498,7 +498,7 @@ export default function ResellerRepairCenters() {
                           data-testid="edit-input-address"
                         />
                       </div>
-                      <div className="grid grid-cols-2 gap-3">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <div className="space-y-2">
                           <Label htmlFor="edit-city">Città *</Label>
                           <Input 
@@ -508,7 +508,7 @@ export default function ResellerRepairCenters() {
                             data-testid="edit-input-city" 
                           />
                         </div>
-                        <div className="grid grid-cols-2 gap-2">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                           <div className="space-y-2">
                             <Label htmlFor="edit-cap">CAP</Label>
                             <Input 
@@ -543,7 +543,7 @@ export default function ResellerRepairCenters() {
                     </AccordionTrigger>
                     <AccordionContent className="space-y-4 pt-2">
                       <p className="text-sm text-muted-foreground">Dati fiscali e fatturazione (opzionali).</p>
-                      <div className="grid grid-cols-2 gap-3">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <div className="space-y-2">
                           <Label htmlFor="edit-ragioneSociale">Ragione Sociale</Label>
                           <Input 
@@ -783,7 +783,7 @@ export default function ResellerRepairCenters() {
                           data-testid="input-address"
                         />
                       </div>
-                      <div className="grid grid-cols-2 gap-3">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <div className="space-y-2">
                           <Label htmlFor="city">Città *</Label>
                           <Input 
@@ -793,7 +793,7 @@ export default function ResellerRepairCenters() {
                             data-testid="input-city" 
                           />
                         </div>
-                        <div className="grid grid-cols-2 gap-2">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                           <div className="space-y-2">
                             <Label htmlFor="cap">CAP</Label>
                             <Input 
@@ -835,7 +835,7 @@ export default function ResellerRepairCenters() {
                           </Label>
                         </div>
                       </div>
-                      <div className="grid grid-cols-2 gap-3">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <div className="space-y-2">
                           <Label htmlFor="ragioneSociale">Ragione Sociale</Label>
                           <Input 
@@ -1447,7 +1447,7 @@ export default function ResellerRepairCenters() {
                       </div>
                     </CardHeader>
                     <CardContent>
-                      <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 text-sm">
                         <div>
                           <p className="text-muted-foreground text-xs uppercase">Ragione Sociale</p>
                           <p className="font-medium">{centerDetail.center.ragioneSociale || "-"}</p>
@@ -1480,7 +1480,7 @@ export default function ResellerRepairCenters() {
 
               {/* Tab Statistiche */}
               <TabsContent value="statistiche" className="mt-4 space-y-4">
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
                   <Card className="relative overflow-hidden">
                     <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-transparent" />
                     <CardContent className="relative pt-4 pb-3">

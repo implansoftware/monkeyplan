@@ -634,7 +634,7 @@ export default function RepairCenterAppointments() {
           </DialogHeader>
           {selectedAppointment && (
             <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <Label className="text-muted-foreground">Data</Label>
                   <p className="font-medium">

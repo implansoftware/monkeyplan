@@ -26,7 +26,7 @@ export function DashboardGrid({ role, layout, widgetComponents, widgetProps = {}
   }, [layout.widgets, registryMap]);
 
   return (
-    <div className="grid gap-4 grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4" data-testid="dashboard-grid">
+    <div className="grid gap-4 grid-cols-1 md:grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4" data-testid="dashboard-grid">
       {visibleWidgets.map(({ preference, config }) => {
         const Component = widgetComponents[preference.id];
         if (!Component) {

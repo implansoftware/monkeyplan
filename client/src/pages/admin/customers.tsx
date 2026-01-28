@@ -534,7 +534,7 @@ export default function AdminCustomers() {
               </TabsList>
               
               <TabsContent value="personal" className="space-y-4 mt-4">
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="edit-fullName" className="text-slate-700 dark:text-slate-300">Nome Completo</Label>
                     <Input
@@ -621,7 +621,7 @@ export default function AdminCustomers() {
                 
                 {editFormData.customerType === "company" && (
                   <>
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <Label className="text-slate-700 dark:text-slate-300">Ragione Sociale</Label>
                         <Input
@@ -641,7 +641,7 @@ export default function AdminCustomers() {
                         />
                       </div>
                     </div>
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <Label className="text-slate-700 dark:text-slate-300">PEC</Label>
                         <Input

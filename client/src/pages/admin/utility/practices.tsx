@@ -1527,7 +1527,7 @@ export default function AdminUtilityPractices() {
                       );
                     })()}
                   </div>
-                  <div className="grid grid-cols-2 gap-2">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                     <div>
                       <Label className="text-xs">Email</Label>
                       <Input
@@ -1589,7 +1589,7 @@ export default function AdminUtilityPractices() {
                 Prezzi e Stato
               </h4>
               
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className="space-y-2">
                   <Label className="text-xs">Tipo Prezzo</Label>
                   <div className="flex gap-1">

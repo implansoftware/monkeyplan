@@ -491,7 +491,7 @@ export default function AdminTransferRequestsOverviewPage() {
           </DialogHeader>
           {selectedRequest && (
             <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4 text-sm">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
                 <div>
                   <span className="text-muted-foreground">Stato:</span>
                   <div className="mt-1">{renderStatusBadge(selectedRequest.status)}</div>
@@ -657,7 +657,7 @@ export default function AdminTransferRequestsOverviewPage() {
           </DialogHeader>
           {selectedRequest && (
             <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <Label>Corriere</Label>
                   <Input

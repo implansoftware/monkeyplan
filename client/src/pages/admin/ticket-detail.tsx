@@ -334,7 +334,7 @@ function TicketDetailManageView({ basePath }: { basePath: string }) {
                 <p className="text-sm text-muted-foreground">{ticket.description}</p>
               </div>
               <Separator />
-              <div className="grid grid-cols-2 gap-4 text-sm">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
                 <div>
                   <div className="font-medium mb-1">Creato il</div>
                   <div className="text-muted-foreground">
@@ -709,7 +709,7 @@ function TicketDetailReadView({ basePath }: { basePath: string }) {
                 <p className="text-sm text-muted-foreground">{ticket.description}</p>
               </div>
               <Separator />
-              <div className="grid grid-cols-2 gap-4 text-sm">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
                 <div>
                   <div className="font-medium mb-1">Creato il</div>
                   <div className="text-muted-foreground">

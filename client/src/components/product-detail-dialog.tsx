@@ -175,7 +175,7 @@ export function ProductDetailDialog({ open, onOpenChange, productId, hideStock =
                         Specifiche {DEVICE_CATEGORY_LABELS[data.product.category || ''] || 'Dispositivo'}
                       </h3>
                       {specs ? (
-                        <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 text-sm">
                           {data.product.brand && (
                             <div>
                               <span className="text-muted-foreground">Marca:</span>
@@ -255,7 +255,7 @@ export function ProductDetailDialog({ open, onOpenChange, productId, hideStock =
                       <Headphones className="h-4 w-4" />
                       Specifiche Accessorio
                     </h3>
-                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 text-sm">
                       {data.product.brand && (
                         <div>
                           <span className="text-muted-foreground">Marca:</span>
@@ -287,7 +287,7 @@ export function ProductDetailDialog({ open, onOpenChange, productId, hideStock =
                       <Wrench className="h-4 w-4" />
                       Dettagli Ricambio
                     </h3>
-                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 text-sm">
                       {data.product.category && (
                         <div>
                           <span className="text-muted-foreground">Categoria:</span>

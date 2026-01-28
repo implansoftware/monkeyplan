@@ -438,7 +438,7 @@ export default function ResellerDashboard() {
       )}
 
       {/* Main KPI Cards - Modern Glass Style */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {[
           { id: "stats-repairs", render: () => (
             <Card key="stats-repairs" className="relative overflow-hidden group hover:shadow-lg transition-all border-0 bg-gradient-to-br from-teal-50 to-emerald-50 dark:from-teal-950/40 dark:to-emerald-950/40" data-testid="card-kpi-repairs">
@@ -544,7 +544,7 @@ export default function ResellerDashboard() {
       </div>
 
       {/* Secondary Metrics - Modern Style */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {[
           { id: "stats-tickets", render: () => (
             <Link key="stats-tickets" href="/reseller/transfer-requests" className="block group">
@@ -655,7 +655,7 @@ export default function ResellerDashboard() {
           </div>
         </CardHeader>
         <CardContent className="pt-4">
-          <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
             <div className="col-span-2 lg:col-span-1 p-4 rounded-xl bg-gradient-to-br from-primary/5 to-primary/10 border border-primary/20">
               <div className="flex items-center gap-2 mb-2">
                 <Euro className="h-4 w-4 text-primary" />

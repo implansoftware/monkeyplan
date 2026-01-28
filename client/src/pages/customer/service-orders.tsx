@@ -368,7 +368,7 @@ export default function CustomerServiceOrders() {
                     data-testid="input-shipping-address"
                   />
                 </div>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label>CAP</Label>
                     <Input
@@ -398,7 +398,7 @@ export default function CustomerServiceOrders() {
                     data-testid="input-shipping-city"
                   />
                 </div>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label>Corriere (opzionale)</Label>
                     <Input

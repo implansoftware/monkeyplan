@@ -425,7 +425,7 @@ export default function ResellerPosOverview() {
                     </div>
                   </div>
                   <p className="text-xs text-muted-foreground mb-2">{reg.repairCenterName}</p>
-                  <div className="grid grid-cols-2 gap-2 text-sm">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm">
                     <div>
                       <p className="text-xs text-muted-foreground">Transazioni</p>
                       <p className="font-bold">{reg.transactionCount}</p>
@@ -581,7 +581,7 @@ export default function ResellerPosOverview() {
             </div>
           ) : txDetail ? (
             <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <p className="text-xs text-muted-foreground">Numero</p>
                   <p className="font-medium">{txDetail.transaction.transactionNumber}</p>

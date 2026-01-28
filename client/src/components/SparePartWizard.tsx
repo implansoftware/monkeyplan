@@ -429,7 +429,7 @@ export function SparePartWizard({
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Qualità *</FormLabel>
-                      <div className="grid grid-cols-2 gap-2">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                         {QUALITY_OPTIONS.map(opt => (
                           <Card
                             key={opt.value}
@@ -450,7 +450,7 @@ export function SparePartWizard({
                   )}
                 />
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <FormField
                     control={form.control}
                     name="sku"
@@ -490,7 +490,7 @@ export function SparePartWizard({
                   <p className="text-sm text-muted-foreground">Configura prezzi e disponibilità</p>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <FormField
                     control={form.control}
                     name="unitPrice"
@@ -682,7 +682,7 @@ export function SparePartWizard({
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-4 pt-4 border-t">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4 border-t">
                       <div>
                         <Label className="text-xs text-muted-foreground">SKU</Label>
                         <p className="font-medium">{values.sku || "-"}</p>
@@ -700,7 +700,7 @@ export function SparePartWizard({
                       </div>
                     )}
 
-                    <div className="grid grid-cols-2 gap-4 pt-4 border-t">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4 border-t">
                       <div>
                         <Label className="text-xs text-muted-foreground">Prezzo Vendita</Label>
                         <p className="font-semibold text-lg text-primary">€{values.unitPrice || "0"}</p>

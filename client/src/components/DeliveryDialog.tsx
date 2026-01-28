@@ -272,7 +272,7 @@ export function DeliveryDialog({
                 </Badge>
               </div>
 
-              <div className="grid grid-cols-2 gap-4 text-sm">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
                 <div>
                   <div className="text-muted-foreground">Destinatario</div>
                   <div className="font-medium">{existingDelivery.deliveredTo}</div>
@@ -423,7 +423,7 @@ export function DeliveryDialog({
               )}
             />
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <FormField
                 control={form.control}
                 name="idDocumentType"
@@ -518,7 +518,7 @@ export function DeliveryDialog({
               </p>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-1 sm:grid-cols-2 gap-4">
               <SignaturePad
                 title="Firma Cliente"
                 signerName={customerSignature.signerName || form.watch("deliveredTo")}

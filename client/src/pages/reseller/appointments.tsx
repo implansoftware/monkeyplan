@@ -803,7 +803,7 @@ export default function ResellerAppointments() {
                     <Wrench className="h-4 w-4 text-muted-foreground" />
                     <span className="font-semibold">Ordine {selectedAppointment.repairOrder.orderNumber}</span>
                   </div>
-                  <div className="grid grid-cols-2 gap-2 text-sm">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm">
                     <div>
                       <span className="text-muted-foreground">Dispositivo: </span>
                       <span>{selectedAppointment.repairOrder.deviceType}</span>
@@ -853,7 +853,7 @@ export default function ResellerAppointments() {
                 </div>
               )}
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <Label className="text-muted-foreground">Data</Label>
                   <p className="font-medium">

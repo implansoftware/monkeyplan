@@ -234,7 +234,7 @@ export default function AdminSuppliers() {
                       data-testid="input-supplier-name" 
                     />
                   </div>
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="vatNumber">Partita IVA</Label>
                       <Input 
@@ -267,7 +267,7 @@ export default function AdminSuppliers() {
                 </TabsContent>
 
                 <TabsContent value="contact" className="space-y-4 mt-4" forceMount hidden={activeTab !== "contact"}>
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="email">Email</Label>
                       <Input 
@@ -289,7 +289,7 @@ export default function AdminSuppliers() {
                       />
                     </div>
                   </div>
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="whatsapp">WhatsApp Business</Label>
                       <Input 
@@ -486,7 +486,7 @@ export default function AdminSuppliers() {
                       </SelectContent>
                     </Select>
                   </div>
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="deliveryDays">Tempo di Consegna (giorni)</Label>
                       <Input 
@@ -511,7 +511,7 @@ export default function AdminSuppliers() {
                       />
                     </div>
                   </div>
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="shippingCost">Costo Spedizione (EUR)</Label>
                       <Input 

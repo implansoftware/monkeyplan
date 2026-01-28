@@ -508,7 +508,7 @@ export default function ResellerCustomers() {
             
             {isEditing ? (
               <div className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="edit-fullName">Nome Completo</Label>
                     <Input
@@ -595,7 +595,7 @@ export default function ResellerCustomers() {
                 </TabsList>
                 
                 <TabsContent value="info" className="space-y-4 mt-4">
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                       <Label className="text-xs text-muted-foreground">Email</Label>
                       <p className="text-sm">{selectedCustomer.email}</p>

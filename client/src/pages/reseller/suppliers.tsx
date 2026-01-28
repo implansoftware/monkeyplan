@@ -723,7 +723,7 @@ export default function ResellerSuppliers() {
           <DialogHeader>
             <DialogTitle>{editingSupplier ? "Modifica Fornitore" : "Nuovo Fornitore"}</DialogTitle>
           </DialogHeader>
-          <div className="grid grid-cols-2 gap-4 py-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 py-4">
             <div className="space-y-2">
               <Label htmlFor="name">Nome / Ragione Sociale *</Label>
               <Input

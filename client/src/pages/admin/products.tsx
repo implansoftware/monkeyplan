@@ -936,7 +936,7 @@ export default function AdminProducts() {
                   </TabsList>
 
                   <TabsContent value="info" className="space-y-4 mt-4">
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <Label htmlFor="name">Nome Prodotto *</Label>
                         <Input 
@@ -961,7 +961,7 @@ export default function AdminProducts() {
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <Label htmlFor="category">Categoria *</Label>
                         <Select value={newProductCategory} onValueChange={setNewProductCategory}>
@@ -993,7 +993,7 @@ export default function AdminProducts() {
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <Label htmlFor="condition">Condizione *</Label>
                         <Select value={newProductCondition} onValueChange={setNewProductCondition}>
@@ -1181,7 +1181,7 @@ export default function AdminProducts() {
                   </TabsContent>
 
                   <TabsContent value="pricing" className="space-y-4 mt-4">
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <Label htmlFor="costPrice">Prezzo Acquisto (€)</Label>
                         <Input
@@ -1228,7 +1228,7 @@ export default function AdminProducts() {
                   </TabsContent>
 
                   <TabsContent value="inventory" className="space-y-4 mt-4">
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <Label htmlFor="supplier">Fornitore</Label>
                         <Select 
@@ -1257,7 +1257,7 @@ export default function AdminProducts() {
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <Label htmlFor="minStock">Scorta Minima</Label>
                         <Input
@@ -1507,7 +1507,7 @@ export default function AdminProducts() {
                         </div>
                       </div>
                       <Separator />
-                      <div className="grid grid-cols-2 gap-4">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div className="space-y-2">
                           <Label htmlFor="edit-name">Nome Prodotto *</Label>
                           <Input 
@@ -1530,7 +1530,7 @@ export default function AdminProducts() {
                         </div>
                       </div>
 
-                      <div className="grid grid-cols-2 gap-4">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div className="space-y-2">
                           <Label htmlFor="edit-category">Categoria *</Label>
                           <Select name="category" defaultValue={editingProduct.category}>
@@ -1562,7 +1562,7 @@ export default function AdminProducts() {
                         </div>
                       </div>
 
-                      <div className="grid grid-cols-2 gap-4">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div className="space-y-2">
                           <Label htmlFor="edit-condition">Condizione *</Label>
                           <Select name="condition" defaultValue={editingProduct.condition}>
@@ -1767,7 +1767,7 @@ export default function AdminProducts() {
                     </TabsContent>
 
                     <TabsContent value="pricing" className="space-y-4 mt-4">
-                      <div className="grid grid-cols-2 gap-4">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div className="space-y-2">
                           <Label htmlFor="edit-costPrice">Prezzo Acquisto (€)</Label>
                           <Input
@@ -1940,7 +1940,7 @@ export default function AdminProducts() {
                               </Select>
                             </div>
 
-                            <div className="grid grid-cols-2 gap-4">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                               <div className="space-y-2">
                                 <Label htmlFor="ps-supplierCode">Codice Articolo Fornitore</Label>
                                 <Input
