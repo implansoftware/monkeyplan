@@ -163,7 +163,7 @@ export default function RepairCenterDashboard() {
               </p>
             </div>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <DashboardCustomizer
               role="repair_center"
               currentLayout={dashboardLayout}
@@ -172,7 +172,7 @@ export default function RepairCenterDashboard() {
             />
             <Button 
               onClick={() => setAcceptanceDialogOpen(true)} 
-              className="bg-white/20 backdrop-blur-sm text-white border-white/30 hover:bg-white/30 shadow-lg" 
+              className="bg-white/20 backdrop-blur-sm text-white border-white/30 hover:bg-white/30 shadow-lg whitespace-nowrap" 
               variant="outline"
               data-testid="button-new-repair"
             >
