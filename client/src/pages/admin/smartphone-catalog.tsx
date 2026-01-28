@@ -1026,7 +1026,7 @@ export default function AdminSmartphoneCatalog() {
           </DialogHeader>
 
           <div className="grid gap-4 py-4">
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="name">Nome dispositivo *</Label>
                 <Input
@@ -1062,7 +1062,7 @@ export default function AdminSmartphoneCatalog() {
               </div>
             </div>
 
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="brand">Marca</Label>
                 <Select value={formData.brand} onValueChange={(v) => setFormData({ ...formData, brand: v })}>
@@ -1104,7 +1104,7 @@ export default function AdminSmartphoneCatalog() {
               </div>
             </div>
 
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="storage">Storage *</Label>
                 <Select value={formData.storage} onValueChange={(v) => setFormData({ ...formData, storage: v })}>
@@ -1146,7 +1146,7 @@ export default function AdminSmartphoneCatalog() {
               </div>
             </div>
 
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="batteryHealth">Batteria %</Label>
                 <Select value={formData.batteryHealth} onValueChange={(v) => setFormData({ ...formData, batteryHealth: v })}>
@@ -1162,7 +1162,7 @@ export default function AdminSmartphoneCatalog() {
               </div>
             </div>
 
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="imei">IMEI</Label>
                 <Input

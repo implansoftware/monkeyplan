@@ -976,7 +976,7 @@ export default function SmartphoneCatalog() {
           </DialogHeader>
 
           <div className="grid gap-4 py-4">
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="name">Nome dispositivo *</Label>
                 <Input
@@ -1012,7 +1012,7 @@ export default function SmartphoneCatalog() {
               </div>
             </div>
 
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="brand">Marca</Label>
                 <Select value={formData.brand} onValueChange={(v) => setFormData({ ...formData, brand: v })}>
@@ -1059,7 +1059,7 @@ export default function SmartphoneCatalog() {
               const specsConfig = getSpecsConfig(formData.category);
               return (
                 <>
-                  <div className="grid grid-cols-3 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                     {specsConfig.storage && (
                       <div className="space-y-2">
                         <Label htmlFor="storage">Storage *</Label>
@@ -1108,7 +1108,7 @@ export default function SmartphoneCatalog() {
                   </div>
 
                   {specsConfig.batteryHealth && (
-                    <div className="grid grid-cols-3 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                       <div className="space-y-2">
                         <Label htmlFor="batteryHealth">Batteria %</Label>
                         <Select value={formData.batteryHealth} onValueChange={(v) => setFormData({ ...formData, batteryHealth: v })}>
@@ -1125,7 +1125,7 @@ export default function SmartphoneCatalog() {
                     </div>
                   )}
 
-                  <div className="grid grid-cols-3 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                     {specsConfig.imei && (
                       <>
                         <div className="space-y-2">
@@ -1167,7 +1167,7 @@ export default function SmartphoneCatalog() {
               );
             })()}
 
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="unitPrice">Prezzo Vendita *</Label>
                 <Input

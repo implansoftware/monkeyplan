@@ -947,7 +947,7 @@ export default function AccessoryCatalog() {
               </div>
             </div>
 
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="accessoryType">Tipo Accessorio *</Label>
                 <Select value={formData.accessoryType} onValueChange={(v) => setFormData({ ...formData, accessoryType: v })}>
@@ -1142,7 +1142,7 @@ export default function AccessoryCatalog() {
               </div>
             )}
 
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="unitPrice">Prezzo Vendita *</Label>
                 <Input

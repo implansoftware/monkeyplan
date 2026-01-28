@@ -684,7 +684,7 @@ export default function AdminCustomers() {
                   />
                 </div>
                 
-                <div className="grid grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                   <div className="space-y-2">
                     <Label className="text-slate-700 dark:text-slate-300">CAP</Label>
                     <Input

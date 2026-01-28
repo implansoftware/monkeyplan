@@ -94,7 +94,7 @@ export default function ResellerCustomerDetail() {
     return (
       <div className="space-y-6" data-testid="page-customer-detail-loading">
         <Skeleton className="h-8 w-64" />
-        <div className="grid grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {[1, 2, 3, 4].map((i) => (
             <Skeleton key={i} className="h-20" />
           ))}
@@ -774,7 +774,7 @@ function CustomerEditForm({
             data-testid="input-edit-address"
           />
         </div>
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div className="space-y-2">
             <Label htmlFor="city">Città</Label>
             <Input

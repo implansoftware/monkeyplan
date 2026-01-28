@@ -488,7 +488,7 @@ export default function RepairCenterDashboard() {
               </Button>
             </Link>
           </div>
-          <div className="grid grid-cols-4 gap-2 mt-3 pt-3 border-t">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-3 pt-3 border-t">
             <Link href="/repair-center/tickets">
               <Button variant="ghost" size="sm" className="w-full h-auto py-2 flex flex-col items-center gap-1 text-muted-foreground hover:text-foreground" data-testid="button-quick-tickets">
                 <Ticket className="h-4 w-4" />
