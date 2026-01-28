@@ -6829,3 +6829,103 @@ export type DashboardWidgetConfig = {
 export type DashboardLayout = {
   widgets: DashboardWidgetConfig[];
 };
+
+// ============ PRICE LISTS (Listini Prezzi) ============
+
+export const priceListOwnerTypeEnum = pgEnum("price_list_owner_type", [
+  "reseller",
+  "sub_reseller", 
+  "repair_center",
+]);
+
+export const priceLists = pgTable("price_lists", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  name: text("name").notNull(),
+  description: text("description"),
+  
+  // Owner del listino
+  ownerId: varchar("owner_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  ownerType: priceListOwnerTypeEnum("owner_type").notNull(),
+  
+  // Se owner è un centro di riparazione
+  repairCenterId: varchar("repair_center_id").references(() => repairCenters.id, { onDelete: "cascade" }),
+  
+  // Ereditarietà: listino da cui è stato copiato (null = creato da zero)
+  parentListId: varchar("parent_list_id"),
+  
+  // Flag listino predefinito (uno solo per owner)
+  isDefault: boolean("is_default").notNull().default(false),
+  
+  // Stato
+  isActive: boolean("is_active").notNull().default(true),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+export const priceListItems = pgTable("price_list_items", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  priceListId: varchar("price_list_id").notNull().references(() => priceLists.id, { onDelete: "cascade" }),
+  
+  // Prodotto o servizio (uno dei due deve essere valorizzato)
+  productId: varchar("product_id").references(() => products.id, { onDelete: "cascade" }),
+  serviceItemId: varchar("service_item_id").references(() => serviceItems.id, { onDelete: "cascade" }),
+  
+  // Prezzi
+  priceCents: integer("price_cents").notNull(),
+  costPriceCents: integer("cost_price_cents"),
+  
+  // Stato
+  isActive: boolean("is_active").notNull().default(true),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+// Relations
+export const priceListsRelations = relations(priceLists, ({ one, many }) => ({
+  owner: one(users, {
+    fields: [priceLists.ownerId],
+    references: [users.id],
+  }),
+  repairCenter: one(repairCenters, {
+    fields: [priceLists.repairCenterId],
+    references: [repairCenters.id],
+  }),
+  items: many(priceListItems),
+}));
+
+export const priceListItemsRelations = relations(priceListItems, ({ one }) => ({
+  priceList: one(priceLists, {
+    fields: [priceListItems.priceListId],
+    references: [priceLists.id],
+  }),
+  product: one(products, {
+    fields: [priceListItems.productId],
+    references: [products.id],
+  }),
+  serviceItem: one(serviceItems, {
+    fields: [priceListItems.serviceItemId],
+    references: [serviceItems.id],
+  }),
+}));
+
+// Insert Schemas
+export const insertPriceListSchema = createInsertSchema(priceLists).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertPriceListItemSchema = createInsertSchema(priceListItems).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+// Types
+export type PriceList = typeof priceLists.$inferSelect;
+export type InsertPriceList = z.infer<typeof insertPriceListSchema>;
+
+export type PriceListItem = typeof priceListItems.$inferSelect;
+export type InsertPriceListItem = z.infer<typeof insertPriceListItemSchema>;
+
+export type PriceListOwnerType = "reseller" | "sub_reseller" | "repair_center";
