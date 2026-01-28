@@ -28,6 +28,50 @@ import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { DotLottieReact } from "@lottiefiles/dotlottie-react";
 
+function LoginLoadingOverlay() {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-500">
+      <div className="absolute inset-0 overflow-hidden">
+        <div className="absolute -top-20 -left-20 w-80 h-80 rounded-full bg-orange-400/30 blur-3xl animate-pulse" />
+        <div className="absolute bottom-10 right-10 w-96 h-96 rounded-full bg-yellow-400/25 blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
+        <div className="absolute top-1/3 left-1/4 w-64 h-64 rounded-full bg-emerald-300/30 blur-3xl animate-pulse" style={{ animationDelay: '2s' }} />
+      </div>
+      
+      <div className="relative z-10 flex flex-col items-center space-y-6">
+        <div 
+          className="relative w-48 h-48"
+          style={{ animation: 'monkeyBounce 1s ease-in-out infinite' }}
+        >
+          <div className="absolute inset-0 bg-gradient-to-r from-yellow-400 via-orange-400 to-amber-400 rounded-full blur-2xl opacity-40" />
+          <DotLottieReact
+            src="https://assets-v2.lottiefiles.com/a/261cdf56-118b-11ee-8495-5b07400f76dd/VtFOjwyK8w.lottie"
+            loop
+            autoplay
+            className="w-full h-full drop-shadow-2xl"
+          />
+        </div>
+        
+        <div className="text-center space-y-3">
+          <h2 className="text-2xl font-bold text-white">Accesso in corso...</h2>
+          <div className="flex items-center justify-center gap-2">
+            <div className="w-3 h-3 rounded-full bg-white animate-bounce" style={{ animationDelay: '0s' }} />
+            <div className="w-3 h-3 rounded-full bg-white animate-bounce" style={{ animationDelay: '0.15s' }} />
+            <div className="w-3 h-3 rounded-full bg-white animate-bounce" style={{ animationDelay: '0.3s' }} />
+          </div>
+          <p className="text-white/80 text-sm">La scimmia sta verificando le credenziali</p>
+        </div>
+      </div>
+      
+      <style>{`
+        @keyframes monkeyBounce {
+          0%, 100% { transform: translateY(0) scale(1); }
+          50% { transform: translateY(-15px) scale(1.05); }
+        }
+      `}</style>
+    </div>
+  );
+}
+
 function AnimatedMonkeyMascot() {
   return (
     <div className="relative flex flex-col items-center">
@@ -161,7 +205,9 @@ export default function AuthPage() {
   };
 
   return (
-    <div className="min-h-screen flex bg-white dark:bg-slate-950">
+    <>
+      {loginMutation.isPending && <LoginLoadingOverlay />}
+      <div className="min-h-screen flex bg-white dark:bg-slate-950">
       <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-500" />
         
@@ -655,5 +701,6 @@ export default function AuthPage() {
         </div>
       </div>
     </div>
+    </>
   );
 }
