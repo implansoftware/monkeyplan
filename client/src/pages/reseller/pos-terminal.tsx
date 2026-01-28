@@ -937,16 +937,16 @@ export default function ResellerPosTerminal() {
             <Tabs defaultValue="search" className="h-full flex flex-col">
               <TabsList className="mb-2">
                 <TabsTrigger value="search" data-testid="tab-search">
-                  <LayoutGrid className="w-4 h-4 mr-1" />
-                  Prodotti
+                  <LayoutGrid className="w-4 h-4 sm:mr-1" />
+                  <span className="hidden sm:inline">Prodotti</span>
                 </TabsTrigger>
                 <TabsTrigger value="services" data-testid="tab-services">
-                  <FileText className="w-4 h-4 mr-1" />
-                  Listino Interventi
+                  <FileText className="w-4 h-4 sm:mr-1" />
+                  <span className="hidden sm:inline">Interventi</span>
                 </TabsTrigger>
                 <TabsTrigger value="history" data-testid="tab-history">
-                  <History className="w-4 h-4 mr-1" />
-                  Storico
+                  <History className="w-4 h-4 sm:mr-1" />
+                  <span className="hidden sm:inline">Storico</span>
                 </TabsTrigger>
               </TabsList>
               
