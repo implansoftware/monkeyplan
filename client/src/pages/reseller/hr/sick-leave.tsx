@@ -24,7 +24,9 @@ import {
   Download,
   Loader2,
   Eye,
-  Pencil
+  Pencil,
+  CheckCircle,
+  XCircle
 } from "lucide-react";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -156,6 +158,20 @@ export default function HrSickLeave() {
       setEditDialogOpen(false);
       setEditingSickLeave(null);
       toast({ title: "Malattia modificata", description: "Le modifiche sono state salvate." });
+    },
+    onError: (error: any) => {
+      toast({ title: "Errore", description: error.message, variant: "destructive" });
+    }
+  });
+
+  const statusMutation = useMutation({
+    mutationFn: async ({ id, status }: { id: string; status: string }) => {
+      return apiRequest("PATCH", `/api/reseller/hr/sick-leaves/${id}`, { status });
+    },
+    onSuccess: (_data, variables) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/reseller/hr/sick-leaves"] });
+      const statusLabel = variables.status === 'confirmed' ? 'confermata' : 'chiusa';
+      toast({ title: "Stato aggiornato", description: `Malattia ${statusLabel} con successo.` });
     },
     onError: (error: any) => {
       toast({ title: "Errore", description: error.message, variant: "destructive" });
@@ -347,16 +363,58 @@ export default function HrSickLeave() {
                         <Badge variant={statusInfo.variant}>{statusInfo.label}</Badge>
                       </TableCell>
                       <TableCell>
-                        {sl.status === 'pending' && !readOnly && (
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            className="h-8 w-8 p-0 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
-                            onClick={() => openEditDialog(sl)}
-                            data-testid={`button-edit-${sl.id}`}
-                          >
-                            <Pencil className="h-4 w-4" />
-                          </Button>
+                        {!readOnly && (
+                          <div className="flex flex-wrap items-center gap-1">
+                            {sl.status === 'pending' && (
+                              <>
+                                <Button
+                                  size="icon"
+                                  variant="ghost"
+                                  className="h-8 w-8 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                                  onClick={() => openEditDialog(sl)}
+                                  title="Modifica"
+                                  data-testid={`button-edit-${sl.id}`}
+                                >
+                                  <Pencil className="h-4 w-4" />
+                                </Button>
+                                <Button
+                                  size="icon"
+                                  variant="ghost"
+                                  className="h-8 w-8 text-green-600 hover:text-green-700 hover:bg-green-50"
+                                  onClick={() => statusMutation.mutate({ id: sl.id, status: 'confirmed' })}
+                                  disabled={statusMutation.isPending}
+                                  title="Conferma malattia"
+                                  data-testid={`button-confirm-${sl.id}`}
+                                >
+                                  <CheckCircle className="h-4 w-4" />
+                                </Button>
+                                <Button
+                                  size="icon"
+                                  variant="ghost"
+                                  className="h-8 w-8 text-orange-600 hover:text-orange-700 hover:bg-orange-50"
+                                  onClick={() => statusMutation.mutate({ id: sl.id, status: 'closed' })}
+                                  disabled={statusMutation.isPending}
+                                  title="Chiudi malattia"
+                                  data-testid={`button-close-${sl.id}`}
+                                >
+                                  <XCircle className="h-4 w-4" />
+                                </Button>
+                              </>
+                            )}
+                            {sl.status === 'confirmed' && (
+                              <Button
+                                size="icon"
+                                variant="ghost"
+                                className="h-8 w-8 text-orange-600 hover:text-orange-700 hover:bg-orange-50"
+                                onClick={() => statusMutation.mutate({ id: sl.id, status: 'closed' })}
+                                disabled={statusMutation.isPending}
+                                title="Chiudi malattia"
+                                data-testid={`button-close-${sl.id}`}
+                              >
+                                <XCircle className="h-4 w-4" />
+                              </Button>
+                            )}
+                          </div>
                         )}
                       </TableCell>
                     </TableRow>
