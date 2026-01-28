@@ -127,12 +127,49 @@ export function setupAuth(app: Express) {
     // Resellers start inactive and need admin approval
     const isActive = requestedRole === "reseller" ? false : true;
 
+    // Customer onboarding: Handle invitation code or repair center selection
+    let resellerId: string | undefined;
+    let repairCenterId: string | undefined;
+    
+    if (requestedRole === "customer") {
+      const { invitationCode, selectedRepairCenterId } = req.body;
+      
+      // Priority 1: Invitation code (validates and assigns customer)
+      if (invitationCode) {
+        const validation = await storage.validateAndUseInvitationCode(invitationCode);
+        if (!validation.valid) {
+          return res.status(400).send(validation.error || "Codice invito non valido");
+        }
+        if (validation.invitationCode) {
+          resellerId = validation.invitationCode.resellerId;
+          repairCenterId = validation.invitationCode.repairCenterId;
+        }
+      }
+      // Priority 2: Direct repair center selection (from public search)
+      else if (selectedRepairCenterId) {
+        const center = await storage.getRepairCenter(selectedRepairCenterId);
+        if (center && center.isActive && center.resellerId) {
+          resellerId = center.resellerId;
+          repairCenterId = center.id;
+        }
+      }
+      // Note: If neither is provided, customer registers without association
+      // They can be associated later when creating a repair order
+    }
+
     const user = await storage.createUser({
       ...req.body,
       role: requestedRole,
       isActive,
+      resellerId,
+      repairCenterId,
       password: await hashPassword(req.body.password),
     });
+
+    // If customer was associated to a repair center, create the many-to-many link
+    if (requestedRole === "customer" && repairCenterId) {
+      await storage.ensureCustomerRepairCenterAssociation(user.id, repairCenterId);
+    }
 
     // Only auto-login for customers (resellers need approval first)
     if (requestedRole === "customer") {

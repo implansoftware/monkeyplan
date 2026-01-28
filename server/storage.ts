@@ -133,7 +133,8 @@ import {
   sibillAccounts, SibillAccount, InsertSibillAccount,
   sibillTransactions, SibillTransaction, InsertSibillTransaction,
   sibillCategories, SibillCategory, InsertSibillCategory,
-  dashboardPreferences, DashboardPreference, InsertDashboardPreference, DashboardLayout
+  dashboardPreferences, DashboardPreference, InsertDashboardPreference, DashboardLayout,
+  invitationCodes, InvitationCode, InsertInvitationCode
 } from "@shared/schema";
 import { db, pool } from "./db";
 import { eq, and, or, desc, lt, gt, gte, lte, sql, not, inArray, isNull, ilike, SQL } from "drizzle-orm";
@@ -1127,6 +1128,16 @@ export interface IStorage {
   acceptRepairWarranty(id: string): Promise<RepairWarranty>;
   declineRepairWarranty(id: string): Promise<RepairWarranty>;
   
+  // Invitation Codes
+  listInvitationCodes(filters?: { repairCenterId?: string; resellerId?: string }): Promise<InvitationCode[]>;
+  getInvitationCode(id: string): Promise<InvitationCode | undefined>;
+  getInvitationCodeByCode(code: string): Promise<InvitationCode | undefined>;
+  createInvitationCode(data: InsertInvitationCode): Promise<InvitationCode>;
+  updateInvitationCode(id: string, updates: Partial<Pick<InvitationCode, 'description' | 'usageLimit' | 'expiresAt' | 'isActive'>>): Promise<InvitationCode>;
+  deleteInvitationCode(id: string): Promise<void>;
+  incrementInvitationCodeUsage(id: string): Promise<InvitationCode>;
+  validateAndUseInvitationCode(code: string): Promise<{ valid: boolean; error?: string; invitationCode?: InvitationCode }>;
+
   // Customer Warranty History
   listCustomerWarrantiesWithDetails(customerId: string): Promise<Array<{
     warranty: RepairWarranty;
@@ -12004,6 +12015,92 @@ export class DatabaseStorage implements IStorage {
       });
     }
     return results;
+  }
+
+  // ============ Invitation Codes ============
+
+  async listInvitationCodes(filters?: { repairCenterId?: string; resellerId?: string }): Promise<InvitationCode[]> {
+    const conditions: SQL[] = [];
+    if (filters?.repairCenterId) {
+      conditions.push(eq(invitationCodes.repairCenterId, filters.repairCenterId));
+    }
+    if (filters?.resellerId) {
+      conditions.push(eq(invitationCodes.resellerId, filters.resellerId));
+    }
+    const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
+    return whereClause 
+      ? db.select().from(invitationCodes).where(whereClause).orderBy(desc(invitationCodes.createdAt))
+      : db.select().from(invitationCodes).orderBy(desc(invitationCodes.createdAt));
+  }
+
+  async getInvitationCode(id: string): Promise<InvitationCode | undefined> {
+    const [code] = await db.select().from(invitationCodes)
+      .where(eq(invitationCodes.id, id))
+      .limit(1);
+    return code;
+  }
+
+  async getInvitationCodeByCode(code: string): Promise<InvitationCode | undefined> {
+    const [result] = await db.select().from(invitationCodes)
+      .where(eq(invitationCodes.code, code.toUpperCase()))
+      .limit(1);
+    return result;
+  }
+
+  async createInvitationCode(data: InsertInvitationCode): Promise<InvitationCode> {
+    const [created] = await db.insert(invitationCodes).values({
+      ...data,
+      code: data.code.toUpperCase(),
+    }).returning();
+    return created;
+  }
+
+  async updateInvitationCode(id: string, updates: Partial<Pick<InvitationCode, 'description' | 'usageLimit' | 'expiresAt' | 'isActive'>>): Promise<InvitationCode> {
+    const [updated] = await db.update(invitationCodes)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(invitationCodes.id, id))
+      .returning();
+    return updated;
+  }
+
+  async deleteInvitationCode(id: string): Promise<void> {
+    await db.delete(invitationCodes).where(eq(invitationCodes.id, id));
+  }
+
+  async incrementInvitationCodeUsage(id: string): Promise<InvitationCode> {
+    const [updated] = await db.update(invitationCodes)
+      .set({ 
+        usageCount: sql`${invitationCodes.usageCount} + 1`,
+        updatedAt: new Date()
+      })
+      .where(eq(invitationCodes.id, id))
+      .returning();
+    return updated;
+  }
+
+  async validateAndUseInvitationCode(code: string): Promise<{ valid: boolean; error?: string; invitationCode?: InvitationCode }> {
+    const invCode = await this.getInvitationCodeByCode(code);
+    
+    if (!invCode) {
+      return { valid: false, error: "Codice invito non trovato" };
+    }
+    
+    if (!invCode.isActive) {
+      return { valid: false, error: "Codice invito non attivo" };
+    }
+    
+    if (invCode.expiresAt && new Date() > invCode.expiresAt) {
+      return { valid: false, error: "Codice invito scaduto" };
+    }
+    
+    if (invCode.usageLimit !== null && invCode.usageCount >= invCode.usageLimit) {
+      return { valid: false, error: "Codice invito ha raggiunto il limite di utilizzi" };
+    }
+    
+    // Increment usage count
+    const updated = await this.incrementInvitationCodeUsage(invCode.id);
+    
+    return { valid: true, invitationCode: updated };
   }
 
   // ============ Warranty Statistics ============

@@ -159,6 +159,7 @@ import ResellerSuppliers from "@/pages/reseller/suppliers";
 import ResellerSupplierOrders from "@/pages/reseller/supplier-orders";
 import ResellerSupplierReturns from "@/pages/reseller/supplier-returns";
 import ResellerRepairCenters from "@/pages/reseller/repair-centers";
+import ResellerInvitationCodes from "@/pages/reseller/invitation-codes";
 import ResellerRepairCenterSchedules from "@/pages/reseller/repair-center-schedules";
 import ResellerAppointments from "@/pages/reseller/appointments";
 import ResellerServiceCatalog from "@/pages/reseller/service-catalog";
@@ -381,6 +382,7 @@ function Router() {
       <ProtectedRoute path="/reseller/customers/:id" component={ResellerCustomerDetail} allowedRoles={["reseller", "reseller_staff"]} />
       <ProtectedRoute path="/reseller/customers" component={ResellerCustomers} allowedRoles={["reseller", "reseller_staff"]} />
       <ProtectedRoute path="/reseller/repair-centers" component={ResellerRepairCenters} allowedRoles={["reseller", "reseller_staff"]} />
+      <ProtectedRoute path="/reseller/invitation-codes" component={ResellerInvitationCodes} allowedRoles={["reseller", "reseller_staff"]} />
       <ProtectedRoute path="/reseller/repair-center-schedules" component={ResellerRepairCenterSchedules} allowedRoles={["reseller", "reseller_staff"]} />
       <ProtectedRoute path="/reseller/appointments" component={ResellerAppointments} allowedRoles={["reseller", "reseller_staff"]} />
       <ProtectedRoute path="/reseller/new-repair" component={ResellerNewRepair} allowedRoles={["reseller", "reseller_staff"]} />
