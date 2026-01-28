@@ -21,12 +21,7 @@ import {
   Smartphone,
   Tablet,
   Headphones,
-  Wrench,
-  Ticket,
-  Search,
-  MapPin,
-  X,
-  Loader2
+  Wrench
 } from "lucide-react";
 import { useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
@@ -114,56 +109,6 @@ export default function AuthPage() {
     partitaIva: "",
   });
   const [resellerPending, setResellerPending] = useState(false);
-  
-  // Customer onboarding state
-  const [invitationCode, setInvitationCode] = useState("");
-  const [invitationCodeStatus, setInvitationCodeStatus] = useState<{ valid: boolean; error?: string; repairCenter?: { id: string; name: string; city: string; address: string } | null } | null>(null);
-  const [centerSearch, setCenterSearch] = useState("");
-  const [selectedCenter, setSelectedCenter] = useState<{ id: string; name: string; city: string; address: string } | null>(null);
-  const [showCenterSearch, setShowCenterSearch] = useState(false);
-  const [searchResults, setSearchResults] = useState<Array<{ id: string; name: string; city: string; address: string; publicPhone?: string }>>([]);
-  const [searchLoading, setSearchLoading] = useState(false);
-
-  // Validate invitation code
-  const validateInvitationCode = async (code: string) => {
-    if (!code.trim()) {
-      setInvitationCodeStatus(null);
-      return;
-    }
-    try {
-      const res = await fetch(`/api/public/invitation-codes/validate?code=${encodeURIComponent(code)}`);
-      const data = await res.json();
-      setInvitationCodeStatus({
-        valid: data.valid,
-        error: data.error,
-        repairCenter: data.repairCenter,
-      });
-      if (data.valid && data.repairCenter) {
-        setSelectedCenter(data.repairCenter);
-        setShowCenterSearch(false);
-      }
-    } catch (err) {
-      setInvitationCodeStatus({ valid: false, error: "Errore di connessione" });
-    }
-  };
-
-  // Search repair centers
-  const searchRepairCenters = async (query: string) => {
-    if (!query.trim()) {
-      setSearchResults([]);
-      return;
-    }
-    setSearchLoading(true);
-    try {
-      const res = await fetch(`/api/public/repair-centers?search=${encodeURIComponent(query)}&limit=5`);
-      const data = await res.json();
-      setSearchResults(data);
-    } catch (err) {
-      setSearchResults([]);
-    } finally {
-      setSearchLoading(false);
-    }
-  };
 
   const resellerRegisterMutation = useMutation({
     mutationFn: async (data: typeof resellerData) => {
@@ -207,12 +152,7 @@ export default function AuthPage() {
 
   const handleCustomerRegister = (e: React.FormEvent) => {
     e.preventDefault();
-    registerMutation.mutate({ 
-      ...customerData, 
-      role: "customer",
-      invitationCode: invitationCode.trim() || undefined,
-      selectedRepairCenterId: !invitationCode.trim() && selectedCenter ? selectedCenter.id : undefined,
-    });
+    registerMutation.mutate({ ...customerData, role: "customer" });
   };
 
   const handleResellerRegister = (e: React.FormEvent) => {
@@ -508,135 +448,6 @@ export default function AuthPage() {
                       />
                     </div>
                   </div>
-                  
-                  <div className="pt-3 border-t border-slate-200 dark:border-slate-700">
-                    <p className="text-sm text-slate-600 dark:text-slate-400 mb-3">
-                      Hai un codice invito? Inseriscilo qui per associarti al centro di riparazione
-                    </p>
-                    
-                    <div className="space-y-2">
-                      <Label htmlFor="invitation-code" className="text-slate-700 dark:text-slate-300">Codice Invito (opzionale)</Label>
-                      <div className="relative">
-                        <Ticket className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" />
-                        <Input
-                          id="invitation-code"
-                          data-testid="input-invitation-code"
-                          placeholder="Es. CENTRO-ABC123"
-                          value={invitationCode}
-                          onChange={(e) => {
-                            const val = e.target.value.toUpperCase();
-                            setInvitationCode(val);
-                            if (val.length >= 4) {
-                              validateInvitationCode(val);
-                            } else {
-                              setInvitationCodeStatus(null);
-                            }
-                          }}
-                          className="pl-12 h-12 rounded-xl border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 focus:bg-white dark:focus:bg-slate-800 focus:border-teal-500 transition-colors uppercase"
-                        />
-                        {invitationCodeStatus && (
-                          <div className={`absolute right-3 top-1/2 -translate-y-1/2 ${invitationCodeStatus.valid ? 'text-green-500' : 'text-red-500'}`}>
-                            {invitationCodeStatus.valid ? <CheckCircle className="h-5 w-5" /> : <X className="h-5 w-5" />}
-                          </div>
-                        )}
-                      </div>
-                      {invitationCodeStatus && (
-                        <p className={`text-xs ${invitationCodeStatus.valid ? 'text-green-600' : 'text-red-500'}`}>
-                          {invitationCodeStatus.valid && invitationCodeStatus.repairCenter 
-                            ? `Centro: ${invitationCodeStatus.repairCenter.name} - ${invitationCodeStatus.repairCenter.city}`
-                            : invitationCodeStatus.error}
-                        </p>
-                      )}
-                    </div>
-                    
-                    {!invitationCode && (
-                      <div className="mt-4">
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          onClick={() => setShowCenterSearch(!showCenterSearch)}
-                          className="w-full rounded-xl text-sm"
-                          data-testid="button-toggle-center-search"
-                        >
-                          <Search className="w-4 h-4 mr-2" />
-                          {showCenterSearch ? "Nascondi ricerca" : "Oppure cerca il tuo centro di riparazione"}
-                        </Button>
-                        
-                        {showCenterSearch && (
-                          <div className="mt-3 space-y-3">
-                            <div className="relative">
-                              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-                              <Input
-                                placeholder="Cerca per nome o città..."
-                                value={centerSearch}
-                                onChange={(e) => {
-                                  setCenterSearch(e.target.value);
-                                  searchRepairCenters(e.target.value);
-                                }}
-                                className="pl-10 h-10 rounded-lg text-sm"
-                                data-testid="input-center-search"
-                              />
-                              {searchLoading && (
-                                <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-slate-400" />
-                              )}
-                            </div>
-                            
-                            {searchResults.length > 0 && (
-                              <div className="border rounded-lg overflow-hidden bg-white dark:bg-slate-800 divide-y divide-slate-100 dark:divide-slate-700">
-                                {searchResults.map(center => (
-                                  <button
-                                    key={center.id}
-                                    type="button"
-                                    onClick={() => {
-                                      setSelectedCenter(center);
-                                      setCenterSearch("");
-                                      setSearchResults([]);
-                                    }}
-                                    className={`w-full text-left p-3 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors ${selectedCenter?.id === center.id ? 'bg-teal-50 dark:bg-teal-900/20' : ''}`}
-                                    data-testid={`button-select-center-${center.id}`}
-                                  >
-                                    <div className="flex flex-wrap items-center gap-2">
-                                      <Store className="w-4 h-4 text-teal-500" />
-                                      <span className="font-medium text-sm text-slate-900 dark:text-white">{center.name}</span>
-                                    </div>
-                                    <div className="flex flex-wrap items-center gap-1 mt-1 text-xs text-slate-500">
-                                      <MapPin className="w-3 h-3" />
-                                      <span>{center.city} - {center.address}</span>
-                                    </div>
-                                  </button>
-                                ))}
-                              </div>
-                            )}
-                          </div>
-                        )}
-                        
-                        {selectedCenter && !invitationCode && (
-                          <div className="mt-3 p-3 rounded-lg bg-teal-50 dark:bg-teal-900/20 border border-teal-200 dark:border-teal-800">
-                            <div className="flex items-center justify-between">
-                              <div className="flex flex-wrap items-center gap-2">
-                                <Store className="w-4 h-4 text-teal-600" />
-                                <span className="text-sm font-medium text-teal-800 dark:text-teal-200">{selectedCenter.name}</span>
-                              </div>
-                              <button
-                                type="button"
-                                onClick={() => setSelectedCenter(null)}
-                                className="text-teal-600 hover:text-teal-800"
-                                data-testid="button-clear-selected-center"
-                              >
-                                <X className="w-4 h-4" />
-                              </button>
-                            </div>
-                            <div className="flex flex-wrap items-center gap-1 mt-1 text-xs text-teal-600 dark:text-teal-400">
-                              <MapPin className="w-3 h-3" />
-                              <span>{selectedCenter.city} - {selectedCenter.address}</span>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                  
                   <Button
                     type="submit"
                     className="w-full h-12 rounded-xl bg-gradient-to-r from-cyan-500 to-teal-500 hover:from-cyan-600 hover:to-teal-600 text-white font-semibold shadow-lg shadow-cyan-500/25 transition-all duration-300"

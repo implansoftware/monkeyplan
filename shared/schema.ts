@@ -6829,30 +6829,3 @@ export type DashboardWidgetConfig = {
 export type DashboardLayout = {
   widgets: DashboardWidgetConfig[];
 };
-
-// ============ INVITATION CODES ============
-// Codici invito per associare clienti a centri riparazione durante la registrazione
-
-export const invitationCodes = pgTable("invitation_codes", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  code: text("code").notNull().unique(), // Codice univoco (es. "CENTRO-ABC123")
-  repairCenterId: varchar("repair_center_id").notNull().references(() => repairCenters.id, { onDelete: "cascade" }),
-  resellerId: varchar("reseller_id").notNull().references(() => users.id, { onDelete: "cascade" }),
-  description: text("description"), // Nota interna (es. "Codice per campagna social")
-  usageLimit: integer("usage_limit"), // Limite utilizzi (null = illimitato)
-  usageCount: integer("usage_count").notNull().default(0), // Contatore utilizzi
-  expiresAt: timestamp("expires_at"), // Scadenza (null = mai)
-  isActive: boolean("is_active").notNull().default(true),
-  createdAt: timestamp("created_at").notNull().defaultNow(),
-  updatedAt: timestamp("updated_at").notNull().defaultNow(),
-});
-
-export const insertInvitationCodeSchema = createInsertSchema(invitationCodes).omit({
-  id: true,
-  usageCount: true,
-  createdAt: true,
-  updatedAt: true,
-});
-
-export type InvitationCode = typeof invitationCodes.$inferSelect;
-export type InsertInvitationCode = z.infer<typeof insertInvitationCodeSchema>;
