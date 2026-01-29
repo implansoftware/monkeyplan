@@ -46,6 +46,8 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import type { PriceList, PriceListItem, Product, ServiceItem } from "@shared/schema";
+import { SearchableProductCombobox } from "@/components/SearchableProductCombobox";
+import { SearchableServiceCombobox } from "@/components/SearchableServiceCombobox";
 
 const formatCurrency = (cents: number) => {
   return new Intl.NumberFormat("it-IT", {
@@ -67,6 +69,8 @@ export default function PriceListDetail() {
   const [deleteItem, setDeleteItem] = useState<PriceListItem | null>(null);
   const [itemType, setItemType] = useState<"product" | "service">("product");
   const [selectedId, setSelectedId] = useState("");
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [selectedService, setSelectedService] = useState<ServiceItem | null>(null);
   const [priceCents, setPriceCents] = useState("");
 
   const { data: priceList, isLoading } = useQuery<PriceListWithItems>({
@@ -127,6 +131,8 @@ export default function PriceListDetail() {
   const resetForm = () => {
     setShowAddDialog(false);
     setSelectedId("");
+    setSelectedProduct(null);
+    setSelectedService(null);
     setPriceCents("");
     setItemType("product");
   };
@@ -377,7 +383,7 @@ export default function PriceListDetail() {
           <div className="space-y-4 py-4">
             <div className="space-y-2">
               <Label>Tipo</Label>
-              <Select value={itemType} onValueChange={(v) => { setItemType(v as "product" | "service"); setSelectedId(""); }}>
+              <Select value={itemType} onValueChange={(v) => { setItemType(v as "product" | "service"); setSelectedId(""); setSelectedProduct(null); setSelectedService(null); }}>
                 <SelectTrigger data-testid="select-type">
                   <SelectValue />
                 </SelectTrigger>
@@ -390,71 +396,68 @@ export default function PriceListDetail() {
             
             <div className="space-y-2">
               <Label>{itemType === "product" ? "Prodotto" : "Servizio"}</Label>
-              <Select value={selectedId} onValueChange={setSelectedId}>
-                <SelectTrigger data-testid="select-item">
-                  <SelectValue placeholder="Seleziona..." />
-                </SelectTrigger>
-                <SelectContent>
-                  {itemType === "product" ? (
-                    products?.map(p => (
-                      <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
-                    ))
-                  ) : (
-                    services?.map(s => (
-                      <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
-                    ))
-                  )}
-                </SelectContent>
-              </Select>
+              {itemType === "product" ? (
+                <SearchableProductCombobox
+                  onSelect={(product) => {
+                    setSelectedId(product.id);
+                    setSelectedProduct(product);
+                    setSelectedService(null);
+                  }}
+                  placeholder="Cerca prodotto per nome..."
+                />
+              ) : (
+                <SearchableServiceCombobox
+                  onSelect={(service) => {
+                    setSelectedId(service.id);
+                    setSelectedService(service);
+                    setSelectedProduct(null);
+                  }}
+                  placeholder="Cerca servizio per nome..."
+                />
+              )}
             </div>
 
-            {selectedId && (
+            {selectedId && (selectedProduct || selectedService) && (
               <div className="flex items-center gap-4 p-3 rounded-md bg-muted/50 border">
-                {itemType === "product" && (() => {
-                  const selectedProduct = products?.find(p => p.id === selectedId);
-                  return selectedProduct ? (
-                    <>
-                      <div className="w-16 h-16 rounded-md overflow-hidden bg-muted flex items-center justify-center shrink-0">
-                        {selectedProduct.imageUrl ? (
-                          <img 
-                            src={selectedProduct.imageUrl} 
-                            alt={selectedProduct.name}
-                            className="w-full h-full object-cover"
-                          />
-                        ) : (
-                          <Package className="w-8 h-8 text-muted-foreground" />
-                        )}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="font-medium truncate">{selectedProduct.name}</p>
-                        <p className="text-sm text-muted-foreground">
-                          Prezzo originale: <span className="font-semibold text-foreground">{formatCurrency(selectedProduct.unitPrice)}</span>
+                {itemType === "product" && selectedProduct && (
+                  <>
+                    <div className="w-16 h-16 rounded-md overflow-hidden bg-muted flex items-center justify-center shrink-0">
+                      {selectedProduct.imageUrl ? (
+                        <img 
+                          src={selectedProduct.imageUrl} 
+                          alt={selectedProduct.name}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <Package className="w-8 h-8 text-muted-foreground" />
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium truncate">{selectedProduct.name}</p>
+                      <p className="text-sm text-muted-foreground">
+                        Prezzo originale: <span className="font-semibold text-foreground">{formatCurrency(selectedProduct.unitPrice)}</span>
+                      </p>
+                      {selectedProduct.costPrice && (
+                        <p className="text-xs text-muted-foreground">
+                          Costo: {formatCurrency(selectedProduct.costPrice)}
                         </p>
-                        {selectedProduct.costPrice && (
-                          <p className="text-xs text-muted-foreground">
-                            Costo: {formatCurrency(selectedProduct.costPrice)}
-                          </p>
-                        )}
-                      </div>
-                    </>
-                  ) : null;
-                })()}
-                {itemType === "service" && (() => {
-                  const selectedService = services?.find(s => s.id === selectedId);
-                  return selectedService ? (
-                    <>
-                      <div className="w-16 h-16 rounded-md overflow-hidden bg-muted flex items-center justify-center shrink-0">
-                        <Wrench className="w-8 h-8 text-muted-foreground" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="font-medium truncate">{selectedService.name}</p>
-                        <p className="text-sm text-muted-foreground">
-                          Prezzo base: <span className="font-semibold text-foreground">{formatCurrency(selectedService.defaultPriceCents)}</span>
-                        </p>
-                      </div>
-                    </>
-                  ) : null;
-                })()}
+                      )}
+                    </div>
+                  </>
+                )}
+                {itemType === "service" && selectedService && (
+                  <>
+                    <div className="w-16 h-16 rounded-md overflow-hidden bg-muted flex items-center justify-center shrink-0">
+                      <Wrench className="w-8 h-8 text-muted-foreground" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium truncate">{selectedService.name}</p>
+                      <p className="text-sm text-muted-foreground">
+                        Prezzo base: <span className="font-semibold text-foreground">{formatCurrency(selectedService.defaultPriceCents)}</span>
+                      </p>
+                    </div>
+                  </>
+                )}
               </div>
             )}
             
