@@ -8009,6 +8009,70 @@ export function registerRoutes(app: Express): Server {
       res.status(500).send(error.message);
     }
   });
+
+  // =============================================
+  // SUB-RESELLER SERVICE CATALOG
+  // =============================================
+
+  // GET /api/sub-reseller/service-catalog - View service catalog with prices from parent reseller's price list
+  app.get("/api/sub-reseller/service-catalog", requireRole("sub_reseller"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      // Sub-reseller must have a parent reseller
+      const parentResellerId = req.user.parentResellerId;
+      if (!parentResellerId) {
+        return res.status(400).send("Parent reseller not found");
+      }
+      
+      // Get all active service items
+      const items = await storage.listServiceItems();
+      const activeItems = items.filter(item => item.isActive);
+      
+      // Cerca listino prezzi per sub_reseller dal reseller padre
+      const priceList = await storage.getPriceListForTarget(parentResellerId, "sub_reseller");
+      
+      // Get parent reseller prices as fallback (old system)
+      const resellerPrices = await storage.listServiceItemPricesByReseller(parentResellerId);
+      
+      // Build response with effective prices
+      const itemsWithPrices = await Promise.all(activeItems.map(async (item) => {
+        let effectivePrice = item.defaultPriceCents;
+        let effectiveLaborMinutes = item.defaultLaborMinutes;
+        let priceSource: 'base' | 'reseller' | 'price_list' = 'base';
+        
+        // Priority: price_list > reseller price > base price
+        if (priceList) {
+          const priceListItem = await storage.getPriceForItem(priceList.id, undefined, item.id);
+          if (priceListItem && priceListItem.isActive) {
+            effectivePrice = priceListItem.priceCents;
+            priceSource = 'price_list';
+          }
+        }
+        
+        // Fallback al vecchio sistema
+        if (priceSource === 'base') {
+          const resellerPrice = resellerPrices.find(p => p.serviceItemId === item.id);
+          if (resellerPrice) {
+            effectivePrice = resellerPrice.priceCents;
+            effectiveLaborMinutes = resellerPrice.laborMinutes ?? item.defaultLaborMinutes;
+            priceSource = 'reseller';
+          }
+        }
+        
+        return {
+          ...item,
+          effectivePrice,
+          effectiveLaborMinutes,
+          priceSource,
+        };
+      }));
+      
+      res.json(itemsWithPrices);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
   // REPAIR CENTER SERVICE ITEMS CRUD
   // =============================================
 
