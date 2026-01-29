@@ -25799,6 +25799,18 @@ export function registerRoutes(app: Express): Server {
           }
         }
         
+        // Applica listino prezzi customer se utente loggato è cliente del reseller
+        const user = req.user;
+        if (user && user.role === "customer" && user.resellerId === resellerId) {
+          const priceList = await storage.getPriceListForTarget(resellerId, "customer");
+          if (priceList) {
+            const priceListItem = await storage.getPriceForItem(priceList.id, productId, undefined);
+            if (priceListItem && priceListItem.isActive) {
+              effectivePrice = priceListItem.priceCents;
+            }
+          }
+        }
+        
         const unitPrice = effectivePrice / 100; // Converti in euro
         const item = await storage.addCartItem({
           cartId: cart.id,
