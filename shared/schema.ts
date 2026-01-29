@@ -6836,7 +6836,6 @@ export const priceListOwnerTypeEnum = pgEnum("price_list_owner_type", [
   "reseller",
   "sub_reseller", 
   "repair_center",
-  "admin",
 ]);
 
 export const priceListTargetAudienceEnum = pgEnum("price_list_target_audience", [

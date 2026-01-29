@@ -115,6 +115,8 @@ const upload = multer({
       'application/pdf',
       'application/msword',
       'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      'application/vnd.ms-excel',
     ];
     
     if (allowedMimes.includes(file.mimetype)) {
@@ -878,6 +880,46 @@ export function registerRoutes(app: Express): Server {
     try {
       await storage.deleteServiceItemPrice(req.params.id);
       res.sendStatus(204);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
+  // ==========================================
+  // ADMIN PRICE LISTS ENDPOINTS
+  // ==========================================
+
+  // GET /api/admin/price-lists - List all price lists (admin can see all resellers' lists)
+  app.get("/api/admin/price-lists", requireRole("admin"), async (req, res) => {
+    try {
+      const lists = await storage.listPriceLists();
+      
+      // Enrich with owner info
+      const enrichedLists = await Promise.all(lists.map(async (list) => {
+        const owner = await storage.getUser(list.ownerId);
+        return {
+          ...list,
+          ownerName: owner ? `${owner.firstName || ""} ${owner.lastName || ""}`.trim() || owner.username : "Unknown",
+          ownerEmail: owner?.email || "",
+        };
+      }));
+      
+      res.json(enrichedLists);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
+  // GET /api/admin/price-lists/:id - Get single price list with items (admin view)
+  app.get("/api/admin/price-lists/:id", requireRole("admin"), async (req, res) => {
+    try {
+      const { id } = req.params;
+      const list = await storage.getPriceList(id);
+      if (!list) {
+        return res.status(404).send("Price list not found");
+      }
+      const items = await storage.listPriceListItems(id);
+      res.json({ ...list, items });
     } catch (error: any) {
       res.status(500).send(error.message);
     }
@@ -2945,6 +2987,17 @@ export function registerRoutes(app: Express): Server {
     try {
       const validatedData = insertProductSchema.parse(req.body);
       const product = await storage.createProduct(validatedData);
+      
+      // Create device compatibilities if provided
+      if (req.body.deviceCompatibilities && Array.isArray(req.body.deviceCompatibilities) && req.body.deviceCompatibilities.length > 0) {
+        const compatEntries = req.body.deviceCompatibilities.map((c: { deviceBrandId: string; deviceModelId?: string | null }) => ({
+          productId: product.id,
+          deviceBrandId: c.deviceBrandId,
+          deviceModelId: c.deviceModelId || null,
+        }));
+        await storage.setProductCompatibilities(product.id, compatEntries);
+      }
+      
       setActivityEntity(res, { type: 'products', id: product.id });
       res.status(201).json(product);
     } catch (error: any) {
@@ -3068,6 +3121,16 @@ export function registerRoutes(app: Express): Server {
       
       const productsWithStock = await storage.getAllProductsWithStock();
       res.json(productsWithStock);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
+  // GET /api/products/compatibilities-count - Get count of device compatibilities for all products
+  app.get("/api/products/compatibilities-count", requireAuth, async (req, res) => {
+    try {
+      const counts = await storage.getProductCompatibilitiesCount();
+      res.json(counts);
     } catch (error: any) {
       res.status(500).send(error.message);
     }
@@ -3790,7 +3853,7 @@ export function registerRoutes(app: Express): Server {
       const { startDate, endDate, status, centerId } = req.query;
 
       // Create workbook
-      const workbook = new ExcelJS.Workbook();
+      const workbook = new ExcelJSModule.default.Workbook();
       workbook.creator = 'MonkeyPlan Admin';
       workbook.created = new Date();
 
@@ -5005,7 +5068,7 @@ export function registerRoutes(app: Express): Server {
       const centerMap = new Map(repairCenters.map(c => [c.id, c.name]));
       
       // Create workbook
-      const workbook = new ExcelJS.Workbook();
+      const workbook = new ExcelJSModule.default.Workbook();
       workbook.creator = 'MonkeyPlan Reseller';
       workbook.created = new Date();
       
@@ -5454,7 +5517,7 @@ export function registerRoutes(app: Express): Server {
   // ============================================================================
 
   // List all staff members for this reseller
-  app.get("/api/reseller/team", requireRole("reseller"), async (req, res) => {
+  app.get("/api/reseller/team", requireRole("reseller", "reseller_staff"), async (req, res) => {
     try {
       if (!req.user) return res.status(401).send("Non autorizzato");
       
@@ -5934,8 +5997,18 @@ export function registerRoutes(app: Express): Server {
       const resellerId = req.user.role === 'reseller' ? req.user.id : req.user.resellerId;
       if (!resellerId) return res.status(400).send("Rivenditore non trovato");
       
-      const { modelName, brandId, typeId, photoUrl } = req.body;
+      const { modelName, brandId, typeId, photoUrl, marketCodes } = req.body;
       if (!modelName) return res.status(400).send("Nome modello obbligatorio");
+      
+      // Check for duplicate market codes
+      if (marketCodes && marketCodes.length > 0) {
+        const duplicateCheck = await checkMarketCodeDuplicates(marketCodes);
+        if (duplicateCheck.isDuplicate) {
+          return res.status(400).json({
+            error: `Codice mercato "${duplicateCheck.conflictingCode}" già assegnato al modello "${duplicateCheck.conflictingModel}"`
+          });
+        }
+      }
       
       // Inserisce direttamente in device_models con resellerId per compatibilità FK
       const model = await storage.createDeviceModel({
@@ -5944,6 +6017,7 @@ export function registerRoutes(app: Express): Server {
         typeId: typeId || null,
         resellerId, // Marca il modello come proprietà del reseller
         photoUrl: photoUrl || null,
+        marketCodes: marketCodes || null,
         isActive: true
       });
       
@@ -5953,7 +6027,6 @@ export function registerRoutes(app: Express): Server {
       res.status(400).send(error.message);
     }
   });
-
   // Update a custom model
   app.patch("/api/reseller/device-models/:id", requireRole("reseller", "reseller_staff"), async (req, res) => {
     try {
@@ -5969,7 +6042,18 @@ export function registerRoutes(app: Express): Server {
         return res.status(404).send("Modello non trovato");
       }
       
-      const { modelName, brandId, resellerBrandId, brandName, typeId, photoUrl, isActive } = req.body;
+      const { modelName, brandId, resellerBrandId, brandName, typeId, photoUrl, isActive, marketCodes } = req.body;
+      
+      // Check for duplicate market codes (excluding current model)
+      if (marketCodes && marketCodes.length > 0) {
+        const duplicateCheck = await checkMarketCodeDuplicates(marketCodes, modelId);
+        if (duplicateCheck.isDuplicate) {
+          return res.status(400).json({
+            error: `Codice mercato "${duplicateCheck.conflictingCode}" già assegnato al modello "${duplicateCheck.conflictingModel}"`
+          });
+        }
+      }
+      
       const updated = await storage.updateResellerDeviceModel(modelId, {
         ...(modelName !== undefined && { modelName }),
         ...(brandId !== undefined && { brandId }),
@@ -5977,7 +6061,8 @@ export function registerRoutes(app: Express): Server {
         ...(brandName !== undefined && { brandName }),
         ...(typeId !== undefined && { typeId }),
         ...(photoUrl !== undefined && { photoUrl }),
-        ...(isActive !== undefined && { isActive })
+        ...(isActive !== undefined && { isActive }),
+        ...(marketCodes !== undefined && { marketCodes })
       });
       
       setActivityEntity(res, { type: 'reseller_device_model', id: modelId });
@@ -5986,7 +6071,6 @@ export function registerRoutes(app: Express): Server {
       res.status(400).send(error.message);
     }
   });
-
   // Delete a custom model
   app.delete("/api/reseller/device-models/:id", requireRole("reseller", "reseller_staff"), async (req, res) => {
     try {
@@ -6207,6 +6291,18 @@ export function registerRoutes(app: Express): Server {
         }
       }
       
+
+      // Create device compatibilities if provided
+      const { deviceCompatibilities } = req.body;
+      if (deviceCompatibilities && Array.isArray(deviceCompatibilities) && deviceCompatibilities.length > 0) {
+        const compatEntries = deviceCompatibilities.map((c: { deviceBrandId: string; deviceModelId?: string | null }) => ({
+          productId: product.id,
+          deviceBrandId: c.deviceBrandId,
+          deviceModelId: c.deviceModelId || null,
+        }));
+        await storage.setProductCompatibilities(product.id, compatEntries);
+      }
+
       res.status(201).json(product);
     } catch (error: any) {
       res.status(400).send(error.message);
@@ -7870,7 +7966,13 @@ export function registerRoutes(app: Express): Server {
         )
       );
       
-      // Get custom prices for this repair center
+      // Cerca listino prezzi per repair center dal reseller
+      let priceList = null;
+      if (repairCenter.resellerId) {
+        priceList = await storage.getPriceListForTarget(repairCenter.resellerId, "repair_center");
+      }
+      
+      // Get custom prices for this repair center (old system - fallback)
       const centerPrices = await storage.listServiceItemPricesByRepairCenter(repairCenterId);
       
       // Get reseller prices as fallback
@@ -7879,23 +7981,34 @@ export function registerRoutes(app: Express): Server {
         : [];
       
       // Build response with effective prices
-      const itemsWithPrices = activeItems.map(item => {
-        const centerPrice = centerPrices.find(p => p.serviceItemId === item.id);
-        const resellerPrice = resellerPrices.find(p => p.serviceItemId === item.id);
-        
-        // Priority: center price > reseller price > base price
+      const itemsWithPrices = await Promise.all(activeItems.map(async (item) => {
         let effectivePrice = item.defaultPriceCents;
         let effectiveLaborMinutes = item.defaultLaborMinutes;
-        let priceSource: 'base' | 'reseller' | 'center' = 'base';
+        let priceSource: 'base' | 'reseller' | 'center' | 'price_list' = 'base';
         
-        if (centerPrice) {
-          effectivePrice = centerPrice.priceCents;
-          effectiveLaborMinutes = centerPrice.laborMinutes ?? item.defaultLaborMinutes;
-          priceSource = 'center';
-        } else if (resellerPrice) {
-          effectivePrice = resellerPrice.priceCents;
-          effectiveLaborMinutes = resellerPrice.laborMinutes ?? item.defaultLaborMinutes;
-          priceSource = 'reseller';
+        // Priority: price_list > center price > reseller price > base price
+        if (priceList) {
+          const priceListItem = await storage.getPriceForItem(priceList.id, undefined, item.id);
+          if (priceListItem && priceListItem.isActive) {
+            effectivePrice = priceListItem.priceCents;
+            priceSource = 'price_list';
+          }
+        }
+        
+        // Fallback al vecchio sistema
+        if (priceSource === 'base') {
+          const centerPrice = centerPrices.find(p => p.serviceItemId === item.id);
+          const resellerPrice = resellerPrices.find(p => p.serviceItemId === item.id);
+          
+          if (centerPrice) {
+            effectivePrice = centerPrice.priceCents;
+            effectiveLaborMinutes = centerPrice.laborMinutes ?? item.defaultLaborMinutes;
+            priceSource = 'center';
+          } else if (resellerPrice) {
+            effectivePrice = resellerPrice.priceCents;
+            effectiveLaborMinutes = resellerPrice.laborMinutes ?? item.defaultLaborMinutes;
+            priceSource = 'reseller';
+          }
         }
         
         return {
@@ -7904,7 +8017,7 @@ export function registerRoutes(app: Express): Server {
           effectiveLaborMinutes,
           priceSource,
         };
-      });
+      }));
       
       res.json(itemsWithPrices);
     } catch (error: any) {
@@ -7913,6 +8026,68 @@ export function registerRoutes(app: Express): Server {
   });
 
   // =============================================
+  // SUB-RESELLER SERVICE CATALOG
+  // =============================================
+
+  // GET /api/sub-reseller/service-catalog - View service catalog with prices from parent reseller's price list
+  app.get("/api/sub-reseller/service-catalog", requireRole("sub_reseller"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      // Sub-reseller must have a parent reseller
+      const parentResellerId = req.user.parentResellerId;
+      if (!parentResellerId) {
+        return res.status(400).send("Parent reseller not found");
+      }
+      
+      // Get all active service items
+      const items = await storage.listServiceItems();
+      const activeItems = items.filter(item => item.isActive);
+      
+      // Cerca listino prezzi per sub_reseller dal reseller padre
+      const priceList = await storage.getPriceListForTarget(parentResellerId, "sub_reseller");
+      
+      // Get parent reseller prices as fallback (old system)
+      const resellerPrices = await storage.listServiceItemPricesByReseller(parentResellerId);
+      
+      // Build response with effective prices
+      const itemsWithPrices = await Promise.all(activeItems.map(async (item) => {
+        let effectivePrice = item.defaultPriceCents;
+        let effectiveLaborMinutes = item.defaultLaborMinutes;
+        let priceSource: 'base' | 'reseller' | 'price_list' = 'base';
+        
+        // Priority: price_list > reseller price > base price
+        if (priceList) {
+          const priceListItem = await storage.getPriceForItem(priceList.id, undefined, item.id);
+          if (priceListItem && priceListItem.isActive) {
+            effectivePrice = priceListItem.priceCents;
+            priceSource = 'price_list';
+          }
+        }
+        
+        // Fallback al vecchio sistema
+        if (priceSource === 'base') {
+          const resellerPrice = resellerPrices.find(p => p.serviceItemId === item.id);
+          if (resellerPrice) {
+            effectivePrice = resellerPrice.priceCents;
+            effectiveLaborMinutes = resellerPrice.laborMinutes ?? item.defaultLaborMinutes;
+            priceSource = 'reseller';
+          }
+        }
+        
+        return {
+          ...item,
+          effectivePrice,
+          effectiveLaborMinutes,
+          priceSource,
+        };
+      }));
+      
+      res.json(itemsWithPrices);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
   // REPAIR CENTER SERVICE ITEMS CRUD
   // =============================================
 
@@ -9088,17 +9263,36 @@ export function registerRoutes(app: Express): Server {
         )
       );
       
+      // Cerca listino prezzi per clienti del reseller
+      const priceList = await storage.getPriceListForTarget(resellerId, "customer");
+      
       const itemsWithPrices = await Promise.all(activeItems.map(async (item) => {
-        const effectivePrice = await storage.getEffectiveServicePrice(
-          item.id, 
-          resellerId, 
-          undefined
-        );
+        let effectivePriceCents = item.defaultPriceCents;
+        let priceSource = "base";
+        
+        // Se esiste un listino per clienti, cerca il prezzo lì
+        if (priceList) {
+          const priceListItem = await storage.getPriceForItem(priceList.id, undefined, item.id);
+          if (priceListItem && priceListItem.isActive) {
+            effectivePriceCents = priceListItem.priceCents;
+            priceSource = "price_list";
+          }
+        }
+        
+        // Fallback al vecchio sistema se non trovato nel listino
+        if (priceSource === "base") {
+          const oldPrice = await storage.getEffectiveServicePrice(item.id, resellerId, undefined);
+          if (oldPrice.source !== "base") {
+            effectivePriceCents = oldPrice.priceCents;
+            priceSource = oldPrice.source;
+          }
+        }
+        
         return {
           ...item,
-          effectivePriceCents: effectivePrice.priceCents,
-          effectiveLaborMinutes: effectivePrice.laborMinutes,
-          priceSource: effectivePrice.source
+          effectivePriceCents,
+          effectiveLaborMinutes: item.defaultLaborMinutes,
+          priceSource
         };
       }));
       
@@ -9806,6 +10000,53 @@ export function registerRoutes(app: Express): Server {
   });
 
   // ============ REPAIR ORDERS - ROLE-NEUTRAL DETAIL ============
+
+  // ============ DASHBOARD PREFERENCES ============
+
+  app.get("/api/dashboard-preferences", requireAuth, async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      // Normalize role: reseller_staff and sub_reseller use "reseller" layout
+      let role = req.user.role;
+      if (role === "reseller_staff" || role === "sub_reseller") {
+        role = "reseller";
+      }
+      if (role === "repair_center_staff") {
+        role = "repair_center";
+      }
+      
+      const pref = await storage.getDashboardPreference(req.user.id, role);
+      res.json(pref || null);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
+  app.put("/api/dashboard-preferences", requireAuth, async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const { layout } = req.body;
+      if (!layout || !layout.widgets) {
+        return res.status(400).send("Invalid layout format");
+      }
+      
+      // Normalize role: reseller_staff and sub_reseller use "reseller" layout
+      let role = req.user.role;
+      if (role === "reseller_staff" || role === "sub_reseller") {
+        role = "reseller";
+      }
+      if (role === "repair_center_staff") {
+        role = "repair_center";
+      }
+      
+      const pref = await storage.saveDashboardPreference(req.user.id, role, layout);
+      res.json(pref);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
   
   // Redirect endpoint for QR codes - returns the correct path based on user role
   app.get("/api/repair-orders/:id/redirect", requireAuth, async (req, res) => {
@@ -11337,7 +11578,7 @@ export function registerRoutes(app: Express): Server {
       }
       
       // Extract initial stock assignments and supplier info from request body
-      const { initialStock, supplierId, supplierCode: supplierCodeParam, ...productData } = req.body;
+      const { initialStock, supplierId, supplierCode: supplierCodeParam, deviceCompatibilities, ...productData } = req.body;
       
       // Save costPrice before validation for use in supplier linking
       const productCostPrice = productData.costPrice;
@@ -11402,6 +11643,15 @@ export function registerRoutes(app: Express): Server {
         }
       }
       
+      // Create device compatibilities if provided
+      if (deviceCompatibilities && Array.isArray(deviceCompatibilities) && deviceCompatibilities.length > 0) {
+        const compatEntries = deviceCompatibilities.map((c: { deviceBrandId: string; deviceModelId?: string | null }) => ({
+          productId: product.id,
+          deviceBrandId: c.deviceBrandId,
+          deviceModelId: c.deviceModelId || null,
+        }));
+        await storage.setProductCompatibilities(product.id, compatEntries);
+      }
       res.status(201).json(product);
     } catch (error: any) {
       res.status(400).send(error.message);
@@ -11447,6 +11697,16 @@ export function registerRoutes(app: Express): Server {
       
       const updated = await storage.updateProduct(req.params.id, updates);
       setActivityEntity(res, { type: 'product', id: updated.id });
+      
+      // Update device compatibilities if provided
+      if (req.body.deviceCompatibilities && Array.isArray(req.body.deviceCompatibilities)) {
+        const compatEntries = req.body.deviceCompatibilities.map((c: { deviceBrandId: string; deviceModelId?: string | null }) => ({
+          productId: req.params.id,
+          deviceBrandId: c.deviceBrandId,
+          deviceModelId: c.deviceModelId || null,
+        }));
+        await storage.setProductCompatibilities(req.params.id, compatEntries);
+      }
       
       res.json(updated);
     } catch (error: any) {
@@ -11823,6 +12083,20 @@ export function registerRoutes(app: Express): Server {
         }
       }
       
+      
+      // Create device compatibilities if provided
+      const deviceCompatibilities = typeof req.body.deviceCompatibilities === 'string' 
+        ? JSON.parse(req.body.deviceCompatibilities) 
+        : req.body.deviceCompatibilities;
+      if (deviceCompatibilities && Array.isArray(deviceCompatibilities) && deviceCompatibilities.length > 0) {
+        const compatEntries = deviceCompatibilities.map((c: { deviceBrandId: string; deviceModelId?: string | null }) => ({
+          productId: createdProduct.id,
+          deviceBrandId: c.deviceBrandId,
+          deviceModelId: c.deviceModelId || null,
+        }));
+        await storage.setProductCompatibilities(createdProduct.id, compatEntries);
+      }
+
       // Create specs linked to product
       specs.productId = createdProduct.id;
       const createdSpecs = await storage.createSmartphoneSpecs(specs);
@@ -12165,6 +12439,20 @@ export function registerRoutes(app: Express): Server {
         }
       }
       
+      
+      // Create device compatibilities if provided
+      const deviceCompatibilities = typeof req.body.deviceCompatibilities === 'string' 
+        ? JSON.parse(req.body.deviceCompatibilities) 
+        : req.body.deviceCompatibilities;
+      if (deviceCompatibilities && Array.isArray(deviceCompatibilities) && deviceCompatibilities.length > 0) {
+        const compatEntries = deviceCompatibilities.map((c: { deviceBrandId: string; deviceModelId?: string | null }) => ({
+          productId: createdProduct.id,
+          deviceBrandId: c.deviceBrandId,
+          deviceModelId: c.deviceModelId || null,
+        }));
+        await storage.setProductCompatibilities(createdProduct.id, compatEntries);
+      }
+
       // Create specs linked to product
       specs.productId = createdProduct.id;
       const createdSpecs = await storage.createAccessorySpecs(specs);
@@ -15897,8 +16185,8 @@ export function registerRoutes(app: Express): Server {
       
       // If Excel export requested
       if (req.query.format === 'excel') {
-        const ExcelJS = await import('exceljs');
-        const workbook = new ExcelJS.Workbook();
+        const ExcelJSModule = await import('exceljs');
+        const workbook = new ExcelJSModule.default.Workbook();
         const worksheet = workbook.addWorksheet('Riparazioni');
         
         worksheet.columns = [
@@ -15949,8 +16237,8 @@ export function registerRoutes(app: Express): Server {
       
       // If Excel export requested
       if (req.query.format === 'excel') {
-        const ExcelJS = await import('exceljs');
-        const workbook = new ExcelJS.Workbook();
+        const ExcelJSModule = await import('exceljs');
+        const workbook = new ExcelJSModule.default.Workbook();
         const worksheet = workbook.addWorksheet('Movimenti Inventario');
         
         worksheet.columns = [
@@ -17783,8 +18071,88 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
-  // ============ ADMIN DEVICE CATALOG CRUD ============
 
+  // ============ MARKET CODE VALIDATION HELPER ============
+  
+  // Helper function to check for duplicate market codes
+  async function checkMarketCodeDuplicates(
+    codes: string[], 
+    excludeModelId?: string
+  ): Promise<{ isDuplicate: boolean; conflictingCode?: string; conflictingModel?: string }> {
+    if (!codes || codes.length === 0) {
+      return { isDuplicate: false };
+    }
+    
+    for (const code of codes) {
+      const upperCode = code.trim().toUpperCase();
+      if (!upperCode) continue;
+      
+      const result = await db.execute(sql`
+        SELECT dm.id, dm.model_name
+        FROM device_models dm
+        WHERE ${upperCode} = ANY(dm.market_codes)
+        ${excludeModelId ? sql`AND dm.id != ${excludeModelId}` : sql``}
+        LIMIT 1
+      `);
+      
+      if (result.rows.length > 0) {
+        const row = result.rows[0] as { id: string; model_name: string };
+        return {
+          isDuplicate: true,
+          conflictingCode: upperCode,
+          conflictingModel: row.model_name
+        };
+      }
+    }
+    
+    return { isDuplicate: false };
+  }
+
+
+  // Lookup device by market code - returns type, brand, model info
+  app.get("/api/device-models/by-market-code", requireAuth, async (req, res) => {
+    try {
+      const code = (req.query.code as string)?.trim().toUpperCase();
+      if (!code) {
+        return res.status(400).json({ error: "Codice mercato richiesto" });
+      }
+      
+      // Search in market_codes array using ANY - get ALL matches to detect conflicts
+      const result = await db.execute(sql`
+        SELECT 
+          dm.id as "modelId",
+          dm.model_name as "modelName",
+          dm.brand_id as "brandId",
+          dm.type_id as "typeId",
+          db.name as "brandName",
+          dt.name as "typeName"
+        FROM device_models dm
+        LEFT JOIN device_brands db ON dm.brand_id = db.id
+        LEFT JOIN device_types dt ON dm.type_id = dt.id
+        WHERE ${code} = ANY(dm.market_codes)
+        AND dm.is_active = true
+      `);
+      
+      if (result.rows.length === 0) {
+        return res.json(null);
+      }
+      
+      // If multiple matches, signal conflict
+      if (result.rows.length > 1) {
+        const models = result.rows.map((r: any) => r.modelName).join(", ");
+        return res.status(409).json({
+          error: `Conflitto: codice mercato "${code}" assegnato a più dispositivi: ${models}`,
+          conflict: true,
+          matches: result.rows
+        });
+      }
+      
+      res.json(result.rows[0]);
+    } catch (error: any) {
+      console.error("Error looking up device by market code:", error);
+      res.status(500).send(error.message);
+    }
+  });
   // List device types (admin only - includes inactive)
   app.get("/api/admin/device-types", requireRole("admin"), async (req, res) => {
     try {
@@ -17888,6 +18256,17 @@ export function registerRoutes(app: Express): Server {
   app.post("/api/admin/device-models", requireRole("admin"), async (req, res) => {
     try {
       const validated = insertDeviceModelSchema.parse(req.body);
+      
+      // Check for duplicate market codes
+      if (validated.marketCodes && validated.marketCodes.length > 0) {
+        const duplicateCheck = await checkMarketCodeDuplicates(validated.marketCodes);
+        if (duplicateCheck.isDuplicate) {
+          return res.status(400).json({
+            error: `Codice mercato "${duplicateCheck.conflictingCode}" già assegnato al modello "${duplicateCheck.conflictingModel}"`
+          });
+        }
+      }
+      
       const deviceModel = await storage.createDeviceModel(validated);
       res.status(201).json(deviceModel);
     } catch (error: any) {
@@ -17895,10 +18274,22 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+
   // Update device model (admin only)
   app.patch("/api/admin/device-models/:id", requireRole("admin"), async (req, res) => {
     try {
       const updates = insertDeviceModelSchema.partial().parse(req.body);
+      
+      // Check for duplicate market codes (excluding current model)
+      if (updates.marketCodes && updates.marketCodes.length > 0) {
+        const duplicateCheck = await checkMarketCodeDuplicates(updates.marketCodes, req.params.id);
+        if (duplicateCheck.isDuplicate) {
+          return res.status(400).json({
+            error: `Codice mercato "${duplicateCheck.conflictingCode}" già assegnato al modello "${duplicateCheck.conflictingModel}"`
+          });
+        }
+      }
+      
       const deviceModel = await storage.updateDeviceModel(req.params.id, updates);
       res.json(deviceModel);
     } catch (error: any) {
@@ -17916,6 +18307,183 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+
+
+  // Import device models from Excel (admin only)
+  app.post("/api/admin/device-models/import-excel", requireRole("admin"), upload.single("file"), async (req, res) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({ error: "File Excel richiesto" });
+      }
+
+      const ExcelJSModule = await import('exceljs');
+      const workbook = new ExcelJSModule.default.Workbook();
+      await workbook.xlsx.load(req.file.buffer);
+      const worksheet = workbook.worksheets[0];
+
+      if (!worksheet) {
+        return res.status(400).json({ error: "Nessun foglio trovato nel file Excel" });
+      }
+
+      // Get headers from first row
+      const headers: string[] = [];
+      worksheet.getRow(1).eachCell((cell: any, colNumber: number) => {
+        headers[colNumber - 1] = String(cell.value || "").toLowerCase().trim();
+      });
+
+      // Validate required headers
+      const requiredHeaders = ["brand", "tipo dispositivo", "modello commerciale", "modello market"];
+      const missingHeaders = requiredHeaders.filter(h => !headers.some(hdr => hdr.includes(h.split(" ")[0])));
+      if (missingHeaders.length > 0) {
+        return res.status(400).json({ 
+          error: "Intestazioni mancanti: " + missingHeaders.join(", ") + ". Richieste: BRAND, Tipo Dispositivo, Modello Commerciale, Modello Market"
+        });
+      }
+
+      // Find column indexes
+      const brandCol = headers.findIndex(h => h.includes("brand")) + 1;
+      const typeCol = headers.findIndex(h => h.includes("tipo")) + 1;
+      const modelCol = headers.findIndex(h => h.includes("modello commerciale") || h.includes("commerciale")) + 1;
+      const marketCol = headers.findIndex(h => h.includes("market")) + 1;
+
+      // Get existing types, brands, and models
+      const existingTypes = await storage.listDeviceTypes(false);
+      const existingBrands = await storage.listDeviceBrands(false);
+      const existingModels = await storage.listDeviceModels();
+
+      // Map for quick lookup (case-insensitive)
+      const typeMap = new Map<string, string>();
+      existingTypes.forEach(t => typeMap.set(t.name.toLowerCase(), t.id));
+      
+      const brandMap = new Map<string, string>();
+      existingBrands.forEach(b => brandMap.set(b.name.toLowerCase(), b.id));
+
+      // Process rows
+      let imported = 0;
+      let updated = 0;
+      let skipped = 0;
+      const errors: string[] = [];
+      const processedMarketCodes = new Set<string>();
+
+      for (let rowNum = 2; rowNum <= worksheet.rowCount; rowNum++) {
+        const row = worksheet.getRow(rowNum);
+        const brandName = String(row.getCell(brandCol).value || "").trim();
+        const typeName = String(row.getCell(typeCol).value || "").trim();
+        const modelName = String(row.getCell(modelCol).value || "").trim();
+        const marketCodesRaw = String(row.getCell(marketCol).value || "").trim();
+
+        if (!brandName || !modelName) {
+          continue; // Skip empty rows
+        }
+
+        // Parse market codes (comma-separated)
+        const marketCodes = marketCodesRaw
+          .split(",")
+          .map(c => c.trim().toUpperCase())
+          .filter(c => c.length > 0);
+
+        // Check for duplicate market codes in this import
+        const duplicateInImport = marketCodes.find(c => processedMarketCodes.has(c));
+        if (duplicateInImport) {
+          errors.push("Riga " + rowNum + ": Codice " + duplicateInImport + " gia presente in questo import");
+          skipped++;
+          continue;
+        }
+
+        // Check for duplicate market codes in database
+        if (marketCodes.length > 0) {
+          const duplicateCheck = await checkMarketCodeDuplicates(marketCodes);
+          if (duplicateCheck.isDuplicate) {
+            // Check if it's the same model (for update)
+            const existingModel = existingModels.find(m => 
+              m.modelName.toLowerCase() === modelName.toLowerCase() &&
+              brandMap.get(brandName.toLowerCase()) === m.brandId
+            );
+            if (!existingModel) {
+              errors.push("Riga " + rowNum + ": Codice " + duplicateCheck.conflictingCode + " gia assegnato a " + duplicateCheck.conflictingModel);
+              skipped++;
+              continue;
+            }
+          }
+        }
+
+        // Get or create device type
+        let typeId: string | null = null;
+        if (typeName) {
+          typeId = typeMap.get(typeName.toLowerCase()) || null;
+          if (!typeId) {
+            try {
+              const newType = await storage.createDeviceType({ name: typeName, isActive: true });
+              typeId = newType.id;
+              typeMap.set(typeName.toLowerCase(), typeId);
+            } catch (e: any) {
+              errors.push("Riga " + rowNum + ": Errore creazione tipo " + typeName + ": " + e.message);
+            }
+          }
+        }
+
+        // Get or create brand
+        let brandId: string | null = null;
+        brandId = brandMap.get(brandName.toLowerCase()) || null;
+        if (!brandId) {
+          try {
+            const newBrand = await storage.createDeviceBrand({ name: brandName, isActive: true });
+            brandId = newBrand.id;
+            brandMap.set(brandName.toLowerCase(), brandId);
+          } catch (e: any) {
+            errors.push("Riga " + rowNum + ": Errore creazione brand " + brandName + ": " + e.message);
+          }
+        }
+
+        // Check if model already exists (same name + brand)
+        const existingModel = existingModels.find(m => 
+          m.modelName.toLowerCase() === modelName.toLowerCase() &&
+          m.brandId === brandId
+        );
+
+        if (existingModel) {
+          // Update market codes if model exists
+          try {
+            await storage.updateDeviceModel(existingModel.id, {
+              marketCodes: marketCodes.length > 0 ? marketCodes : null,
+              typeId: typeId || existingModel.typeId
+            });
+            updated++;
+            marketCodes.forEach(c => processedMarketCodes.add(c));
+          } catch (e: any) {
+            errors.push("Riga " + rowNum + ": Errore aggiornamento " + modelName + ": " + e.message);
+            skipped++;
+          }
+        } else {
+          // Create new model
+          try {
+            await storage.createDeviceModel({
+              modelName,
+              brandId,
+              typeId,
+              marketCodes: marketCodes.length > 0 ? marketCodes : null,
+              isActive: true
+            });
+            imported++;
+            marketCodes.forEach(c => processedMarketCodes.add(c));
+          } catch (e: any) {
+            errors.push("Riga " + rowNum + ": Errore creazione " + modelName + ": " + e.message);
+            skipped++;
+          }
+        }
+      }
+
+      res.json({
+        imported,
+        updated,
+        skipped,
+        errors: errors.slice(0, 50)
+      });
+    } catch (error: any) {
+      console.error("Error importing Excel:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
   // ============ ISSUE TYPES ============
 
   // Get issue types (filtered by device type, includes "Altro" option)
@@ -22773,6 +23341,7 @@ export function registerRoutes(app: Express): Server {
         storeCode,
         storeName,
         isDefault: isDefault || false,
+        targetAudience: targetAudience || "all",
       });
       
       res.status(201).json(store);
@@ -24956,6 +25525,25 @@ export function registerRoutes(app: Express): Server {
         );
       }
       
+      // Applica listino prezzi customer se utente loggato è cliente del reseller
+      const user = req.user;
+      if (user && user.role === "customer" && user.resellerId === sellerId) {
+        const priceList = await storage.getPriceListForTarget(sellerId, "customer");
+        if (priceList) {
+          shopProducts = await Promise.all(shopProducts.map(async (product) => {
+            const priceListItem = await storage.getPriceForItem(priceList.id, product.id, undefined);
+            if (priceListItem && priceListItem.isActive) {
+              return {
+                ...product,
+                shopPrice: priceListItem.priceCents,
+                unitPrice: priceListItem.priceCents,
+              };
+            }
+            return product;
+          }));
+        }
+      }
+      
       const total = shopProducts.length;
       const offsetNum = parseInt(offset as string) || 0;
       const limitNum = parseInt(limit as string) || 20;
@@ -25223,6 +25811,18 @@ export function registerRoutes(app: Express): Server {
           const assignment = await storage.getResellerProduct(productId, resellerId);
           if (assignment?.customPriceCents) {
             effectivePrice = assignment.customPriceCents;
+          }
+        }
+        
+        // Applica listino prezzi customer se utente loggato è cliente del reseller
+        const user = req.user;
+        if (user && user.role === "customer" && user.resellerId === resellerId) {
+          const priceList = await storage.getPriceListForTarget(resellerId, "customer");
+          if (priceList) {
+            const priceListItem = await storage.getPriceForItem(priceList.id, productId, undefined);
+            if (priceListItem && priceListItem.isActive) {
+              effectivePrice = priceListItem.priceCents;
+            }
           }
         }
         
@@ -28471,6 +29071,18 @@ export function registerRoutes(app: Express): Server {
         return res.status(400).json({ error: "Magazzino venditore non trovato" });
       }
       
+      
+      // Load seller's price list for "reseller" target (bulk load to avoid N+1)
+      const sellerPriceList = await storage.getPriceListForTarget(sellerResellerId, 'reseller');
+      const priceListMap = new Map<string, number>();
+      if (sellerPriceList) {
+        const priceListItems = await storage.listPriceListItems(sellerPriceList.id);
+        for (const pli of priceListItems) {
+          if (pli.productId) {
+            priceListMap.set(pli.productId, pli.priceCents);
+          }
+        }
+      }
       // Validate items and calculate totals
       let subtotal = 0;
       const validatedItems = [];
@@ -28499,7 +29111,11 @@ export function registerRoutes(app: Express): Server {
           return res.status(400).json({ error: `Quantità minima per ${product.name}: ${minQty}` });
         }
         
-        const unitPrice = product.marketplacePriceCents || product.unitPrice;
+        // Price priority: price_list > marketplacePriceCents > unitPrice
+        const priceListPrice = priceListMap.get(item.productId);
+        const unitPrice = priceListPrice !== undefined 
+          ? priceListPrice 
+          : (product.marketplacePriceCents || product.unitPrice);
         const totalPrice = unitPrice * item.quantity;
         subtotal += totalPrice;
         
@@ -28534,6 +29150,19 @@ export function registerRoutes(app: Express): Server {
         });
       }
       
+      
+      // Notify seller about new order
+      const buyer = await storage.getUser(req.user.id);
+      const buyerName = buyer?.fullName || buyer?.username || 'Rivenditore';
+      const itemCount = validatedItems.reduce((sum, i) => sum + i.quantity, 0);
+      
+      await storage.createNotification({
+        userId: sellerResellerId,
+        type: 'system',
+        title: 'Nuovo ordine Marketplace',
+        message: `${buyerName} ha effettuato un ordine di ${itemCount} prodotti per ${(subtotal / 100).toFixed(2)} €. Ordine #${order.orderNumber}`,
+        data: JSON.stringify({ orderId: order.id, orderNumber: order.orderNumber, buyerId: req.user.id }),
+      });
       const createdItems = await storage.listMarketplaceOrderItems(order.id);
       res.json({ ...order, items: createdItems });
     } catch (error: any) {
@@ -28915,19 +29544,46 @@ export function registerRoutes(app: Express): Server {
       const resellerWarehouse = await storage.ensureDefaultWarehouse('reseller', repairCenter.resellerId, 'Reseller');
       const stock = await storage.listWarehouseStock(resellerWarehouse.id);
       
+      // Get reseller's price list for repair_center - BULK QUERY
+      const priceList = await storage.getPriceListForTarget(repairCenter.resellerId, "repair_center");
+      
+      // Bulk load all price list items to avoid N+1 queries
+      const priceListItemsMap = new Map<string, { priceCents: number }>();
+      if (priceList) {
+        const allPriceListItems = await storage.listPriceListItems(priceList.id);
+        for (const pli of allPriceListItems) {
+          if (pli.productId && pli.isActive) {
+            priceListItemsMap.set(pli.productId, { priceCents: pli.priceCents });
+          }
+        }
+      }
+      
       // Build catalog from reseller stock
       const catalog = await Promise.all(stock.filter(s => s.quantity > 0).map(async (s) => {
         const product = await storage.getProduct(s.productId);
         if (!product || !product.isActive) return null;
         
-        // Get B2B price for repair centers (use costPrice or 80% of unitPrice)
-        const b2bPrice = product.costPrice || Math.round((product.unitPrice || 0) * 0.8);
+        // B2B price priority: price_list > costPrice > unitPrice * 0.8
+        let b2bPrice: number;
+        let priceSource = 'fallback';
+        
+        const priceListItem = priceListItemsMap.get(product.id);
+        if (priceListItem) {
+          b2bPrice = priceListItem.priceCents;
+          priceSource = 'price_list';
+        }
+        
+        if (priceSource === 'fallback') {
+          b2bPrice = product.costPrice || Math.round((product.unitPrice || 0) * 0.8);
+          priceSource = product.costPrice ? 'cost_price' : 'calculated';
+        }
         
         return {
           product,
           resellerStock: s.quantity,
-          b2bPrice,
+          b2bPrice: b2bPrice!,
           minimumOrderQuantity: 1,
+          priceSource,
         };
       }));
       
@@ -29014,6 +29670,20 @@ export function registerRoutes(app: Express): Server {
       let totalCents = 0;
       const orderItems: Array<{ productId: string; quantity: number; unitPriceCents: number; productName: string }> = [];
       
+      // Get reseller's price list for repair_center (RC buying from reseller) - BULK QUERY
+      const priceList = await storage.getPriceListForTarget(repairCenter.resellerId, "repair_center");
+      
+      // Bulk load all price list items to avoid N+1 queries
+      const priceListItemsMap = new Map<string, { priceCents: number }>();
+      if (priceList) {
+        const allPriceListItems = await storage.listPriceListItems(priceList.id);
+        for (const pli of allPriceListItems) {
+          if (pli.productId && pli.isActive) {
+            priceListItemsMap.set(pli.productId, { priceCents: pli.priceCents });
+          }
+        }
+      }
+      
       for (const item of items) {
         const product = await storage.getProduct(item.productId);
         if (!product || !product.isActive) {
@@ -29025,7 +29695,15 @@ export function registerRoutes(app: Express): Server {
           return res.status(400).json({ error: `Stock insufficiente per ${product.name}: disponibili ${availableStock}` });
         }
         
-        const b2bPrice = product.costPrice || Math.round((product.unitPrice || 0) * 0.8);
+        // B2B price priority: price_list > product.costPrice > product.unitPrice * 0.8
+        let b2bPrice: number;
+        const priceListItem = priceListItemsMap.get(item.productId);
+        if (priceListItem) {
+          b2bPrice = priceListItem.priceCents;
+        } else {
+          b2bPrice = product.costPrice || Math.round((product.unitPrice || 0) * 0.8);
+        }
+        
         const lineTotalCents = b2bPrice * item.quantity;
         totalCents += lineTotalCents;
         
@@ -32800,7 +33478,7 @@ export function registerRoutes(app: Express): Server {
   app.post("/api/repair-center/pos/registers", requireRole("repair_center", "repair_center_staff"), async (req, res) => {
     try {
       const repairCenterId = req.user!.repairCenterId || req.user!.id;
-      const { name, description, isDefault } = req.body;
+      const { name, description, isDefault, targetAudience } = req.body;
       
       if (!name?.trim()) {
         return res.status(400).json({ error: "Nome cassa obbligatorio" });
@@ -32811,6 +33489,7 @@ export function registerRoutes(app: Express): Server {
         name: name.trim(),
         description: description?.trim() || null,
         isDefault: isDefault || false,
+        targetAudience: targetAudience || "all",
       });
       
       res.json(register);
@@ -33111,7 +33790,7 @@ export function registerRoutes(app: Express): Server {
         
       } else if (format === 'xlsx') {
         // Generate XLSX
-        const workbook = new ExcelJS.Workbook();
+        const workbook = new ExcelJSModule.default.Workbook();
         workbook.creator = 'MonkeyPlan POS';
         workbook.created = new Date();
         
@@ -34502,6 +35181,7 @@ export function registerRoutes(app: Express): Server {
         name: name.trim(),
         description: description?.trim() || null,
         isDefault: isDefault || false,
+        targetAudience: targetAudience || "all",
       });
       
       res.json(register);
@@ -34785,7 +35465,7 @@ export function registerRoutes(app: Express): Server {
         res.setHeader('Content-Disposition', `attachment; filename="sessioni_rete_${new Date().toISOString().split('T')[0]}.csv"`);
         res.send('\ufeff' + csv);
       } else if (format === 'xlsx') {
-        const workbook = new ExcelJS.Workbook();
+        const workbook = new ExcelJSModule.default.Workbook();
         workbook.creator = 'MonkeyPlan POS';
         const worksheet = workbook.addWorksheet('Sessioni Rete');
         worksheet.addRow(stableHeaders);
@@ -34885,7 +35565,7 @@ export function registerRoutes(app: Express): Server {
         res.setHeader('Content-Disposition', `attachment; filename="vendite_rete_${new Date().toISOString().split('T')[0]}.csv"`);
         res.send('\ufeff' + csv);
       } else if (format === 'xlsx') {
-        const workbook = new ExcelJS.Workbook();
+        const workbook = new ExcelJSModule.default.Workbook();
         workbook.creator = 'MonkeyPlan POS';
         const worksheet = workbook.addWorksheet('Vendite Rete');
         worksheet.addRow(stableHeaders);
@@ -35748,8 +36428,416 @@ export function registerRoutes(app: Express): Server {
       console.error("Error deleting Sibill credentials:", error);
       res.status(500).json({ error: error.message });
     }
+  });
 
-  return httpServer;
+  // ============ PRICE LISTS (Listini Prezzi) ============
+
+  // List price lists for current user (reseller or repair center)
+  app.get("/api/price-lists", requireAuth, async (req, res) => {
+    try {
+      const user = req.user as User;
+      let ownerId = user.id;
+      let ownerType: string | undefined;
+      
+      if (["reseller", "sub_reseller"].includes(user.role)) {
+        ownerType = user.role === "sub_reseller" ? "sub_reseller" : "reseller";
+      } else if ((user.role === "repair_center" || user.role === "repair_center_staff") && user.repairCenterId) {
+        ownerId = user.repairCenterId;
+        ownerType = "repair_center";
+      } else if (user.role === "reseller_staff" && user.resellerId) {
+        ownerId = user.resellerId;
+        ownerType = "reseller";
+      } else {
+        return res.status(403).json({ error: "Ruolo non autorizzato" });
+      }
+      
+      const lists = await storage.listPriceLists({ ownerId, isActive: true });
+      res.json(lists);
+    } catch (error: any) {
+      console.error("Error fetching price lists:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Get single price list with items
+  app.get("/api/price-lists/:id", requireAuth, async (req, res) => {
+    try {
+      const user = req.user as User;
+      const list = await storage.getPriceList(req.params.id);
+      if (!list) {
+        return res.status(404).json({ error: "Listino non trovato" });
+      }
+      
+      let ownerId = user.id;
+      if (user.role === "reseller_staff" && user.resellerId) {
+        ownerId = user.resellerId;
+      } else if ((user.role === "repair_center" || user.role === "repair_center_staff") && user.repairCenterId) {
+        ownerId = user.repairCenterId;
+      }
+      if (list.ownerId !== ownerId) {
+        return res.status(403).json({ error: "Non autorizzato" });
+      }
+      
+      const items = await storage.listPriceListItems(list.id);
+      res.json({ ...list, items });
+    } catch (error: any) {
+      console.error("Error fetching price list:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Create price list
+  app.post("/api/price-lists", requireAuth, async (req, res) => {
+    try {
+      const user = req.user as User;
+      let ownerId = user.id;
+      let ownerType: "reseller" | "sub_reseller" | "repair_center";
+      let repairCenterId: string | null = null;
+      
+      if (user.role === "reseller") {
+        ownerType = "reseller";
+      } else if (user.role === "sub_reseller") {
+        ownerType = "sub_reseller";
+      } else if ((user.role === "repair_center" || user.role === "repair_center_staff") && user.repairCenterId) {
+        ownerId = user.repairCenterId;
+        ownerType = "repair_center";
+        repairCenterId = user.repairCenterId;
+      } else if (user.role === "reseller_staff" && user.resellerId) {
+        ownerId = user.resellerId;
+        ownerType = "reseller";
+      } else {
+        return res.status(403).json({ error: "Ruolo non autorizzato" });
+      }
+      
+      const { name, description, isDefault, targetAudience } = req.body;
+      if (!name) {
+        return res.status(400).json({ error: "Nome listino obbligatorio" });
+      }
+      
+      const list = await storage.createPriceList({
+        name,
+        description: description || null,
+        ownerId,
+        ownerType,
+        repairCenterId,
+        isDefault: isDefault || false,
+        targetAudience: targetAudience || "all",
+        isActive: true,
+      });
+      
+      res.status(201).json(list);
+    } catch (error: any) {
+      console.error("Error creating price list:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Update price list
+  app.put("/api/price-lists/:id", requireAuth, async (req, res) => {
+    try {
+      const user = req.user as User;
+      const list = await storage.getPriceList(req.params.id);
+      if (!list) {
+        return res.status(404).json({ error: "Listino non trovato" });
+      }
+      
+      let ownerId = user.id;
+      if (user.role === "reseller_staff" && user.resellerId) {
+        ownerId = user.resellerId;
+      } else if ((user.role === "repair_center" || user.role === "repair_center_staff") && user.repairCenterId) {
+        ownerId = user.repairCenterId;
+      }
+      if (list.ownerId !== ownerId) {
+        return res.status(403).json({ error: "Non autorizzato" });
+      }
+      
+      const { name, description, isDefault, isActive, targetAudience } = req.body;
+      const updated = await storage.updatePriceList(req.params.id, {
+        name,
+        description,
+        isDefault,
+        isActive,
+        targetAudience,
+      });
+      
+      res.json(updated);
+    } catch (error: any) {
+      console.error("Error updating price list:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Delete price list
+  app.delete("/api/price-lists/:id", requireAuth, async (req, res) => {
+    try {
+      const user = req.user as User;
+      const list = await storage.getPriceList(req.params.id);
+      if (!list) {
+        return res.status(404).json({ error: "Listino non trovato" });
+      }
+      
+      let ownerId = user.id;
+      if (user.role === "reseller_staff" && user.resellerId) {
+        ownerId = user.resellerId;
+      } else if ((user.role === "repair_center" || user.role === "repair_center_staff") && user.repairCenterId) {
+        ownerId = user.repairCenterId;
+      }
+      if (list.ownerId !== ownerId) {
+        return res.status(403).json({ error: "Non autorizzato" });
+      }
+      
+      await storage.deletePriceList(req.params.id);
+      res.json({ success: true, message: "Listino eliminato" });
+    } catch (error: any) {
+      console.error("Error deleting price list:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Set default price list
+  app.post("/api/price-lists/:id/set-default", requireAuth, async (req, res) => {
+    try {
+      const user = req.user as User;
+      const list = await storage.getPriceList(req.params.id);
+      if (!list) {
+        return res.status(404).json({ error: "Listino non trovato" });
+      }
+      
+      let ownerId = user.id;
+      if (user.role === "reseller_staff" && user.resellerId) {
+        ownerId = user.resellerId;
+      } else if ((user.role === "repair_center" || user.role === "repair_center_staff") && user.repairCenterId) {
+        ownerId = user.repairCenterId;
+      }
+      if (list.ownerId !== ownerId) {
+        return res.status(403).json({ error: "Non autorizzato" });
+      }
+      
+      const updated = await storage.setDefaultPriceList(req.params.id, ownerId);
+      res.json(updated);
+    } catch (error: any) {
+      console.error("Error setting default price list:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Copy price list from parent
+  app.post("/api/price-lists/copy/:sourceId", requireAuth, async (req, res) => {
+    try {
+      const user = req.user as User;
+      let ownerId = user.id;
+      let ownerType: "reseller" | "sub_reseller" | "repair_center";
+      let repairCenterId: string | undefined;
+      let expectedParentId: string | undefined;
+      
+      if (user.role === "sub_reseller") {
+        ownerType = "sub_reseller";
+        expectedParentId = user.resellerId || undefined;
+      } else if ((user.role === "repair_center" || user.role === "repair_center_staff") && user.repairCenterId) {
+        ownerId = user.repairCenterId;
+        ownerType = "repair_center";
+        repairCenterId = user.repairCenterId;
+        expectedParentId = user.resellerId || undefined;
+      } else {
+        return res.status(403).json({ error: "Solo sub-reseller e centri riparazione possono copiare listini" });
+      }
+      
+      // Validate that source list belongs to parent tenant
+      const sourceList = await storage.getPriceList(req.params.sourceId);
+      if (!sourceList) {
+        return res.status(404).json({ error: "Listino sorgente non trovato" });
+      }
+      if (expectedParentId && sourceList.ownerId !== expectedParentId) {
+        return res.status(403).json({ error: "Non autorizzato a copiare questo listino" });
+      }
+      
+      const { name } = req.body;
+      if (!name) {
+        return res.status(400).json({ error: "Nome listino obbligatorio" });
+      }
+      
+      const newList = await storage.copyPriceList(req.params.sourceId, ownerId, ownerType, name, repairCenterId);
+      res.status(201).json(newList);
+    } catch (error: any) {
+      console.error("Error copying price list:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Get inherited price lists
+  app.get("/api/price-lists/inherited", requireAuth, async (req, res) => {
+    try {
+      const user = req.user as User;
+      let childId = user.id;
+      let childRole = user.role;
+      
+      if ((user.role === "repair_center" || user.role === "repair_center_staff") && user.repairCenterId) {
+        childId = user.repairCenterId;
+        childRole = "repair_center";
+      }
+      
+      const lists = await storage.getInheritedPriceLists(childId, childRole);
+      res.json(lists);
+    } catch (error: any) {
+      console.error("Error fetching inherited price lists:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // ============ PRICE LIST ITEMS ============
+
+  // Add item to price list
+  app.post("/api/price-lists/:listId/items", requireAuth, async (req, res) => {
+    try {
+      const user = req.user as User;
+      const list = await storage.getPriceList(req.params.listId);
+      if (!list) {
+        return res.status(404).json({ error: "Listino non trovato" });
+      }
+      
+      let ownerId = user.id;
+      if (user.role === "reseller_staff" && user.resellerId) {
+        ownerId = user.resellerId;
+      } else if ((user.role === "repair_center" || user.role === "repair_center_staff") && user.repairCenterId) {
+        ownerId = user.repairCenterId;
+      }
+      if (list.ownerId !== ownerId) {
+        return res.status(403).json({ error: "Non autorizzato" });
+      }
+      
+      const { productId, serviceItemId, priceCents, costPriceCents } = req.body;
+      if (!productId && !serviceItemId) {
+        return res.status(400).json({ error: "Specificare productId o serviceItemId" });
+      }
+      if (priceCents === undefined) {
+        return res.status(400).json({ error: "Prezzo obbligatorio" });
+      }
+      
+      const item = await storage.createPriceListItem({
+        priceListId: req.params.listId,
+        productId: productId || null,
+        serviceItemId: serviceItemId || null,
+        priceCents,
+        costPriceCents: costPriceCents || null,
+        isActive: true,
+      });
+      
+      res.status(201).json(item);
+    } catch (error: any) {
+      console.error("Error adding price list item:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Update price list item
+  app.put("/api/price-list-items/:id", requireAuth, async (req, res) => {
+    try {
+      const user = req.user as User;
+      const item = await storage.getPriceListItem(req.params.id);
+      if (!item) {
+        return res.status(404).json({ error: "Voce non trovata" });
+      }
+      
+      const list = await storage.getPriceList(item.priceListId);
+      if (!list) {
+        return res.status(404).json({ error: "Listino non trovato" });
+      }
+      
+      let ownerId = user.id;
+      if (user.role === "reseller_staff" && user.resellerId) {
+        ownerId = user.resellerId;
+      } else if ((user.role === "repair_center" || user.role === "repair_center_staff") && user.repairCenterId) {
+        ownerId = user.repairCenterId;
+      }
+      if (list.ownerId !== ownerId) {
+        return res.status(403).json({ error: "Non autorizzato" });
+      }
+      
+      const { priceCents, costPriceCents, isActive } = req.body;
+      const updated = await storage.updatePriceListItem(req.params.id, {
+        priceCents,
+        costPriceCents,
+        isActive,
+      });
+      
+      res.json(updated);
+    } catch (error: any) {
+      console.error("Error updating price list item:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Delete price list item
+  app.delete("/api/price-list-items/:id", requireAuth, async (req, res) => {
+    try {
+      const user = req.user as User;
+      const item = await storage.getPriceListItem(req.params.id);
+      if (!item) {
+        return res.status(404).json({ error: "Voce non trovata" });
+      }
+      
+      const list = await storage.getPriceList(item.priceListId);
+      if (!list) {
+        return res.status(404).json({ error: "Listino non trovato" });
+      }
+      
+      let ownerId = user.id;
+      if (user.role === "reseller_staff" && user.resellerId) {
+        ownerId = user.resellerId;
+      } else if ((user.role === "repair_center" || user.role === "repair_center_staff") && user.repairCenterId) {
+        ownerId = user.repairCenterId;
+      }
+      if (list.ownerId !== ownerId) {
+        return res.status(403).json({ error: "Non autorizzato" });
+      }
+      
+      await storage.deletePriceListItem(req.params.id);
+      res.json({ success: true, message: "Voce eliminata" });
+    } catch (error: any) {
+      console.error("Error deleting price list item:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Bulk add items
+  app.post("/api/price-lists/:listId/items/bulk", requireAuth, async (req, res) => {
+    try {
+      const user = req.user as User;
+      const list = await storage.getPriceList(req.params.listId);
+      if (!list) {
+        return res.status(404).json({ error: "Listino non trovato" });
+      }
+      
+      let ownerId = user.id;
+      if (user.role === "reseller_staff" && user.resellerId) {
+        ownerId = user.resellerId;
+      } else if ((user.role === "repair_center" || user.role === "repair_center_staff") && user.repairCenterId) {
+        ownerId = user.repairCenterId;
+      }
+      if (list.ownerId !== ownerId) {
+        return res.status(403).json({ error: "Non autorizzato" });
+      }
+      
+      const { items } = req.body;
+      if (!items || !Array.isArray(items)) {
+        return res.status(400).json({ error: "Fornire un array di items" });
+      }
+      
+      const itemsToCreate = items.map((item: any) => ({
+        priceListId: req.params.listId,
+        productId: item.productId || null,
+        serviceItemId: item.serviceItemId || null,
+        priceCents: item.priceCents,
+        costPriceCents: item.costPriceCents || null,
+        isActive: true,
+      }));
+      
+      const created = await storage.bulkCreatePriceListItems(itemsToCreate);
+      res.status(201).json(created);
+    } catch (error: any) {
+      console.error("Error bulk adding price list items:", error);
+      res.status(500).json({ error: error.message });
+    }
   });
 
   return httpServer;
