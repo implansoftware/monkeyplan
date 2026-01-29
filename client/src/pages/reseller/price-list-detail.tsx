@@ -186,6 +186,26 @@ export default function PriceListDetail() {
     return item.productId ? "product" : "service";
   };
 
+  const getItemImage = (item: PriceListItem) => {
+    if (item.productId) {
+      const product = products?.find(p => p.id === item.productId);
+      return product?.imageUrl || null;
+    }
+    return null;
+  };
+
+  const getItemOriginalPrice = (item: PriceListItem) => {
+    if (item.productId) {
+      const product = products?.find(p => p.id === item.productId);
+      return product?.unitPrice || null;
+    }
+    if (item.serviceItemId) {
+      const service = services?.find(s => s.id === item.serviceItemId);
+      return service?.defaultPriceCents || null;
+    }
+    return null;
+  };
+
   const filteredItems = priceList?.items?.filter(item => {
     const name = getItemName(item).toLowerCase();
     return name.includes(search.toLowerCase());
@@ -268,26 +288,46 @@ export default function PriceListDetail() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Tipo</TableHead>
+                  <TableHead className="w-[60px]">Foto</TableHead>
                   <TableHead>Nome</TableHead>
+                  <TableHead>Tipo</TableHead>
+                  <TableHead className="text-right">Prezzo Originale</TableHead>
                   <TableHead className="text-right">Prezzo Costo</TableHead>
-                  <TableHead className="text-right">Prezzo Vendita</TableHead>
+                  <TableHead className="text-right">Prezzo Listino</TableHead>
                   <TableHead className="text-right">Azioni</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredItems.map((item) => (
+                {filteredItems.map((item) => {
+                  const imageUrl = getItemImage(item);
+                  const originalPrice = getItemOriginalPrice(item);
+                  const isProduct = getItemType(item) === "product";
+                  return (
                   <TableRow key={item.id} data-testid={`row-item-${item.id}`}>
                     <TableCell>
+                      <div className="w-10 h-10 rounded-md overflow-hidden bg-muted flex items-center justify-center">
+                        {imageUrl ? (
+                          <img src={imageUrl} alt="" className="w-full h-full object-cover" />
+                        ) : isProduct ? (
+                          <Package className="w-5 h-5 text-muted-foreground" />
+                        ) : (
+                          <Wrench className="w-5 h-5 text-muted-foreground" />
+                        )}
+                      </div>
+                    </TableCell>
+                    <TableCell className="font-medium">{getItemName(item)}</TableCell>
+                    <TableCell>
                       <Badge variant="outline">
-                        {getItemType(item) === "product" ? (
+                        {isProduct ? (
                           <><Package className="h-3 w-3 mr-1" /> Prodotto</>
                         ) : (
                           <><Wrench className="h-3 w-3 mr-1" /> Servizio</>
                         )}
                       </Badge>
                     </TableCell>
-                    <TableCell className="font-medium">{getItemName(item)}</TableCell>
+                    <TableCell className="text-right text-muted-foreground">
+                      {originalPrice ? formatCurrency(originalPrice) : "-"}
+                    </TableCell>
                     <TableCell className="text-right text-muted-foreground">
                       {item.costPriceCents ? formatCurrency(item.costPriceCents) : "-"}
                     </TableCell>
@@ -320,7 +360,8 @@ export default function PriceListDetail() {
                       </div>
                     </TableCell>
                   </TableRow>
-                ))}
+                  );
+                })}
               </TableBody>
             </Table>
           )}
