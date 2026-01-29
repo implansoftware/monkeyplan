@@ -203,7 +203,6 @@ const menuItems = {
     { title: "Lavorazioni", url: "/reseller/repairs", icon: Wrench, group: "Centri & Riparazioni" },
     { title: "Appuntamenti", url: "/reseller/appointments", icon: CalendarCheck, group: "Centri & Riparazioni" },
     { title: "Listino Servizi", url: "/reseller/service-catalog", icon: Receipt, group: "Centri & Riparazioni" },
-    { title: "Listini Prezzi", url: "/reseller/price-lists", icon: ListOrdered, group: "Centri & Riparazioni" },
     { title: "Catalogo Dispositivi", url: "/reseller/device-catalog", icon: Smartphone, group: "Centri & Riparazioni" },
     { title: "Ordini Interventi", url: "/reseller/service-orders", icon: ClipboardList, group: "Centri & Riparazioni" },
     { title: "Utility", url: "/reseller/utility", icon: Zap, group: "Utility" },
@@ -217,6 +216,7 @@ const menuItems = {
     { title: "Ricambi", url: "/reseller/products", icon: Package, group: "Magazzino" },
     { title: "Dispositivi", url: "/reseller/dispositivi", icon: Smartphone, group: "Magazzino" },
     { title: "Accessori", url: "/reseller/accessory-catalog", icon: ShoppingCart, group: "Magazzino" },
+    { title: "Listini Prezzi", url: "/reseller/price-lists", icon: ListOrdered, group: "Magazzino" },
     { title: "Panoramica", url: "/reseller/transfer-requests", icon: ArrowRightLeft, group: "Interscambio" },
     { title: "Richieste Ricevute", url: "/reseller/incoming-transfer-requests", icon: Inbox, group: "Interscambio" },
     { title: "Richieste Inviate", url: "/reseller/sub-transfer-requests", icon: Send, group: "Interscambio" },
@@ -272,7 +272,6 @@ const menuItems = {
     { title: "Lavorazioni", url: "/repair-center/repairs", icon: Wrench, group: "Lavorazioni" },
     { title: "Appuntamenti", url: "/repair-center/appointments", icon: CalendarCheck, group: "Lavorazioni" },
     { title: "Listino Interventi", url: "/repair-center/service-catalog", icon: Receipt, group: "Lavorazioni" },
-    { title: "Listini Prezzi", url: "/repair-center/price-lists", icon: ListOrdered, group: "Lavorazioni" },
     { title: "Richieste Remote", url: "/repair-center/remote-requests", icon: Send, group: "Lavorazioni" },
     // Utility
     { title: "Utility", url: "/repair-center/utility", icon: Zap, group: "Utility" },
@@ -284,6 +283,7 @@ const menuItems = {
     // Magazzino
     { title: "Magazzino", url: "/repair-center/warehouses", icon: Warehouse, group: "Magazzino" },
     { title: "Prodotti", url: "/repair-center/products", icon: Package, group: "Magazzino" },
+    { title: "Listini Prezzi", url: "/repair-center/price-lists", icon: ListOrdered, group: "Magazzino" },
     // Cataloghi
     { title: "Dispositivi", url: "/repair-center/dispositivi", icon: Smartphone, group: "Cataloghi" },
     { title: "Accessori", url: "/repair-center/accessory-catalog", icon: ShoppingCart, group: "Cataloghi" },
