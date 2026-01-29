@@ -56,13 +56,14 @@ export default function ResellerPriceLists() {
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [editingList, setEditingList] = useState<PriceList | null>(null);
   const [deleteList, setDeleteList] = useState<PriceList | null>(null);
-  const [formData, setFormData] = useState({ name: "", description: "", targetAudience: "all" as "sub_reseller" | "repair_center" | "customer" | "all" });
+  const [formData, setFormData] = useState({ name: "", description: "", targetAudience: "all" as "sub_reseller" | "repair_center" | "customer" | "reseller" | "all" });
 
   const targetAudienceOptions = [
     { value: "all", label: "Tutti" },
     { value: "sub_reseller", label: "Sub-Rivenditori" },
     { value: "repair_center", label: "Centri Riparazione" },
     { value: "customer", label: "Clienti" },
+    { value: "reseller", label: "Rivenditori" },
   ];
 
   const { data: priceLists, isLoading } = useQuery<PriceList[]>({
@@ -237,6 +238,7 @@ export default function ResellerPriceLists() {
                         {list.targetAudience === "sub_reseller" && "Sub-Rivenditori"}
                         {list.targetAudience === "repair_center" && "Centri Riparazione"}
                         {list.targetAudience === "customer" && "Clienti"}
+                        {list.targetAudience === "reseller" && "Rivenditori"}
                       </Badge>
                     </TableCell>
                     <TableCell>
@@ -333,7 +335,7 @@ export default function ResellerPriceLists() {
               </Label>
               <Select
                 value={formData.targetAudience}
-                onValueChange={(value: "sub_reseller" | "repair_center" | "customer" | "all") => 
+                onValueChange={(value: "sub_reseller" | "repair_center" | "customer" | "reseller" | "all") => 
                   setFormData({ ...formData, targetAudience: value })
                 }
               >
@@ -404,7 +406,7 @@ export default function ResellerPriceLists() {
               </Label>
               <Select
                 value={formData.targetAudience}
-                onValueChange={(value: "sub_reseller" | "repair_center" | "customer" | "all") => 
+                onValueChange={(value: "sub_reseller" | "repair_center" | "customer" | "reseller" | "all") => 
                   setFormData({ ...formData, targetAudience: value })
                 }
               >
