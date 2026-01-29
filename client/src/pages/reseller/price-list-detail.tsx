@@ -368,6 +368,56 @@ export default function PriceListDetail() {
                 </SelectContent>
               </Select>
             </div>
+
+            {selectedId && (
+              <div className="flex items-center gap-4 p-3 rounded-md bg-muted/50 border">
+                {itemType === "product" && (() => {
+                  const selectedProduct = products?.find(p => p.id === selectedId);
+                  return selectedProduct ? (
+                    <>
+                      <div className="w-16 h-16 rounded-md overflow-hidden bg-muted flex items-center justify-center shrink-0">
+                        {selectedProduct.imageUrl ? (
+                          <img 
+                            src={selectedProduct.imageUrl} 
+                            alt={selectedProduct.name}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <Package className="w-8 h-8 text-muted-foreground" />
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium truncate">{selectedProduct.name}</p>
+                        <p className="text-sm text-muted-foreground">
+                          Prezzo originale: <span className="font-semibold text-foreground">{formatCurrency(selectedProduct.unitPrice)}</span>
+                        </p>
+                        {selectedProduct.costPrice && (
+                          <p className="text-xs text-muted-foreground">
+                            Costo: {formatCurrency(selectedProduct.costPrice)}
+                          </p>
+                        )}
+                      </div>
+                    </>
+                  ) : null;
+                })()}
+                {itemType === "service" && (() => {
+                  const selectedService = services?.find(s => s.id === selectedId);
+                  return selectedService ? (
+                    <>
+                      <div className="w-16 h-16 rounded-md overflow-hidden bg-muted flex items-center justify-center shrink-0">
+                        <Wrench className="w-8 h-8 text-muted-foreground" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium truncate">{selectedService.name}</p>
+                        <p className="text-sm text-muted-foreground">
+                          Prezzo base: <span className="font-semibold text-foreground">{formatCurrency(selectedService.defaultPriceCents)}</span>
+                        </p>
+                      </div>
+                    </>
+                  ) : null;
+                })()}
+              </div>
+            )}
             
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
