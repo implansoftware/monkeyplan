@@ -85,10 +85,7 @@ export default function PriceListDetail() {
 
   const addItemMutation = useMutation({
     mutationFn: async (data: { productId?: string; serviceItemId?: string; priceCents: number; costPriceCents?: number }) => {
-      return apiRequest(`/api/price-lists/${listId}/items`, {
-        method: "POST",
-        body: JSON.stringify(data),
-      });
+      return apiRequest("POST", `/api/price-lists/${listId}/items`, data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/price-lists", listId] });
@@ -102,10 +99,7 @@ export default function PriceListDetail() {
 
   const updateItemMutation = useMutation({
     mutationFn: async ({ id, data }: { id: string; data: { priceCents?: number; costPriceCents?: number } }) => {
-      return apiRequest(`/api/price-list-items/${id}`, {
-        method: "PUT",
-        body: JSON.stringify(data),
-      });
+      return apiRequest("PUT", `/api/price-list-items/${id}`, data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/price-lists", listId] });
@@ -119,7 +113,7 @@ export default function PriceListDetail() {
 
   const deleteItemMutation = useMutation({
     mutationFn: async (id: string) => {
-      return apiRequest(`/api/price-list-items/${id}`, { method: "DELETE" });
+      return apiRequest("DELETE", `/api/price-list-items/${id}`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/price-lists", listId] });
@@ -211,7 +205,7 @@ export default function PriceListDetail() {
       <div className="container mx-auto py-6 text-center">
         <p className="text-muted-foreground">Listino non trovato</p>
         <Link href="/reseller/price-lists">
-          <Button variant="link">Torna ai listini</Button>
+          <Button variant="ghost">Torna ai listini</Button>
         </Link>
       </div>
     );

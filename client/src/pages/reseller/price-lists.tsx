@@ -63,10 +63,7 @@ export default function ResellerPriceLists() {
 
   const createMutation = useMutation({
     mutationFn: async (data: { name: string; description: string }) => {
-      return apiRequest("/api/price-lists", {
-        method: "POST",
-        body: JSON.stringify(data),
-      });
+      return apiRequest("POST", "/api/price-lists", data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/price-lists"] });
@@ -81,10 +78,7 @@ export default function ResellerPriceLists() {
 
   const updateMutation = useMutation({
     mutationFn: async ({ id, data }: { id: string; data: Partial<PriceList> }) => {
-      return apiRequest(`/api/price-lists/${id}`, {
-        method: "PUT",
-        body: JSON.stringify(data),
-      });
+      return apiRequest("PUT", `/api/price-lists/${id}`, data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/price-lists"] });
@@ -98,7 +92,7 @@ export default function ResellerPriceLists() {
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
-      return apiRequest(`/api/price-lists/${id}`, { method: "DELETE" });
+      return apiRequest("DELETE", `/api/price-lists/${id}`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/price-lists"] });
@@ -112,7 +106,7 @@ export default function ResellerPriceLists() {
 
   const setDefaultMutation = useMutation({
     mutationFn: async (id: string) => {
-      return apiRequest(`/api/price-lists/${id}/set-default`, { method: "POST" });
+      return apiRequest("POST", `/api/price-lists/${id}/set-default`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/price-lists"] });
