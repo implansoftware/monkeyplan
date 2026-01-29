@@ -5907,6 +5907,12 @@ export const hrLeaveRequestStatusEnum = pgEnum("hr_leave_request_status", [
   "cancelled",       // Annullata dal richiedente
 ]);
 
+export const hrSickLeaveStatusEnum = pgEnum("hr_sick_leave_status", [
+  "pending",         // In corso
+  "confirmed",       // Confermata
+  "closed",          // Conclusa
+]);
+
 export const hrAbsenceTypeEnum = pgEnum("hr_absence_type", [
   "ritardo",         // Ritardo entrata
   "uscita_anticipata", // Uscita anticipata
@@ -6152,6 +6158,7 @@ export const hrSickLeaves = pgTable("hr_sick_leaves", {
   resellerId: varchar("reseller_id").notNull().references(() => users.id, { onDelete: "cascade" }),
   startDate: timestamp("start_date").notNull(),
   endDate: timestamp("end_date"),
+  status: hrSickLeaveStatusEnum("status").notNull().default("pending"),
   protocolNumber: varchar("protocol_number", { length: 50 }), // Numero protocollo INPS
   certificateRequired: boolean("certificate_required").default(true),
   certificateUploaded: boolean("certificate_uploaded").default(false),
