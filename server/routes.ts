@@ -886,6 +886,31 @@ export function registerRoutes(app: Express): Server {
   });
 
   // ==========================================
+  // ADMIN PRICE LISTS ENDPOINTS
+  // ==========================================
+
+  // GET /api/admin/price-lists - List all price lists (admin can see all resellers' lists)
+  app.get("/api/admin/price-lists", requireRole("admin"), async (req, res) => {
+    try {
+      const lists = await storage.listPriceLists();
+      
+      // Enrich with owner info
+      const enrichedLists = await Promise.all(lists.map(async (list) => {
+        const owner = await storage.getUser(list.ownerId);
+        return {
+          ...list,
+          ownerName: owner ? `${owner.firstName || ""} ${owner.lastName || ""}`.trim() || owner.username : "Unknown",
+          ownerEmail: owner?.email || "",
+        };
+      }));
+      
+      res.json(enrichedLists);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
+  // ==========================================
   // PUBLIC TRACKING ENDPOINT (no auth required)
   // ==========================================
   
@@ -7926,7 +7951,13 @@ export function registerRoutes(app: Express): Server {
         )
       );
       
-      // Get custom prices for this repair center
+      // Cerca listino prezzi per repair center dal reseller
+      let priceList = null;
+      if (repairCenter.resellerId) {
+        priceList = await storage.getPriceListForTarget(repairCenter.resellerId, "repair_center");
+      }
+      
+      // Get custom prices for this repair center (old system - fallback)
       const centerPrices = await storage.listServiceItemPricesByRepairCenter(repairCenterId);
       
       // Get reseller prices as fallback
@@ -7935,23 +7966,34 @@ export function registerRoutes(app: Express): Server {
         : [];
       
       // Build response with effective prices
-      const itemsWithPrices = activeItems.map(item => {
-        const centerPrice = centerPrices.find(p => p.serviceItemId === item.id);
-        const resellerPrice = resellerPrices.find(p => p.serviceItemId === item.id);
-        
-        // Priority: center price > reseller price > base price
+      const itemsWithPrices = await Promise.all(activeItems.map(async (item) => {
         let effectivePrice = item.defaultPriceCents;
         let effectiveLaborMinutes = item.defaultLaborMinutes;
-        let priceSource: 'base' | 'reseller' | 'center' = 'base';
+        let priceSource: 'base' | 'reseller' | 'center' | 'price_list' = 'base';
         
-        if (centerPrice) {
-          effectivePrice = centerPrice.priceCents;
-          effectiveLaborMinutes = centerPrice.laborMinutes ?? item.defaultLaborMinutes;
-          priceSource = 'center';
-        } else if (resellerPrice) {
-          effectivePrice = resellerPrice.priceCents;
-          effectiveLaborMinutes = resellerPrice.laborMinutes ?? item.defaultLaborMinutes;
-          priceSource = 'reseller';
+        // Priority: price_list > center price > reseller price > base price
+        if (priceList) {
+          const priceListItem = await storage.getPriceForItem(priceList.id, undefined, item.id);
+          if (priceListItem && priceListItem.isActive) {
+            effectivePrice = priceListItem.priceCents;
+            priceSource = 'price_list';
+          }
+        }
+        
+        // Fallback al vecchio sistema
+        if (priceSource === 'base') {
+          const centerPrice = centerPrices.find(p => p.serviceItemId === item.id);
+          const resellerPrice = resellerPrices.find(p => p.serviceItemId === item.id);
+          
+          if (centerPrice) {
+            effectivePrice = centerPrice.priceCents;
+            effectiveLaborMinutes = centerPrice.laborMinutes ?? item.defaultLaborMinutes;
+            priceSource = 'center';
+          } else if (resellerPrice) {
+            effectivePrice = resellerPrice.priceCents;
+            effectiveLaborMinutes = resellerPrice.laborMinutes ?? item.defaultLaborMinutes;
+            priceSource = 'reseller';
+          }
         }
         
         return {
@@ -7960,15 +8002,13 @@ export function registerRoutes(app: Express): Server {
           effectiveLaborMinutes,
           priceSource,
         };
-      });
+      }));
       
       res.json(itemsWithPrices);
     } catch (error: any) {
       res.status(500).send(error.message);
     }
   });
-
-  // =============================================
   // REPAIR CENTER SERVICE ITEMS CRUD
   // =============================================
 
@@ -9144,17 +9184,36 @@ export function registerRoutes(app: Express): Server {
         )
       );
       
+      // Cerca listino prezzi per clienti del reseller
+      const priceList = await storage.getPriceListForTarget(resellerId, "customer");
+      
       const itemsWithPrices = await Promise.all(activeItems.map(async (item) => {
-        const effectivePrice = await storage.getEffectiveServicePrice(
-          item.id, 
-          resellerId, 
-          undefined
-        );
+        let effectivePriceCents = item.defaultPriceCents;
+        let priceSource = "base";
+        
+        // Se esiste un listino per clienti, cerca il prezzo lì
+        if (priceList) {
+          const priceListItem = await storage.getPriceForItem(priceList.id, undefined, item.id);
+          if (priceListItem && priceListItem.isActive) {
+            effectivePriceCents = priceListItem.priceCents;
+            priceSource = "price_list";
+          }
+        }
+        
+        // Fallback al vecchio sistema se non trovato nel listino
+        if (priceSource === "base") {
+          const oldPrice = await storage.getEffectiveServicePrice(item.id, resellerId, undefined);
+          if (oldPrice.source !== "base") {
+            effectivePriceCents = oldPrice.priceCents;
+            priceSource = oldPrice.source;
+          }
+        }
+        
         return {
           ...item,
-          effectivePriceCents: effectivePrice.priceCents,
-          effectiveLaborMinutes: effectivePrice.laborMinutes,
-          priceSource: effectivePrice.source
+          effectivePriceCents,
+          effectiveLaborMinutes: item.defaultLaborMinutes,
+          priceSource
         };
       }));
       

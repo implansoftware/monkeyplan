@@ -1160,6 +1160,7 @@ export interface IStorage {
   updatePriceList(id: string, updates: Partial<Pick<PriceList, 'name' | 'description' | 'isDefault' | 'isActive' | 'targetAudience'>>): Promise<PriceList>;
   deletePriceList(id: string): Promise<void>;
   getDefaultPriceList(ownerId: string): Promise<PriceList | undefined>;
+  getPriceListForTarget(ownerId: string, targetAudience: string): Promise<PriceList | undefined>;
   setDefaultPriceList(id: string, ownerId: string): Promise<PriceList>;
   copyPriceList(sourceId: string, newOwnerId: string, ownerType: PriceListOwnerType, newName: string, repairCenterId?: string): Promise<PriceList>;
   getInheritedPriceLists(childId: string, childRole: string): Promise<PriceList[]>;
@@ -12160,6 +12161,22 @@ export class DatabaseStorage implements IStorage {
   async getDefaultPriceList(ownerId: string): Promise<PriceList | undefined> {
     const [list] = await db.select().from(priceLists)
       .where(and(eq(priceLists.ownerId, ownerId), eq(priceLists.isDefault, true)));
+    return list || undefined;
+  }
+
+  async getPriceListForTarget(ownerId: string, targetAudience: string): Promise<PriceList | undefined> {
+    // Prima cerca un listino default con target audience specifico o "all"
+    const [list] = await db.select().from(priceLists)
+      .where(and(
+        eq(priceLists.ownerId, ownerId),
+        eq(priceLists.isActive, true),
+        or(
+          eq(priceLists.targetAudience, targetAudience),
+          eq(priceLists.targetAudience, "all")
+        )
+      ))
+      .orderBy(desc(priceLists.isDefault), desc(priceLists.createdAt))
+      .limit(1);
     return list || undefined;
   }
 
