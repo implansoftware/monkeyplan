@@ -9256,10 +9256,10 @@ export class DatabaseStorage implements IStorage {
       priceSource: string;
     }> = [];
     
-    // Get admin's price list for sub_reseller (reseller buying from admin) - BULK QUERY
+    // Get admin's price list for reseller (reseller buying from admin) - BULK QUERY
     const adminUser = await db.select().from(users).where(eq(users.role, 'admin')).limit(1);
     const adminId = adminUser[0]?.id;
-    const priceList = adminId ? await this.getPriceListForTarget(adminId, 'sub_reseller') : null;
+    const priceList = adminId ? await this.getPriceListForTarget(adminId, 'reseller') : null;
     
     // Bulk load all price list items to avoid N+1 queries
     const priceListItemsMap = new Map<string, PriceListItem>();
