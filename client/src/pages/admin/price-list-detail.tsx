@@ -56,6 +56,8 @@ export default function AdminPriceListDetail() {
   const [itemType, setItemType] = useState<"product" | "service">("product");
   const [selectedProductId, setSelectedProductId] = useState<string | null>(null);
   const [selectedServiceId, setSelectedServiceId] = useState<string | null>(null);
+  const [selectedProductName, setSelectedProductName] = useState<string | null>(null);
+  const [selectedServiceName, setSelectedServiceName] = useState<string | null>(null);
   const [newItemPrice, setNewItemPrice] = useState("");
 
   const { data: priceList, isLoading } = useQuery<PriceListWithItems>({
@@ -87,6 +89,8 @@ export default function AdminPriceListDetail() {
       setAddItemDialogOpen(false);
       setSelectedProductId(null);
       setSelectedServiceId(null);
+      setSelectedProductName(null);
+      setSelectedServiceName(null);
       setNewItemPrice("");
       toast({
         title: "Voce aggiunta",
@@ -308,7 +312,13 @@ export default function AdminPriceListDetail() {
                     <div className="space-y-4 py-4">
                       <div className="space-y-2">
                         <Label>Tipo</Label>
-                        <Select value={itemType} onValueChange={(v) => setItemType(v as "product" | "service")}>
+                        <Select value={itemType} onValueChange={(v) => {
+                          setItemType(v as "product" | "service");
+                          setSelectedProductId(null);
+                          setSelectedServiceId(null);
+                          setSelectedProductName(null);
+                          setSelectedServiceName(null);
+                        }}>
                           <SelectTrigger data-testid="select-item-type">
                             <SelectValue />
                           </SelectTrigger>
@@ -323,22 +333,34 @@ export default function AdminPriceListDetail() {
                         <div className="space-y-2">
                           <Label>Prodotto</Label>
                           <SearchableProductCombobox
-                            onSelect={(product) => setSelectedProductId(product.id)}
+                            onSelect={(product) => {
+                              setSelectedProductId(product.id);
+                              setSelectedProductName(product.name);
+                            }}
                             placeholder="Cerca prodotto..."
                           />
-                          {selectedProductId && (
-                            <p className="text-xs text-muted-foreground">Prodotto selezionato</p>
+                          {selectedProductName && (
+                            <div className="p-2 rounded-md bg-muted/50 border">
+                              <p className="text-sm font-medium">{selectedProductName}</p>
+                              <p className="text-xs text-muted-foreground">Prodotto selezionato</p>
+                            </div>
                           )}
                         </div>
                       ) : (
                         <div className="space-y-2">
                           <Label>Servizio</Label>
                           <SearchableServiceCombobox
-                            onSelect={(service) => setSelectedServiceId(service.id)}
+                            onSelect={(service) => {
+                              setSelectedServiceId(service.id);
+                              setSelectedServiceName(service.name);
+                            }}
                             placeholder="Cerca servizio..."
                           />
-                          {selectedServiceId && (
-                            <p className="text-xs text-muted-foreground">Servizio selezionato</p>
+                          {selectedServiceName && (
+                            <div className="p-2 rounded-md bg-muted/50 border">
+                              <p className="text-sm font-medium">{selectedServiceName}</p>
+                              <p className="text-xs text-muted-foreground">Servizio selezionato</p>
+                            </div>
                           )}
                         </div>
                       )}
