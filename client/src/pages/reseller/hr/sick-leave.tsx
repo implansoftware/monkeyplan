@@ -82,7 +82,8 @@ export default function HrSickLeave() {
     endDate: "",
     certificateNumber: "",
     inpsProtocol: "",
-    notes: ""
+    notes: "",
+    status: ""
   });
   const { toast } = useToast();
 
@@ -185,7 +186,8 @@ export default function HrSickLeave() {
       endDate: sickLeave.endDate ? sickLeave.endDate.split("T")[0] : "",
       certificateNumber: sickLeave.certificateNumber || "",
       inpsProtocol: sickLeave.inpsProtocol || "",
-      notes: sickLeave.notes || ""
+      notes: sickLeave.notes || "",
+      status: sickLeave.status
     });
     setEditDialogOpen(true);
   };
@@ -363,45 +365,32 @@ export default function HrSickLeave() {
                         <Badge variant={statusInfo.variant}>{statusInfo.label}</Badge>
                       </TableCell>
                       <TableCell>
-                        {!readOnly && (
-                          <div className="flex flex-wrap items-center gap-1">
-                            {sl.status === 'pending' && (
-                              <>
-                                <Button
-                                  size="icon"
-                                  variant="ghost"
-                                  className="h-8 w-8 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
-                                  onClick={() => openEditDialog(sl)}
-                                  title="Modifica"
-                                  data-testid={`button-edit-${sl.id}`}
-                                >
-                                  <Pencil className="h-4 w-4" />
-                                </Button>
-                                <Button
-                                  size="icon"
-                                  variant="ghost"
-                                  className="h-8 w-8 text-green-600 hover:text-green-700 hover:bg-green-50"
-                                  onClick={() => statusMutation.mutate({ id: sl.id, status: 'confirmed' })}
-                                  disabled={statusMutation.isPending}
-                                  title="Conferma malattia"
-                                  data-testid={`button-confirm-${sl.id}`}
-                                >
-                                  <CheckCircle className="h-4 w-4" />
-                                </Button>
-                                <Button
-                                  size="icon"
-                                  variant="ghost"
-                                  className="h-8 w-8 text-orange-600 hover:text-orange-700 hover:bg-orange-50"
-                                  onClick={() => statusMutation.mutate({ id: sl.id, status: 'closed' })}
-                                  disabled={statusMutation.isPending}
-                                  title="Chiudi malattia"
-                                  data-testid={`button-close-${sl.id}`}
-                                >
-                                  <XCircle className="h-4 w-4" />
-                                </Button>
-                              </>
-                            )}
-                            {sl.status === 'confirmed' && (
+                        <div className="flex flex-wrap items-center gap-1">
+                          {!readOnly && (
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              className="h-8 w-8 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                              onClick={() => openEditDialog(sl)}
+                              title="Modifica"
+                              data-testid={`button-edit-${sl.id}`}
+                            >
+                              <Pencil className="h-4 w-4" />
+                            </Button>
+                          )}
+                          {sl.status === 'pending' && !readOnly && (
+                            <>
+                              <Button
+                                size="icon"
+                                variant="ghost"
+                                className="h-8 w-8 text-green-600 hover:text-green-700 hover:bg-green-50"
+                                onClick={() => statusMutation.mutate({ id: sl.id, status: 'confirmed' })}
+                                disabled={statusMutation.isPending}
+                                title="Conferma malattia"
+                                data-testid={`button-confirm-${sl.id}`}
+                              >
+                                <CheckCircle className="h-4 w-4" />
+                              </Button>
                               <Button
                                 size="icon"
                                 variant="ghost"
@@ -413,9 +402,22 @@ export default function HrSickLeave() {
                               >
                                 <XCircle className="h-4 w-4" />
                               </Button>
-                            )}
-                          </div>
-                        )}
+                            </>
+                          )}
+                          {sl.status === 'confirmed' && !readOnly && (
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              className="h-8 w-8 text-orange-600 hover:text-orange-700 hover:bg-orange-50"
+                              onClick={() => statusMutation.mutate({ id: sl.id, status: 'closed' })}
+                              disabled={statusMutation.isPending}
+                              title="Chiudi malattia"
+                              data-testid={`button-close-${sl.id}`}
+                            >
+                              <XCircle className="h-4 w-4" />
+                            </Button>
+                          )}
+                        </div>
                       </TableCell>
                     </TableRow>
                   );
@@ -610,6 +612,19 @@ export default function HrSickLeave() {
                 onChange={(e) => setEditForm({ ...editForm, notes: e.target.value })}
                 placeholder="Note aggiuntive..."
               />
+            </div>
+            <div className="space-y-2">
+              <Label>Stato</Label>
+              <Select value={editForm.status} onValueChange={(v) => setEditForm({ ...editForm, status: v })}>
+                <SelectTrigger data-testid="select-edit-status">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="pending">In Corso</SelectItem>
+                  <SelectItem value="confirmed">Confermata</SelectItem>
+                  <SelectItem value="closed">Conclusa</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </div>
           <DialogFooter>
