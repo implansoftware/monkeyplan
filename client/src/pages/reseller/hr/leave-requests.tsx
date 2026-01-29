@@ -88,7 +88,8 @@ export default function HrLeaveRequests() {
     leaveType: "",
     startDate: "",
     endDate: "",
-    reason: ""
+    reason: "",
+    status: ""
   });
   const { toast } = useToast();
 
@@ -167,7 +168,8 @@ export default function HrLeaveRequests() {
       leaveType: request.leaveType,
       startDate: request.startDate.split("T")[0],
       endDate: request.endDate.split("T")[0],
-      reason: request.reason || ""
+      reason: request.reason || "",
+      status: request.status
     });
     setEditDialogOpen(true);
   };
@@ -485,6 +487,20 @@ export default function HrLeaveRequests() {
                 onChange={(e) => setEditForm({ ...editForm, reason: e.target.value })}
                 placeholder="Descrivi il motivo della richiesta..."
               />
+            </div>
+            <div className="space-y-2">
+              <Label>Stato</Label>
+              <Select value={editForm.status} onValueChange={(v) => setEditForm({ ...editForm, status: v })}>
+                <SelectTrigger data-testid="select-edit-status">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="pending">In Attesa</SelectItem>
+                  <SelectItem value="approved">Approvata</SelectItem>
+                  <SelectItem value="rejected">Rifiutata</SelectItem>
+                  <SelectItem value="cancelled">Annullata</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </div>
           <DialogFooter>
