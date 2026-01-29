@@ -56,8 +56,8 @@ export default function AdminPriceListDetail() {
   const [itemType, setItemType] = useState<"product" | "service">("product");
   const [selectedProductId, setSelectedProductId] = useState<string | null>(null);
   const [selectedServiceId, setSelectedServiceId] = useState<string | null>(null);
-  const [selectedProductName, setSelectedProductName] = useState<string | null>(null);
-  const [selectedServiceName, setSelectedServiceName] = useState<string | null>(null);
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [selectedService, setSelectedService] = useState<ServiceItem | null>(null);
   const [newItemPrice, setNewItemPrice] = useState("");
 
   const { data: priceList, isLoading } = useQuery<PriceListWithItems>({
@@ -89,8 +89,8 @@ export default function AdminPriceListDetail() {
       setAddItemDialogOpen(false);
       setSelectedProductId(null);
       setSelectedServiceId(null);
-      setSelectedProductName(null);
-      setSelectedServiceName(null);
+      setSelectedProduct(null);
+      setSelectedService(null);
       setNewItemPrice("");
       toast({
         title: "Voce aggiunta",
@@ -316,8 +316,8 @@ export default function AdminPriceListDetail() {
                           setItemType(v as "product" | "service");
                           setSelectedProductId(null);
                           setSelectedServiceId(null);
-                          setSelectedProductName(null);
-                          setSelectedServiceName(null);
+                          setSelectedProduct(null);
+                          setSelectedService(null);
                         }}>
                           <SelectTrigger data-testid="select-item-type">
                             <SelectValue />
@@ -335,16 +335,10 @@ export default function AdminPriceListDetail() {
                           <SearchableProductCombobox
                             onSelect={(product) => {
                               setSelectedProductId(product.id);
-                              setSelectedProductName(product.name);
+                              setSelectedProduct(product as Product);
                             }}
                             placeholder="Cerca prodotto..."
                           />
-                          {selectedProductName && (
-                            <div className="p-2 rounded-md bg-muted/50 border">
-                              <p className="text-sm font-medium">{selectedProductName}</p>
-                              <p className="text-xs text-muted-foreground">Prodotto selezionato</p>
-                            </div>
-                          )}
                         </div>
                       ) : (
                         <div className="space-y-2">
@@ -352,15 +346,53 @@ export default function AdminPriceListDetail() {
                           <SearchableServiceCombobox
                             onSelect={(service) => {
                               setSelectedServiceId(service.id);
-                              setSelectedServiceName(service.name);
+                              setSelectedService(service as ServiceItem);
                             }}
                             placeholder="Cerca servizio..."
                           />
-                          {selectedServiceName && (
-                            <div className="p-2 rounded-md bg-muted/50 border">
-                              <p className="text-sm font-medium">{selectedServiceName}</p>
-                              <p className="text-xs text-muted-foreground">Servizio selezionato</p>
-                            </div>
+                        </div>
+                      )}
+
+                      {(selectedProduct || selectedService) && (
+                        <div className="flex items-center gap-4 p-3 rounded-md bg-muted/50 border">
+                          {itemType === "product" && selectedProduct && (
+                            <>
+                              <div className="w-16 h-16 rounded-md overflow-hidden bg-muted flex items-center justify-center shrink-0">
+                                {selectedProduct.imageUrl ? (
+                                  <img 
+                                    src={selectedProduct.imageUrl} 
+                                    alt={selectedProduct.name}
+                                    className="w-full h-full object-cover"
+                                  />
+                                ) : (
+                                  <Package className="w-8 h-8 text-muted-foreground" />
+                                )}
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <p className="font-medium truncate">{selectedProduct.name}</p>
+                                <p className="text-sm text-muted-foreground">
+                                  Prezzo originale: <span className="font-semibold text-foreground">{formatCurrency(selectedProduct.unitPrice)}</span>
+                                </p>
+                                {selectedProduct.costPrice && (
+                                  <p className="text-xs text-muted-foreground">
+                                    Costo: {formatCurrency(selectedProduct.costPrice)}
+                                  </p>
+                                )}
+                              </div>
+                            </>
+                          )}
+                          {itemType === "service" && selectedService && (
+                            <>
+                              <div className="w-16 h-16 rounded-md overflow-hidden bg-muted flex items-center justify-center shrink-0">
+                                <Wrench className="w-8 h-8 text-muted-foreground" />
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <p className="font-medium truncate">{selectedService.name}</p>
+                                <p className="text-sm text-muted-foreground">
+                                  Prezzo base: <span className="font-semibold text-foreground">{formatCurrency(selectedService.defaultPriceCents)}</span>
+                                </p>
+                              </div>
+                            </>
                           )}
                         </div>
                       )}
