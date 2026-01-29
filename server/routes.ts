@@ -25510,6 +25510,25 @@ export function registerRoutes(app: Express): Server {
         );
       }
       
+      // Applica listino prezzi customer se utente loggato è cliente del reseller
+      const user = req.user;
+      if (user && user.role === "customer" && user.resellerId === sellerId) {
+        const priceList = await storage.getPriceListForTarget(sellerId, "customer");
+        if (priceList) {
+          shopProducts = await Promise.all(shopProducts.map(async (product) => {
+            const priceListItem = await storage.getPriceForItem(priceList.id, product.id, undefined);
+            if (priceListItem && priceListItem.isActive) {
+              return {
+                ...product,
+                shopPrice: priceListItem.priceCents,
+                unitPrice: priceListItem.priceCents,
+              };
+            }
+            return product;
+          }));
+        }
+      }
+      
       const total = shopProducts.length;
       const offsetNum = parseInt(offset as string) || 0;
       const limitNum = parseInt(limit as string) || 20;
