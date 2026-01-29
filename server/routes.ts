@@ -910,6 +910,21 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // GET /api/admin/price-lists/:id - Get single price list with items (admin view)
+  app.get("/api/admin/price-lists/:id", requireRole("admin"), async (req, res) => {
+    try {
+      const { id } = req.params;
+      const list = await storage.getPriceList(id);
+      if (!list) {
+        return res.status(404).send("Price list not found");
+      }
+      const items = await storage.listPriceListItems(id);
+      res.json({ ...list, items });
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
   // ==========================================
   // PUBLIC TRACKING ENDPOINT (no auth required)
   // ==========================================

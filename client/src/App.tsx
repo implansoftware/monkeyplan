@@ -84,6 +84,7 @@ import AdminSmartphoneCatalog from "@/pages/admin/smartphone-catalog";
 import AdminAccessoryCatalog from "@/pages/admin/accessory-catalog";
 import AdminDeviceCatalog from "@/pages/admin/device-catalog";
 import AdminPriceLists from "@/pages/admin/price-lists";
+import AdminPriceListDetail from "@/pages/admin/price-list-detail";
 import AdminDeviceCompatibilities from "@/pages/admin/device-compatibilities";
 import AdminUtilityCategories from "@/pages/admin/utility-categories";
 import AdminSalesOrders from "@/pages/admin/sales-orders";
@@ -367,6 +368,7 @@ function Router() {
       <ProtectedRoute path="/admin/accessory-catalog" component={AdminAccessoryCatalog} />
       <ProtectedRoute path="/admin/device-catalog" component={AdminDeviceCatalog} />
       <ProtectedRoute path="/admin/price-lists" component={AdminPriceLists} />
+      <ProtectedRoute path="/admin/price-lists/:id" component={AdminPriceListDetail} />
       <ProtectedRoute path="/admin/device-compatibilities" component={AdminDeviceCompatibilities} />
       <ProtectedRoute path="/admin/utility-categories" component={AdminUtilityCategories} />
       <ProtectedRoute path="/admin/team" component={AdminTeam} />
