@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import { RepairCenter, InsertRepairCenter } from "@shared/schema";
@@ -10,7 +10,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Plus, Search, MapPin, Phone, Mail, Pencil, Trash2, Building, Clock, ChevronLeft, ChevronRight, Check, FileText, Settings, Network, Users, Eye, UserCheck, KeyRound, Wrench, Euro, TrendingUp, Loader2, BarChart3, Calendar, User2, AlertCircle } from "lucide-react";
+import { Plus, Search, MapPin, Phone, Mail, Pencil, Trash2, Building, Clock, ChevronLeft, ChevronRight, Check, FileText, Settings, Network, Users, Eye, UserCheck, KeyRound, Wrench, Euro, TrendingUp, Loader2, BarChart3, Calendar, User2, AlertCircle, Upload, ImageIcon } from "lucide-react";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
@@ -133,6 +134,8 @@ export default function ResellerRepairCenters() {
   });
   const { toast } = useToast();
   const { user } = useUser();
+  const logoInputRef = useRef<HTMLInputElement>(null);
+  const [isUploadingLogo, setIsUploadingLogo] = useState(false);
 
   const { data: centers = [], isLoading } = useQuery<RepairCenter[]>({
     queryKey: ["/api/reseller/repair-centers"],
@@ -239,6 +242,62 @@ export default function ResellerRepairCenters() {
     setRepairsPage(0);
     setRepairsStatusFilter("all");
     setDetailDialogOpen(true);
+  };
+
+  const handleCenterLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !selectedCenterId) return;
+
+    const allowedTypes = ["image/jpeg", "image/png", "image/webp"];
+    if (!allowedTypes.includes(file.type)) {
+      toast({ title: "Formato non supportato", description: "Usa un'immagine JPEG, PNG o WebP", variant: "destructive" });
+      return;
+    }
+
+    if (file.size > 2 * 1024 * 1024) {
+      toast({ title: "File troppo grande", description: "L'immagine non può superare i 2MB", variant: "destructive" });
+      return;
+    }
+
+    setIsUploadingLogo(true);
+    try {
+      const formData = new FormData();
+      formData.append("logo", file);
+
+      const res = await fetch(`/api/repair-centers/${selectedCenterId}/logo`, {
+        method: "POST",
+        body: formData,
+        credentials: "include",
+      });
+
+      if (!res.ok) throw new Error(await res.text());
+
+      queryClient.invalidateQueries({ queryKey: [`/api/reseller/repair-centers/${selectedCenterId}/detail`] });
+      toast({ title: "Logo caricato", description: "Il logo è stato aggiornato con successo" });
+    } catch (error: any) {
+      toast({ title: "Errore", description: error.message || "Impossibile caricare il logo", variant: "destructive" });
+    } finally {
+      setIsUploadingLogo(false);
+      if (logoInputRef.current) logoInputRef.current.value = "";
+    }
+  };
+
+  const handleDeleteCenterLogo = async () => {
+    if (!selectedCenterId) return;
+
+    try {
+      const res = await fetch(`/api/repair-centers/${selectedCenterId}/logo`, {
+        method: "DELETE",
+        credentials: "include",
+      });
+
+      if (!res.ok) throw new Error(await res.text());
+
+      queryClient.invalidateQueries({ queryKey: [`/api/reseller/repair-centers/${selectedCenterId}/detail`] });
+      toast({ title: "Logo rimosso", description: "Il logo è stato eliminato" });
+    } catch (error: any) {
+      toast({ title: "Errore", description: error.message || "Impossibile eliminare il logo", variant: "destructive" });
+    }
   };
 
   const getStatusBadge = (status: string) => {
@@ -1397,6 +1456,67 @@ export default function ResellerRepairCenters() {
 
               {/* Tab Anagrafica */}
               <TabsContent value="anagrafica" className="mt-4 space-y-4">
+                {/* Logo Aziendale */}
+                <Card>
+                  <CardHeader className="pb-3">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <div className="h-8 w-8 rounded-lg bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center">
+                        <ImageIcon className="h-4 w-4 text-purple-600 dark:text-purple-400" />
+                      </div>
+                      <span className="font-semibold">Logo Aziendale</span>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="flex flex-wrap items-center gap-6">
+                      <Avatar className="h-20 w-20 rounded-lg border-2 border-dashed border-muted-foreground/25">
+                        {centerDetail.center.logoUrl ? (
+                          <AvatarImage src={centerDetail.center.logoUrl} alt="Logo centro" className="object-contain" />
+                        ) : null}
+                        <AvatarFallback className="rounded-lg bg-muted text-muted-foreground">
+                          <Building className="h-8 w-8" />
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="flex-1 space-y-2">
+                        <div className="flex flex-wrap gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => logoInputRef.current?.click()}
+                            disabled={isUploadingLogo}
+                            data-testid="button-upload-center-logo"
+                          >
+                            <Upload className="h-4 w-4 mr-2" />
+                            {isUploadingLogo ? "Caricamento..." : centerDetail.center.logoUrl ? "Cambia Logo" : "Carica Logo"}
+                          </Button>
+                          {centerDetail.center.logoUrl && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={handleDeleteCenterLogo}
+                              className="text-destructive hover:text-destructive"
+                              data-testid="button-delete-center-logo"
+                            >
+                              <Trash2 className="h-4 w-4 mr-2" />
+                              Rimuovi
+                            </Button>
+                          )}
+                        </div>
+                        <p className="text-xs text-muted-foreground">
+                          Formati supportati: JPEG, PNG, WebP. Max 2MB
+                        </p>
+                      </div>
+                      <input
+                        ref={logoInputRef}
+                        type="file"
+                        accept="image/jpeg,image/png,image/webp"
+                        onChange={handleCenterLogoUpload}
+                        className="hidden"
+                        data-testid="input-center-logo-file"
+                      />
+                    </div>
+                  </CardContent>
+                </Card>
+
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {/* Contatti */}
                   <Card>
