@@ -89,7 +89,13 @@ export default function ProfilePage() {
       const formData = new FormData();
       formData.append("logo", file);
 
-      const res = await fetch(`/api/resellers/${user.id}/logo`, {
+      // Determine endpoint based on user role
+      let endpoint = `/api/resellers/${user.id}/logo`;
+      if (user.role === 'repair_center') {
+        endpoint = `/api/repair-centers/${user.id}/logo`;
+      }
+
+      const res = await fetch(endpoint, {
         method: "POST",
         body: formData,
         credentials: "include",
@@ -123,7 +129,13 @@ export default function ProfilePage() {
     if (!user) return;
     
     try {
-      const res = await fetch(`/api/resellers/${user.id}/logo`, {
+      // Determine endpoint based on user role
+      let endpoint = `/api/resellers/${user.id}/logo`;
+      if (user.role === 'repair_center') {
+        endpoint = `/api/repair-centers/${user.id}/logo`;
+      }
+
+      const res = await fetch(endpoint, {
         method: "DELETE",
         credentials: "include",
       });
@@ -366,7 +378,7 @@ export default function ProfilePage() {
         </CardContent>
       </Card>
 
-      {user.role === "reseller" && (
+      {(user.role === "reseller" || user.role === "repair_center") && (
         <Card className="rounded-2xl">
           <CardHeader>
             <CardTitle className="flex flex-wrap items-center gap-2">
