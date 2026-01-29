@@ -29056,6 +29056,18 @@ export function registerRoutes(app: Express): Server {
         return res.status(400).json({ error: "Magazzino venditore non trovato" });
       }
       
+      
+      // Load seller's price list for "reseller" target (bulk load to avoid N+1)
+      const sellerPriceList = await storage.getPriceListForTarget(sellerResellerId, 'reseller');
+      const priceListMap = new Map<string, number>();
+      if (sellerPriceList) {
+        const priceListItems = await storage.listPriceListItems(sellerPriceList.id);
+        for (const pli of priceListItems) {
+          if (pli.productId) {
+            priceListMap.set(pli.productId, pli.priceCents);
+          }
+        }
+      }
       // Validate items and calculate totals
       let subtotal = 0;
       const validatedItems = [];
@@ -29084,7 +29096,11 @@ export function registerRoutes(app: Express): Server {
           return res.status(400).json({ error: `Quantità minima per ${product.name}: ${minQty}` });
         }
         
-        const unitPrice = product.marketplacePriceCents || product.unitPrice;
+        // Price priority: price_list > marketplacePriceCents > unitPrice
+        const priceListPrice = priceListMap.get(item.productId);
+        const unitPrice = priceListPrice !== undefined 
+          ? priceListPrice 
+          : (product.marketplacePriceCents || product.unitPrice);
         const totalPrice = unitPrice * item.quantity;
         subtotal += totalPrice;
         

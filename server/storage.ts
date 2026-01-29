@@ -1071,6 +1071,7 @@ export interface IStorage {
     availableStock: number;
     marketplacePrice: number;
     minQuantity: number;
+    priceSource?: string;
   }>>;
   listMarketplaceOrders(filters?: { buyerResellerId?: string; sellerResellerId?: string; status?: string }): Promise<MarketplaceOrder[]>;
   getMarketplaceOrder(id: string): Promise<MarketplaceOrder | undefined>;
@@ -9515,6 +9516,7 @@ export class DatabaseStorage implements IStorage {
     availableStock: number;
     marketplacePrice: number;
     minQuantity: number;
+    priceSource?: string;
   }>> {
     // Get all products that are marketplace-enabled from OTHER resellers
     const catalogProducts = await db
@@ -9536,6 +9538,54 @@ export class DatabaseStorage implements IStorage {
         not(eq(products.createdBy, buyerResellerId)) // Exclude buyer's own products
       ));
 
+    // Group products by seller to load price lists efficiently (avoid N+1)
+    const sellerIds = [...new Set(catalogProducts.map(p => p.sellerResellerId))];
+    
+    // TRUE BULK LOAD: Load all seller price lists for target "reseller" in 2 queries total
+    const sellerPriceListMaps = new Map<string, Map<string, number>>();
+    
+    if (sellerIds.length > 0) {
+      // Query 1: Get all price lists for all sellers with target "reseller"
+      const allPriceLists = await db.select()
+        .from(priceLists)
+        .where(and(
+          inArray(priceLists.ownerId, sellerIds),
+          eq(priceLists.targetAudience, 'reseller'),
+          eq(priceLists.isActive, true)
+        ));
+      
+      if (allPriceLists.length > 0) {
+        const priceListIds = allPriceLists.map(pl => pl.id);
+        const ownerToListId = new Map<string, string>();
+        for (const pl of allPriceLists) {
+          ownerToListId.set(pl.ownerId, pl.id);
+        }
+        
+        // Query 2: Get all price list items for all these price lists
+        const allItems = await db.select()
+          .from(priceListItems)
+          .where(inArray(priceListItems.priceListId, priceListIds));
+        
+        // Build seller -> product -> price map
+        const listIdToOwner = new Map<string, string>();
+        for (const pl of allPriceLists) {
+          listIdToOwner.set(pl.id, pl.ownerId);
+        }
+        
+        for (const item of allItems) {
+          if (item.productId) {
+            const ownerId = listIdToOwner.get(item.priceListId);
+            if (ownerId) {
+              if (!sellerPriceListMaps.has(ownerId)) {
+                sellerPriceListMaps.set(ownerId, new Map());
+              }
+              sellerPriceListMaps.get(ownerId)!.set(item.productId, item.priceCents);
+            }
+          }
+        }
+      }
+    }
+
     // For each product, get the available stock from the seller's warehouse
     const result = [];
     for (const item of catalogProducts) {
@@ -9548,13 +9598,29 @@ export class DatabaseStorage implements IStorage {
       
       const availableStock = stockItem?.quantity || 0;
       if (availableStock > 0) {
+        // Check price list first, then fall back to marketplace price
+        const sellerPriceMap = sellerPriceListMaps.get(item.sellerResellerId);
+        const priceListPrice = sellerPriceMap?.get(item.product.id);
+        
+        let marketplacePrice: number;
+        let priceSource: string;
+        
+        if (priceListPrice !== undefined) {
+          marketplacePrice = priceListPrice;
+          priceSource = 'price_list';
+        } else {
+          marketplacePrice = item.product.marketplacePriceCents || item.product.unitPrice;
+          priceSource = item.product.marketplacePriceCents ? 'marketplace_price' : 'unit_price';
+        }
+        
         result.push({
           product: item.product,
           sellerResellerId: item.sellerResellerId,
           sellerName: item.sellerName || 'Rivenditore',
           availableStock,
-          marketplacePrice: item.product.marketplacePriceCents || item.product.unitPrice,
+          marketplacePrice,
           minQuantity: item.product.marketplaceMinQuantity || 1,
+          priceSource,
         });
       }
     }

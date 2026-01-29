@@ -6842,6 +6842,7 @@ export const priceListTargetAudienceEnum = pgEnum("price_list_target_audience", 
   "sub_reseller",
   "repair_center",
   "customer",
+  "reseller",
   "all",
 ]);
 
