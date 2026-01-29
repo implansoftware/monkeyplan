@@ -68,7 +68,6 @@ export default function PriceListDetail() {
   const [itemType, setItemType] = useState<"product" | "service">("product");
   const [selectedId, setSelectedId] = useState("");
   const [priceCents, setPriceCents] = useState("");
-  const [costPriceCents, setCostPriceCents] = useState("");
 
   const { data: priceList, isLoading } = useQuery<PriceListWithItems>({
     queryKey: ["/api/price-lists", listId],
@@ -129,7 +128,6 @@ export default function PriceListDetail() {
     setShowAddDialog(false);
     setSelectedId("");
     setPriceCents("");
-    setCostPriceCents("");
     setItemType("product");
   };
 
@@ -142,10 +140,6 @@ export default function PriceListDetail() {
     const data: any = {
       priceCents: Math.round(parseFloat(priceCents) * 100),
     };
-    
-    if (costPriceCents) {
-      data.costPriceCents = Math.round(parseFloat(costPriceCents) * 100);
-    }
     
     if (itemType === "product") {
       data.productId = selectedId;
@@ -162,10 +156,6 @@ export default function PriceListDetail() {
     const data: any = {
       priceCents: Math.round(parseFloat(priceCents) * 100),
     };
-    
-    if (costPriceCents) {
-      data.costPriceCents = Math.round(parseFloat(costPriceCents) * 100);
-    }
     
     updateItemMutation.mutate({ id: editingItem.id, data });
   };
@@ -202,6 +192,14 @@ export default function PriceListDetail() {
     if (item.serviceItemId) {
       const service = services?.find(s => s.id === item.serviceItemId);
       return service?.defaultPriceCents || null;
+    }
+    return null;
+  };
+
+  const getItemCost = (item: PriceListItem) => {
+    if (item.productId) {
+      const product = products?.find(p => p.id === item.productId);
+      return product?.costPrice || null;
     }
     return null;
   };
@@ -301,6 +299,7 @@ export default function PriceListDetail() {
                 {filteredItems.map((item) => {
                   const imageUrl = getItemImage(item);
                   const originalPrice = getItemOriginalPrice(item);
+                  const costPrice = getItemCost(item);
                   const isProduct = getItemType(item) === "product";
                   return (
                   <TableRow key={item.id} data-testid={`row-item-${item.id}`}>
@@ -329,7 +328,7 @@ export default function PriceListDetail() {
                       {originalPrice ? formatCurrency(originalPrice) : "-"}
                     </TableCell>
                     <TableCell className="text-right text-muted-foreground">
-                      {item.costPriceCents ? formatCurrency(item.costPriceCents) : "-"}
+                      {costPrice ? formatCurrency(costPrice) : "-"}
                     </TableCell>
                     <TableCell className="text-right font-medium">
                       {formatCurrency(item.priceCents)}
@@ -341,7 +340,6 @@ export default function PriceListDetail() {
                           variant="ghost"
                           onClick={() => {
                             setPriceCents((item.priceCents / 100).toFixed(2));
-                            setCostPriceCents(item.costPriceCents ? (item.costPriceCents / 100).toFixed(2) : "");
                             setEditingItem(item);
                           }}
                           data-testid={`button-edit-${item.id}`}
@@ -460,31 +458,17 @@ export default function PriceListDetail() {
               </div>
             )}
             
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="costPrice">Prezzo Costo</Label>
-                <Input
-                  id="costPrice"
-                  type="number"
-                  step="0.01"
-                  placeholder="0.00"
-                  value={costPriceCents}
-                  onChange={(e) => setCostPriceCents(e.target.value)}
-                  data-testid="input-cost-price"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="price">Prezzo Vendita *</Label>
-                <Input
-                  id="price"
-                  type="number"
-                  step="0.01"
-                  placeholder="0.00"
-                  value={priceCents}
-                  onChange={(e) => setPriceCents(e.target.value)}
-                  data-testid="input-price"
-                />
-              </div>
+            <div className="space-y-2">
+              <Label htmlFor="price">Prezzo Vendita *</Label>
+              <Input
+                id="price"
+                type="number"
+                step="0.01"
+                placeholder="0.00"
+                value={priceCents}
+                onChange={(e) => setPriceCents(e.target.value)}
+                data-testid="input-price"
+              />
             </div>
           </div>
           <DialogFooter>
@@ -509,29 +493,16 @@ export default function PriceListDetail() {
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="edit-costPrice">Prezzo Costo</Label>
-                <Input
-                  id="edit-costPrice"
-                  type="number"
-                  step="0.01"
-                  value={costPriceCents}
-                  onChange={(e) => setCostPriceCents(e.target.value)}
-                  data-testid="input-edit-cost-price"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="edit-price">Prezzo Vendita *</Label>
-                <Input
-                  id="edit-price"
-                  type="number"
-                  step="0.01"
-                  value={priceCents}
-                  onChange={(e) => setPriceCents(e.target.value)}
-                  data-testid="input-edit-price"
-                />
-              </div>
+            <div className="space-y-2">
+              <Label htmlFor="edit-price">Prezzo Vendita *</Label>
+              <Input
+                id="edit-price"
+                type="number"
+                step="0.01"
+                value={priceCents}
+                onChange={(e) => setPriceCents(e.target.value)}
+                data-testid="input-edit-price"
+              />
             </div>
           </div>
           <DialogFooter>
