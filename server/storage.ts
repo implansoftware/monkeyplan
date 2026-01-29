@@ -1025,6 +1025,7 @@ export interface IStorage {
     adminStock: number;
     b2bPrice: number;
     minimumOrderQuantity: number;
+    priceSource: string;
   }>>;
   
   // B2B Returns (Resi ordini B2B)
@@ -9251,25 +9252,60 @@ export class DatabaseStorage implements IStorage {
       adminStock: number;
       b2bPrice: number;
       minimumOrderQuantity: number;
+      priceSource: string;
     }> = [];
+    
+    // Get admin's price list for sub_reseller (reseller buying from admin) - BULK QUERY
+    const adminUser = await db.select().from(users).where(eq(users.role, 'admin')).limit(1);
+    const adminId = adminUser[0]?.id;
+    const priceList = adminId ? await this.getPriceListForTarget(adminId, 'sub_reseller') : null;
+    
+    // Bulk load all price list items to avoid N+1 queries
+    const priceListItemsMap = new Map<string, PriceListItem>();
+    if (priceList) {
+      const allPriceListItems = await this.listPriceListItems(priceList.id);
+      for (const pli of allPriceListItems) {
+        if (pli.productId && pli.isActive) {
+          priceListItemsMap.set(pli.productId, pli);
+        }
+      }
+    }
     
     for (const product of productsWithStock) {
       const stock = stockMap.get(product.id) || 0;
-      
       const assignment = assignmentMap.get(product.id);
       
-      // B2B price priority: assignment.b2bPriceCents > product.costPrice > product.unitPrice * 0.7
-      const b2bPrice = assignment?.b2bPriceCents 
-        ?? product.costPrice 
-        ?? Math.round((product.unitPrice || 0) * 0.7);
+      // B2B price priority: 
+      // 1. Price list for sub_reseller (new system)
+      // 2. assignment.b2bPriceCents (old system) 
+      // 3. product.costPrice 
+      // 4. product.unitPrice * 0.7
+      let b2bPrice: number;
+      let priceSource = 'fallback';
+      
+      // Check price list first (from pre-loaded map)
+      const priceListItem = priceListItemsMap.get(product.id);
+      if (priceListItem) {
+        b2bPrice = priceListItem.priceCents;
+        priceSource = 'price_list';
+      }
+      
+      // Fallback to old system
+      if (priceSource === 'fallback') {
+        b2bPrice = assignment?.b2bPriceCents 
+          ?? product.costPrice 
+          ?? Math.round((product.unitPrice || 0) * 0.7);
+        priceSource = assignment?.b2bPriceCents ? 'assignment' : (product.costPrice ? 'cost_price' : 'calculated');
+      }
       
       const minimumOrderQuantity = assignment?.minimumOrderQuantity ?? 1;
       
       catalog.push({
         product,
         adminStock: stock,
-        b2bPrice,
+        b2bPrice: b2bPrice!,
         minimumOrderQuantity,
+        priceSource,
       });
     }
     

@@ -29513,19 +29513,46 @@ export function registerRoutes(app: Express): Server {
       const resellerWarehouse = await storage.ensureDefaultWarehouse('reseller', repairCenter.resellerId, 'Reseller');
       const stock = await storage.listWarehouseStock(resellerWarehouse.id);
       
+      // Get reseller's price list for repair_center - BULK QUERY
+      const priceList = await storage.getPriceListForTarget(repairCenter.resellerId, "repair_center");
+      
+      // Bulk load all price list items to avoid N+1 queries
+      const priceListItemsMap = new Map<string, { priceCents: number }>();
+      if (priceList) {
+        const allPriceListItems = await storage.listPriceListItems(priceList.id);
+        for (const pli of allPriceListItems) {
+          if (pli.productId && pli.isActive) {
+            priceListItemsMap.set(pli.productId, { priceCents: pli.priceCents });
+          }
+        }
+      }
+      
       // Build catalog from reseller stock
       const catalog = await Promise.all(stock.filter(s => s.quantity > 0).map(async (s) => {
         const product = await storage.getProduct(s.productId);
         if (!product || !product.isActive) return null;
         
-        // Get B2B price for repair centers (use costPrice or 80% of unitPrice)
-        const b2bPrice = product.costPrice || Math.round((product.unitPrice || 0) * 0.8);
+        // B2B price priority: price_list > costPrice > unitPrice * 0.8
+        let b2bPrice: number;
+        let priceSource = 'fallback';
+        
+        const priceListItem = priceListItemsMap.get(product.id);
+        if (priceListItem) {
+          b2bPrice = priceListItem.priceCents;
+          priceSource = 'price_list';
+        }
+        
+        if (priceSource === 'fallback') {
+          b2bPrice = product.costPrice || Math.round((product.unitPrice || 0) * 0.8);
+          priceSource = product.costPrice ? 'cost_price' : 'calculated';
+        }
         
         return {
           product,
           resellerStock: s.quantity,
-          b2bPrice,
+          b2bPrice: b2bPrice!,
           minimumOrderQuantity: 1,
+          priceSource,
         };
       }));
       
@@ -29612,6 +29639,20 @@ export function registerRoutes(app: Express): Server {
       let totalCents = 0;
       const orderItems: Array<{ productId: string; quantity: number; unitPriceCents: number; productName: string }> = [];
       
+      // Get reseller's price list for repair_center (RC buying from reseller) - BULK QUERY
+      const priceList = await storage.getPriceListForTarget(repairCenter.resellerId, "repair_center");
+      
+      // Bulk load all price list items to avoid N+1 queries
+      const priceListItemsMap = new Map<string, { priceCents: number }>();
+      if (priceList) {
+        const allPriceListItems = await storage.listPriceListItems(priceList.id);
+        for (const pli of allPriceListItems) {
+          if (pli.productId && pli.isActive) {
+            priceListItemsMap.set(pli.productId, { priceCents: pli.priceCents });
+          }
+        }
+      }
+      
       for (const item of items) {
         const product = await storage.getProduct(item.productId);
         if (!product || !product.isActive) {
@@ -29623,7 +29664,15 @@ export function registerRoutes(app: Express): Server {
           return res.status(400).json({ error: `Stock insufficiente per ${product.name}: disponibili ${availableStock}` });
         }
         
-        const b2bPrice = product.costPrice || Math.round((product.unitPrice || 0) * 0.8);
+        // B2B price priority: price_list > product.costPrice > product.unitPrice * 0.8
+        let b2bPrice: number;
+        const priceListItem = priceListItemsMap.get(item.productId);
+        if (priceListItem) {
+          b2bPrice = priceListItem.priceCents;
+        } else {
+          b2bPrice = product.costPrice || Math.round((product.unitPrice || 0) * 0.8);
+        }
+        
         const lineTotalCents = b2bPrice * item.quantity;
         totalCents += lineTotalCents;
         
