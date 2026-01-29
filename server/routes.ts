@@ -25801,20 +25801,14 @@ export function registerRoutes(app: Express): Server {
         
         // Applica listino prezzi customer se utente loggato è cliente del reseller
         const user = req.user;
-        console.log("[CART DEBUG] user:", user?.id, "role:", user?.role, "user.resellerId:", user?.resellerId, "resellerId param:", resellerId);
         if (user && user.role === "customer" && user.resellerId === resellerId) {
           const priceList = await storage.getPriceListForTarget(resellerId, "customer");
-          console.log("[CART DEBUG] priceList found:", priceList?.id, "for reseller:", resellerId);
           if (priceList) {
             const priceListItem = await storage.getPriceForItem(priceList.id, productId, undefined);
-            console.log("[CART DEBUG] priceListItem:", priceListItem?.priceCents, "isActive:", priceListItem?.isActive);
             if (priceListItem && priceListItem.isActive) {
               effectivePrice = priceListItem.priceCents;
-              console.log("[CART DEBUG] Applied price list price:", effectivePrice);
             }
           }
-        } else {
-          console.log("[CART DEBUG] Condition not met - user exists:", !!user, "role:", user?.role, "user.resellerId:", user?.resellerId, "resellerId:", resellerId);
         }
         
         const unitPrice = effectivePrice / 100; // Converti in euro
