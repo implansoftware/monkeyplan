@@ -31200,13 +31200,20 @@ export function registerRoutes(app: Express): Server {
   app.patch("/api/reseller/hr/sick-leaves/:id", requireRole("reseller", "reseller_staff"), async (req, res) => {
     try {
       if (!req.user) return res.status(401).json({ error: "Non autenticato" });
-      const sickLeave = await storage.updateHrSickLeave(req.params.id, req.body);
+      const { startDate, endDate, certificateNumber, inpsProtocol, notes, status } = req.body;
+      const updateData: any = {};
+      if (startDate !== undefined) updateData.startDate = new Date(startDate);
+      if (endDate !== undefined) updateData.endDate = endDate ? new Date(endDate) : null;
+      if (certificateNumber !== undefined) updateData.certificateNumber = certificateNumber;
+      if (inpsProtocol !== undefined) updateData.inpsProtocol = inpsProtocol;
+      if (notes !== undefined) updateData.notes = notes;
+      if (status !== undefined) updateData.status = status;
+      const sickLeave = await storage.updateHrSickLeave(req.params.id, updateData);
       res.json(sickLeave);
     } catch (error: any) {
       res.status(500).json({ error: error.message });
     }
   });
-
   // Upload certificato malattia
   app.post("/api/reseller/hr/sick-leaves/:id/certificate", requireRole("reseller", "reseller_staff"), upload.single("certificate"), async (req, res) => {
     try {
