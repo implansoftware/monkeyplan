@@ -50,6 +50,7 @@ import {
   Link2,
   Bell,
   ListOrdered,
+  Calculator,
 } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { useState, Fragment, useMemo } from "react";
@@ -251,6 +252,21 @@ const menuItems = {
     { title: "Richieste Remote", url: "/reseller/remote-requests", icon: Send, group: "Centri & Riparazioni" },
     { title: "Notifiche", url: "/reseller/notifications", icon: Bell, group: "Sub-Reseller" },
     { title: "Integrazioni", url: "/reseller/integrations", icon: Plug, group: "Account" },
+    { title: "Profilo", url: "/profile", icon: UserCircle, group: "Account" },
+  ],
+  sub_reseller: [
+    { title: "Dashboard", url: "/reseller", icon: LayoutDashboard, group: "Dashboard" },
+    { title: "Catalogo Servizi", url: "/sub-reseller/service-catalog", icon: Wrench, group: "Servizi" },
+    { title: "Panoramica POS", url: "/reseller/pos", icon: Receipt, group: "POS" },
+    { title: "Storico Vendite POS", url: "/reseller/pos/sales-history", icon: Clock, group: "POS" },
+    { title: "Sessioni POS", url: "/reseller/pos/sessions", icon: FileText, group: "POS" },
+    { title: "Registratori", url: "/reseller/pos/registers", icon: Calculator, group: "POS" },
+    { title: "Lavorazioni", url: "/reseller/repairs", icon: Wrench, group: "Centri & Riparazioni" },
+    { title: "Centri Riparazione", url: "/reseller/repair-centers", icon: Building, group: "Centri & Riparazioni" },
+    { title: "Richieste Remote", url: "/reseller/remote-requests", icon: Send, group: "Centri & Riparazioni" },
+    { title: "Il Mio Magazzino", url: "/reseller/warehouses", icon: Warehouse, group: "Magazzino" },
+    { title: "Analytics Garanzie", url: "/reseller/warranty-analytics", icon: BarChart3, group: "Garanzie" },
+    { title: "Fatture", url: "/reseller/invoices", icon: FileText, group: "Fatturazione" },
     { title: "Profilo", url: "/profile", icon: UserCircle, group: "Account" },
   ],
   repair_center: [

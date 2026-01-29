@@ -36,6 +36,8 @@ function HomePage() {
     case "reseller":
     case "reseller_staff":
       return <Redirect to="/reseller" />;
+    case "sub_reseller":
+      return <Redirect to="/sub-reseller/service-catalog" />;
     case "repair_center":
       return <Redirect to="/repair-center" />;
     case "customer":
@@ -166,6 +168,7 @@ import ResellerServiceCatalog from "@/pages/reseller/service-catalog";
 import ResellerTeam from "@/pages/reseller/team";
 import ResellerServiceOrders from "@/pages/reseller/service-orders";
 import ResellerSubResellers from "@/pages/reseller/sub-resellers";
+import SubResellerServiceCatalog from "@/pages/sub-reseller/service-catalog";
 import ResellerDeviceCatalog from "@/pages/reseller/device-catalog";
 import ResellerRepairDetail from "@/pages/reseller/repair-detail";
 import ResellerSmartphoneCatalog from "@/pages/reseller/smartphone-catalog";
@@ -381,97 +384,98 @@ function Router() {
       <ProtectedRoute path="/admin/warranty-analytics" component={AdminWarrantyAnalytics} />
       
       {/* Reseller routes - accessible by reseller and reseller_staff */}
-      <ProtectedRoute path="/reseller" component={ResellerDashboard} allowedRoles={["reseller", "reseller_staff"]} />
-      <ProtectedRoute path="/reseller/orders" component={ResellerOrders} allowedRoles={["reseller", "reseller_staff"]} />
-      <ProtectedRoute path="/reseller/customers/:id" component={ResellerCustomerDetail} allowedRoles={["reseller", "reseller_staff"]} />
-      <ProtectedRoute path="/reseller/customers" component={ResellerCustomers} allowedRoles={["reseller", "reseller_staff"]} />
-      <ProtectedRoute path="/reseller/repair-centers" component={ResellerRepairCenters} allowedRoles={["reseller", "reseller_staff"]} />
-      <ProtectedRoute path="/reseller/repair-center-schedules" component={ResellerRepairCenterSchedules} allowedRoles={["reseller", "reseller_staff"]} />
-      <ProtectedRoute path="/reseller/appointments" component={ResellerAppointments} allowedRoles={["reseller", "reseller_staff"]} />
-      <ProtectedRoute path="/reseller/new-repair" component={ResellerNewRepair} allowedRoles={["reseller", "reseller_staff"]} />
-      <ProtectedRoute path="/reseller/repairs/:id" component={ResellerRepairDetail} allowedRoles={["reseller", "reseller_staff"]} />
-      <ProtectedRoute path="/reseller/repairs" component={ResellerRepairs} allowedRoles={["reseller", "reseller_staff"]} />
-      <ProtectedRoute path="/reseller/diagnostics" component={DiagnosisList} allowedRoles={["reseller", "reseller_staff"]} />
-      <ProtectedRoute path="/reseller/quotes" component={QuotesList} allowedRoles={["reseller", "reseller_staff"]} />
-      <ProtectedRoute path="/reseller/service-catalog" component={ResellerServiceCatalog} allowedRoles={["reseller", "reseller_staff"]} />
-      <ProtectedRoute path="/reseller/price-lists/:id" component={ResellerPriceListDetail} allowedRoles={["reseller", "reseller_staff"]} />
-      <ProtectedRoute path="/reseller/price-lists" component={ResellerPriceLists} allowedRoles={["reseller", "reseller_staff"]} />
-      <ProtectedRoute path="/reseller/warehouses" component={AdminWarehouses} allowedRoles={["reseller", "reseller_staff"]} />
-      <ProtectedRoute path="/reseller/network-warehouses" component={ResellerNetworkWarehouses} allowedRoles={["reseller", "reseller_staff"]} />
-      <ProtectedRoute path="/reseller/service-orders" component={ResellerServiceOrders} allowedRoles={["reseller", "reseller_staff"]} />
-      <ProtectedRoute path="/reseller/products" component={ResellerProducts} allowedRoles={["reseller", "reseller_staff"]} />
-      <ProtectedRoute path="/reseller/suppliers" component={ResellerSuppliers} allowedRoles={["reseller", "reseller_staff"]} />
-      <ProtectedRoute path="/reseller/supplier-orders" component={ResellerSupplierOrders} allowedRoles={["reseller", "reseller_staff"]} />
-      <ProtectedRoute path="/reseller/supplier-returns" component={ResellerSupplierReturns} allowedRoles={["reseller", "reseller_staff"]} />
-      <ProtectedRoute path="/reseller/tickets" component={ResellerTickets} allowedRoles={["reseller", "reseller_staff"]} />
-      <ProtectedRoute path="/reseller/tickets/:id" component={ResellerTicketDetail} allowedRoles={["reseller", "reseller_staff"]} />
-      <ProtectedRoute path="/reseller/notifications" component={ResellerNotifications} allowedRoles={["reseller", "reseller_staff"]} />
-      <ProtectedRoute path="/reseller/guide" component={ResellerGuide} allowedRoles={["reseller", "reseller_staff"]} />
+      <ProtectedRoute path="/reseller" component={ResellerDashboard} allowedRoles={["reseller", "reseller_staff", "sub_reseller"]} />
+      <ProtectedRoute path="/reseller/orders" component={ResellerOrders} allowedRoles={["reseller", "reseller_staff", "sub_reseller"]} />
+      <ProtectedRoute path="/reseller/customers/:id" component={ResellerCustomerDetail} allowedRoles={["reseller", "reseller_staff", "sub_reseller"]} />
+      <ProtectedRoute path="/reseller/customers" component={ResellerCustomers} allowedRoles={["reseller", "reseller_staff", "sub_reseller"]} />
+      <ProtectedRoute path="/reseller/repair-centers" component={ResellerRepairCenters} allowedRoles={["reseller", "reseller_staff", "sub_reseller"]} />
+      <ProtectedRoute path="/reseller/repair-center-schedules" component={ResellerRepairCenterSchedules} allowedRoles={["reseller", "reseller_staff", "sub_reseller"]} />
+      <ProtectedRoute path="/reseller/appointments" component={ResellerAppointments} allowedRoles={["reseller", "reseller_staff", "sub_reseller"]} />
+      <ProtectedRoute path="/reseller/new-repair" component={ResellerNewRepair} allowedRoles={["reseller", "reseller_staff", "sub_reseller"]} />
+      <ProtectedRoute path="/reseller/repairs/:id" component={ResellerRepairDetail} allowedRoles={["reseller", "reseller_staff", "sub_reseller"]} />
+      <ProtectedRoute path="/reseller/repairs" component={ResellerRepairs} allowedRoles={["reseller", "reseller_staff", "sub_reseller"]} />
+      <ProtectedRoute path="/reseller/diagnostics" component={DiagnosisList} allowedRoles={["reseller", "reseller_staff", "sub_reseller"]} />
+      <ProtectedRoute path="/reseller/quotes" component={QuotesList} allowedRoles={["reseller", "reseller_staff", "sub_reseller"]} />
+      <ProtectedRoute path="/reseller/service-catalog" component={ResellerServiceCatalog} allowedRoles={["reseller", "reseller_staff", "sub_reseller"]} />
+      <ProtectedRoute path="/reseller/price-lists/:id" component={ResellerPriceListDetail} allowedRoles={["reseller", "reseller_staff", "sub_reseller"]} />
+      <ProtectedRoute path="/reseller/price-lists" component={ResellerPriceLists} allowedRoles={["reseller", "reseller_staff", "sub_reseller"]} />
+      <ProtectedRoute path="/reseller/warehouses" component={AdminWarehouses} allowedRoles={["reseller", "reseller_staff", "sub_reseller"]} />
+      <ProtectedRoute path="/reseller/network-warehouses" component={ResellerNetworkWarehouses} allowedRoles={["reseller", "reseller_staff", "sub_reseller"]} />
+      <ProtectedRoute path="/reseller/service-orders" component={ResellerServiceOrders} allowedRoles={["reseller", "reseller_staff", "sub_reseller"]} />
+      <ProtectedRoute path="/reseller/products" component={ResellerProducts} allowedRoles={["reseller", "reseller_staff", "sub_reseller"]} />
+      <ProtectedRoute path="/reseller/suppliers" component={ResellerSuppliers} allowedRoles={["reseller", "reseller_staff", "sub_reseller"]} />
+      <ProtectedRoute path="/reseller/supplier-orders" component={ResellerSupplierOrders} allowedRoles={["reseller", "reseller_staff", "sub_reseller"]} />
+      <ProtectedRoute path="/reseller/supplier-returns" component={ResellerSupplierReturns} allowedRoles={["reseller", "reseller_staff", "sub_reseller"]} />
+      <ProtectedRoute path="/reseller/tickets" component={ResellerTickets} allowedRoles={["reseller", "reseller_staff", "sub_reseller"]} />
+      <ProtectedRoute path="/reseller/tickets/:id" component={ResellerTicketDetail} allowedRoles={["reseller", "reseller_staff", "sub_reseller"]} />
+      <ProtectedRoute path="/reseller/notifications" component={ResellerNotifications} allowedRoles={["reseller", "reseller_staff", "sub_reseller"]} />
+      <ProtectedRoute path="/reseller/guide" component={ResellerGuide} allowedRoles={["reseller", "reseller_staff", "sub_reseller"]} />
       <ProtectedRoute path="/reseller/pos" component={ResellerPosOverview} allowedRoles={["reseller", "reseller_staff", "sub_reseller"]} />
       <ProtectedRoute path="/reseller/pos/sales-history" component={ResellerPosSalesHistory} allowedRoles={["reseller", "reseller_staff", "sub_reseller"]} />
       <ProtectedRoute path="/reseller/pos/sessions" component={ResellerPosSessions} allowedRoles={["reseller", "reseller_staff", "sub_reseller"]} />
       <ProtectedRoute path="/reseller/pos/registers" component={ResellerPosRegisters} allowedRoles={["reseller", "reseller_staff", "sub_reseller"]} />
       <ProtectedRoute path="/reseller/pos/terminal/:repairCenterId/:registerId" component={ResellerPosTerminal} allowedRoles={["reseller", "reseller_staff", "sub_reseller"]} />
       <ProtectedRoute path="/reseller/pos/transaction/:id" component={ResellerPosTransactionDetail} allowedRoles={["reseller", "reseller_staff", "sub_reseller"]} />
-      <ProtectedRoute path="/reseller/utility" component={ResellerUtility} allowedRoles={["reseller", "reseller_staff"]} />
-      <ProtectedRoute path="/reseller/utility/suppliers" component={ResellerUtilitySuppliers} allowedRoles={["reseller", "reseller_staff"]} />
-      <ProtectedRoute path="/reseller/utility/services" component={ResellerUtilityServices} allowedRoles={["reseller", "reseller_staff"]} />
-      <ProtectedRoute path="/reseller/utility/practices/:id" component={ResellerUtilityPracticeDetail} allowedRoles={["reseller", "reseller_staff"]} />
-      <ProtectedRoute path="/reseller/utility/practices" component={ResellerUtilityPractices} allowedRoles={["reseller", "reseller_staff"]} />
-      <ProtectedRoute path="/reseller/utility/commissions" component={ResellerUtilityCommissions} allowedRoles={["reseller", "reseller_staff"]} />
-      <ProtectedRoute path="/reseller/utility/reports" component={ResellerUtilityReports} allowedRoles={["reseller", "reseller_staff"]} />
-      <ProtectedRoute path="/reseller/invoices" component={ResellerInvoices} allowedRoles={["reseller", "reseller_staff"]} />
-      <ProtectedRoute path="/reseller/sales" component={ResellerSales} allowedRoles={["reseller", "reseller_staff"]} />
+      <ProtectedRoute path="/reseller/utility" component={ResellerUtility} allowedRoles={["reseller", "reseller_staff", "sub_reseller"]} />
+      <ProtectedRoute path="/reseller/utility/suppliers" component={ResellerUtilitySuppliers} allowedRoles={["reseller", "reseller_staff", "sub_reseller"]} />
+      <ProtectedRoute path="/reseller/utility/services" component={ResellerUtilityServices} allowedRoles={["reseller", "reseller_staff", "sub_reseller"]} />
+      <ProtectedRoute path="/reseller/utility/practices/:id" component={ResellerUtilityPracticeDetail} allowedRoles={["reseller", "reseller_staff", "sub_reseller"]} />
+      <ProtectedRoute path="/reseller/utility/practices" component={ResellerUtilityPractices} allowedRoles={["reseller", "reseller_staff", "sub_reseller"]} />
+      <ProtectedRoute path="/reseller/utility/commissions" component={ResellerUtilityCommissions} allowedRoles={["reseller", "reseller_staff", "sub_reseller"]} />
+      <ProtectedRoute path="/reseller/utility/reports" component={ResellerUtilityReports} allowedRoles={["reseller", "reseller_staff", "sub_reseller"]} />
+      <ProtectedRoute path="/reseller/invoices" component={ResellerInvoices} allowedRoles={["reseller", "reseller_staff", "sub_reseller"]} />
+      <ProtectedRoute path="/reseller/sales" component={ResellerSales} allowedRoles={["reseller", "reseller_staff", "sub_reseller"]} />
       <ProtectedRoute path="/reseller/warranty-products" component={ResellerWarrantyProducts} allowedRoles={["reseller"]} />
-      <ProtectedRoute path="/reseller/reports" component={ResellerReports} allowedRoles={["reseller", "reseller_staff"]} />
+      <ProtectedRoute path="/reseller/reports" component={ResellerReports} allowedRoles={["reseller", "reseller_staff", "sub_reseller"]} />
       <ProtectedRoute path="/reseller/warranty-analytics" component={ResellerWarrantyAnalytics} allowedRoles={["reseller", "sub_reseller"]} />
-      <ProtectedRoute path="/reseller/sifar/settings" component={ResellerSifarSettings} allowedRoles={["reseller", "reseller_staff"]} />
-      <ProtectedRoute path="/reseller/sifar/catalog" component={ResellerSifarCatalog} allowedRoles={["reseller", "reseller_staff"]} />
-      <ProtectedRoute path="/reseller/sifar/cart" component={ResellerSifarCart} allowedRoles={["reseller", "reseller_staff"]} />
-      <ProtectedRoute path="/reseller/foneday/settings" component={ResellerFonedaySettings} allowedRoles={["reseller", "reseller_staff"]} />
-      <ProtectedRoute path="/reseller/foneday/catalog" component={ResellerFonedayCatalog} allowedRoles={["reseller", "reseller_staff"]} />
-      <ProtectedRoute path="/reseller/foneday/cart" component={ResellerFonedayCart} allowedRoles={["reseller", "reseller_staff"]} />
-      <ProtectedRoute path="/reseller/mobilesentrix/settings" component={ResellerMobilesentrixSettings} allowedRoles={["reseller", "reseller_staff"]} />
-      <ProtectedRoute path="/reseller/mobilesentrix/catalog" component={ResellerMobilesentrixCatalog} allowedRoles={["reseller", "reseller_staff"]} />
-      <ProtectedRoute path="/reseller/mobilesentrix/cart" component={ResellerMobilesentrixCart} allowedRoles={["reseller", "reseller_staff"]} />
-      <ProtectedRoute path="/reseller/mobilesentrix/orders" component={ResellerMobilesentrixOrders} allowedRoles={["reseller", "reseller_staff"]} />
-      <ProtectedRoute path="/reseller/trovausati/settings" component={ResellerTrovausatiSettings} allowedRoles={["reseller", "reseller_staff"]} />
-      <ProtectedRoute path="/reseller/trovausati/marketplace" component={ResellerTrovausatiMarketplace} allowedRoles={["reseller", "reseller_staff"]} />
-      <ProtectedRoute path="/reseller/trovausati/valutatore" component={ResellerTrovausatiValutatore} allowedRoles={["reseller", "reseller_staff"]} />
-      <ProtectedRoute path="/reseller/sibill/settings" component={ResellerSibillSettings} allowedRoles={["reseller", "reseller_staff"]} />
-      <ProtectedRoute path="/reseller/integrations" component={ResellerIntegrations} allowedRoles={["reseller", "reseller_staff"]} />
+      <ProtectedRoute path="/reseller/sifar/settings" component={ResellerSifarSettings} allowedRoles={["reseller", "reseller_staff", "sub_reseller"]} />
+      <ProtectedRoute path="/reseller/sifar/catalog" component={ResellerSifarCatalog} allowedRoles={["reseller", "reseller_staff", "sub_reseller"]} />
+      <ProtectedRoute path="/reseller/sifar/cart" component={ResellerSifarCart} allowedRoles={["reseller", "reseller_staff", "sub_reseller"]} />
+      <ProtectedRoute path="/reseller/foneday/settings" component={ResellerFonedaySettings} allowedRoles={["reseller", "reseller_staff", "sub_reseller"]} />
+      <ProtectedRoute path="/reseller/foneday/catalog" component={ResellerFonedayCatalog} allowedRoles={["reseller", "reseller_staff", "sub_reseller"]} />
+      <ProtectedRoute path="/reseller/foneday/cart" component={ResellerFonedayCart} allowedRoles={["reseller", "reseller_staff", "sub_reseller"]} />
+      <ProtectedRoute path="/reseller/mobilesentrix/settings" component={ResellerMobilesentrixSettings} allowedRoles={["reseller", "reseller_staff", "sub_reseller"]} />
+      <ProtectedRoute path="/reseller/mobilesentrix/catalog" component={ResellerMobilesentrixCatalog} allowedRoles={["reseller", "reseller_staff", "sub_reseller"]} />
+      <ProtectedRoute path="/reseller/mobilesentrix/cart" component={ResellerMobilesentrixCart} allowedRoles={["reseller", "reseller_staff", "sub_reseller"]} />
+      <ProtectedRoute path="/reseller/mobilesentrix/orders" component={ResellerMobilesentrixOrders} allowedRoles={["reseller", "reseller_staff", "sub_reseller"]} />
+      <ProtectedRoute path="/reseller/trovausati/settings" component={ResellerTrovausatiSettings} allowedRoles={["reseller", "reseller_staff", "sub_reseller"]} />
+      <ProtectedRoute path="/reseller/trovausati/marketplace" component={ResellerTrovausatiMarketplace} allowedRoles={["reseller", "reseller_staff", "sub_reseller"]} />
+      <ProtectedRoute path="/reseller/trovausati/valutatore" component={ResellerTrovausatiValutatore} allowedRoles={["reseller", "reseller_staff", "sub_reseller"]} />
+      <ProtectedRoute path="/reseller/sibill/settings" component={ResellerSibillSettings} allowedRoles={["reseller", "reseller_staff", "sub_reseller"]} />
+      <ProtectedRoute path="/reseller/integrations" component={ResellerIntegrations} allowedRoles={["reseller", "reseller_staff", "sub_reseller"]} />
       <ProtectedRoute path="/reseller/team" component={ResellerTeam} allowedRoles={["reseller"]} />
       <ProtectedRoute path="/reseller/sub-resellers" component={ResellerSubResellers} allowedRoles={["reseller"]} />
-      <ProtectedRoute path="/reseller/device-catalog" component={ResellerDeviceCatalog} allowedRoles={["reseller", "reseller_staff"]} />
-      <ProtectedRoute path="/reseller/dispositivi" component={ResellerSmartphoneCatalog} allowedRoles={["reseller", "reseller_staff"]} />
-      <ProtectedRoute path="/reseller/accessory-catalog" component={ResellerAccessoryCatalog} allowedRoles={["reseller", "reseller_staff"]} />
-      <ProtectedRoute path="/reseller/shop-catalog" component={ResellerShopCatalog} allowedRoles={["reseller", "reseller_staff"]} />
-      <ProtectedRoute path="/reseller/sales-orders/:id" component={ResellerSalesOrders} allowedRoles={["reseller", "reseller_staff"]} />
-      <ProtectedRoute path="/reseller/sales-orders" component={ResellerSalesOrders} allowedRoles={["reseller", "reseller_staff"]} />
-      <ProtectedRoute path="/reseller/shipments/:id" component={ResellerShipments} allowedRoles={["reseller", "reseller_staff"]} />
-      <ProtectedRoute path="/reseller/shipments" component={ResellerShipments} allowedRoles={["reseller", "reseller_staff"]} />
-      <ProtectedRoute path="/reseller/payments" component={ResellerPayments} allowedRoles={["reseller", "reseller_staff"]} />
-      <ProtectedRoute path="/reseller/sales-returns" component={ResellerSalesReturns} allowedRoles={["reseller", "reseller_staff"]} />
-      <ProtectedRoute path="/reseller/b2b-catalog" component={ResellerB2BCatalog} allowedRoles={["reseller", "reseller_staff"]} />
-      <ProtectedRoute path="/reseller/b2b-orders" component={ResellerB2BOrders} allowedRoles={["reseller", "reseller_staff"]} />
-      <ProtectedRoute path="/reseller/b2b-returns" component={ResellerB2BReturns} allowedRoles={["reseller", "reseller_staff"]} />
-      <ProtectedRoute path="/reseller/rc-b2b-orders" component={ResellerRCB2BOrders} allowedRoles={["reseller", "reseller_staff"]} />
-      <ProtectedRoute path="/reseller/marketplace" component={ResellerMarketplace} allowedRoles={["reseller", "reseller_staff"]} />
-      <ProtectedRoute path="/reseller/marketplace-orders" component={ResellerMarketplaceOrders} allowedRoles={["reseller", "reseller_staff"]} />
-      <ProtectedRoute path="/reseller/marketplace-sales" component={ResellerMarketplaceSales} allowedRoles={["reseller", "reseller_staff"]} />
+      <ProtectedRoute path="/sub-reseller/service-catalog" component={SubResellerServiceCatalog} allowedRoles={["sub_reseller"]} />
+      <ProtectedRoute path="/reseller/device-catalog" component={ResellerDeviceCatalog} allowedRoles={["reseller", "reseller_staff", "sub_reseller"]} />
+      <ProtectedRoute path="/reseller/dispositivi" component={ResellerSmartphoneCatalog} allowedRoles={["reseller", "reseller_staff", "sub_reseller"]} />
+      <ProtectedRoute path="/reseller/accessory-catalog" component={ResellerAccessoryCatalog} allowedRoles={["reseller", "reseller_staff", "sub_reseller"]} />
+      <ProtectedRoute path="/reseller/shop-catalog" component={ResellerShopCatalog} allowedRoles={["reseller", "reseller_staff", "sub_reseller"]} />
+      <ProtectedRoute path="/reseller/sales-orders/:id" component={ResellerSalesOrders} allowedRoles={["reseller", "reseller_staff", "sub_reseller"]} />
+      <ProtectedRoute path="/reseller/sales-orders" component={ResellerSalesOrders} allowedRoles={["reseller", "reseller_staff", "sub_reseller"]} />
+      <ProtectedRoute path="/reseller/shipments/:id" component={ResellerShipments} allowedRoles={["reseller", "reseller_staff", "sub_reseller"]} />
+      <ProtectedRoute path="/reseller/shipments" component={ResellerShipments} allowedRoles={["reseller", "reseller_staff", "sub_reseller"]} />
+      <ProtectedRoute path="/reseller/payments" component={ResellerPayments} allowedRoles={["reseller", "reseller_staff", "sub_reseller"]} />
+      <ProtectedRoute path="/reseller/sales-returns" component={ResellerSalesReturns} allowedRoles={["reseller", "reseller_staff", "sub_reseller"]} />
+      <ProtectedRoute path="/reseller/b2b-catalog" component={ResellerB2BCatalog} allowedRoles={["reseller", "reseller_staff", "sub_reseller"]} />
+      <ProtectedRoute path="/reseller/b2b-orders" component={ResellerB2BOrders} allowedRoles={["reseller", "reseller_staff", "sub_reseller"]} />
+      <ProtectedRoute path="/reseller/b2b-returns" component={ResellerB2BReturns} allowedRoles={["reseller", "reseller_staff", "sub_reseller"]} />
+      <ProtectedRoute path="/reseller/rc-b2b-orders" component={ResellerRCB2BOrders} allowedRoles={["reseller", "reseller_staff", "sub_reseller"]} />
+      <ProtectedRoute path="/reseller/marketplace" component={ResellerMarketplace} allowedRoles={["reseller", "reseller_staff", "sub_reseller"]} />
+      <ProtectedRoute path="/reseller/marketplace-orders" component={ResellerMarketplaceOrders} allowedRoles={["reseller", "reseller_staff", "sub_reseller"]} />
+      <ProtectedRoute path="/reseller/marketplace-sales" component={ResellerMarketplaceSales} allowedRoles={["reseller", "reseller_staff", "sub_reseller"]} />
       <ProtectedRoute path="/reseller/remote-requests" component={ResellerRemoteRequests} allowedRoles={["reseller", "sub_reseller"]} />
-      <ProtectedRoute path="/reseller/sub-transfer-requests" component={SubResellerTransferRequests} allowedRoles={["reseller", "reseller_staff"]} />
-      <ProtectedRoute path="/reseller/incoming-transfer-requests" component={IncomingTransferRequests} allowedRoles={["reseller", "reseller_staff"]} />
-      <ProtectedRoute path="/reseller/transfer-requests" component={TransferRequests} allowedRoles={["reseller", "reseller_staff"]} />
+      <ProtectedRoute path="/reseller/sub-transfer-requests" component={SubResellerTransferRequests} allowedRoles={["reseller", "reseller_staff", "sub_reseller"]} />
+      <ProtectedRoute path="/reseller/incoming-transfer-requests" component={IncomingTransferRequests} allowedRoles={["reseller", "reseller_staff", "sub_reseller"]} />
+      <ProtectedRoute path="/reseller/transfer-requests" component={TransferRequests} allowedRoles={["reseller", "reseller_staff", "sub_reseller"]} />
       
       {/* Reseller HR routes */}
-      <ProtectedRoute path="/reseller/hr/attendance" component={ResellerHrAttendance} allowedRoles={["reseller", "reseller_staff"]} />
-      <ProtectedRoute path="/reseller/hr/leave-requests" component={ResellerHrLeaveRequests} allowedRoles={["reseller", "reseller_staff"]} />
-      <ProtectedRoute path="/reseller/hr/work-profiles" component={ResellerHrWorkProfiles} allowedRoles={["reseller", "reseller_staff"]} />
-      <ProtectedRoute path="/reseller/hr/expenses" component={ResellerHrExpenses} allowedRoles={["reseller", "reseller_staff"]} />
-      <ProtectedRoute path="/reseller/hr/sick-leave" component={ResellerHrSickLeave} allowedRoles={["reseller", "reseller_staff"]} />
-      <ProtectedRoute path="/reseller/hr/calendar" component={ResellerHrCalendar} allowedRoles={["reseller", "reseller_staff"]} />
-      <ProtectedRoute path="/reseller/hr" component={ResellerHrDashboard} allowedRoles={["reseller", "reseller_staff"]} />
+      <ProtectedRoute path="/reseller/hr/attendance" component={ResellerHrAttendance} allowedRoles={["reseller", "reseller_staff", "sub_reseller"]} />
+      <ProtectedRoute path="/reseller/hr/leave-requests" component={ResellerHrLeaveRequests} allowedRoles={["reseller", "reseller_staff", "sub_reseller"]} />
+      <ProtectedRoute path="/reseller/hr/work-profiles" component={ResellerHrWorkProfiles} allowedRoles={["reseller", "reseller_staff", "sub_reseller"]} />
+      <ProtectedRoute path="/reseller/hr/expenses" component={ResellerHrExpenses} allowedRoles={["reseller", "reseller_staff", "sub_reseller"]} />
+      <ProtectedRoute path="/reseller/hr/sick-leave" component={ResellerHrSickLeave} allowedRoles={["reseller", "reseller_staff", "sub_reseller"]} />
+      <ProtectedRoute path="/reseller/hr/calendar" component={ResellerHrCalendar} allowedRoles={["reseller", "reseller_staff", "sub_reseller"]} />
+      <ProtectedRoute path="/reseller/hr" component={ResellerHrDashboard} allowedRoles={["reseller", "reseller_staff", "sub_reseller"]} />
       
       {/* Repair Center routes */}
       <ProtectedRoute path="/repair-center" component={RepairCenterDashboard} />
