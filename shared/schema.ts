@@ -6838,6 +6838,13 @@ export const priceListOwnerTypeEnum = pgEnum("price_list_owner_type", [
   "repair_center",
 ]);
 
+export const priceListTargetAudienceEnum = pgEnum("price_list_target_audience", [
+  "sub_reseller",
+  "repair_center",
+  "customer",
+  "all",
+]);
+
 export const priceLists = pgTable("price_lists", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   name: text("name").notNull(),
@@ -6849,6 +6856,9 @@ export const priceLists = pgTable("price_lists", {
   
   // Se owner è un centro di riparazione
   repairCenterId: varchar("repair_center_id").references(() => repairCenters.id, { onDelete: "cascade" }),
+  
+  // Destinatari del listino (chi può vedere/usare questo listino)
+  targetAudience: priceListTargetAudienceEnum("target_audience").notNull().default("all"),
   
   // Ereditarietà: listino da cui è stato copiato (null = creato da zero)
   parentListId: varchar("parent_list_id"),
