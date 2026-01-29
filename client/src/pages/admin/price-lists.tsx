@@ -1,8 +1,10 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Table,
   TableBody,
@@ -18,19 +20,30 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Loader2, Search, ListChecks, Users, Building2, User, Eye } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Loader2, Search, ListChecks, Users, Building2, User, Eye, Plus, Shield } from "lucide-react";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
 import { useState } from "react";
 import { Link } from "wouter";
+import { apiRequest, queryClient } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
 
 interface PriceList {
   id: string;
   name: string;
   description: string | null;
   ownerId: string;
-  ownerType: "reseller" | "repair_center";
-  targetAudience: "sub_reseller" | "repair_center" | "customer" | "all";
+  ownerType: "admin" | "reseller" | "sub_reseller" | "repair_center";
+  targetAudience: "sub_reseller" | "repair_center" | "customer" | "reseller" | "all";
   isDefault: boolean;
   isActive: boolean;
   createdAt: string;
@@ -39,15 +52,64 @@ interface PriceList {
 }
 
 export default function AdminPriceLists() {
+  const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState("");
   const [ownerTypeFilter, setOwnerTypeFilter] = useState<string>("all");
   const [targetAudienceFilter, setTargetAudienceFilter] = useState<string>("all");
+  const [createDialogOpen, setCreateDialogOpen] = useState(false);
+  const [newListName, setNewListName] = useState("");
+  const [newListDescription, setNewListDescription] = useState("");
+  const [newListTargetAudience, setNewListTargetAudience] = useState<string>("reseller");
 
   const { data: priceLists, isLoading } = useQuery<PriceList[]>({
     queryKey: ["/api/admin/price-lists"],
   });
 
-  const filteredLists = priceLists?.filter((list) => {
+  const createMutation = useMutation({
+    mutationFn: async (data: { name: string; description: string; targetAudience: string }) => {
+      return apiRequest("POST", "/api/price-lists", data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/price-lists"] });
+      setCreateDialogOpen(false);
+      setNewListName("");
+      setNewListDescription("");
+      setNewListTargetAudience("reseller");
+      toast({
+        title: "Listino creato",
+        description: "Il nuovo listino prezzi è stato creato con successo.",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Errore",
+        description: error.message || "Errore durante la creazione del listino.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleCreateList = () => {
+    if (!newListName.trim()) {
+      toast({
+        title: "Errore",
+        description: "Il nome del listino è obbligatorio.",
+        variant: "destructive",
+      });
+      return;
+    }
+    createMutation.mutate({
+      name: newListName,
+      description: newListDescription,
+      targetAudience: newListTargetAudience,
+    });
+  };
+
+  // Separate admin lists from others
+  const adminLists = priceLists?.filter((list) => list.ownerType === "admin") || [];
+  const otherLists = priceLists?.filter((list) => list.ownerType !== "admin") || [];
+
+  const filteredOtherLists = otherLists.filter((list) => {
     const matchesSearch =
       list.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       list.ownerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -60,10 +122,12 @@ export default function AdminPriceLists() {
       targetAudienceFilter === "all" || list.targetAudience === targetAudienceFilter;
 
     return matchesSearch && matchesOwnerType && matchesTargetAudience;
-  }) || [];
+  });
 
   const getOwnerTypeIcon = (ownerType: string) => {
     switch (ownerType) {
+      case "admin":
+        return <Shield className="h-4 w-4" />;
       case "reseller":
         return <Building2 className="h-4 w-4" />;
       case "repair_center":
@@ -75,8 +139,12 @@ export default function AdminPriceLists() {
 
   const getOwnerTypeBadge = (ownerType: string) => {
     switch (ownerType) {
+      case "admin":
+        return <Badge className="bg-gradient-to-r from-emerald-500 to-teal-500 text-white">Admin</Badge>;
       case "reseller":
         return <Badge variant="default">Reseller</Badge>;
+      case "sub_reseller":
+        return <Badge variant="secondary">Sub-Reseller</Badge>;
       case "repair_center":
         return <Badge variant="secondary">Centro Riparazione</Badge>;
       default:
@@ -86,6 +154,8 @@ export default function AdminPriceLists() {
 
   const getTargetAudienceBadge = (target: string) => {
     switch (target) {
+      case "reseller":
+        return <Badge variant="outline" className="border-emerald-500 text-emerald-600">Reseller</Badge>;
       case "sub_reseller":
         return <Badge variant="outline" className="border-blue-500 text-blue-600">Sub-Reseller</Badge>;
       case "repair_center":
@@ -117,17 +187,153 @@ export default function AdminPriceLists() {
           <div>
             <h1 className="text-2xl font-bold">Listini Prezzi</h1>
             <p className="text-muted-foreground">
-              Visualizza tutti i listini creati dai reseller e centri riparazione
+              Gestisci i tuoi listini e visualizza quelli dei reseller
             </p>
           </div>
         </div>
+        <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
+          <DialogTrigger asChild>
+            <Button data-testid="button-create-price-list">
+              <Plus className="h-4 w-4 mr-2" />
+              Crea Listino
+            </Button>
+          </DialogTrigger>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Crea Nuovo Listino</DialogTitle>
+              <DialogDescription>
+                Crea un listino prezzi per i reseller che acquistano da te
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <Label htmlFor="name">Nome Listino</Label>
+                <Input
+                  id="name"
+                  placeholder="es. Listino Reseller 2026"
+                  value={newListName}
+                  onChange={(e) => setNewListName(e.target.value)}
+                  data-testid="input-new-list-name"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="description">Descrizione</Label>
+                <Textarea
+                  id="description"
+                  placeholder="Descrizione opzionale..."
+                  value={newListDescription}
+                  onChange={(e) => setNewListDescription(e.target.value)}
+                  data-testid="input-new-list-description"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Target Audience</Label>
+                <Select value={newListTargetAudience} onValueChange={setNewListTargetAudience}>
+                  <SelectTrigger data-testid="select-new-list-target">
+                    <SelectValue placeholder="Seleziona target" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="reseller">Reseller (acquisti B2B)</SelectItem>
+                    <SelectItem value="sub_reseller">Sub-Reseller</SelectItem>
+                    <SelectItem value="repair_center">Centri Riparazione</SelectItem>
+                    <SelectItem value="customer">Clienti</SelectItem>
+                    <SelectItem value="all">Tutti</SelectItem>
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">
+                  Per i reseller che acquistano da te, seleziona "Reseller"
+                </p>
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setCreateDialogOpen(false)}>
+                Annulla
+              </Button>
+              <Button
+                onClick={handleCreateList}
+                disabled={createMutation.isPending}
+                data-testid="button-confirm-create-list"
+              >
+                {createMutation.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                Crea Listino
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
+
+      {adminLists.length > 0 && (
+        <Card className="border-emerald-200 dark:border-emerald-800">
+          <CardHeader className="pb-4">
+            <div className="flex items-center gap-2">
+              <Shield className="h-5 w-5 text-emerald-500" />
+              <CardTitle className="text-lg">I Tuoi Listini (Admin)</CardTitle>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Nome Listino</TableHead>
+                  <TableHead>Target</TableHead>
+                  <TableHead>Stato</TableHead>
+                  <TableHead>Creato</TableHead>
+                  <TableHead className="text-right">Azioni</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {adminLists.map((list) => (
+                  <TableRow key={list.id} data-testid={`row-admin-price-list-${list.id}`}>
+                    <TableCell>
+                      <div className="flex flex-col">
+                        <span className="font-medium">{list.name}</span>
+                        {list.description && (
+                          <span className="text-xs text-muted-foreground">{list.description}</span>
+                        )}
+                        {list.isDefault && (
+                          <Badge variant="secondary" className="w-fit mt-1 text-xs">
+                            Predefinito
+                          </Badge>
+                        )}
+                      </div>
+                    </TableCell>
+                    <TableCell>{getTargetAudienceBadge(list.targetAudience)}</TableCell>
+                    <TableCell>
+                      {list.isActive ? (
+                        <Badge variant="default" className="bg-green-500">Attivo</Badge>
+                      ) : (
+                        <Badge variant="secondary">Inattivo</Badge>
+                      )}
+                    </TableCell>
+                    <TableCell className="text-muted-foreground">
+                      {format(new Date(list.createdAt), "dd MMM yyyy", { locale: it })}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        asChild
+                        data-testid={`button-edit-admin-price-list-${list.id}`}
+                      >
+                        <Link href={`/admin/price-lists/${list.id}`}>
+                          <Eye className="h-4 w-4 mr-1" />
+                          Gestisci
+                        </Link>
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+      )}
 
       <Card>
         <CardHeader className="pb-4">
-          <CardTitle className="text-lg">Filtri</CardTitle>
+          <CardTitle className="text-lg">Listini Reseller e Centri Riparazione</CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-4">
           <div className="flex flex-wrap gap-4">
             <div className="relative flex-1 min-w-[200px]">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -146,6 +352,7 @@ export default function AdminPriceLists() {
               <SelectContent>
                 <SelectItem value="all">Tutti i tipi</SelectItem>
                 <SelectItem value="reseller">Reseller</SelectItem>
+                <SelectItem value="sub_reseller">Sub-Reseller</SelectItem>
                 <SelectItem value="repair_center">Centro Riparazione</SelectItem>
               </SelectContent>
             </Select>
@@ -155,17 +362,14 @@ export default function AdminPriceLists() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Tutti i target</SelectItem>
+                <SelectItem value="reseller">Reseller</SelectItem>
                 <SelectItem value="sub_reseller">Sub-Reseller</SelectItem>
                 <SelectItem value="repair_center">Centri Riparazione</SelectItem>
                 <SelectItem value="customer">Clienti</SelectItem>
               </SelectContent>
             </Select>
           </div>
-        </CardContent>
-      </Card>
 
-      <Card>
-        <CardContent className="pt-6">
           <Table>
             <TableHeader>
               <TableRow>
@@ -179,14 +383,14 @@ export default function AdminPriceLists() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredLists.length === 0 ? (
+              {filteredOtherLists.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
                     Nessun listino trovato
                   </TableCell>
                 </TableRow>
               ) : (
-                filteredLists.map((list) => (
+                filteredOtherLists.map((list) => (
                   <TableRow key={list.id} data-testid={`row-price-list-${list.id}`}>
                     <TableCell>
                       <div className="flex flex-col">
@@ -241,7 +445,7 @@ export default function AdminPriceLists() {
       </Card>
 
       <div className="text-sm text-muted-foreground">
-        Totale: {filteredLists.length} listini
+        Totale: {adminLists.length + filteredOtherLists.length} listini ({adminLists.length} admin, {filteredOtherLists.length} altri)
       </div>
     </div>
   );

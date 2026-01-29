@@ -36444,6 +36444,8 @@ export function registerRoutes(app: Express): Server {
       } else if ((user.role === "repair_center" || user.role === "repair_center_staff") && user.repairCenterId) {
         ownerId = user.repairCenterId;
         ownerType = "repair_center";
+      } else if (user.role === "admin" || user.role === "admin_staff") {
+        // Admin can edit their own price lists
       } else if (user.role === "reseller_staff" && user.resellerId) {
         ownerId = user.resellerId;
         ownerType = "reseller";
@@ -36469,7 +36471,9 @@ export function registerRoutes(app: Express): Server {
       }
       
       let ownerId = user.id;
-      if (user.role === "reseller_staff" && user.resellerId) {
+      if (user.role === "admin" || user.role === "admin_staff") {
+        // Admin can edit their own price lists
+      } else if (user.role === "reseller_staff" && user.resellerId) {
         ownerId = user.resellerId;
       } else if ((user.role === "repair_center" || user.role === "repair_center_staff") && user.repairCenterId) {
         ownerId = user.repairCenterId;
@@ -36491,10 +36495,12 @@ export function registerRoutes(app: Express): Server {
     try {
       const user = req.user as User;
       let ownerId = user.id;
-      let ownerType: "reseller" | "sub_reseller" | "repair_center";
+      let ownerType: "admin" | "reseller" | "sub_reseller" | "repair_center";
       let repairCenterId: string | null = null;
       
-      if (user.role === "reseller") {
+      if (user.role === "admin" || user.role === "admin_staff") {
+        ownerType = "admin";
+      } else if (user.role === "reseller") {
         ownerType = "reseller";
       } else if (user.role === "sub_reseller") {
         ownerType = "sub_reseller";
@@ -36502,6 +36508,8 @@ export function registerRoutes(app: Express): Server {
         ownerId = user.repairCenterId;
         ownerType = "repair_center";
         repairCenterId = user.repairCenterId;
+      } else if (user.role === "admin" || user.role === "admin_staff") {
+        // Admin can edit their own price lists
       } else if (user.role === "reseller_staff" && user.resellerId) {
         ownerId = user.resellerId;
         ownerType = "reseller";
@@ -36542,7 +36550,9 @@ export function registerRoutes(app: Express): Server {
       }
       
       let ownerId = user.id;
-      if (user.role === "reseller_staff" && user.resellerId) {
+      if (user.role === "admin" || user.role === "admin_staff") {
+        // Admin can edit their own price lists
+      } else if (user.role === "reseller_staff" && user.resellerId) {
         ownerId = user.resellerId;
       } else if ((user.role === "repair_center" || user.role === "repair_center_staff") && user.repairCenterId) {
         ownerId = user.repairCenterId;
@@ -36577,7 +36587,9 @@ export function registerRoutes(app: Express): Server {
       }
       
       let ownerId = user.id;
-      if (user.role === "reseller_staff" && user.resellerId) {
+      if (user.role === "admin" || user.role === "admin_staff") {
+        // Admin can edit their own price lists
+      } else if (user.role === "reseller_staff" && user.resellerId) {
         ownerId = user.resellerId;
       } else if ((user.role === "repair_center" || user.role === "repair_center_staff") && user.repairCenterId) {
         ownerId = user.repairCenterId;
@@ -36604,7 +36616,9 @@ export function registerRoutes(app: Express): Server {
       }
       
       let ownerId = user.id;
-      if (user.role === "reseller_staff" && user.resellerId) {
+      if (user.role === "admin" || user.role === "admin_staff") {
+        // Admin can edit their own price lists
+      } else if (user.role === "reseller_staff" && user.resellerId) {
         ownerId = user.resellerId;
       } else if ((user.role === "repair_center" || user.role === "repair_center_staff") && user.repairCenterId) {
         ownerId = user.repairCenterId;
@@ -36626,7 +36640,7 @@ export function registerRoutes(app: Express): Server {
     try {
       const user = req.user as User;
       let ownerId = user.id;
-      let ownerType: "reseller" | "sub_reseller" | "repair_center";
+      let ownerType: "admin" | "reseller" | "sub_reseller" | "repair_center";
       let repairCenterId: string | undefined;
       let expectedParentId: string | undefined;
       
@@ -36696,7 +36710,9 @@ export function registerRoutes(app: Express): Server {
       }
       
       let ownerId = user.id;
-      if (user.role === "reseller_staff" && user.resellerId) {
+      if (user.role === "admin" || user.role === "admin_staff") {
+        // Admin can edit their own price lists
+      } else if (user.role === "reseller_staff" && user.resellerId) {
         ownerId = user.resellerId;
       } else if ((user.role === "repair_center" || user.role === "repair_center_staff") && user.repairCenterId) {
         ownerId = user.repairCenterId;
@@ -36744,7 +36760,9 @@ export function registerRoutes(app: Express): Server {
       }
       
       let ownerId = user.id;
-      if (user.role === "reseller_staff" && user.resellerId) {
+      if (user.role === "admin" || user.role === "admin_staff") {
+        // Admin can edit their own price lists
+      } else if (user.role === "reseller_staff" && user.resellerId) {
         ownerId = user.resellerId;
       } else if ((user.role === "repair_center" || user.role === "repair_center_staff") && user.repairCenterId) {
         ownerId = user.repairCenterId;
@@ -36782,7 +36800,9 @@ export function registerRoutes(app: Express): Server {
       }
       
       let ownerId = user.id;
-      if (user.role === "reseller_staff" && user.resellerId) {
+      if (user.role === "admin" || user.role === "admin_staff") {
+        // Admin can edit their own price lists
+      } else if (user.role === "reseller_staff" && user.resellerId) {
         ownerId = user.resellerId;
       } else if ((user.role === "repair_center" || user.role === "repair_center_staff") && user.repairCenterId) {
         ownerId = user.repairCenterId;
@@ -36809,7 +36829,9 @@ export function registerRoutes(app: Express): Server {
       }
       
       let ownerId = user.id;
-      if (user.role === "reseller_staff" && user.resellerId) {
+      if (user.role === "admin" || user.role === "admin_staff") {
+        // Admin can edit their own price lists
+      } else if (user.role === "reseller_staff" && user.resellerId) {
         ownerId = user.resellerId;
       } else if ((user.role === "repair_center" || user.role === "repair_center_staff") && user.repairCenterId) {
         ownerId = user.repairCenterId;

@@ -6833,6 +6833,7 @@ export type DashboardLayout = {
 // ============ PRICE LISTS (Listini Prezzi) ============
 
 export const priceListOwnerTypeEnum = pgEnum("price_list_owner_type", [
+  "admin",
   "reseller",
   "sub_reseller", 
   "repair_center",
