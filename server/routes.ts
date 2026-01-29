@@ -23203,6 +23203,7 @@ export function registerRoutes(app: Express): Server {
         storeCode,
         storeName,
         isDefault: isDefault || false,
+        targetAudience: targetAudience || "all",
       });
       
       res.status(201).json(store);
@@ -33243,7 +33244,7 @@ export function registerRoutes(app: Express): Server {
   app.post("/api/repair-center/pos/registers", requireRole("repair_center", "repair_center_staff"), async (req, res) => {
     try {
       const repairCenterId = req.user!.repairCenterId || req.user!.id;
-      const { name, description, isDefault } = req.body;
+      const { name, description, isDefault, targetAudience } = req.body;
       
       if (!name?.trim()) {
         return res.status(400).json({ error: "Nome cassa obbligatorio" });
@@ -33254,6 +33255,7 @@ export function registerRoutes(app: Express): Server {
         name: name.trim(),
         description: description?.trim() || null,
         isDefault: isDefault || false,
+        targetAudience: targetAudience || "all",
       });
       
       res.json(register);
@@ -34945,6 +34947,7 @@ export function registerRoutes(app: Express): Server {
         name: name.trim(),
         description: description?.trim() || null,
         isDefault: isDefault || false,
+        targetAudience: targetAudience || "all",
       });
       
       res.json(register);
@@ -36272,7 +36275,7 @@ export function registerRoutes(app: Express): Server {
         return res.status(403).json({ error: "Ruolo non autorizzato" });
       }
       
-      const { name, description, isDefault } = req.body;
+      const { name, description, isDefault, targetAudience } = req.body;
       if (!name) {
         return res.status(400).json({ error: "Nome listino obbligatorio" });
       }
@@ -36284,6 +36287,7 @@ export function registerRoutes(app: Express): Server {
         ownerType,
         repairCenterId,
         isDefault: isDefault || false,
+        targetAudience: targetAudience || "all",
         isActive: true,
       });
       
@@ -36313,7 +36317,7 @@ export function registerRoutes(app: Express): Server {
         return res.status(403).json({ error: "Non autorizzato" });
       }
       
-      const { name, description, isDefault, isActive } = req.body;
+      const { name, description, isDefault, isActive, targetAudience } = req.body;
       const updated = await storage.updatePriceList(req.params.id, {
         name,
         description,
