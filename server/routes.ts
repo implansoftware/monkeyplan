@@ -36323,6 +36323,7 @@ export function registerRoutes(app: Express): Server {
         description,
         isDefault,
         isActive,
+        targetAudience,
       });
       
       res.json(updated);

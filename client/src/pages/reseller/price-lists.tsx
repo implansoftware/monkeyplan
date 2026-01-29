@@ -5,10 +5,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { 
-  ListOrdered, Plus, Pencil, Trash2, Star, StarOff, Eye, Search, Package, Wrench, Euro
+  ListOrdered, Plus, Pencil, Trash2, Star, StarOff, Eye, Search, Package, Wrench, Euro, Users
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
@@ -55,21 +56,28 @@ export default function ResellerPriceLists() {
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [editingList, setEditingList] = useState<PriceList | null>(null);
   const [deleteList, setDeleteList] = useState<PriceList | null>(null);
-  const [formData, setFormData] = useState({ name: "", description: "" });
+  const [formData, setFormData] = useState({ name: "", description: "", targetAudience: "all" as "sub_reseller" | "repair_center" | "customer" | "all" });
+
+  const targetAudienceOptions = [
+    { value: "all", label: "Tutti" },
+    { value: "sub_reseller", label: "Sub-Rivenditori" },
+    { value: "repair_center", label: "Centri Riparazione" },
+    { value: "customer", label: "Clienti" },
+  ];
 
   const { data: priceLists, isLoading } = useQuery<PriceList[]>({
     queryKey: ["/api/price-lists"],
   });
 
   const createMutation = useMutation({
-    mutationFn: async (data: { name: string; description: string }) => {
+    mutationFn: async (data: { name: string; description: string; targetAudience: string }) => {
       return apiRequest("POST", "/api/price-lists", data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/price-lists"] });
       toast({ title: "Listino creato", description: "Il listino prezzi è stato creato con successo" });
       setShowCreateDialog(false);
-      setFormData({ name: "", description: "" });
+      setFormData({ name: "", description: "", targetAudience: "all" });
     },
     onError: (error: any) => {
       toast({ title: "Errore", description: error.message, variant: "destructive" });
@@ -134,7 +142,7 @@ export default function ResellerPriceLists() {
     if (!editingList) return;
     updateMutation.mutate({
       id: editingList.id,
-      data: { name: formData.name, description: formData.description },
+      data: { name: formData.name, description: formData.description, targetAudience: formData.targetAudience },
     });
   };
 
@@ -199,6 +207,7 @@ export default function ResellerPriceLists() {
                 <TableRow>
                   <TableHead>Nome</TableHead>
                   <TableHead>Descrizione</TableHead>
+                  <TableHead>Destinatari</TableHead>
                   <TableHead>Stato</TableHead>
                   <TableHead>Data Creazione</TableHead>
                   <TableHead className="text-right">Azioni</TableHead>
@@ -222,6 +231,15 @@ export default function ResellerPriceLists() {
                       {list.description || "-"}
                     </TableCell>
                     <TableCell>
+                      <Badge variant="outline" className="text-xs">
+                        <Users className="h-3 w-3 mr-1" />
+                        {list.targetAudience === "all" && "Tutti"}
+                        {list.targetAudience === "sub_reseller" && "Sub-Rivenditori"}
+                        {list.targetAudience === "repair_center" && "Centri Riparazione"}
+                        {list.targetAudience === "customer" && "Clienti"}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
                       <Badge variant={list.isActive ? "default" : "secondary"}>
                         {list.isActive ? "Attivo" : "Disattivato"}
                       </Badge>
@@ -240,7 +258,7 @@ export default function ResellerPriceLists() {
                           size="icon"
                           variant="ghost"
                           onClick={() => {
-                            setFormData({ name: list.name, description: list.description || "" });
+                            setFormData({ name: list.name, description: list.description || "", targetAudience: list.targetAudience || "all" });
                             setEditingList(list);
                           }}
                           data-testid={`button-edit-${list.id}`}
@@ -306,6 +324,34 @@ export default function ResellerPriceLists() {
                 data-testid="input-description"
               />
             </div>
+            <div className="space-y-2">
+              <Label htmlFor="targetAudience">
+                <span className="flex items-center gap-2">
+                  <Users className="h-4 w-4" />
+                  Destinatari
+                </span>
+              </Label>
+              <Select
+                value={formData.targetAudience}
+                onValueChange={(value: "sub_reseller" | "repair_center" | "customer" | "all") => 
+                  setFormData({ ...formData, targetAudience: value })
+                }
+              >
+                <SelectTrigger className="w-full" data-testid="select-target-audience">
+                  <SelectValue placeholder="Seleziona destinatari..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {targetAudienceOptions.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">
+                Scegli chi potrà vedere e utilizzare questo listino prezzi
+              </p>
+            </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowCreateDialog(false)}>
@@ -348,6 +394,34 @@ export default function ResellerPriceLists() {
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                 data-testid="input-edit-description"
               />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="edit-targetAudience">
+                <span className="flex items-center gap-2">
+                  <Users className="h-4 w-4" />
+                  Destinatari
+                </span>
+              </Label>
+              <Select
+                value={formData.targetAudience}
+                onValueChange={(value: "sub_reseller" | "repair_center" | "customer" | "all") => 
+                  setFormData({ ...formData, targetAudience: value })
+                }
+              >
+                <SelectTrigger className="w-full" data-testid="select-edit-target-audience">
+                  <SelectValue placeholder="Seleziona destinatari..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {targetAudienceOptions.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">
+                Scegli chi potrà vedere e utilizzare questo listino prezzi
+              </p>
             </div>
           </div>
           <DialogFooter>
