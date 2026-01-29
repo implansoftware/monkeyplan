@@ -36191,8 +36191,414 @@ export function registerRoutes(app: Express): Server {
       console.error("Error deleting Sibill credentials:", error);
       res.status(500).json({ error: error.message });
     }
+  });
 
-  return httpServer;
+  // ============ PRICE LISTS (Listini Prezzi) ============
+
+  // List price lists for current user (reseller or repair center)
+  app.get("/api/price-lists", requireAuth, async (req, res) => {
+    try {
+      const user = req.user as User;
+      let ownerId = user.id;
+      let ownerType: string | undefined;
+      
+      if (["reseller", "sub_reseller"].includes(user.role)) {
+        ownerType = user.role === "sub_reseller" ? "sub_reseller" : "reseller";
+      } else if ((user.role === "repair_center" || user.role === "repair_center_staff") && user.repairCenterId) {
+        ownerId = user.repairCenterId;
+        ownerType = "repair_center";
+      } else if (user.role === "reseller_staff" && user.resellerId) {
+        ownerId = user.resellerId;
+        ownerType = "reseller";
+      } else {
+        return res.status(403).json({ error: "Ruolo non autorizzato" });
+      }
+      
+      const lists = await storage.listPriceLists({ ownerId, isActive: true });
+      res.json(lists);
+    } catch (error: any) {
+      console.error("Error fetching price lists:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Get single price list with items
+  app.get("/api/price-lists/:id", requireAuth, async (req, res) => {
+    try {
+      const user = req.user as User;
+      const list = await storage.getPriceList(req.params.id);
+      if (!list) {
+        return res.status(404).json({ error: "Listino non trovato" });
+      }
+      
+      let ownerId = user.id;
+      if (user.role === "reseller_staff" && user.resellerId) {
+        ownerId = user.resellerId;
+      } else if ((user.role === "repair_center" || user.role === "repair_center_staff") && user.repairCenterId) {
+        ownerId = user.repairCenterId;
+      }
+      if (list.ownerId !== ownerId) {
+        return res.status(403).json({ error: "Non autorizzato" });
+      }
+      
+      const items = await storage.listPriceListItems(list.id);
+      res.json({ ...list, items });
+    } catch (error: any) {
+      console.error("Error fetching price list:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Create price list
+  app.post("/api/price-lists", requireAuth, async (req, res) => {
+    try {
+      const user = req.user as User;
+      let ownerId = user.id;
+      let ownerType: "reseller" | "sub_reseller" | "repair_center";
+      let repairCenterId: string | null = null;
+      
+      if (user.role === "reseller") {
+        ownerType = "reseller";
+      } else if (user.role === "sub_reseller") {
+        ownerType = "sub_reseller";
+      } else if ((user.role === "repair_center" || user.role === "repair_center_staff") && user.repairCenterId) {
+        ownerId = user.repairCenterId;
+        ownerType = "repair_center";
+        repairCenterId = user.repairCenterId;
+      } else if (user.role === "reseller_staff" && user.resellerId) {
+        ownerId = user.resellerId;
+        ownerType = "reseller";
+      } else {
+        return res.status(403).json({ error: "Ruolo non autorizzato" });
+      }
+      
+      const { name, description, isDefault } = req.body;
+      if (!name) {
+        return res.status(400).json({ error: "Nome listino obbligatorio" });
+      }
+      
+      const list = await storage.createPriceList({
+        name,
+        description: description || null,
+        ownerId,
+        ownerType,
+        repairCenterId,
+        isDefault: isDefault || false,
+        isActive: true,
+      });
+      
+      res.status(201).json(list);
+    } catch (error: any) {
+      console.error("Error creating price list:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Update price list
+  app.put("/api/price-lists/:id", requireAuth, async (req, res) => {
+    try {
+      const user = req.user as User;
+      const list = await storage.getPriceList(req.params.id);
+      if (!list) {
+        return res.status(404).json({ error: "Listino non trovato" });
+      }
+      
+      let ownerId = user.id;
+      if (user.role === "reseller_staff" && user.resellerId) {
+        ownerId = user.resellerId;
+      } else if ((user.role === "repair_center" || user.role === "repair_center_staff") && user.repairCenterId) {
+        ownerId = user.repairCenterId;
+      }
+      if (list.ownerId !== ownerId) {
+        return res.status(403).json({ error: "Non autorizzato" });
+      }
+      
+      const { name, description, isDefault, isActive } = req.body;
+      const updated = await storage.updatePriceList(req.params.id, {
+        name,
+        description,
+        isDefault,
+        isActive,
+      });
+      
+      res.json(updated);
+    } catch (error: any) {
+      console.error("Error updating price list:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Delete price list
+  app.delete("/api/price-lists/:id", requireAuth, async (req, res) => {
+    try {
+      const user = req.user as User;
+      const list = await storage.getPriceList(req.params.id);
+      if (!list) {
+        return res.status(404).json({ error: "Listino non trovato" });
+      }
+      
+      let ownerId = user.id;
+      if (user.role === "reseller_staff" && user.resellerId) {
+        ownerId = user.resellerId;
+      } else if ((user.role === "repair_center" || user.role === "repair_center_staff") && user.repairCenterId) {
+        ownerId = user.repairCenterId;
+      }
+      if (list.ownerId !== ownerId) {
+        return res.status(403).json({ error: "Non autorizzato" });
+      }
+      
+      await storage.deletePriceList(req.params.id);
+      res.json({ success: true, message: "Listino eliminato" });
+    } catch (error: any) {
+      console.error("Error deleting price list:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Set default price list
+  app.post("/api/price-lists/:id/set-default", requireAuth, async (req, res) => {
+    try {
+      const user = req.user as User;
+      const list = await storage.getPriceList(req.params.id);
+      if (!list) {
+        return res.status(404).json({ error: "Listino non trovato" });
+      }
+      
+      let ownerId = user.id;
+      if (user.role === "reseller_staff" && user.resellerId) {
+        ownerId = user.resellerId;
+      } else if ((user.role === "repair_center" || user.role === "repair_center_staff") && user.repairCenterId) {
+        ownerId = user.repairCenterId;
+      }
+      if (list.ownerId !== ownerId) {
+        return res.status(403).json({ error: "Non autorizzato" });
+      }
+      
+      const updated = await storage.setDefaultPriceList(req.params.id, ownerId);
+      res.json(updated);
+    } catch (error: any) {
+      console.error("Error setting default price list:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Copy price list from parent
+  app.post("/api/price-lists/copy/:sourceId", requireAuth, async (req, res) => {
+    try {
+      const user = req.user as User;
+      let ownerId = user.id;
+      let ownerType: "reseller" | "sub_reseller" | "repair_center";
+      let repairCenterId: string | undefined;
+      let expectedParentId: string | undefined;
+      
+      if (user.role === "sub_reseller") {
+        ownerType = "sub_reseller";
+        expectedParentId = user.resellerId || undefined;
+      } else if ((user.role === "repair_center" || user.role === "repair_center_staff") && user.repairCenterId) {
+        ownerId = user.repairCenterId;
+        ownerType = "repair_center";
+        repairCenterId = user.repairCenterId;
+        expectedParentId = user.resellerId || undefined;
+      } else {
+        return res.status(403).json({ error: "Solo sub-reseller e centri riparazione possono copiare listini" });
+      }
+      
+      // Validate that source list belongs to parent tenant
+      const sourceList = await storage.getPriceList(req.params.sourceId);
+      if (!sourceList) {
+        return res.status(404).json({ error: "Listino sorgente non trovato" });
+      }
+      if (expectedParentId && sourceList.ownerId !== expectedParentId) {
+        return res.status(403).json({ error: "Non autorizzato a copiare questo listino" });
+      }
+      
+      const { name } = req.body;
+      if (!name) {
+        return res.status(400).json({ error: "Nome listino obbligatorio" });
+      }
+      
+      const newList = await storage.copyPriceList(req.params.sourceId, ownerId, ownerType, name, repairCenterId);
+      res.status(201).json(newList);
+    } catch (error: any) {
+      console.error("Error copying price list:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Get inherited price lists
+  app.get("/api/price-lists/inherited", requireAuth, async (req, res) => {
+    try {
+      const user = req.user as User;
+      let childId = user.id;
+      let childRole = user.role;
+      
+      if ((user.role === "repair_center" || user.role === "repair_center_staff") && user.repairCenterId) {
+        childId = user.repairCenterId;
+        childRole = "repair_center";
+      }
+      
+      const lists = await storage.getInheritedPriceLists(childId, childRole);
+      res.json(lists);
+    } catch (error: any) {
+      console.error("Error fetching inherited price lists:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // ============ PRICE LIST ITEMS ============
+
+  // Add item to price list
+  app.post("/api/price-lists/:listId/items", requireAuth, async (req, res) => {
+    try {
+      const user = req.user as User;
+      const list = await storage.getPriceList(req.params.listId);
+      if (!list) {
+        return res.status(404).json({ error: "Listino non trovato" });
+      }
+      
+      let ownerId = user.id;
+      if (user.role === "reseller_staff" && user.resellerId) {
+        ownerId = user.resellerId;
+      } else if ((user.role === "repair_center" || user.role === "repair_center_staff") && user.repairCenterId) {
+        ownerId = user.repairCenterId;
+      }
+      if (list.ownerId !== ownerId) {
+        return res.status(403).json({ error: "Non autorizzato" });
+      }
+      
+      const { productId, serviceItemId, priceCents, costPriceCents } = req.body;
+      if (!productId && !serviceItemId) {
+        return res.status(400).json({ error: "Specificare productId o serviceItemId" });
+      }
+      if (priceCents === undefined) {
+        return res.status(400).json({ error: "Prezzo obbligatorio" });
+      }
+      
+      const item = await storage.createPriceListItem({
+        priceListId: req.params.listId,
+        productId: productId || null,
+        serviceItemId: serviceItemId || null,
+        priceCents,
+        costPriceCents: costPriceCents || null,
+        isActive: true,
+      });
+      
+      res.status(201).json(item);
+    } catch (error: any) {
+      console.error("Error adding price list item:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Update price list item
+  app.put("/api/price-list-items/:id", requireAuth, async (req, res) => {
+    try {
+      const user = req.user as User;
+      const item = await storage.getPriceListItem(req.params.id);
+      if (!item) {
+        return res.status(404).json({ error: "Voce non trovata" });
+      }
+      
+      const list = await storage.getPriceList(item.priceListId);
+      if (!list) {
+        return res.status(404).json({ error: "Listino non trovato" });
+      }
+      
+      let ownerId = user.id;
+      if (user.role === "reseller_staff" && user.resellerId) {
+        ownerId = user.resellerId;
+      } else if ((user.role === "repair_center" || user.role === "repair_center_staff") && user.repairCenterId) {
+        ownerId = user.repairCenterId;
+      }
+      if (list.ownerId !== ownerId) {
+        return res.status(403).json({ error: "Non autorizzato" });
+      }
+      
+      const { priceCents, costPriceCents, isActive } = req.body;
+      const updated = await storage.updatePriceListItem(req.params.id, {
+        priceCents,
+        costPriceCents,
+        isActive,
+      });
+      
+      res.json(updated);
+    } catch (error: any) {
+      console.error("Error updating price list item:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Delete price list item
+  app.delete("/api/price-list-items/:id", requireAuth, async (req, res) => {
+    try {
+      const user = req.user as User;
+      const item = await storage.getPriceListItem(req.params.id);
+      if (!item) {
+        return res.status(404).json({ error: "Voce non trovata" });
+      }
+      
+      const list = await storage.getPriceList(item.priceListId);
+      if (!list) {
+        return res.status(404).json({ error: "Listino non trovato" });
+      }
+      
+      let ownerId = user.id;
+      if (user.role === "reseller_staff" && user.resellerId) {
+        ownerId = user.resellerId;
+      } else if ((user.role === "repair_center" || user.role === "repair_center_staff") && user.repairCenterId) {
+        ownerId = user.repairCenterId;
+      }
+      if (list.ownerId !== ownerId) {
+        return res.status(403).json({ error: "Non autorizzato" });
+      }
+      
+      await storage.deletePriceListItem(req.params.id);
+      res.json({ success: true, message: "Voce eliminata" });
+    } catch (error: any) {
+      console.error("Error deleting price list item:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Bulk add items
+  app.post("/api/price-lists/:listId/items/bulk", requireAuth, async (req, res) => {
+    try {
+      const user = req.user as User;
+      const list = await storage.getPriceList(req.params.listId);
+      if (!list) {
+        return res.status(404).json({ error: "Listino non trovato" });
+      }
+      
+      let ownerId = user.id;
+      if (user.role === "reseller_staff" && user.resellerId) {
+        ownerId = user.resellerId;
+      } else if ((user.role === "repair_center" || user.role === "repair_center_staff") && user.repairCenterId) {
+        ownerId = user.repairCenterId;
+      }
+      if (list.ownerId !== ownerId) {
+        return res.status(403).json({ error: "Non autorizzato" });
+      }
+      
+      const { items } = req.body;
+      if (!items || !Array.isArray(items)) {
+        return res.status(400).json({ error: "Fornire un array di items" });
+      }
+      
+      const itemsToCreate = items.map((item: any) => ({
+        priceListId: req.params.listId,
+        productId: item.productId || null,
+        serviceItemId: item.serviceItemId || null,
+        priceCents: item.priceCents,
+        costPriceCents: item.costPriceCents || null,
+        isActive: true,
+      }));
+      
+      const created = await storage.bulkCreatePriceListItems(itemsToCreate);
+      res.status(201).json(created);
+    } catch (error: any) {
+      console.error("Error bulk adding price list items:", error);
+      res.status(500).json({ error: error.message });
+    }
   });
 
   return httpServer;

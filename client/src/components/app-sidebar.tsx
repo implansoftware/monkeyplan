@@ -49,6 +49,7 @@ import {
   AlertTriangle,
   Link2,
   Bell,
+  ListOrdered,
 } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { useState, Fragment, useMemo } from "react";
@@ -201,7 +202,8 @@ const menuItems = {
     { title: "Clienti", url: "/reseller/customers", icon: Users, group: "Centri & Riparazioni" },
     { title: "Lavorazioni", url: "/reseller/repairs", icon: Wrench, group: "Centri & Riparazioni" },
     { title: "Appuntamenti", url: "/reseller/appointments", icon: CalendarCheck, group: "Centri & Riparazioni" },
-    { title: "Listino Prezzi", url: "/reseller/service-catalog", icon: Receipt, group: "Centri & Riparazioni" },
+    { title: "Listino Servizi", url: "/reseller/service-catalog", icon: Receipt, group: "Centri & Riparazioni" },
+    { title: "Listini Prezzi", url: "/reseller/price-lists", icon: ListOrdered, group: "Centri & Riparazioni" },
     { title: "Catalogo Dispositivi", url: "/reseller/device-catalog", icon: Smartphone, group: "Centri & Riparazioni" },
     { title: "Ordini Interventi", url: "/reseller/service-orders", icon: ClipboardList, group: "Centri & Riparazioni" },
     { title: "Utility", url: "/reseller/utility", icon: Zap, group: "Utility" },
@@ -270,6 +272,7 @@ const menuItems = {
     { title: "Lavorazioni", url: "/repair-center/repairs", icon: Wrench, group: "Lavorazioni" },
     { title: "Appuntamenti", url: "/repair-center/appointments", icon: CalendarCheck, group: "Lavorazioni" },
     { title: "Listino Interventi", url: "/repair-center/service-catalog", icon: Receipt, group: "Lavorazioni" },
+    { title: "Listini Prezzi", url: "/repair-center/price-lists", icon: ListOrdered, group: "Lavorazioni" },
     { title: "Richieste Remote", url: "/repair-center/remote-requests", icon: Send, group: "Lavorazioni" },
     // Utility
     { title: "Utility", url: "/repair-center/utility", icon: Zap, group: "Utility" },

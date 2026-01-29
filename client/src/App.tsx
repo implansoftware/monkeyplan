@@ -170,6 +170,8 @@ import ResellerRepairDetail from "@/pages/reseller/repair-detail";
 import ResellerSmartphoneCatalog from "@/pages/reseller/smartphone-catalog";
 import ResellerAccessoryCatalog from "@/pages/reseller/accessory-catalog";
 import ResellerGuide from "@/pages/reseller/guide";
+import ResellerPriceLists from "@/pages/reseller/price-lists";
+import ResellerPriceListDetail from "@/pages/reseller/price-list-detail";
 
 // Reseller HR pages
 import ResellerHrDashboard from "@/pages/reseller/hr/index";
@@ -208,6 +210,7 @@ import RepairCenterUtility from "@/pages/repair-center/utility/index";
 import RepairCenterUtilitySuppliers from "@/pages/repair-center/utility/suppliers";
 import RepairCenterUtilityServices from "@/pages/repair-center/utility/services";
 import RepairCenterServiceCatalog from "@/pages/repair-center/service-catalog";
+import RepairCenterPriceLists from "@/pages/repair-center/price-lists";
 import RepairCenterUtilityPractices from "@/pages/repair-center/utility/practices";
 import RepairCenterUtilityPracticeDetail from "@/pages/repair-center/utility/practice-detail";
 import RepairCenterUtilityCommissions from "@/pages/repair-center/utility/commissions";
@@ -389,6 +392,8 @@ function Router() {
       <ProtectedRoute path="/reseller/diagnostics" component={DiagnosisList} allowedRoles={["reseller", "reseller_staff"]} />
       <ProtectedRoute path="/reseller/quotes" component={QuotesList} allowedRoles={["reseller", "reseller_staff"]} />
       <ProtectedRoute path="/reseller/service-catalog" component={ResellerServiceCatalog} allowedRoles={["reseller", "reseller_staff"]} />
+      <ProtectedRoute path="/reseller/price-lists/:id" component={ResellerPriceListDetail} allowedRoles={["reseller", "reseller_staff"]} />
+      <ProtectedRoute path="/reseller/price-lists" component={ResellerPriceLists} allowedRoles={["reseller", "reseller_staff"]} />
       <ProtectedRoute path="/reseller/warehouses" component={AdminWarehouses} allowedRoles={["reseller", "reseller_staff"]} />
       <ProtectedRoute path="/reseller/network-warehouses" component={ResellerNetworkWarehouses} allowedRoles={["reseller", "reseller_staff"]} />
       <ProtectedRoute path="/reseller/service-orders" component={ResellerServiceOrders} allowedRoles={["reseller", "reseller_staff"]} />
@@ -481,6 +486,7 @@ function Router() {
       <ProtectedRoute path="/repair-center/spare-parts-catalog" component={RepairCenterSparePartsCatalog} />
       <ProtectedRoute path="/repair-center/customers" component={RepairCenterCustomers} />
       <ProtectedRoute path="/repair-center/service-catalog" component={RepairCenterServiceCatalog} />
+      <ProtectedRoute path="/repair-center/price-lists" component={RepairCenterPriceLists} />
       <ProtectedRoute path="/repair-center/settings" component={RepairCenterSettings} />
       <ProtectedRoute path="/repair-center/invoices" component={RepairCenterInvoices} />
       <ProtectedRoute path="/repair-center/b2b-returns" component={RepairCenterB2BReturns} />

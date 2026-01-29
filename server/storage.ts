@@ -133,7 +133,9 @@ import {
   sibillAccounts, SibillAccount, InsertSibillAccount,
   sibillTransactions, SibillTransaction, InsertSibillTransaction,
   sibillCategories, SibillCategory, InsertSibillCategory,
-  dashboardPreferences, DashboardPreference, InsertDashboardPreference, DashboardLayout
+  dashboardPreferences, DashboardPreference, InsertDashboardPreference, DashboardLayout,
+  priceLists, PriceList, InsertPriceList,
+  priceListItems, PriceListItem, InsertPriceListItem, PriceListOwnerType
 } from "@shared/schema";
 import { db, pool } from "./db";
 import { eq, and, or, desc, lt, gt, gte, lte, sql, not, inArray, isNull, ilike, SQL } from "drizzle-orm";
@@ -1150,6 +1152,26 @@ export interface IStorage {
     topProducts: Array<{ productName: string; count: number; revenue: number }>;
     monthlyTrend: Array<{ month: string; offered: number; accepted: number; revenue: number }>;
   }>;
+
+  // Price Lists
+  listPriceLists(filters?: { ownerId?: string; ownerType?: string; isActive?: boolean }): Promise<PriceList[]>;
+  getPriceList(id: string): Promise<PriceList | undefined>;
+  createPriceList(data: InsertPriceList): Promise<PriceList>;
+  updatePriceList(id: string, updates: Partial<Pick<PriceList, 'name' | 'description' | 'isDefault' | 'isActive'>>): Promise<PriceList>;
+  deletePriceList(id: string): Promise<void>;
+  getDefaultPriceList(ownerId: string): Promise<PriceList | undefined>;
+  setDefaultPriceList(id: string, ownerId: string): Promise<PriceList>;
+  copyPriceList(sourceId: string, newOwnerId: string, ownerType: PriceListOwnerType, newName: string, repairCenterId?: string): Promise<PriceList>;
+  getInheritedPriceLists(childId: string, childRole: string): Promise<PriceList[]>;
+
+  // Price List Items
+  listPriceListItems(priceListId: string): Promise<PriceListItem[]>;
+  getPriceListItem(id: string): Promise<PriceListItem | undefined>;
+  createPriceListItem(data: InsertPriceListItem): Promise<PriceListItem>;
+  updatePriceListItem(id: string, updates: Partial<Pick<PriceListItem, 'priceCents' | 'costPriceCents' | 'isActive'>>): Promise<PriceListItem>;
+  deletePriceListItem(id: string): Promise<void>;
+  bulkCreatePriceListItems(items: InsertPriceListItem[]): Promise<PriceListItem[]>;
+  getPriceForItem(priceListId: string, productId?: string, serviceItemId?: string): Promise<PriceListItem | undefined>;
 
 }
 
@@ -12096,6 +12118,158 @@ export class DatabaseStorage implements IStorage {
       topProducts,
       monthlyTrend,
     };
+  }
+
+  // ============ PRICE LISTS ============
+  
+  async listPriceLists(filters?: { ownerId?: string; ownerType?: string; isActive?: boolean }): Promise<PriceList[]> {
+    const conditions: SQL[] = [];
+    if (filters?.ownerId) conditions.push(eq(priceLists.ownerId, filters.ownerId));
+    if (filters?.ownerType) conditions.push(eq(priceLists.ownerType, filters.ownerType as any));
+    if (filters?.isActive !== undefined) conditions.push(eq(priceLists.isActive, filters.isActive));
+    
+    const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
+    return whereClause 
+      ? db.select().from(priceLists).where(whereClause).orderBy(desc(priceLists.createdAt))
+      : db.select().from(priceLists).orderBy(desc(priceLists.createdAt));
+  }
+
+  async getPriceList(id: string): Promise<PriceList | undefined> {
+    const [list] = await db.select().from(priceLists).where(eq(priceLists.id, id));
+    return list || undefined;
+  }
+
+  async createPriceList(data: InsertPriceList): Promise<PriceList> {
+    const [list] = await db.insert(priceLists).values(data).returning();
+    return list;
+  }
+
+  async updatePriceList(id: string, updates: Partial<Pick<PriceList, 'name' | 'description' | 'isDefault' | 'isActive'>>): Promise<PriceList> {
+    const [list] = await db.update(priceLists)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(priceLists.id, id))
+      .returning();
+    if (!list) throw new Error("Price list not found");
+    return list;
+  }
+
+  async deletePriceList(id: string): Promise<void> {
+    await db.delete(priceLists).where(eq(priceLists.id, id));
+  }
+
+  async getDefaultPriceList(ownerId: string): Promise<PriceList | undefined> {
+    const [list] = await db.select().from(priceLists)
+      .where(and(eq(priceLists.ownerId, ownerId), eq(priceLists.isDefault, true)));
+    return list || undefined;
+  }
+
+  async setDefaultPriceList(id: string, ownerId: string): Promise<PriceList> {
+    await db.update(priceLists)
+      .set({ isDefault: false })
+      .where(eq(priceLists.ownerId, ownerId));
+    
+    const [list] = await db.update(priceLists)
+      .set({ isDefault: true, updatedAt: new Date() })
+      .where(eq(priceLists.id, id))
+      .returning();
+    if (!list) throw new Error("Price list not found");
+    return list;
+  }
+
+  async copyPriceList(sourceId: string, newOwnerId: string, ownerType: PriceListOwnerType, newName: string, repairCenterId?: string): Promise<PriceList> {
+    const source = await this.getPriceList(sourceId);
+    if (!source) throw new Error("Source price list not found");
+
+    const [newList] = await db.insert(priceLists).values({
+      name: newName,
+      description: source.description,
+      ownerId: newOwnerId,
+      ownerType,
+      repairCenterId: repairCenterId || null,
+      parentListId: sourceId,
+      isDefault: false,
+      isActive: true,
+    }).returning();
+
+    const sourceItems = await this.listPriceListItems(sourceId);
+    if (sourceItems.length > 0) {
+      await db.insert(priceListItems).values(
+        sourceItems.map(item => ({
+          priceListId: newList.id,
+          productId: item.productId,
+          serviceItemId: item.serviceItemId,
+          priceCents: item.priceCents,
+          costPriceCents: item.costPriceCents,
+          isActive: item.isActive,
+        }))
+      );
+    }
+
+    return newList;
+  }
+
+  async getInheritedPriceLists(childId: string, childRole: string): Promise<PriceList[]> {
+    if (childRole === 'repair_center') {
+      const [user] = await db.select().from(users).where(eq(users.repairCenterId, childId));
+      if (user?.resellerId) {
+        return db.select().from(priceLists)
+          .where(and(eq(priceLists.ownerId, user.resellerId), eq(priceLists.isActive, true)))
+          .orderBy(desc(priceLists.createdAt));
+      }
+    } else if (childRole === 'sub_reseller') {
+      const [user] = await db.select().from(users).where(eq(users.id, childId));
+      if (user?.parentResellerId) {
+        return db.select().from(priceLists)
+          .where(and(eq(priceLists.ownerId, user.parentResellerId), eq(priceLists.isActive, true)))
+          .orderBy(desc(priceLists.createdAt));
+      }
+    }
+    return [];
+  }
+
+  // ============ PRICE LIST ITEMS ============
+
+  async listPriceListItems(priceListId: string): Promise<PriceListItem[]> {
+    return db.select().from(priceListItems)
+      .where(eq(priceListItems.priceListId, priceListId))
+      .orderBy(priceListItems.createdAt);
+  }
+
+  async getPriceListItem(id: string): Promise<PriceListItem | undefined> {
+    const [item] = await db.select().from(priceListItems).where(eq(priceListItems.id, id));
+    return item || undefined;
+  }
+
+  async createPriceListItem(data: InsertPriceListItem): Promise<PriceListItem> {
+    const [item] = await db.insert(priceListItems).values(data).returning();
+    return item;
+  }
+
+  async updatePriceListItem(id: string, updates: Partial<Pick<PriceListItem, 'priceCents' | 'costPriceCents' | 'isActive'>>): Promise<PriceListItem> {
+    const [item] = await db.update(priceListItems)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(priceListItems.id, id))
+      .returning();
+    if (!item) throw new Error("Price list item not found");
+    return item;
+  }
+
+  async deletePriceListItem(id: string): Promise<void> {
+    await db.delete(priceListItems).where(eq(priceListItems.id, id));
+  }
+
+  async bulkCreatePriceListItems(items: InsertPriceListItem[]): Promise<PriceListItem[]> {
+    if (items.length === 0) return [];
+    return db.insert(priceListItems).values(items).returning();
+  }
+
+  async getPriceForItem(priceListId: string, productId?: string, serviceItemId?: string): Promise<PriceListItem | undefined> {
+    const conditions: SQL[] = [eq(priceListItems.priceListId, priceListId)];
+    if (productId) conditions.push(eq(priceListItems.productId, productId));
+    if (serviceItemId) conditions.push(eq(priceListItems.serviceItemId, serviceItemId));
+    
+    const [item] = await db.select().from(priceListItems).where(and(...conditions));
+    return item || undefined;
   }
 
 }
