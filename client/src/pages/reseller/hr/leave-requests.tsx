@@ -307,8 +307,8 @@ export default function HrLeaveRequests() {
                         <Badge variant={statusInfo.variant}>{statusInfo.label}</Badge>
                       </TableCell>
                       <TableCell>
-                        {request.status === 'pending' && !readOnly && (
-                          <div className="flex gap-1">
+                        <div className="flex gap-1">
+                          {!readOnly && (
                             <Button
                               size="sm"
                               variant="ghost"
@@ -318,26 +318,30 @@ export default function HrLeaveRequests() {
                             >
                               <Pencil className="h-4 w-4" />
                             </Button>
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              className="h-8 w-8 p-0 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50"
-                              onClick={() => updateStatusMutation.mutate({ id: request.id, status: 'approved' })}
-                              data-testid={`button-approve-${request.id}`}
-                            >
-                              <Check className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
-                              onClick={() => updateStatusMutation.mutate({ id: request.id, status: 'rejected' })}
-                              data-testid={`button-reject-${request.id}`}
-                            >
-                              <X className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        )}
+                          )}
+                          {request.status === 'pending' && !readOnly && (
+                            <>
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                className="h-8 w-8 p-0 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50"
+                                onClick={() => updateStatusMutation.mutate({ id: request.id, status: 'approved' })}
+                                data-testid={`button-approve-${request.id}`}
+                              >
+                                <Check className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
+                                onClick={() => updateStatusMutation.mutate({ id: request.id, status: 'rejected' })}
+                                data-testid={`button-reject-${request.id}`}
+                              >
+                                <X className="h-4 w-4" />
+                              </Button>
+                            </>
+                          )}
+                        </div>
                       </TableCell>
                     </TableRow>
                   );
