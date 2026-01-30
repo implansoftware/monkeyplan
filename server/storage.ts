@@ -1427,9 +1427,10 @@ export class DatabaseStorage implements IStorage {
         fullName: users.fullName,
         email: users.email,
         phone: users.phone,
-        customerType: users.customerType,
+        customerType: billingData.customerType,
       })
       .from(users)
+      .leftJoin(billingData, eq(billingData.userId, users.id))
       .where(and(
         inArray(users.id, customerIds),
         eq(users.role, "customer")
