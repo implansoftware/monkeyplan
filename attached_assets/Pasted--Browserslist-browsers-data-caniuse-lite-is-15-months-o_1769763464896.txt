@@ -1,0 +1,39 @@
+
+Browserslist: browsers data (caniuse-lite) is 15 months old. Please run:
+  npx update-browserslist-db@latest
+  Why you should do it regularly: https://github.com/browserslist/update-db#readme
+
+✓ 87 modules transformed.
+
+x Build failed in 9.00s
+
+error during build:
+[vite:esbuild] Transform failed with 1 error:
+/home/runner/workspace/client/src/pages/admin-commerce.tsx:492:33: ERROR: Expected "}" but found "admin"
+file: /home/runner/workspace/client/src/pages/admin-commerce.tsx:492:33
+
+Expected "}" but found "admin"
+490|      const statusMap: Record<string, { label: string; className: string }> = {
+491|        pending: { label: "In attesa", className: "bg-yellow-500" },
+492|        approved: { label: "` + t("admin.commerce.returns.actions.approve") + `to", className: "bg-green-500" },
+   |                                   ^
+493|        declined: { label: "` + t("admin.commerce.returns.actions.reject") + `to", className: "bg-red-500" },
+494|        in_transit: { label: "In transito", className: "bg-blue-500" },
+
+    at failureErrorWithLog (/home/runner/workspace/node_modules/vite/node_modules/esbuild/lib/main.js:1472:15)
+    at /home/runner/workspace/node_modules/vite/node_modules/esbuild/lib/main.js:755:50
+    at responseCallbacks.<computed> (/home/runner/workspace/node_modules/vite/node_modules/esbuild/lib/main.js:622:9)
+    at handleIncomingPacket (/home/runner/workspace/node_modules/vite/node_modules/esbuild/lib/main.js:677:12)
+    at Socket.readFromStdout (/home/runner/workspace/node_modules/vite/node_modules/esbuild/lib/main.js:600:7)
+    at Socket.emit (node:events:524:28)
+    at addChunk (node:internal/streams/readable:561:12)
+    at readableAddChunkPushByteMode (node:internal/streams/readable:512:3)
+    at Readable.push (node:internal/streams/readable:392:5)
+    at Pipe.onStreamRead (node:internal/stream_base_commons:191:23)
+
+npm notice
+npm notice New major version of npm available! 10.8.2 -> 11.8.0
+npm notice Changelog: https://github.com/npm/cli/releases/tag/v11.8.0
+npm notice To update run: npm install -g npm@11.8.0
+npm notice
+
