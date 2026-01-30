@@ -36750,7 +36750,7 @@ export function registerRoutes(app: Express): Server {
       if (["reseller", "sub_reseller"].includes(user.role)) {
         ownerType = user.role === "sub_reseller" ? "sub_reseller" : "reseller";
       } else if ((user.role === "repair_center" || user.role === "repair_center_staff") && user.repairCenterId) {
-        ownerId = user.repairCenterId;
+        ownerId = user.id; // Keep user ID for foreign key, repairCenterId tracks the center
         ownerType = "repair_center";
       } else if (user.role === "admin" || user.role === "admin_staff") {
         // Admin can edit their own price lists
@@ -36805,7 +36805,7 @@ export function registerRoutes(app: Express): Server {
       } else if (user.role === "reseller_staff" && user.resellerId) {
         ownerId = user.resellerId;
       } else if ((user.role === "repair_center" || user.role === "repair_center_staff") && user.repairCenterId) {
-        ownerId = user.repairCenterId;
+        ownerId = user.id; // Keep user ID for foreign key, repairCenterId tracks the center
       }
       if (list.ownerId !== ownerId) {
         return res.status(403).json({ error: "Non autorizzato" });
@@ -36834,7 +36834,7 @@ export function registerRoutes(app: Express): Server {
       } else if (user.role === "sub_reseller") {
         ownerType = "sub_reseller";
       } else if ((user.role === "repair_center" || user.role === "repair_center_staff") && user.repairCenterId) {
-        ownerId = user.repairCenterId;
+        ownerId = user.id; // Keep user ID for foreign key, repairCenterId tracks the center
         ownerType = "repair_center";
         repairCenterId = user.repairCenterId;
       } else if (user.role === "admin" || user.role === "admin_staff") {
@@ -36884,7 +36884,7 @@ export function registerRoutes(app: Express): Server {
       } else if (user.role === "reseller_staff" && user.resellerId) {
         ownerId = user.resellerId;
       } else if ((user.role === "repair_center" || user.role === "repair_center_staff") && user.repairCenterId) {
-        ownerId = user.repairCenterId;
+        ownerId = user.id; // Keep user ID for foreign key, repairCenterId tracks the center
       }
       if (list.ownerId !== ownerId) {
         return res.status(403).json({ error: "Non autorizzato" });
@@ -36921,7 +36921,7 @@ export function registerRoutes(app: Express): Server {
       } else if (user.role === "reseller_staff" && user.resellerId) {
         ownerId = user.resellerId;
       } else if ((user.role === "repair_center" || user.role === "repair_center_staff") && user.repairCenterId) {
-        ownerId = user.repairCenterId;
+        ownerId = user.id; // Keep user ID for foreign key, repairCenterId tracks the center
       }
       if (list.ownerId !== ownerId) {
         return res.status(403).json({ error: "Non autorizzato" });
@@ -36950,7 +36950,7 @@ export function registerRoutes(app: Express): Server {
       } else if (user.role === "reseller_staff" && user.resellerId) {
         ownerId = user.resellerId;
       } else if ((user.role === "repair_center" || user.role === "repair_center_staff") && user.repairCenterId) {
-        ownerId = user.repairCenterId;
+        ownerId = user.id; // Keep user ID for foreign key, repairCenterId tracks the center
       }
       if (list.ownerId !== ownerId) {
         return res.status(403).json({ error: "Non autorizzato" });
@@ -36977,7 +36977,7 @@ export function registerRoutes(app: Express): Server {
         ownerType = "sub_reseller";
         expectedParentId = user.resellerId || undefined;
       } else if ((user.role === "repair_center" || user.role === "repair_center_staff") && user.repairCenterId) {
-        ownerId = user.repairCenterId;
+        ownerId = user.id; // Keep user ID for foreign key, repairCenterId tracks the center
         ownerType = "repair_center";
         repairCenterId = user.repairCenterId;
         expectedParentId = user.resellerId || undefined;
@@ -37024,7 +37024,7 @@ export function registerRoutes(app: Express): Server {
       } else if (user.role === "reseller_staff" && user.resellerId) {
         ownerId = user.resellerId;
       } else if ((user.role === "repair_center" || user.role === "repair_center_staff") && user.repairCenterId) {
-        ownerId = user.repairCenterId;
+        ownerId = user.id; // Keep user ID for foreign key, repairCenterId tracks the center
       }
       if (list.ownerId !== ownerId) {
         return res.status(403).json({ error: "Non autorizzato" });
@@ -37074,7 +37074,7 @@ export function registerRoutes(app: Express): Server {
       } else if (user.role === "reseller_staff" && user.resellerId) {
         ownerId = user.resellerId;
       } else if ((user.role === "repair_center" || user.role === "repair_center_staff") && user.repairCenterId) {
-        ownerId = user.repairCenterId;
+        ownerId = user.id; // Keep user ID for foreign key, repairCenterId tracks the center
       }
       if (list.ownerId !== ownerId) {
         return res.status(403).json({ error: "Non autorizzato" });
@@ -37114,7 +37114,7 @@ export function registerRoutes(app: Express): Server {
       } else if (user.role === "reseller_staff" && user.resellerId) {
         ownerId = user.resellerId;
       } else if ((user.role === "repair_center" || user.role === "repair_center_staff") && user.repairCenterId) {
-        ownerId = user.repairCenterId;
+        ownerId = user.id; // Keep user ID for foreign key, repairCenterId tracks the center
       }
       if (list.ownerId !== ownerId) {
         return res.status(403).json({ error: "Non autorizzato" });
@@ -37143,7 +37143,7 @@ export function registerRoutes(app: Express): Server {
       } else if (user.role === "reseller_staff" && user.resellerId) {
         ownerId = user.resellerId;
       } else if ((user.role === "repair_center" || user.role === "repair_center_staff") && user.repairCenterId) {
-        ownerId = user.repairCenterId;
+        ownerId = user.id; // Keep user ID for foreign key, repairCenterId tracks the center
       }
       if (list.ownerId !== ownerId) {
         return res.status(403).json({ error: "Non autorizzato" });
