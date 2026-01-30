@@ -36260,6 +36260,7 @@ export function registerRoutes(app: Express): Server {
       res.json(customers);
     } catch (error: any) {
       res.status(500).json({ error: error.message });
+      console.error("POS customers error:", error);
     }
   });
 
