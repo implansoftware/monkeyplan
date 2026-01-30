@@ -6869,6 +6869,10 @@ export const priceLists = pgTable("price_lists", {
   // Destinatari del listino (chi può vedere/usare questo listino)
   targetAudience: priceListTargetAudienceEnum("target_audience").notNull().default("all"),
   
+  // Tipo cliente specifico (solo quando targetAudience = 'customer')
+  // null = tutti i clienti, 'private' = solo privati, 'company' = solo aziende
+  targetCustomerType: customerTypeEnum("target_customer_type"),
+  
   // Ereditarietà: listino da cui è stato copiato (null = creato da zero)
   parentListId: varchar("parent_list_id"),
   
