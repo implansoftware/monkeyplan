@@ -963,10 +963,10 @@ export default function PosPage() {
                           >
                             <div className="flex gap-2 mb-2">
                               <ProductImage category={product.category} imageUrl={product.imageUrl} size="md" />
-                              <div className="flex-1 min-w-0">
-                                <div className="font-medium text-sm line-clamp-2">{product.name}</div>
+                              <div className="flex-1 min-w-0 overflow-hidden">
+                                <div className="font-medium text-sm line-clamp-2 break-words">{product.name}</div>
                                 {product.sku && (
-                                  <div className="text-xs text-muted-foreground mt-0.5">{product.sku}</div>
+                                  <div className="text-xs text-muted-foreground mt-0.5 truncate">{product.sku}</div>
                                 )}
                               </div>
                             </div>
