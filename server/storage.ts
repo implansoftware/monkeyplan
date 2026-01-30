@@ -1165,7 +1165,7 @@ export interface IStorage {
   getPriceListForTarget(ownerId: string, targetAudience: string): Promise<PriceList | undefined>;
   setDefaultPriceList(id: string, ownerId: string): Promise<PriceList>;
   copyPriceList(sourceId: string, newOwnerId: string, ownerType: PriceListOwnerType, newName: string, repairCenterId?: string): Promise<PriceList>;
-  getInheritedPriceLists(childId: string, childRole: string): Promise<PriceList[]>;
+  getInheritedPriceLists(childId: string, childRole: string, customerType?: 'private' | 'company'): Promise<PriceList[]>;
 
   // Price List Items
   listPriceListItems(priceListId: string): Promise<PriceListItem[]>;
@@ -12327,23 +12327,42 @@ export class DatabaseStorage implements IStorage {
     return newList;
   }
 
-  async getInheritedPriceLists(childId: string, childRole: string): Promise<PriceList[]> {
+  async getInheritedPriceLists(childId: string, childRole: string, customerType?: 'private' | 'company'): Promise<PriceList[]> {
+    let ownerId: string | null = null;
+    
     if (childRole === 'repair_center') {
       const [center] = await db.select().from(repairCenters).where(eq(repairCenters.id, childId));
-      if (center?.resellerId) {
-        return db.select().from(priceLists)
-          .where(and(eq(priceLists.ownerId, center.resellerId), eq(priceLists.isActive, true)))
-          .orderBy(desc(priceLists.createdAt));
-      }
+      ownerId = center?.resellerId || null;
     } else if (childRole === 'sub_reseller') {
       const [user] = await db.select().from(users).where(eq(users.id, childId));
-      if (user?.parentResellerId) {
-        return db.select().from(priceLists)
-          .where(and(eq(priceLists.ownerId, user.parentResellerId), eq(priceLists.isActive, true)))
-          .orderBy(desc(priceLists.createdAt));
+      ownerId = user?.parentResellerId || null;
+    }
+    
+    if (!ownerId) return [];
+    
+    // Se customerType specificato, cerca prima listini specifici per quel tipo
+    if (customerType) {
+      const specificLists = await db.select().from(priceLists)
+        .where(and(
+          eq(priceLists.ownerId, ownerId),
+          eq(priceLists.isActive, true),
+          eq(priceLists.targetCustomerType, customerType)
+        ))
+        .orderBy(desc(priceLists.createdAt));
+      
+      if (specificLists.length > 0) {
+        return specificLists;
       }
     }
-    return [];
+    
+    // Fallback: listini senza tipo cliente specificato (generici)
+    return db.select().from(priceLists)
+      .where(and(
+        eq(priceLists.ownerId, ownerId),
+        eq(priceLists.isActive, true),
+        isNull(priceLists.targetCustomerType)
+      ))
+      .orderBy(desc(priceLists.createdAt));
   }
 
   // ============ PRICE LIST ITEMS ============
