@@ -735,7 +735,8 @@ export const products = pgTable("products", {
   
   // Pricing
   costPrice: integer("cost_price"), // Prezzo acquisto in cents
-  unitPrice: integer("unit_price").notNull(), // Prezzo vendita in cents
+  unitPrice: integer("unit_price").notNull(), // Prezzo vendita in cents (IVA esclusa)
+  vatRate: real("vat_rate").notNull().default(22), // Aliquota IVA % (22, 10, 4, 0)
   
   // Condition & Quality
   condition: productConditionEnum("condition").notNull().default("nuovo"),
@@ -3118,8 +3119,9 @@ export const serviceItems = pgTable("service_items", {
   modelId: varchar("model_id").references(() => deviceModels.id), // Modello specifico compatibile (opzionale)
   
   // Prezzi e tempi default
-  defaultPriceCents: integer("default_price_cents").notNull(), // Prezzo base in centesimi
+  defaultPriceCents: integer("default_price_cents").notNull(), // Prezzo base in centesimi (IVA esclusa)
   defaultLaborMinutes: integer("default_labor_minutes").notNull().default(60), // Tempo manodopera stimato in minuti
+  vatRate: real("vat_rate").notNull().default(22), // Aliquota IVA % (22, 10, 4, 0)
   
   // Creatore (null = admin/globale, altrimenti = rivenditore specifico)
   createdBy: varchar("created_by").references(() => users.id, { onDelete: "cascade" }),
@@ -6894,8 +6896,9 @@ export const priceListItems = pgTable("price_list_items", {
   serviceItemId: varchar("service_item_id").references(() => serviceItems.id, { onDelete: "cascade" }),
   
   // Prezzi
-  priceCents: integer("price_cents").notNull(),
+  priceCents: integer("price_cents").notNull(), // Prezzo in centesimi (IVA esclusa)
   costPriceCents: integer("cost_price_cents"),
+  vatRate: real("vat_rate"), // Override aliquota IVA % (null = usa default prodotto/servizio)
   
   // Stato
   isActive: boolean("is_active").notNull().default(true),
