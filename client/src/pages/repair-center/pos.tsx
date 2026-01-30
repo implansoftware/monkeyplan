@@ -183,6 +183,8 @@ type Product = {
   category: string | null;
   imageUrl: string | null;
   availableQuantity?: number;
+  listPrice?: number | null;
+  priceListName?: string | null;
 };
 
 type CartItem = {
@@ -501,7 +503,7 @@ export default function PosPage() {
     : 0;
 
   const addToCart = (product: Product) => {
-    const price = product.sellingPrice || product.unitPrice || 0;
+    const price = product.listPrice ?? product.sellingPrice ?? product.unitPrice ?? 0;
     const existing = cart.find(item => item.productId === product.id);
     
     if (existing) {
@@ -948,7 +950,7 @@ export default function PosPage() {
                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
                       {filteredProducts.map((product) => {
                         const isOutOfStock = product.availableQuantity !== undefined && product.availableQuantity <= 0;
-                        const price = product.sellingPrice || product.unitPrice || 0;
+                        const price = product.listPrice ?? product.sellingPrice ?? product.unitPrice ?? 0;
                         return (
                           <button
                             key={product.id}
