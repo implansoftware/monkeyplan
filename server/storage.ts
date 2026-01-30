@@ -1453,18 +1453,7 @@ export class DatabaseStorage implements IStorage {
     }));
   }
 
-  async createQuickCustomer(repairCenterId: string, data: { 
-    fullName: string; 
-    email?: string; 
-    phone?: string;
-    indirizzo?: string;
-    cap?: string;
-    citta?: string;
-    provincia?: string;
-    codiceFiscale?: string;
-    partitaIva?: string;
-    ragioneSociale?: string;
-  }): Promise<User> {
+  async createQuickCustomer(repairCenterId: string, data: { fullName: string; email?: string; phone?: string }): Promise<User> {
     const username = `customer_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`;
     const email = data.email || `${username}@guest.local`;
     
@@ -1475,13 +1464,6 @@ export class DatabaseStorage implements IStorage {
       role: "customer",
       fullName: data.fullName,
       phone: data.phone || null,
-      indirizzo: data.indirizzo || null,
-      cap: data.cap || null,
-      citta: data.citta || null,
-      provincia: data.provincia || null,
-      codiceFiscale: data.codiceFiscale || null,
-      partitaIva: data.partitaIva || null,
-      ragioneSociale: data.ragioneSociale || null,
       isActive: true,
     }).returning();
     
