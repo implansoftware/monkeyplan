@@ -56,7 +56,18 @@ export default function ResellerPriceLists() {
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [editingList, setEditingList] = useState<PriceList | null>(null);
   const [deleteList, setDeleteList] = useState<PriceList | null>(null);
-  const [formData, setFormData] = useState({ name: "", description: "", targetAudience: "all" as "sub_reseller" | "repair_center" | "customer" | "reseller" | "all" });
+  const [formData, setFormData] = useState({ 
+    name: "", 
+    description: "", 
+    targetAudience: "all" as "sub_reseller" | "repair_center" | "customer" | "reseller" | "all",
+    targetCustomerType: null as "private" | "company" | null
+  });
+
+  const customerTypeOptions = [
+    { value: "all", label: "Tutti i Clienti" },
+    { value: "private", label: "Solo Privati" },
+    { value: "company", label: "Solo Aziende" },
+  ];
 
   const targetAudienceOptions = [
     { value: "all", label: "Tutti" },
@@ -71,14 +82,14 @@ export default function ResellerPriceLists() {
   });
 
   const createMutation = useMutation({
-    mutationFn: async (data: { name: string; description: string; targetAudience: string }) => {
+    mutationFn: async (data: { name: string; description: string; targetAudience: string; targetCustomerType?: string | null }) => {
       return apiRequest("POST", "/api/price-lists", data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/price-lists"] });
       toast({ title: "Listino creato", description: "Il listino prezzi è stato creato con successo" });
       setShowCreateDialog(false);
-      setFormData({ name: "", description: "", targetAudience: "all" });
+      setFormData({ name: "", description: "", targetAudience: "all", targetCustomerType: null });
     },
     onError: (error: any) => {
       toast({ title: "Errore", description: error.message, variant: "destructive" });
@@ -143,7 +154,12 @@ export default function ResellerPriceLists() {
     if (!editingList) return;
     updateMutation.mutate({
       id: editingList.id,
-      data: { name: formData.name, description: formData.description, targetAudience: formData.targetAudience },
+      data: { 
+        name: formData.name, 
+        description: formData.description, 
+        targetAudience: formData.targetAudience,
+        targetCustomerType: formData.targetAudience === "customer" ? formData.targetCustomerType : null
+      },
     });
   };
 
@@ -232,14 +248,21 @@ export default function ResellerPriceLists() {
                       {list.description || "-"}
                     </TableCell>
                     <TableCell>
-                      <Badge variant="outline" className="text-xs">
-                        <Users className="h-3 w-3 mr-1" />
-                        {list.targetAudience === "all" && "Tutti"}
-                        {list.targetAudience === "sub_reseller" && "Sub-Rivenditori"}
-                        {list.targetAudience === "repair_center" && "Centri Riparazione"}
-                        {list.targetAudience === "customer" && "Clienti"}
-                        {list.targetAudience === "reseller" && "Rivenditori"}
-                      </Badge>
+                      <div className="flex flex-col gap-1">
+                        <Badge variant="outline" className="text-xs w-fit">
+                          <Users className="h-3 w-3 mr-1" />
+                          {list.targetAudience === "all" && "Tutti"}
+                          {list.targetAudience === "sub_reseller" && "Sub-Rivenditori"}
+                          {list.targetAudience === "repair_center" && "Centri Riparazione"}
+                          {list.targetAudience === "customer" && "Clienti"}
+                          {list.targetAudience === "reseller" && "Rivenditori"}
+                        </Badge>
+                        {list.targetAudience === "customer" && list.targetCustomerType && (
+                          <Badge variant="secondary" className="text-xs w-fit">
+                            {list.targetCustomerType === "private" ? "Solo Privati" : "Solo Aziende"}
+                          </Badge>
+                        )}
+                      </div>
                     </TableCell>
                     <TableCell>
                       <Badge variant={list.isActive ? "default" : "secondary"}>
@@ -260,7 +283,12 @@ export default function ResellerPriceLists() {
                           size="icon"
                           variant="ghost"
                           onClick={() => {
-                            setFormData({ name: list.name, description: list.description || "", targetAudience: list.targetAudience || "all" });
+                            setFormData({ 
+                              name: list.name, 
+                              description: list.description || "", 
+                              targetAudience: list.targetAudience || "all",
+                              targetCustomerType: list.targetCustomerType || null
+                            });
                             setEditingList(list);
                           }}
                           data-testid={`button-edit-${list.id}`}
@@ -336,7 +364,7 @@ export default function ResellerPriceLists() {
               <Select
                 value={formData.targetAudience}
                 onValueChange={(value: "sub_reseller" | "repair_center" | "customer" | "reseller" | "all") => 
-                  setFormData({ ...formData, targetAudience: value })
+                  setFormData({ ...formData, targetAudience: value, targetCustomerType: null })
                 }
               >
                 <SelectTrigger className="w-full" data-testid="select-target-audience">
@@ -354,6 +382,31 @@ export default function ResellerPriceLists() {
                 Scegli chi potrà vedere e utilizzare questo listino prezzi
               </p>
             </div>
+            {formData.targetAudience === "customer" && (
+              <div className="space-y-2">
+                <Label htmlFor="targetCustomerType">Tipo Cliente</Label>
+                <Select
+                  value={formData.targetCustomerType || "all"}
+                  onValueChange={(value) => 
+                    setFormData({ ...formData, targetCustomerType: value === "all" ? null : value as "private" | "company" })
+                  }
+                >
+                  <SelectTrigger className="w-full" data-testid="select-target-customer-type">
+                    <SelectValue placeholder="Seleziona tipo cliente..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {customerTypeOptions.map((option) => (
+                      <SelectItem key={option.value} value={option.value}>
+                        {option.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">
+                  Limita questo listino a un tipo specifico di cliente
+                </p>
+              </div>
+            )}
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowCreateDialog(false)}>
@@ -407,7 +460,7 @@ export default function ResellerPriceLists() {
               <Select
                 value={formData.targetAudience}
                 onValueChange={(value: "sub_reseller" | "repair_center" | "customer" | "reseller" | "all") => 
-                  setFormData({ ...formData, targetAudience: value })
+                  setFormData({ ...formData, targetAudience: value, targetCustomerType: null })
                 }
               >
                 <SelectTrigger className="w-full" data-testid="select-edit-target-audience">
@@ -425,6 +478,31 @@ export default function ResellerPriceLists() {
                 Scegli chi potrà vedere e utilizzare questo listino prezzi
               </p>
             </div>
+            {formData.targetAudience === "customer" && (
+              <div className="space-y-2">
+                <Label htmlFor="edit-targetCustomerType">Tipo Cliente</Label>
+                <Select
+                  value={formData.targetCustomerType || "all"}
+                  onValueChange={(value) => 
+                    setFormData({ ...formData, targetCustomerType: value === "all" ? null : value as "private" | "company" })
+                  }
+                >
+                  <SelectTrigger className="w-full" data-testid="select-edit-target-customer-type">
+                    <SelectValue placeholder="Seleziona tipo cliente..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {customerTypeOptions.map((option) => (
+                      <SelectItem key={option.value} value={option.value}>
+                        {option.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">
+                  Limita questo listino a un tipo specifico di cliente
+                </p>
+              </div>
+            )}
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setEditingList(null)}>
