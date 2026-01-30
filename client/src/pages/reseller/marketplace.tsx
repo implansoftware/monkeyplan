@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Product } from "@shared/schema";
 import { Button } from "@/components/ui/button";
@@ -17,6 +17,7 @@ import { Link } from "wouter";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { ProductDetailDialog } from "@/components/product-detail-dialog";
+import { formatCurrency, addVat, calculateVatSummary, DEFAULT_VAT_RATE } from "@/lib/utils";
 
 interface MarketplaceCatalogItem {
   product: Product;
@@ -31,7 +32,8 @@ interface CartItem {
   productId: string;
   product: Product;
   quantity: number;
-  unitPrice: number;
+  unitPrice: number; // IVA esclusa
+  vatRate: number; // Aliquota IVA %
   minQty: number;
   maxQty: number;
   sellerResellerId: string;
@@ -39,7 +41,7 @@ interface CartItem {
 }
 
 function formatPrice(cents: number): string {
-  return new Intl.NumberFormat('it-IT', { style: 'currency', currency: 'EUR' }).format(cents / 100);
+  return formatCurrency(cents);
 }
 
 export default function ResellerMarketplace() {
@@ -120,6 +122,7 @@ export default function ResellerMarketplace() {
         product: item.product,
         quantity: item.minQuantity,
         unitPrice: item.marketplacePrice,
+        vatRate: (item.product as any).vatRate ?? DEFAULT_VAT_RATE,
         minQty: item.minQuantity,
         maxQty: item.availableStock,
         sellerResellerId: item.sellerResellerId,
@@ -145,7 +148,15 @@ export default function ResellerMarketplace() {
     setCart(cart.filter(item => item.productId !== productId));
   };
 
-  const cartTotal = cart.reduce((sum, item) => sum + (item.unitPrice * item.quantity), 0);
+  const cartVatSummary = useMemo(() => {
+    const items = cart.map(item => ({
+      priceCents: item.unitPrice * item.quantity,
+      quantity: 1,
+      vatRate: item.vatRate,
+    }));
+    return calculateVatSummary(items);
+  }, [cart]);
+  const cartTotal = cartVatSummary.total;
   const cartItemCount = cart.reduce((sum, item) => sum + item.quantity, 0);
 
   const handleCheckout = () => {
@@ -416,6 +427,15 @@ export default function ResellerMarketplace() {
           <Separator />
 
           <div className="space-y-4">
+            <div className="flex justify-between text-sm">
+              <span className="text-muted-foreground">Imponibile:</span>
+              <span>{formatPrice(cartVatSummary.subtotal)}</span>
+            </div>
+            <div className="flex justify-between text-sm">
+              <span className="text-muted-foreground">IVA:</span>
+              <span>{formatPrice(cartVatSummary.vatAmount)}</span>
+            </div>
+            <Separator className="my-1" />
             <div className="flex justify-between text-lg font-bold">
               <span>Totale:</span>
               <span>{formatPrice(cartTotal)}</span>

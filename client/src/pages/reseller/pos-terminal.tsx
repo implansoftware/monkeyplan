@@ -8,6 +8,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { formatCurrency, formatPriceWithVat, addVat, calculateVat, calculateVatSummary, DEFAULT_VAT_RATE } from "@/lib/utils";
 import { 
   CreditCard, Banknote, QrCode, Trash2, Plus, Minus, 
   ShoppingCart, Receipt, X, Check, DollarSign, 
@@ -196,9 +197,10 @@ type CartItem = {
   category: string | null;
   imageUrl: string | null;
   quantity: number;
-  unitPrice: number;
+  unitPrice: number; // Prezzo unitario IVA esclusa
+  vatRate: number; // Aliquota IVA %
   discount: number;
-  totalPrice: number;
+  totalPrice: number; // Totale riga IVA esclusa
   isTemporary?: boolean;
   isService?: boolean;
   maxStock?: number;
@@ -242,12 +244,7 @@ type ServiceItem = {
   laborMinutes: number;
 };
 
-const formatCurrency = (cents: number) => {
-  return new Intl.NumberFormat("it-IT", {
-    style: "currency",
-    currency: "EUR",
-  }).format(cents / 100);
-};
+// formatCurrency importato da @/lib/utils
 
 const paymentMethodLabels: Record<string, { label: string; icon: typeof CreditCard }> = {
   cash: { label: "Contanti", icon: Banknote },
@@ -556,9 +553,20 @@ export default function ResellerPosTerminal() {
     },
   });
 
-  const cartSubtotal = cart.reduce((sum, item) => sum + item.totalPrice, 0);
+  // Calcoli IVA separata
+  const cartVatSummary = useMemo(() => {
+    const items = cart.map(item => ({
+      priceCents: item.totalPrice,
+      quantity: 1, // totalPrice già include la quantity
+      vatRate: item.vatRate,
+    }));
+    return calculateVatSummary(items);
+  }, [cart]);
+  
   const discount = Math.round(parseFloat(discountAmount || "0") * 100);
-  const cartTotal = Math.max(0, cartSubtotal - discount);
+  const discountedSubtotal = Math.max(0, cartVatSummary.subtotal - discount);
+  const discountedVat = Math.round(discountedSubtotal * (cartVatSummary.vatAmount / (cartVatSummary.subtotal || 1)));
+  const cartTotal = discountedSubtotal + discountedVat;
   const changeAmount = selectedPayment === "cash" && cashReceived 
     ? (parseFloat(cashReceived) * 100) - cartTotal 
     : 0;
@@ -588,6 +596,7 @@ export default function ResellerPosTerminal() {
         imageUrl: product.imageUrl || null,
         quantity: 1,
         unitPrice: price,
+        vatRate: (product as any).vatRate ?? DEFAULT_VAT_RATE,
         discount: 0,
         totalPrice: price,
         maxStock,
@@ -616,6 +625,7 @@ export default function ResellerPosTerminal() {
         imageUrl: null,
         quantity: 1,
         unitPrice: service.priceCents,
+        vatRate: (service as any).vatRate ?? DEFAULT_VAT_RATE,
         discount: 0,
         totalPrice: service.priceCents,
         isService: true,
@@ -704,6 +714,7 @@ export default function ResellerPosTerminal() {
       imageUrl: null,
       quantity: 1,
       unitPrice: price,
+      vatRate: DEFAULT_VAT_RATE,
       discount: 0,
       totalPrice: price,
       isTemporary: true,
@@ -1291,8 +1302,8 @@ export default function ResellerPosTerminal() {
         
         <div className="p-4 space-y-2">
           <div className="flex justify-between text-sm">
-            <span className="text-muted-foreground">Subtotale</span>
-            <span>{formatCurrency(cartSubtotal)}</span>
+            <span className="text-muted-foreground">Imponibile</span>
+            <span>{formatCurrency(cartVatSummary.subtotal)}</span>
           </div>
           {discount > 0 && (
             <div className="flex justify-between text-sm text-destructive">
@@ -1300,6 +1311,11 @@ export default function ResellerPosTerminal() {
               <span>-{formatCurrency(discount)}</span>
             </div>
           )}
+          <div className="flex justify-between text-sm">
+            <span className="text-muted-foreground">IVA</span>
+            <span>{formatCurrency(discountedVat)}</span>
+          </div>
+          <Separator className="my-1" />
           <div className="flex justify-between font-semibold text-lg">
             <span>Totale</span>
             <span>{formatCurrency(cartTotal)}</span>

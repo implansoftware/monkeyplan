@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Product } from "@shared/schema";
 import { Button } from "@/components/ui/button";
@@ -17,6 +17,7 @@ import { Package, Search, ShoppingCart, Plus, Minus, Trash2, CreditCard, Send, B
 import { Link } from "wouter";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { formatCurrency, addVat, calculateVatSummary, DEFAULT_VAT_RATE } from "@/lib/utils";
 
 interface B2BCatalogItem {
   product: Product;
@@ -30,13 +31,14 @@ interface CartItem {
   productId: string;
   product: Product;
   quantity: number;
-  unitPrice: number;
+  unitPrice: number; // IVA esclusa
+  vatRate: number; // Aliquota IVA %
   minQty: number;
   maxQty: number;
 }
 
 function formatPrice(cents: number): string {
-  return new Intl.NumberFormat('it-IT', { style: 'currency', currency: 'EUR' }).format(cents / 100);
+  return formatCurrency(cents);
 }
 
 export default function ResellerB2BCatalog() {
@@ -88,6 +90,7 @@ export default function ResellerB2BCatalog() {
         product: item.product,
         quantity: item.minimumOrderQuantity,
         unitPrice: item.b2bPrice,
+        vatRate: (item.product as any).vatRate ?? DEFAULT_VAT_RATE,
         minQty: item.minimumOrderQuantity,
         maxQty: item.adminStock,
       }]);
@@ -111,7 +114,15 @@ export default function ResellerB2BCatalog() {
     setCart(cart.filter(item => item.productId !== productId));
   };
 
-  const cartTotal = cart.reduce((sum, item) => sum + (item.unitPrice * item.quantity), 0);
+  const cartVatSummary = useMemo(() => {
+    const items = cart.map(item => ({
+      priceCents: item.unitPrice * item.quantity,
+      quantity: 1,
+      vatRate: item.vatRate,
+    }));
+    return calculateVatSummary(items);
+  }, [cart]);
+  const cartTotal = cartVatSummary.total;
   const cartItemCount = cart.reduce((sum, item) => sum + item.quantity, 0);
 
   const handleCheckout = () => {
@@ -408,9 +419,20 @@ export default function ResellerB2BCatalog() {
 
           <Separator />
 
-          <div className="flex justify-between items-center text-lg font-semibold">
-            <span>Totale Ordine:</span>
-            <span className="text-primary">{formatPrice(cartTotal)}</span>
+          <div className="space-y-2">
+            <div className="flex justify-between text-sm">
+              <span className="text-muted-foreground">Imponibile:</span>
+              <span>{formatPrice(cartVatSummary.subtotal)}</span>
+            </div>
+            <div className="flex justify-between text-sm">
+              <span className="text-muted-foreground">IVA:</span>
+              <span>{formatPrice(cartVatSummary.vatAmount)}</span>
+            </div>
+            <Separator className="my-1" />
+            <div className="flex justify-between items-center text-lg font-semibold">
+              <span>Totale Ordine:</span>
+              <span className="text-primary">{formatPrice(cartTotal)}</span>
+            </div>
           </div>
 
           <div className="space-y-4">
