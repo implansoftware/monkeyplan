@@ -1,18 +1,17 @@
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { useQuery, useMutation } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Users, Search, Phone, Mail, MapPin, Wrench, Eye, CheckCircle, Clock, User, Plus, Loader2 } from "lucide-react";
+import { Users, Search, Phone, Mail, MapPin, Wrench, Eye, CheckCircle, Clock, User, Plus } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { apiRequest, queryClient } from "@/lib/queryClient";
-import { useToast } from "@/hooks/use-toast";
+import { queryClient } from "@/lib/queryClient";
+import { CustomerWizardDialog } from "@/components/CustomerWizardDialog";
 import type { User as UserType, RepairOrder } from "@shared/schema";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
@@ -24,58 +23,15 @@ type CustomerWithStats = UserType & {
   repairs?: RepairOrder[];
 };
 
-const initialFormData = {
-  fullName: "",
-  email: "",
-  phone: "",
-};
-
 export default function RepairCenterCustomers() {
   const [searchQuery, setSearchQuery] = useState("");
   const [detailDialogOpen, setDetailDialogOpen] = useState(false);
   const [selectedCustomer, setSelectedCustomer] = useState<CustomerWithStats | null>(null);
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
-  const [formData, setFormData] = useState(initialFormData);
-  const { toast } = useToast();
 
   const { data: customers = [], isLoading } = useQuery<CustomerWithStats[]>({
     queryKey: ["/api/repair-center/customers"],
   });
-
-  const createMutation = useMutation({
-    mutationFn: async (data: typeof initialFormData) => {
-      const res = await apiRequest("POST", "/api/repair-center/pos/customers", data);
-      return res.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/repair-center/customers"] });
-      setCreateDialogOpen(false);
-      setFormData(initialFormData);
-      toast({
-        title: "Cliente creato",
-        description: "Il nuovo cliente è stato aggiunto con successo.",
-      });
-    },
-    onError: (error: any) => {
-      toast({
-        title: "Errore",
-        description: error.message || "Impossibile creare il cliente.",
-        variant: "destructive",
-      });
-    },
-  });
-
-  const handleCreateCustomer = () => {
-    if (!formData.fullName.trim()) {
-      toast({
-        title: "Errore",
-        description: "Il nome è obbligatorio.",
-        variant: "destructive",
-      });
-      return;
-    }
-    createMutation.mutate(formData);
-  };
 
   const { data: customerDetail } = useQuery<CustomerWithStats>({
     queryKey: ["/api/repair-center/customers", selectedCustomer?.id],
@@ -408,73 +364,15 @@ export default function RepairCenterCustomers() {
         </DialogContent>
       </Dialog>
 
-      {/* Create Customer Dialog */}
-      <Dialog open={createDialogOpen} onOpenChange={(open) => {
-        setCreateDialogOpen(open);
-        if (!open) setFormData(initialFormData);
-      }}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle className="flex flex-wrap items-center gap-2">
-              <Plus className="h-5 w-5" />
-              Nuovo Cliente
-            </DialogTitle>
-            <DialogDescription>
-              Inserisci i dati del nuovo cliente.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label htmlFor="fullName">Nome Completo *</Label>
-              <Input
-                id="fullName"
-                placeholder="Mario Rossi"
-                value={formData.fullName}
-                onChange={(e) => setFormData(prev => ({ ...prev, fullName: e.target.value }))}
-                data-testid="input-customer-fullname"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                placeholder="mario.rossi@email.com"
-                value={formData.email}
-                onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
-                data-testid="input-customer-email"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="phone">Telefono</Label>
-              <Input
-                id="phone"
-                placeholder="+39 123 456 7890"
-                value={formData.phone}
-                onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
-                data-testid="input-customer-phone"
-              />
-            </div>
-          </div>
-          <DialogFooter className="gap-2">
-            <Button variant="outline" onClick={() => setCreateDialogOpen(false)}>
-              Annulla
-            </Button>
-            <Button 
-              onClick={handleCreateCustomer}
-              disabled={createMutation.isPending}
-              data-testid="button-save-customer"
-            >
-              {createMutation.isPending ? (
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-              ) : (
-                <Plus className="h-4 w-4 mr-2" />
-              )}
-              Crea Cliente
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      {/* Create Customer Wizard Dialog */}
+      <CustomerWizardDialog
+        open={createDialogOpen}
+        onOpenChange={setCreateDialogOpen}
+        onSuccess={() => {
+          queryClient.invalidateQueries({ queryKey: ["/api/repair-center/customers"] });
+          setCreateDialogOpen(false);
+        }}
+      />
     </div>
   );
 }

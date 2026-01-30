@@ -30424,6 +30424,106 @@ export function registerRoutes(app: Express): Server {
   // ==========================================
 
   // Repair Center: List customers assigned to this repair center
+  // Repair Center: Create a new customer (full wizard)
+  app.post("/api/repair-center/customers", requireRole("repair_center", "repair_center_staff"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const repairCenterId = req.user.repairCenterId || req.user.id;
+      
+      // Get repair center to find reseller
+      const repairCenter = await storage.getRepairCenter(repairCenterId);
+      if (!repairCenter) {
+        return res.status(404).send("Centro riparazione non trovato");
+      }
+      
+      const baseSchema = insertUserSchema.pick({
+        username: true,
+        password: true,
+        email: true,
+        fullName: true,
+        phone: true,
+        isActive: true,
+        indirizzo: true,
+        cap: true,
+        citta: true,
+        provincia: true,
+        codiceFiscale: true,
+        partitaIva: true,
+        ragioneSociale: true,
+      }).extend({
+        username: z.string().optional(),
+        password: z.string().optional(),
+        customerType: z.enum(["private", "company"]).optional(),
+        address: z.string().optional(),
+        city: z.string().optional(),
+        zipCode: z.string().optional(),
+        country: z.string().optional(),
+        companyName: z.string().optional(),
+        vatNumber: z.string().optional(),
+        fiscalCode: z.string().optional(),
+        pec: z.string().optional(),
+        codiceUnivoco: z.string().optional(),
+        iban: z.string().optional(),
+      });
+      const validatedData = baseSchema.parse(req.body);
+      
+      // Auto-generate username if not provided
+      let username = validatedData.username;
+      const nameForUsername = validatedData.fullName || validatedData.companyName || "cliente";
+      if (!username) {
+        let baseUsername = nameForUsername
+          .toLowerCase()
+          .replace(/[^a-z0-9]/g, "")
+          .substring(0, 20);
+        if (baseUsername.length < 3) baseUsername = "cliente";
+        username = baseUsername;
+        let counter = 1;
+        while (await storage.getUserByUsername(username)) {
+          username = `${baseUsername}${counter}`;
+          counter++;
+        }
+      }
+      
+      // Auto-generate password if not provided
+      let password = validatedData.password;
+      if (!password) {
+        password = randomBytes(8).toString("hex");
+      }
+
+      // Hash password before storing
+      const hashedPassword = await hashPassword(password);
+
+      const user = await storage.createUser({
+        username: username,
+        password: hashedPassword,
+        email: validatedData.email,
+        fullName: validatedData.fullName || validatedData.companyName || "",
+        phone: validatedData.phone,
+        isActive: validatedData.isActive ?? true,
+        role: "customer",
+        resellerId: repairCenter.resellerId,
+        repairCenterId: repairCenterId,
+        indirizzo: validatedData.address || validatedData.indirizzo || null,
+        cap: validatedData.zipCode || validatedData.cap || null,
+        citta: validatedData.city || validatedData.citta || null,
+        provincia: validatedData.provincia || null,
+        codiceFiscale: validatedData.fiscalCode || validatedData.codiceFiscale || null,
+        partitaIva: validatedData.vatNumber || validatedData.partitaIva || null,
+        ragioneSociale: validatedData.companyName || validatedData.ragioneSociale || null,
+      });
+      
+      // Associate customer with this repair center
+      await storage.ensureCustomerRepairCenterAssociation(user.id, repairCenterId);
+      
+      setActivityEntity(res, { type: "users", id: user.id });
+      const { password: _, ...safeUser } = user;
+      res.status(201).json({ customer: safeUser, tempPassword: password });
+    } catch (error: any) {
+      res.status(400).send(error.message);
+    }
+  });
+
   app.get("/api/repair-center/customers", requireRole("repair_center"), async (req, res) => {
     try {
       if (!req.user || !req.user.repairCenterId) {

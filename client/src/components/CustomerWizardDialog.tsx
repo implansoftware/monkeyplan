@@ -122,7 +122,11 @@ export function CustomerWizardDialog({ open, onOpenChange, onSuccess }: Customer
       if (selectedRepairCenterIds.length > 0) {
         payload.repairCenterIds = selectedRepairCenterIds;
       }
-      const endpoint = (isReseller || isResellerStaff) ? "/api/reseller/customers" : "/api/customers";
+      const endpoint = (isReseller || isResellerStaff) 
+        ? "/api/reseller/customers" 
+        : isRepairCenter 
+          ? "/api/repair-center/customers"
+          : "/api/customers";
       const response = await apiRequest("POST", endpoint, payload);
       const result = await response.json() as {
         customer: {
