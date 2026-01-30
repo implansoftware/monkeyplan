@@ -36231,19 +36231,8 @@ export function registerRoutes(app: Express): Server {
         return res.status(403).json({ error: "Non autorizzato" });
       }
       
-      let customers = await storage.listCustomers({ repairCenterId });
-      
-      // Filtra per ricerca se specificata
-      if (search && search.trim()) {
-        const searchLower = search.toLowerCase().trim();
-        customers = customers.filter(c => 
-          (c.fullName && c.fullName.toLowerCase().includes(searchLower)) ||
-          (c.email && c.email.toLowerCase().includes(searchLower)) ||
-          (c.phone && c.phone.includes(searchLower)) ||
-          (c.companyName && c.companyName.toLowerCase().includes(searchLower))
-        );
-      }
-      
+      // Usa searchPosCustomers che cerca dalla tabella customerRepairCenters
+      const customers = await storage.searchPosCustomers(repairCenterId, search);
       res.json(customers);
     } catch (error: any) {
       res.status(500).json({ error: error.message });
