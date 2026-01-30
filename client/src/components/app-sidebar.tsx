@@ -434,6 +434,21 @@ export function AppSidebar() {
     enabled: shouldShowResellerLogo,
   });
 
+  // Query repair center settings for logo (only for repair centers)
+  const { data: repairCenterData } = useQuery<{ id: number; name: string; logoUrl: string | null }>({
+    queryKey: ["/api/repair-center/settings"],
+    enabled: isRepairCenter,
+    select: (data: any) => ({ id: data.id, name: data.name, logoUrl: data.logoUrl }),
+  });
+
+  // Determine which logo to show: repair center logo takes priority over parent reseller logo
+  const sidebarLogoUrl = isRepairCenter && repairCenterData?.logoUrl 
+    ? repairCenterData.logoUrl 
+    : parentReseller?.logoUrl;
+  const sidebarLogoName = isRepairCenter && repairCenterData?.logoUrl
+    ? repairCenterData.name
+    : (parentReseller?.ragioneSociale || parentReseller?.fullName);
+
   // Query sub-resellers for franchising/gdo resellers
   const { data: subResellers = [] } = useQuery<any[]>({
     queryKey: ["/api/reseller/sub-resellers"],
@@ -662,20 +677,20 @@ export function AppSidebar() {
   return (
     <Sidebar>
       <SidebarHeader className="px-3 py-4">
-        {parentReseller?.logoUrl ? (
+        {sidebarLogoUrl ? (
           <div className="flex flex-wrap items-center gap-3 p-3 rounded-2xl bg-gradient-to-br from-emerald-500/10 via-teal-500/5 to-cyan-500/10 border border-emerald-500/20 backdrop-blur-sm">
             <div className="relative">
               <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/30 to-teal-500/20 rounded-xl blur-sm" />
               <Avatar className="relative h-11 w-11 rounded-xl shadow-lg ring-2 ring-emerald-500/30">
-                <AvatarImage src={parentReseller.logoUrl} alt={parentReseller.ragioneSociale || parentReseller.fullName} className="object-contain" />
+                <AvatarImage src={sidebarLogoUrl} alt={sidebarLogoName || ''} className="object-contain" />
                 <AvatarFallback className="rounded-xl bg-gradient-to-br from-emerald-500 to-teal-500 text-white text-sm font-bold">
-                  {getInitials(parentReseller.ragioneSociale || parentReseller.fullName)}
+                  {getInitials(sidebarLogoName || '')}
                 </AvatarFallback>
               </Avatar>
             </div>
             <div className="min-w-0 flex-1">
               <span className="font-bold text-sm block truncate">
-                {parentReseller.ragioneSociale || parentReseller.fullName}
+                {sidebarLogoName}
               </span>
               <div className="flex flex-wrap items-center gap-1.5 mt-0.5">
                 <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
