@@ -12329,10 +12329,10 @@ export class DatabaseStorage implements IStorage {
 
   async getInheritedPriceLists(childId: string, childRole: string): Promise<PriceList[]> {
     if (childRole === 'repair_center') {
-      const [user] = await db.select().from(users).where(eq(users.repairCenterId, childId));
-      if (user?.resellerId) {
+      const [center] = await db.select().from(repairCenters).where(eq(repairCenters.id, childId));
+      if (center?.resellerId) {
         return db.select().from(priceLists)
-          .where(and(eq(priceLists.ownerId, user.resellerId), eq(priceLists.isActive, true)))
+          .where(and(eq(priceLists.ownerId, center.resellerId), eq(priceLists.isActive, true)))
           .orderBy(desc(priceLists.createdAt));
       }
     } else if (childRole === 'sub_reseller') {
