@@ -379,11 +379,32 @@ export default function ResellerPosTerminal() {
     enabled: !!currentSession && !!selectedRegisterId && !!repairCenterId,
   });
 
-  // Prodotti del centro riparazione
-  const { data: products = [], isLoading: productsLoading } = useQuery<Product[]>({
-    queryKey: ["/api/reseller/pos", repairCenterId, "products"],
+  // Type per clienti POS (definito prima per poterlo usare sotto)
+  type PosCustomerType = { id: string; fullName: string; email: string; phone: string | null; customerType: 'private' | 'company' };
+  
+  // Clienti del centro (query anticipata per poter usare customerType nei prodotti)
+  const { data: customersForProducts = [] } = useQuery<PosCustomerType[]>({
     queryFn: async () => {
-      const res = await fetch(`/api/reseller/pos/${repairCenterId}/products`, { credentials: "include" });
+      const res = await fetch(`/api/reseller/pos/${repairCenterId}/customers`, { credentials: "include" });
+      if (!res.ok) return [];
+      return res.json();
+    },
+    queryKey: ["/api/reseller/pos", repairCenterId, "customers-for-products"],
+    enabled: !!repairCenterId,
+  });
+  
+  // Determina il customerType del cliente selezionato per il pricing
+  const selectedCustomerForPricing = customersForProducts.find(c => c.id === selectedCustomerId);
+  const pricingCustomerType = selectedCustomerForPricing?.customerType;
+
+  // Prodotti del centro riparazione (con prezzi basati sul tipo cliente)
+  const { data: products = [], isLoading: productsLoading } = useQuery<Product[]>({
+    queryKey: ["/api/reseller/pos", repairCenterId, "products", pricingCustomerType],
+    queryFn: async () => {
+      const url = pricingCustomerType 
+        ? `/api/reseller/pos/${repairCenterId}/products?customerType=${pricingCustomerType}`
+        : `/api/reseller/pos/${repairCenterId}/products`;
+      const res = await fetch(url, { credentials: "include" });
       if (!res.ok) return [];
       return res.json();
     },
@@ -407,10 +428,8 @@ export default function ResellerPosTerminal() {
     s.category.toLowerCase().includes(serviceSearchQuery.toLowerCase())
   ).slice(0, 20);
 
-  type PosCustomer = { id: string; fullName: string; email: string; phone: string | null };
-
-  // Clienti del centro
-  const { data: customers = [] } = useQuery<PosCustomer[]>({
+  // Clienti del centro (per ricerca nel dialog pagamento)
+  const { data: customers = [] } = useQuery<PosCustomerType[]>({
     queryFn: async () => {
       const res = await fetch(`/api/reseller/pos/${repairCenterId}/customers?search=${encodeURIComponent(customerSearch)}`, { credentials: "include" });
       if (!res.ok) throw new Error("Errore caricamento clienti");
@@ -476,8 +495,9 @@ export default function ResellerPosTerminal() {
       const res = await apiRequest("POST", "/api/reseller/pos/customers", data);
       return res.json();
     },
-    onSuccess: (customer: PosCustomer) => {
-      queryClient.invalidateQueries({ queryKey: ["/api/reseller/pos/customers"] });
+    onSuccess: (customer: PosCustomerType) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/reseller/pos", repairCenterId, "customers"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/reseller/pos", repairCenterId, "customers-for-products"] });
       setSelectedCustomerId(customer.id);
       setCustomerType("existing");
       setNewCustomerName("");

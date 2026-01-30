@@ -169,7 +169,7 @@ export interface IStorage {
   listAllCustomerRepairCenters(): Promise<CustomerRepairCenter[]>;
   ensureCustomerRepairCenterAssociation(customerId: string, repairCenterId: string): Promise<void>;
   listCustomerIdsForRepairCenter(repairCenterId: string): Promise<string[]>;
-  searchPosCustomers(repairCenterId: string, search?: string): Promise<Array<{ id: string; fullName: string; email: string; phone: string | null }>>;
+  searchPosCustomers(repairCenterId: string, search?: string): Promise<Array<{ id: string; fullName: string; email: string; phone: string | null; customerType: 'private' | 'company' }>>;
   createQuickCustomer(repairCenterId: string, data: { fullName: string; email?: string; phone?: string }): Promise<User>;
   
   // Staff-RepairCenter Many-to-Many
@@ -1417,16 +1417,17 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async searchPosCustomers(repairCenterId: string, search?: string): Promise<Array<{ id: string; fullName: string; email: string; phone: string | null }>> {
+  async searchPosCustomers(repairCenterId: string, search?: string): Promise<Array<{ id: string; fullName: string; email: string; phone: string | null; customerType: 'private' | 'company' }>> {
     const customerIds = await this.listCustomerIdsForRepairCenter(repairCenterId);
     if (customerIds.length === 0) return [];
     
-    let query = db
+    const results = await db
       .select({
         id: users.id,
         fullName: users.fullName,
         email: users.email,
         phone: users.phone,
+        customerType: users.customerType,
       })
       .from(users)
       .where(and(
@@ -1434,22 +1435,22 @@ export class DatabaseStorage implements IStorage {
         eq(users.role, "customer")
       ));
     
-    const results = await query;
-    
+    let filtered = results;
     if (search && search.trim()) {
       const searchLower = search.toLowerCase().trim();
-      return results.filter(c => 
+      filtered = results.filter(c => 
         (c.fullName && c.fullName.toLowerCase().includes(searchLower)) ||
         (c.email && c.email.toLowerCase().includes(searchLower)) ||
         (c.phone && c.phone.includes(searchLower))
       );
     }
     
-    return results.map(c => ({
+    return filtered.map(c => ({
       id: c.id,
       fullName: c.fullName || "",
       email: c.email,
       phone: c.phone,
+      customerType: c.customerType || 'private',
     }));
   }
 
