@@ -741,6 +741,28 @@ export default function ResellerPosTerminal() {
     }
   }, [currentSession]);
 
+  // Aggiorna i prezzi nel carrello quando cambiano i prodotti (es. cambio cliente)
+  useEffect(() => {
+    if (products.length === 0 || cart.length === 0) return;
+    
+    setCart(prevCart => prevCart.map(item => {
+      if (item.productId) {
+        const product = products.find(p => p.id === item.productId);
+        if (product) {
+          const newPrice = product.sellingPrice || product.unitPrice || 0;
+          if (newPrice !== item.unitPrice) {
+            return {
+              ...item,
+              unitPrice: newPrice,
+              totalPrice: item.quantity * newPrice - item.discount
+            };
+          }
+        }
+      }
+      return item;
+    }));
+  }, [products]);
+
   if (sessionLoading) {
     return (
       <div className="p-4">
