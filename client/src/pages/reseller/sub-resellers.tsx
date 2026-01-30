@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Badge } from "@/components/ui/badge";
@@ -11,11 +11,12 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { Progress } from "@/components/ui/progress";
-import { Network, Search, Users, Building, Store, ShoppingCart, Package, TrendingUp, DollarSign, Eye, Plus, Pencil, Trash2, Loader2, Copy, KeyRound, User as UserIcon, FileText, Check, ChevronLeft, ChevronRight } from "lucide-react";
+import { Network, Search, Users, Building, Store, ShoppingCart, Package, TrendingUp, DollarSign, Eye, Plus, Pencil, Trash2, Loader2, Copy, KeyRound, User as UserIcon, FileText, Check, ChevronLeft, ChevronRight, Camera, Upload } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
 import { Link } from "wouter";
@@ -50,6 +51,7 @@ interface SubReseller {
   pec?: string | null;
   codiceUnivoco?: string | null;
   hasAutonomousInvoicing?: boolean;
+  logoUrl?: string | null;
 }
 
 interface SubResellerEcommerce {
@@ -124,6 +126,9 @@ export default function SubResellers() {
   const [formData, setFormData] = useState<SubResellerFormData>(initialFormData);
   const [useParentData, setUseParentData] = useState(false);
   const [wizardStep, setWizardStep] = useState(1);
+  const [logoFile, setLogoFile] = useState<File | null>(null);
+  const [logoPreview, setLogoPreview] = useState<string | null>(null);
+  const [isUploadingLogo, setIsUploadingLogo] = useState(false);
   const { toast } = useToast();
   const { user: currentUser } = useAuth();
 
@@ -296,6 +301,100 @@ export default function SubResellers() {
     setEditingReseller(null);
     setFormData(initialFormData);
     setUseParentData(false);
+    setLogoFile(null);
+    setLogoPreview(null);
+  };
+
+  const handleLogoFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const validTypes = ['image/jpeg', 'image/png', 'image/webp'];
+    if (!validTypes.includes(file.type)) {
+      toast({
+        title: "Formato non valido",
+        description: "Il file deve essere in formato JPEG, PNG o WebP.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (file.size > 2 * 1024 * 1024) {
+      toast({
+        title: "File troppo grande",
+        description: "Il file non può superare i 2MB.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setLogoFile(file);
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setLogoPreview(reader.result as string);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleUploadLogo = async (subResellerId: string) => {
+    if (!logoFile) return;
+    
+    setIsUploadingLogo(true);
+    try {
+      const formData = new FormData();
+      formData.append("logo", logoFile);
+      
+      const res = await fetch(`/api/sub-resellers/${subResellerId}/logo`, {
+        method: "POST",
+        body: formData,
+        credentials: "include",
+      });
+      
+      if (!res.ok) {
+        throw new Error(await res.text());
+      }
+      
+      await queryClient.invalidateQueries({ queryKey: ["/api/reseller/sub-resellers"] });
+      setLogoFile(null);
+      setLogoPreview(null);
+      toast({
+        title: "Logo caricato",
+        description: "Il logo è stato aggiornato con successo.",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Errore",
+        description: error.message || "Impossibile caricare il logo.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsUploadingLogo(false);
+    }
+  };
+
+  const handleDeleteLogo = async (subResellerId: string) => {
+    try {
+      const res = await fetch(`/api/sub-resellers/${subResellerId}/logo`, {
+        method: "DELETE",
+        credentials: "include",
+      });
+      
+      if (!res.ok) {
+        throw new Error(await res.text());
+      }
+      
+      await queryClient.invalidateQueries({ queryKey: ["/api/reseller/sub-resellers"] });
+      toast({
+        title: "Logo rimosso",
+        description: "Il logo è stato rimosso con successo.",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Errore",
+        description: error.message || "Impossibile rimuovere il logo.",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleSubmit = () => {
@@ -764,6 +863,94 @@ export default function SubResellers() {
                       data-testid="switch-autonomous-invoicing"
                     />
                   </div>
+
+                  {/* Logo Section - Only show when editing */}
+                  {editingReseller && (
+                    <div className="space-y-3 pt-4 border-t">
+                      <div>
+                        <Label className="text-base font-medium">Logo Aziendale</Label>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          Carica il logo del sub-reseller (JPEG, PNG o WebP, max 2MB)
+                        </p>
+                      </div>
+                      
+                      <div className="flex flex-wrap items-start gap-4">
+                        <Avatar className="h-16 w-16 rounded-xl border-2 border-dashed border-muted-foreground/25">
+                          {(logoPreview || editingReseller.logoUrl) ? (
+                            <AvatarImage 
+                              src={logoPreview || editingReseller.logoUrl || ''} 
+                              alt="Logo" 
+                              className="object-contain"
+                            />
+                          ) : null}
+                          <AvatarFallback className="rounded-xl bg-muted">
+                            <Building className="h-6 w-6 text-muted-foreground" />
+                          </AvatarFallback>
+                        </Avatar>
+                        
+                        <div className="flex-1 space-y-2">
+                          <input
+                            type="file"
+                            accept="image/jpeg,image/png,image/webp"
+                            onChange={handleLogoFileChange}
+                            className="hidden"
+                            id="logo-upload-sub-reseller"
+                            data-testid="input-logo-file-subreseller"
+                          />
+                          
+                          <div className="flex flex-wrap gap-2">
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={() => document.getElementById('logo-upload-sub-reseller')?.click()}
+                              data-testid="button-select-logo-subreseller"
+                            >
+                              <Camera className="h-4 w-4 mr-2" />
+                              Seleziona
+                            </Button>
+                            
+                            {logoFile && (
+                              <Button
+                                type="button"
+                                size="sm"
+                                onClick={() => handleUploadLogo(editingReseller.id)}
+                                disabled={isUploadingLogo}
+                                data-testid="button-upload-logo-subreseller"
+                              >
+                                {isUploadingLogo ? (
+                                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                ) : (
+                                  <Upload className="h-4 w-4 mr-2" />
+                                )}
+                                Carica
+                              </Button>
+                            )}
+                            
+                            {editingReseller.logoUrl && !logoFile && (
+                              <Button
+                                type="button"
+                                variant="destructive"
+                                size="sm"
+                                onClick={() => handleDeleteLogo(editingReseller.id)}
+                                data-testid="button-delete-logo-subreseller"
+                              >
+                                <Trash2 className="h-4 w-4 mr-2" />
+                                Rimuovi
+                              </Button>
+                            )}
+                          </div>
+                          
+                          {logoFile && (
+                            <p className="text-xs text-muted-foreground">
+                              File: {logoFile.name}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
                   {editingReseller && (
                     <div className="space-y-2 pt-2 border-t">
                       <Label htmlFor="password">Password (lascia vuoto per mantenere)</Label>

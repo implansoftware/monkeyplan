@@ -441,13 +441,23 @@ export function AppSidebar() {
     select: (data: any) => ({ id: data.id, name: data.name, logoUrl: data.logoUrl }),
   });
 
-  // Determine which logo to show: repair center logo takes priority over parent reseller logo
+  // Determine if current user is a sub-reseller (reseller with parentResellerId)
+  const isSubReseller = isReseller && hasParentReseller;
+
+  // Determine which logo to show with priority:
+  // 1. Repair center's own logo (if repair_center role)
+  // 2. Sub-reseller's own logo (if sub-reseller with logoUrl)
+  // 3. Parent reseller's logo (fallback)
   const sidebarLogoUrl = isRepairCenter && repairCenterData?.logoUrl 
     ? repairCenterData.logoUrl 
-    : parentReseller?.logoUrl;
+    : isSubReseller && user?.logoUrl
+      ? user.logoUrl
+      : parentReseller?.logoUrl;
   const sidebarLogoName = isRepairCenter && repairCenterData?.logoUrl
     ? repairCenterData.name
-    : (parentReseller?.ragioneSociale || parentReseller?.fullName);
+    : isSubReseller && user?.logoUrl
+      ? ((user as any).ragioneSociale || user?.fullName)
+      : (parentReseller?.ragioneSociale || parentReseller?.fullName);
 
   // Query sub-resellers for franchising/gdo resellers
   const { data: subResellers = [] } = useQuery<any[]>({

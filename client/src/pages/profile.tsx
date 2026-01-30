@@ -89,10 +89,13 @@ export default function ProfilePage() {
       const formData = new FormData();
       formData.append("logo", file);
 
-      // Determine endpoint based on user role
+      // Determine endpoint based on user role and sub-reseller status
       let endpoint = `/api/resellers/${user.id}/logo`;
       if (user.role === 'repair_center') {
         endpoint = `/api/repair-centers/${user.id}/logo`;
+      } else if (user.role === 'reseller' && (user as any).parentResellerId) {
+        // Sub-reseller uses different endpoint
+        endpoint = `/api/sub-resellers/${user.id}/logo`;
       }
 
       const res = await fetch(endpoint, {
@@ -129,10 +132,13 @@ export default function ProfilePage() {
     if (!user) return;
     
     try {
-      // Determine endpoint based on user role
+      // Determine endpoint based on user role and sub-reseller status
       let endpoint = `/api/resellers/${user.id}/logo`;
       if (user.role === 'repair_center') {
         endpoint = `/api/repair-centers/${user.id}/logo`;
+      } else if (user.role === 'reseller' && (user as any).parentResellerId) {
+        // Sub-reseller uses different endpoint
+        endpoint = `/api/sub-resellers/${user.id}/logo`;
       }
 
       const res = await fetch(endpoint, {
