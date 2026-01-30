@@ -315,12 +315,12 @@ export default function ResellerPosTerminal() {
     enabled: !!repairCenterId,
   });
   
-  // Listini disponibili (ereditati)
+  // Listini disponibili del reseller
   type PriceList = { id: string; name: string; description: string | null; isDefault: boolean };
   const { data: priceLists = [] } = useQuery<PriceList[]>({
-    queryKey: ["/api/price-lists/inherited"],
+    queryKey: ["/api/price-lists"],
     queryFn: async () => {
-      const res = await fetch("/api/price-lists/inherited", { credentials: "include" });
+      const res = await fetch("/api/price-lists", { credentials: "include" });
       if (!res.ok) return [];
       return res.json();
     },
@@ -1386,7 +1386,7 @@ export default function ResellerPosTerminal() {
           </div>
           
           {/* Selezione Listino Prezzi */}
-          {priceLists.length > 1 && (
+          {priceLists.length > 0 && (
             <div className="w-full space-y-1">
               <div className="flex items-center gap-2">
                 <span className="text-sm text-muted-foreground">Listino:</span>
