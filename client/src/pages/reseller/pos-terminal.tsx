@@ -295,6 +295,7 @@ export default function ResellerPosTerminal() {
   const [newCustomerPhone, setNewCustomerPhone] = useState("");
   const [customerSearch, setCustomerSearch] = useState("");
   const [selectedRegisterId, setSelectedRegisterId] = useState<string>(urlRegisterId);
+  const [selectedPriceListId, setSelectedPriceListId] = useState<string>("");
   
   // Stato per prodotto temporaneo
   const [tempProductDialog, setTempProductDialog] = useState(false);
@@ -313,6 +314,25 @@ export default function ResellerPosTerminal() {
     },
     enabled: !!repairCenterId,
   });
+  
+  // Listini disponibili (ereditati)
+  type PriceList = { id: string; name: string; description: string | null; isDefault: boolean };
+  const { data: priceLists = [] } = useQuery<PriceList[]>({
+    queryKey: ["/api/price-lists/inherited"],
+    queryFn: async () => {
+      const res = await fetch("/api/price-lists/inherited", { credentials: "include" });
+      if (!res.ok) return [];
+      return res.json();
+    },
+  });
+  
+  // Seleziona listino di default quando disponibile
+  useEffect(() => {
+    if (priceLists.length > 0 && !selectedPriceListId) {
+      const defaultList = priceLists.find(p => p.isDefault) || priceLists[0];
+      if (defaultList) setSelectedPriceListId(defaultList.id);
+    }
+  }, [priceLists, selectedPriceListId]);
   
   // POS Registers filtrati per questo centro
   const { data: registers = [], isLoading: registersLoading } = useQuery<PosRegister[]>({
@@ -381,30 +401,15 @@ export default function ResellerPosTerminal() {
     enabled: !!currentSession && !!selectedRegisterId && !!repairCenterId,
   });
 
-  // Type per clienti POS (definito prima per poterlo usare sotto)
+  // Type per clienti POS
   type PosCustomerType = { id: string; fullName: string; email: string; phone: string | null; customerType: 'private' | 'company' };
-  
-  // Clienti del centro (query anticipata per poter usare customerType nei prodotti)
-  const { data: customersForProducts = [] } = useQuery<PosCustomerType[]>({
-    queryFn: async () => {
-      const res = await fetch(`/api/reseller/pos/${repairCenterId}/customers`, { credentials: "include" });
-      if (!res.ok) return [];
-      return res.json();
-    },
-    queryKey: ["/api/reseller/pos", repairCenterId, "customers-for-products"],
-    enabled: !!repairCenterId,
-  });
-  
-  // Determina il customerType del cliente selezionato per il pricing
-  const selectedCustomerForPricing = customersForProducts.find(c => c.id === selectedCustomerId);
-  const pricingCustomerType = selectedCustomerForPricing?.customerType;
 
-  // Prodotti del centro riparazione (con prezzi basati sul tipo cliente)
+  // Prodotti del centro riparazione (con prezzi basati sul listino selezionato)
   const { data: products = [], isLoading: productsLoading } = useQuery<Product[]>({
-    queryKey: ["/api/reseller/pos", repairCenterId, "products", pricingCustomerType],
+    queryKey: ["/api/reseller/pos", repairCenterId, "products", selectedPriceListId],
     queryFn: async () => {
-      const url = pricingCustomerType 
-        ? `/api/reseller/pos/${repairCenterId}/products?customerType=${pricingCustomerType}`
+      const url = selectedPriceListId 
+        ? `/api/reseller/pos/${repairCenterId}/products?priceListId=${selectedPriceListId}`
         : `/api/reseller/pos/${repairCenterId}/products`;
       const res = await fetch(url, { credentials: "include" });
       if (!res.ok) return [];
@@ -1379,6 +1384,27 @@ export default function ResellerPosTerminal() {
               </div>
             )}
           </div>
+          
+          {/* Selezione Listino Prezzi */}
+          {priceLists.length > 1 && (
+            <div className="w-full space-y-1">
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-muted-foreground">Listino:</span>
+                <Select value={selectedPriceListId} onValueChange={setSelectedPriceListId}>
+                  <SelectTrigger className="flex-1 h-8" data-testid="select-price-list">
+                    <SelectValue placeholder="Seleziona listino" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {priceLists.map(list => (
+                      <SelectItem key={list.id} value={list.id} data-testid={`price-list-${list.id}`}>
+                        {list.name} {list.isDefault && "(Default)"}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          )}
           
           <div className="w-full">
             <Input
