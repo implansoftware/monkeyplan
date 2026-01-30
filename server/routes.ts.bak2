@@ -36769,27 +36769,6 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
-
-  // Get inherited price lists
-  app.get("/api/price-lists/inherited", requireAuth, async (req, res) => {
-    try {
-      const user = req.user as User;
-      let childId = user.id;
-      let childRole = user.role;
-      
-      if ((user.role === "repair_center" || user.role === "repair_center_staff") && user.repairCenterId) {
-        childId = user.repairCenterId;
-        childRole = "repair_center";
-      }
-      
-      const lists = await storage.getInheritedPriceLists(childId, childRole);
-      res.json(lists);
-    } catch (error: any) {
-      console.error("Error fetching inherited price lists:", error);
-      res.status(500).json({ error: error.message });
-    }
-  });
-
   // Get single price list with items
   app.get("/api/price-lists/:id", requireAuth, async (req, res) => {
     try {
@@ -37003,6 +36982,26 @@ export function registerRoutes(app: Express): Server {
       res.status(201).json(newList);
     } catch (error: any) {
       console.error("Error copying price list:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Get inherited price lists
+  app.get("/api/price-lists/inherited", requireAuth, async (req, res) => {
+    try {
+      const user = req.user as User;
+      let childId = user.id;
+      let childRole = user.role;
+      
+      if ((user.role === "repair_center" || user.role === "repair_center_staff") && user.repairCenterId) {
+        childId = user.repairCenterId;
+        childRole = "repair_center";
+      }
+      
+      const lists = await storage.getInheritedPriceLists(childId, childRole);
+      res.json(lists);
+    } catch (error: any) {
+      console.error("Error fetching inherited price lists:", error);
       res.status(500).json({ error: error.message });
     }
   });
