@@ -1,3 +1,4 @@
+import { useState, useRef } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,8 +13,9 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import { Building2, Phone, Mail, Globe, Clock, Camera, Save, Loader2, MapPin, FileText, CreditCard, Instagram, Linkedin, Twitter, Facebook, Settings } from "lucide-react";
+import { Building2, Phone, Mail, Globe, Clock, Camera, Save, Loader2, MapPin, FileText, CreditCard, Instagram, Linkedin, Twitter, Facebook, Settings, Trash2, Upload } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { z } from "zod";
 import type { RepairCenter } from "@shared/schema";
 
@@ -78,6 +80,9 @@ const defaultOpeningHours = DAYS_OF_WEEK.reduce((acc, day) => {
 
 export default function RepairCenterSettings() {
   const { toast } = useToast();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [logoFile, setLogoFile] = useState<File | null>(null);
+  const [logoPreview, setLogoPreview] = useState<string | null>(null);
 
   const { data: settings, isLoading } = useQuery<RepairCenter>({
     queryKey: ['/api/repair-center/settings'],
@@ -154,6 +159,102 @@ export default function RepairCenterSettings() {
       });
     },
   });
+
+  const uploadLogoMutation = useMutation({
+    mutationFn: async (file: File) => {
+      if (!settings?.id) throw new Error("Centro non trovato");
+      const formData = new FormData();
+      formData.append("logo", file);
+      const response = await fetch(`/api/repair-centers/${settings.id}/logo`, {
+        method: "POST",
+        body: formData,
+        credentials: "include",
+      });
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || "Errore durante l'upload del logo");
+      }
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/repair-center/settings'] });
+      setLogoFile(null);
+      setLogoPreview(null);
+      toast({
+        title: "Logo caricato",
+        description: "Il logo è stato aggiornato con successo.",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Errore",
+        description: error.message || "Impossibile caricare il logo.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const deleteLogoMutation = useMutation({
+    mutationFn: async () => {
+      if (!settings?.id) throw new Error("Centro non trovato");
+      return apiRequest('DELETE', `/api/repair-centers/${settings.id}/logo`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/repair-center/settings'] });
+      toast({
+        title: "Logo rimosso",
+        description: "Il logo è stato rimosso con successo.",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Errore",
+        description: error.message || "Impossibile rimuovere il logo.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleLogoFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const validTypes = ['image/jpeg', 'image/png', 'image/webp'];
+    if (!validTypes.includes(file.type)) {
+      toast({
+        title: "Formato non valido",
+        description: "Il file deve essere in formato JPEG, PNG o WebP.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (file.size > 2 * 1024 * 1024) {
+      toast({
+        title: "File troppo grande",
+        description: "Il file non può superare i 2MB.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setLogoFile(file);
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setLogoPreview(reader.result as string);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleUploadLogo = () => {
+    if (logoFile) {
+      uploadLogoMutation.mutate(logoFile);
+    }
+  };
+
+  const handleDeleteLogo = () => {
+    deleteLogoMutation.mutate();
+  };
 
   const onSubmit = (data: SettingsFormData) => {
     updateMutation.mutate(data);
@@ -333,6 +434,98 @@ export default function RepairCenterSettings() {
                         </FormItem>
                       )}
                     />
+                  </div>
+
+                  <Separator />
+
+                  {/* Logo Aziendale Section */}
+                  <div className="space-y-4">
+                    <div>
+                      <Label className="text-base font-medium">Logo Aziendale</Label>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        Carica il logo del tuo centro di riparazione (JPEG, PNG o WebP, max 2MB)
+                      </p>
+                    </div>
+                    
+                    <div className="flex flex-wrap items-start gap-6">
+                      <Avatar className="h-24 w-24 rounded-xl border-2 border-dashed border-muted-foreground/25">
+                        {(logoPreview || settings?.logoUrl) ? (
+                          <AvatarImage 
+                            src={logoPreview || settings?.logoUrl || ''} 
+                            alt="Logo centro" 
+                            className="object-contain"
+                          />
+                        ) : null}
+                        <AvatarFallback className="rounded-xl bg-muted">
+                          <Building2 className="h-10 w-10 text-muted-foreground" />
+                        </AvatarFallback>
+                      </Avatar>
+                      
+                      <div className="flex-1 space-y-3">
+                        <input
+                          ref={fileInputRef}
+                          type="file"
+                          accept="image/jpeg,image/png,image/webp"
+                          onChange={handleLogoFileChange}
+                          className="hidden"
+                          data-testid="input-logo-file"
+                        />
+                        
+                        <div className="flex flex-wrap gap-2">
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => fileInputRef.current?.click()}
+                            data-testid="button-select-logo"
+                          >
+                            <Camera className="h-4 w-4 mr-2" />
+                            Seleziona Immagine
+                          </Button>
+                          
+                          {logoFile && (
+                            <Button
+                              type="button"
+                              size="sm"
+                              onClick={handleUploadLogo}
+                              disabled={uploadLogoMutation.isPending}
+                              data-testid="button-upload-logo"
+                            >
+                              {uploadLogoMutation.isPending ? (
+                                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                              ) : (
+                                <Upload className="h-4 w-4 mr-2" />
+                              )}
+                              Carica Logo
+                            </Button>
+                          )}
+                          
+                          {settings?.logoUrl && !logoFile && (
+                            <Button
+                              type="button"
+                              variant="destructive"
+                              size="sm"
+                              onClick={handleDeleteLogo}
+                              disabled={deleteLogoMutation.isPending}
+                              data-testid="button-delete-logo"
+                            >
+                              {deleteLogoMutation.isPending ? (
+                                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                              ) : (
+                                <Trash2 className="h-4 w-4 mr-2" />
+                              )}
+                              Rimuovi Logo
+                            </Button>
+                          )}
+                        </div>
+                        
+                        {logoFile && (
+                          <p className="text-sm text-muted-foreground">
+                            File selezionato: {logoFile.name}
+                          </p>
+                        )}
+                      </div>
+                    </div>
                   </div>
 
                   <Separator />
