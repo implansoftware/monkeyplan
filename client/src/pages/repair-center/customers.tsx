@@ -170,7 +170,7 @@ export default function RepairCenterCustomers() {
                     <TableHead>Cliente</TableHead>
                     <TableHead>Contatto</TableHead>
                     <TableHead className="text-center">Riparazioni</TableHead>
-                    <TableHead className="text-center">Stato</TableHead>
+                    <TableHead className="text-center">In Lavorazione</TableHead>
                     <TableHead className="text-right">Azioni</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -222,7 +222,7 @@ export default function RepairCenterCustomers() {
                           ) : (
                             <Badge variant="outline" className="bg-green-50 text-green-700 dark:bg-green-900/20 dark:text-green-400">
                               <CheckCircle className="h-3 w-3 mr-1" />
-                              Nessuna attiva
+                              Nessuna riparazione
                             </Badge>
                           )}
                         </div>
