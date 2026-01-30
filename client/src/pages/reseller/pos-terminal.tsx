@@ -178,11 +178,13 @@ type Product = {
   name: string;
   sku: string | null;
   barcode: string | null;
+  listPrice?: number | null;
   sellingPrice: number | null;
   unitPrice: number | null;
   category: string | null;
   imageUrl: string | null;
   availableQuantity?: number;
+  priceListName?: string | null;
 };
 
 type CartItem = {
@@ -557,7 +559,7 @@ export default function ResellerPosTerminal() {
     : 0;
 
   const addToCart = (product: Product) => {
-    const price = product.sellingPrice || product.unitPrice || 0;
+    const price = product.listPrice ?? product.sellingPrice ?? product.unitPrice ?? 0;
     const maxStock = product.availableQuantity;
     const existing = cart.find(item => item.productId === product.id);
     
@@ -749,7 +751,7 @@ export default function ResellerPosTerminal() {
       if (item.productId) {
         const product = products.find(p => p.id === item.productId);
         if (product) {
-          const newPrice = product.sellingPrice || product.unitPrice || 0;
+          const newPrice = product.listPrice ?? product.sellingPrice ?? product.unitPrice ?? 0;
           if (newPrice !== item.unitPrice) {
             return {
               ...item,
@@ -1017,7 +1019,7 @@ export default function ResellerPosTerminal() {
                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
                       {filteredProducts.map((product) => {
                         const isOutOfStock = product.availableQuantity !== undefined && product.availableQuantity <= 0;
-                        const price = product.sellingPrice || product.unitPrice || 0;
+                        const price = product.listPrice ?? product.sellingPrice ?? product.unitPrice ?? 0;
                         return (
                           <button
                             key={product.id}
