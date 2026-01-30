@@ -1278,6 +1278,84 @@ export default function ResellerPosTerminal() {
         </div>
 
         <CardFooter className="flex-col gap-2 pt-0">
+          {/* Selezione Cliente */}
+          <div className="w-full space-y-2">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-sm text-muted-foreground">Cliente:</span>
+              {(["guest", "existing", "new"] as const).map((type) => {
+                const labels = { guest: "Ospite", existing: "Esistente", new: "Nuovo" };
+                return (
+                  <Button
+                    key={type}
+                    size="sm"
+                    variant={customerType === type ? "default" : "outline"}
+                    onClick={() => {
+                      setCustomerType(type);
+                      if (type !== "existing") setSelectedCustomerId("");
+                    }}
+                    className="h-7 px-2 text-xs"
+                    data-testid={`cart-button-customer-${type}`}
+                  >
+                    {labels[type]}
+                  </Button>
+                );
+              })}
+            </div>
+            
+            {customerType === "existing" && (
+              <div className="space-y-1 p-2 rounded-md bg-muted/50">
+                {!selectedCustomer ? (
+                  <>
+                    <Input
+                      placeholder="Cerca cliente..."
+                      value={customerSearch}
+                      onChange={(e) => setCustomerSearch(e.target.value)}
+                      className="h-8 text-sm"
+                      data-testid="cart-input-customer-search"
+                    />
+                    {customers.length > 0 && (
+                      <div className="max-h-24 overflow-y-auto border rounded bg-background">
+                        {customers.map(customer => (
+                          <button
+                            key={customer.id}
+                            onClick={() => {
+                              setSelectedCustomerId(customer.id);
+                              setCustomerSearch("");
+                            }}
+                            className="w-full p-1.5 text-left hover-elevate text-sm"
+                            data-testid={`cart-customer-option-${customer.id}`}
+                          >
+                            <span className="font-medium">{customer.fullName}</span>
+                            <span className="text-muted-foreground ml-2 text-xs">{customer.email}</span>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm"><User className="w-3 h-3 inline mr-1" />{selectedCustomer.fullName}</span>
+                    <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => setSelectedCustomerId("")} data-testid="cart-button-remove-customer">
+                      <X className="w-3 h-3" />
+                    </Button>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {customerType === "new" && (
+              <div className="grid grid-cols-1 gap-1 p-2 rounded-md bg-muted/50">
+                <Input placeholder="Nome *" value={newCustomerName} onChange={(e) => setNewCustomerName(e.target.value)} className="h-8 text-sm" data-testid="cart-input-new-customer-name" />
+                <Input placeholder="Email" type="email" value={newCustomerEmail} onChange={(e) => setNewCustomerEmail(e.target.value)} className="h-8 text-sm" data-testid="cart-input-new-customer-email" />
+                <Input placeholder="Telefono" value={newCustomerPhone} onChange={(e) => setNewCustomerPhone(e.target.value)} className="h-8 text-sm" data-testid="cart-input-new-customer-phone" />
+                <Button size="sm" variant="outline" disabled={!newCustomerName.trim() || createCustomerMutation.isPending} onClick={() => createCustomerMutation.mutate({ fullName: newCustomerName.trim(), email: newCustomerEmail.trim() || undefined, phone: newCustomerPhone.trim() || undefined })} data-testid="cart-button-create-customer">
+                  {createCustomerMutation.isPending ? <Loader2 className="w-3 h-3 mr-1 animate-spin" /> : <UserPlus className="w-3 h-3 mr-1" />}
+                  Crea Cliente
+                </Button>
+              </div>
+            )}
+          </div>
+          
           <div className="w-full">
             <Input
               placeholder="Sconto (EUR)"
