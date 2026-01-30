@@ -135,7 +135,10 @@ export default function ResellerRepairCenters() {
   const { toast } = useToast();
   const { user } = useUser();
   const logoInputRef = useRef<HTMLInputElement>(null);
+  const formLogoInputRef = useRef<HTMLInputElement>(null);
   const [isUploadingLogo, setIsUploadingLogo] = useState(false);
+  const [pendingLogoFile, setPendingLogoFile] = useState<File | null>(null);
+  const [pendingLogoPreview, setPendingLogoPreview] = useState<string | null>(null);
 
   const { data: centers = [], isLoading } = useQuery<RepairCenter[]>({
     queryKey: ["/api/reseller/repair-centers"],
@@ -169,10 +172,27 @@ export default function ResellerRepairCenters() {
       const res = await apiRequest("POST", "/api/reseller/repair-centers", data);
       return await res.json();
     },
-    onSuccess: () => {
+    onSuccess: async (newCenter: RepairCenter) => {
+      if (pendingLogoFile && newCenter.id) {
+        try {
+          const formData = new FormData();
+          formData.append("logo", pendingLogoFile);
+          const logoRes = await fetch(`/api/repair-centers/${newCenter.id}/logo`, {
+            method: "POST",
+            body: formData,
+            credentials: "include",
+          });
+          if (!logoRes.ok) {
+            toast({ title: "Attenzione", description: "Centro creato ma upload logo fallito. Puoi caricarlo dal dettaglio.", variant: "default" });
+          }
+        } catch {
+          toast({ title: "Attenzione", description: "Centro creato ma upload logo fallito.", variant: "default" });
+        }
+      }
       queryClient.invalidateQueries({ queryKey: ["/api/reseller/repair-centers"] });
       setDialogOpen(false);
       setEditingCenter(null);
+      resetWizard();
       toast({ title: "Centro di riparazione creato" });
     },
     onError: (error: Error) => {
@@ -300,6 +320,35 @@ export default function ResellerRepairCenters() {
     }
   };
 
+  const handleFormLogoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const allowedTypes = ["image/jpeg", "image/png", "image/webp"];
+    if (!allowedTypes.includes(file.type)) {
+      toast({ title: "Formato non supportato", description: "Usa un'immagine JPEG, PNG o WebP", variant: "destructive" });
+      return;
+    }
+
+    if (file.size > 2 * 1024 * 1024) {
+      toast({ title: "File troppo grande", description: "L'immagine non può superare i 2MB", variant: "destructive" });
+      return;
+    }
+
+    setPendingLogoFile(file);
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setPendingLogoPreview(reader.result as string);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleRemovePendingLogo = () => {
+    setPendingLogoFile(null);
+    setPendingLogoPreview(null);
+    if (formLogoInputRef.current) formLogoInputRef.current.value = "";
+  };
+
   const getStatusBadge = (status: string) => {
     const statusConfig: Record<string, { label: string; variant: "default" | "secondary" | "outline" | "destructive" }> = {
       pending: { label: "In Attesa", variant: "secondary" },
@@ -336,6 +385,9 @@ export default function ResellerRepairCenters() {
     setHourlyRateEuros("");
     setUseMyFiscalData(false);
     setSelectedSubResellerId(null);
+    setPendingLogoFile(null);
+    setPendingLogoPreview(null);
+    if (formLogoInputRef.current) formLogoInputRef.current.value = "";
   };
 
   const progressPercent = (wizardStep / WIZARD_STEPS.length) * 100;
@@ -491,7 +543,7 @@ export default function ResellerRepairCenters() {
             {/* MODIFICA: Form con Accordion (tutte le sezioni visibili) */}
             {editingCenter ? (
               <div className="space-y-4">
-                <Accordion type="multiple" defaultValue={["info", "address", "fiscal", "config"]} className="w-full">
+                <Accordion type="multiple" defaultValue={["info", "address", "fiscal", "config", "logo"]} className="w-full">
                   <AccordionItem value="info">
                     <AccordionTrigger className="text-sm font-medium">
                       <div className="flex flex-wrap items-center gap-2">
@@ -719,6 +771,116 @@ export default function ResellerRepairCenters() {
                           </p>
                         </div>
                       )}
+                    </AccordionContent>
+                  </AccordionItem>
+
+                  <AccordionItem value="logo">
+                    <AccordionTrigger className="text-sm font-medium">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <ImageIcon className="h-4 w-4" />
+                        Logo Aziendale
+                      </div>
+                    </AccordionTrigger>
+                    <AccordionContent className="space-y-4 pt-2">
+                      <div className="flex flex-wrap items-center gap-4">
+                        <Avatar className="h-16 w-16 rounded-lg border-2 border-dashed border-muted-foreground/25">
+                          {editingCenter?.logoUrl ? (
+                            <AvatarImage src={editingCenter.logoUrl} alt="Logo centro" className="object-contain" />
+                          ) : pendingLogoPreview ? (
+                            <AvatarImage src={pendingLogoPreview} alt="Anteprima logo" className="object-contain" />
+                          ) : null}
+                          <AvatarFallback className="rounded-lg bg-muted text-muted-foreground">
+                            <Building className="h-6 w-6" />
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="flex-1 space-y-2">
+                          <div className="flex flex-wrap gap-2">
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={() => formLogoInputRef.current?.click()}
+                              disabled={isUploadingLogo}
+                              data-testid="button-edit-select-logo"
+                            >
+                              <Upload className="h-4 w-4 mr-2" />
+                              {isUploadingLogo ? "Caricamento..." : editingCenter?.logoUrl ? "Cambia Logo" : "Carica Logo"}
+                            </Button>
+                            {editingCenter?.logoUrl && (
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                onClick={async () => {
+                                  if (!editingCenter?.id) return;
+                                  try {
+                                    const res = await fetch(`/api/repair-centers/${editingCenter.id}/logo`, {
+                                      method: "DELETE",
+                                      credentials: "include",
+                                    });
+                                    if (!res.ok) throw new Error(await res.text());
+                                    queryClient.invalidateQueries({ queryKey: ["/api/reseller/repair-centers"] });
+                                    setEditingCenter({ ...editingCenter, logoUrl: null });
+                                    toast({ title: "Logo rimosso" });
+                                  } catch (error: any) {
+                                    toast({ title: "Errore", description: error.message, variant: "destructive" });
+                                  }
+                                }}
+                                className="text-destructive hover:text-destructive"
+                                data-testid="button-edit-delete-logo"
+                              >
+                                <Trash2 className="h-4 w-4 mr-2" />
+                                Rimuovi
+                              </Button>
+                            )}
+                          </div>
+                          <p className="text-xs text-muted-foreground">
+                            Formati supportati: JPEG, PNG, WebP. Max 2MB
+                          </p>
+                        </div>
+                        <input
+                          ref={formLogoInputRef}
+                          type="file"
+                          accept="image/jpeg,image/png,image/webp"
+                          onChange={async (e) => {
+                            const file = e.target.files?.[0];
+                            if (!file || !editingCenter?.id) return;
+
+                            const allowedTypes = ["image/jpeg", "image/png", "image/webp"];
+                            if (!allowedTypes.includes(file.type)) {
+                              toast({ title: "Formato non supportato", description: "Usa JPEG, PNG o WebP", variant: "destructive" });
+                              return;
+                            }
+                            if (file.size > 2 * 1024 * 1024) {
+                              toast({ title: "File troppo grande", description: "Max 2MB", variant: "destructive" });
+                              return;
+                            }
+
+                            setIsUploadingLogo(true);
+                            try {
+                              const formData = new FormData();
+                              formData.append("logo", file);
+                              const res = await fetch(`/api/repair-centers/${editingCenter.id}/logo`, {
+                                method: "POST",
+                                body: formData,
+                                credentials: "include",
+                              });
+                              if (!res.ok) throw new Error(await res.text());
+                              const result = await res.json();
+                              queryClient.invalidateQueries({ queryKey: ["/api/reseller/repair-centers"] });
+                              setEditingCenter({ ...editingCenter, logoUrl: result.logoUrl });
+                              toast({ title: "Logo caricato" });
+                            } catch (error: any) {
+                              toast({ title: "Errore", description: error.message, variant: "destructive" });
+                            } finally {
+                              setIsUploadingLogo(false);
+                              if (formLogoInputRef.current) formLogoInputRef.current.value = "";
+                            }
+                          }}
+                          className="hidden"
+                          data-testid="input-edit-logo-file"
+                        />
+                      </div>
                     </AccordionContent>
                   </AccordionItem>
                 </Accordion>
@@ -1020,6 +1182,61 @@ export default function ResellerRepairCenters() {
                           </div>
                         </div>
                       )}
+
+                      <div className="space-y-2">
+                        <h4 className="font-medium text-sm text-muted-foreground flex items-center gap-2">
+                          <ImageIcon className="h-4 w-4" />
+                          Logo Aziendale (opzionale)
+                        </h4>
+                        <div className="flex flex-wrap items-center gap-4">
+                          <Avatar className="h-16 w-16 rounded-lg border-2 border-dashed border-muted-foreground/25">
+                            {pendingLogoPreview ? (
+                              <AvatarImage src={pendingLogoPreview} alt="Anteprima logo" className="object-contain" />
+                            ) : null}
+                            <AvatarFallback className="rounded-lg bg-muted text-muted-foreground">
+                              <Building className="h-6 w-6" />
+                            </AvatarFallback>
+                          </Avatar>
+                          <div className="flex-1 space-y-2">
+                            <div className="flex flex-wrap gap-2">
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={() => formLogoInputRef.current?.click()}
+                                data-testid="button-select-logo"
+                              >
+                                <Upload className="h-4 w-4 mr-2" />
+                                {pendingLogoFile ? "Cambia" : "Seleziona"}
+                              </Button>
+                              {pendingLogoFile && (
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={handleRemovePendingLogo}
+                                  className="text-destructive hover:text-destructive"
+                                  data-testid="button-remove-pending-logo"
+                                >
+                                  <Trash2 className="h-4 w-4 mr-2" />
+                                  Rimuovi
+                                </Button>
+                              )}
+                            </div>
+                            <p className="text-xs text-muted-foreground">
+                              JPEG, PNG, WebP. Max 2MB
+                            </p>
+                          </div>
+                          <input
+                            ref={formLogoInputRef}
+                            type="file"
+                            accept="image/jpeg,image/png,image/webp"
+                            onChange={handleFormLogoSelect}
+                            className="hidden"
+                            data-testid="input-form-logo-file"
+                          />
+                        </div>
+                      </div>
                       
                       <div className="bg-muted/50 p-3 rounded-md mt-4">
                         <p className="text-xs text-muted-foreground">
