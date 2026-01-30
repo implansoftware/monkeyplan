@@ -1375,6 +1375,7 @@ export default function ResellerRepairCenters() {
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead className="w-14">Logo</TableHead>
                   <TableHead>Nome</TableHead>
                   <TableHead>Località</TableHead>
                   <TableHead>Contatti</TableHead>
@@ -1386,6 +1387,16 @@ export default function ResellerRepairCenters() {
               <TableBody>
                 {filteredCenters.map((center) => (
                   <TableRow key={center.id} data-testid={`row-center-${center.id}`}>
+                    <TableCell>
+                      <Avatar className="h-10 w-10 rounded-lg">
+                        {center.logoUrl ? (
+                          <AvatarImage src={center.logoUrl} alt={center.name} className="object-contain" />
+                        ) : null}
+                        <AvatarFallback className="rounded-lg bg-muted">
+                          <Building className="h-5 w-5 text-muted-foreground" />
+                        </AvatarFallback>
+                      </Avatar>
+                    </TableCell>
                     <TableCell className="font-medium" data-testid={`text-name-${center.id}`}>{center.name}</TableCell>
                     <TableCell data-testid={`text-location-${center.id}`}>
                       <div className="flex flex-wrap items-center gap-2 text-sm">

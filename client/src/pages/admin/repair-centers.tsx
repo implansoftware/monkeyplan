@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Plus, Search, MapPin, Phone, Mail, Pencil, Trash2, Building, Store, Clock, ChevronLeft, ChevronRight, Check, FileText, Settings, Eye, KeyRound, AlertTriangle, UserPlus } from "lucide-react";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Link } from "wouter";
@@ -781,6 +782,7 @@ export default function AdminRepairCenters() {
               <Table>
                 <TableHeader>
                   <TableRow className="bg-slate-50 dark:bg-slate-800/50">
+                    <TableHead className="w-14 text-slate-600 dark:text-slate-400">Logo</TableHead>
                     <TableHead className="text-slate-600 dark:text-slate-400">Nome</TableHead>
                     <TableHead className="text-slate-600 dark:text-slate-400">Località</TableHead>
                     <TableHead className="text-slate-600 dark:text-slate-400">Rivenditore</TableHead>
@@ -792,6 +794,16 @@ export default function AdminRepairCenters() {
                 <TableBody>
                   {filteredCenters.map((center) => (
                     <TableRow key={center.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/30" data-testid={`row-center-${center.id}`}>
+                      <TableCell>
+                        <Avatar className="h-10 w-10 rounded-lg">
+                          {center.logoUrl ? (
+                            <AvatarImage src={center.logoUrl} alt={center.name} className="object-contain" />
+                          ) : null}
+                          <AvatarFallback className="rounded-lg bg-muted">
+                            <Building className="h-5 w-5 text-muted-foreground" />
+                          </AvatarFallback>
+                        </Avatar>
+                      </TableCell>
                       <TableCell className="font-medium">{center.name}</TableCell>
                       <TableCell>
                         <div className="flex flex-wrap items-center gap-2 text-sm">
