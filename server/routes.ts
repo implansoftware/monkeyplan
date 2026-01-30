@@ -4252,12 +4252,12 @@ export function registerRoutes(app: Express): Server {
       const subResellerId = req.params.id;
       
       const subReseller = await storage.getUser(subResellerId);
-      if (!subReseller || subReseller.role !== 'sub_reseller') {
+      if (!subReseller || subReseller.role !== 'reseller' || !subReseller.parentResellerId) {
         return res.status(404).send("Sub-rivenditore non trovato");
       }
       
       const isOwner = req.user.id === subResellerId;
-      const isParentReseller = req.user.role === 'reseller' && subReseller.resellerId === req.user.id;
+      const isParentReseller = req.user.role === 'reseller' && subReseller.parentResellerId === req.user.id;
       const isAdmin = req.user.role === 'admin';
       
       if (!isOwner && !isParentReseller && !isAdmin) {
@@ -4310,12 +4310,12 @@ export function registerRoutes(app: Express): Server {
       const subResellerId = req.params.id;
       
       const subReseller = await storage.getUser(subResellerId);
-      if (!subReseller || subReseller.role !== 'sub_reseller') {
+      if (!subReseller || subReseller.role !== 'reseller' || !subReseller.parentResellerId) {
         return res.status(404).send("Sub-rivenditore non trovato");
       }
       
       const isOwner = req.user.id === subResellerId;
-      const isParentReseller = req.user.role === 'reseller' && subReseller.resellerId === req.user.id;
+      const isParentReseller = req.user.role === 'reseller' && subReseller.parentResellerId === req.user.id;
       const isAdmin = req.user.role === 'admin';
       
       if (!isOwner && !isParentReseller && !isAdmin) {
