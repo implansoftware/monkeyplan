@@ -1231,25 +1231,98 @@ export default function PosPage() {
           </div>
         </div>
 
-        <CardFooter className="flex-col gap-2 pt-0">
+        <CardFooter className="flex-col gap-3 pt-0">
           <div className="w-full">
             <Input
               placeholder="Sconto (EUR)"
               type="number"
               value={discountAmount}
               onChange={(e) => setDiscountAmount(e.target.value)}
-              className="h-10"
+              className="h-9"
               data-testid="input-discount"
             />
           </div>
+          
+          {/* Metodi di pagamento */}
+          <div className="grid grid-cols-4 gap-1 w-full">
+            {(["cash", "card", "pos_terminal", "satispay"] as const).map((method) => {
+              const { label, icon: Icon } = paymentMethodLabels[method];
+              return (
+                <button
+                  key={method}
+                  onClick={() => setSelectedPayment(method)}
+                  className={`p-2 rounded-md border-2 flex flex-col items-center gap-1 transition-colors ${
+                    selectedPayment === method
+                      ? "border-primary bg-primary/10"
+                      : "border-muted hover-elevate"
+                  }`}
+                  data-testid={`button-payment-inline-${method}`}
+                >
+                  <Icon className="w-4 h-4" />
+                  <span className="font-medium text-[10px]">{label}</span>
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Tastierino numerico per contante */}
+          {selectedPayment === "cash" && (
+            <div className="w-full space-y-2">
+              <div className="flex items-center gap-2">
+                <Input
+                  placeholder="Contante ricevuto"
+                  value={cashReceived}
+                  onChange={(e) => setCashReceived(e.target.value)}
+                  className="h-9 text-center font-bold"
+                  data-testid="input-cash-inline"
+                />
+                {parseFloat(cashReceived || "0") * 100 >= cartTotal && cartTotal > 0 && (
+                  <div className="px-2 py-1 rounded bg-blue-500/10 border border-blue-500/30">
+                    <span className="text-xs font-bold text-blue-600">Resto: {formatCurrency(changeAmount)}</span>
+                  </div>
+                )}
+              </div>
+              
+              <div className="grid grid-cols-4 gap-1">
+                {["7", "8", "9", "C", "4", "5", "6", "←", "1", "2", "3", "."].map((key) => (
+                  <Button
+                    key={key}
+                    variant={key === "C" ? "destructive" : "outline"}
+                    size="sm"
+                    className="h-8 text-sm font-bold"
+                    onClick={() => {
+                      if (key === "C") setCashReceived("");
+                      else if (key === "←") setCashReceived(prev => prev.slice(0, -1));
+                      else if (key === ".") {
+                        if (!cashReceived.includes(".")) setCashReceived(prev => prev === "" ? "0." : prev + ".");
+                      } else setCashReceived(prev => prev + key);
+                    }}
+                    data-testid={`keypad-inline-${key}`}
+                  >
+                    {key}
+                  </Button>
+                ))}
+                <Button variant="outline" size="sm" className="h-8 font-bold col-span-2" onClick={() => setCashReceived(prev => prev + "0")} data-testid="keypad-inline-0">0</Button>
+                <Button variant="outline" size="sm" className="h-8 font-bold" onClick={() => setCashReceived(prev => prev + "00")} data-testid="keypad-inline-00">00</Button>
+                <Button size="sm" className="h-8 font-bold bg-gradient-to-r from-blue-500 to-cyan-500 text-[10px]" onClick={() => setCashReceived((cartTotal / 100).toFixed(2))} data-testid="keypad-inline-exact">Esatto</Button>
+              </div>
+            </div>
+          )}
+
           <Button
-            className="w-full h-14 text-lg bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600"
-            disabled={cart.length === 0}
-            onClick={() => setPaymentDialog(true)}
+            className="w-full h-12 text-base bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600"
+            disabled={cart.length === 0 || (selectedPayment === "cash" && (!cashReceived || parseFloat(cashReceived) * 100 < cartTotal))}
+            onClick={handlePayment}
             data-testid="button-checkout"
           >
-            <Calculator className="w-5 h-5 mr-2" />
-            Procedi al Pagamento
+            {createTransactionMutation.isPending ? (
+              <Loader2 className="w-5 h-5 animate-spin" />
+            ) : (
+              <>
+                <Check className="w-5 h-5 mr-2" />
+                Conferma Pagamento
+              </>
+            )}
           </Button>
         </CardFooter>
       </Card>
