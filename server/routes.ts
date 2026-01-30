@@ -36224,13 +36224,26 @@ export function registerRoutes(app: Express): Server {
     try {
       const { resellerId } = getEffectiveContext(req);
       const { repairCenterId } = req.params;
+      const search = req.query.search as string | undefined;
       
       const center = await storage.getRepairCenter(repairCenterId);
       if (!center || center.resellerId !== resellerId) {
         return res.status(403).json({ error: "Non autorizzato" });
       }
       
-      const customers = await storage.listCustomers({ repairCenterId });
+      let customers = await storage.listCustomers({ repairCenterId });
+      
+      // Filtra per ricerca se specificata
+      if (search && search.trim()) {
+        const searchLower = search.toLowerCase().trim();
+        customers = customers.filter(c => 
+          (c.fullName && c.fullName.toLowerCase().includes(searchLower)) ||
+          (c.email && c.email.toLowerCase().includes(searchLower)) ||
+          (c.phone && c.phone.includes(searchLower)) ||
+          (c.companyName && c.companyName.toLowerCase().includes(searchLower))
+        );
+      }
+      
       res.json(customers);
     } catch (error: any) {
       res.status(500).json({ error: error.message });
