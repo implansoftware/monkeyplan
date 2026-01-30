@@ -147,7 +147,10 @@ export default function ResellerPriceLists() {
       toast({ title: "Errore", description: "Il nome è obbligatorio", variant: "destructive" });
       return;
     }
-    createMutation.mutate(formData);
+    createMutation.mutate({
+      ...formData,
+      targetCustomerType: formData.targetAudience === "customer" ? formData.targetCustomerType : null
+    });
   };
 
   const handleUpdateSubmit = () => {

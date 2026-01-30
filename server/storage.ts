@@ -1159,7 +1159,7 @@ export interface IStorage {
   listPriceLists(filters?: { ownerId?: string; ownerType?: string; isActive?: boolean }): Promise<PriceList[]>;
   getPriceList(id: string): Promise<PriceList | undefined>;
   createPriceList(data: InsertPriceList): Promise<PriceList>;
-  updatePriceList(id: string, updates: Partial<Pick<PriceList, 'name' | 'description' | 'isDefault' | 'isActive' | 'targetAudience'>>): Promise<PriceList>;
+  updatePriceList(id: string, updates: Partial<Pick<PriceList, 'name' | 'description' | 'isDefault' | 'isActive' | 'targetAudience' | 'targetCustomerType'>>): Promise<PriceList>;
   deletePriceList(id: string): Promise<void>;
   getDefaultPriceList(ownerId: string): Promise<PriceList | undefined>;
   getPriceListForTarget(ownerId: string, targetAudience: string): Promise<PriceList | undefined>;
@@ -12247,7 +12247,7 @@ export class DatabaseStorage implements IStorage {
     return list;
   }
 
-  async updatePriceList(id: string, updates: Partial<Pick<PriceList, 'name' | 'description' | 'isDefault' | 'isActive' | 'targetAudience'>>): Promise<PriceList> {
+  async updatePriceList(id: string, updates: Partial<Pick<PriceList, 'name' | 'description' | 'isDefault' | 'isActive' | 'targetAudience' | 'targetCustomerType'>>): Promise<PriceList> {
     const [list] = await db.update(priceLists)
       .set({ ...updates, updatedAt: new Date() })
       .where(eq(priceLists.id, id))
