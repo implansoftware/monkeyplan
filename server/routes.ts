@@ -36790,6 +36790,59 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // Get inherited price list detail (for repair centers viewing reseller lists)
+  app.get("/api/price-lists/inherited/:id", requireAuth, async (req, res) => {
+    try {
+      const user = req.user as User;
+      
+      // Only repair centers can use this endpoint
+      if (user.role !== "repair_center" && user.role !== "repair_center_staff") {
+        return res.status(403).json({ error: "Solo i centri riparazione possono accedere a questo endpoint" });
+      }
+      
+      if (!user.repairCenterId) {
+        return res.status(403).json({ error: "Centro riparazione non associato" });
+      }
+      
+      // Get the repair center to find its reseller
+      const center = await storage.getRepairCenter(user.repairCenterId);
+      if (!center?.resellerId) {
+        return res.status(403).json({ error: "Nessun reseller associato" });
+      }
+      
+      const list = await storage.getPriceList(req.params.id);
+      if (!list) {
+        return res.status(404).json({ error: "Listino non trovato" });
+      }
+      
+      // Verify the list belongs to the repair centers reseller
+      if (list.ownerId !== center.resellerId) {
+        return res.status(403).json({ error: "Non autorizzato a visualizzare questo listino" });
+      }
+      
+      const items = await storage.listPriceListItems(list.id);
+      
+      // Enrich items with product/service names
+      const products = await storage.listProducts({});
+      const services = await storage.listServiceItems();
+      
+      const enrichedItems = items.map(item => {
+        const product = item.productId ? products.find(p => p.id === item.productId) : null;
+        const service = item.serviceItemId ? services.find(s => s.id === item.serviceItemId) : null;
+        return {
+          ...item,
+          productName: product?.name || null,
+          serviceItemName: service?.name || null,
+        };
+      });
+      
+      res.json({ ...list, items: enrichedItems });
+    } catch (error: any) {
+      console.error("Error fetching inherited price list:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   // Get single price list with items
   app.get("/api/price-lists/:id", requireAuth, async (req, res) => {
     try {
