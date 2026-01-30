@@ -36133,7 +36133,7 @@ export function registerRoutes(app: Express): Server {
       const { resellerId } = getEffectiveContext(req);
       const { repairCenterId } = req.params;
       const search = req.query.search as string | undefined;
-      const customerType = req.query.customerType as 'private' | 'company' | undefined;
+      const priceListId = req.query.priceListId as string | undefined;
       
       const center = await storage.getRepairCenter(repairCenterId);
       if (!center || center.resellerId !== resellerId) {
@@ -36153,8 +36153,31 @@ export function registerRoutes(app: Express): Server {
       const warehouse = warehouseList[0];
       const productsWithStock = await storage.listWarehouseProductsWithStock(warehouse.id, search);
       
-      // Applica prezzi dal listino del reseller se disponibile
-      const inheritedLists = await storage.getInheritedPriceLists(repairCenterId, 'repair_center', customerType);
+      // Se è specificato un priceListId, usa quello direttamente
+      if (priceListId) {
+        const priceList = await storage.getPriceList(priceListId);
+        if (priceList) {
+          const priceListItems = await storage.listPriceListItems(priceList.id);
+          
+          const priceMap = new Map<string, number>();
+          for (const item of priceListItems) {
+            if (item.productId && item.isActive) {
+              priceMap.set(item.productId, item.priceCents);
+            }
+          }
+          
+          const productsWithListPrice = productsWithStock.map(product => ({
+            ...product,
+            listPrice: priceMap.get(product.id) ?? null,
+            priceListName: priceMap.has(product.id) ? priceList.name : null,
+          }));
+          
+          return res.json(productsWithListPrice);
+        }
+      }
+      
+      // Fallback: usa il primo listino ereditato disponibile
+      const inheritedLists = await storage.getInheritedPriceLists(repairCenterId, 'repair_center');
       
       if (inheritedLists.length > 0) {
         const priceList = inheritedLists[0];
