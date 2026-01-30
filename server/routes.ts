@@ -4530,6 +4530,7 @@ export function registerRoutes(app: Express): Server {
             pec: reseller.pec,
             codiceUnivoco: reseller.codiceUnivoco,
             hasAutonomousInvoicing: reseller.hasAutonomousInvoicing,
+            logoUrl: reseller.logoUrl,
           };
         })
       );
