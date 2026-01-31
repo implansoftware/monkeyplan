@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useParams, useLocation } from "wouter";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -10,7 +10,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { ArrowLeft, Plus, MapPin, CreditCard, Truck, Check, Loader2 } from "lucide-react";
+import { ArrowLeft, Plus, MapPin, CreditCard, Truck, Check, Loader2, Building } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -21,6 +21,21 @@ import type { Cart, CartItem, CustomerAddress } from "@shared/schema";
 interface CartItemWithProduct extends CartItem {
   product: { name: string; images?: string[] } | null;
 }
+
+interface PaymentConfigPublic {
+  bankTransfer: {
+    enabled: boolean;
+    iban: string | null;
+    accountHolder: string | null;
+    bankName: string | null;
+    bic: string | null;
+  };
+  stripe: { enabled: boolean };
+  paypal: { enabled: boolean; email: string | null };
+  satispay: { enabled: boolean };
+  hasAnyMethod: boolean;
+}
+
 
 export default function ShopCheckout() {
   const { resellerId } = useParams<{ resellerId: string }>();
@@ -49,6 +64,34 @@ export default function ShopCheckout() {
     queryKey: ['/api/customer-addresses'],
     enabled: !!user
   });
+  
+  // Fetch reseller's payment configuration
+  const { data: paymentConfig, isLoading: isLoadingPaymentConfig } = useQuery<PaymentConfigPublic>({
+    queryKey: ['/api/payment-config', resellerId, 'public'],
+    queryFn: async () => {
+      const res = await fetch(`/api/payment-config/${resellerId}/public`, { credentials: 'include' });
+      if (!res.ok) throw new Error('Errore nel caricamento metodi di pagamento');
+      return res.json();
+    },
+    enabled: !!resellerId
+  });
+  
+  // Set first enabled payment method as default
+  useEffect(() => {
+    if (paymentConfig) {
+      if (paymentConfig.stripe.enabled) {
+        setPaymentMethod("card");
+      } else if (paymentConfig.bankTransfer.enabled) {
+        setPaymentMethod("bank_transfer");
+      } else if (paymentConfig.paypal.enabled) {
+        setPaymentMethod("paypal");
+      } else if (paymentConfig.satispay.enabled) {
+        setPaymentMethod("satispay");
+      } else {
+        setPaymentMethod("");
+      }
+    }
+  }, [paymentConfig]);
   
   const addAddressForm = useForm({
     defaultValues: {
@@ -122,7 +165,7 @@ export default function ShopCheckout() {
     setSelectedShippingAddress(defaultAddress.id);
   }
   
-  const canPlaceOrder = selectedShippingAddress && paymentMethod;
+  const canPlaceOrder = selectedShippingAddress && paymentMethod && paymentConfig?.hasAnyMethod;
   
   return (
     <div className="space-y-6">
@@ -308,30 +351,99 @@ export default function ShopCheckout() {
                 Metodo di pagamento
               </CardTitle>
             </CardHeader>
-            <CardContent>
-              <RadioGroup value={paymentMethod} onValueChange={setPaymentMethod}>
-                <div className="flex items-start space-x-3 p-3 rounded-lg border hover-elevate">
-                  <RadioGroupItem value="card" id="payment-card" />
-                  <Label htmlFor="payment-card" className="flex-1 cursor-pointer">
-                    <div className="font-medium">Carta di credito/debito</div>
-                    <div className="text-sm text-muted-foreground">Visa, Mastercard, American Express</div>
-                  </Label>
+            <CardContent className="space-y-4">
+              {isLoadingPaymentConfig ? (
+                <div className="flex items-center justify-center py-4">
+                  <Loader2 className="h-6 w-6 animate-spin" />
                 </div>
-                <div className="flex items-start space-x-3 p-3 rounded-lg border hover-elevate">
-                  <RadioGroupItem value="paypal" id="payment-paypal" />
-                  <Label htmlFor="payment-paypal" className="flex-1 cursor-pointer">
-                    <div className="font-medium">PayPal</div>
-                    <div className="text-sm text-muted-foreground">Paga con il tuo account PayPal</div>
-                  </Label>
+              ) : !paymentConfig?.hasAnyMethod ? (
+                <div className="text-center py-4 text-muted-foreground">
+                  <p>Nessun metodo di pagamento disponibile.</p>
+                  <p className="text-sm">Contatta il venditore per maggiori informazioni.</p>
                 </div>
-                <div className="flex items-start space-x-3 p-3 rounded-lg border hover-elevate">
-                  <RadioGroupItem value="bank_transfer" id="payment-transfer" />
-                  <Label htmlFor="payment-transfer" className="flex-1 cursor-pointer">
-                    <div className="font-medium">Bonifico bancario</div>
-                    <div className="text-sm text-muted-foreground">Riceverai le coordinate dopo l'ordine</div>
-                  </Label>
-                </div>
-              </RadioGroup>
+              ) : (
+                <RadioGroup value={paymentMethod} onValueChange={setPaymentMethod}>
+                  {paymentConfig.stripe.enabled && (
+                    <div className="flex items-start space-x-3 p-3 rounded-lg border hover-elevate" data-testid="payment-option-card">
+                      <RadioGroupItem value="card" id="payment-card" />
+                      <Label htmlFor="payment-card" className="flex-1 cursor-pointer">
+                        <div className="font-medium">Carta di credito/debito</div>
+                        <div className="text-sm text-muted-foreground">Visa, Mastercard, American Express</div>
+                      </Label>
+                    </div>
+                  )}
+                  {paymentConfig.paypal.enabled && (
+                    <div className="flex items-start space-x-3 p-3 rounded-lg border hover-elevate" data-testid="payment-option-paypal">
+                      <RadioGroupItem value="paypal" id="payment-paypal" />
+                      <Label htmlFor="payment-paypal" className="flex-1 cursor-pointer">
+                        <div className="font-medium">PayPal</div>
+                        <div className="text-sm text-muted-foreground">Paga con il tuo account PayPal</div>
+                      </Label>
+                    </div>
+                  )}
+                  {paymentConfig.bankTransfer.enabled && (
+                    <div className="flex items-start space-x-3 p-3 rounded-lg border hover-elevate" data-testid="payment-option-bank-transfer">
+                      <RadioGroupItem value="bank_transfer" id="payment-transfer" />
+                      <Label htmlFor="payment-transfer" className="flex-1 cursor-pointer">
+                        <div className="font-medium">Bonifico bancario</div>
+                        <div className="text-sm text-muted-foreground">Le coordinate bancarie saranno mostrate di seguito</div>
+                      </Label>
+                    </div>
+                  )}
+                  {paymentConfig.satispay.enabled && (
+                    <div className="flex items-start space-x-3 p-3 rounded-lg border hover-elevate" data-testid="payment-option-satispay">
+                      <RadioGroupItem value="satispay" id="payment-satispay" />
+                      <Label htmlFor="payment-satispay" className="flex-1 cursor-pointer">
+                        <div className="font-medium">Satispay</div>
+                        <div className="text-sm text-muted-foreground">Paga con la tua app Satispay</div>
+                      </Label>
+                    </div>
+                  )}
+                </RadioGroup>
+              )}
+              
+              {/* Show IBAN details when bank_transfer is selected */}
+              {paymentMethod === "bank_transfer" && paymentConfig?.bankTransfer.enabled && paymentConfig.bankTransfer.iban && (
+                <Card className="bg-blue-50 dark:bg-blue-950/30 border-blue-200 dark:border-blue-800">
+                  <CardContent className="pt-4">
+                    <div className="flex items-start gap-3">
+                      <div className="p-2 bg-blue-100 dark:bg-blue-900/50 rounded-lg">
+                        <Building className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                      </div>
+                      <div className="space-y-2 flex-1">
+                        <h4 className="font-semibold text-blue-900 dark:text-blue-100">Coordinate Bancarie</h4>
+                        <div className="grid gap-1.5 text-sm">
+                          <div className="flex justify-between">
+                            <span className="text-blue-700 dark:text-blue-300">IBAN:</span>
+                            <span className="font-mono font-medium text-blue-900 dark:text-blue-100" data-testid="text-iban">{paymentConfig.bankTransfer.iban}</span>
+                          </div>
+                          {paymentConfig.bankTransfer.accountHolder && (
+                            <div className="flex justify-between">
+                              <span className="text-blue-700 dark:text-blue-300">Intestatario:</span>
+                              <span className="font-medium text-blue-900 dark:text-blue-100" data-testid="text-account-holder">{paymentConfig.bankTransfer.accountHolder}</span>
+                            </div>
+                          )}
+                          {paymentConfig.bankTransfer.bankName && (
+                            <div className="flex justify-between">
+                              <span className="text-blue-700 dark:text-blue-300">Banca:</span>
+                              <span className="font-medium text-blue-900 dark:text-blue-100" data-testid="text-bank-name">{paymentConfig.bankTransfer.bankName}</span>
+                            </div>
+                          )}
+                          {paymentConfig.bankTransfer.bic && (
+                            <div className="flex justify-between">
+                              <span className="text-blue-700 dark:text-blue-300">BIC/SWIFT:</span>
+                              <span className="font-mono font-medium text-blue-900 dark:text-blue-100" data-testid="text-bic">{paymentConfig.bankTransfer.bic}</span>
+                            </div>
+                          )}
+                        </div>
+                        <p className="text-xs text-blue-600 dark:text-blue-400 mt-2">
+                          Inserisci il numero ordine nella causale del bonifico.
+                        </p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
             </CardContent>
           </Card>
           

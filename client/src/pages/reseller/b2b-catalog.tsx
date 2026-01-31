@@ -13,7 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
-import { Package, Search, ShoppingCart, Plus, Minus, Trash2, CreditCard, Send, Box, Building2, Store, ArrowRight } from "lucide-react";
+import { Package, Search, ShoppingCart, Plus, Minus, Trash2, CreditCard, Send, Box, Building2, Store, ArrowRight, Building } from "lucide-react";
 import { Link } from "wouter";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -37,6 +37,20 @@ interface CartItem {
   maxQty: number;
 }
 
+interface PaymentConfigPublic {
+  bankTransfer: {
+    enabled: boolean;
+    iban: string | null;
+    accountHolder: string | null;
+    bankName: string | null;
+    bic: string | null;
+  };
+  stripe: { enabled: boolean };
+  paypal: { enabled: boolean; email: string | null };
+  satispay: { enabled: boolean };
+  hasAnyMethod: boolean;
+}
+
 function formatPrice(cents: number): string {
   return formatCurrency(cents);
 }
@@ -51,6 +65,11 @@ export default function ResellerB2BCatalog() {
 
   const { data: catalog, isLoading } = useQuery<B2BCatalogItem[]>({
     queryKey: ['/api/reseller/b2b-catalog'],
+  });
+
+  // Fetch admin's payment configuration for B2B orders
+  const { data: paymentConfig } = useQuery<PaymentConfigPublic>({
+    queryKey: ['/api/admin/payment-config/public'],
   });
 
   const createOrderMutation = useMutation({
@@ -446,6 +465,49 @@ export default function ResellerB2BCatalog() {
                   <SelectItem value="bank_transfer">Bonifico Bancario</SelectItem>
                 </SelectContent>
               </Select>
+              
+              {/* Show IBAN details when bank_transfer is selected */}
+              {paymentMethod === "bank_transfer" && paymentConfig?.bankTransfer.enabled && paymentConfig.bankTransfer.iban && (
+                <Card className="mt-4 bg-blue-50 dark:bg-blue-950/30 border-blue-200 dark:border-blue-800">
+                  <CardContent className="pt-4">
+                    <div className="flex items-start gap-3">
+                      <div className="p-2 bg-blue-100 dark:bg-blue-900/50 rounded-lg">
+                        <Building className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                      </div>
+                      <div className="space-y-2 flex-1">
+                        <h4 className="font-semibold text-blue-900 dark:text-blue-100">Coordinate Bancarie Admin</h4>
+                        <div className="grid gap-1.5 text-sm">
+                          <div className="flex justify-between">
+                            <span className="text-blue-700 dark:text-blue-300">IBAN:</span>
+                            <span className="font-mono font-medium text-blue-900 dark:text-blue-100" data-testid="text-admin-iban">{paymentConfig.bankTransfer.iban}</span>
+                          </div>
+                          {paymentConfig.bankTransfer.accountHolder && (
+                            <div className="flex justify-between">
+                              <span className="text-blue-700 dark:text-blue-300">Intestatario:</span>
+                              <span className="font-medium text-blue-900 dark:text-blue-100">{paymentConfig.bankTransfer.accountHolder}</span>
+                            </div>
+                          )}
+                          {paymentConfig.bankTransfer.bankName && (
+                            <div className="flex justify-between">
+                              <span className="text-blue-700 dark:text-blue-300">Banca:</span>
+                              <span className="font-medium text-blue-900 dark:text-blue-100">{paymentConfig.bankTransfer.bankName}</span>
+                            </div>
+                          )}
+                          {paymentConfig.bankTransfer.bic && (
+                            <div className="flex justify-between">
+                              <span className="text-blue-700 dark:text-blue-300">BIC/SWIFT:</span>
+                              <span className="font-mono font-medium text-blue-900 dark:text-blue-100">{paymentConfig.bankTransfer.bic}</span>
+                            </div>
+                          )}
+                        </div>
+                        <p className="text-xs text-blue-600 dark:text-blue-400 mt-2">
+                          Inserisci il numero ordine nella causale del bonifico.
+                        </p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
             </div>
 
             <div className="space-y-2">

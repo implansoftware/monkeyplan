@@ -8218,6 +8218,174 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // GET /api/payment-config/:entityId/public - Get enabled payment methods for checkout (public data only)
+  app.get("/api/payment-config/:entityId/public", async (req, res) => {
+    try {
+      const { entityId } = req.params;
+      
+      // Try to find entity type by checking if it's a reseller or repair center
+      let config = await storage.getPaymentConfiguration("reseller", entityId);
+      let entityType: "reseller" | "repair_center" | "admin" = "reseller";
+      
+      // If not found, check if it's a repair center
+      if (!config) {
+        config = await storage.getPaymentConfiguration("repair_center", entityId);
+        entityType = "repair_center";
+        
+        // If repair center uses parent config, get parent's config
+        if (config?.useParentConfig) {
+          const repairCenter = await storage.getRepairCenter(entityId);
+          if (repairCenter?.resellerId) {
+            config = await storage.getPaymentConfiguration("reseller", repairCenter.resellerId);
+            entityType = "reseller";
+          }
+        }
+      }
+      
+      // Check if it's admin (for B2B orders to admin)
+      if (!config) {
+        config = await storage.getPaymentConfiguration("admin", entityId);
+        entityType = "admin";
+      }
+      
+      // Build public response - only enabled methods with necessary data
+      const publicConfig = {
+        bankTransfer: {
+          enabled: config?.bankTransferEnabled || false,
+          iban: config?.bankTransferEnabled ? config.iban : null,
+          accountHolder: config?.bankTransferEnabled ? config.accountHolder : null,
+          bankName: config?.bankTransferEnabled ? config.bankName : null,
+          bic: config?.bankTransferEnabled ? config.bic : null,
+        },
+        stripe: {
+          enabled: config?.stripeEnabled || false,
+        },
+        paypal: {
+          enabled: config?.paypalEnabled || false,
+          email: config?.paypalEnabled ? config.paypalEmail : null,
+        },
+        satispay: {
+          enabled: config?.satispayEnabled || false,
+        },
+        hasAnyMethod: !!(
+          config?.bankTransferEnabled ||
+          config?.stripeEnabled ||
+          config?.paypalEnabled ||
+          config?.satispayEnabled
+        ),
+      };
+      
+      res.json(publicConfig);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // GET /api/admin/payment-config/public - Get admin's payment config for B2B orders
+  app.get("/api/admin/payment-config/public", requireAuth, async (req, res) => {
+    try {
+      // Get the first admin user to fetch their payment config
+      const admins = await storage.listUsers({ role: 'admin' });
+      const adminId = admins[0]?.id;
+      
+      if (!adminId) {
+        return res.json({
+          bankTransfer: { enabled: true, iban: null, accountHolder: null, bankName: null, bic: null },
+          stripe: { enabled: false },
+          paypal: { enabled: false },
+          satispay: { enabled: false },
+          hasAnyMethod: true,
+        });
+      }
+      
+      const config = await storage.getPaymentConfiguration("admin", adminId);
+      
+      const publicConfig = {
+        bankTransfer: {
+          enabled: config?.bankTransferEnabled ?? true,
+          iban: config?.bankTransferEnabled ? config.iban : null,
+          accountHolder: config?.bankTransferEnabled ? config.accountHolder : null,
+          bankName: config?.bankTransferEnabled ? config.bankName : null,
+          bic: config?.bankTransferEnabled ? config.bic : null,
+        },
+        stripe: {
+          enabled: config?.stripeEnabled || false,
+        },
+        paypal: {
+          enabled: config?.paypalEnabled || false,
+          email: config?.paypalEnabled ? config.paypalEmail : null,
+        },
+        satispay: {
+          enabled: config?.satispayEnabled || false,
+        },
+        hasAnyMethod: !!(
+          (config?.bankTransferEnabled ?? true) ||
+          config?.stripeEnabled ||
+          config?.paypalEnabled ||
+          config?.satispayEnabled
+        ),
+      };
+      
+      res.json(publicConfig);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // GET /api/repair-center/parent-payment-config - Get parent reseller's payment config for RC B2B orders
+  app.get("/api/repair-center/parent-payment-config", requireRole("repair_center"), async (req, res) => {
+    try {
+      if (!req.user || !req.user.repairCenterId) {
+        return res.status(401).json({ error: "Non autenticato" });
+      }
+      
+      const repairCenter = await storage.getRepairCenter(req.user.repairCenterId);
+      if (!repairCenter?.resellerId) {
+        return res.json({
+          bankTransfer: { enabled: true, iban: null, accountHolder: null, bankName: null, bic: null },
+          stripe: { enabled: false },
+          paypal: { enabled: false },
+          satispay: { enabled: false },
+          hasAnyMethod: true,
+        });
+      }
+      
+      const config = await storage.getPaymentConfiguration("reseller", repairCenter.resellerId);
+      
+      const publicConfig = {
+        bankTransfer: {
+          enabled: config?.bankTransferEnabled ?? true,
+          iban: config?.bankTransferEnabled ? config.iban : null,
+          accountHolder: config?.bankTransferEnabled ? config.accountHolder : null,
+          bankName: config?.bankTransferEnabled ? config.bankName : null,
+          bic: config?.bankTransferEnabled ? config.bic : null,
+        },
+        stripe: {
+          enabled: config?.stripeEnabled || false,
+        },
+        paypal: {
+          enabled: config?.paypalEnabled || false,
+          email: config?.paypalEnabled ? config.paypalEmail : null,
+        },
+        satispay: {
+          enabled: config?.satispayEnabled || false,
+        },
+        hasAnyMethod: !!(
+          (config?.bankTransferEnabled ?? true) ||
+          config?.stripeEnabled ||
+          config?.paypalEnabled ||
+          config?.satispayEnabled
+        ),
+      };
+      
+      res.json(publicConfig);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // POST /api/stripe/connect/create-account - Create Stripe Connect account
+  // POST /api/stripe/connect/create-account - Create Stripe Connect account
   // POST /api/stripe/connect/create-account - Create Stripe Connect account
   app.post("/api/stripe/connect/create-account", requireRole("reseller", "sub_reseller", "repair_center"), async (req, res) => {
     try {
@@ -26504,6 +26672,20 @@ export function registerRoutes(app: Express): Server {
         customerNotes
       } = req.body;
       
+      // Validate payment method against reseller's enabled methods
+      if (paymentMethod) {
+        const paymentConfig = await storage.getPaymentConfiguration("reseller", resellerId);
+        const methodEnabled = {
+          card: paymentConfig?.stripeEnabled,
+          bank_transfer: paymentConfig?.bankTransferEnabled,
+          paypal: paymentConfig?.paypalEnabled,
+          satispay: paymentConfig?.satispayEnabled,
+        };
+        if (!methodEnabled[paymentMethod as keyof typeof methodEnabled]) {
+          return res.status(400).json({ error: "Metodo di pagamento non disponibile" });
+        }
+      }
+      
       const cart = await storage.getActiveCart(req.user.id, null, resellerId);
       if (!cart) return res.status(400).json({ error: "Carrello vuoto" });
       
@@ -28688,6 +28870,24 @@ export function registerRoutes(app: Express): Server {
       if (!req.user) return res.status(401).json({ error: "Non autenticato" });
       const { items, paymentMethod, notes, shippingAddress } = req.body;
       
+      // Validate payment method against admin's enabled methods (B2B orders go to admin)
+      if (paymentMethod) {
+        // Get admin user to check their payment config
+        const admins = await storage.listUsers({ role: 'admin' });
+        const adminId = admins[0]?.id;
+        if (adminId) {
+          const paymentConfig = await storage.getPaymentConfiguration("admin", adminId);
+          const methodEnabled = {
+            bank_transfer: paymentConfig?.bankTransferEnabled ?? true, // Default to allow if not configured
+            stripe: paymentConfig?.stripeEnabled,
+            paypal: paymentConfig?.paypalEnabled,
+          };
+          if (paymentMethod !== 'bank_transfer' && !methodEnabled[paymentMethod as keyof typeof methodEnabled]) {
+            return res.status(400).json({ error: "Metodo di pagamento non disponibile" });
+          }
+        }
+      }
+      
       if (!items || !Array.isArray(items) || items.length === 0) {
         return res.status(400).json({ error: "L'ordine deve contenere almeno un prodotto" });
       }
@@ -30243,6 +30443,21 @@ export function registerRoutes(app: Express): Server {
       const repairCenter = await storage.getRepairCenter(req.user.repairCenterId);
       if (!repairCenter || !repairCenter.resellerId) {
         return res.status(400).json({ error: "Centro riparazione non associato a un rivenditore" });
+      }
+      
+      // Validate payment method against reseller's enabled methods
+      if (paymentMethod) {
+        const paymentConfig = await storage.getPaymentConfiguration("reseller", repairCenter.resellerId);
+        const methodEnabled = {
+          bank_transfer: paymentConfig?.bankTransferEnabled ?? true, // Default to allow if not configured
+          cash: true, // Cash is always available for B2B
+          credit: true, // Credit is always available for B2B
+          stripe: paymentConfig?.stripeEnabled,
+          paypal: paymentConfig?.paypalEnabled,
+        };
+        if (!methodEnabled[paymentMethod as keyof typeof methodEnabled]) {
+          return res.status(400).json({ error: "Metodo di pagamento non disponibile" });
+        }
       }
       
       // Get reseller warehouse stock
