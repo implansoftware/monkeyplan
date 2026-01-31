@@ -361,7 +361,7 @@ export default function PosPage() {
   }, [openSessionDialog, lastClosedSession]);
 
   // Listini prezzi ereditati dal reseller
-  type PriceList = { id: string; name: string; isDefault: boolean };
+  type PriceList = { id: string; name: string; isDefault: boolean; defaultVatRate?: number; targetCustomerType?: string | null };
   const { data: priceLists = [] } = useQuery<PriceList[]>({
     queryKey: ["/api/repair-center/price-lists"],
     queryFn: async () => {
@@ -939,7 +939,7 @@ export default function PosPage() {
                   <SelectContent>
                     {priceLists.map(pl => (
                       <SelectItem key={pl.id} value={pl.id} data-testid={`select-price-list-${pl.id}`}>
-                        {pl.name} {pl.isDefault && "(Default)"}
+                        {pl.name} {pl.defaultVatRate !== undefined && `(${pl.defaultVatRate}% IVA)`} {pl.isDefault && " - Default"}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -1022,6 +1022,96 @@ export default function PosPage() {
                   <span className="hidden sm:inline">Storico</span>
                 </TabsTrigger>
               </TabsList>
+              
+              {/* Selezione Cliente */}
+              <div className="space-y-2 mb-3">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="text-sm text-muted-foreground">Cliente:</span>
+                  {(["guest", "existing", "new"] as const).map((type) => {
+                    const labels = { guest: "Ospite", existing: "Esistente", new: "Nuovo" };
+                    return (
+                      <Button
+                        key={type}
+                        size="sm"
+                        variant={customerType === type ? "default" : "outline"}
+                        onClick={() => {
+                          setCustomerType(type);
+                          if (type === "guest") {
+                            setSelectedCustomerId("");
+                            setCustomerSearch("");
+                          }
+                        }}
+                        data-testid={`button-customer-${type}`}
+                      >
+                        {labels[type]}
+                      </Button>
+                    );
+                  })}
+                </div>
+                
+                {customerType === "existing" && (
+                  <div className="space-y-1 p-2 rounded-md bg-muted/50">
+                    {!selectedCustomer ? (
+                      <>
+                        <Input
+                          placeholder="Cerca cliente..."
+                          value={customerSearch}
+                          onChange={(e) => setCustomerSearch(e.target.value)}
+                          className="h-8 text-sm"
+                          data-testid="input-customer-search-main"
+                        />
+                        {customers.length > 0 && (
+                          <div className="max-h-24 overflow-y-auto border rounded bg-background">
+                            {customers.map(customer => (
+                              <button
+                                key={customer.id}
+                                onClick={() => {
+                                  setSelectedCustomerId(customer.id);
+                                  setCustomerSearch("");
+                                }}
+                                className="w-full p-1.5 text-left hover-elevate text-sm"
+                                data-testid={`customer-option-main-${customer.id}`}
+                              >
+                                <span className="font-medium">{customer.fullName}</span>
+                                <span className="text-muted-foreground ml-2 text-xs">{customer.email}</span>
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                      </>
+                    ) : (
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm"><User className="w-3 h-3 inline mr-1" />{selectedCustomer.fullName}</span>
+                        <Button size="icon" variant="ghost" onClick={() => setSelectedCustomerId("")} data-testid="button-remove-customer-main">
+                          <X className="w-3 h-3" />
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {customerType === "new" && (
+                  <div className="grid grid-cols-1 gap-1 p-2 rounded-md bg-muted/50">
+                    <Input placeholder="Nome *" value={newCustomerName} onChange={(e) => setNewCustomerName(e.target.value)} className="h-8 text-sm" data-testid="input-new-customer-name-main" />
+                    <Input placeholder="Email" type="email" value={newCustomerEmail} onChange={(e) => setNewCustomerEmail(e.target.value)} className="h-8 text-sm" data-testid="input-new-customer-email-main" />
+                    <Input placeholder="Telefono" value={newCustomerPhone} onChange={(e) => setNewCustomerPhone(e.target.value)} className="h-8 text-sm" data-testid="input-new-customer-phone-main" />
+                    <Button size="sm" variant="outline" disabled={!newCustomerName.trim() || createCustomerMutation.isPending} onClick={() => createCustomerMutation.mutate({ fullName: newCustomerName.trim(), email: newCustomerEmail.trim() || undefined, phone: newCustomerPhone.trim() || undefined })} data-testid="button-create-customer-main">
+                      {createCustomerMutation.isPending ? <Loader2 className="w-3 h-3 mr-1 animate-spin" /> : <UserPlus className="w-3 h-3 mr-1" />}
+                      Crea Cliente
+                    </Button>
+                  </div>
+                )}
+                
+                {invoiceRequested && customerType === "guest" && (
+                  <p className="text-xs text-amber-600">Fattura richiede cliente</p>
+                )}
+                {invoiceRequested && customerType === "existing" && !selectedCustomerId && (
+                  <p className="text-xs text-amber-600">Seleziona cliente per fattura</p>
+                )}
+                {invoiceRequested && customerType === "new" && !selectedCustomerId && (
+                  <p className="text-xs text-amber-600">Crea cliente per fattura</p>
+                )}
+              </div>
               
               <TabsContent value="search" className="flex-1 overflow-hidden m-0">
                 <div className="mb-2">
@@ -1461,101 +1551,17 @@ export default function PosPage() {
               })}
             </div>
 
-            <div className="flex flex-wrap items-center gap-2 flex-wrap">
-              <span className="text-sm text-muted-foreground">Cliente:</span>
-              {(["guest", "existing", "new"] as const).map((type) => {
-                const labels = { guest: "Ospite", existing: "Esistente", new: "Nuovo" };
-                return (
-                  <Button
-                    key={type}
-                    size="sm"
-                    variant={customerType === type ? "default" : "outline"}
-                    onClick={() => {
-                      setCustomerType(type);
-                      if (type === "guest") {
-                        setSelectedCustomerId("");
-                        setCustomerSearch("");
-                      }
-                    }}
-                    data-testid={`button-customer-${type}`}
-                  >
-                    {labels[type]}
-                  </Button>
-                );
-              })}
-              <div className="ml-auto flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
+              <div className="flex items-center gap-2">
                 <Switch
                   id="invoice-switch"
                   checked={invoiceRequested}
                   onCheckedChange={setInvoiceRequested}
                   data-testid="switch-invoice-requested"
                 />
-                <Label htmlFor="invoice-switch" className="text-xs">Fattura</Label>
+                <Label htmlFor="invoice-switch" className="text-xs">Richiedi Fattura</Label>
               </div>
             </div>
-
-            {customerType === "existing" && (
-              <div className="space-y-1 p-2 rounded-md bg-muted/50">
-                {!selectedCustomer ? (
-                  <>
-                    <Input
-                      placeholder="Cerca cliente..."
-                      value={customerSearch}
-                      onChange={(e) => setCustomerSearch(e.target.value)}
-                      className="h-8 text-sm"
-                      data-testid="input-customer-search"
-                    />
-                    {customers.length > 0 && (
-                      <div className="max-h-24 overflow-y-auto border rounded bg-background">
-                        {customers.map(customer => (
-                          <button
-                            key={customer.id}
-                            onClick={() => {
-                              setSelectedCustomerId(customer.id);
-                              setCustomerSearch("");
-                            }}
-                            className="w-full p-1.5 text-left hover-elevate text-sm"
-                            data-testid={`customer-option-${customer.id}`}
-                          >
-                            <span className="font-medium">{customer.fullName}</span>
-                            <span className="text-muted-foreground ml-2 text-xs">{customer.email}</span>
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                  </>
-                ) : (
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm"><User className="w-3 h-3 inline mr-1" />{selectedCustomer.fullName}</span>
-                    <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => setSelectedCustomerId("")} data-testid="button-remove-customer">
-                      <X className="w-3 h-3" />
-                    </Button>
-                  </div>
-                )}
-              </div>
-            )}
-
-            {customerType === "new" && (
-              <div className="grid grid-cols-3 gap-1 p-2 rounded-md bg-muted/50">
-                <Input placeholder="Nome *" value={newCustomerName} onChange={(e) => setNewCustomerName(e.target.value)} className="h-8 text-sm" data-testid="input-new-customer-name" />
-                <Input placeholder="Email" type="email" value={newCustomerEmail} onChange={(e) => setNewCustomerEmail(e.target.value)} className="h-8 text-sm" data-testid="input-new-customer-email" />
-                <Input placeholder="Telefono" value={newCustomerPhone} onChange={(e) => setNewCustomerPhone(e.target.value)} className="h-8 text-sm" data-testid="input-new-customer-phone" />
-                <Button size="sm" variant="outline" className="col-span-3" disabled={!newCustomerName.trim() || createCustomerMutation.isPending} onClick={() => createCustomerMutation.mutate({ fullName: newCustomerName.trim(), email: newCustomerEmail.trim() || undefined, phone: newCustomerPhone.trim() || undefined })} data-testid="button-create-customer">
-                  {createCustomerMutation.isPending ? <Loader2 className="w-3 h-3 mr-1 animate-spin" /> : <UserPlus className="w-3 h-3 mr-1" />}
-                  Crea Cliente
-                </Button>
-              </div>
-            )}
-            
-            {invoiceRequested && customerType === "guest" && (
-              <p className="text-xs text-amber-600">Fattura richiede cliente</p>
-            )}
-            {invoiceRequested && customerType === "existing" && !selectedCustomerId && (
-              <p className="text-xs text-amber-600">Seleziona cliente per fattura</p>
-            )}
-            {invoiceRequested && customerType === "new" && !selectedCustomerId && (
-              <p className="text-xs text-amber-600">Crea cliente per fattura</p>
-            )}
 
             {selectedPayment === "cash" && (
               <div className="space-y-2">

@@ -12349,7 +12349,7 @@ export class DatabaseStorage implements IStorage {
     return newList;
   }
 
-  async getInheritedPriceLists(childId: string, childRole: string, customerType?: 'private' | 'company'): Promise<PriceList[]> {
+  async getInheritedPriceLists(childId: string, childRole: string, customerType?: 'private' | 'company', showAll?: boolean): Promise<PriceList[]> {
     let ownerId: string | null = null;
     
     if (childRole === 'repair_center') {
@@ -12361,6 +12361,16 @@ export class DatabaseStorage implements IStorage {
     }
     
     if (!ownerId) return [];
+    
+    // Se showAll è true, restituisce TUTTI i listini attivi senza filtrare per tipo cliente
+    if (showAll) {
+      return db.select().from(priceLists)
+        .where(and(
+          eq(priceLists.ownerId, ownerId),
+          eq(priceLists.isActive, true)
+        ))
+        .orderBy(desc(priceLists.isDefault), desc(priceLists.createdAt));
+    }
     
     // Se customerType specificato, cerca prima listini specifici per quel tipo
     if (customerType) {

@@ -34726,7 +34726,7 @@ export function registerRoutes(app: Express): Server {
   app.get("/api/repair-center/price-lists", requireRole("repair_center", "repair_center_staff"), async (req, res) => {
     try {
       const repairCenterId = req.user!.repairCenterId || req.user!.id;
-      const inheritedLists = await storage.getInheritedPriceLists(repairCenterId, 'repair_center');
+      const inheritedLists = await storage.getInheritedPriceLists(repairCenterId, 'repair_center', undefined, true);
       res.json(inheritedLists);
     } catch (error: any) {
       res.status(500).json({ error: error.message });
