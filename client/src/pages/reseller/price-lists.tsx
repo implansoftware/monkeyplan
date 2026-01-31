@@ -297,7 +297,7 @@ export default function ResellerPriceLists() {
                               description: list.description || "", 
                               targetAudience: list.targetAudience || "all",
                               targetCustomerType: list.targetCustomerType || null,
-                              defaultVatRate: (list as any).defaultVatRate || 22
+                              defaultVatRate: (list as any).defaultVatRate ?? 22
                             });
                             setEditingList(list);
                           }}

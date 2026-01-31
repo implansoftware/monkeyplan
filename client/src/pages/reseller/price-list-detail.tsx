@@ -290,7 +290,7 @@ export default function PriceListDetail() {
           <div className="flex items-center gap-2">
             <Percent className="h-4 w-4 text-muted-foreground" />
             <Select
-              value={String((priceList as any).defaultVatRate || 22)}
+              value={String((priceList as any).defaultVatRate ?? 22)}
               onValueChange={(value) => updateVatMutation.mutate(Number(value))}
             >
               <SelectTrigger className="w-[140px]" data-testid="select-list-vat">
@@ -550,7 +550,7 @@ export default function PriceListDetail() {
                   <SelectValue placeholder="Usa default listino" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="default">Usa default listino ({(priceList as any)?.defaultVatRate || 22}%)</SelectItem>
+                  <SelectItem value="default">Usa default listino ({(priceList as any)?.defaultVatRate ?? 22}%)</SelectItem>
                   {VAT_RATES.map((rate) => (
                     <SelectItem key={rate.value} value={String(rate.value)}>
                       {rate.label}
