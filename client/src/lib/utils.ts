@@ -10,6 +10,15 @@ export function cn(...inputs: ClassValue[]) {
 
 export const DEFAULT_VAT_RATE = 22; // Aliquota IVA standard Italia
 
+// Aliquote IVA disponibili in Italia
+export const VAT_RATES = [
+  { value: 22, label: "22% - IVA Standard" },
+  { value: 10, label: "10% - IVA Ridotta" },
+  { value: 5, label: "5% - IVA Super Ridotta" },
+  { value: 4, label: "4% - IVA Minima" },
+  { value: 0, label: "0% - Esente IVA" },
+] as const;
+
 /**
  * Calcola il prezzo con IVA inclusa
  * @param priceCents - Prezzo in centesimi (IVA esclusa)

@@ -37019,7 +37019,7 @@ export function registerRoutes(app: Express): Server {
         return res.status(403).json({ error: "Non autorizzato" });
       }
       
-      const { name, description, isDefault, isActive, targetAudience, targetCustomerType } = req.body;
+      const { name, description, isDefault, isActive, targetAudience, targetCustomerType, defaultVatRate } = req.body;
       const updated = await storage.updatePriceList(req.params.id, {
         name,
         description,
@@ -37027,6 +37027,7 @@ export function registerRoutes(app: Express): Server {
         isActive,
         targetAudience,
         targetCustomerType: targetAudience === "customer" ? targetCustomerType : null,
+        defaultVatRate,
       });
       
       res.json(updated);
@@ -37160,7 +37161,7 @@ export function registerRoutes(app: Express): Server {
         return res.status(403).json({ error: "Non autorizzato" });
       }
       
-      const { productId, serviceItemId, priceCents, costPriceCents } = req.body;
+      const { productId, serviceItemId, priceCents, costPriceCents, vatRate } = req.body;
       if (!productId && !serviceItemId) {
         return res.status(400).json({ error: "Specificare productId o serviceItemId" });
       }
@@ -37174,6 +37175,7 @@ export function registerRoutes(app: Express): Server {
         serviceItemId: serviceItemId || null,
         priceCents,
         costPriceCents: costPriceCents || null,
+        vatRate: vatRate || null,
         isActive: true,
       });
       
