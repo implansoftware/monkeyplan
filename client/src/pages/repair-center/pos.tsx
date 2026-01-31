@@ -124,7 +124,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
-import { FileText, User, UserPlus, Store, Settings } from "lucide-react";
+import { FileText, User, UserPlus, Store, Settings, List } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
@@ -279,6 +279,7 @@ export default function PosPage() {
   const [newCustomerPhone, setNewCustomerPhone] = useState("");
   const [customerSearch, setCustomerSearch] = useState("");
   const [selectedRegisterId, setSelectedRegisterId] = useState<string>("");
+  const [selectedPriceListId, setSelectedPriceListId] = useState<string>("");
   
   // Stato per prodotto temporaneo
   const [tempProductDialog, setTempProductDialog] = useState(false);
@@ -359,12 +360,47 @@ export default function PosPage() {
     }
   }, [openSessionDialog, lastClosedSession]);
 
+  // Listini prezzi ereditati dal reseller
+  type PriceList = { id: string; name: string; isDefault: boolean };
+  const { data: priceLists = [] } = useQuery<PriceList[]>({
+    queryKey: ["/api/repair-center/price-lists"],
+    queryFn: async () => {
+      const res = await fetch("/api/repair-center/price-lists", { credentials: "include" });
+      if (!res.ok) return [];
+      return res.json();
+    },
+  });
+
+  // Seleziona listino default
+  useEffect(() => {
+    if (priceLists.length > 0 && !selectedPriceListId) {
+      const defaultList = priceLists.find(l => l.isDefault) || priceLists[0];
+      if (defaultList) setSelectedPriceListId(defaultList.id);
+    }
+  }, [priceLists, selectedPriceListId]);
+
   const { data: products = [], isLoading: productsLoading } = useQuery<Product[]>({
-    queryKey: ["/api/repair-center/pos/products"],
+    queryKey: ["/api/repair-center/pos/products", selectedPriceListId],
+    queryFn: async () => {
+      const url = selectedPriceListId 
+        ? `/api/repair-center/pos/products?priceListId=${selectedPriceListId}`
+        : "/api/repair-center/pos/products";
+      const res = await fetch(url, { credentials: "include" });
+      if (!res.ok) return [];
+      return res.json();
+    },
   });
 
   const { data: services = [], isLoading: servicesLoading } = useQuery<ServiceItem[]>({
-    queryKey: ["/api/repair-center/pos/services"],
+    queryKey: ["/api/repair-center/pos/services", selectedPriceListId],
+    queryFn: async () => {
+      const url = selectedPriceListId 
+        ? `/api/repair-center/pos/services?priceListId=${selectedPriceListId}`
+        : "/api/repair-center/pos/services";
+      const res = await fetch(url, { credentials: "include" });
+      if (!res.ok) return [];
+      return res.json();
+    },
   });
 
   const filteredServices = services.filter(s => 
@@ -689,6 +725,42 @@ export default function PosPage() {
     }
   }, [currentSession]);
 
+  // Aggiorna vatRate/prezzi prodotti nel carrello quando cambia il listino
+  useEffect(() => {
+    if (products.length === 0 || !selectedPriceListId) return;
+    setCart(prevCart => prevCart.map(item => {
+      if (item.isService || item.isTemporary || !item.productId) return item;
+      const product = products.find(p => p.id === item.productId);
+      if (!product) return item;
+      const newVatRate = (product as any).vatRate ?? DEFAULT_VAT_RATE;
+      const newUnitPrice = (product as any).listPrice ?? (product as any).unitPrice ?? item.unitPrice;
+      return {
+        ...item,
+        vatRate: newVatRate,
+        unitPrice: newUnitPrice,
+        totalPrice: newUnitPrice * item.quantity * (1 - item.discount / 100),
+      };
+    }));
+  }, [products, selectedPriceListId]);
+
+  // Aggiorna vatRate/prezzi servizi nel carrello quando cambia il listino
+  useEffect(() => {
+    if (services.length === 0 || !selectedPriceListId) return;
+    setCart(prevCart => prevCart.map(item => {
+      if (!item.isService || !item.serviceItemId) return item;
+      const service = services.find(s => s.id === item.serviceItemId);
+      if (!service) return item;
+      const newVatRate = (service as any).vatRate ?? DEFAULT_VAT_RATE;
+      const newUnitPrice = (service as any).priceCents ?? item.unitPrice;
+      return {
+        ...item,
+        vatRate: newVatRate,
+        unitPrice: newUnitPrice,
+        totalPrice: newUnitPrice * item.quantity * (1 - item.discount / 100),
+      };
+    }));
+  }, [services, selectedPriceListId]);
+
   if (sessionLoading) {
     return (
       <div className="p-4">
@@ -858,6 +930,21 @@ export default function PosPage() {
                   ))}
                 </SelectContent>
               </Select>
+              {priceLists.length > 0 && (
+                <Select value={selectedPriceListId} onValueChange={setSelectedPriceListId}>
+                  <SelectTrigger className="w-auto max-w-[140px] sm:max-w-[180px] h-8 bg-white/20 backdrop-blur-sm text-white border-white/30 truncate" data-testid="select-price-list">
+                    <List className="w-4 h-4 mr-1 flex-shrink-0" />
+                    <SelectValue placeholder="Listino" className="truncate" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {priceLists.map(pl => (
+                      <SelectItem key={pl.id} value={pl.id} data-testid={`select-price-list-${pl.id}`}>
+                        {pl.name} {pl.isDefault && "(Default)"}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
               <Link href="/repair-center/pos/registers">
                 <Button variant="outline" size="icon" className="h-8 w-8 bg-white/20 backdrop-blur-sm text-white border-white/30 hover:bg-white/30" data-testid="button-manage-registers">
                   <Settings className="w-4 h-4" />

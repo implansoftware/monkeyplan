@@ -34721,10 +34721,23 @@ export function registerRoutes(app: Express): Server {
 
 
   // Prodotti magazzino per POS
+
+  // Listini prezzi ereditati per il repair center
+  app.get("/api/repair-center/price-lists", requireRole("repair_center", "repair_center_staff"), async (req, res) => {
+    try {
+      const repairCenterId = req.user!.repairCenterId || req.user!.id;
+      const inheritedLists = await storage.getInheritedPriceLists(repairCenterId, 'repair_center');
+      res.json(inheritedLists);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   app.get("/api/repair-center/pos/products", requireRole("repair_center", "repair_center_staff"), async (req, res) => {
     try {
       const repairCenterId = req.user!.repairCenterId || req.user!.id;
       const search = req.query.search as string | undefined;
+      const priceListId = req.query.priceListId as string | undefined;
       
       // Trova il magazzino del repair center
       const warehouseList = await storage.listWarehouses({ 
@@ -34739,30 +34752,61 @@ export function registerRoutes(app: Express): Server {
       const warehouse = warehouseList[0];
       const productsWithStock = await storage.listWarehouseProductsWithStock(warehouse.id, search);
       
-      // Applica prezzi dal listino del reseller se disponibile
+      // Ottieni i listini ereditati per validazione e fallback
       const inheritedLists = await storage.getInheritedPriceLists(repairCenterId, 'repair_center');
       
-      if (inheritedLists.length > 0) {
-        const priceList = inheritedLists[0]; // Usa il primo listino attivo
-        const priceListItems = await storage.listPriceListItems(priceList.id);
+      // Se è specificato un priceListId, verifica che sia accessibile al repair center
+      if (priceListId) {
+        const isAccessible = inheritedLists.some(pl => pl.id === priceListId);
+        if (!isAccessible) {
+          return res.status(403).json({ error: "Price list not accessible" });
+        }
         
-        // Crea una mappa productId -> priceCents per lookup veloce
-        const priceMap = new Map<string, number>();
-          const vatRateMap = new Map<string, number>();
+        const priceList = await storage.getPriceList(priceListId);
+        if (priceList) {
+          const priceListItems = await storage.listPriceListItems(priceList.id);
           const defaultVatRate = (priceList as any).defaultVatRate ?? 22;
+          
+          const priceMap = new Map<string, number>();
+          const vatRateMap = new Map<string, number>();
+          for (const item of priceListItems) {
+            if (item.productId && item.isActive) {
+              priceMap.set(item.productId, item.priceCents);
+              vatRateMap.set(item.productId, (item as any).vatRate ?? defaultVatRate);
+            }
+          }
+          
+          const productsWithListPrice = productsWithStock.map(product => ({
+            ...product,
+            listPrice: priceMap.get(product.id) ?? null,
+            priceListName: priceMap.has(product.id) ? priceList.name : null,
+            vatRate: vatRateMap.get(product.id) ?? defaultVatRate,
+          }));
+          
+          return res.json(productsWithListPrice);
+        }
+      }
+      
+      // Fallback: Applica prezzi dal primo listino ereditato
+      if (inheritedLists.length > 0) {
+        const priceList = inheritedLists[0];
+        const priceListItems = await storage.listPriceListItems(priceList.id);
+        const defaultVatRate = (priceList as any).defaultVatRate ?? 22;
+        
+        const priceMap = new Map<string, number>();
+        const vatRateMap = new Map<string, number>();
         for (const item of priceListItems) {
           if (item.productId && item.isActive) {
             priceMap.set(item.productId, item.priceCents);
-              vatRateMap.set(item.productId, (item as any).vatRate ?? defaultVatRate);
+            vatRateMap.set(item.productId, (item as any).vatRate ?? defaultVatRate);
           }
         }
         
-        // Aggiungi listPrice ai prodotti
         const productsWithListPrice = productsWithStock.map(product => ({
           ...product,
           listPrice: priceMap.get(product.id) ?? null,
           priceListName: priceMap.has(product.id) ? priceList.name : null,
-            vatRate: vatRateMap.get(product.id) ?? defaultVatRate,
+          vatRate: vatRateMap.get(product.id) ?? defaultVatRate,
         }));
         
         return res.json(productsWithListPrice);
@@ -34773,7 +34817,6 @@ export function registerRoutes(app: Express): Server {
       res.status(500).json({ error: error.message });
     }
   });
-
   // Cerca prodotto per barcode
   app.get("/api/repair-center/pos/product/barcode/:barcode", requireRole("repair_center", "repair_center_staff"), async (req, res) => {
     try {
@@ -34825,8 +34868,16 @@ export function registerRoutes(app: Express): Server {
         activeItems = activeItems.filter(item => item.category === category);
       }
       
-      // Se è specificato un priceListId, usa i prezzi dal listino
+      
+      // Se è specificato un priceListId, verifica che sia accessibile e usa i prezzi dal listino
       if (priceListId) {
+        // Valida l'accesso: il priceListId deve essere tra i listini ereditati
+        const inheritedLists = await storage.getInheritedPriceLists(repairCenterId, 'repair_center');
+        const isAccessible = inheritedLists.some(pl => pl.id === priceListId);
+        if (!isAccessible) {
+          return res.status(403).json({ error: "Price list not accessible" });
+        }
+        
         const priceList = await storage.getPriceList(priceListId);
         if (priceList) {
           const priceListItems = await storage.listPriceListItems(priceList.id);
