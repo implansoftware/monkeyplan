@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useParams, Link } from "wouter";
-import { RepairCenter, RepairOrder, User, UtilityPractice } from "@shared/schema";
+import { RepairCenter, RepairOrder, User, UtilityPractice, PaymentConfiguration } from "@shared/schema";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -30,8 +30,12 @@ import {
   Calendar,
   Eye,
   FileCheck,
-  KeyRound
+  KeyRound,
+  CreditCard,
+  Check,
+  X
 } from "lucide-react";
+import { SiStripe, SiPaypal } from "react-icons/si";
 
 type SafeUser = Omit<User, 'password'>;
 
@@ -144,6 +148,15 @@ export default function AdminRepairCenterDetail() {
 
   const { data, isLoading, error } = useQuery<RepairCenterOverviewResponse>({
     queryKey: ["/api/admin/repair-centers", centerId, "overview"],
+    enabled: !!centerId,
+  });
+
+  const { data: paymentConfig } = useQuery<PaymentConfiguration | null>({
+    queryKey: ["/api/admin/repair-centers", centerId, "payment-config"],
+    queryFn: async () => {
+      const res = await apiRequest("GET", `/api/admin/repair-centers/${centerId}/payment-config`);
+      return await res.json();
+    },
     enabled: !!centerId,
   });
 
@@ -432,6 +445,97 @@ export default function AdminRepairCenterDetail() {
           </Card>
         )}
       </div>
+
+      {/* Payment Configuration Card */}
+      <Card className="border-0 shadow-lg bg-white dark:bg-slate-800/50">
+        <CardHeader className="pb-4">
+          <CardTitle className="flex flex-wrap items-center gap-3 text-slate-900 dark:text-white">
+            <div className="p-2 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600">
+              <CreditCard className="h-5 w-5 text-white" />
+            </div>
+            Configurazione Pagamenti
+            {paymentConfig?.useParentConfig && (
+              <Badge className="bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300" data-testid="badge-uses-parent-config">
+                Usa config. rivenditore
+              </Badge>
+            )}
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {!paymentConfig ? (
+            <div className="p-4 bg-slate-50 dark:bg-slate-800/30 rounded-xl text-center">
+              <p className="text-slate-500">Non configurato</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              <div className="p-3 bg-slate-50 dark:bg-slate-800/30 rounded-xl" data-testid="payment-stripe-status">
+                <div className="flex items-center gap-2 mb-1">
+                  <SiStripe className="h-4 w-4 text-[#635BFF]" />
+                  <p className="text-xs text-slate-500 uppercase tracking-wide">Stripe</p>
+                </div>
+                <div className="flex items-center gap-1">
+                  {paymentConfig.stripeEnabled && paymentConfig.stripeAccountId ? (
+                    <Check className="h-4 w-4 text-emerald-500" />
+                  ) : (
+                    <X className="h-4 w-4 text-slate-400" />
+                  )}
+                  <span className={paymentConfig.stripeEnabled && paymentConfig.stripeAccountId ? "text-emerald-600 font-medium text-sm" : "text-slate-400 text-sm"}>
+                    {paymentConfig.stripeEnabled && paymentConfig.stripeAccountId ? "Configurato" : "Non attivo"}
+                  </span>
+                </div>
+              </div>
+              <div className="p-3 bg-slate-50 dark:bg-slate-800/30 rounded-xl" data-testid="payment-bonifico-status">
+                <div className="flex items-center gap-2 mb-1">
+                  <Building2 className="h-4 w-4 text-blue-600" />
+                  <p className="text-xs text-slate-500 uppercase tracking-wide">Bonifico</p>
+                </div>
+                <div className="flex items-center gap-1">
+                  {paymentConfig.bankTransferEnabled && paymentConfig.iban ? (
+                    <Check className="h-4 w-4 text-emerald-500" />
+                  ) : (
+                    <X className="h-4 w-4 text-slate-400" />
+                  )}
+                  <span className={paymentConfig.bankTransferEnabled && paymentConfig.iban ? "text-emerald-600 font-medium text-sm" : "text-slate-400 text-sm"}>
+                    {paymentConfig.bankTransferEnabled && paymentConfig.iban ? "Configurato" : "Non attivo"}
+                  </span>
+                </div>
+              </div>
+              <div className="p-3 bg-slate-50 dark:bg-slate-800/30 rounded-xl" data-testid="payment-paypal-status">
+                <div className="flex items-center gap-2 mb-1">
+                  <SiPaypal className="h-4 w-4 text-[#003087]" />
+                  <p className="text-xs text-slate-500 uppercase tracking-wide">PayPal</p>
+                </div>
+                <div className="flex items-center gap-1">
+                  {paymentConfig.paypalEnabled && paymentConfig.paypalEmail ? (
+                    <Check className="h-4 w-4 text-emerald-500" />
+                  ) : (
+                    <X className="h-4 w-4 text-slate-400" />
+                  )}
+                  <span className={paymentConfig.paypalEnabled && paymentConfig.paypalEmail ? "text-emerald-600 font-medium text-sm" : "text-slate-400 text-sm"}>
+                    {paymentConfig.paypalEnabled && paymentConfig.paypalEmail ? "Configurato" : "Non attivo"}
+                  </span>
+                </div>
+              </div>
+              <div className="p-3 bg-slate-50 dark:bg-slate-800/30 rounded-xl" data-testid="payment-satispay-status">
+                <div className="flex items-center gap-2 mb-1">
+                  <CreditCard className="h-4 w-4 text-[#FF4438]" />
+                  <p className="text-xs text-slate-500 uppercase tracking-wide">Satispay</p>
+                </div>
+                <div className="flex items-center gap-1">
+                  {paymentConfig.satispayEnabled && paymentConfig.satispayShopId ? (
+                    <Check className="h-4 w-4 text-emerald-500" />
+                  ) : (
+                    <X className="h-4 w-4 text-slate-400" />
+                  )}
+                  <span className={paymentConfig.satispayEnabled && paymentConfig.satispayShopId ? "text-emerald-600 font-medium text-sm" : "text-slate-400 text-sm"}>
+                    {paymentConfig.satispayEnabled && paymentConfig.satispayShopId ? "Configurato" : "Non attivo"}
+                  </span>
+                </div>
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       <Tabs defaultValue="repairs" className="w-full">
         <TabsList className="grid w-full grid-cols-5 h-12 bg-slate-100 dark:bg-slate-800 rounded-xl p-1">
