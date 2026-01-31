@@ -72,9 +72,10 @@ interface ProductDetailDialogProps {
   productId: string | null;
   hideStock?: boolean;
   hidePrices?: boolean;
+  overridePrice?: number | null;
 }
 
-export function ProductDetailDialog({ open, onOpenChange, productId, hideStock = false, hidePrices = false }: ProductDetailDialogProps) {
+export function ProductDetailDialog({ open, onOpenChange, productId, hideStock = false, hidePrices = false, overridePrice }: ProductDetailDialogProps) {
   const { data, isLoading } = useQuery<ProductDetails>({
     queryKey: ["/api/products", productId, "details"],
     queryFn: async () => {
@@ -146,7 +147,7 @@ export function ProductDetailDialog({ open, onOpenChange, productId, hideStock =
                   <div className="flex flex-wrap items-center gap-4 mt-3">
                     <div className="flex flex-wrap items-center gap-1">
                       <Tag className="h-4 w-4 text-muted-foreground" />
-                      <span className="font-medium">{(Number(data.product.unitPrice || 0) / 100).toFixed(2)} €</span>
+                      <span className="font-medium">{(Number(overridePrice ?? data.product.unitPrice ?? 0) / 100).toFixed(2)} €</span>
                     </div>
                     <div className="flex flex-wrap items-center gap-1">
                       <Warehouse className="h-4 w-4 text-muted-foreground" />

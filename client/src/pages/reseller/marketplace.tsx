@@ -51,11 +51,13 @@ export default function ResellerMarketplace() {
   const [notes, setNotes] = useState("");
   const [paymentMethod, setPaymentMethod] = useState("bank_transfer");
   const [detailProductId, setDetailProductId] = useState<string | null>(null);
+  const [detailPrice, setDetailPrice] = useState<number | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
   const { toast } = useToast();
 
-  const openProductDetail = (productId: string) => {
+  const openProductDetail = (productId: string, priceCents: number) => {
     setDetailProductId(productId);
+    setDetailPrice(priceCents);
     setDetailOpen(true);
   };
 
@@ -283,7 +285,7 @@ export default function ResellerMarketplace() {
                   <Card key={item.product.id} className="rounded-2xl overflow-hidden">
                     <div 
                       className="aspect-square w-full bg-muted cursor-pointer relative group"
-                      onClick={() => openProductDetail(item.product.id)}
+                      onClick={() => openProductDetail(item.product.id, item.marketplacePrice)}
                       data-testid={`card-product-image-${item.product.id}`}
                     >
                       {item.product.imageUrl ? (
@@ -305,7 +307,7 @@ export default function ResellerMarketplace() {
                       <div className="flex items-start justify-between gap-2">
                         <div 
                           className="flex-1 min-w-0 cursor-pointer hover:text-primary transition-colors"
-                          onClick={() => openProductDetail(item.product.id)}
+                          onClick={() => openProductDetail(item.product.id, item.marketplacePrice)}
                         >
                           <CardTitle className="text-base truncate">{item.product.name}</CardTitle>
                           {item.product.sku && (
@@ -487,6 +489,7 @@ export default function ResellerMarketplace() {
         productId={detailProductId}
         hideStock
         hidePrices
+        overridePrice={detailPrice}
       />
     </div>
   );
