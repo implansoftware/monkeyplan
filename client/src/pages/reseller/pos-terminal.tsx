@@ -759,7 +759,7 @@ export default function ResellerPosTerminal() {
     }
   }, [currentSession]);
 
-  // Aggiorna i prezzi nel carrello quando cambiano i prodotti (es. cambio cliente)
+  // Aggiorna prezzi e vatRate nel carrello quando cambiano i prodotti (es. cambio listino)
   useEffect(() => {
     if (products.length === 0 || cart.length === 0) return;
     
@@ -768,10 +768,12 @@ export default function ResellerPosTerminal() {
         const product = products.find(p => p.id === item.productId);
         if (product) {
           const newPrice = product.listPrice ?? product.sellingPrice ?? product.unitPrice ?? 0;
-          if (newPrice !== item.unitPrice) {
+          const newVatRate = (product as any).vatRate ?? DEFAULT_VAT_RATE;
+          if (newPrice !== item.unitPrice || newVatRate !== item.vatRate) {
             return {
               ...item,
               unitPrice: newPrice,
+              vatRate: newVatRate,
               totalPrice: item.quantity * newPrice - item.discount
             };
           }
