@@ -3316,8 +3316,9 @@ export const invoices = pgTable("invoices", {
   repairCenterId: varchar("repair_center_id"),
   resellerId: varchar("reseller_id"),
   source: invoiceSourceEnum("source").default("other"),
-  amount: integer("amount").notNull(), // in cents
-  tax: integer("tax").notNull().default(0), // in cents
+  amount: integer("amount").notNull(), // in cents (imponibile)
+  tax: integer("tax").notNull().default(0), // in cents (IVA)
+  vatRate: real("vat_rate").notNull().default(22), // Aliquota IVA % (22, 10, 5, 4, 0)
   total: integer("total").notNull(), // in cents
   paymentStatus: paymentStatusEnum("payment_status").notNull().default("pending"),
   paymentMethod: text("payment_method").default("bank_transfer"),
