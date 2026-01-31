@@ -415,11 +415,14 @@ export default function ResellerPosTerminal() {
     enabled: !!repairCenterId,
   });
 
-  // Servizi disponibili
+  // Servizi disponibili (con prezzi dal listino selezionato)
   const { data: services = [], isLoading: servicesLoading } = useQuery<ServiceItem[]>({
-    queryKey: ["/api/reseller/pos", repairCenterId, "services"],
+    queryKey: ["/api/reseller/pos", repairCenterId, "services", selectedPriceListId],
     queryFn: async () => {
-      const res = await fetch(`/api/reseller/pos/${repairCenterId}/services`, { credentials: "include" });
+      const url = selectedPriceListId 
+        ? `/api/reseller/pos/${repairCenterId}/services?priceListId=${selectedPriceListId}`
+        : `/api/reseller/pos/${repairCenterId}/services`;
+      const res = await fetch(url, { credentials: "include" });
       if (!res.ok) return [];
       return res.json();
     },
@@ -782,6 +785,30 @@ export default function ResellerPosTerminal() {
       return item;
     }));
   }, [products]);
+
+  // Aggiorna prezzi e vatRate nel carrello quando cambiano i servizi (es. cambio listino)
+  useEffect(() => {
+    if (services.length === 0 || cart.length === 0) return;
+    
+    setCart(prevCart => prevCart.map(item => {
+      if (item.serviceItemId && item.isService) {
+        const service = services.find(s => s.id === item.serviceItemId);
+        if (service) {
+          const newPrice = service.priceCents ?? 0;
+          const newVatRate = (service as any).vatRate ?? DEFAULT_VAT_RATE;
+          if (newPrice !== item.unitPrice || newVatRate !== item.vatRate) {
+            return {
+              ...item,
+              unitPrice: newPrice,
+              vatRate: newVatRate,
+              totalPrice: item.quantity * newPrice - item.discount
+            };
+          }
+        }
+      }
+      return item;
+    }));
+  }, [services]);
 
   if (sessionLoading) {
     return (

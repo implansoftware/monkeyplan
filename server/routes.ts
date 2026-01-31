@@ -34797,6 +34797,7 @@ export function registerRoutes(app: Express): Server {
       
       const search = req.query.search as string | undefined;
       const category = req.query.category as string | undefined;
+      const priceListId = req.query.priceListId as string | undefined;
       
       const repairCenter = await storage.getRepairCenter(repairCenterId);
       if (!repairCenter) {
@@ -34824,6 +34825,39 @@ export function registerRoutes(app: Express): Server {
         activeItems = activeItems.filter(item => item.category === category);
       }
       
+      // Se è specificato un priceListId, usa i prezzi dal listino
+      if (priceListId) {
+        const priceList = await storage.getPriceList(priceListId);
+        if (priceList) {
+          const priceListItems = await storage.listPriceListItems(priceList.id);
+          const defaultVatRate = (priceList as any).defaultVatRate ?? 22;
+          
+          const priceMap = new Map<string, number>();
+          const vatRateMap = new Map<string, number>();
+          for (const pli of priceListItems) {
+            if (pli.serviceItemId && pli.isActive) {
+              priceMap.set(pli.serviceItemId, pli.priceCents);
+              vatRateMap.set(pli.serviceItemId, (pli as any).vatRate ?? defaultVatRate);
+            }
+          }
+          
+          const servicesWithListPrice = activeItems.map(item => ({
+            id: item.id,
+            code: item.code,
+            name: item.name,
+            description: item.description,
+            category: item.category,
+            priceCents: priceMap.get(item.id) ?? item.defaultPriceCents,
+            laborMinutes: item.defaultLaborMinutes,
+            vatRate: vatRateMap.get(item.id) ?? defaultVatRate,
+            priceListName: priceMap.has(item.id) ? priceList.name : null,
+          }));
+          
+          return res.json(servicesWithListPrice);
+        }
+      }
+      
+      // Fallback: prezzi centro/reseller
       const centerPrices = await storage.listServiceItemPricesByRepairCenter(repairCenterId);
       const resellerPrices = repairCenter.resellerId 
         ? await storage.listServiceItemPricesByReseller(repairCenter.resellerId)
@@ -34842,6 +34876,7 @@ export function registerRoutes(app: Express): Server {
           category: item.category,
           priceCents: effectivePrice,
           laborMinutes: centerPrice?.laborMinutes ?? resellerPrice?.laborMinutes ?? item.defaultLaborMinutes,
+          vatRate: 22,
         };
       });
       
@@ -36228,6 +36263,7 @@ export function registerRoutes(app: Express): Server {
       const { repairCenterId } = req.params;
       const search = req.query.search as string | undefined;
       const category = req.query.category as string | undefined;
+      const priceListId = req.query.priceListId as string | undefined;
       
       const center = await storage.getRepairCenter(repairCenterId);
       if (!center || center.resellerId !== resellerId) {
@@ -36255,11 +36291,43 @@ export function registerRoutes(app: Express): Server {
         activeItems = activeItems.filter(item => item.category === category);
       }
       
-      // Recupera prezzi personalizzati del centro e del reseller
+      // Se è specificato un priceListId, usa i prezzi dal listino
+      if (priceListId) {
+        const priceList = await storage.getPriceList(priceListId);
+        if (priceList) {
+          const priceListItems = await storage.listPriceListItems(priceList.id);
+          const defaultVatRate = (priceList as any).defaultVatRate ?? 22;
+          
+          const priceMap = new Map<string, number>();
+          const vatRateMap = new Map<string, number>();
+          for (const pli of priceListItems) {
+            if (pli.serviceItemId && pli.isActive) {
+              priceMap.set(pli.serviceItemId, pli.priceCents);
+              vatRateMap.set(pli.serviceItemId, (pli as any).vatRate ?? defaultVatRate);
+            }
+          }
+          
+          const servicesWithListPrice = activeItems.map(item => ({
+            id: item.id,
+            code: item.code,
+            name: item.name,
+            description: item.description,
+            category: item.category,
+            priceCents: priceMap.get(item.id) ?? item.defaultPriceCents,
+            laborMinutes: item.defaultLaborMinutes,
+            vatRate: vatRateMap.get(item.id) ?? defaultVatRate,
+            priceListName: priceMap.has(item.id) ? priceList.name : null,
+          }));
+          
+          return res.json(servicesWithListPrice);
+        }
+      }
+      
+      // Fallback: Recupera prezzi personalizzati del centro e del reseller
       const centerPrices = await storage.listServiceItemPricesByRepairCenter(repairCenterId);
       const resellerPrices = await storage.listServiceItemPricesByReseller(resellerId);
       
-      // Mappa i servizi con prezzi effettivi (come fa l'endpoint repair center)
+      // Mappa i servizi con prezzi effettivi
       const servicesWithPrices = activeItems.map(item => {
         const centerPrice = centerPrices.find(p => p.serviceItemId === item.id);
         const resellerPrice = resellerPrices.find(p => p.serviceItemId === item.id);
@@ -36273,6 +36341,7 @@ export function registerRoutes(app: Express): Server {
           category: item.category,
           priceCents: effectivePrice,
           laborMinutes: centerPrice?.laborMinutes ?? resellerPrice?.laborMinutes ?? item.defaultLaborMinutes,
+          vatRate: 22,
         };
       });
       
@@ -36281,7 +36350,6 @@ export function registerRoutes(app: Express): Server {
       res.status(500).json({ error: error.message });
     }
   });
-
   // Clienti del centro (per selezione in POS)
   app.get("/api/reseller/pos/:repairCenterId/customers", requireRole("reseller", "reseller_staff", "sub_reseller"), async (req, res) => {
     try {
