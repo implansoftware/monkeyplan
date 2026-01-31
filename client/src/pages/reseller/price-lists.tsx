@@ -9,8 +9,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { 
-  ListOrdered, Plus, Pencil, Trash2, Star, StarOff, Eye, Search, Package, Wrench, Euro, Users
+  ListOrdered, Plus, Pencil, Trash2, Star, StarOff, Eye, Search, Package, Wrench, Euro, Users, Percent
 } from "lucide-react";
+import { VAT_RATES } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { Link } from "wouter";
@@ -60,7 +61,8 @@ export default function ResellerPriceLists() {
     name: "", 
     description: "", 
     targetAudience: "all" as "sub_reseller" | "repair_center" | "customer" | "reseller" | "all",
-    targetCustomerType: null as "private" | "company" | null
+    targetCustomerType: null as "private" | "company" | null,
+    defaultVatRate: 22
   });
 
   const customerTypeOptions = [
@@ -82,14 +84,14 @@ export default function ResellerPriceLists() {
   });
 
   const createMutation = useMutation({
-    mutationFn: async (data: { name: string; description: string; targetAudience: string; targetCustomerType?: string | null }) => {
+    mutationFn: async (data: { name: string; description: string; targetAudience: string; targetCustomerType?: string | null; defaultVatRate?: number }) => {
       return apiRequest("POST", "/api/price-lists", data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/price-lists"] });
       toast({ title: "Listino creato", description: "Il listino prezzi è stato creato con successo" });
       setShowCreateDialog(false);
-      setFormData({ name: "", description: "", targetAudience: "all", targetCustomerType: null });
+      setFormData({ name: "", description: "", targetAudience: "all", targetCustomerType: null, defaultVatRate: 22 });
     },
     onError: (error: any) => {
       toast({ title: "Errore", description: error.message, variant: "destructive" });
@@ -149,7 +151,8 @@ export default function ResellerPriceLists() {
     }
     createMutation.mutate({
       ...formData,
-      targetCustomerType: formData.targetAudience === "customer" ? formData.targetCustomerType : null
+      targetCustomerType: formData.targetAudience === "customer" ? formData.targetCustomerType : null,
+      defaultVatRate: formData.defaultVatRate
     });
   };
 
@@ -161,7 +164,10 @@ export default function ResellerPriceLists() {
         name: formData.name, 
         description: formData.description, 
         targetAudience: formData.targetAudience,
-        targetCustomerType: formData.targetAudience === "customer" ? formData.targetCustomerType : null
+        targetCustomerType: formData.targetAudience === "customer" ? formData.targetCustomerType : null,
+        defaultVatRate: formData.defaultVatRate,
+        isDefault: editingList.isDefault,
+        isActive: editingList.isActive
       },
     });
   };
@@ -290,7 +296,8 @@ export default function ResellerPriceLists() {
                               name: list.name, 
                               description: list.description || "", 
                               targetAudience: list.targetAudience || "all",
-                              targetCustomerType: list.targetCustomerType || null
+                              targetCustomerType: list.targetCustomerType || null,
+                              defaultVatRate: (list as any).defaultVatRate || 22
                             });
                             setEditingList(list);
                           }}
@@ -410,6 +417,32 @@ export default function ResellerPriceLists() {
                 </p>
               </div>
             )}
+            <div className="space-y-2">
+              <Label>
+                <span className="flex items-center gap-2">
+                  <Percent className="h-4 w-4" />
+                  Aliquota IVA Default
+                </span>
+              </Label>
+              <Select
+                value={String(formData.defaultVatRate)}
+                onValueChange={(value) => setFormData({ ...formData, defaultVatRate: Number(value) })}
+              >
+                <SelectTrigger data-testid="select-vat-rate">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {VAT_RATES.map((rate) => (
+                    <SelectItem key={rate.value} value={String(rate.value)}>
+                      {rate.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">
+                Aliquota IVA applicata di default agli articoli del listino
+              </p>
+            </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowCreateDialog(false)}>
@@ -506,6 +539,32 @@ export default function ResellerPriceLists() {
                 </p>
               </div>
             )}
+            <div className="space-y-2">
+              <Label>
+                <span className="flex items-center gap-2">
+                  <Percent className="h-4 w-4" />
+                  Aliquota IVA Default
+                </span>
+              </Label>
+              <Select
+                value={String(formData.defaultVatRate)}
+                onValueChange={(value) => setFormData({ ...formData, defaultVatRate: Number(value) })}
+              >
+                <SelectTrigger data-testid="select-edit-vat-rate">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {VAT_RATES.map((rate) => (
+                    <SelectItem key={rate.value} value={String(rate.value)}>
+                      {rate.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">
+                Aliquota IVA applicata di default agli articoli del listino
+              </p>
+            </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setEditingList(null)}>

@@ -8,8 +8,9 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { 
-  ArrowLeft, Plus, Pencil, Trash2, Package, Wrench, Euro, Search, Save
+  ArrowLeft, Plus, Pencil, Trash2, Package, Wrench, Euro, Search, Save, Percent
 } from "lucide-react";
+import { VAT_RATES } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -72,6 +73,7 @@ export default function PriceListDetail() {
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [selectedService, setSelectedService] = useState<ServiceItem | null>(null);
   const [priceCents, setPriceCents] = useState("");
+  const [selectedVatRate, setSelectedVatRate] = useState<number | null>(null);
 
   const { data: priceList, isLoading } = useQuery<PriceListWithItems>({
     queryKey: ["/api/price-lists", listId],
@@ -86,8 +88,36 @@ export default function PriceListDetail() {
     queryKey: ["/api/service-items"],
   });
 
+  const updateVatMutation = useMutation({
+    mutationFn: async (vatRate: number) => {
+      return apiRequest("PUT", `/api/price-lists/${listId}`, { 
+        name: priceList?.name,
+        description: priceList?.description,
+        isDefault: priceList?.isDefault,
+        isActive: priceList?.isActive,
+        targetAudience: priceList?.targetAudience,
+        targetCustomerType: (priceList as any)?.targetCustomerType,
+        defaultVatRate: vatRate,
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/price-lists", listId] });
+      toast({
+        title: "Aliquota IVA aggiornata",
+        description: "L'aliquota IVA del listino è stata aggiornata.",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Errore",
+        description: error.message || "Errore durante l'aggiornamento dell'aliquota.",
+        variant: "destructive",
+      });
+    },
+  });
+
   const addItemMutation = useMutation({
-    mutationFn: async (data: { productId?: string; serviceItemId?: string; priceCents: number; costPriceCents?: number }) => {
+    mutationFn: async (data: { productId?: string; serviceItemId?: string; priceCents: number; costPriceCents?: number; vatRate?: number }) => {
       return apiRequest("POST", `/api/price-lists/${listId}/items`, data);
     },
     onSuccess: () => {
@@ -135,6 +165,7 @@ export default function PriceListDetail() {
     setSelectedService(null);
     setPriceCents("");
     setItemType("product");
+    setSelectedVatRate(null);
   };
 
   const handleAddSubmit = () => {
@@ -151,6 +182,10 @@ export default function PriceListDetail() {
       data.productId = selectedId;
     } else {
       data.serviceItemId = selectedId;
+    }
+    
+    if (selectedVatRate !== null) {
+      data.vatRate = selectedVatRate;
     }
     
     addItemMutation.mutate(data);
@@ -251,10 +286,30 @@ export default function PriceListDetail() {
             )}
           </div>
         </div>
-        <Button onClick={() => setShowAddDialog(true)} data-testid="button-add-item">
-          <Plus className="h-4 w-4 mr-2" />
-          Aggiungi Voce
-        </Button>
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
+            <Percent className="h-4 w-4 text-muted-foreground" />
+            <Select
+              value={String((priceList as any).defaultVatRate || 22)}
+              onValueChange={(value) => updateVatMutation.mutate(Number(value))}
+            >
+              <SelectTrigger className="w-[140px]" data-testid="select-list-vat">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {VAT_RATES.map((rate) => (
+                  <SelectItem key={rate.value} value={String(rate.value)}>
+                    {rate.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <Button onClick={() => setShowAddDialog(true)} data-testid="button-add-item">
+            <Plus className="h-4 w-4 mr-2" />
+            Aggiungi Voce
+          </Button>
+        </div>
       </div>
 
       <Card>
@@ -298,6 +353,7 @@ export default function PriceListDetail() {
                   <TableHead className="text-right">Prezzo Originale</TableHead>
                   <TableHead className="text-right">Prezzo Costo</TableHead>
                   <TableHead className="text-right">Prezzo Listino</TableHead>
+                  <TableHead className="text-right">IVA</TableHead>
                   <TableHead className="text-right">Azioni</TableHead>
                 </TableRow>
               </TableHeader>
@@ -338,6 +394,11 @@ export default function PriceListDetail() {
                     </TableCell>
                     <TableCell className="text-right font-medium">
                       {formatCurrency(item.priceCents)}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <Badge variant="secondary">
+                        {item.vatRate ?? (priceList as any).defaultVatRate ?? 22}%
+                      </Badge>
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex items-center justify-end gap-1">
@@ -472,6 +533,34 @@ export default function PriceListDetail() {
                 onChange={(e) => setPriceCents(e.target.value)}
                 data-testid="input-price"
               />
+            </div>
+            
+            <div className="space-y-2">
+              <Label>
+                <span className="flex items-center gap-2">
+                  <Percent className="h-4 w-4" />
+                  Aliquota IVA (opzionale)
+                </span>
+              </Label>
+              <Select
+                value={selectedVatRate !== null ? String(selectedVatRate) : "default"}
+                onValueChange={(value) => setSelectedVatRate(value === "default" ? null : Number(value))}
+              >
+                <SelectTrigger data-testid="select-item-vat">
+                  <SelectValue placeholder="Usa default listino" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="default">Usa default listino ({(priceList as any)?.defaultVatRate || 22}%)</SelectItem>
+                  {VAT_RATES.map((rate) => (
+                    <SelectItem key={rate.value} value={String(rate.value)}>
+                      {rate.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">
+                Lascia vuoto per usare l'aliquota default del listino
+              </p>
             </div>
           </div>
           <DialogFooter>
