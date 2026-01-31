@@ -1022,6 +1022,10 @@ export default function PosPage() {
                   <Smartphone className="w-4 h-4 sm:mr-1" />
                   <span className="hidden sm:inline">Dispositivi</span>
                 </TabsTrigger>
+                <TabsTrigger value="consumabili" data-testid="tab-consumabili">
+                  <LayoutGrid className="w-4 h-4 sm:mr-1" />
+                  <span className="hidden sm:inline">Consumabili</span>
+                </TabsTrigger>
                 <TabsTrigger value="services" data-testid="tab-services">
                   <FileText className="w-4 h-4 sm:mr-1" />
                   <span className="hidden sm:inline">Interventi</span>
@@ -1302,6 +1306,65 @@ export default function PosPage() {
                 </ScrollArea>
               </TabsContent>
 
+              {/* Tab Consumabili */}
+              <TabsContent value="consumabili" className="flex-1 overflow-hidden m-0">
+                <div className="mb-2">
+                  <Input
+                    placeholder="Cerca consumabile..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="h-10"
+                    data-testid="input-consumabili-search"
+                  />
+                </div>
+                <ScrollArea className="h-[calc(100%-3rem)]">
+                  {productsLoading ? (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
+                      {[1,2,3,4].map(i => <Skeleton key={i} className="h-24 w-full" />)}
+                    </div>
+                  ) : (() => {
+                    const filtered = filteredProducts.filter(p => p.productType === "consumabile");
+                    return filtered.length === 0 ? (
+                      <div className="flex flex-col items-center justify-center h-40 text-muted-foreground">
+                        <LayoutGrid className="w-12 h-12 mb-2 opacity-50" />
+                        <span>Nessun consumabile disponibile</span>
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
+                        {filtered.map((product) => {
+                          const isOutOfStock = product.availableQuantity !== undefined && product.availableQuantity <= 0;
+                          const price = product.listPrice ?? product.sellingPrice ?? product.unitPrice ?? 0;
+                          return (
+                            <button
+                              key={product.id}
+                              onClick={() => !isOutOfStock && addToCart(product)}
+                              disabled={isOutOfStock}
+                              className={`p-3 rounded-lg border bg-card text-left transition-colors min-h-[120px] ${isOutOfStock ? "opacity-50 cursor-not-allowed" : "hover-elevate active-elevate-2"}`}
+                              data-testid={`button-consumabile-${product.id}`}
+                            >
+                              <div className="flex gap-2 mb-2">
+                                <ProductImage category={product.category} imageUrl={product.imageUrl} size="md" />
+                                <div className="flex-1 min-w-0 overflow-hidden">
+                                  <div className="font-medium text-sm line-clamp-2 break-words">{product.name}</div>
+                                  {product.sku && <div className="text-xs text-muted-foreground mt-0.5 truncate">{product.sku}</div>}
+                                </div>
+                              </div>
+                              <div className="flex items-center justify-between">
+                                <div className="font-semibold text-primary">{formatCurrency(price)}</div>
+                                {product.availableQuantity !== undefined && (
+                                  <Badge variant={isOutOfStock ? "destructive" : "secondary"} className="text-xs">
+                                    {isOutOfStock ? "Esaurito" : `${product.availableQuantity} disp.`}
+                                  </Badge>
+                                )}
+                              </div>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    );
+                  })()}
+                </ScrollArea>
+              </TabsContent>
 
               <TabsContent value="services" className="flex-1 overflow-hidden m-0">
                 <div className="mb-2">
