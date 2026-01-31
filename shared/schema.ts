@@ -6881,6 +6881,9 @@ export const priceLists = pgTable("price_lists", {
   // Flag listino predefinito (uno solo per owner)
   isDefault: boolean("is_default").notNull().default(false),
   
+  // Aliquota IVA di default per il listino (22%, 10%, 5%, 0%)
+  defaultVatRate: real("default_vat_rate").notNull().default(22),
+  
   // Stato
   isActive: boolean("is_active").notNull().default(true),
   createdAt: timestamp("created_at").notNull().defaultNow(),
