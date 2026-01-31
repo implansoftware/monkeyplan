@@ -192,7 +192,10 @@ export default function AdminInvoices() {
                 <TableRow>
                   <TableHead>Numero</TableHead>
                   <TableHead>Data</TableHead>
-                  <TableHead>Importo</TableHead>
+                  <TableHead className="text-right">Imponibile</TableHead>
+                  <TableHead className="text-right">IVA%</TableHead>
+                  <TableHead className="text-right">IVA</TableHead>
+                  <TableHead className="text-right">Totale</TableHead>
                   <TableHead>Metodo</TableHead>
                   <TableHead>Scadenza</TableHead>
                   <TableHead>Stato</TableHead>
@@ -206,7 +209,16 @@ export default function AdminInvoices() {
                     <TableCell>
                       {format(new Date(invoice.createdAt), "dd MMM yyyy", { locale: it })}
                     </TableCell>
-                    <TableCell className="font-semibold">
+                    <TableCell className="text-right text-muted-foreground">
+                      {formatCurrency(invoice.amount)}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <Badge variant="outline" className="font-mono">{invoice.vatRate ?? 22}%</Badge>
+                    </TableCell>
+                    <TableCell className="text-right text-muted-foreground">
+                      {formatCurrency(invoice.tax)}
+                    </TableCell>
+                    <TableCell className="text-right font-semibold">
                       {formatCurrency(invoice.total)}
                     </TableCell>
                     <TableCell className="capitalize">

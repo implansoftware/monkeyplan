@@ -146,7 +146,10 @@ export default function CustomerInvoices() {
                 <TableRow>
                   <TableHead>N. Fattura</TableHead>
                   <TableHead>Data Emissione</TableHead>
-                  <TableHead>Importo</TableHead>
+                  <TableHead className="text-right">Imponibile</TableHead>
+                  <TableHead className="text-right">IVA%</TableHead>
+                  <TableHead className="text-right">IVA</TableHead>
+                  <TableHead className="text-right">Totale</TableHead>
                   <TableHead>Stato</TableHead>
                   <TableHead>Data Pagamento</TableHead>
                 </TableRow>
@@ -156,7 +159,12 @@ export default function CustomerInvoices() {
                   <TableRow key={invoice.id} data-testid={`row-invoice-${invoice.id}`}>
                     <TableCell className="font-medium">{invoice.invoiceNumber}</TableCell>
                     <TableCell>{format(new Date(invoice.createdAt), "dd MMM yyyy", { locale: it })}</TableCell>
-                    <TableCell>{formatCurrency(invoice.total)}</TableCell>
+                    <TableCell className="text-right text-muted-foreground">{formatCurrency(invoice.amount)}</TableCell>
+                    <TableCell className="text-right">
+                      <Badge variant="outline" className="font-mono">{invoice.vatRate ?? 22}%</Badge>
+                    </TableCell>
+                    <TableCell className="text-right text-muted-foreground">{formatCurrency(invoice.tax)}</TableCell>
+                    <TableCell className="text-right font-semibold">{formatCurrency(invoice.total)}</TableCell>
                     <TableCell>
                       <Badge variant={getStatusBadgeVariant(invoice.paymentStatus)}>
                         {getStatusLabel(invoice.paymentStatus)}

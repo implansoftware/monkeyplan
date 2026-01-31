@@ -157,7 +157,8 @@ export async function generateInvoicePdf(data: InvoicePdfData): Promise<Buffer> 
     doc.text(formatCurrency(invoice.amount), totalsX + 80, doc.y - doc.currentLineHeight());
     doc.moveDown(0.5);
     
-    doc.text("IVA (22%):", totalsX, doc.y);
+    const vatRateDisplay = invoice.vatRate ?? 22;
+    doc.text(`IVA (${vatRateDisplay}%):`, totalsX, doc.y);
     doc.text(formatCurrency(invoice.tax), totalsX + 80, doc.y - doc.currentLineHeight());
     doc.moveDown(0.5);
     
