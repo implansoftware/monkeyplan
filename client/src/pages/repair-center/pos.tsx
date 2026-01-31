@@ -900,42 +900,57 @@ export default function PosPage() {
           <div className="absolute bottom-0 right-0 w-64 h-64 rounded-full bg-yellow-400/20 blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
           <div className="absolute top-1/2 left-1/3 w-48 h-48 rounded-full bg-emerald-300/20 blur-3xl animate-pulse" style={{ animationDelay: '2s' }} />
           
-          <div className="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-            <div className="flex flex-wrap items-center gap-3">
-              <div className="h-12 w-12 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center shadow-xl">
-                <CreditCard className="h-6 w-6 text-white" />
-              </div>
-              <div>
-                <h1 className="text-xl sm:text-2xl font-bold text-white tracking-tight">POS</h1>
-                <div className="flex flex-wrap items-center gap-2 text-emerald-100 text-sm">
-                  <div className="w-2 h-2 rounded-full bg-green-300 animate-pulse" />
-                  {selectedRegister?.name || "Cassa"} • dalle {format(new Date(currentSession.openedAt), "HH:mm", { locale: it })}
+          <div className="relative flex flex-col gap-3">
+            {/* Riga 1: Logo + Info + Chiudi */}
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="h-10 w-10 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center shadow-xl">
+                  <CreditCard className="h-5 w-5 text-white" />
+                </div>
+                <div>
+                  <h1 className="text-lg font-bold text-white tracking-tight">POS</h1>
+                  <div className="flex items-center gap-2 text-emerald-100 text-xs">
+                    <div className="w-1.5 h-1.5 rounded-full bg-green-300 animate-pulse" />
+                    {selectedRegister?.name || "Cassa"} • dalle {format(new Date(currentSession.openedAt), "HH:mm", { locale: it })}
+                  </div>
                 </div>
               </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setCloseSessionDialog(true)}
+                className="bg-red-500/30 backdrop-blur-sm text-white border-red-300/50 hover:bg-red-500/50"
+                data-testid="button-close-session"
+              >
+                <X className="w-4 h-4 mr-1" />
+                Chiudi
+              </Button>
             </div>
+            
+            {/* Riga 2: Selettori + Azioni */}
             <div className="flex flex-wrap items-center gap-2">
               <Select value={selectedRegisterId} onValueChange={setSelectedRegisterId}>
-                <SelectTrigger className="w-auto max-w-[140px] sm:max-w-[180px] h-8 bg-white/20 backdrop-blur-sm text-white border-white/30 truncate" data-testid="select-register">
-                  <Store className="w-4 h-4 mr-1 flex-shrink-0" />
-                  <SelectValue placeholder="Cassa" className="truncate" />
+                <SelectTrigger className="w-auto max-w-[160px] h-8 bg-white/20 backdrop-blur-sm text-white border-white/30 text-sm" data-testid="select-register">
+                  <Store className="w-3.5 h-3.5 mr-1 flex-shrink-0" />
+                  <SelectValue placeholder="Cassa" />
                 </SelectTrigger>
                 <SelectContent>
                   {registers.filter(r => r.isActive).map(reg => (
                     <SelectItem key={reg.id} value={reg.id} data-testid={`select-register-${reg.id}`}>
-                      <span className="flex flex-wrap items-center gap-2">
+                      <span className="flex items-center gap-2">
                         <span className={`w-2 h-2 rounded-full ${registerSessions[reg.id] ? "bg-green-500" : "bg-gray-300"}`} />
                         {reg.name} {reg.isDefault && "(Default)"}
-                        {registerSessions[reg.id] && <span className="text-xs text-green-600 ml-1">Aperta</span>}
                       </span>
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
+              
               {priceLists.length > 0 && (
                 <Select value={selectedPriceListId} onValueChange={setSelectedPriceListId}>
-                  <SelectTrigger className="w-auto max-w-[140px] sm:max-w-[180px] h-8 bg-white/20 backdrop-blur-sm text-white border-white/30 truncate" data-testid="select-price-list">
-                    <List className="w-4 h-4 mr-1 flex-shrink-0" />
-                    <SelectValue placeholder="Listino" className="truncate" />
+                  <SelectTrigger className="w-auto max-w-[180px] h-8 bg-white/20 backdrop-blur-sm text-white border-white/30 text-sm" data-testid="select-price-list">
+                    <List className="w-3.5 h-3.5 mr-1 flex-shrink-0" />
+                    <SelectValue placeholder="Listino" />
                   </SelectTrigger>
                   <SelectContent>
                     {priceLists.map(pl => (
@@ -946,27 +961,20 @@ export default function PosPage() {
                   </SelectContent>
                 </Select>
               )}
-              <Link href="/repair-center/pos/registers">
-                <Button variant="outline" size="icon" className="h-8 w-8 bg-white/20 backdrop-blur-sm text-white border-white/30 hover:bg-white/30" data-testid="button-manage-registers">
-                  <Settings className="w-4 h-4" />
-                </Button>
-              </Link>
-              <Link href="/repair-center/pos/sessions">
-                <Button variant="outline" size="icon" className="h-8 w-8 sm:w-auto sm:px-3 bg-white/20 backdrop-blur-sm text-white border-white/30 hover:bg-white/30" data-testid="button-session-history">
-                  <History className="w-4 h-4 sm:mr-1" />
-                  <span className="hidden sm:inline">Storico</span>
-                </Button>
-              </Link>
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={() => setCloseSessionDialog(true)}
-                className="h-8 w-8 sm:w-auto sm:px-3 bg-red-500/30 backdrop-blur-sm text-white border-red-300/50 hover:bg-red-500/50"
-                data-testid="button-close-session"
-              >
-                <X className="w-4 h-4 sm:mr-1" />
-                <span className="hidden sm:inline">Chiudi</span>
-              </Button>
+              
+              <div className="flex items-center gap-1 ml-auto">
+                <Link href="/repair-center/pos/registers">
+                  <Button variant="outline" size="icon" className="h-8 w-8 bg-white/20 backdrop-blur-sm text-white border-white/30 hover:bg-white/30" data-testid="button-manage-registers">
+                    <Settings className="w-4 h-4" />
+                  </Button>
+                </Link>
+                <Link href="/repair-center/pos/sessions">
+                  <Button variant="outline" size="sm" className="h-8 bg-white/20 backdrop-blur-sm text-white border-white/30 hover:bg-white/30" data-testid="button-session-history">
+                    <History className="w-4 h-4 mr-1" />
+                    Storico
+                  </Button>
+                </Link>
+              </div>
             </div>
           </div>
         </div>
