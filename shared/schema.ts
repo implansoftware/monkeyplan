@@ -6577,6 +6577,80 @@ export type PosTransactionStatus = "completed" | "refunded" | "partial_refund" |
 export type PosPaymentMethod = "cash" | "card" | "pos_terminal" | "satispay" | "mixed";
 
 // ==========================================
+// PAYMENT CONFIGURATIONS (Stripe Connect, Bank Transfer, PayPal, Satispay)
+// ==========================================
+
+// Entity type enum for payment configurations
+export const paymentConfigEntityTypeEnum = pgEnum("payment_config_entity_type", [
+  "reseller",
+  "sub_reseller", 
+  "repair_center"
+]);
+
+// Stripe Connect account status
+export const stripeAccountStatusEnum = pgEnum("stripe_account_status", [
+  "pending",        // Account creato ma onboarding non completato
+  "onboarding",     // Onboarding in corso
+  "active",         // Account attivo e pronto per ricevere pagamenti
+  "restricted",     // Account con restrizioni (richiede azioni)
+  "disabled"        // Account disabilitato
+]);
+
+// Payment configurations table
+export const paymentConfigurations = pgTable("payment_configurations", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  
+  // Entity reference (polymorphic)
+  entityType: paymentConfigEntityTypeEnum("entity_type").notNull(),
+  entityId: varchar("entity_id").notNull(),
+  
+  // For Repair Centers: inherit from parent reseller
+  useParentConfig: boolean("use_parent_config").notNull().default(false),
+  
+  // Bank Transfer configuration
+  bankTransferEnabled: boolean("bank_transfer_enabled").notNull().default(false),
+  iban: varchar("iban", { length: 34 }),
+  bankName: varchar("bank_name", { length: 100 }),
+  accountHolder: varchar("account_holder", { length: 200 }),
+  bic: varchar("bic", { length: 11 }), // SWIFT/BIC code
+  
+  // Stripe Connect configuration
+  stripeEnabled: boolean("stripe_enabled").notNull().default(false),
+  stripeAccountId: varchar("stripe_account_id", { length: 50 }), // acct_xxxxx
+  stripeAccountStatus: stripeAccountStatusEnum("stripe_account_status"),
+  stripeOnboardingComplete: boolean("stripe_onboarding_complete").notNull().default(false),
+  stripeDetailsSubmitted: boolean("stripe_details_submitted").notNull().default(false),
+  stripeChargesEnabled: boolean("stripe_charges_enabled").notNull().default(false),
+  stripePayoutsEnabled: boolean("stripe_payouts_enabled").notNull().default(false),
+  
+  // PayPal configuration
+  paypalEnabled: boolean("paypal_enabled").notNull().default(false),
+  paypalEmail: varchar("paypal_email", { length: 254 }),
+  paypalMerchantId: varchar("paypal_merchant_id", { length: 50 }),
+  
+  // Satispay configuration
+  satispayEnabled: boolean("satispay_enabled").notNull().default(false),
+  satispayShopId: varchar("satispay_shop_id", { length: 50 }),
+  
+  // Metadata
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+// Insert schema
+export const insertPaymentConfigurationSchema = createInsertSchema(paymentConfigurations).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+// Types
+export type PaymentConfiguration = typeof paymentConfigurations.$inferSelect;
+export type InsertPaymentConfiguration = z.infer<typeof insertPaymentConfigurationSchema>;
+export type PaymentConfigEntityType = "reseller" | "sub_reseller" | "repair_center";
+export type StripeAccountStatus = "pending" | "onboarding" | "active" | "restricted" | "disabled";
+
+// ==========================================
 // SIBILL INTEGRATION
 // ==========================================
 
