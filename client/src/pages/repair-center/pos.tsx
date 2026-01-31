@@ -14,7 +14,7 @@ import {
   ShoppingCart, Receipt, X, Check, DollarSign, 
   RotateCcw, Clock, ChevronRight, Loader2, Search,
   Calculator, LayoutGrid, History, AlertCircle, Wallet,
-  Package, Smartphone
+  Package, Smartphone, Wrench
 } from "lucide-react";
 import bwipjs from "bwip-js";
 
@@ -186,6 +186,7 @@ type Product = {
   availableQuantity?: number;
   listPrice?: number | null;
   priceListName?: string | null;
+  productType?: string;
 };
 
 type CartItem = {
@@ -1007,11 +1008,19 @@ export default function PosPage() {
             </div>
           </CardHeader>
           <CardContent className="flex-1 overflow-hidden">
-            <Tabs defaultValue="search" className="h-full flex flex-col">
-              <TabsList className="mb-2">
-                <TabsTrigger value="search" data-testid="tab-search">
-                  <LayoutGrid className="w-4 h-4 sm:mr-1" />
-                  <span className="hidden sm:inline">Prodotti</span>
+            <Tabs defaultValue="ricambi" className="h-full flex flex-col">
+              <TabsList className="mb-2 flex-wrap">
+                <TabsTrigger value="ricambi" data-testid="tab-ricambi">
+                  <Wrench className="w-4 h-4 sm:mr-1" />
+                  <span className="hidden sm:inline">Ricambi</span>
+                </TabsTrigger>
+                <TabsTrigger value="accessori" data-testid="tab-accessori">
+                  <Package className="w-4 h-4 sm:mr-1" />
+                  <span className="hidden sm:inline">Accessori</span>
+                </TabsTrigger>
+                <TabsTrigger value="dispositivi" data-testid="tab-dispositivi">
+                  <Smartphone className="w-4 h-4 sm:mr-1" />
+                  <span className="hidden sm:inline">Dispositivi</span>
                 </TabsTrigger>
                 <TabsTrigger value="services" data-testid="tab-services">
                   <FileText className="w-4 h-4 sm:mr-1" />
@@ -1113,76 +1122,183 @@ export default function PosPage() {
                 )}
               </div>
               
-              <TabsContent value="search" className="flex-1 overflow-hidden m-0">
+              {/* Tab Ricambi */}
+              <TabsContent value="ricambi" className="flex-1 overflow-hidden m-0">
                 <div className="mb-2">
                   <Input
-                    placeholder="Cerca prodotto..."
+                    placeholder="Cerca ricambio..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     className="h-10"
-                    data-testid="input-product-search"
+                    data-testid="input-ricambi-search"
                   />
                 </div>
                 <ScrollArea className="h-[calc(100%-3rem)]">
                   {productsLoading ? (
                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
-                      {[1,2,3,4,5,6,7,8].map(i => <Skeleton key={i} className="h-24 w-full" />)}
+                      {[1,2,3,4].map(i => <Skeleton key={i} className="h-24 w-full" />)}
                     </div>
-                  ) : filteredProducts.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center h-40 text-muted-foreground">
-                      <AlertCircle className="w-12 h-12 mb-2 opacity-50" />
-                      <span>Nessun prodotto in magazzino</span>
-                      <span className="text-sm">Aggiungi prodotti dal gestionale</span>
-                    </div>
-                  ) : (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
-                      {filteredProducts.map((product) => {
-                        const isOutOfStock = product.availableQuantity !== undefined && product.availableQuantity <= 0;
-                        const price = product.listPrice ?? product.sellingPrice ?? product.unitPrice ?? 0;
-                        return (
-                          <button
-                            key={product.id}
-                            onClick={() => !isOutOfStock && addToCart(product)}
-                            disabled={isOutOfStock}
-                            className={`p-3 rounded-lg border bg-card text-left transition-colors min-h-[120px] ${
-                              isOutOfStock 
-                                ? "opacity-50 cursor-not-allowed" 
-                                : "hover-elevate active-elevate-2"
-                            }`}
-                            data-testid={`button-product-${product.id}`}
-                          >
-                            <div className="flex gap-2 mb-2">
-                              <ProductImage category={product.category} imageUrl={product.imageUrl} size="md" />
-                              <div className="flex-1 min-w-0 overflow-hidden">
-                                <div className="font-medium text-sm line-clamp-2 break-words">{product.name}</div>
-                                {product.sku && (
-                                  <div className="text-xs text-muted-foreground mt-0.5 truncate">{product.sku}</div>
+                  ) : (() => {
+                    const filtered = filteredProducts.filter(p => (p.productType || "ricambio") === "ricambio");
+                    return filtered.length === 0 ? (
+                      <div className="flex flex-col items-center justify-center h-40 text-muted-foreground">
+                        <Wrench className="w-12 h-12 mb-2 opacity-50" />
+                        <span>Nessun ricambio disponibile</span>
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
+                        {filtered.map((product) => {
+                          const isOutOfStock = product.availableQuantity !== undefined && product.availableQuantity <= 0;
+                          const price = product.listPrice ?? product.sellingPrice ?? product.unitPrice ?? 0;
+                          return (
+                            <button
+                              key={product.id}
+                              onClick={() => !isOutOfStock && addToCart(product)}
+                              disabled={isOutOfStock}
+                              className={`p-3 rounded-lg border bg-card text-left transition-colors min-h-[120px] ${isOutOfStock ? "opacity-50 cursor-not-allowed" : "hover-elevate active-elevate-2"}`}
+                              data-testid={`button-ricambio-${product.id}`}
+                            >
+                              <div className="flex gap-2 mb-2">
+                                <ProductImage category={product.category} imageUrl={product.imageUrl} size="md" />
+                                <div className="flex-1 min-w-0 overflow-hidden">
+                                  <div className="font-medium text-sm line-clamp-2 break-words">{product.name}</div>
+                                  {product.sku && <div className="text-xs text-muted-foreground mt-0.5 truncate">{product.sku}</div>}
+                                </div>
+                              </div>
+                              <div className="flex items-center justify-between">
+                                <div className="font-semibold text-primary">{formatCurrency(price)}</div>
+                                {product.availableQuantity !== undefined && (
+                                  <Badge variant={isOutOfStock ? "destructive" : "secondary"} className="text-xs">
+                                    {isOutOfStock ? "Esaurito" : `${product.availableQuantity} disp.`}
+                                  </Badge>
                                 )}
                               </div>
-                            </div>
-                            {product.barcode && (
-                              <div className="mb-2">
-                                <BarcodeDisplay code={product.barcode} width={100} height={25} />
-                              </div>
-                            )}
-                            <div className="flex items-center justify-between">
-                              <div className="font-semibold text-primary">
-                                {formatCurrency(price)}
-                              </div>
-                              {product.availableQuantity !== undefined && (
-                                <Badge 
-                                  variant={isOutOfStock ? "destructive" : "secondary"}
-                                  className="text-xs"
-                                >
-                                  {isOutOfStock ? "Esaurito" : `${product.availableQuantity} disp.`}
-                                </Badge>
-                              )}
-                            </div>
-                          </button>
-                        );
-                      })}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    );
+                  })()}
+                </ScrollArea>
+              </TabsContent>
+
+              {/* Tab Accessori */}
+              <TabsContent value="accessori" className="flex-1 overflow-hidden m-0">
+                <div className="mb-2">
+                  <Input
+                    placeholder="Cerca accessorio..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="h-10"
+                    data-testid="input-accessori-search"
+                  />
+                </div>
+                <ScrollArea className="h-[calc(100%-3rem)]">
+                  {productsLoading ? (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
+                      {[1,2,3,4].map(i => <Skeleton key={i} className="h-24 w-full" />)}
                     </div>
-                  )}
+                  ) : (() => {
+                    const filtered = filteredProducts.filter(p => p.productType === "accessorio");
+                    return filtered.length === 0 ? (
+                      <div className="flex flex-col items-center justify-center h-40 text-muted-foreground">
+                        <Package className="w-12 h-12 mb-2 opacity-50" />
+                        <span>Nessun accessorio disponibile</span>
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
+                        {filtered.map((product) => {
+                          const isOutOfStock = product.availableQuantity !== undefined && product.availableQuantity <= 0;
+                          const price = product.listPrice ?? product.sellingPrice ?? product.unitPrice ?? 0;
+                          return (
+                            <button
+                              key={product.id}
+                              onClick={() => !isOutOfStock && addToCart(product)}
+                              disabled={isOutOfStock}
+                              className={`p-3 rounded-lg border bg-card text-left transition-colors min-h-[120px] ${isOutOfStock ? "opacity-50 cursor-not-allowed" : "hover-elevate active-elevate-2"}`}
+                              data-testid={`button-accessorio-${product.id}`}
+                            >
+                              <div className="flex gap-2 mb-2">
+                                <ProductImage category={product.category} imageUrl={product.imageUrl} size="md" />
+                                <div className="flex-1 min-w-0 overflow-hidden">
+                                  <div className="font-medium text-sm line-clamp-2 break-words">{product.name}</div>
+                                  {product.sku && <div className="text-xs text-muted-foreground mt-0.5 truncate">{product.sku}</div>}
+                                </div>
+                              </div>
+                              <div className="flex items-center justify-between">
+                                <div className="font-semibold text-primary">{formatCurrency(price)}</div>
+                                {product.availableQuantity !== undefined && (
+                                  <Badge variant={isOutOfStock ? "destructive" : "secondary"} className="text-xs">
+                                    {isOutOfStock ? "Esaurito" : `${product.availableQuantity} disp.`}
+                                  </Badge>
+                                )}
+                              </div>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    );
+                  })()}
+                </ScrollArea>
+              </TabsContent>
+
+              {/* Tab Dispositivi */}
+              <TabsContent value="dispositivi" className="flex-1 overflow-hidden m-0">
+                <div className="mb-2">
+                  <Input
+                    placeholder="Cerca dispositivo..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="h-10"
+                    data-testid="input-dispositivi-search"
+                  />
+                </div>
+                <ScrollArea className="h-[calc(100%-3rem)]">
+                  {productsLoading ? (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
+                      {[1,2,3,4].map(i => <Skeleton key={i} className="h-24 w-full" />)}
+                    </div>
+                  ) : (() => {
+                    const filtered = filteredProducts.filter(p => p.productType === "dispositivo");
+                    return filtered.length === 0 ? (
+                      <div className="flex flex-col items-center justify-center h-40 text-muted-foreground">
+                        <Smartphone className="w-12 h-12 mb-2 opacity-50" />
+                        <span>Nessun dispositivo disponibile</span>
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
+                        {filtered.map((product) => {
+                          const isOutOfStock = product.availableQuantity !== undefined && product.availableQuantity <= 0;
+                          const price = product.listPrice ?? product.sellingPrice ?? product.unitPrice ?? 0;
+                          return (
+                            <button
+                              key={product.id}
+                              onClick={() => !isOutOfStock && addToCart(product)}
+                              disabled={isOutOfStock}
+                              className={`p-3 rounded-lg border bg-card text-left transition-colors min-h-[120px] ${isOutOfStock ? "opacity-50 cursor-not-allowed" : "hover-elevate active-elevate-2"}`}
+                              data-testid={`button-dispositivo-${product.id}`}
+                            >
+                              <div className="flex gap-2 mb-2">
+                                <ProductImage category={product.category} imageUrl={product.imageUrl} size="md" />
+                                <div className="flex-1 min-w-0 overflow-hidden">
+                                  <div className="font-medium text-sm line-clamp-2 break-words">{product.name}</div>
+                                  {product.sku && <div className="text-xs text-muted-foreground mt-0.5 truncate">{product.sku}</div>}
+                                </div>
+                              </div>
+                              <div className="flex items-center justify-between">
+                                <div className="font-semibold text-primary">{formatCurrency(price)}</div>
+                                {product.availableQuantity !== undefined && (
+                                  <Badge variant={isOutOfStock ? "destructive" : "secondary"} className="text-xs">
+                                    {isOutOfStock ? "Esaurito" : `${product.availableQuantity} disp.`}
+                                  </Badge>
+                                )}
+                              </div>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    );
+                  })()}
                 </ScrollArea>
               </TabsContent>
 
