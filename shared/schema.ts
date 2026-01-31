@@ -6582,6 +6582,7 @@ export type PosPaymentMethod = "cash" | "card" | "pos_terminal" | "satispay" | "
 
 // Entity type enum for payment configurations
 export const paymentConfigEntityTypeEnum = pgEnum("payment_config_entity_type", [
+  "admin",
   "reseller",
   "sub_reseller", 
   "repair_center"

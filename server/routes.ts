@@ -8242,12 +8242,6 @@ export function registerRoutes(app: Express): Server {
         }
       }
       
-      // Check if it's admin (for B2B orders to admin)
-      if (!config) {
-        config = await storage.getPaymentConfiguration("admin", entityId);
-        entityType = "admin";
-      }
-      
       // Build public response - only enabled methods with necessary data
       const publicConfig = {
         bankTransfer: {
