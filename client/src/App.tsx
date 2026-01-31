@@ -120,6 +120,7 @@ import ResellerNotifications from "@/pages/reseller/notifications";
 import ResellerInvoices from "@/pages/reseller/invoices";
 import ResellerSales from "@/pages/reseller/sales";
 import ResellerReports from "@/pages/reseller/reports";
+import ResellerSettings from "@/pages/reseller/settings";
 
 // Reseller Utility pages
 import ResellerUtility from "@/pages/reseller/utility/index";
@@ -479,6 +480,7 @@ function Router() {
       <ProtectedRoute path="/reseller/hr/sick-leave" component={ResellerHrSickLeave} allowedRoles={["reseller", "reseller_staff", "sub_reseller"]} />
       <ProtectedRoute path="/reseller/hr/calendar" component={ResellerHrCalendar} allowedRoles={["reseller", "reseller_staff", "sub_reseller"]} />
       <ProtectedRoute path="/reseller/hr" component={ResellerHrDashboard} allowedRoles={["reseller", "reseller_staff", "sub_reseller"]} />
+      <ProtectedRoute path="/reseller/settings" component={ResellerSettings} allowedRoles={["reseller"]} />
       
       {/* Repair Center routes */}
       <ProtectedRoute path="/repair-center" component={RepairCenterDashboard} />

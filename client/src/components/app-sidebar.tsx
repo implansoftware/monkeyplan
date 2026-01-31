@@ -252,6 +252,7 @@ const menuItems = {
     { title: "Richieste Remote", url: "/reseller/remote-requests", icon: Send, group: "Centri & Riparazioni" },
     { title: "Notifiche", url: "/reseller/notifications", icon: Bell, group: "Sub-Reseller" },
     { title: "Integrazioni", url: "/reseller/integrations", icon: Plug, group: "Account" },
+    { title: "Impostazioni", url: "/reseller/settings", icon: Settings, group: "Account" },
     { title: "Profilo", url: "/profile", icon: UserCircle, group: "Account" },
   ],
   sub_reseller: [
