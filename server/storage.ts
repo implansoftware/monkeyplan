@@ -135,7 +135,8 @@ import {
   sibillCategories, SibillCategory, InsertSibillCategory,
   dashboardPreferences, DashboardPreference, InsertDashboardPreference, DashboardLayout,
   priceLists, PriceList, InsertPriceList,
-  priceListItems, PriceListItem, InsertPriceListItem, PriceListOwnerType
+  priceListItems, PriceListItem, InsertPriceListItem, PriceListOwnerType,
+  paymentConfigurations, PaymentConfiguration, InsertPaymentConfiguration, PaymentConfigEntityType
 } from "@shared/schema";
 import { db, pool } from "./db";
 import { eq, and, or, desc, lt, gt, gte, lte, sql, not, inArray, isNull, ilike, SQL } from "drizzle-orm";
@@ -12440,6 +12441,111 @@ export class DatabaseStorage implements IStorage {
     
     const [item] = await db.select().from(priceListItems).where(and(...conditions));
     return item || undefined;
+  }
+
+  // ==========================================
+  // PAYMENT CONFIGURATIONS
+  // ==========================================
+
+  async getPaymentConfiguration(entityType: PaymentConfigEntityType, entityId: string): Promise<PaymentConfiguration | undefined> {
+    const [config] = await db.select()
+      .from(paymentConfigurations)
+      .where(and(
+        eq(paymentConfigurations.entityType, entityType),
+        eq(paymentConfigurations.entityId, entityId)
+      ));
+    return config || undefined;
+  }
+
+  async getPaymentConfigurationById(id: string): Promise<PaymentConfiguration | undefined> {
+    const [config] = await db.select()
+      .from(paymentConfigurations)
+      .where(eq(paymentConfigurations.id, id));
+    return config || undefined;
+  }
+
+  async upsertPaymentConfiguration(data: InsertPaymentConfiguration): Promise<PaymentConfiguration> {
+    const existing = await this.getPaymentConfiguration(data.entityType, data.entityId);
+    
+    if (existing) {
+      const [updated] = await db.update(paymentConfigurations)
+        .set({
+          ...data,
+          updatedAt: new Date()
+        })
+        .where(eq(paymentConfigurations.id, existing.id))
+        .returning();
+      return updated;
+    } else {
+      const [created] = await db.insert(paymentConfigurations)
+        .values(data)
+        .returning();
+      return created;
+    }
+  }
+
+  async updatePaymentConfigurationStripeStatus(
+    entityType: PaymentConfigEntityType,
+    entityId: string,
+    stripeData: {
+      stripeAccountId?: string;
+      stripeAccountStatus?: "pending" | "onboarding" | "active" | "restricted" | "disabled";
+      stripeOnboardingComplete?: boolean;
+      stripeDetailsSubmitted?: boolean;
+      stripeChargesEnabled?: boolean;
+      stripePayoutsEnabled?: boolean;
+    }
+  ): Promise<PaymentConfiguration | undefined> {
+    const existing = await this.getPaymentConfiguration(entityType, entityId);
+    if (!existing) return undefined;
+    
+    const [updated] = await db.update(paymentConfigurations)
+      .set({
+        ...stripeData,
+        updatedAt: new Date()
+      })
+      .where(eq(paymentConfigurations.id, existing.id))
+      .returning();
+    return updated;
+  }
+
+  async getEffectivePaymentConfiguration(
+    entityType: PaymentConfigEntityType,
+    entityId: string,
+    parentResellerId?: string
+  ): Promise<PaymentConfiguration | undefined> {
+    const ownConfig = await this.getPaymentConfiguration(entityType, entityId);
+    
+    if (ownConfig && !ownConfig.useParentConfig) {
+      return ownConfig;
+    }
+    
+    if (entityType === 'repair_center' && parentResellerId) {
+      return this.getPaymentConfiguration('reseller', parentResellerId);
+    }
+    
+    return ownConfig;
+  }
+
+  async getPaymentConfigurationsByReseller(resellerId: string): Promise<PaymentConfiguration[]> {
+    return db.select()
+      .from(paymentConfigurations)
+      .where(
+        or(
+          and(
+            eq(paymentConfigurations.entityType, 'reseller'),
+            eq(paymentConfigurations.entityId, resellerId)
+          ),
+          and(
+            eq(paymentConfigurations.entityType, 'sub_reseller'),
+            eq(paymentConfigurations.entityId, resellerId)
+          )
+        )
+      );
+  }
+
+  async deletePaymentConfiguration(id: string): Promise<void> {
+    await db.delete(paymentConfigurations).where(eq(paymentConfigurations.id, id));
   }
 
 }
