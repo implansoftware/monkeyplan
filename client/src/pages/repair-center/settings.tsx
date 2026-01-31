@@ -13,11 +13,13 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import { Building2, Phone, Mail, Globe, Clock, Camera, Save, Loader2, MapPin, FileText, CreditCard, Instagram, Linkedin, Twitter, Facebook, Settings, Trash2, Upload } from "lucide-react";
+import { Building2, Phone, Mail, Globe, Clock, Camera, Save, Loader2, MapPin, FileText, CreditCard, Instagram, Linkedin, Twitter, Facebook, Settings, Trash2, Upload, Landmark, CircleDollarSign, Wallet, CheckCircle, AlertCircle, ExternalLink } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
 import { z } from "zod";
-import type { RepairCenter } from "@shared/schema";
+import type { RepairCenter, PaymentConfiguration } from "@shared/schema";
+import { SiStripe, SiPaypal } from "react-icons/si";
 
 const settingsFormSchema = z.object({
   name: z.string().min(1, "Il nome è obbligatorio"),
@@ -57,6 +59,27 @@ const settingsFormSchema = z.object({
 
 type SettingsFormData = z.infer<typeof settingsFormSchema>;
 
+const paymentFormSchema = z.object({
+  bankTransferEnabled: z.boolean().default(false),
+  iban: z.string().max(34).optional().nullable(),
+  bankName: z.string().max(100).optional().nullable(),
+  accountHolder: z.string().max(200).optional().nullable(),
+  bic: z.string().max(11).optional().nullable(),
+  paypalEnabled: z.boolean().default(false),
+  paypalEmail: z.string().email("Email PayPal non valida").optional().nullable().or(z.literal('')),
+  satispayEnabled: z.boolean().default(false),
+  satispayShopId: z.string().max(50).optional().nullable(),
+});
+
+type PaymentFormData = z.infer<typeof paymentFormSchema>;
+
+interface RepairCenterPaymentConfig {
+  ownConfig: PaymentConfiguration | null;
+  parentConfig: PaymentConfiguration | null;
+  effectiveConfig: PaymentConfiguration | null;
+  useParentConfig: boolean;
+}
+
 const DAYS_OF_WEEK = [
   { key: 'monday', label: 'Lunedì' },
   { key: 'tuesday', label: 'Martedì' },
@@ -83,9 +106,25 @@ export default function RepairCenterSettings() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
+  const [isConnectingStripe, setIsConnectingStripe] = useState(false);
 
   const { data: settings, isLoading } = useQuery<RepairCenter>({
     queryKey: ['/api/repair-center/settings'],
+  });
+
+  const { data: paymentConfigData, isLoading: isLoadingPayment } = useQuery<RepairCenterPaymentConfig>({
+    queryKey: ['/api/repair-center/payment-config'],
+  });
+
+  const { data: stripeStatus, isLoading: isLoadingStripe } = useQuery<{
+    connected: boolean;
+    accountId?: string;
+    status?: string;
+    detailsSubmitted?: boolean;
+    chargesEnabled?: boolean;
+    payoutsEnabled?: boolean;
+  }>({
+    queryKey: ['/api/stripe/connect/status'],
   });
 
   const form = useForm<SettingsFormData>({
@@ -215,6 +254,154 @@ export default function RepairCenterSettings() {
     },
   });
 
+  const paymentForm = useForm<PaymentFormData>({
+    resolver: zodResolver(paymentFormSchema),
+    defaultValues: {
+      bankTransferEnabled: false,
+      iban: '',
+      bankName: '',
+      accountHolder: '',
+      bic: '',
+      paypalEnabled: false,
+      paypalEmail: '',
+      satispayEnabled: false,
+      satispayShopId: '',
+    },
+    values: paymentConfigData?.ownConfig ? {
+      bankTransferEnabled: paymentConfigData.ownConfig.bankTransferEnabled,
+      iban: paymentConfigData.ownConfig.iban || '',
+      bankName: paymentConfigData.ownConfig.bankName || '',
+      accountHolder: paymentConfigData.ownConfig.accountHolder || '',
+      bic: paymentConfigData.ownConfig.bic || '',
+      paypalEnabled: paymentConfigData.ownConfig.paypalEnabled,
+      paypalEmail: paymentConfigData.ownConfig.paypalEmail || '',
+      satispayEnabled: paymentConfigData.ownConfig.satispayEnabled,
+      satispayShopId: paymentConfigData.ownConfig.satispayShopId || '',
+    } : undefined,
+  });
+
+  const toggleUseParentConfigMutation = useMutation({
+    mutationFn: async (useParentConfig: boolean) => {
+      const res = await apiRequest('PUT', '/api/repair-center/payment-config', { useParentConfig });
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/repair-center/payment-config'] });
+      toast({
+        title: "Configurazione aggiornata",
+        description: "La preferenza di configurazione pagamenti è stata salvata.",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Errore",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const updatePaymentMutation = useMutation({
+    mutationFn: async (data: PaymentFormData) => {
+      const res = await apiRequest('PUT', '/api/repair-center/payment-config', data);
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/repair-center/payment-config'] });
+      toast({
+        title: "Configurazione salvata",
+        description: "I metodi di pagamento sono stati aggiornati.",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Errore",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const connectStripeMutation = useMutation({
+    mutationFn: async () => {
+      const res = await apiRequest('POST', '/api/stripe/connect/create-account');
+      return res.json() as Promise<{ accountId: string; onboardingUrl: string }>;
+    },
+    onSuccess: (data) => {
+      window.location.href = data.onboardingUrl;
+    },
+    onError: (error: Error) => {
+      setIsConnectingStripe(false);
+      toast({
+        title: "Errore connessione Stripe",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const getStripeDashboardMutation = useMutation({
+    mutationFn: async () => {
+      const res = await apiRequest('POST', '/api/stripe/connect/dashboard');
+      return res.json() as Promise<{ dashboardUrl: string }>;
+    },
+    onSuccess: (data) => {
+      window.open(data.dashboardUrl, '_blank');
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Errore",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const refreshStripeLinkMutation = useMutation({
+    mutationFn: async () => {
+      const res = await apiRequest('POST', '/api/stripe/connect/refresh-link');
+      return res.json() as Promise<{ onboardingUrl: string }>;
+    },
+    onSuccess: (data) => {
+      window.location.href = data.onboardingUrl;
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Errore",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleConnectStripe = () => {
+    setIsConnectingStripe(true);
+    connectStripeMutation.mutate();
+  };
+
+  const onPaymentSubmit = (data: PaymentFormData) => {
+    updatePaymentMutation.mutate(data);
+  };
+
+  const getStripeStatusBadge = () => {
+    if (!stripeStatus?.connected) {
+      return <Badge variant="secondary">Non connesso</Badge>;
+    }
+    
+    switch (stripeStatus.status) {
+      case 'active':
+        return <Badge className="bg-green-500/10 text-green-600 dark:text-green-400">Attivo</Badge>;
+      case 'onboarding':
+        return <Badge className="bg-yellow-500/10 text-yellow-600 dark:text-yellow-400">Onboarding in corso</Badge>;
+      case 'restricted':
+        return <Badge className="bg-orange-500/10 text-orange-600 dark:text-orange-400">Richiede azioni</Badge>;
+      case 'disabled':
+        return <Badge variant="destructive">Disabilitato</Badge>;
+      default:
+        return <Badge variant="secondary">In attesa</Badge>;
+    }
+  };
+
   const handleLogoFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -312,6 +499,10 @@ export default function RepairCenterSettings() {
               <TabsTrigger value="fiscal" data-testid="tab-fiscal">
                 <FileText className="h-4 w-4 mr-2" />
                 Dati Fiscali
+              </TabsTrigger>
+              <TabsTrigger value="payments" data-testid="tab-payments">
+                <CreditCard className="h-4 w-4 mr-2" />
+                Pagamenti
               </TabsTrigger>
             </TabsList>
 
@@ -950,6 +1141,464 @@ export default function RepairCenterSettings() {
                       )}
                     />
                   </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="payments" className="space-y-6">
+              <Card>
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 bg-primary/10 rounded-lg">
+                        <CreditCard className="h-6 w-6 text-primary" />
+                      </div>
+                      <div>
+                        <CardTitle>Configurazione Pagamenti</CardTitle>
+                        <CardDescription>
+                          Gestisci i metodi di pagamento per ricevere i pagamenti dai tuoi clienti
+                        </CardDescription>
+                      </div>
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  {isLoadingPayment ? (
+                    <div className="space-y-4">
+                      <Skeleton className="h-12 w-full" />
+                      <Skeleton className="h-32 w-full" />
+                    </div>
+                  ) : (
+                    <>
+                      {paymentConfigData?.parentConfig && (
+                        <div className="flex flex-row items-center justify-between rounded-lg border p-4">
+                          <div className="space-y-0.5">
+                            <Label className="text-base">Usa configurazione del rivenditore</Label>
+                            <p className="text-sm text-muted-foreground">
+                              Utilizza i metodi di pagamento configurati dal tuo rivenditore
+                            </p>
+                          </div>
+                          <Switch
+                            checked={paymentConfigData?.useParentConfig ?? false}
+                            onCheckedChange={(checked) => toggleUseParentConfigMutation.mutate(checked)}
+                            disabled={toggleUseParentConfigMutation.isPending}
+                            data-testid="switch-use-parent-config"
+                          />
+                        </div>
+                      )}
+
+                      {paymentConfigData?.useParentConfig && paymentConfigData?.parentConfig ? (
+                        <Card className="border-dashed">
+                          <CardHeader>
+                            <CardTitle className="text-lg">Configurazione del Rivenditore</CardTitle>
+                            <CardDescription>
+                              I metodi di pagamento attivi sono gestiti dal tuo rivenditore
+                            </CardDescription>
+                          </CardHeader>
+                          <CardContent className="space-y-4">
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                              <div className="flex items-center gap-3 p-3 bg-muted rounded-lg">
+                                <Landmark className="h-5 w-5 text-muted-foreground" />
+                                <div>
+                                  <p className="font-medium">Bonifico Bancario</p>
+                                  <p className="text-sm text-muted-foreground">
+                                    {paymentConfigData.parentConfig.bankTransferEnabled ? (
+                                      <span className="flex items-center gap-1 text-green-600">
+                                        <CheckCircle className="h-3 w-3" /> Attivo
+                                      </span>
+                                    ) : (
+                                      <span className="text-muted-foreground">Non attivo</span>
+                                    )}
+                                  </p>
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-3 p-3 bg-muted rounded-lg">
+                                <SiPaypal className="h-5 w-5 text-[#003087]" />
+                                <div>
+                                  <p className="font-medium">PayPal</p>
+                                  <p className="text-sm text-muted-foreground">
+                                    {paymentConfigData.parentConfig.paypalEnabled ? (
+                                      <span className="flex items-center gap-1 text-green-600">
+                                        <CheckCircle className="h-3 w-3" /> Attivo
+                                      </span>
+                                    ) : (
+                                      <span className="text-muted-foreground">Non attivo</span>
+                                    )}
+                                  </p>
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-3 p-3 bg-muted rounded-lg">
+                                <CircleDollarSign className="h-5 w-5 text-[#f24e4e]" />
+                                <div>
+                                  <p className="font-medium">Satispay</p>
+                                  <p className="text-sm text-muted-foreground">
+                                    {paymentConfigData.parentConfig.satispayEnabled ? (
+                                      <span className="flex items-center gap-1 text-green-600">
+                                        <CheckCircle className="h-3 w-3" /> Attivo
+                                      </span>
+                                    ) : (
+                                      <span className="text-muted-foreground">Non attivo</span>
+                                    )}
+                                  </p>
+                                </div>
+                              </div>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      ) : (
+                        <div className="space-y-6">
+                          <Card>
+                            <CardHeader>
+                              <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-3">
+                                  <div className="p-2 bg-[#635bff]/10 rounded-lg">
+                                    <SiStripe className="h-6 w-6 text-[#635bff]" />
+                                  </div>
+                                  <div>
+                                    <CardTitle className="text-lg">Stripe Connect</CardTitle>
+                                    <CardDescription>
+                                      Ricevi pagamenti con carta di credito direttamente sul tuo conto Stripe
+                                    </CardDescription>
+                                  </div>
+                                </div>
+                                {getStripeStatusBadge()}
+                              </div>
+                            </CardHeader>
+                            <CardContent className="space-y-4">
+                              {isLoadingStripe ? (
+                                <div className="flex items-center gap-2">
+                                  <Loader2 className="h-4 w-4 animate-spin" />
+                                  <span>Verifica stato connessione...</span>
+                                </div>
+                              ) : stripeStatus?.connected ? (
+                                <div className="space-y-4">
+                                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                    <div className="p-3 bg-muted rounded-lg">
+                                      <p className="text-xs text-muted-foreground">Account ID</p>
+                                      <p className="font-mono text-sm">{stripeStatus.accountId}</p>
+                                    </div>
+                                    <div className="p-3 bg-muted rounded-lg">
+                                      <p className="text-xs text-muted-foreground">Dettagli completati</p>
+                                      <p className="font-medium flex items-center gap-1">
+                                        {stripeStatus.detailsSubmitted ? (
+                                          <><CheckCircle className="h-4 w-4 text-green-500" /> Si</>
+                                        ) : (
+                                          <><AlertCircle className="h-4 w-4 text-yellow-500" /> No</>
+                                        )}
+                                      </p>
+                                    </div>
+                                    <div className="p-3 bg-muted rounded-lg">
+                                      <p className="text-xs text-muted-foreground">Pagamenti abilitati</p>
+                                      <p className="font-medium flex items-center gap-1">
+                                        {stripeStatus.chargesEnabled ? (
+                                          <><CheckCircle className="h-4 w-4 text-green-500" /> Si</>
+                                        ) : (
+                                          <><AlertCircle className="h-4 w-4 text-yellow-500" /> No</>
+                                        )}
+                                      </p>
+                                    </div>
+                                    <div className="p-3 bg-muted rounded-lg">
+                                      <p className="text-xs text-muted-foreground">Bonifici abilitati</p>
+                                      <p className="font-medium flex items-center gap-1">
+                                        {stripeStatus.payoutsEnabled ? (
+                                          <><CheckCircle className="h-4 w-4 text-green-500" /> Si</>
+                                        ) : (
+                                          <><AlertCircle className="h-4 w-4 text-yellow-500" /> No</>
+                                        )}
+                                      </p>
+                                    </div>
+                                  </div>
+
+                                  <div className="flex flex-wrap gap-3">
+                                    <Button
+                                      type="button"
+                                      variant="outline"
+                                      onClick={() => getStripeDashboardMutation.mutate()}
+                                      disabled={getStripeDashboardMutation.isPending}
+                                      data-testid="button-stripe-dashboard"
+                                    >
+                                      {getStripeDashboardMutation.isPending ? (
+                                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                      ) : (
+                                        <ExternalLink className="h-4 w-4 mr-2" />
+                                      )}
+                                      Apri Dashboard Stripe
+                                    </Button>
+
+                                    {!stripeStatus.detailsSubmitted && (
+                                      <Button
+                                        type="button"
+                                        onClick={() => refreshStripeLinkMutation.mutate()}
+                                        disabled={refreshStripeLinkMutation.isPending}
+                                        data-testid="button-stripe-complete"
+                                      >
+                                        {refreshStripeLinkMutation.isPending ? (
+                                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                        ) : null}
+                                        Completa Configurazione
+                                      </Button>
+                                    )}
+                                  </div>
+                                </div>
+                              ) : (
+                                <div className="space-y-4">
+                                  <p className="text-sm text-muted-foreground">
+                                    Connetti il tuo account Stripe per iniziare a ricevere pagamenti con carta di credito. 
+                                    La configurazione richiede solo pochi minuti.
+                                  </p>
+                                  <Button
+                                    type="button"
+                                    onClick={handleConnectStripe}
+                                    disabled={isConnectingStripe || connectStripeMutation.isPending}
+                                    data-testid="button-connect-stripe"
+                                  >
+                                    {(isConnectingStripe || connectStripeMutation.isPending) ? (
+                                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                    ) : (
+                                      <SiStripe className="h-4 w-4 mr-2" />
+                                    )}
+                                    Connetti con Stripe
+                                  </Button>
+                                </div>
+                              )}
+                            </CardContent>
+                          </Card>
+
+                          <Form {...paymentForm}>
+                            <form onSubmit={paymentForm.handleSubmit(onPaymentSubmit)} className="space-y-6">
+                              <Card>
+                                <CardHeader>
+                                  <div className="flex items-center gap-3">
+                                    <div className="p-2 bg-blue-500/10 rounded-lg">
+                                      <Landmark className="h-6 w-6 text-blue-600" />
+                                    </div>
+                                    <div>
+                                      <CardTitle className="text-lg">Bonifico Bancario</CardTitle>
+                                      <CardDescription>
+                                        Configura i dati bancari per ricevere pagamenti tramite bonifico
+                                      </CardDescription>
+                                    </div>
+                                  </div>
+                                </CardHeader>
+                                <CardContent className="space-y-4">
+                                  <FormField
+                                    control={paymentForm.control}
+                                    name="bankTransferEnabled"
+                                    render={({ field }) => (
+                                      <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                                        <div className="space-y-0.5">
+                                          <FormLabel className="text-base">Abilita Bonifico Bancario</FormLabel>
+                                          <FormDescription>
+                                            Permetti ai clienti di pagare tramite bonifico bancario
+                                          </FormDescription>
+                                        </div>
+                                        <FormControl>
+                                          <Switch
+                                            checked={field.value}
+                                            onCheckedChange={field.onChange}
+                                            data-testid="switch-bank-transfer"
+                                          />
+                                        </FormControl>
+                                      </FormItem>
+                                    )}
+                                  />
+
+                                  {paymentForm.watch("bankTransferEnabled") && (
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4">
+                                      <FormField
+                                        control={paymentForm.control}
+                                        name="accountHolder"
+                                        render={({ field }) => (
+                                          <FormItem>
+                                            <FormLabel>Intestatario Conto</FormLabel>
+                                            <FormControl>
+                                              <Input {...field} value={field.value || ''} placeholder="Nome Cognome o Ragione Sociale" data-testid="input-account-holder" />
+                                            </FormControl>
+                                            <FormMessage />
+                                          </FormItem>
+                                        )}
+                                      />
+                                      <FormField
+                                        control={paymentForm.control}
+                                        name="bankName"
+                                        render={({ field }) => (
+                                          <FormItem>
+                                            <FormLabel>Nome Banca</FormLabel>
+                                            <FormControl>
+                                              <Input {...field} value={field.value || ''} placeholder="Es. UniCredit" data-testid="input-bank-name" />
+                                            </FormControl>
+                                            <FormMessage />
+                                          </FormItem>
+                                        )}
+                                      />
+                                      <FormField
+                                        control={paymentForm.control}
+                                        name="iban"
+                                        render={({ field }) => (
+                                          <FormItem>
+                                            <FormLabel>IBAN</FormLabel>
+                                            <FormControl>
+                                              <Input {...field} value={field.value || ''} placeholder="IT60X0542811101000000123456" data-testid="input-payment-iban" />
+                                            </FormControl>
+                                            <FormMessage />
+                                          </FormItem>
+                                        )}
+                                      />
+                                      <FormField
+                                        control={paymentForm.control}
+                                        name="bic"
+                                        render={({ field }) => (
+                                          <FormItem>
+                                            <FormLabel>BIC/SWIFT</FormLabel>
+                                            <FormControl>
+                                              <Input {...field} value={field.value || ''} placeholder="UNCRITMMXXX" data-testid="input-bic" />
+                                            </FormControl>
+                                            <FormMessage />
+                                          </FormItem>
+                                        )}
+                                      />
+                                    </div>
+                                  )}
+                                </CardContent>
+                              </Card>
+
+                              <Card>
+                                <CardHeader>
+                                  <div className="flex items-center gap-3">
+                                    <div className="p-2 bg-[#003087]/10 rounded-lg">
+                                      <SiPaypal className="h-6 w-6 text-[#003087]" />
+                                    </div>
+                                    <div>
+                                      <CardTitle className="text-lg">PayPal</CardTitle>
+                                      <CardDescription>
+                                        Ricevi pagamenti tramite PayPal
+                                      </CardDescription>
+                                    </div>
+                                  </div>
+                                </CardHeader>
+                                <CardContent className="space-y-4">
+                                  <FormField
+                                    control={paymentForm.control}
+                                    name="paypalEnabled"
+                                    render={({ field }) => (
+                                      <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                                        <div className="space-y-0.5">
+                                          <FormLabel className="text-base">Abilita PayPal</FormLabel>
+                                          <FormDescription>
+                                            Permetti ai clienti di pagare tramite PayPal
+                                          </FormDescription>
+                                        </div>
+                                        <FormControl>
+                                          <Switch
+                                            checked={field.value}
+                                            onCheckedChange={field.onChange}
+                                            data-testid="switch-paypal"
+                                          />
+                                        </FormControl>
+                                      </FormItem>
+                                    )}
+                                  />
+
+                                  {paymentForm.watch("paypalEnabled") && (
+                                    <FormField
+                                      control={paymentForm.control}
+                                      name="paypalEmail"
+                                      render={({ field }) => (
+                                        <FormItem className="pt-4">
+                                          <FormLabel>Email PayPal</FormLabel>
+                                          <FormControl>
+                                            <div className="relative">
+                                              <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                                              <Input {...field} value={field.value || ''} type="email" placeholder="pagamenti@tuaemail.it" className="pl-10" data-testid="input-paypal-email" />
+                                            </div>
+                                          </FormControl>
+                                          <FormMessage />
+                                        </FormItem>
+                                      )}
+                                    />
+                                  )}
+                                </CardContent>
+                              </Card>
+
+                              <Card>
+                                <CardHeader>
+                                  <div className="flex items-center gap-3">
+                                    <div className="p-2 bg-[#f24e4e]/10 rounded-lg">
+                                      <CircleDollarSign className="h-6 w-6 text-[#f24e4e]" />
+                                    </div>
+                                    <div>
+                                      <CardTitle className="text-lg">Satispay</CardTitle>
+                                      <CardDescription>
+                                        Ricevi pagamenti tramite Satispay Business
+                                      </CardDescription>
+                                    </div>
+                                  </div>
+                                </CardHeader>
+                                <CardContent className="space-y-4">
+                                  <FormField
+                                    control={paymentForm.control}
+                                    name="satispayEnabled"
+                                    render={({ field }) => (
+                                      <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                                        <div className="space-y-0.5">
+                                          <FormLabel className="text-base">Abilita Satispay</FormLabel>
+                                          <FormDescription>
+                                            Permetti ai clienti di pagare tramite Satispay
+                                          </FormDescription>
+                                        </div>
+                                        <FormControl>
+                                          <Switch
+                                            checked={field.value}
+                                            onCheckedChange={field.onChange}
+                                            data-testid="switch-satispay"
+                                          />
+                                        </FormControl>
+                                      </FormItem>
+                                    )}
+                                  />
+
+                                  {paymentForm.watch("satispayEnabled") && (
+                                    <FormField
+                                      control={paymentForm.control}
+                                      name="satispayShopId"
+                                      render={({ field }) => (
+                                        <FormItem className="pt-4">
+                                          <FormLabel>Satispay Shop ID</FormLabel>
+                                          <FormControl>
+                                            <Input {...field} value={field.value || ''} placeholder="Il tuo Shop ID Satispay" data-testid="input-satispay-shop-id" />
+                                          </FormControl>
+                                          <FormDescription>
+                                            Trova il tuo Shop ID nella dashboard Satispay Business
+                                          </FormDescription>
+                                          <FormMessage />
+                                        </FormItem>
+                                      )}
+                                    />
+                                  )}
+                                </CardContent>
+                              </Card>
+
+                              <div className="flex justify-end">
+                                <Button type="submit" disabled={updatePaymentMutation.isPending} data-testid="button-save-payments">
+                                  {updatePaymentMutation.isPending ? (
+                                    <>
+                                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                      Salvataggio...
+                                    </>
+                                  ) : (
+                                    <>
+                                      <Save className="h-4 w-4 mr-2" />
+                                      Salva Configurazione Pagamenti
+                                    </>
+                                  )}
+                                </Button>
+                              </div>
+                            </form>
+                          </Form>
+                        </div>
+                      )}
+                    </>
+                  )}
                 </CardContent>
               </Card>
             </TabsContent>
