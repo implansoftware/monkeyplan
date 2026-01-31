@@ -5593,6 +5593,7 @@ export const marketplaceOrderItems = pgTable("marketplace_order_items", {
   quantity: integer("quantity").notNull(),
   unitPrice: integer("unit_price").notNull(), // In cents
   totalPrice: integer("total_price").notNull(), // quantity * unitPrice
+  vatRate: integer("vat_rate").notNull().default(22), // Aliquota IVA % (snapshot at order time)
   
   // Product snapshot (in case product changes later)
   productName: text("product_name").notNull(),

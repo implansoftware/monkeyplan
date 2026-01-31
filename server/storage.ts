@@ -1026,6 +1026,7 @@ export interface IStorage {
     b2bPrice: number;
     minimumOrderQuantity: number;
     priceSource: string;
+    vatRate: number;
   }>>;
   
   // B2B Returns (Resi ordini B2B)
@@ -1072,6 +1073,7 @@ export interface IStorage {
     marketplacePrice: number;
     minQuantity: number;
     priceSource?: string;
+    vatRate: number;
   }>>;
   listMarketplaceOrders(filters?: { buyerResellerId?: string; sellerResellerId?: string; status?: string }): Promise<MarketplaceOrder[]>;
   getMarketplaceOrder(id: string): Promise<MarketplaceOrder | undefined>;
@@ -9221,6 +9223,8 @@ export class DatabaseStorage implements IStorage {
     adminStock: number;
     b2bPrice: number;
     minimumOrderQuantity: number;
+    priceSource: string;
+    vatRate: number;
   }>> {
     // Get admin warehouse (owner_id is 'system' for the central admin warehouse)
     const adminWarehouse = await this.getWarehouseByOwner('admin', 'system');
@@ -9256,6 +9260,7 @@ export class DatabaseStorage implements IStorage {
       b2bPrice: number;
       minimumOrderQuantity: number;
       priceSource: string;
+      vatRate: number;
     }> = [];
     
     // Get admin's price list for reseller (reseller buying from admin) - BULK QUERY
@@ -9302,6 +9307,8 @@ export class DatabaseStorage implements IStorage {
       }
       
       const minimumOrderQuantity = assignment?.minimumOrderQuantity ?? 1;
+      const defaultVatRate = (priceList as any)?.defaultVatRate ?? 22;
+      const vatRate = priceListItem ? ((priceListItem as any).vatRate ?? defaultVatRate) : 22;
       
       catalog.push({
         product,
@@ -9309,6 +9316,7 @@ export class DatabaseStorage implements IStorage {
         b2bPrice: b2bPrice!,
         minimumOrderQuantity,
         priceSource,
+        vatRate,
       });
     }
     
@@ -9519,6 +9527,7 @@ export class DatabaseStorage implements IStorage {
     marketplacePrice: number;
     minQuantity: number;
     priceSource?: string;
+    vatRate: number;
   }>> {
     // Get all products that are marketplace-enabled from OTHER resellers
     const catalogProducts = await db
@@ -9544,7 +9553,7 @@ export class DatabaseStorage implements IStorage {
     const sellerIds = [...new Set(catalogProducts.map(p => p.sellerResellerId))];
     
     // TRUE BULK LOAD: Load all seller price lists for target "reseller" in 2 queries total
-    const sellerPriceListMaps = new Map<string, Map<string, number>>();
+    const sellerPriceListMaps = new Map<string, Map<string, { priceCents: number; vatRate: number }>>();
     
     if (sellerIds.length > 0) {
       // Query 1: Get all price lists for all sellers with target "reseller"
@@ -9559,8 +9568,10 @@ export class DatabaseStorage implements IStorage {
       if (allPriceLists.length > 0) {
         const priceListIds = allPriceLists.map(pl => pl.id);
         const ownerToListId = new Map<string, string>();
+        const ownerToDefaultVat = new Map<string, number>();
         for (const pl of allPriceLists) {
           ownerToListId.set(pl.ownerId, pl.id);
+          ownerToDefaultVat.set(pl.ownerId, pl.defaultVatRate ?? 22);
         }
         
         // Query 2: Get all price list items for all these price lists
@@ -9568,20 +9579,26 @@ export class DatabaseStorage implements IStorage {
           .from(priceListItems)
           .where(inArray(priceListItems.priceListId, priceListIds));
         
-        // Build seller -> product -> price map
+        // Build seller -> product -> { priceCents, vatRate } map
         const listIdToOwner = new Map<string, string>();
+        const listIdToDefaultVat = new Map<string, number>();
         for (const pl of allPriceLists) {
           listIdToOwner.set(pl.id, pl.ownerId);
+          listIdToDefaultVat.set(pl.id, pl.defaultVatRate ?? 22);
         }
         
         for (const item of allItems) {
           if (item.productId) {
             const ownerId = listIdToOwner.get(item.priceListId);
+            const defaultVat = listIdToDefaultVat.get(item.priceListId) ?? 22;
             if (ownerId) {
               if (!sellerPriceListMaps.has(ownerId)) {
                 sellerPriceListMaps.set(ownerId, new Map());
               }
-              sellerPriceListMaps.get(ownerId)!.set(item.productId, item.priceCents);
+              sellerPriceListMaps.get(ownerId)!.set(item.productId, {
+                priceCents: item.priceCents,
+                vatRate: item.vatRate ?? defaultVat,
+              });
             }
           }
         }
@@ -9602,13 +9619,15 @@ export class DatabaseStorage implements IStorage {
       if (availableStock > 0) {
         // Check price list first, then fall back to marketplace price
         const sellerPriceMap = sellerPriceListMaps.get(item.sellerResellerId);
-        const priceListPrice = sellerPriceMap?.get(item.product.id);
+        const priceListData = sellerPriceMap?.get(item.product.id);
         
         let marketplacePrice: number;
         let priceSource: string;
+        let vatRate: number = 22; // Default VAT rate
         
-        if (priceListPrice !== undefined) {
-          marketplacePrice = priceListPrice;
+        if (priceListData !== undefined) {
+          marketplacePrice = priceListData.priceCents;
+          vatRate = priceListData.vatRate;
           priceSource = 'price_list';
         } else {
           marketplacePrice = item.product.marketplacePriceCents || item.product.unitPrice;
@@ -9623,6 +9642,7 @@ export class DatabaseStorage implements IStorage {
           marketplacePrice,
           minQuantity: item.product.marketplaceMinQuantity || 1,
           priceSource,
+          vatRate,
         });
       }
     }

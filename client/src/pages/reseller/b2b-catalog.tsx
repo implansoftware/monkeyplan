@@ -90,7 +90,7 @@ export default function ResellerB2BCatalog() {
         product: item.product,
         quantity: item.minimumOrderQuantity,
         unitPrice: item.b2bPrice,
-        vatRate: (item.product as any).vatRate ?? DEFAULT_VAT_RATE,
+        vatRate: (item as any).vatRate ?? DEFAULT_VAT_RATE,
         minQty: item.minimumOrderQuantity,
         maxQty: item.adminStock,
       }]);

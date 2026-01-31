@@ -122,7 +122,7 @@ export default function ResellerMarketplace() {
         product: item.product,
         quantity: item.minQuantity,
         unitPrice: item.marketplacePrice,
-        vatRate: (item.product as any).vatRate ?? DEFAULT_VAT_RATE,
+        vatRate: (item as any).vatRate ?? DEFAULT_VAT_RATE,
         minQty: item.minQuantity,
         maxQty: item.availableStock,
         sellerResellerId: item.sellerResellerId,

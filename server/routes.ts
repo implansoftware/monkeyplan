@@ -29275,12 +29275,13 @@ export function registerRoutes(app: Express): Server {
       
       // Load seller's price list for "reseller" target (bulk load to avoid N+1)
       const sellerPriceList = await storage.getPriceListForTarget(sellerResellerId, 'reseller');
-      const priceListMap = new Map<string, number>();
+      const priceListMap = new Map<string, { priceCents: number; vatRate: number }>();
+      const defaultVatRate = sellerPriceList?.defaultVatRate ?? 22;
       if (sellerPriceList) {
         const priceListItems = await storage.listPriceListItems(sellerPriceList.id);
         for (const pli of priceListItems) {
           if (pli.productId) {
-            priceListMap.set(pli.productId, pli.priceCents);
+            priceListMap.set(pli.productId, { priceCents: pli.priceCents, vatRate: pli.vatRate ?? defaultVatRate });
           }
         }
       }
@@ -29313,11 +29314,12 @@ export function registerRoutes(app: Express): Server {
         }
         
         // Price priority: price_list > marketplacePriceCents > unitPrice
-        const priceListPrice = priceListMap.get(item.productId);
-        const unitPrice = priceListPrice !== undefined 
-          ? priceListPrice 
+        const priceListData = priceListMap.get(item.productId);
+        const unitPrice = priceListData !== undefined 
+          ? priceListData.priceCents 
           : (product.marketplacePriceCents || product.unitPrice);
         const totalPrice = unitPrice * item.quantity;
+        const vatRate = priceListData?.vatRate ?? 22;
         subtotal += totalPrice;
         
         validatedItems.push({
@@ -29327,6 +29329,7 @@ export function registerRoutes(app: Express): Server {
           totalPrice,
           productName: product.name,
           productSku: product.sku,
+          vatRate,
         });
       }
       
@@ -29749,12 +29752,12 @@ export function registerRoutes(app: Express): Server {
       const priceList = await storage.getPriceListForTarget(repairCenter.resellerId, "repair_center");
       
       // Bulk load all price list items to avoid N+1 queries
-      const priceListItemsMap = new Map<string, { priceCents: number }>();
+      const priceListItemsMap = new Map<string, { priceCents: number; vatRate: number }>();
       if (priceList) {
         const allPriceListItems = await storage.listPriceListItems(priceList.id);
         for (const pli of allPriceListItems) {
           if (pli.productId && pli.isActive) {
-            priceListItemsMap.set(pli.productId, { priceCents: pli.priceCents });
+            priceListItemsMap.set(pli.productId, { priceCents: pli.priceCents, vatRate: (pli as any).vatRate ?? (priceList as any)?.defaultVatRate ?? 22 });
           }
         }
       }
@@ -29785,6 +29788,7 @@ export function registerRoutes(app: Express): Server {
           b2bPrice: b2bPrice!,
           minimumOrderQuantity: 1,
           priceSource,
+          vatRate: priceListItem?.vatRate ?? 22,
         };
       }));
       
@@ -29875,12 +29879,12 @@ export function registerRoutes(app: Express): Server {
       const priceList = await storage.getPriceListForTarget(repairCenter.resellerId, "repair_center");
       
       // Bulk load all price list items to avoid N+1 queries
-      const priceListItemsMap = new Map<string, { priceCents: number }>();
+      const priceListItemsMap = new Map<string, { priceCents: number; vatRate: number }>();
       if (priceList) {
         const allPriceListItems = await storage.listPriceListItems(priceList.id);
         for (const pli of allPriceListItems) {
           if (pli.productId && pli.isActive) {
-            priceListItemsMap.set(pli.productId, { priceCents: pli.priceCents });
+            priceListItemsMap.set(pli.productId, { priceCents: pli.priceCents, vatRate: (pli as any).vatRate ?? (priceList as any)?.defaultVatRate ?? 22 });
           }
         }
       }
@@ -34744,9 +34748,12 @@ export function registerRoutes(app: Express): Server {
         
         // Crea una mappa productId -> priceCents per lookup veloce
         const priceMap = new Map<string, number>();
+          const vatRateMap = new Map<string, number>();
+          const defaultVatRate = (priceList as any).defaultVatRate ?? 22;
         for (const item of priceListItems) {
           if (item.productId && item.isActive) {
             priceMap.set(item.productId, item.priceCents);
+              vatRateMap.set(item.productId, (item as any).vatRate ?? defaultVatRate);
           }
         }
         
@@ -34755,6 +34762,7 @@ export function registerRoutes(app: Express): Server {
           ...product,
           listPrice: priceMap.get(product.id) ?? null,
           priceListName: priceMap.has(product.id) ? priceList.name : null,
+            vatRate: vatRateMap.get(product.id) ?? defaultVatRate,
         }));
         
         return res.json(productsWithListPrice);
@@ -36160,9 +36168,12 @@ export function registerRoutes(app: Express): Server {
           const priceListItems = await storage.listPriceListItems(priceList.id);
           
           const priceMap = new Map<string, number>();
+          const vatRateMap = new Map<string, number>();
+          const defaultVatRate = (priceList as any).defaultVatRate ?? 22;
           for (const item of priceListItems) {
             if (item.productId && item.isActive) {
               priceMap.set(item.productId, item.priceCents);
+              vatRateMap.set(item.productId, (item as any).vatRate ?? defaultVatRate);
             }
           }
           
@@ -36170,6 +36181,7 @@ export function registerRoutes(app: Express): Server {
             ...product,
             listPrice: priceMap.get(product.id) ?? null,
             priceListName: priceMap.has(product.id) ? priceList.name : null,
+            vatRate: vatRateMap.get(product.id) ?? defaultVatRate,
           }));
           
           return res.json(productsWithListPrice);
@@ -36184,9 +36196,12 @@ export function registerRoutes(app: Express): Server {
         const priceListItems = await storage.listPriceListItems(priceList.id);
         
         const priceMap = new Map<string, number>();
+          const vatRateMap = new Map<string, number>();
+          const defaultVatRate = (priceList as any).defaultVatRate ?? 22;
         for (const item of priceListItems) {
           if (item.productId && item.isActive) {
             priceMap.set(item.productId, item.priceCents);
+              vatRateMap.set(item.productId, (item as any).vatRate ?? defaultVatRate);
           }
         }
         
@@ -36194,6 +36209,7 @@ export function registerRoutes(app: Express): Server {
           ...product,
           listPrice: priceMap.get(product.id) ?? null,
           priceListName: priceMap.has(product.id) ? priceList.name : null,
+            vatRate: vatRateMap.get(product.id) ?? defaultVatRate,
         }));
         
         return res.json(productsWithListPrice);
