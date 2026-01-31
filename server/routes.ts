@@ -8081,6 +8081,384 @@ export function registerRoutes(app: Express): Server {
 
   // ============ REPAIR CENTER ROUTES ============
 
+  // ============ PAYMENT CONFIGURATIONS ============
+
+  // GET /api/reseller/payment-config - Get reseller's payment configuration
+  app.get("/api/reseller/payment-config", requireRole("reseller", "sub_reseller"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const entityType = req.user.role === "sub_reseller" ? "sub_reseller" : "reseller";
+      const entityId = req.user.id;
+      
+      const config = await storage.getPaymentConfiguration(entityType, entityId);
+      res.json(config || null);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
+  // PUT /api/reseller/payment-config - Update reseller's payment configuration
+  app.put("/api/reseller/payment-config", requireRole("reseller", "sub_reseller"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const entityType = req.user.role === "sub_reseller" ? "sub_reseller" : "reseller";
+      const entityId = req.user.id;
+      
+      const data = {
+        ...req.body,
+        entityType,
+        entityId
+      };
+      
+      const config = await storage.upsertPaymentConfiguration(data);
+      res.json(config);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
+  // GET /api/repair-center/payment-config - Get repair center's payment configuration (with parent fallback)
+  app.get("/api/repair-center/payment-config", requireRole("repair_center"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const repairCenterId = req.user.repairCenterId;
+      if (!repairCenterId) {
+        return res.status(400).send("Nessun centro di riparazione associato");
+      }
+      
+      const repairCenter = await storage.getRepairCenter(repairCenterId);
+      if (!repairCenter) {
+        return res.status(404).send("Centro di riparazione non trovato");
+      }
+      
+      // Get own config
+      const ownConfig = await storage.getPaymentConfiguration("repair_center", repairCenterId);
+      
+      // If useParentConfig is true or no own config, get parent's config
+      let effectiveConfig = ownConfig;
+      let parentConfig = null;
+      
+      if (repairCenter.resellerId) {
+        parentConfig = await storage.getPaymentConfiguration("reseller", repairCenter.resellerId);
+        if (!ownConfig || ownConfig.useParentConfig) {
+          effectiveConfig = parentConfig;
+        }
+      }
+      
+      res.json({
+        ownConfig: ownConfig || null,
+        parentConfig: parentConfig || null,
+        effectiveConfig: effectiveConfig || null,
+        useParentConfig: ownConfig?.useParentConfig ?? true
+      });
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
+  // PUT /api/repair-center/payment-config - Update repair center's payment configuration
+  app.put("/api/repair-center/payment-config", requireRole("repair_center"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const repairCenterId = req.user.repairCenterId;
+      if (!repairCenterId) {
+        return res.status(400).send("Nessun centro di riparazione associato");
+      }
+      
+      const data = {
+        ...req.body,
+        entityType: "repair_center" as const,
+        entityId: repairCenterId
+      };
+      
+      const config = await storage.upsertPaymentConfiguration(data);
+      res.json(config);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
+  // GET /api/admin/payment-config/:entityType/:entityId - Admin view payment config for any entity
+  app.get("/api/admin/payment-config/:entityType/:entityId", requireRole("admin"), async (req, res) => {
+    try {
+      const { entityType, entityId } = req.params;
+      
+      if (!["reseller", "sub_reseller", "repair_center"].includes(entityType)) {
+        return res.status(400).send("Invalid entity type");
+      }
+      
+      const config = await storage.getPaymentConfiguration(entityType as any, entityId);
+      
+      // For repair centers, also get parent config
+      let parentConfig = null;
+      if (entityType === "repair_center") {
+        const repairCenter = await storage.getRepairCenter(entityId);
+        if (repairCenter?.resellerId) {
+          parentConfig = await storage.getPaymentConfiguration("reseller", repairCenter.resellerId);
+        }
+      }
+      
+      res.json({
+        config: config || null,
+        parentConfig: parentConfig || null,
+        hasConfig: !!config && (
+          config.bankTransferEnabled || 
+          config.stripeEnabled || 
+          config.paypalEnabled || 
+          config.satispayEnabled ||
+          config.useParentConfig
+        )
+      });
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
+  // POST /api/stripe/connect/create-account - Create Stripe Connect account
+  app.post("/api/stripe/connect/create-account", requireRole("reseller", "sub_reseller", "repair_center"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
+      if (!stripeSecretKey) {
+        return res.status(503).send("Stripe non configurato. Contatta l'amministratore.");
+      }
+      
+      // Determine entity type and ID
+      let entityType: "reseller" | "sub_reseller" | "repair_center";
+      let entityId: string;
+      
+      if (req.user.role === "repair_center" && req.user.repairCenterId) {
+        entityType = "repair_center";
+        entityId = req.user.repairCenterId;
+      } else if (req.user.role === "sub_reseller") {
+        entityType = "sub_reseller";
+        entityId = req.user.id;
+      } else {
+        entityType = "reseller";
+        entityId = req.user.id;
+      }
+      
+      // Dynamic import of Stripe
+      const Stripe = (await import("stripe")).default;
+      const stripe = new Stripe(stripeSecretKey);
+      
+      // Create Stripe Connect account
+      const account = await stripe.accounts.create({
+        type: "express",
+        country: "IT",
+        email: req.user.email || undefined,
+        capabilities: {
+          card_payments: { requested: true },
+          transfers: { requested: true }
+        },
+        business_type: "company",
+        metadata: {
+          entityType,
+          entityId,
+          monkeyplanUserId: req.user.id
+        }
+      });
+      
+      // Save to payment config
+      await storage.upsertPaymentConfiguration({
+        entityType,
+        entityId,
+        stripeEnabled: true,
+        stripeAccountId: account.id,
+        stripeAccountStatus: "pending",
+        stripeOnboardingComplete: false,
+        bankTransferEnabled: false,
+        paypalEnabled: false,
+        satispayEnabled: false,
+        useParentConfig: false
+      });
+      
+      // Create onboarding link
+      const returnUrl = `${req.protocol}://${req.get("host")}/settings?stripe=complete`;
+      const refreshUrl = `${req.protocol}://${req.get("host")}/settings?stripe=refresh`;
+      
+      const accountLink = await stripe.accountLinks.create({
+        account: account.id,
+        refresh_url: refreshUrl,
+        return_url: returnUrl,
+        type: "account_onboarding"
+      });
+      
+      res.json({ 
+        accountId: account.id,
+        onboardingUrl: accountLink.url 
+      });
+    } catch (error: any) {
+      console.error("Stripe Connect error:", error);
+      res.status(500).send(error.message);
+    }
+  });
+
+  // GET /api/stripe/connect/status - Check Stripe Connect account status
+  app.get("/api/stripe/connect/status", requireRole("reseller", "sub_reseller", "repair_center"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
+      if (!stripeSecretKey) {
+        return res.status(503).send("Stripe non configurato");
+      }
+      
+      // Determine entity type and ID
+      let entityType: "reseller" | "sub_reseller" | "repair_center";
+      let entityId: string;
+      
+      if (req.user.role === "repair_center" && req.user.repairCenterId) {
+        entityType = "repair_center";
+        entityId = req.user.repairCenterId;
+      } else if (req.user.role === "sub_reseller") {
+        entityType = "sub_reseller";
+        entityId = req.user.id;
+      } else {
+        entityType = "reseller";
+        entityId = req.user.id;
+      }
+      
+      const config = await storage.getPaymentConfiguration(entityType, entityId);
+      if (!config?.stripeAccountId) {
+        return res.json({ connected: false });
+      }
+      
+      const Stripe = (await import("stripe")).default;
+      const stripe = new Stripe(stripeSecretKey);
+      
+      const account = await stripe.accounts.retrieve(config.stripeAccountId);
+      
+      // Update status in DB
+      let status: "pending" | "onboarding" | "active" | "restricted" | "disabled" = "pending";
+      if (account.details_submitted && account.charges_enabled && account.payouts_enabled) {
+        status = "active";
+      } else if (account.details_submitted) {
+        status = "restricted";
+      } else {
+        status = "onboarding";
+      }
+      
+      await storage.updatePaymentConfigurationStripeStatus(entityType, entityId, {
+        stripeAccountStatus: status,
+        stripeOnboardingComplete: account.details_submitted || false,
+        stripeDetailsSubmitted: account.details_submitted || false,
+        stripeChargesEnabled: account.charges_enabled || false,
+        stripePayoutsEnabled: account.payouts_enabled || false
+      });
+      
+      res.json({
+        connected: true,
+        accountId: config.stripeAccountId,
+        status,
+        detailsSubmitted: account.details_submitted,
+        chargesEnabled: account.charges_enabled,
+        payoutsEnabled: account.payouts_enabled
+      });
+    } catch (error: any) {
+      console.error("Stripe status check error:", error);
+      res.status(500).send(error.message);
+    }
+  });
+
+  // POST /api/stripe/connect/refresh-link - Get new onboarding link
+  app.post("/api/stripe/connect/refresh-link", requireRole("reseller", "sub_reseller", "repair_center"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
+      if (!stripeSecretKey) {
+        return res.status(503).send("Stripe non configurato");
+      }
+      
+      // Determine entity type and ID
+      let entityType: "reseller" | "sub_reseller" | "repair_center";
+      let entityId: string;
+      
+      if (req.user.role === "repair_center" && req.user.repairCenterId) {
+        entityType = "repair_center";
+        entityId = req.user.repairCenterId;
+      } else if (req.user.role === "sub_reseller") {
+        entityType = "sub_reseller";
+        entityId = req.user.id;
+      } else {
+        entityType = "reseller";
+        entityId = req.user.id;
+      }
+      
+      const config = await storage.getPaymentConfiguration(entityType, entityId);
+      if (!config?.stripeAccountId) {
+        return res.status(400).send("Nessun account Stripe collegato");
+      }
+      
+      const Stripe = (await import("stripe")).default;
+      const stripe = new Stripe(stripeSecretKey);
+      
+      const returnUrl = `${req.protocol}://${req.get("host")}/settings?stripe=complete`;
+      const refreshUrl = `${req.protocol}://${req.get("host")}/settings?stripe=refresh`;
+      
+      const accountLink = await stripe.accountLinks.create({
+        account: config.stripeAccountId,
+        refresh_url: refreshUrl,
+        return_url: returnUrl,
+        type: "account_onboarding"
+      });
+      
+      res.json({ onboardingUrl: accountLink.url });
+    } catch (error: any) {
+      console.error("Stripe refresh link error:", error);
+      res.status(500).send(error.message);
+    }
+  });
+
+  // POST /api/stripe/connect/dashboard - Get Stripe Express Dashboard link
+  app.post("/api/stripe/connect/dashboard", requireRole("reseller", "sub_reseller", "repair_center"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
+      if (!stripeSecretKey) {
+        return res.status(503).send("Stripe non configurato");
+      }
+      
+      // Determine entity type and ID
+      let entityType: "reseller" | "sub_reseller" | "repair_center";
+      let entityId: string;
+      
+      if (req.user.role === "repair_center" && req.user.repairCenterId) {
+        entityType = "repair_center";
+        entityId = req.user.repairCenterId;
+      } else if (req.user.role === "sub_reseller") {
+        entityType = "sub_reseller";
+        entityId = req.user.id;
+      } else {
+        entityType = "reseller";
+        entityId = req.user.id;
+      }
+      
+      const config = await storage.getPaymentConfiguration(entityType, entityId);
+      if (!config?.stripeAccountId) {
+        return res.status(400).send("Nessun account Stripe collegato");
+      }
+      
+      const Stripe = (await import("stripe")).default;
+      const stripe = new Stripe(stripeSecretKey);
+      
+      const loginLink = await stripe.accounts.createLoginLink(config.stripeAccountId);
+      
+      res.json({ dashboardUrl: loginLink.url });
+    } catch (error: any) {
+      console.error("Stripe dashboard link error:", error);
+      res.status(500).send(error.message);
+    }
+  });
+
+
   // GET /api/repair-center/settings - Get repair center profile settings
   app.get("/api/repair-center/settings", requireRole("repair_center"), async (req, res) => {
     try {
