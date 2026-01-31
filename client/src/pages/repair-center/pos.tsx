@@ -946,22 +946,6 @@ export default function PosPage() {
                 </SelectContent>
               </Select>
               
-              {priceLists.length > 0 && (
-                <Select value={selectedPriceListId} onValueChange={setSelectedPriceListId}>
-                  <SelectTrigger className="w-auto max-w-[180px] h-8 bg-white/20 backdrop-blur-sm text-white border-white/30 text-sm" data-testid="select-price-list">
-                    <List className="w-3.5 h-3.5 mr-1 flex-shrink-0" />
-                    <SelectValue placeholder="Listino" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {priceLists.map(pl => (
-                      <SelectItem key={pl.id} value={pl.id} data-testid={`select-price-list-${pl.id}`}>
-                        {pl.name} {pl.defaultVatRate !== undefined && `(${pl.defaultVatRate}% IVA)`} {pl.isDefault && " - Default"}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              )}
-              
               <div className="flex items-center gap-1 ml-auto">
                 <Link href="/repair-center/pos/registers">
                   <Button variant="outline" size="icon" className="h-8 w-8 bg-white/20 backdrop-blur-sm text-white border-white/30 hover:bg-white/30" data-testid="button-manage-registers">
@@ -1039,6 +1023,26 @@ export default function PosPage() {
                   <span className="hidden sm:inline">Storico</span>
                 </TabsTrigger>
               </TabsList>
+              
+              {/* Selezione Listino */}
+              {priceLists.length > 0 && (
+                <div className="flex items-center gap-2 mb-3">
+                  <span className="text-sm text-muted-foreground">Listino:</span>
+                  <Select value={selectedPriceListId} onValueChange={setSelectedPriceListId}>
+                    <SelectTrigger className="w-auto max-w-[220px] h-8" data-testid="select-price-list">
+                      <List className="w-3.5 h-3.5 mr-1 flex-shrink-0" />
+                      <SelectValue placeholder="Seleziona listino" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {priceLists.map(pl => (
+                        <SelectItem key={pl.id} value={pl.id} data-testid={`select-price-list-${pl.id}`}>
+                          {pl.name} {pl.defaultVatRate !== undefined && `(${pl.defaultVatRate}% IVA)`} {pl.isDefault && " - Default"}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
               
               {/* Selezione Cliente */}
               <div className="space-y-2 mb-3">
