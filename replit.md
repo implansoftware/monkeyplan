@@ -48,3 +48,13 @@ The backend is an `Express.js` application with TypeScript, featuring a RESTful 
     *   `recharts`
 *   **Development Dependencies**: `tsx`, `esbuild`, `drizzle-kit`.
 *   **Sibill**: Invoice management and bank reconciliation.
+## Recent Changes (February 2026)
+
+### Admin Payment Configuration
+- Added GET/PUT `/api/admin/payment-config` endpoints for admin to manage their payment methods
+- Admin Settings page now includes "Metodi di Pagamento B2B" section with:
+  - Bank transfer toggle with IBAN, BIC, account holder, bank name fields
+  - Stripe, PayPal, Satispay toggles
+- Conditional validation: IBAN and account holder required when bank transfer enabled
+- Resellers see admin's payment methods when placing B2B orders
+- Replaced emoji phase icons in SLA section with lucide-react icons
