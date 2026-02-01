@@ -7,7 +7,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Separator } from "@/components/ui/separator";
-import { ShoppingBag, Package, CheckCircle2, XCircle, Truck, Clock, Eye, Download, FileText } from "lucide-react";
+import { ShoppingBag, Package, CheckCircle2, XCircle, Truck, Clock, Eye, Download, FileText, CreditCard } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
@@ -46,6 +46,19 @@ interface MarketplaceOrder {
   shippedAt: string | null;
   receivedAt: string | null;
   items: MarketplaceOrderItem[];
+}
+
+function getPaymentMethodLabel(method: string): string {
+  const labels: Record<string, string> = {
+    'bank_transfer': 'Bonifico Bancario',
+    'stripe': 'Carta di Credito',
+    'paypal': 'PayPal',
+    'satispay': 'Satispay',
+    'cash': 'Contanti',
+    'card': 'Carta',
+    'pos_terminal': 'POS'
+  };
+  return labels[method] || method;
 }
 
 function formatPrice(cents: number): string {
@@ -204,6 +217,14 @@ export default function ResellerMarketplaceOrders() {
                   {format(new Date(selectedOrder.createdAt), 'dd MMMM yyyy HH:mm', { locale: it })}
                 </span>
               </div>
+
+              {selectedOrder.paymentMethod && (
+                <div className="flex items-center gap-2 p-3 bg-muted rounded-lg">
+                  <CreditCard className="h-4 w-4 text-muted-foreground" />
+                  <span className="text-sm font-medium">Metodo di pagamento:</span>
+                  <span className="text-sm">{getPaymentMethodLabel(selectedOrder.paymentMethod)}</span>
+                </div>
+              )}
 
               {selectedOrder.rejectionReason && (
                 <div className="p-3 bg-destructive/10 rounded-lg">
