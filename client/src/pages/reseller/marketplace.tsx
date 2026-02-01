@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Product } from "@shared/schema";
 import { Button } from "@/components/ui/button";
@@ -12,7 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
-import { Store, Search, ShoppingCart, Plus, Minus, Trash2, Send, Package, Users, Building2, ArrowRight, Eye } from "lucide-react";
+import { Store, Search, ShoppingCart, Plus, Minus, Trash2, Send, Package, Users, Building, Building2, ArrowRight, Eye } from "lucide-react";
 import { Link } from "wouter";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -160,6 +160,36 @@ export default function ResellerMarketplace() {
   }, [cart]);
   const cartTotal = cartVatSummary.total;
   const cartItemCount = cart.reduce((sum, item) => sum + item.quantity, 0);
+
+  // Get current seller ID from cart
+  const currentSellerId = cart[0]?.sellerResellerId || null;
+
+  // Query seller's payment configuration
+  const { data: paymentConfig, isLoading: paymentConfigLoading } = useQuery<{
+    bankTransfer: { enabled: boolean; iban: string | null; accountHolder: string | null; bankName: string | null; bic: string | null };
+    stripe: { enabled: boolean };
+    paypal: { enabled: boolean; email: string | null };
+    satispay: { enabled: boolean };
+    hasAnyMethod: boolean;
+  }>({
+    queryKey: [`/api/payment-config/${currentSellerId}/public`],
+    enabled: !!currentSellerId,
+  });
+
+  // Set default payment method based on seller's enabled methods
+  // Only set default when seller changes or on first load, not when user makes a choice
+  useEffect(() => {
+    if (!paymentConfig) return;
+    const methods: string[] = [];
+    if (paymentConfig.bankTransfer?.enabled) methods.push('bank_transfer');
+    if (paymentConfig.stripe?.enabled) methods.push('stripe');
+    if (paymentConfig.paypal?.enabled) methods.push('paypal');
+    if (paymentConfig.satispay?.enabled) methods.push('satispay');
+    // Only auto-select if current method is not in available methods
+    if (methods.length > 0 && !methods.includes(paymentMethod)) {
+      setPaymentMethod(methods[0]);
+    }
+  }, [paymentConfig, currentSellerId, paymentMethod]);
 
   const handleCheckout = () => {
     if (cart.length === 0) {
@@ -445,16 +475,58 @@ export default function ResellerMarketplace() {
 
             <div className="space-y-2">
               <Label>Metodo di pagamento</Label>
-              <Select value={paymentMethod} onValueChange={setPaymentMethod}>
-                <SelectTrigger data-testid="select-payment-method">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="bank_transfer">Bonifico Bancario</SelectItem>
-                  <SelectItem value="cash">Contanti</SelectItem>
-                </SelectContent>
-              </Select>
+              {paymentConfigLoading ? (
+                <Skeleton className="h-10 w-full" />
+              ) : !paymentConfig?.hasAnyMethod ? (
+                <Card className="border-destructive bg-destructive/10 p-3">
+                  <p className="text-sm text-destructive">Il venditore non ha configurato metodi di pagamento</p>
+                </Card>
+              ) : (
+                <Select value={paymentMethod} onValueChange={setPaymentMethod}>
+                  <SelectTrigger data-testid="select-payment-method">
+                    <SelectValue placeholder="Seleziona metodo di pagamento" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {paymentConfig?.bankTransfer?.enabled && (
+                      <SelectItem value="bank_transfer">Bonifico Bancario</SelectItem>
+                    )}
+                    {paymentConfig?.stripe?.enabled && (
+                      <SelectItem value="stripe">Carta di Credito</SelectItem>
+                    )}
+                    {paymentConfig?.paypal?.enabled && (
+                      <SelectItem value="paypal">PayPal</SelectItem>
+                    )}
+                    {paymentConfig?.satispay?.enabled && (
+                      <SelectItem value="satispay">Satispay</SelectItem>
+                    )}
+                  </SelectContent>
+                </Select>
+              )}
             </div>
+
+            {paymentMethod === 'bank_transfer' && paymentConfig?.bankTransfer?.enabled && paymentConfig.bankTransfer.iban && (
+              <Card className="border-blue-200 bg-blue-50 dark:border-blue-800 dark:bg-blue-950/50">
+                <CardContent className="p-4 space-y-2">
+                  <div className="flex items-center gap-2 text-blue-700 dark:text-blue-300">
+                    <Building className="h-4 w-4" />
+                    <span className="font-medium">Dati per il bonifico</span>
+                  </div>
+                  <div className="space-y-1 text-sm">
+                    <p><span className="text-muted-foreground">IBAN:</span> <span className="font-mono font-medium">{paymentConfig.bankTransfer.iban}</span></p>
+                    {paymentConfig.bankTransfer.accountHolder && (
+                      <p><span className="text-muted-foreground">Intestatario:</span> {paymentConfig.bankTransfer.accountHolder}</p>
+                    )}
+                    {paymentConfig.bankTransfer.bankName && (
+                      <p><span className="text-muted-foreground">Banca:</span> {paymentConfig.bankTransfer.bankName}</p>
+                    )}
+                    {paymentConfig.bankTransfer.bic && (
+                      <p><span className="text-muted-foreground">BIC/SWIFT:</span> <span className="font-mono">{paymentConfig.bankTransfer.bic}</span></p>
+                    )}
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-2">Indica il numero ordine nella causale del bonifico</p>
+                </CardContent>
+              </Card>
+            )}
 
             <div className="space-y-2">
               <Label>Note per il venditore</Label>
@@ -473,7 +545,7 @@ export default function ResellerMarketplace() {
             </Button>
             <Button 
               onClick={submitOrder}
-              disabled={createOrderMutation.isPending || cart.length === 0}
+              disabled={createOrderMutation.isPending || cart.length === 0 || !paymentConfig?.hasAnyMethod}
               data-testid="button-submit-marketplace-order"
             >
               <Send className="h-4 w-4 mr-2" />
