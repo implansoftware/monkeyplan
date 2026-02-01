@@ -136,7 +136,8 @@ import {
   dashboardPreferences, DashboardPreference, InsertDashboardPreference, DashboardLayout,
   priceLists, PriceList, InsertPriceList,
   priceListItems, PriceListItem, InsertPriceListItem, PriceListOwnerType,
-  paymentConfigurations, PaymentConfiguration, InsertPaymentConfiguration, PaymentConfigEntityType
+  paymentConfigurations, PaymentConfiguration, InsertPaymentConfiguration, PaymentConfigEntityType,
+  shippingMethods, ShippingMethod, InsertShippingMethod
 } from "@shared/schema";
 import { db, pool } from "./db";
 import { eq, and, or, desc, lt, gt, gte, lte, sql, not, inArray, isNull, ilike, SQL } from "drizzle-orm";
@@ -1178,6 +1179,16 @@ export interface IStorage {
   deletePriceListItem(id: string): Promise<void>;
   bulkCreatePriceListItems(items: InsertPriceListItem[]): Promise<PriceListItem[]>;
   getPriceForItem(priceListId: string, productId?: string, serviceItemId?: string): Promise<PriceListItem | undefined>;
+
+  // Shipping Methods
+  listShippingMethods(filters?: { createdBy?: string; repairCenterId?: string; isTemplate?: boolean; isActive?: boolean }): Promise<ShippingMethod[]>;
+  getShippingMethod(id: string): Promise<ShippingMethod | undefined>;
+  createShippingMethod(data: InsertShippingMethod): Promise<ShippingMethod>;
+  updateShippingMethod(id: string, updates: Partial<InsertShippingMethod>): Promise<ShippingMethod>;
+  deleteShippingMethod(id: string): Promise<void>;
+  getShippingMethodsForSeller(sellerId: string): Promise<ShippingMethod[]>;
+  getShippingMethodsForRepairCenter(repairCenterId: string, parentResellerId: string): Promise<ShippingMethod[]>;
+  listAllShippingMethods(): Promise<ShippingMethod[]>;
 
 }
 
@@ -12546,6 +12557,91 @@ export class DatabaseStorage implements IStorage {
 
   async deletePaymentConfiguration(id: string): Promise<void> {
     await db.delete(paymentConfigurations).where(eq(paymentConfigurations.id, id));
+  }
+
+  // ==========================================
+  // SHIPPING METHODS
+  // ==========================================
+
+  async listShippingMethods(filters?: { createdBy?: string; repairCenterId?: string; isTemplate?: boolean; isActive?: boolean }): Promise<ShippingMethod[]> {
+    const conditions: SQL[] = [];
+    
+    if (filters?.createdBy) {
+      conditions.push(eq(shippingMethods.createdBy, filters.createdBy));
+    }
+    if (filters?.repairCenterId) {
+      conditions.push(eq(shippingMethods.repairCenterId, filters.repairCenterId));
+    }
+    if (filters?.isTemplate !== undefined) {
+      conditions.push(eq(shippingMethods.isTemplate, filters.isTemplate));
+    }
+    if (filters?.isActive !== undefined) {
+      conditions.push(eq(shippingMethods.isActive, filters.isActive));
+    }
+    
+    return db.select()
+      .from(shippingMethods)
+      .where(conditions.length > 0 ? and(...conditions) : undefined)
+      .orderBy(shippingMethods.sortOrder, shippingMethods.name);
+  }
+
+  async getShippingMethod(id: string): Promise<ShippingMethod | undefined> {
+    const [method] = await db.select().from(shippingMethods).where(eq(shippingMethods.id, id));
+    return method;
+  }
+
+  async createShippingMethod(data: InsertShippingMethod): Promise<ShippingMethod> {
+    const [method] = await db.insert(shippingMethods).values(data).returning();
+    return method;
+  }
+
+  async updateShippingMethod(id: string, updates: Partial<InsertShippingMethod>): Promise<ShippingMethod> {
+    const [method] = await db.update(shippingMethods)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(shippingMethods.id, id))
+      .returning();
+    return method;
+  }
+
+  async deleteShippingMethod(id: string): Promise<void> {
+    await db.delete(shippingMethods).where(eq(shippingMethods.id, id));
+  }
+
+  async getShippingMethodsForSeller(sellerId: string): Promise<ShippingMethod[]> {
+    return db.select()
+      .from(shippingMethods)
+      .where(
+        and(
+          eq(shippingMethods.createdBy, sellerId),
+          isNull(shippingMethods.repairCenterId),
+          eq(shippingMethods.isActive, true)
+        )
+      )
+      .orderBy(shippingMethods.sortOrder, shippingMethods.name);
+  }
+
+  async getShippingMethodsForRepairCenter(repairCenterId: string, parentResellerId: string): Promise<ShippingMethod[]> {
+    return db.select()
+      .from(shippingMethods)
+      .where(
+        and(
+          or(
+            eq(shippingMethods.repairCenterId, repairCenterId),
+            and(
+              eq(shippingMethods.createdBy, parentResellerId),
+              isNull(shippingMethods.repairCenterId)
+            )
+          ),
+          eq(shippingMethods.isActive, true)
+        )
+      )
+      .orderBy(shippingMethods.sortOrder, shippingMethods.name);
+  }
+
+  async listAllShippingMethods(): Promise<ShippingMethod[]> {
+    return db.select()
+      .from(shippingMethods)
+      .orderBy(shippingMethods.createdBy, shippingMethods.sortOrder, shippingMethods.name);
   }
 
 }

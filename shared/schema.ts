@@ -7035,3 +7035,64 @@ export type PriceListItem = typeof priceListItems.$inferSelect;
 export type InsertPriceListItem = z.infer<typeof insertPriceListItemSchema>;
 
 export type PriceListOwnerType = "reseller" | "sub_reseller" | "repair_center";
+
+// ==========================================
+// SHIPPING METHODS - Metodi di spedizione configurabili
+// ==========================================
+
+export const shippingMethods = pgTable("shipping_methods", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  
+  // Identificazione
+  name: text("name").notNull(), // Es. "Spedizione Standard", "Express 24h"
+  code: text("code").notNull(), // Es. "standard", "express", "pickup"
+  description: text("description"), // Descrizione opzionale
+  
+  // Costi e tempi
+  priceCents: integer("price_cents").notNull().default(0), // Costo in centesimi
+  estimatedDays: integer("estimated_days"), // Giorni stimati per consegna (null per pickup)
+  
+  // Tipo
+  isPickup: boolean("is_pickup").notNull().default(false), // true = ritiro in sede
+  
+  // Owner (chi possiede questo metodo)
+  // null = template globale admin
+  createdBy: varchar("created_by").references(() => users.id, { onDelete: "cascade" }),
+  
+  // Centro di riparazione (se metodo specifico per RC)
+  repairCenterId: varchar("repair_center_id").references(() => repairCenters.id, { onDelete: "cascade" }),
+  
+  // Template
+  isTemplate: boolean("is_template").notNull().default(false), // true = template copiabile
+  copiedFromId: varchar("copied_from_id"), // ID del template da cui è stato copiato
+  
+  // Ordinamento e stato
+  sortOrder: integer("sort_order").notNull().default(0),
+  isActive: boolean("is_active").notNull().default(true),
+  
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+// Relations
+export const shippingMethodsRelations = relations(shippingMethods, ({ one }) => ({
+  owner: one(users, {
+    fields: [shippingMethods.createdBy],
+    references: [users.id],
+  }),
+  repairCenter: one(repairCenters, {
+    fields: [shippingMethods.repairCenterId],
+    references: [repairCenters.id],
+  }),
+}));
+
+// Insert Schema
+export const insertShippingMethodSchema = createInsertSchema(shippingMethods).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+// Types
+export type ShippingMethod = typeof shippingMethods.$inferSelect;
+export type InsertShippingMethod = z.infer<typeof insertShippingMethodSchema>;
