@@ -8182,7 +8182,37 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
-  // GET /api/admin/payment-config/:entityType/:entityId - Admin view payment config for any entity
+  // GET /api/admin/payment-config - Get admin's own payment configuration
+  app.get("/api/admin/payment-config", requireRole("admin"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const config = await storage.getPaymentConfiguration("admin", req.user.id);
+      res.json(config || null);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
+  // PUT /api/admin/payment-config - Update admin's payment configuration
+  app.put("/api/admin/payment-config", requireRole("admin"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const data = {
+        ...req.body,
+        entityType: "admin",
+        entityId: req.user.id
+      };
+      
+      const config = await storage.upsertPaymentConfiguration(data);
+      res.json(config);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
+    // GET /api/admin/payment-config/:entityType/:entityId - Admin view payment config for any entity
   app.get("/api/admin/payment-config/:entityType/:entityId", requireRole("admin"), async (req, res) => {
     try {
       const { entityType, entityId } = req.params;
