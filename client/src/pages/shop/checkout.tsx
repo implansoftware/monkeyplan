@@ -19,7 +19,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import type { Cart, CartItem, CustomerAddress } from "@shared/schema";
 
 interface CartItemWithProduct extends CartItem {
-  product: { name: string; images?: string[] } | null;
+  product: { name: string; images?: string[]; vatRate?: number } | null;
 }
 
 interface PaymentConfigPublic {
@@ -502,6 +502,20 @@ export default function ShopCheckout() {
                 <span>Totale</span>
                 <span data-testid="text-checkout-total">{formatPrice(cart?.total || 0)}</span>
               </div>
+              {items.length > 0 && (
+                <div className="flex justify-between text-sm text-muted-foreground">
+                  <span>di cui IVA</span>
+                  <span data-testid="text-checkout-vat">
+                    {formatPrice(
+                      items.reduce((sum, item) => {
+                        const vatRate = item.product?.vatRate ?? 22;
+                        const vatAmount = item.totalPrice - (item.totalPrice / (1 + vatRate / 100));
+                        return sum + vatAmount;
+                      }, 0)
+                    )}
+                  </span>
+                </div>
+              )}
             </CardContent>
             <CardFooter>
               <Button 
