@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { Product } from "@shared/schema";
+import { Product, ShippingMethod } from "@shared/schema";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -42,14 +42,32 @@ export default function RepairCenterB2BCatalog() {
   const [checkoutOpen, setCheckoutOpen] = useState(false);
   const [notes, setNotes] = useState("");
   const [paymentMethod, setPaymentMethod] = useState("bank_transfer");
+  const [selectedShippingMethod, setSelectedShippingMethod] = useState("");
   const { toast } = useToast();
 
   const { data: catalog, isLoading } = useQuery<B2BCatalogItem[]>({
     queryKey: ['/api/repair-center/b2b-catalog'],
   });
 
+  // Fetch parent reseller's shipping methods for RC B2B orders
+  const { data: shippingMethods, isLoading: shippingMethodsLoading } = useQuery<ShippingMethod[]>({
+    queryKey: ['/api/shipping-methods/rc-public'],
+    queryFn: async () => {
+      const res = await fetch('/api/shipping-methods/rc-public', { credentials: 'include' });
+      if (!res.ok) throw new Error('Errore nel caricamento metodi di spedizione');
+      return res.json();
+    },
+  });
+
+  // Auto-select first shipping method when loaded
+  useEffect(() => {
+    if (shippingMethods && shippingMethods.length > 0 && !selectedShippingMethod) {
+      setSelectedShippingMethod(shippingMethods[0].id);
+    }
+  }, [shippingMethods, selectedShippingMethod]);
+
   const createOrderMutation = useMutation({
-    mutationFn: async (data: { items: { productId: string; quantity: number }[]; paymentMethod: string; notes: string }) => {
+    mutationFn: async (data: { items: { productId: string; quantity: number }[]; paymentMethod: string; shippingMethodId: string; notes: string }) => {
       const res = await apiRequest('POST', '/api/repair-center/b2b-orders', data);
       return res.json();
     },
@@ -123,6 +141,7 @@ export default function RepairCenterB2BCatalog() {
     createOrderMutation.mutate({
       items: cart.map(item => ({ productId: item.productId, quantity: item.quantity })),
       paymentMethod,
+      shippingMethodId: selectedShippingMethod,
       notes,
     });
   };
@@ -323,6 +342,30 @@ export default function RepairCenterB2BCatalog() {
           </div>
           
           <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>Metodo di Spedizione</Label>
+              {shippingMethodsLoading ? (
+                <div className="h-10 bg-muted animate-pulse rounded" />
+              ) : !shippingMethods || shippingMethods.length === 0 ? (
+                <Card className="border-muted bg-muted/10 p-3">
+                  <p className="text-sm text-muted-foreground">Nessun metodo di spedizione configurato</p>
+                </Card>
+              ) : (
+                <Select value={selectedShippingMethod} onValueChange={setSelectedShippingMethod}>
+                  <SelectTrigger data-testid="select-shipping-method">
+                    <SelectValue placeholder="Seleziona metodo di spedizione" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {shippingMethods.map(method => (
+                      <SelectItem key={method.id} value={method.id}>
+                        {method.name} - {method.priceCents === 0 ? 'Gratuita' : formatPrice(method.priceCents)}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+            </div>
+
             <div className="space-y-2">
               <Label>Metodo di Pagamento</Label>
               <Select value={paymentMethod} onValueChange={setPaymentMethod}>

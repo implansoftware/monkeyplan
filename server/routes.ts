@@ -8636,6 +8636,54 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // Public shipping methods: For e-commerce checkout (get reseller's methods)
+  app.get("/api/shipping-methods/public", async (req, res) => {
+    try {
+      const resellerId = req.query.resellerId as string | undefined;
+      // If resellerId provided, get that reseller's methods, otherwise get admin's methods for B2B
+      if (resellerId) {
+        const methods = await storage.getShippingMethodsByCreator(resellerId);
+        const activeMethods = methods.filter(m => m.isActive && !m.isTemplate);
+        return res.json(activeMethods);
+      } else {
+        // For B2B: get admin's shipping methods
+        const admins = (await storage.listUsers()).filter((u: any) => u.role === "admin");
+        const adminId = admins[0]?.id;
+        if (!adminId) {
+          return res.json([]);
+        }
+        const methods = await storage.getShippingMethodsByCreator(adminId);
+        const activeMethods = methods.filter(m => m.isActive && !m.isTemplate);
+        return res.json(activeMethods);
+      }
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // RC public shipping methods: For repair center B2B checkout (get parent reseller's methods)
+  app.get("/api/shipping-methods/rc-public", requireRole("repair_center", "repair_center_staff"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      // Get repair center's parent reseller
+      const rc = await storage.getRepairCenterByUserId(req.user.id);
+      if (!rc || !rc.resellerId) {
+        return res.json([]);
+      }
+      // Get parent reseller
+      const parentReseller = await storage.getUser(rc.resellerId);
+      if (!parentReseller) {
+        return res.json([]);
+      }
+      // Get parent reseller's shipping methods
+      const methods = await storage.getShippingMethodsByCreator(parentReseller.id);
+      const activeMethods = methods.filter(m => m.isActive && !m.isTemplate);
+      res.json(activeMethods);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   // POST /api/stripe/connect/create-account - Create Stripe Connect account
   // POST /api/stripe/connect/create-account - Create Stripe Connect account
   // POST /api/stripe/connect/create-account - Create Stripe Connect account
