@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Product } from "@shared/schema";
 import { Button } from "@/components/ui/button";
@@ -68,9 +68,24 @@ export default function ResellerB2BCatalog() {
   });
 
   // Fetch admin's payment configuration for B2B orders
-  const { data: paymentConfig } = useQuery<PaymentConfigPublic>({
+  const { data: paymentConfig, isLoading: paymentConfigLoading } = useQuery<PaymentConfigPublic>({
     queryKey: ['/api/admin/payment-config/public'],
   });
+
+  // Auto-select first available payment method when config loads
+  useEffect(() => {
+    if (!paymentConfig) return;
+    
+    const methods: string[] = [];
+    if (paymentConfig.bankTransfer?.enabled) methods.push('bank_transfer');
+    if (paymentConfig.stripe?.enabled) methods.push('stripe');
+    if (paymentConfig.paypal?.enabled) methods.push('paypal');
+    if (paymentConfig.satispay?.enabled) methods.push('satispay');
+    
+    if (methods.length > 0 && !methods.includes(paymentMethod)) {
+      setPaymentMethod(methods[0]);
+    }
+  }, [paymentConfig, paymentMethod]);
 
   const createOrderMutation = useMutation({
     mutationFn: async (data: { items: { productId: string; quantity: number }[]; paymentMethod: string; notes: string }) => {
@@ -457,17 +472,36 @@ export default function ResellerB2BCatalog() {
           <div className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="paymentMethod">Metodo di Pagamento</Label>
-              <Select value={paymentMethod} onValueChange={setPaymentMethod}>
-                <SelectTrigger data-testid="select-payment">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="bank_transfer">Bonifico Bancario</SelectItem>
-                </SelectContent>
-              </Select>
+              {paymentConfigLoading ? (
+                <Skeleton className="h-10 w-full" />
+              ) : !paymentConfig?.hasAnyMethod ? (
+                <Card className="border-destructive bg-destructive/10 p-3">
+                  <p className="text-sm text-destructive">L'admin non ha configurato metodi di pagamento</p>
+                </Card>
+              ) : (
+                <Select value={paymentMethod} onValueChange={setPaymentMethod}>
+                  <SelectTrigger data-testid="select-payment">
+                    <SelectValue placeholder="Seleziona metodo di pagamento" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {paymentConfig?.bankTransfer?.enabled && (
+                      <SelectItem value="bank_transfer">Bonifico Bancario</SelectItem>
+                    )}
+                    {paymentConfig?.stripe?.enabled && (
+                      <SelectItem value="stripe">Carta di Credito</SelectItem>
+                    )}
+                    {paymentConfig?.paypal?.enabled && (
+                      <SelectItem value="paypal">PayPal</SelectItem>
+                    )}
+                    {paymentConfig?.satispay?.enabled && (
+                      <SelectItem value="satispay">Satispay</SelectItem>
+                    )}
+                  </SelectContent>
+                </Select>
+              )}
               
               {/* Show IBAN details when bank_transfer is selected */}
-              {paymentMethod === "bank_transfer" && paymentConfig?.bankTransfer.enabled && paymentConfig.bankTransfer.iban && (
+              {paymentMethod === "bank_transfer" && paymentConfig?.bankTransfer?.enabled && paymentConfig.bankTransfer.iban && (
                 <Card className="mt-4 bg-blue-50 dark:bg-blue-950/30 border-blue-200 dark:border-blue-800">
                   <CardContent className="pt-4">
                     <div className="flex items-start gap-3">
