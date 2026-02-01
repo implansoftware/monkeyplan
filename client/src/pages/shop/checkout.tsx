@@ -16,7 +16,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useForm } from "react-hook-form";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import type { Cart, CartItem, CustomerAddress } from "@shared/schema";
+import type { Cart, CartItem, CustomerAddress, ShippingMethod } from "@shared/schema";
 
 interface CartItemWithProduct extends CartItem {
   product: { name: string; images?: string[]; vatRate?: number } | null;
@@ -46,7 +46,7 @@ export default function ShopCheckout() {
   const [selectedShippingAddress, setSelectedShippingAddress] = useState<string>("");
   const [selectedBillingAddress, setSelectedBillingAddress] = useState<string>("");
   const [sameBillingAddress, setSameBillingAddress] = useState(true);
-  const [deliveryType, setDeliveryType] = useState<string>("shipping");
+  const [selectedShippingMethod, setSelectedShippingMethod] = useState<string>("");
   const [paymentMethod, setPaymentMethod] = useState<string>("card");
   const [customerNotes, setCustomerNotes] = useState("");
   const [showAddAddressDialog, setShowAddAddressDialog] = useState(false);
@@ -75,6 +75,24 @@ export default function ShopCheckout() {
     },
     enabled: !!resellerId
   });
+  
+  // Fetch reseller's shipping methods
+  const { data: shippingMethods, isLoading: isLoadingShipping } = useQuery<ShippingMethod[]>({
+    queryKey: ['/api/shipping-methods/public', resellerId],
+    queryFn: async () => {
+      const res = await fetch(`/api/shipping-methods/public?resellerId=${resellerId}`, { credentials: 'include' });
+      if (!res.ok) throw new Error('Errore nel caricamento metodi di spedizione');
+      return res.json();
+    },
+    enabled: !!resellerId
+  });
+  
+  // Set first shipping method as default
+  useEffect(() => {
+    if (shippingMethods && shippingMethods.length > 0 && !selectedShippingMethod) {
+      setSelectedShippingMethod(shippingMethods[0].id);
+    }
+  }, [shippingMethods, selectedShippingMethod]);
   
   // Set first enabled payment method as default
   useEffect(() => {
@@ -127,7 +145,7 @@ export default function ShopCheckout() {
       const res = await apiRequest('POST', `/api/shop/${resellerId}/checkout`, {
         shippingAddressId: selectedShippingAddress,
         billingAddressId: sameBillingAddress ? selectedShippingAddress : selectedBillingAddress,
-        deliveryType,
+        shippingMethodId: selectedShippingMethod,
         paymentMethod,
         customerNotes
       });
@@ -165,7 +183,9 @@ export default function ShopCheckout() {
     setSelectedShippingAddress(defaultAddress.id);
   }
   
-  const canPlaceOrder = selectedShippingAddress && paymentMethod && paymentConfig?.hasAnyMethod;
+  const selectedMethod = shippingMethods?.find(m => m.id === selectedShippingMethod);
+  const shippingCost = selectedMethod ? selectedMethod.priceCents / 100 : 0;
+  const canPlaceOrder = selectedShippingAddress && selectedShippingMethod && paymentMethod && paymentConfig?.hasAnyMethod;
   
   return (
     <div className="space-y-6">
@@ -318,29 +338,39 @@ export default function ShopCheckout() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <RadioGroup value={deliveryType} onValueChange={setDeliveryType}>
-                <div className="flex items-start space-x-3 p-3 rounded-lg border hover-elevate">
-                  <RadioGroupItem value="shipping" id="delivery-shipping" />
-                  <Label htmlFor="delivery-shipping" className="flex-1 cursor-pointer">
-                    <div className="font-medium">Spedizione standard</div>
-                    <div className="text-sm text-muted-foreground">Consegna in 3-5 giorni lavorativi</div>
-                  </Label>
+              {isLoadingShipping ? (
+                <div className="flex items-center justify-center py-4">
+                  <Loader2 className="h-6 w-6 animate-spin" />
                 </div>
-                <div className="flex items-start space-x-3 p-3 rounded-lg border hover-elevate">
-                  <RadioGroupItem value="express" id="delivery-express" />
-                  <Label htmlFor="delivery-express" className="flex-1 cursor-pointer">
-                    <div className="font-medium">Spedizione express</div>
-                    <div className="text-sm text-muted-foreground">Consegna in 1-2 giorni lavorativi</div>
-                  </Label>
+              ) : !shippingMethods || shippingMethods.length === 0 ? (
+                <div className="text-center py-4 text-muted-foreground">
+                  <p>Nessun metodo di consegna disponibile.</p>
                 </div>
-                <div className="flex items-start space-x-3 p-3 rounded-lg border hover-elevate">
-                  <RadioGroupItem value="pickup" id="delivery-pickup" />
-                  <Label htmlFor="delivery-pickup" className="flex-1 cursor-pointer">
-                    <div className="font-medium">Ritiro in negozio</div>
-                    <div className="text-sm text-muted-foreground">Ritira presso il punto vendita</div>
-                  </Label>
-                </div>
-              </RadioGroup>
+              ) : (
+                <RadioGroup value={selectedShippingMethod} onValueChange={setSelectedShippingMethod}>
+                  {shippingMethods.map((method) => (
+                    <div key={method.id} className="flex items-start space-x-3 p-3 rounded-lg border hover-elevate" data-testid={`shipping-method-${method.id}`}>
+                      <RadioGroupItem value={method.id} id={`shipping-${method.id}`} />
+                      <Label htmlFor={`shipping-${method.id}`} className="flex-1 cursor-pointer">
+                        <div className="flex items-center justify-between">
+                          <span className="font-medium">{method.name}</span>
+                          <span className="font-semibold">
+                            {method.priceCents === 0 ? 'Gratuita' : formatPrice(method.priceCents / 100)}
+                          </span>
+                        </div>
+                        <div className="text-sm text-muted-foreground">
+                          {method.isPickup 
+                            ? 'Ritiro presso il punto vendita' 
+                            : method.estimatedDays 
+                              ? `Consegna in ${method.estimatedDays} giorni lavorativi`
+                              : 'Tempi di consegna variabili'
+                          }
+                        </div>
+                      </Label>
+                    </div>
+                  ))}
+                </RadioGroup>
+              )}
             </CardContent>
           </Card>
           
@@ -493,14 +523,16 @@ export default function ShopCheckout() {
               )}
               <div className="flex justify-between">
                 <span>Spedizione</span>
-                <span>{(cart?.shippingCost || 0) > 0 ? formatPrice(cart?.shippingCost || 0) : 'Gratuita'}</span>
+                <span data-testid="text-shipping-cost">
+                  {shippingCost > 0 ? formatPrice(shippingCost) : 'Gratuita'}
+                </span>
               </div>
               
               <Separator />
               
               <div className="flex justify-between text-lg font-bold">
                 <span>Totale</span>
-                <span data-testid="text-checkout-total">{formatPrice(cart?.total || 0)}</span>
+                <span data-testid="text-checkout-total">{formatPrice((cart?.subtotal || 0) - (cart?.discount || 0) + shippingCost)}</span>
               </div>
               {items.length > 0 && (
                 <div className="flex justify-between text-sm text-muted-foreground">
