@@ -8323,8 +8323,9 @@ export function registerRoutes(app: Express): Server {
   app.get("/api/admin/payment-config/public", requireAuth, async (req, res) => {
     try {
       // Get the first admin user to fetch their payment config
-      const admins = await storage.listUsers({ role: 'admin' });
-      const adminId = admins[0]?.id;
+      const allUsers = await storage.listUsers();
+      const admin = allUsers.find(u => u.role === 'admin');
+      const adminId = admin?.id;
       
       if (!adminId) {
         return res.json({
@@ -11475,7 +11476,8 @@ export function registerRoutes(app: Express): Server {
       // Broadcast notification to target
       if (targetType === 'admin') {
         // Notify all admins
-        const admins = await storage.listUsers({ role: 'admin' });
+        const allUsers = await storage.listUsers();
+      const admin = allUsers.find(u => u.role === 'admin');
         for (const admin of admins) {
           broadcastNotification(admin.id, {
             type: 'new_internal_ticket',
@@ -28911,8 +28913,9 @@ export function registerRoutes(app: Express): Server {
       // Validate payment method against admin's enabled methods (B2B orders go to admin)
       if (paymentMethod) {
         // Get admin user to check their payment config
-        const admins = await storage.listUsers({ role: 'admin' });
-        const adminId = admins[0]?.id;
+        const allUsers = await storage.listUsers();
+      const admin = allUsers.find(u => u.role === 'admin');
+        const adminId = admin?.id;
         if (adminId) {
           const paymentConfig = await storage.getPaymentConfiguration("admin", adminId);
           const methodEnabled = {
