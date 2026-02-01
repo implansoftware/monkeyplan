@@ -97,6 +97,7 @@ import AdminAllWarehouses from "@/pages/admin/all-warehouses";
 import AdminWarrantyProducts from "@/pages/admin/warranty-products";
 import AdminWarrantyAnalytics from "@/pages/admin/warranty-analytics";
 import AdminUnrepairableReasons from "@/pages/admin/unrepairable-reasons";
+import AdminShippingMethods from "@/pages/admin/shipping-methods";
 
 // Admin Utility pages
 import AdminUtility from "@/pages/admin/utility/index";
@@ -386,6 +387,7 @@ function Router() {
       <ProtectedRoute path="/admin/pos" component={AdminPosOverview} />
       <ProtectedRoute path="/admin/warranty-products" component={AdminWarrantyProducts} />
       <ProtectedRoute path="/admin/warranty-analytics" component={AdminWarrantyAnalytics} />
+      <ProtectedRoute path="/admin/shipping-methods" component={AdminShippingMethods} />
       
       {/* Reseller routes - accessible by reseller and reseller_staff */}
       <ProtectedRoute path="/reseller" component={ResellerDashboard} allowedRoles={["reseller", "reseller_staff", "sub_reseller"]} />

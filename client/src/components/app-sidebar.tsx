@@ -51,6 +51,7 @@ import {
   Bell,
   ListOrdered,
   Calculator,
+  Truck,
 } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { useState, Fragment, useMemo } from "react";
@@ -136,6 +137,7 @@ const menuItems = {
     { title: "Listini Network", url: "/admin/price-lists", icon: ListOrdered, group: "Network B2B" },
     { title: "Prodotti Garanzia", url: "/admin/warranty-products", icon: Shield, group: "Garanzie" },
     { title: "Analytics Garanzie", url: "/admin/warranty-analytics", icon: BarChart3, group: "Garanzie" },
+    { title: "Metodi Spedizione", url: "/admin/shipping-methods", icon: Truck, group: "Configurazione" },
     { title: "Categorie Utility", url: "/admin/utility-categories", icon: FolderOpen, group: "Cataloghi" },
     { title: "Integrazioni API", url: "/admin/external-integrations", icon: Plug, group: "Integrazioni" },
     { title: "Activity Logs", url: "/admin/activity-logs", icon: Shield, group: "Monitoraggio" },
