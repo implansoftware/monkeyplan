@@ -1,15 +1,22 @@
 import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
-import { Settings, Save, Clock, Euro, AlertTriangle, Timer } from "lucide-react";
+import { Settings, Save, Clock, Euro, AlertTriangle, Timer, CreditCard, Landmark, Loader2, Download, Search, FileText, Package, Wrench, CheckCircle, Truck } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Switch } from "@/components/ui/switch";
+import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { SiPaypal, SiStripe } from "react-icons/si";
+import type { PaymentConfiguration } from "@shared/schema";
 
 interface HourlyRateResponse {
   hourlyRateCents: number;
@@ -62,15 +69,36 @@ const phaseDescriptions: Record<string, string> = {
   pronto_ritiro: "Tempo dal dispositivo pronto al ritiro effettivo",
 };
 
-const phaseIcons: Record<string, string> = {
-  ingressato: "📥",
-  in_diagnosi: "🔍",
-  preventivo_emesso: "📋",
-  attesa_ricambi: "📦",
-  in_riparazione: "🔧",
-  in_test: "✅",
-  pronto_ritiro: "🚚",
+const PhaseIcons: Record<string, React.ComponentType<{ className?: string }>> = {
+  ingressato: Download,
+  in_diagnosi: Search,
+  preventivo_emesso: FileText,
+  attesa_ricambi: Package,
+  in_riparazione: Wrench,
+  in_test: CheckCircle,
+  pronto_ritiro: Truck,
 };
+
+const paymentFormSchema = z.object({
+  bankTransferEnabled: z.boolean().default(true),
+  accountHolder: z.string().optional(),
+  iban: z.string().optional(),
+  bic: z.string().optional(),
+  bankName: z.string().optional(),
+  stripeEnabled: z.boolean().default(false),
+  paypalEnabled: z.boolean().default(false),
+  satispayEnabled: z.boolean().default(false),
+}).refine((data) => {
+  if (data.bankTransferEnabled) {
+    return data.iban && data.iban.trim().length > 0 && data.accountHolder && data.accountHolder.trim().length > 0;
+  }
+  return true;
+}, {
+  message: "IBAN e intestatario sono obbligatori quando il bonifico è abilitato",
+  path: ["iban"],
+});
+
+type PaymentFormValues = z.infer<typeof paymentFormSchema>;
 
 export default function AdminSettings() {
   const { toast } = useToast();
@@ -84,6 +112,64 @@ export default function AdminSettings() {
   const { data: slaData, isLoading: slaLoading } = useQuery<SLAThresholdsResponse>({
     queryKey: ["/api/admin/settings/sla-thresholds"],
   });
+
+  const { data: paymentConfig, isLoading: isLoadingPayment } = useQuery<PaymentConfiguration | null>({
+    queryKey: ['/api/admin/payment-config'],
+  });
+
+  const paymentForm = useForm<PaymentFormValues>({
+    resolver: zodResolver(paymentFormSchema),
+    defaultValues: {
+      bankTransferEnabled: true,
+      accountHolder: '',
+      iban: '',
+      bic: '',
+      bankName: '',
+      stripeEnabled: false,
+      paypalEnabled: false,
+      satispayEnabled: false,
+    },
+  });
+
+  useEffect(() => {
+    if (paymentConfig) {
+      paymentForm.reset({
+        bankTransferEnabled: paymentConfig.bankTransferEnabled ?? true,
+        accountHolder: paymentConfig.accountHolder || '',
+        iban: paymentConfig.iban || '',
+        bic: paymentConfig.bic || '',
+        bankName: paymentConfig.bankName || '',
+        stripeEnabled: paymentConfig.stripeEnabled ?? false,
+        paypalEnabled: paymentConfig.paypalEnabled ?? false,
+        satispayEnabled: paymentConfig.satispayEnabled ?? false,
+      });
+    }
+  }, [paymentConfig, paymentForm]);
+
+  const updatePaymentMutation = useMutation({
+    mutationFn: async (data: PaymentFormValues) => {
+      const res = await apiRequest('PUT', '/api/admin/payment-config', data);
+      return res.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Configurazione Salvata",
+        description: "I metodi di pagamento sono stati aggiornati",
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/payment-config'] });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Errore",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const onPaymentSubmit = (data: PaymentFormValues) => {
+    updatePaymentMutation.mutate(data);
+  };
 
   useEffect(() => {
     if (slaData) {
@@ -323,7 +409,10 @@ export default function AdminSettings() {
                   <div key={phase} className="border rounded-lg p-4 space-y-4 bg-card">
                     <div className="flex items-center justify-between flex-wrap gap-2">
                       <div className="flex flex-wrap items-center gap-3">
-                        <span className="text-2xl">{phaseIcons[phase]}</span>
+                        {(() => {
+                          const IconComponent = PhaseIcons[phase];
+                          return IconComponent ? <IconComponent className="h-6 w-6 text-primary" /> : null;
+                        })()}
                         <div>
                           <h4 className="font-semibold text-lg">{phaseLabels[phase]}</h4>
                           <p className="text-sm text-muted-foreground">{phaseDescriptions[phase]}</p>
@@ -415,6 +504,229 @@ export default function AdminSettings() {
                 </Button>
               </div>
             </div>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card className="mt-6">
+        <CardHeader>
+          <CardTitle className="flex flex-wrap items-center gap-2">
+            <CreditCard className="h-5 w-5" />
+            Metodi di Pagamento B2B
+          </CardTitle>
+          <CardDescription>
+            Configura i metodi di pagamento che i rivenditori vedranno quando effettuano ordini B2B
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {isLoadingPayment ? (
+            <div className="space-y-4">
+              <Skeleton className="h-16 w-full" />
+              <Skeleton className="h-10 w-full" />
+              <Skeleton className="h-10 w-full" />
+            </div>
+          ) : (
+            <Form {...paymentForm}>
+              <form onSubmit={paymentForm.handleSubmit(onPaymentSubmit)} className="space-y-6">
+                <div className="space-y-4">
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="p-2 bg-blue-500/10 rounded-lg">
+                      <Landmark className="h-5 w-5 text-blue-600" />
+                    </div>
+                    <div>
+                      <h4 className="font-medium">Bonifico Bancario</h4>
+                      <p className="text-sm text-muted-foreground">Ricevi pagamenti tramite bonifico</p>
+                    </div>
+                  </div>
+
+                  <FormField
+                    control={paymentForm.control}
+                    name="bankTransferEnabled"
+                    render={({ field }) => (
+                      <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                        <div className="space-y-0.5">
+                          <FormLabel className="text-base">Abilita bonifico bancario</FormLabel>
+                          <FormDescription>
+                            Permetti ai rivenditori di pagare tramite bonifico
+                          </FormDescription>
+                        </div>
+                        <FormControl>
+                          <Switch
+                            checked={field.value}
+                            onCheckedChange={field.onChange}
+                            data-testid="switch-admin-bank-transfer"
+                          />
+                        </FormControl>
+                      </FormItem>
+                    )}
+                  />
+
+                  {paymentForm.watch('bankTransferEnabled') && (
+                    <div className="grid gap-4 md:grid-cols-2 pl-4 border-l-2 border-blue-200 dark:border-blue-800">
+                      <FormField
+                        control={paymentForm.control}
+                        name="accountHolder"
+                        render={({ field }) => (
+                          <FormItem className="md:col-span-2">
+                            <FormLabel>Intestatario conto</FormLabel>
+                            <FormControl>
+                              <Input 
+                                placeholder="MonkeyPlan S.r.l." 
+                                {...field} 
+                                value={field.value || ''}
+                                data-testid="input-admin-account-holder"
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={paymentForm.control}
+                        name="iban"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>IBAN</FormLabel>
+                            <FormControl>
+                              <Input 
+                                placeholder="IT60X0542811101000000123456" 
+                                {...field}
+                                value={field.value || ''}
+                                data-testid="input-admin-iban"
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={paymentForm.control}
+                        name="bic"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>BIC/SWIFT</FormLabel>
+                            <FormControl>
+                              <Input 
+                                placeholder="BCITITMM" 
+                                {...field}
+                                value={field.value || ''}
+                                data-testid="input-admin-bic"
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={paymentForm.control}
+                        name="bankName"
+                        render={({ field }) => (
+                          <FormItem className="md:col-span-2">
+                            <FormLabel>Nome banca</FormLabel>
+                            <FormControl>
+                              <Input 
+                                placeholder="Intesa Sanpaolo" 
+                                {...field}
+                                value={field.value || ''}
+                                data-testid="input-admin-bank-name"
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                  )}
+                </div>
+
+                <div className="border-t pt-6 space-y-4">
+                  <h4 className="font-medium flex items-center gap-2">
+                    Altri Metodi di Pagamento
+                  </h4>
+
+                  <div className="grid gap-4 md:grid-cols-3">
+                    <FormField
+                      control={paymentForm.control}
+                      name="stripeEnabled"
+                      render={({ field }) => (
+                        <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                          <div className="flex items-center gap-2">
+                            <div className="p-1.5 bg-[#635bff]/10 rounded">
+                              <SiStripe className="h-4 w-4 text-[#635bff]" />
+                            </div>
+                            <FormLabel className="text-sm font-medium">Stripe</FormLabel>
+                          </div>
+                          <FormControl>
+                            <Switch
+                              checked={field.value}
+                              onCheckedChange={field.onChange}
+                              data-testid="switch-admin-stripe"
+                            />
+                          </FormControl>
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={paymentForm.control}
+                      name="paypalEnabled"
+                      render={({ field }) => (
+                        <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                          <div className="flex items-center gap-2">
+                            <div className="p-1.5 bg-[#003087]/10 rounded">
+                              <SiPaypal className="h-4 w-4 text-[#003087]" />
+                            </div>
+                            <FormLabel className="text-sm font-medium">PayPal</FormLabel>
+                          </div>
+                          <FormControl>
+                            <Switch
+                              checked={field.value}
+                              onCheckedChange={field.onChange}
+                              data-testid="switch-admin-paypal"
+                            />
+                          </FormControl>
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={paymentForm.control}
+                      name="satispayEnabled"
+                      render={({ field }) => (
+                        <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                          <div className="flex items-center gap-2">
+                            <div className="p-1.5 bg-[#eb4034]/10 rounded">
+                              <CreditCard className="h-4 w-4 text-[#eb4034]" />
+                            </div>
+                            <FormLabel className="text-sm font-medium">Satispay</FormLabel>
+                          </div>
+                          <FormControl>
+                            <Switch
+                              checked={field.value}
+                              onCheckedChange={field.onChange}
+                              data-testid="switch-admin-satispay"
+                            />
+                          </FormControl>
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                </div>
+
+                <Button 
+                  type="submit" 
+                  disabled={updatePaymentMutation.isPending}
+                  data-testid="button-save-admin-payment"
+                >
+                  {updatePaymentMutation.isPending && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+                  <Save className="h-4 w-4 mr-2" />
+                  Salva Configurazione Pagamenti
+                </Button>
+              </form>
+            </Form>
           )}
         </CardContent>
       </Card>

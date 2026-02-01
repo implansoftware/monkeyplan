@@ -8199,9 +8199,23 @@ export function registerRoutes(app: Express): Server {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
       
+      const { bankTransferEnabled, accountHolder, iban, bic, bankName, stripeEnabled, paypalEnabled, satispayEnabled } = req.body;
+      
+      // Validate: if bank transfer is enabled, require IBAN and account holder
+      if (bankTransferEnabled && (!iban || !iban.trim() || !accountHolder || !accountHolder.trim())) {
+        return res.status(400).send("IBAN e intestatario sono obbligatori quando il bonifico è abilitato");
+      }
+      
       const data = {
-        ...req.body,
-        entityType: "admin",
+        bankTransferEnabled: bankTransferEnabled ?? true,
+        accountHolder: accountHolder || null,
+        iban: iban || null,
+        bic: bic || null,
+        bankName: bankName || null,
+        stripeEnabled: stripeEnabled ?? false,
+        paypalEnabled: paypalEnabled ?? false,
+        satispayEnabled: satispayEnabled ?? false,
+        entityType: "admin" as const,
         entityId: req.user.id
       };
       
