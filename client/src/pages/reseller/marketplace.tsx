@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { Product } from "@shared/schema";
+import { Product, ShippingMethod } from "@shared/schema";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -50,6 +50,8 @@ export default function ResellerMarketplace() {
   const [checkoutOpen, setCheckoutOpen] = useState(false);
   const [notes, setNotes] = useState("");
   const [paymentMethod, setPaymentMethod] = useState("bank_transfer");
+  const [selectedShippingMethod, setSelectedShippingMethod] = useState("");
+  const [userSelectedShipping, setUserSelectedShipping] = useState(false);
   const [detailProductId, setDetailProductId] = useState<string | null>(null);
   const [detailPrice, setDetailPrice] = useState<number | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
@@ -66,7 +68,7 @@ export default function ResellerMarketplace() {
   });
 
   const createOrderMutation = useMutation({
-    mutationFn: async (data: { sellerResellerId: string; items: { productId: string; quantity: number }[]; paymentMethod: string; buyerNotes: string }) => {
+    mutationFn: async (data: { sellerResellerId: string; items: { productId: string; quantity: number }[]; paymentMethod: string; shippingMethodId: string; buyerNotes: string }) => {
       const res = await apiRequest('POST', '/api/reseller/marketplace/orders', data);
       return res.json();
     },
@@ -176,6 +178,25 @@ export default function ResellerMarketplace() {
     enabled: !!currentSellerId,
   });
 
+  // Query seller's shipping methods
+  const { data: shippingMethods, isLoading: shippingMethodsLoading } = useQuery<ShippingMethod[]>({
+    queryKey: [`/api/shipping-methods/public?resellerId=${currentSellerId}`],
+    enabled: !!currentSellerId,
+  });
+
+  // Reset shipping state when seller changes
+  useEffect(() => {
+    setSelectedShippingMethod("");
+    setUserSelectedShipping(false);
+  }, [currentSellerId]);
+
+  // Auto-select first shipping method only if user hasn't made a selection
+  useEffect(() => {
+    if (!userSelectedShipping && shippingMethods && shippingMethods.length > 0 && !selectedShippingMethod) {
+      setSelectedShippingMethod(shippingMethods[0].id);
+    }
+  }, [shippingMethods, userSelectedShipping, selectedShippingMethod]);
+
   // Set default payment method based on seller's enabled methods
   // Only set default when seller changes or on first load, not when user makes a choice
   useEffect(() => {
@@ -200,11 +221,19 @@ export default function ResellerMarketplace() {
   };
 
   const submitOrder = () => {
+    // Validate shipping method is selected and belongs to current seller
+    const validShippingMethods = shippingMethods?.map(m => m.id) || [];
+    if (!selectedShippingMethod || !validShippingMethods.includes(selectedShippingMethod)) {
+      toast({ title: "Errore", description: "Seleziona un metodo di spedizione valido", variant: "destructive" });
+      return;
+    }
+
     const sellerResellerId = cart[0].sellerResellerId;
     createOrderMutation.mutate({
       sellerResellerId,
       items: cart.map(item => ({ productId: item.productId, quantity: item.quantity })),
       paymentMethod,
+      shippingMethodId: selectedShippingMethod,
       buyerNotes: notes,
     });
   };
@@ -474,6 +503,31 @@ export default function ResellerMarketplace() {
             </div>
 
             <div className="space-y-2">
+              <Label>Metodo di spedizione</Label>
+              {shippingMethodsLoading ? (
+                <Skeleton className="h-10 w-full" />
+              ) : !shippingMethods || shippingMethods.length === 0 ? (
+                <Card className="border-muted bg-muted/10 p-3">
+                  <p className="text-sm text-muted-foreground">Nessun metodo di spedizione disponibile</p>
+                </Card>
+              ) : (
+                <Select value={selectedShippingMethod} onValueChange={(val) => { setSelectedShippingMethod(val); setUserSelectedShipping(true); }}>
+                  <SelectTrigger data-testid="select-shipping-method">
+                    <SelectValue placeholder="Seleziona metodo di spedizione" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {shippingMethods.map(method => (
+                      <SelectItem key={method.id} value={method.id}>
+                        {method.name} - {method.priceCents === 0 ? 'Gratuita' : formatPrice(method.priceCents)}
+                        {method.estimatedDays && ` (${method.estimatedDays} gg)`}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+            </div>
+
+            <div className="space-y-2">
               <Label>Metodo di pagamento</Label>
               {paymentConfigLoading ? (
                 <Skeleton className="h-10 w-full" />
@@ -545,7 +599,7 @@ export default function ResellerMarketplace() {
             </Button>
             <Button 
               onClick={submitOrder}
-              disabled={createOrderMutation.isPending || cart.length === 0 || !paymentConfig?.hasAnyMethod}
+              disabled={createOrderMutation.isPending || cart.length === 0 || !paymentConfig?.hasAnyMethod || !selectedShippingMethod || shippingMethodsLoading}
               data-testid="button-submit-marketplace-order"
             >
               <Send className="h-4 w-4 mr-2" />

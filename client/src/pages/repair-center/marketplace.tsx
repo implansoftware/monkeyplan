@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { Product } from "@shared/schema";
+import { Product, ShippingMethod } from "@shared/schema";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -46,14 +46,38 @@ export default function RepairCenterMarketplace() {
   const [checkoutOpen, setCheckoutOpen] = useState(false);
   const [notes, setNotes] = useState("");
   const [paymentMethod, setPaymentMethod] = useState("bank_transfer");
+  const [selectedShippingMethod, setSelectedShippingMethod] = useState("");
+  const [userSelectedShipping, setUserSelectedShipping] = useState(false);
   const { toast } = useToast();
 
   const { data: catalog, isLoading } = useQuery<MarketplaceCatalogItem[]>({
     queryKey: ['/api/repair-center/marketplace/catalog'],
   });
 
+  // Get current seller ID from cart
+  const currentSellerId = cart[0]?.sellerResellerId || null;
+
+  // Query seller's shipping methods
+  const { data: shippingMethods, isLoading: shippingMethodsLoading } = useQuery<ShippingMethod[]>({
+    queryKey: [`/api/shipping-methods/public?resellerId=${currentSellerId}`],
+    enabled: !!currentSellerId,
+  });
+
+  // Reset shipping state when seller changes
+  useEffect(() => {
+    setSelectedShippingMethod("");
+    setUserSelectedShipping(false);
+  }, [currentSellerId]);
+
+  // Auto-select first shipping method only if user hasn't made a selection
+  useEffect(() => {
+    if (!userSelectedShipping && shippingMethods && shippingMethods.length > 0 && !selectedShippingMethod) {
+      setSelectedShippingMethod(shippingMethods[0].id);
+    }
+  }, [shippingMethods, userSelectedShipping, selectedShippingMethod]);
+
   const createOrderMutation = useMutation({
-    mutationFn: async (data: { sellerResellerId: string; items: { productId: string; quantity: number }[]; paymentMethod: string; buyerNotes: string }) => {
+    mutationFn: async (data: { sellerResellerId: string; items: { productId: string; quantity: number }[]; paymentMethod: string; shippingMethodId: string; buyerNotes: string }) => {
       const res = await apiRequest('POST', '/api/repair-center/marketplace/orders', data);
       return res.json();
     },
@@ -148,11 +172,19 @@ export default function RepairCenterMarketplace() {
   };
 
   const submitOrder = () => {
+    // Validate shipping method is selected and belongs to current seller
+    const validShippingMethods = shippingMethods?.map(m => m.id) || [];
+    if (!selectedShippingMethod || !validShippingMethods.includes(selectedShippingMethod)) {
+      toast({ title: "Errore", description: "Seleziona un metodo di spedizione valido", variant: "destructive" });
+      return;
+    }
+
     const sellerResellerId = cart[0].sellerResellerId;
     createOrderMutation.mutate({
       sellerResellerId,
       items: cart.map(item => ({ productId: item.productId, quantity: item.quantity })),
       paymentMethod,
+      shippingMethodId: selectedShippingMethod,
       buyerNotes: notes,
     });
   };
@@ -379,6 +411,31 @@ export default function RepairCenterMarketplace() {
             </div>
 
             <div className="space-y-2">
+              <Label>Metodo di spedizione</Label>
+              {shippingMethodsLoading ? (
+                <Skeleton className="h-10 w-full" />
+              ) : !shippingMethods || shippingMethods.length === 0 ? (
+                <Card className="border-muted bg-muted/10 p-3">
+                  <p className="text-sm text-muted-foreground">Nessun metodo di spedizione disponibile</p>
+                </Card>
+              ) : (
+                <Select value={selectedShippingMethod} onValueChange={(val) => { setSelectedShippingMethod(val); setUserSelectedShipping(true); }}>
+                  <SelectTrigger data-testid="select-rc-shipping-method">
+                    <SelectValue placeholder="Seleziona metodo di spedizione" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {shippingMethods.map(method => (
+                      <SelectItem key={method.id} value={method.id}>
+                        {method.name} - {method.priceCents === 0 ? 'Gratuita' : formatPrice(method.priceCents)}
+                        {method.estimatedDays && ` (${method.estimatedDays} gg)`}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+            </div>
+
+            <div className="space-y-2">
               <Label>Metodo di pagamento</Label>
               <Select value={paymentMethod} onValueChange={setPaymentMethod}>
                 <SelectTrigger data-testid="select-rc-payment-method">
@@ -408,7 +465,7 @@ export default function RepairCenterMarketplace() {
             </Button>
             <Button 
               onClick={submitOrder}
-              disabled={createOrderMutation.isPending || cart.length === 0}
+              disabled={createOrderMutation.isPending || cart.length === 0 || !selectedShippingMethod || shippingMethodsLoading}
               data-testid="button-rc-submit-marketplace-order"
             >
               <Send className="h-4 w-4 mr-2" />
