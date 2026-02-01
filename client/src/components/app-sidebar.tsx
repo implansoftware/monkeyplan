@@ -51,7 +51,6 @@ import {
   Bell,
   ListOrdered,
   Calculator,
-  Truck,
 } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { useState, Fragment, useMemo } from "react";
@@ -233,6 +232,7 @@ const menuItems = {
     { title: "Prodotti Garanzia", url: "/reseller/warranty-products", icon: Shield, group: "Garanzie" },
     { title: "Analytics Garanzie", url: "/reseller/warranty-analytics", icon: BarChart3, group: "Garanzie" },
     { title: "Report", url: "/reseller/reports", icon: BarChart3, group: "Fatturazione" },
+    { title: "Metodi Consegna", url: "/reseller/shipping-methods", icon: Truck, group: "Configurazione" },
     // E-commerce - Catalogo
     { title: "Catalogo Shop", url: "/reseller/shop-catalog", icon: Store, group: "E-commerce" },
     // E-commerce - Ordini
@@ -270,6 +270,7 @@ const menuItems = {
     { title: "Il Mio Magazzino", url: "/reseller/warehouses", icon: Warehouse, group: "Magazzino" },
     { title: "Analytics Garanzie", url: "/reseller/warranty-analytics", icon: BarChart3, group: "Garanzie" },
     { title: "Fatture", url: "/reseller/invoices", icon: FileText, group: "Fatturazione" },
+    { title: "Metodi Consegna", url: "/reseller/shipping-methods", icon: Truck, group: "Configurazione" },
     { title: "Profilo", url: "/profile", icon: UserCircle, group: "Account" },
   ],
   repair_center: [
@@ -313,6 +314,7 @@ const menuItems = {
     // Garanzie
     { title: "Analytics Garanzie", url: "/repair-center/warranty-analytics", icon: BarChart3, group: "Garanzie" },
     // Acquisti B2B
+    { title: "Metodi Consegna", url: "/repair-center/shipping-methods", icon: Truck, group: "Configurazione" },
     { title: "Catalogo Rivenditore", url: "/repair-center/b2b-catalog", icon: ShoppingCart, group: "Acquisti B2B" },
     { title: "Marketplace Rivenditori", url: "/repair-center/marketplace", icon: Store, group: "Acquisti B2B" },
     { title: "Ordini B2B", url: "/repair-center/b2b-orders", icon: FileText, group: "Acquisti B2B" },
