@@ -12,12 +12,13 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import { CreditCard, Building2, Loader2, CheckCircle, AlertCircle, ExternalLink, Landmark, CircleDollarSign, Wallet } from "lucide-react";
+import { CreditCard, Building2, Loader2, CheckCircle, AlertCircle, ExternalLink, Landmark, CircleDollarSign, Wallet, Truck } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { z } from "zod";
 import type { PaymentConfiguration } from "@shared/schema";
 import { SiStripe, SiPaypal } from "react-icons/si";
+import { ShippingMethodsTab } from "@/components/shipping-methods-tab";
 
 const paymentFormSchema = z.object({
   bankTransferEnabled: z.boolean().default(false),
@@ -211,6 +212,10 @@ export default function ResellerSettings() {
           <TabsTrigger value="other" className="gap-2">
             <Wallet className="h-4 w-4" />
             Altri
+          </TabsTrigger>
+          <TabsTrigger value="shipping" className="gap-2" data-testid="tab-shipping">
+            <Truck className="h-4 w-4" />
+            Consegna
           </TabsTrigger>
         </TabsList>
 
@@ -627,6 +632,26 @@ export default function ResellerSettings() {
                   </Button>
                 </form>
               </Form>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="shipping" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Truck className="h-5 w-5" />
+                Metodi di Consegna
+              </CardTitle>
+              <CardDescription>
+                Configura le opzioni di spedizione e ritiro per i tuoi clienti
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <ShippingMethodsTab
+                role="reseller"
+                apiBase="/api/reseller/shipping-methods"
+              />
             </CardContent>
           </Card>
         </TabsContent>

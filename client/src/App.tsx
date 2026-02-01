@@ -97,7 +97,6 @@ import AdminAllWarehouses from "@/pages/admin/all-warehouses";
 import AdminWarrantyProducts from "@/pages/admin/warranty-products";
 import AdminWarrantyAnalytics from "@/pages/admin/warranty-analytics";
 import AdminUnrepairableReasons from "@/pages/admin/unrepairable-reasons";
-import AdminShippingMethods from "@/pages/admin/shipping-methods";
 
 // Admin Utility pages
 import AdminUtility from "@/pages/admin/utility/index";
@@ -307,10 +306,8 @@ import IncomingTransferRequests from "@/pages/reseller/incoming-transfer-request
 import TransferRequests from "@/pages/reseller/transfer-requests";
 import ResellerWarrantyProducts from "@/pages/reseller/warranty-products";
 import ResellerWarrantyAnalytics from "@/pages/reseller/warranty-analytics";
-import ResellerShippingMethods from "@/pages/reseller/shipping-methods";
 import RepairCenterWarrantyAnalytics from "@/pages/repair-center/warranty-analytics";
 
-import RepairCenterShippingMethods from "@/pages/repair-center/shipping-methods";
 function Router() {
   return (
     <Switch>
@@ -389,7 +386,6 @@ function Router() {
       <ProtectedRoute path="/admin/pos" component={AdminPosOverview} />
       <ProtectedRoute path="/admin/warranty-products" component={AdminWarrantyProducts} />
       <ProtectedRoute path="/admin/warranty-analytics" component={AdminWarrantyAnalytics} />
-      <ProtectedRoute path="/admin/shipping-methods" component={AdminShippingMethods} />
       
       {/* Reseller routes - accessible by reseller and reseller_staff */}
       <ProtectedRoute path="/reseller" component={ResellerDashboard} allowedRoles={["reseller", "reseller_staff", "sub_reseller"]} />
@@ -436,7 +432,6 @@ function Router() {
       <ProtectedRoute path="/reseller/warranty-products" component={ResellerWarrantyProducts} allowedRoles={["reseller"]} />
       <ProtectedRoute path="/reseller/reports" component={ResellerReports} allowedRoles={["reseller", "reseller_staff", "sub_reseller"]} />
       <ProtectedRoute path="/reseller/warranty-analytics" component={ResellerWarrantyAnalytics} allowedRoles={["reseller", "sub_reseller"]} />
-      <ProtectedRoute path="/reseller/shipping-methods" component={ResellerShippingMethods} allowedRoles={["reseller", "sub_reseller"]} />
       <ProtectedRoute path="/reseller/sifar/settings" component={ResellerSifarSettings} allowedRoles={["reseller", "reseller_staff", "sub_reseller"]} />
       <ProtectedRoute path="/reseller/sifar/catalog" component={ResellerSifarCatalog} allowedRoles={["reseller", "reseller_staff", "sub_reseller"]} />
       <ProtectedRoute path="/reseller/sifar/cart" component={ResellerSifarCart} allowedRoles={["reseller", "reseller_staff", "sub_reseller"]} />
@@ -508,7 +503,6 @@ function Router() {
       <ProtectedRoute path="/repair-center/invoices" component={RepairCenterInvoices} />
       <ProtectedRoute path="/repair-center/b2b-returns" component={RepairCenterB2BReturns} />
       <ProtectedRoute path="/repair-center/warranty-analytics" component={RepairCenterWarrantyAnalytics} allowedRoles={["repair_center", "repair_center_staff"]} />
-      <ProtectedRoute path="/repair-center/shipping-methods" component={RepairCenterShippingMethods} allowedRoles={["repair_center", "repair_center_staff"]} />
       <ProtectedRoute path="/repair-center/marketplace" component={RepairCenterMarketplace} />
       <ProtectedRoute path="/repair-center/suppliers" component={RepairCenterSuppliers} />
       <ProtectedRoute path="/repair-center/supplier-orders" component={RepairCenterSupplierOrders} />

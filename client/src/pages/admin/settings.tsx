@@ -17,6 +17,7 @@ import { Switch } from "@/components/ui/switch";
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { SiPaypal, SiStripe } from "react-icons/si";
 import type { PaymentConfiguration } from "@shared/schema";
+import { ShippingMethodsTab } from "@/components/shipping-methods-tab";
 
 interface HourlyRateResponse {
   hourlyRateCents: number;
@@ -728,6 +729,25 @@ export default function AdminSettings() {
               </form>
             </Form>
           )}
+        </CardContent>
+      </Card>
+
+      <Card className="mt-6">
+        <CardHeader>
+          <CardTitle className="flex flex-wrap items-center gap-2">
+            <Truck className="h-5 w-5" />
+            Metodi di Spedizione
+          </CardTitle>
+          <CardDescription>
+            Configura i metodi di spedizione e consegna. I template saranno disponibili per reseller e centri riparazione
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <ShippingMethodsTab
+            role="admin"
+            apiBase="/api/admin/shipping-methods"
+            showTemplateToggle={true}
+          />
         </CardContent>
       </Card>
     </div>

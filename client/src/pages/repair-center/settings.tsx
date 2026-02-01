@@ -13,7 +13,8 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import { Building2, Phone, Mail, Globe, Clock, Camera, Save, Loader2, MapPin, FileText, CreditCard, Instagram, Linkedin, Twitter, Facebook, Settings, Trash2, Upload, Landmark, CircleDollarSign, Wallet, CheckCircle, AlertCircle, ExternalLink } from "lucide-react";
+import { Building2, Phone, Mail, Globe, Clock, Camera, Save, Loader2, MapPin, FileText, CreditCard, Instagram, Linkedin, Twitter, Facebook, Settings, Trash2, Upload, Landmark, CircleDollarSign, Wallet, CheckCircle, AlertCircle, ExternalLink, Truck } from "lucide-react";
+import { ShippingMethodsTab } from "@/components/shipping-methods-tab";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -503,6 +504,10 @@ export default function RepairCenterSettings() {
               <TabsTrigger value="payments" data-testid="tab-payments">
                 <CreditCard className="h-4 w-4 mr-2" />
                 Pagamenti
+              </TabsTrigger>
+              <TabsTrigger value="shipping" data-testid="tab-shipping">
+                <Truck className="h-4 w-4 mr-2" />
+                Consegna
               </TabsTrigger>
             </TabsList>
 
@@ -1599,6 +1604,29 @@ export default function RepairCenterSettings() {
                       )}
                     </>
                   )}
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="shipping" className="space-y-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Truck className="h-5 w-5" />
+                    Metodi di Consegna
+                  </CardTitle>
+                  <CardDescription>
+                    Configura le opzioni di spedizione e ritiro. I metodi del tuo reseller sono ereditati automaticamente
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <ShippingMethodsTab
+                    role="repair_center"
+                    apiBase="/api/repair-center/shipping-methods"
+                    showInheritedMethods={true}
+                    inheritedMethodsFilter={(m) => !m.repairCenterId}
+                    ownMethodsFilter={(m) => !!m.repairCenterId}
+                  />
                 </CardContent>
               </Card>
             </TabsContent>

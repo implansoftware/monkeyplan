@@ -136,7 +136,6 @@ const menuItems = {
     { title: "Listini Network", url: "/admin/price-lists", icon: ListOrdered, group: "Network B2B" },
     { title: "Prodotti Garanzia", url: "/admin/warranty-products", icon: Shield, group: "Garanzie" },
     { title: "Analytics Garanzie", url: "/admin/warranty-analytics", icon: BarChart3, group: "Garanzie" },
-    { title: "Metodi Spedizione", url: "/admin/shipping-methods", icon: Truck, group: "Configurazione" },
     { title: "Categorie Utility", url: "/admin/utility-categories", icon: FolderOpen, group: "Cataloghi" },
     { title: "Integrazioni API", url: "/admin/external-integrations", icon: Plug, group: "Integrazioni" },
     { title: "Activity Logs", url: "/admin/activity-logs", icon: Shield, group: "Monitoraggio" },
@@ -232,7 +231,6 @@ const menuItems = {
     { title: "Prodotti Garanzia", url: "/reseller/warranty-products", icon: Shield, group: "Garanzie" },
     { title: "Analytics Garanzie", url: "/reseller/warranty-analytics", icon: BarChart3, group: "Garanzie" },
     { title: "Report", url: "/reseller/reports", icon: BarChart3, group: "Fatturazione" },
-    { title: "Metodi Consegna", url: "/reseller/shipping-methods", icon: Truck, group: "Configurazione" },
     // E-commerce - Catalogo
     { title: "Catalogo Shop", url: "/reseller/shop-catalog", icon: Store, group: "E-commerce" },
     // E-commerce - Ordini
@@ -270,7 +268,6 @@ const menuItems = {
     { title: "Il Mio Magazzino", url: "/reseller/warehouses", icon: Warehouse, group: "Magazzino" },
     { title: "Analytics Garanzie", url: "/reseller/warranty-analytics", icon: BarChart3, group: "Garanzie" },
     { title: "Fatture", url: "/reseller/invoices", icon: FileText, group: "Fatturazione" },
-    { title: "Metodi Consegna", url: "/reseller/shipping-methods", icon: Truck, group: "Configurazione" },
     { title: "Profilo", url: "/profile", icon: UserCircle, group: "Account" },
   ],
   repair_center: [
@@ -314,7 +311,6 @@ const menuItems = {
     // Garanzie
     { title: "Analytics Garanzie", url: "/repair-center/warranty-analytics", icon: BarChart3, group: "Garanzie" },
     // Acquisti B2B
-    { title: "Metodi Consegna", url: "/repair-center/shipping-methods", icon: Truck, group: "Configurazione" },
     { title: "Catalogo Rivenditore", url: "/repair-center/b2b-catalog", icon: ShoppingCart, group: "Acquisti B2B" },
     { title: "Marketplace Rivenditori", url: "/repair-center/marketplace", icon: Store, group: "Acquisti B2B" },
     { title: "Ordini B2B", url: "/repair-center/b2b-orders", icon: FileText, group: "Acquisti B2B" },
