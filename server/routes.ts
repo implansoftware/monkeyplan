@@ -8423,6 +8423,219 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+
+  // ==========================================
+  // SHIPPING METHODS MANAGEMENT
+  // ==========================================
+
+  // Admin: List all shipping methods (templates + all entities)
+  app.get("/api/admin/shipping-methods", requireRole("admin"), async (req, res) => {
+    try {
+      const methods = await storage.listAllShippingMethods();
+      res.json(methods);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Admin: List template shipping methods only
+  app.get("/api/admin/shipping-methods/templates", requireRole("admin"), async (req, res) => {
+    try {
+      const templates = await storage.listShippingMethods({ isTemplate: true });
+      res.json(templates);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Admin: Create shipping method (template or for specific entity)
+  app.post("/api/admin/shipping-methods", requireRole("admin"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Non autenticato" });
+      const method = await storage.createShippingMethod({
+        ...req.body,
+        createdBy: req.user.id,
+      });
+      res.status(201).json(method);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Admin: Update any shipping method
+  app.put("/api/admin/shipping-methods/:id", requireRole("admin"), async (req, res) => {
+    try {
+      const method = await storage.updateShippingMethod(req.params.id, req.body);
+      res.json(method);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Admin: Delete any shipping method
+  app.delete("/api/admin/shipping-methods/:id", requireRole("admin"), async (req, res) => {
+    try {
+      await storage.deleteShippingMethod(req.params.id);
+      res.status(204).send();
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Reseller/SubReseller: List own shipping methods
+  app.get("/api/reseller/shipping-methods", requireRole("reseller", "sub_reseller"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Non autenticato" });
+      const methods = await storage.listShippingMethods({ createdBy: req.user.id });
+      res.json(methods);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Reseller/SubReseller: Create shipping method
+  app.post("/api/reseller/shipping-methods", requireRole("reseller", "sub_reseller"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Non autenticato" });
+      const method = await storage.createShippingMethod({
+        ...req.body,
+        createdBy: req.user.id,
+        isTemplate: false,
+      });
+      res.status(201).json(method);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Reseller/SubReseller: Update own shipping method
+  app.put("/api/reseller/shipping-methods/:id", requireRole("reseller", "sub_reseller"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Non autenticato" });
+      const existing = await storage.getShippingMethod(req.params.id);
+      if (!existing || existing.createdBy !== req.user.id) {
+        return res.status(403).json({ error: "Non autorizzato" });
+      }
+      const method = await storage.updateShippingMethod(req.params.id, req.body);
+      res.json(method);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Reseller/SubReseller: Delete own shipping method
+  app.delete("/api/reseller/shipping-methods/:id", requireRole("reseller", "sub_reseller"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Non autenticato" });
+      const existing = await storage.getShippingMethod(req.params.id);
+      if (!existing || existing.createdBy !== req.user.id) {
+        return res.status(403).json({ error: "Non autorizzato" });
+      }
+      await storage.deleteShippingMethod(req.params.id);
+      res.status(204).send();
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Repair Center: List available shipping methods (own + parent reseller)
+  app.get("/api/repair-center/shipping-methods", requireRole("repair_center"), async (req, res) => {
+    try {
+      if (!req.user?.repairCenterId) return res.status(401).json({ error: "Non autenticato" });
+      const repairCenter = await storage.getRepairCenter(req.user.repairCenterId);
+      if (!repairCenter?.resellerId) {
+        return res.json([]);
+      }
+      const methods = await storage.getShippingMethodsForRepairCenter(req.user.repairCenterId, repairCenter.resellerId);
+      res.json(methods);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Repair Center: Create own shipping method
+  app.post("/api/repair-center/shipping-methods", requireRole("repair_center"), async (req, res) => {
+    try {
+      if (!req.user?.repairCenterId) return res.status(401).json({ error: "Non autenticato" });
+      const method = await storage.createShippingMethod({
+        ...req.body,
+        createdBy: req.user.id,
+        repairCenterId: req.user.repairCenterId,
+        isTemplate: false,
+      });
+      res.status(201).json(method);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Repair Center: Update own shipping method
+  app.put("/api/repair-center/shipping-methods/:id", requireRole("repair_center"), async (req, res) => {
+    try {
+      if (!req.user?.repairCenterId) return res.status(401).json({ error: "Non autenticato" });
+      const existing = await storage.getShippingMethod(req.params.id);
+      if (!existing || existing.repairCenterId !== req.user.repairCenterId) {
+        return res.status(403).json({ error: "Non autorizzato" });
+      }
+      const method = await storage.updateShippingMethod(req.params.id, req.body);
+      res.json(method);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Repair Center: Delete own shipping method
+  app.delete("/api/repair-center/shipping-methods/:id", requireRole("repair_center"), async (req, res) => {
+    try {
+      if (!req.user?.repairCenterId) return res.status(401).json({ error: "Non autenticato" });
+      const existing = await storage.getShippingMethod(req.params.id);
+      if (!existing || existing.repairCenterId !== req.user.repairCenterId) {
+        return res.status(403).json({ error: "Non autorizzato" });
+      }
+      await storage.deleteShippingMethod(req.params.id);
+      res.status(204).send();
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Public: Get shipping methods for a seller (for checkout)
+  app.get("/api/shipping-methods/seller/:sellerId", requireAuth, async (req, res) => {
+    try {
+      const methods = await storage.getShippingMethodsForSeller(req.params.sellerId);
+      res.json(methods);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Copy template: Admin can copy a template to a specific entity
+  app.post("/api/admin/shipping-methods/:id/copy", requireRole("admin"), async (req, res) => {
+    try {
+      const template = await storage.getShippingMethod(req.params.id);
+      if (!template || !template.isTemplate) {
+        return res.status(404).json({ error: "Template non trovato" });
+      }
+      const { targetCreatedBy, targetRepairCenterId } = req.body;
+      const newMethod = await storage.createShippingMethod({
+        name: template.name,
+        code: template.code ? `${template.code}_copy` : undefined,
+        description: template.description,
+        priceCents: template.priceCents,
+        estimatedDays: template.estimatedDays,
+        isPickup: template.isPickup,
+        isActive: true,
+        isTemplate: false,
+        copiedFromId: template.id,
+        createdBy: targetCreatedBy,
+        repairCenterId: targetRepairCenterId,
+      });
+      res.status(201).json(newMethod);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   // POST /api/stripe/connect/create-account - Create Stripe Connect account
   // POST /api/stripe/connect/create-account - Create Stripe Connect account
   // POST /api/stripe/connect/create-account - Create Stripe Connect account
