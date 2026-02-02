@@ -9063,6 +9063,81 @@ export function registerRoutes(app: Express): Server {
   });
 
 
+
+  // ==========================================
+  // REPAIR CENTER SETTINGS - HOURLY RATE & SLA (with parent fallback)
+  // ==========================================
+
+  // GET /api/repair-center/settings/hourly-rate - Get hourly rate with parent fallback
+  app.get("/api/repair-center/settings/hourly-rate", requireRole("repair_center"), async (req, res) => {
+    try {
+      if (!req.user?.repairCenterId) return res.status(401).json({ error: "Non autenticato" });
+      const result = await storage.getRepairCenterHourlyRate(req.user.repairCenterId);
+      res.json(result);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // PATCH /api/repair-center/settings/hourly-rate - Update hourly rate config
+  app.patch("/api/repair-center/settings/hourly-rate", requireRole("repair_center"), async (req, res) => {
+    try {
+      if (!req.user?.repairCenterId) return res.status(401).json({ error: "Non autenticato" });
+      const { hourlyRateCents, useParent } = req.body;
+      
+      if (typeof useParent !== 'boolean') {
+        return res.status(400).json({ error: "useParent deve essere un booleano" });
+      }
+      
+      if (!useParent && (typeof hourlyRateCents !== 'number' || hourlyRateCents < 0)) {
+        return res.status(400).json({ error: "hourlyRateCents deve essere un numero >= 0" });
+      }
+      
+      await storage.setRepairCenterHourlyRate(req.user.repairCenterId, hourlyRateCents || 0, useParent);
+      const result = await storage.getRepairCenterHourlyRate(req.user.repairCenterId);
+      res.json(result);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // GET /api/repair-center/settings/sla-thresholds - Get SLA thresholds with parent fallback
+  app.get("/api/repair-center/settings/sla-thresholds", requireRole("repair_center"), async (req, res) => {
+    try {
+      if (!req.user?.repairCenterId) return res.status(401).json({ error: "Non autenticato" });
+      const result = await storage.getRepairCenterSlaThresholds(req.user.repairCenterId);
+      res.json(result);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // PUT /api/repair-center/settings/sla-thresholds - Update SLA thresholds config
+  app.put("/api/repair-center/settings/sla-thresholds", requireRole("repair_center"), async (req, res) => {
+    try {
+      if (!req.user?.repairCenterId) return res.status(401).json({ error: "Non autenticato" });
+      const { thresholds, useParent } = req.body;
+      
+      if (typeof useParent !== 'boolean') {
+        return res.status(400).json({ error: "useParent deve essere un booleano" });
+      }
+      
+      if (!useParent) {
+        const { slaThresholdsSchema } = await import("@shared/schema");
+        try {
+          slaThresholdsSchema.parse(thresholds);
+        } catch {
+          return res.status(400).json({ error: "Formato soglie SLA non valido" });
+        }
+      }
+      
+      await storage.updateRepairCenterSlaThresholds(req.user.repairCenterId, thresholds || {}, useParent);
+      const result = await storage.getRepairCenterSlaThresholds(req.user.repairCenterId);
+      res.json(result);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
   // GET /api/repair-center/service-catalog - View service catalog with prices
   app.get("/api/repair-center/service-catalog", requireRole("repair_center"), async (req, res) => {
     try {
