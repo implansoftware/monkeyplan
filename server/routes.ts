@@ -13992,6 +13992,22 @@ export function registerRoutes(app: Express): Server {
             email: buyer.email,
           };
         }
+      } else if (invoice.repairCenterId) {
+        // For RCB2B orders: buyer is the repair center
+        const repairCenter = await storage.getRepairCenter(invoice.repairCenterId);
+        if (repairCenter) {
+          customer = {
+            name: repairCenter.ragioneSociale || repairCenter.name,
+            address: repairCenter.address,
+            city: repairCenter.city,
+            postalCode: repairCenter.cap,
+            province: repairCenter.provincia,
+            vatNumber: repairCenter.partitaIva,
+            fiscalCode: repairCenter.codiceFiscale,
+            email: repairCenter.email,
+            pec: repairCenter.pec,
+          };
+        }
       }
       
       
