@@ -13988,6 +13988,99 @@ export function registerRoutes(app: Express): Server {
       res.status(500).json({ error: error.message });
     }
   });
+
+  // GET /api/invoices/:id/pdf - Download invoice PDF by invoice ID
+  app.get("/api/invoices/:id/pdf", requireAuth, async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Non autenticato" });
+      
+      const invoice = await storage.getInvoice(req.params.id);
+      if (!invoice) {
+        return res.status(404).json({ error: "Fattura non trovata" });
+      }
+      
+      // Access control
+      const isAdmin = ["admin", "admin_staff"].includes(req.user.role);
+      const isReseller = invoice.resellerId === req.user.id;
+      const isCustomer = invoice.customerId === req.user.id;
+      
+      if (!isAdmin && !isReseller && !isCustomer) {
+        return res.status(403).json({ error: "Accesso negato" });
+      }
+      
+      // Get issuer info
+      let issuer: any = { name: "MonkeyPlan" };
+      if (invoice.resellerId) {
+        const seller = await storage.getUser(invoice.resellerId);
+        if (seller) {
+          issuer = {
+            name: seller.companyName || seller.username,
+            address: seller.address,
+            city: seller.city,
+            postalCode: seller.postalCode,
+            province: seller.province,
+            vatNumber: seller.vatNumber,
+            fiscalCode: seller.fiscalCode,
+            phone: seller.phone,
+            email: seller.email,
+            pec: seller.pec,
+            iban: seller.iban,
+          };
+        }
+      } else {
+        // Admin invoice - get admin user
+        const adminUser = await storage.getUserByUsername("admin");
+        if (adminUser) {
+          issuer = {
+            name: adminUser.companyName || "MonkeyPlan",
+            address: adminUser.address,
+            city: adminUser.city,
+            postalCode: adminUser.postalCode,
+            province: adminUser.province,
+            vatNumber: adminUser.vatNumber,
+            fiscalCode: adminUser.fiscalCode,
+            phone: adminUser.phone,
+            email: adminUser.email,
+            pec: adminUser.pec,
+            iban: adminUser.iban,
+          };
+        }
+      }
+      
+      // Get customer info
+      let customer: any = { name: "Cliente" };
+      if (invoice.customerId) {
+        const buyer = await storage.getUser(invoice.customerId);
+        if (buyer) {
+          customer = {
+            name: buyer.companyName || buyer.username,
+            address: buyer.address,
+            city: buyer.city,
+            postalCode: buyer.postalCode,
+            province: buyer.province,
+            vatNumber: buyer.vatNumber,
+            fiscalCode: buyer.fiscalCode,
+            email: buyer.email,
+          };
+        }
+      }
+      
+      // Generate PDF
+      const { generateInvoicePdf } = await import("./services/invoicePdf");
+      const pdfBuffer = await generateInvoicePdf({
+        invoice,
+        issuer,
+        customer,
+      });
+      
+      res.setHeader("Content-Type", "application/pdf");
+      res.setHeader("Content-Disposition", `attachment; filename="Fattura-${invoice.invoiceNumber}.pdf"`);
+      res.send(pdfBuffer);
+    } catch (error: any) {
+      console.error("Error generating invoice PDF:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
   app.get("/api/invoices/:id", requireAuth, async (req, res) => {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
