@@ -29835,7 +29835,16 @@ export function registerRoutes(app: Express): Server {
         carrier,
       });
       
-      res.json(updated);
+      // Auto-create invoice for admin when shipping B2B order to reseller
+      let invoice = null;
+      invoice = await storage.createInvoiceForAdminB2BOrder({
+        id: order.id,
+        orderNumber: order.orderNumber,
+        buyerId: order.resellerId,
+        total: order.total,
+      });
+      
+      res.json({ ...updated, generatedInvoice: invoice });
     } catch (error: any) {
       res.status(500).json({ error: error.message });
     }
@@ -30707,7 +30716,19 @@ export function registerRoutes(app: Express): Server {
         trackingCarrier,
       });
       
-      res.json(updated);
+      // Auto-create invoice for seller when shipping marketplace order
+      let invoice = null;
+      if (!req.user.parentResellerId || req.user.hasAutonomousInvoicing) {
+        invoice = await storage.createInvoiceForB2BOrder({
+          id: order.id,
+          orderNumber: order.orderNumber,
+          resellerId: order.sellerResellerId,
+          buyerId: order.buyerResellerId,
+          total: order.total,
+        });
+      }
+      
+      res.json({ ...updated, generatedInvoice: invoice });
     } catch (error: any) {
       res.status(500).json({ error: error.message });
     }
