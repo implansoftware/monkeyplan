@@ -30551,7 +30551,7 @@ export function registerRoutes(app: Express): Server {
         await storage.createWarehouseTransferItem({
           transferId: transfer.id,
           productId: item.productId,
-          quantity: item.quantity,
+          requestedQuantity: item.quantity,
         });
       }
       
