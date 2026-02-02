@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,7 +13,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import { Building2, Phone, Mail, Globe, Clock, Camera, Save, Loader2, MapPin, FileText, CreditCard, Instagram, Linkedin, Twitter, Facebook, Settings, Trash2, Upload, Landmark, CircleDollarSign, Wallet, CheckCircle, AlertCircle, ExternalLink, Truck } from "lucide-react";
+import { Building2, Phone, Mail, Globe, Clock, Camera, Save, Loader2, MapPin, FileText, CreditCard, Instagram, Linkedin, Twitter, Facebook, Settings, Trash2, Upload, Landmark, CircleDollarSign, Wallet, CheckCircle, AlertCircle, ExternalLink, Truck, Euro, Target, Info } from "lucide-react";
 import { ShippingMethodsTab } from "@/components/shipping-methods-tab";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -108,6 +108,8 @@ export default function RepairCenterSettings() {
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
   const [isConnectingStripe, setIsConnectingStripe] = useState(false);
+  const [localHourlyRate, setLocalHourlyRate] = useState<string>('35.00');
+  const [localSlaThresholds, setLocalSlaThresholds] = useState<Record<string, { warning: number; critical: number }>>({});
 
   const { data: settings, isLoading } = useQuery<RepairCenter>({
     queryKey: ['/api/repair-center/settings'],
@@ -127,6 +129,39 @@ export default function RepairCenterSettings() {
   }>({
     queryKey: ['/api/stripe/connect/status'],
   });
+
+  const { data: hourlyRateData, isLoading: isLoadingHourlyRate } = useQuery<{
+    hourlyRateCents: number;
+    useParent: boolean;
+    source: 'own' | 'reseller' | 'default';
+  }>({
+    queryKey: ['/api/repair-center/settings/hourly-rate'],
+  });
+
+  const { data: slaData, isLoading: isLoadingSla } = useQuery<{
+    thresholds: {
+      phase1: { warning: number; critical: number };
+      phase2: { warning: number; critical: number };
+      phase3: { warning: number; critical: number };
+      phase4: { warning: number; critical: number };
+    };
+    useParent: boolean;
+    source: 'own' | 'reseller' | 'default';
+  }>({
+    queryKey: ['/api/repair-center/settings/sla-thresholds'],
+  });
+
+  useEffect(() => {
+    if (hourlyRateData) {
+      setLocalHourlyRate(((hourlyRateData.hourlyRateCents ?? 3500) / 100).toFixed(2));
+    }
+  }, [hourlyRateData]);
+
+  useEffect(() => {
+    if (slaData?.thresholds) {
+      setLocalSlaThresholds(slaData.thresholds);
+    }
+  }, [slaData?.thresholds]);
 
   const form = useForm<SettingsFormData>({
     resolver: zodResolver(settingsFormSchema),
@@ -375,6 +410,48 @@ export default function RepairCenterSettings() {
     },
   });
 
+  const updateHourlyRateMutation = useMutation({
+    mutationFn: async (data: { hourlyRateCents: number; useParent: boolean }) => {
+      const res = await apiRequest('PATCH', '/api/repair-center/settings/hourly-rate', data);
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/repair-center/settings/hourly-rate'] });
+      toast({
+        title: "Tariffa oraria salvata",
+        description: "La configurazione della tariffa oraria è stata aggiornata.",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Errore",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const updateSlaMutation = useMutation({
+    mutationFn: async (data: { thresholds: any; useParent: boolean }) => {
+      const res = await apiRequest('PUT', '/api/repair-center/settings/sla-thresholds', data);
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/repair-center/settings/sla-thresholds'] });
+      toast({
+        title: "Soglie SLA salvate",
+        description: "La configurazione delle soglie SLA è stata aggiornata.",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Errore",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
   const handleConnectStripe = () => {
     setIsConnectingStripe(true);
     connectStripeMutation.mutate();
@@ -508,6 +585,14 @@ export default function RepairCenterSettings() {
               <TabsTrigger value="shipping" data-testid="tab-shipping">
                 <Truck className="h-4 w-4 mr-2" />
                 Consegna
+              </TabsTrigger>
+              <TabsTrigger value="rates" data-testid="tab-rates">
+                <Euro className="h-4 w-4 mr-2" />
+                Tariffe
+              </TabsTrigger>
+              <TabsTrigger value="sla" data-testid="tab-sla">
+                <Target className="h-4 w-4 mr-2" />
+                SLA
               </TabsTrigger>
             </TabsList>
 
@@ -1627,6 +1712,265 @@ export default function RepairCenterSettings() {
                     inheritedMethodsFilter={(m) => !m.repairCenterId}
                     ownMethodsFilter={(m) => !!m.repairCenterId}
                   />
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="rates" className="space-y-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Euro className="h-5 w-5" />
+                    Tariffa Oraria Manodopera
+                  </CardTitle>
+                  <CardDescription>
+                    Configura la tariffa oraria per il calcolo dei costi di manodopera
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  {isLoadingHourlyRate ? (
+                    <div className="space-y-4">
+                      <Skeleton className="h-10 w-full" />
+                      <Skeleton className="h-10 w-full" />
+                    </div>
+                  ) : (
+                    <>
+                      <div className="flex items-center justify-between gap-4 p-4 rounded-lg border bg-muted/50">
+                        <div className="flex items-center gap-3">
+                          <Switch
+                            checked={hourlyRateData?.useParent ?? true}
+                            onCheckedChange={(checked) => {
+                              updateHourlyRateMutation.mutate({
+                                hourlyRateCents: hourlyRateData?.hourlyRateCents ?? 3500,
+                                useParent: checked
+                              });
+                            }}
+                            disabled={updateHourlyRateMutation.isPending}
+                            data-testid="switch-hourly-rate-use-parent"
+                          />
+                          <div>
+                            <Label className="text-base font-medium">Usa tariffa Reseller</Label>
+                            <p className="text-sm text-muted-foreground">
+                              Eredita automaticamente la tariffa oraria dal tuo Reseller
+                            </p>
+                          </div>
+                        </div>
+                        {hourlyRateData?.source && (
+                          <Badge 
+                            variant={hourlyRateData.source === 'own' ? 'default' : 'secondary'}
+                            data-testid="badge-hourly-rate-source"
+                          >
+                            {hourlyRateData.source === 'own' ? 'Personalizzata' : 
+                             hourlyRateData.source === 'reseller' ? 'Dal Reseller' : 'Default'}
+                          </Badge>
+                        )}
+                      </div>
+
+                      {!hourlyRateData?.useParent && (
+                        <div className="space-y-4 p-4 rounded-lg border">
+                          <div className="flex items-center gap-2 mb-2">
+                            <Info className="h-4 w-4 text-muted-foreground" />
+                            <span className="text-sm text-muted-foreground">
+                              Stai usando una tariffa personalizzata per questo centro
+                            </span>
+                          </div>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                              <Label htmlFor="hourly-rate">Tariffa Oraria (EUR)</Label>
+                              <div className="relative">
+                                <Euro className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                                <Input
+                                  id="hourly-rate"
+                                  type="number"
+                                  step="0.01"
+                                  min="0"
+                                  className="pl-10"
+                                  value={localHourlyRate}
+                                  onChange={(e) => setLocalHourlyRate(e.target.value)}
+                                  onBlur={() => {
+                                    const cents = Math.round(parseFloat(localHourlyRate || '0') * 100);
+                                    updateHourlyRateMutation.mutate({
+                                      hourlyRateCents: cents,
+                                      useParent: false
+                                    });
+                                  }}
+                                  disabled={updateHourlyRateMutation.isPending}
+                                  data-testid="input-hourly-rate"
+                                />
+                              </div>
+                            </div>
+                            <div className="flex items-end">
+                              <div className="p-3 rounded-lg bg-muted">
+                                <p className="text-sm font-medium text-muted-foreground">Tariffa corrente</p>
+                                <p className="text-2xl font-bold" data-testid="text-hourly-rate-value">
+                                  {((hourlyRateData?.hourlyRateCents ?? 3500) / 100).toFixed(2)} EUR/ora
+                                </p>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      {hourlyRateData?.useParent && (
+                        <div className="p-4 rounded-lg border bg-muted/30">
+                          <div className="flex items-center justify-between gap-4">
+                            <div>
+                              <p className="text-sm text-muted-foreground">Tariffa ereditata dal Reseller</p>
+                              <p className="text-2xl font-bold" data-testid="text-hourly-rate-inherited">
+                                {((hourlyRateData?.hourlyRateCents ?? 3500) / 100).toFixed(2)} EUR/ora
+                              </p>
+                            </div>
+                            <Badge variant="secondary" data-testid="badge-hourly-rate-inherited">Ereditata</Badge>
+                          </div>
+                        </div>
+                      )}
+                    </>
+                  )}
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="sla" className="space-y-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Target className="h-5 w-5" />
+                    Soglie SLA
+                  </CardTitle>
+                  <CardDescription>
+                    Configura le soglie temporali per gli avvisi SLA delle riparazioni
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  {isLoadingSla ? (
+                    <div className="space-y-4">
+                      <Skeleton className="h-10 w-full" />
+                      <Skeleton className="h-32 w-full" />
+                    </div>
+                  ) : (
+                    <>
+                      <div className="flex items-center justify-between gap-4 p-4 rounded-lg border bg-muted/50">
+                        <div className="flex items-center gap-3">
+                          <Switch
+                            checked={slaData?.useParent ?? true}
+                            onCheckedChange={(checked) => {
+                              updateSlaMutation.mutate({
+                                thresholds: localSlaThresholds,
+                                useParent: checked
+                              });
+                            }}
+                            disabled={updateSlaMutation.isPending}
+                            data-testid="switch-sla-use-parent"
+                          />
+                          <div>
+                            <Label className="text-base font-medium">Usa soglie Reseller</Label>
+                            <p className="text-sm text-muted-foreground">
+                              Eredita automaticamente le soglie SLA dal tuo Reseller
+                            </p>
+                          </div>
+                        </div>
+                        {slaData?.source && (
+                          <Badge 
+                            variant={slaData.source === 'own' ? 'default' : 'secondary'}
+                            data-testid="badge-sla-source"
+                          >
+                            {slaData.source === 'own' ? 'Personalizzate' : 
+                             slaData.source === 'reseller' ? 'Dal Reseller' : 'Default'}
+                          </Badge>
+                        )}
+                      </div>
+
+                      <div className={`space-y-4 p-4 rounded-lg border ${slaData?.useParent ? 'bg-muted/30' : ''}`}>
+                        {!slaData?.useParent && (
+                          <div className="flex items-center gap-2 mb-2">
+                            <Info className="h-4 w-4 text-muted-foreground" />
+                            <span className="text-sm text-muted-foreground">
+                              Stai usando soglie personalizzate per questo centro
+                            </span>
+                          </div>
+                        )}
+
+                        {slaData?.useParent && (
+                          <div className="flex items-center gap-2 mb-4">
+                            <Badge variant="secondary" data-testid="badge-sla-inherited">Soglie ereditate</Badge>
+                            <span className="text-sm text-muted-foreground">
+                              Le soglie mostrate sono quelle del tuo Reseller
+                            </span>
+                          </div>
+                        )}
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          {[
+                            { key: 'phase1', label: 'Fase 1 - Accettazione', icon: CheckCircle },
+                            { key: 'phase2', label: 'Fase 2 - Diagnostica', icon: AlertCircle },
+                            { key: 'phase3', label: 'Fase 3 - Riparazione', icon: Settings },
+                            { key: 'phase4', label: 'Fase 4 - Consegna', icon: Truck },
+                          ].map(({ key, label, icon: Icon }) => (
+                            <div key={key} className="p-4 rounded-lg border bg-card" data-testid={`card-sla-${key}`}>
+                              <div className="flex items-center gap-2 mb-3">
+                                <Icon className="h-4 w-4 text-muted-foreground" />
+                                <span className="font-medium" data-testid={`text-sla-${key}-label`}>{label}</span>
+                              </div>
+                              <div className="grid grid-cols-2 gap-3">
+                                <div className="space-y-1">
+                                  <Label className="text-xs text-muted-foreground">Warning (ore)</Label>
+                                  <Input
+                                    type="number"
+                                    min="1"
+                                    value={localSlaThresholds[key]?.warning ?? slaData?.thresholds?.[key as keyof typeof slaData.thresholds]?.warning ?? 24}
+                                    onChange={(e) => {
+                                      if (slaData?.useParent) return;
+                                      setLocalSlaThresholds(prev => ({
+                                        ...prev,
+                                        [key]: {
+                                          ...prev[key],
+                                          warning: parseInt(e.target.value) || 24,
+                                          critical: prev[key]?.critical ?? slaData?.thresholds?.[key as keyof typeof slaData.thresholds]?.critical ?? 48
+                                        }
+                                      }));
+                                    }}
+                                    onBlur={() => {
+                                      if (slaData?.useParent) return;
+                                      updateSlaMutation.mutate({ thresholds: localSlaThresholds, useParent: false });
+                                    }}
+                                    disabled={slaData?.useParent || updateSlaMutation.isPending}
+                                    className="h-8 text-sm"
+                                    data-testid={`input-sla-${key}-warning`}
+                                  />
+                                </div>
+                                <div className="space-y-1">
+                                  <Label className="text-xs text-muted-foreground">Critical (ore)</Label>
+                                  <Input
+                                    type="number"
+                                    min="1"
+                                    value={localSlaThresholds[key]?.critical ?? slaData?.thresholds?.[key as keyof typeof slaData.thresholds]?.critical ?? 48}
+                                    onChange={(e) => {
+                                      if (slaData?.useParent) return;
+                                      setLocalSlaThresholds(prev => ({
+                                        ...prev,
+                                        [key]: {
+                                          warning: prev[key]?.warning ?? slaData?.thresholds?.[key as keyof typeof slaData.thresholds]?.warning ?? 24,
+                                          ...prev[key],
+                                          critical: parseInt(e.target.value) || 48
+                                        }
+                                      }));
+                                    }}
+                                    onBlur={() => {
+                                      if (slaData?.useParent) return;
+                                      updateSlaMutation.mutate({ thresholds: localSlaThresholds, useParent: false });
+                                    }}
+                                    disabled={slaData?.useParent || updateSlaMutation.isPending}
+                                    className="h-8 text-sm"
+                                    data-testid={`input-sla-${key}-critical`}
+                                  />
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </>
+                  )}
                 </CardContent>
               </Card>
             </TabsContent>
