@@ -1105,6 +1105,7 @@ export const resellerPurchaseOrders = pgTable("reseller_purchase_orders", {
   subtotal: integer("subtotal").notNull().default(0),
   discountAmount: integer("discount_amount").notNull().default(0),
   shippingCost: integer("shipping_cost").notNull().default(0),
+  shippingMethodId: varchar("shipping_method_id"), // ID del metodo di spedizione scelto
   total: integer("total").notNull().default(0),
   
   // Pagamento

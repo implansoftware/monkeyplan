@@ -29323,7 +29323,7 @@ export function registerRoutes(app: Express): Server {
   app.post("/api/reseller/b2b-orders", requireRole("reseller"), async (req, res) => {
     try {
       if (!req.user) return res.status(401).json({ error: "Non autenticato" });
-      const { items, paymentMethod, notes, shippingAddress } = req.body;
+      const { items, paymentMethod, notes, shippingAddress, shippingMethodId } = req.body;
       
       // Validate payment method against admin's enabled methods (B2B orders go to admin)
       if (paymentMethod) {
@@ -29384,6 +29384,7 @@ export function registerRoutes(app: Express): Server {
         subtotal: totalCents,
         total: totalCents,
         paymentMethod: paymentMethod || 'bank_transfer',
+        shippingMethodId: shippingMethodId || null,
         resellerNotes: notes,
       });
       
@@ -29399,6 +29400,20 @@ export function registerRoutes(app: Express): Server {
         });
       }
       
+      // Notify admin about new B2B order
+      const admins = (await storage.listUsers()).filter((u: any) => u.role === "admin");
+      if (admins.length > 0) {
+        const reseller = await storage.getUser(req.user.id);
+        await storage.createNotification({
+          userId: admins[0].id,
+          type: "b2b_order_received",
+          title: "Nuovo ordine B2B ricevuto",
+          message: `${reseller?.businessName || reseller?.username || "Un reseller"} ha effettuato un ordine B2B per ${(totalCents / 100).toFixed(2)} EUR`,
+          link: `/admin/b2b-orders?orderId=${order.id}`,
+          isRead: false,
+        });
+      }
+
       const createdItems = await storage.listResellerPurchaseOrderItems(order.id);
       res.status(201).json({ ...order, items: createdItems });
     } catch (error: any) {
@@ -30377,6 +30392,7 @@ export function registerRoutes(app: Express): Server {
         shippingCost: 0,
         total: subtotal,
         paymentMethod: paymentMethod || 'bank_transfer',
+        shippingMethodId: shippingMethodId || null,
         buyerNotes,
       });
       
@@ -30714,6 +30730,7 @@ export function registerRoutes(app: Express): Server {
         shippingCost: 0,
         total: subtotal,
         paymentMethod: paymentMethod || 'bank_transfer',
+        shippingMethodId: shippingMethodId || null,
         notes: buyerNotes || null,
       });
       
@@ -30977,6 +30994,7 @@ export function registerRoutes(app: Express): Server {
         subtotal: totalCents,
         total: totalCents,
         paymentMethod: paymentMethod || 'bank_transfer',
+        shippingMethodId: shippingMethodId || null,
         notes,
       });
       
