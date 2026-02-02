@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
-import { Package, Clock, Check, X, Truck, FileCheck, Eye, ShoppingBag } from "lucide-react";
+import { Package, Clock, Check, X, Truck, FileCheck, Eye, ShoppingBag, Download } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
@@ -293,6 +293,16 @@ export default function RepairCenterB2BOrders() {
             </div>
             
             <DialogFooter>
+              {['approved', 'shipped', 'delivered', 'received'].includes(selectedOrder.status) && (
+                <Button 
+                  variant="outline"
+                  onClick={() => window.open(`/api/invoices/by-order/${selectedOrder.orderNumber}/pdf`, "_blank")}
+                  data-testid="button-download-invoice"
+                >
+                  <Download className="h-4 w-4 mr-2" />
+                  Scarica Fattura
+                </Button>
+              )}
               {selectedOrder.status === 'shipped' && (
                 <Button 
                   onClick={() => receiveMutation.mutate(selectedOrder.id)}
