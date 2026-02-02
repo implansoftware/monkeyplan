@@ -40,6 +40,7 @@ interface MarketplaceOrder {
   total: number;
   paymentMethod: string;
   shippingMethodId: string | null;
+  shippingMethodName: string | null;
   buyerNotes: string | null;
   sellerNotes: string | null;
   rejectionReason: string | null;
@@ -110,9 +111,10 @@ export default function ResellerMarketplaceSales() {
     return paymentMethodLabels[method] || method;
   };
 
-  const getShippingMethodName = (methodId: string | null | undefined): string => {
-    if (!methodId) return "Non specificato";
-    const method = shippingMethods?.find(m => m.id === methodId);
+  const getShippingMethodName = (order: MarketplaceOrder): string => {
+    if (order.shippingMethodName) return order.shippingMethodName;
+    if (!order.shippingMethodId) return "Non specificato";
+    const method = shippingMethods?.find(m => m.id === order.shippingMethodId);
     return method?.name || "Metodo sconosciuto";
   };
 
@@ -356,7 +358,7 @@ export default function ResellerMarketplaceSales() {
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Metodo di spedizione</p>
-                  <p className="font-medium" data-testid="text-shipping-method">{getShippingMethodName(selectedOrder.shippingMethodId)}</p>
+                  <p className="font-medium" data-testid="text-shipping-method">{getShippingMethodName(selectedOrder)}</p>
                 </div>
               </div>
 

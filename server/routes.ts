@@ -30264,14 +30264,20 @@ export function registerRoutes(app: Express): Server {
       if (!req.user) return res.status(401).json({ error: "Non autenticato" });
       const orders = await storage.listMarketplaceOrders({ sellerResellerId: req.user.id });
       
-      // Enrich with buyer info and items
+      // Enrich with buyer info, items, and shipping method name
       const enrichedOrders = await Promise.all(orders.map(async (order) => {
         const buyer = await storage.getUser(order.buyerResellerId);
         const items = await storage.listMarketplaceOrderItems(order.id);
+        let shippingMethodName = null;
+        if (order.shippingMethodId) {
+          const shippingMethod = await storage.getShippingMethod(order.shippingMethodId);
+          shippingMethodName = shippingMethod?.name || null;
+        }
         return { 
           ...order, 
           items,
-          buyerName: buyer?.fullName || buyer?.ragioneSociale || 'Rivenditore'
+          buyerName: buyer?.fullName || buyer?.ragioneSociale || 'Rivenditore',
+          shippingMethodName
         };
       }));
       
