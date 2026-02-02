@@ -32,8 +32,11 @@ interface Order {
   repairCenterId: string;
   resellerId: string;
   status: string;
+  subtotal: number;
+  shippingCost: number;
   total: number;
   paymentMethod: string;
+  shippingMethodId?: string;
   notes?: string;
   rejectionReason?: string;
   trackingNumber?: string;
@@ -48,6 +51,18 @@ interface Order {
 
 function formatPrice(cents: number): string {
   return new Intl.NumberFormat('it-IT', { style: 'currency', currency: 'EUR' }).format(cents / 100);
+}
+
+function getPaymentMethodName(method: string): string {
+  const names: Record<string, string> = {
+    bank_transfer: 'Bonifico Bancario',
+    stripe: 'Carta di Credito (Stripe)',
+    paypal: 'PayPal',
+    satispay: 'Satispay',
+    cash: 'Contanti',
+    credit: 'Credito',
+  };
+  return names[method] || method;
 }
 
 function getStatusBadge(status: string) {
@@ -77,6 +92,17 @@ export default function ResellerRCB2BOrders() {
   const { data: orders, isLoading } = useQuery<Order[]>({
     queryKey: ['/api/reseller/rc-b2b-orders'],
   });
+  
+  // Fetch shipping methods for displaying names
+  const { data: shippingMethods } = useQuery<{ id: string; name: string; priceCents: number }[]>({
+    queryKey: ['/api/reseller/shipping-methods'],
+  });
+  
+  const getShippingMethodName = (methodId?: string) => {
+    if (!methodId || !shippingMethods) return 'Non specificato';
+    const method = shippingMethods.find(m => m.id === methodId);
+    return method?.name || 'Non specificato';
+  };
 
   const approveMutation = useMutation({
     mutationFn: async (orderId: string) => {
@@ -243,9 +269,37 @@ export default function ResellerRCB2BOrders() {
                 </TableBody>
               </Table>
               
-              <div className="flex justify-between items-center border-t pt-4">
-                <span className="text-lg font-bold">Totale Ordine:</span>
-                <span className="text-lg font-bold">{formatPrice(selectedOrder.total)}</span>
+              <div className="space-y-2 border-t pt-4">
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Imponibile:</span>
+                  <span>{formatPrice(selectedOrder.subtotal || selectedOrder.total)}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">IVA (22%):</span>
+                  <span>{formatPrice(Math.round((selectedOrder.subtotal || selectedOrder.total) * 0.22))}</span>
+                </div>
+                {(selectedOrder.shippingCost || 0) > 0 && (
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">Spedizione:</span>
+                    <span>{formatPrice(selectedOrder.shippingCost)}</span>
+                  </div>
+                )}
+                <Separator className="my-2" />
+                <div className="flex justify-between items-center">
+                  <span className="text-lg font-bold">Totale Ordine:</span>
+                  <span className="text-lg font-bold">{formatPrice(selectedOrder.total)}</span>
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4 border-t pt-4">
+                <div>
+                  <p className="text-sm text-muted-foreground">Metodo di Pagamento</p>
+                  <p className="font-medium">{getPaymentMethodName(selectedOrder.paymentMethod)}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Metodo di Spedizione</p>
+                  <p className="font-medium">{getShippingMethodName(selectedOrder.shippingMethodId)}</p>
+                </div>
               </div>
               
               {selectedOrder.notes && (
