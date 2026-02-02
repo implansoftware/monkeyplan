@@ -29377,12 +29377,22 @@ export function registerRoutes(app: Express): Server {
         });
       }
       
+      // Calculate shipping cost
+      let shippingCostB2B = 0;
+      if (shippingMethodId) {
+        const shippingMethodB2B = await storage.getShippingMethod(shippingMethodId);
+        if (shippingMethodB2B) {
+          shippingCostB2B = shippingMethodB2B.priceCents || 0;
+        }
+      }
+      
       // Create order
       const order = await storage.createResellerPurchaseOrder({
         resellerId: req.user.id,
         status: 'pending',
         subtotal: totalCents,
-        total: totalCents,
+        shippingCost: shippingCostB2B,
+        total: totalCents + shippingCostB2B,
         paymentMethod: paymentMethod || 'bank_transfer',
         shippingMethodId: shippingMethodId || null,
         resellerNotes: notes,
@@ -30382,6 +30392,15 @@ export function registerRoutes(app: Express): Server {
         });
       }
       
+      // Calculate shipping cost
+      let shippingCost = 0;
+      if (shippingMethodId) {
+        const shippingMethod = await storage.getShippingMethod(shippingMethodId);
+        if (shippingMethod) {
+          shippingCost = shippingMethod.priceCents || 0;
+        }
+      }
+      
       // Create order
       const order = await storage.createMarketplaceOrder({
         buyerResellerId: req.user.id,
@@ -30389,8 +30408,8 @@ export function registerRoutes(app: Express): Server {
         status: 'pending',
         subtotal,
         discountAmount: 0,
-        shippingCost: 0,
-        total: subtotal,
+        shippingCost,
+        total: subtotal + shippingCost,
         paymentMethod: paymentMethod || 'bank_transfer',
         shippingMethodId: shippingMethodId || null,
         buyerNotes,
@@ -30719,6 +30738,15 @@ export function registerRoutes(app: Express): Server {
         });
       }
       
+      // Calculate shipping cost
+      let shippingCostRC = 0;
+      if (shippingMethodId) {
+        const shippingMethodRC = await storage.getShippingMethod(shippingMethodId);
+        if (shippingMethodRC) {
+          shippingCostRC = shippingMethodRC.priceCents || 0;
+        }
+      }
+      
       // Create order using repair_center_purchase_orders table (proper referential integrity)
       // Note: orderNumber is generated automatically in createRepairCenterPurchaseOrder
       const order = await storage.createRepairCenterPurchaseOrder({
@@ -30727,8 +30755,8 @@ export function registerRoutes(app: Express): Server {
         status: 'pending',
         subtotal,
         discountAmount: 0,
-        shippingCost: 0,
-        total: subtotal,
+        shippingCost: shippingCostRC,
+        total: subtotal + shippingCostRC,
         paymentMethod: paymentMethod || 'bank_transfer',
         shippingMethodId: shippingMethodId || null,
         notes: buyerNotes || null,
