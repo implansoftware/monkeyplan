@@ -14091,7 +14091,7 @@ export function registerRoutes(app: Express): Server {
         const orderNumber = orderNumberMatch[1];
         
         // Try B2B Admin order
-        if (orderNumber.startsWith("B2B-") || orderNumber.startsWith("RES-B2B-") || orderNumber.startsWith("RCB2B-") || orderNumber.startsWith("RES-RCB2B-")) {
+        if (orderNumber.startsWith("B2B-") || orderNumber.startsWith("RES-B2B-") ) {
           const b2bOrder = await storage.getResellerPurchaseOrderByNumber(orderNumber);
           if (b2bOrder) {
             const orderItems = await storage.listResellerPurchaseOrderItems(b2bOrder.id);
@@ -14111,6 +14111,31 @@ export function registerRoutes(app: Express): Server {
                 quantity: 1,
                 unitPrice: b2bOrder.shippingCost,
                 total: b2bOrder.shippingCost,
+              });
+            }
+          }
+        }
+        // Try Repair Center B2B order via notes
+        else if (orderNumber.startsWith("RCB2B-") || orderNumber.startsWith("RES-RCB2B-")) {
+          const rcOrder = await storage.getRepairCenterPurchaseOrderByNumber(orderNumber);
+          if (rcOrder) {
+            const orderItems = await storage.listRepairCenterPurchaseOrderItems(rcOrder.id);
+            for (const item of orderItems) {
+              const product = item.productId ? await storage.getProduct(item.productId) : null;
+              items.push({
+                description: product?.name || item.productName || "Prodotto",
+                quantity: item.quantity,
+                unitPrice: item.unitPrice,
+                total: item.quantity * item.unitPrice,
+              });
+            }
+            // Add shipping cost if present
+            if (rcOrder.shippingCost && rcOrder.shippingCost > 0) {
+              items.push({
+                description: "Spese di spedizione",
+                quantity: 1,
+                unitPrice: rcOrder.shippingCost,
+                total: rcOrder.shippingCost,
               });
             }
           }

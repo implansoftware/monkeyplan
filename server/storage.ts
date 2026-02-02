@@ -1063,6 +1063,7 @@ export interface IStorage {
   // B2B Repair Center Purchase Orders
   listRepairCenterPurchaseOrders(filters?: { repairCenterId?: string; resellerId?: string; status?: string }): Promise<RepairCenterPurchaseOrder[]>;
   getRepairCenterPurchaseOrder(id: string): Promise<RepairCenterPurchaseOrder | undefined>;
+  getRepairCenterPurchaseOrderByNumber(orderNumber: string): Promise<RepairCenterPurchaseOrder | undefined>;
   createRepairCenterPurchaseOrder(data: InsertRepairCenterPurchaseOrder): Promise<RepairCenterPurchaseOrder>;
   updateRepairCenterPurchaseOrder(id: string, updates: Partial<RepairCenterPurchaseOrder>): Promise<RepairCenterPurchaseOrder>;
   generateRCB2BOrderNumber(): Promise<string>;
@@ -9642,6 +9643,11 @@ export class DatabaseStorage implements IStorage {
 
   async getRepairCenterPurchaseOrder(id: string): Promise<RepairCenterPurchaseOrder | undefined> {
     const [order] = await db.select().from(repairCenterPurchaseOrders).where(eq(repairCenterPurchaseOrders.id, id));
+    return order || undefined;
+  }
+
+  async getRepairCenterPurchaseOrderByNumber(orderNumber: string): Promise<RepairCenterPurchaseOrder | undefined> {
+    const [order] = await db.select().from(repairCenterPurchaseOrders).where(eq(repairCenterPurchaseOrders.orderNumber, orderNumber));
     return order || undefined;
   }
 
