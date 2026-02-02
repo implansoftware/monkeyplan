@@ -14070,7 +14070,7 @@ export function registerRoutes(app: Express): Server {
       let items: Array<{ description: string; quantity: number; unitPrice: number; total: number }> = [];
       
       // Try to find order number from notes (format: "ordine B2B-2026-XXXXX" or "ORD-XXXXX")
-      const orderNumberMatch = invoice.notes?.match(/(RES-RCB2B-\d{4}-\d+|RCB2B-\d{4}-\d+|RES-B2B-\d{4}-\d+|B2B-\d{4}-\d+|ORD-\d+|MKT-\d{4}-\d+)/i);
+      const orderNumberMatch = invoice.notes?.match(/(RES-RCB2B-\d{4}-\d+|RCB2B-\d{4}-\d+|RES-B2B-\d{4}-\d+|B2B-\d{4}-\d+|ORD-\d+|MP-\d{4}-\d+)/i);
       
       if (orderNumberMatch) {
         const orderNumber = orderNumberMatch[1];
