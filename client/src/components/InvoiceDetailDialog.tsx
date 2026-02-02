@@ -3,8 +3,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Invoice, User, MarketplaceOrderItem } from "@shared/schema";
-import { Download, FileText, Calendar, CreditCard, Euro, Building2, Package } from "lucide-react";
+import { Invoice, User, MarketplaceOrderItem, RepairCenter } from "@shared/schema";
+import { Download, FileText, Calendar, CreditCard, Euro, Building2, Package, Wrench } from "lucide-react";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
 import { useQuery } from "@tanstack/react-query";
@@ -26,6 +26,11 @@ export function InvoiceDetailDialog({ invoice, open, onOpenChange }: InvoiceDeta
   const { data: customer } = useQuery<User>({
     queryKey: ["/api/users", invoice?.customerId],
     enabled: !!invoice?.customerId && open,
+  });
+
+  const { data: repairCenter } = useQuery<RepairCenter>({
+    queryKey: ["/api/repair-centers", invoice?.repairCenterId],
+    enabled: !!invoice?.repairCenterId && !invoice?.customerId && open,
   });
 
   const { data: orderItems = [] } = useQuery<MarketplaceOrderItem[]>({
@@ -61,6 +66,13 @@ export function InvoiceDetailDialog({ invoice, open, onOpenChange }: InvoiceDeta
     window.open(`/api/invoices/${invoice.id}/pdf`, "_blank");
   };
 
+  const buyerName = customer?.ragioneSociale || customer?.fullName || customer?.username || repairCenter?.ragioneSociale || repairCenter?.name;
+  const buyerEmail = customer?.email || repairCenter?.email;
+  const buyerAddress = customer?.indirizzo || repairCenter?.address;
+  const buyerCity = customer?.citta || repairCenter?.city;
+  const buyerVat = customer?.partitaIva || repairCenter?.partitaIva;
+  const isRepairCenter = !customer && !!repairCenter;
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-lg">
@@ -88,15 +100,22 @@ export function InvoiceDetailDialog({ invoice, open, onOpenChange }: InvoiceDeta
 
           <Separator />
 
-          {customer && (
+          {(customer || repairCenter) && (
             <div className="space-y-2">
               <h4 className="font-medium flex items-center gap-2">
-                <Building2 className="h-4 w-4" />
-                Cliente
+                {isRepairCenter ? <Wrench className="h-4 w-4" /> : <Building2 className="h-4 w-4" />}
+                {isRepairCenter ? "Centro Riparazione" : "Cliente"}
               </h4>
-              <div className="bg-muted/50 p-3 rounded-md text-sm">
-                <p className="font-medium">{customer.fullName || customer.username}</p>
-                {customer.email && <p className="text-muted-foreground">{customer.email}</p>}
+              <div className="bg-muted/50 p-3 rounded-md text-sm space-y-1">
+                <p className="font-medium">{buyerName}</p>
+                {buyerEmail && <p className="text-muted-foreground">{buyerEmail}</p>}
+                {buyerAddress && (
+                  <p className="text-muted-foreground">
+                    {buyerAddress}
+                    {buyerCity && `, ${buyerCity}`}
+                  </p>
+                )}
+                {buyerVat && <p className="text-muted-foreground">P.IVA: {buyerVat}</p>}
               </div>
             </div>
           )}
