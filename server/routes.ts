@@ -17804,6 +17804,37 @@ export function registerRoutes(app: Express): Server {
       res.status(500).send(error.message);
     }
   });
+
+  // GET /api/users/:id - Get a single user by ID
+  app.get("/api/users/:id", requireAuth, async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const { id } = req.params;
+      const user = await storage.getUser(id);
+      
+      if (!user) {
+        return res.status(404).send("User not found");
+      }
+      
+      // Authorization: admin can see all, reseller can see their customers/sub-entities, user can see themselves
+      const canAccess = 
+        req.user.role === 'admin' ||
+        req.user.id === id ||
+        (req.user.role === 'reseller' && (user.resellerId === req.user.id || user.parentResellerId === req.user.id)) ||
+        (req.user.role === 'reseller' && user.role === 'reseller'); // Resellers can see other resellers for B2B
+      
+      if (!canAccess) {
+        return res.status(403).send("Access denied");
+      }
+      
+      // Return user without password
+      const { password, ...safeUser } = user;
+      res.json(safeUser);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
   // GET /api/my-parent-reseller - Get parent reseller info for sub-resellers, reseller_staff, and repair_center
   app.get("/api/my-parent-reseller", requireAuth, async (req, res) => {
     try {
