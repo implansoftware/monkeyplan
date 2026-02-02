@@ -345,9 +345,32 @@ export default function ResellerMarketplaceSales() {
 
               <Separator />
 
-              <div className="flex justify-between text-lg font-bold">
-                <span>Totale:</span>
-                <span>{formatPrice(selectedOrder.total)}</span>
+              <div className="space-y-2">
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Imponibile:</span>
+                  <span>{formatPrice(selectedOrder.subtotal)}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">IVA (22%):</span>
+                  <span>{formatPrice(Math.round(selectedOrder.subtotal * 0.22))}</span>
+                </div>
+                {selectedOrder.shippingCost > 0 && (
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">Spedizione:</span>
+                    <span>{formatPrice(selectedOrder.shippingCost)}</span>
+                  </div>
+                )}
+                {selectedOrder.discountAmount > 0 && (
+                  <div className="flex justify-between text-sm text-green-600">
+                    <span>Sconto:</span>
+                    <span>-{formatPrice(selectedOrder.discountAmount)}</span>
+                  </div>
+                )}
+                <Separator className="my-1" />
+                <div className="flex justify-between text-lg font-bold">
+                  <span>Totale:</span>
+                  <span>{formatPrice(selectedOrder.total)}</span>
+                </div>
               </div>
 
               {/* Payment and Shipping Info */}
