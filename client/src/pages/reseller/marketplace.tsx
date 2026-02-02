@@ -163,15 +163,6 @@ export default function ResellerMarketplace() {
   const cartTotal = cartVatSummary.total;
   const cartItemCount = cart.reduce((sum, item) => sum + item.quantity, 0);
   
-  // Calculate selected shipping cost
-  const selectedShippingCost = useMemo(() => {
-    if (!selectedShippingMethod || !shippingMethods) return 0;
-    const method = shippingMethods.find(m => m.id === selectedShippingMethod);
-    return method?.priceCents || 0;
-  }, [selectedShippingMethod, shippingMethods]);
-  
-  const grandTotal = cartTotal + selectedShippingCost;
-
   // Get current seller ID from cart
   const currentSellerId = cart[0]?.sellerResellerId || null;
 
@@ -198,6 +189,15 @@ export default function ResellerMarketplace() {
     setSelectedShippingMethod("");
     setUserSelectedShipping(false);
   }, [currentSellerId]);
+
+  // Calculate selected shipping cost
+  const selectedShippingCost = useMemo(() => {
+    if (!selectedShippingMethod || !shippingMethods) return 0;
+    const method = shippingMethods.find(m => m.id === selectedShippingMethod);
+    return method?.priceCents || 0;
+  }, [selectedShippingMethod, shippingMethods]);
+  
+  const grandTotal = cartTotal + selectedShippingCost;
 
   // Auto-select first shipping method only if user hasn't made a selection
   useEffect(() => {
