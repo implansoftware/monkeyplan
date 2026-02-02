@@ -561,7 +561,7 @@ export default function RepairCenterSettings() {
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
           <Tabs defaultValue="general" className="w-full">
-            <TabsList className="mb-4">
+            <TabsList className="mb-4 w-full max-w-full overflow-x-auto flex-nowrap justify-start">
               <TabsTrigger value="general" data-testid="tab-general">
                 <Building2 className="h-4 w-4 mr-2" />
                 Generale
