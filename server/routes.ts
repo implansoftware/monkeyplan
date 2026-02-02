@@ -13905,6 +13905,89 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+
+  // GET /api/invoices/by-order/:orderNumber/pdf - Download invoice PDF by order number
+  app.get("/api/invoices/by-order/:orderNumber/pdf", requireAuth, async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Non autenticato" });
+      
+      const { orderNumber } = req.params;
+      
+      // Find marketplace order by number
+      const marketplaceOrder = await storage.getMarketplaceOrderByNumber(orderNumber);
+      if (!marketplaceOrder) {
+        return res.status(404).json({ error: "Ordine non trovato" });
+      }
+      
+      // Find invoice by marketplace order ID
+      const invoice = await storage.getInvoiceByMarketplaceOrderId(marketplaceOrder.id);
+      if (!invoice) {
+        return res.status(404).json({ error: "Fattura non trovata per questo ordine" });
+      }
+      
+      // Access control: buyer or seller can download
+      const isAdmin = req.user.role === "admin";
+      const isBuyer = marketplaceOrder.buyerResellerId === req.user.id;
+      const isSeller = marketplaceOrder.sellerResellerId === req.user.id;
+      
+      if (!isAdmin && !isBuyer && !isSeller) {
+        return res.status(403).json({ error: "Accesso negato" });
+      }
+      
+      // Get issuer info (seller)
+      let issuer: any = { name: "MonkeyPlan" };
+      if (invoice.resellerId) {
+        const seller = await storage.getUser(invoice.resellerId);
+        if (seller) {
+          issuer = {
+            name: seller.companyName || seller.username,
+            address: seller.address,
+            city: seller.city,
+            postalCode: seller.postalCode,
+            province: seller.province,
+            vatNumber: seller.vatNumber,
+            fiscalCode: seller.fiscalCode,
+            phone: seller.phone,
+            email: seller.email,
+            pec: seller.pec,
+          };
+        }
+      }
+      
+      // Get customer info (buyer)
+      let customer: any = { name: "Cliente" };
+      if (invoice.customerId) {
+        const buyer = await storage.getUser(invoice.customerId);
+        if (buyer) {
+          customer = {
+            name: buyer.companyName || buyer.username,
+            address: buyer.address,
+            city: buyer.city,
+            postalCode: buyer.postalCode,
+            province: buyer.province,
+            vatNumber: buyer.vatNumber,
+            fiscalCode: buyer.fiscalCode,
+            email: buyer.email,
+          };
+        }
+      }
+      
+      // Generate PDF
+      const { generateInvoicePdf } = await import("./services/invoicePdf");
+      const pdfBuffer = await generateInvoicePdf({
+        invoice,
+        issuer,
+        customer,
+      });
+      
+      res.setHeader("Content-Type", "application/pdf");
+      res.setHeader("Content-Disposition", `attachment; filename="Fattura-${invoice.invoiceNumber}.pdf"`);
+      res.send(pdfBuffer);
+    } catch (error: any) {
+      console.error("Error generating invoice PDF:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
   app.get("/api/invoices/:id", requireAuth, async (req, res) => {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");

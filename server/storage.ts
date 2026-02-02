@@ -276,6 +276,7 @@ export interface IStorage {
   // Invoices
   listInvoices(filters?: { customerId?: string; paymentStatus?: string; resellerId?: string; source?: string }): Promise<Invoice[]>;
   getInvoice(id: string): Promise<Invoice | undefined>;
+  getInvoiceByMarketplaceOrderId(marketplaceOrderId: string): Promise<Invoice | undefined>;
   createInvoice(invoice: InsertInvoice): Promise<Invoice>;
   updateInvoice(id: string, updates: Partial<Pick<Invoice, 'paymentStatus' | 'paidDate' | 'notes' | 'paymentMethod'>>): Promise<Invoice>;
   getInvoicesByRepairCenter(repairCenterId: string, filters?: { source?: string; paymentStatus?: string }): Promise<Invoice[]>;
@@ -2861,6 +2862,11 @@ export class DatabaseStorage implements IStorage {
 
   async getInvoice(id: string): Promise<Invoice | undefined> {
     const [invoice] = await db.select().from(invoices).where(eq(invoices.id, id));
+    return invoice || undefined;
+  }
+
+  async getInvoiceByMarketplaceOrderId(marketplaceOrderId: string): Promise<Invoice | undefined> {
+    const [invoice] = await db.select().from(invoices).where(eq(invoices.marketplaceOrderId, marketplaceOrderId));
     return invoice || undefined;
   }
 
