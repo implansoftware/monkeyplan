@@ -1212,6 +1212,8 @@ export const repairCenterPurchaseOrders = pgTable("repair_center_purchase_orders
   paymentReference: text("payment_reference"),
   paymentConfirmedAt: timestamp("payment_confirmed_at"),
   
+  shippingMethodId: varchar("shipping_method_id").references(() => shippingMethods.id),
+  
   notes: text("notes"),
   rejectionReason: text("rejection_reason"),
   
