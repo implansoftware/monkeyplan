@@ -5559,6 +5559,9 @@ export const marketplaceOrders = pgTable("marketplace_orders", {
   paymentConfirmedAt: timestamp("payment_confirmed_at"),
   paymentConfirmedBy: varchar("payment_confirmed_by").references(() => users.id),
   
+  // Shipping
+  shippingMethodId: varchar("shipping_method_id"), // ID del metodo di spedizione scelto
+  
   // Notes
   buyerNotes: text("buyer_notes"),
   sellerNotes: text("seller_notes"),

@@ -39,6 +39,7 @@ interface MarketplaceOrder {
   shippingCost: number;
   total: number;
   paymentMethod: string;
+  shippingMethodId: string | null;
   buyerNotes: string | null;
   sellerNotes: string | null;
   rejectionReason: string | null;
@@ -93,6 +94,27 @@ export default function ResellerMarketplaceSales() {
   const { data: orders, isLoading } = useQuery<MarketplaceOrder[]>({
     queryKey: ['/api/reseller/marketplace/sales'],
   });
+
+  const { data: shippingMethods } = useQuery<{ id: string; name: string }[]>({
+    queryKey: ['/api/shipping-methods/public'],
+  });
+
+  const paymentMethodLabels: Record<string, string> = {
+    bank_transfer: "Bonifico Bancario",
+    stripe: "Carta di Credito",
+    credit: "Credito/Fido",
+  };
+
+  const getPaymentMethodName = (method: string | null | undefined): string => {
+    if (!method) return "Non specificato";
+    return paymentMethodLabels[method] || method;
+  };
+
+  const getShippingMethodName = (methodId: string | null | undefined): string => {
+    if (!methodId) return "Non specificato";
+    const method = shippingMethods?.find(m => m.id === methodId);
+    return method?.name || "Metodo sconosciuto";
+  };
 
   const approveMutation = useMutation({
     mutationFn: async ({ orderId, sellerNotes }: { orderId: string; sellerNotes: string }) => {
@@ -324,6 +346,18 @@ export default function ResellerMarketplaceSales() {
               <div className="flex justify-between text-lg font-bold">
                 <span>Totale:</span>
                 <span>{formatPrice(selectedOrder.total)}</span>
+              </div>
+
+              {/* Payment and Shipping Info */}
+              <div className="grid grid-cols-2 gap-4 p-3 bg-muted/50 rounded-lg">
+                <div>
+                  <p className="text-sm text-muted-foreground">Metodo di pagamento</p>
+                  <p className="font-medium" data-testid="text-payment-method">{getPaymentMethodName(selectedOrder.paymentMethod)}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Metodo di spedizione</p>
+                  <p className="font-medium" data-testid="text-shipping-method">{getShippingMethodName(selectedOrder.shippingMethodId)}</p>
+                </div>
               </div>
 
               {selectedOrder.status === 'pending' && (
