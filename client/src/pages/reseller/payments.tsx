@@ -328,19 +328,41 @@ export default function ResellerPayments() {
                   </p>
                 </div>
                 <div>
-                  <Label className="text-muted-foreground">Data Pagamento</Label>
-                  <p className="font-medium">{formatDate(selectedPayment?.paidAt || null)}</p>
+                  <Label className="text-muted-foreground">Stato Ordine</Label>
+                  <p className="font-medium">{(selectedPayment as any)?.orderStatus || '-'}</p>
                 </div>
               </div>
               
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <Label className="text-muted-foreground">ID Ordine</Label>
-                  <p className="font-mono text-sm">{selectedPayment?.orderId?.slice(0, 12)}...</p>
+                  <Label className="text-muted-foreground">Ordine</Label>
+                  <p className="font-medium">{(selectedPayment as any)?.orderNumber || selectedPayment?.orderId?.slice(0, 12)}</p>
                 </div>
+                <div>
+                  <Label className="text-muted-foreground">Totale Ordine</Label>
+                  <p className="font-medium">{formatPrice((selectedPayment as any)?.orderTotal || 0)}</p>
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <Label className="text-muted-foreground">Cliente</Label>
+                  <p className="font-medium">{(selectedPayment as any)?.customerName || '-'}</p>
+                </div>
+                <div>
+                  <Label className="text-muted-foreground">Email Cliente</Label>
+                  <p className="font-medium text-sm">{(selectedPayment as any)?.customerEmail || '-'}</p>
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <Label className="text-muted-foreground">Creato il</Label>
                   <p className="font-medium">{formatDate(selectedPayment?.createdAt || null)}</p>
+                </div>
+                <div>
+                  <Label className="text-muted-foreground">Data Pagamento</Label>
+                  <p className="font-medium">{formatDate(selectedPayment?.paidAt || null)}</p>
                 </div>
               </div>
               

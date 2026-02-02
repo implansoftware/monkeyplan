@@ -52,7 +52,7 @@ import { generatePosReceiptPdf } from "./services/posReceipt";
 import { calculateRepairPriority } from "./helpers/priorityCalculation";
 import { db } from "./db";
 import { sql, eq, and, desc } from "drizzle-orm";
-import { salesOrderPayments, salesOrders } from "@shared/schema";
+import { salesOrderPayments, salesOrders, users } from "@shared/schema";
 
 const scryptAsync = promisify(scrypt);
 
@@ -27902,7 +27902,7 @@ export function registerRoutes(app: Express): Server {
         conditions.push(eq(salesOrderPayments.method, method as any));
       }
       
-      // Query pagamenti degli ordini di questo reseller
+      // Query pagamenti degli ordini di questo reseller con dettagli ordine e cliente
       const payments = await db.select({
         id: salesOrderPayments.id,
         orderId: salesOrderPayments.orderId,
@@ -27915,10 +27915,19 @@ export function registerRoutes(app: Express): Server {
         paidAt: salesOrderPayments.paidAt,
         notes: salesOrderPayments.notes,
         createdAt: salesOrderPayments.createdAt,
-        updatedAt: salesOrderPayments.updatedAt
+        updatedAt: salesOrderPayments.updatedAt,
+        // Dettagli ordine
+        orderNumber: salesOrders.orderNumber,
+        orderTotal: salesOrders.total,
+        orderStatus: salesOrders.status,
+        // Dettagli cliente
+        customerId: salesOrders.customerId,
+        customerName: users.fullName,
+        customerEmail: users.email
       })
       .from(salesOrderPayments)
       .innerJoin(salesOrders, eq(salesOrderPayments.orderId, salesOrders.id))
+      .leftJoin(users, eq(salesOrders.customerId, users.id))
       .where(and(...conditions))
       .orderBy(desc(salesOrderPayments.createdAt));
       
