@@ -8081,6 +8081,82 @@ export function registerRoutes(app: Express): Server {
 
   // ============ REPAIR CENTER ROUTES ============
 
+  // ============ RESELLER SETTINGS (Hourly Rate, SLA) ============
+
+  // GET /api/reseller/settings/hourly-rate - Get reseller's hourly rate
+  app.get("/api/reseller/settings/hourly-rate", requireRole("reseller", "sub_reseller"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const setting = await storage.getResellerSetting(req.user.id, "hourly_rate");
+      if (!setting) {
+        return res.json({ hourlyRateCents: 3500, description: "Tariffa oraria manodopera predefinita" });
+      }
+      res.json({
+        hourlyRateCents: parseInt(setting.settingValue),
+        description: setting.description,
+        updatedAt: setting.updatedAt,
+      });
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
+  // PATCH /api/reseller/settings/hourly-rate - Update reseller's hourly rate
+  app.patch("/api/reseller/settings/hourly-rate", requireRole("reseller", "sub_reseller"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const { hourlyRateCents, description } = req.body;
+      
+      if (typeof hourlyRateCents !== "number" || hourlyRateCents < 0) {
+        return res.status(400).send("La tariffa oraria deve essere un numero positivo");
+      }
+      
+      const setting = await storage.setResellerSetting(
+        req.user.id,
+        "hourly_rate",
+        hourlyRateCents.toString(),
+        description ?? "Tariffa oraria manodopera in centesimi"
+      );
+      
+      res.json({
+        hourlyRateCents: parseInt(setting.settingValue),
+        description: setting.description,
+        updatedAt: setting.updatedAt,
+      });
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
+  // GET /api/reseller/settings/sla-thresholds - Get reseller's SLA thresholds
+  app.get("/api/reseller/settings/sla-thresholds", requireRole("reseller", "sub_reseller"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const thresholds = await storage.getResellerSlaThresholds(req.user.id);
+      res.json(thresholds);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
+  // PUT /api/reseller/settings/sla-thresholds - Update reseller's SLA thresholds
+  app.put("/api/reseller/settings/sla-thresholds", requireRole("reseller", "sub_reseller"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const thresholds = req.body;
+      await storage.updateResellerSlaThresholds(req.user.id, thresholds);
+      
+      const updated = await storage.getResellerSlaThresholds(req.user.id);
+      res.json(updated);
+    } catch (error: any) {
+      res.status(400).send(error.message);
+    }
+  });
+
   // ============ PAYMENT CONFIGURATIONS ============
 
   // GET /api/reseller/payment-config - Get reseller's payment configuration
