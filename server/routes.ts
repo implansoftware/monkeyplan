@@ -1232,7 +1232,7 @@ export function registerRoutes(app: Express): Server {
         deviceTypeId: deviceTypeId || null,
         defaultPriceCents,
         defaultLaborMinutes: defaultLaborMinutes || 60,
-        createdBy: req.user.id,
+        requestedBy: req.user.id,
         isActive: true,
       });
       
@@ -6441,7 +6441,7 @@ export function registerRoutes(app: Express): Server {
       
       const validationResult = insertProductSchema.safeParse({
         ...cleanedProductData,
-        createdBy: req.user.id, // Imposta il creatore come il reseller corrente
+        requestedBy: req.user.id, // Imposta il creatore come il reseller corrente
       });
       
       if (!validationResult.success) {
@@ -6486,7 +6486,7 @@ export function registerRoutes(app: Express): Server {
               movementType: 'carico',
               quantity: stock.quantity,
               notes: 'Quantità iniziale alla creazione del prodotto',
-              createdBy: req.user.id,
+              requestedBy: req.user.id,
             });
           }
         }
@@ -7070,7 +7070,7 @@ export function registerRoutes(app: Express): Server {
           movementType: quantity > currentQuantity ? 'in' : 'out',
           quantity: Math.abs(quantity - currentQuantity),
           notes: notes || 'Modifica manuale stock',
-          createdBy: req.user.id,
+          requestedBy: req.user.id,
         };
         
         await storage.createWarehouseMovement(movement as any);
@@ -7600,7 +7600,7 @@ export function registerRoutes(app: Express): Server {
       
       const validated = insertSupplierSchema.parse({
         ...req.body,
-        createdBy: req.user.id, // Set ownership to reseller
+        requestedBy: req.user.id, // Set ownership to reseller
       });
       
       // Generate unique code for reseller supplier (prefix with R-)
@@ -8530,7 +8530,7 @@ export function registerRoutes(app: Express): Server {
       if (!req.user) return res.status(401).json({ error: "Non autenticato" });
       const method = await storage.createShippingMethod({
         ...req.body,
-        createdBy: req.user.id,
+        requestedBy: req.user.id,
       });
       res.status(201).json(method);
     } catch (error: any) {
@@ -8575,7 +8575,7 @@ export function registerRoutes(app: Express): Server {
       if (!req.user) return res.status(401).json({ error: "Non autenticato" });
       const method = await storage.createShippingMethod({
         ...req.body,
-        createdBy: req.user.id,
+        requestedBy: req.user.id,
         isTemplate: false,
       });
       res.status(201).json(method);
@@ -8635,7 +8635,7 @@ export function registerRoutes(app: Express): Server {
       if (!req.user?.repairCenterId) return res.status(401).json({ error: "Non autenticato" });
       const method = await storage.createShippingMethod({
         ...req.body,
-        createdBy: req.user.id,
+        requestedBy: req.user.id,
         repairCenterId: req.user.repairCenterId,
         isTemplate: false,
       });
@@ -12817,7 +12817,7 @@ export function registerRoutes(app: Express): Server {
               quantity: stockEntry.quantity,
               referenceType: 'creazione_prodotto',
               notes: 'Quantità iniziale alla creazione prodotto',
-              createdBy: req.user.id,
+              requestedBy: req.user.id,
             });
             
             // Update warehouse stock (increment, not overwrite) with optional location
@@ -13113,7 +13113,7 @@ export function registerRoutes(app: Express): Server {
         quantity: Math.abs(difference),
         referenceType: 'rettifica',
         notes: notes || `Rettifica manuale: da ${currentQuantity} a ${quantity}`,
-        createdBy: req.user.id,
+        requestedBy: req.user.id,
       });
       
       // Update warehouse stock (passes location for new entries)
@@ -13275,7 +13275,7 @@ export function registerRoutes(app: Express): Server {
               quantity: stockEntry.quantity,
               referenceType: 'initial_stock',
               notes: 'Quantità iniziale alla creazione prodotto',
-              createdBy: req.user.id,
+              requestedBy: req.user.id,
             });
             const stockLocation = typeof stockEntry.location === 'string' && stockEntry.location.trim() 
               ? stockEntry.location.trim() 
@@ -13631,7 +13631,7 @@ export function registerRoutes(app: Express): Server {
               quantity: stockEntry.quantity,
               referenceType: 'initial_stock',
               notes: 'Quantità iniziale alla creazione prodotto',
-              createdBy: req.user.id,
+              requestedBy: req.user.id,
             });
             const stockLocation = typeof stockEntry.location === 'string' && stockEntry.location.trim() 
               ? stockEntry.location.trim() 
@@ -14540,7 +14540,7 @@ export function registerRoutes(app: Express): Server {
         status: 'draft',
         validUntil: validUntilDate,
         notes: req.body.notes || null,
-        createdBy: req.user.id,
+        requestedBy: req.user.id,
       });
       
       if (!validationResult.success) {
@@ -15118,7 +15118,7 @@ export function registerRoutes(app: Express): Server {
         status: 'submitted',
         expectedArrival: expectedArrival ? new Date(expectedArrival) : null,
         notes: notes || null,
-        createdBy: req.user.id,
+        requestedBy: req.user.id,
       });
       
       // Create individual parts order items linked to this purchase order
@@ -21810,7 +21810,7 @@ export function registerRoutes(app: Express): Server {
         ownerType,
         ownerId,
         repairCenterId: repairCenterId || null,
-        createdBy: req.user.id,
+        requestedBy: req.user.id,
       });
       
       const order = await storage.createSupplierOrder(validated);
@@ -21905,7 +21905,7 @@ export function registerRoutes(app: Express): Server {
             entityId: order.id,
             content: `Ordine ${order.orderNumber} inviato`,
             sentAt: new Date(),
-            createdBy: req.user.id,
+            requestedBy: req.user.id,
           });
         }
       }
@@ -22087,7 +22087,7 @@ export function registerRoutes(app: Express): Server {
               referenceType: 'carico_fornitore',
               referenceId: order.id,
               notes: `Ordine fornitore ${order.orderNumber} - Ricezione (+${delta})`,
-              createdBy: req.user.id,
+              requestedBy: req.user.id,
             });
             
             // Update warehouse stock
@@ -22227,7 +22227,7 @@ export function registerRoutes(app: Express): Server {
       const validated = insertSupplierReturnSchema.parse({
         ...req.body,
         repairCenterId,
-        createdBy: req.user.id,
+        requestedBy: req.user.id,
       });
       
       const returnData = await storage.createSupplierReturn(validated);
@@ -22363,7 +22363,7 @@ export function registerRoutes(app: Express): Server {
       
       const validated = insertSupplierCommunicationLogSchema.parse({
         ...req.body,
-        createdBy: req.user.id,
+        requestedBy: req.user.id,
       });
       
       const log = await storage.createSupplierCommunicationLog(validated);
@@ -23475,7 +23475,7 @@ export function registerRoutes(app: Express): Server {
         title: `Commissione approvata: €${(commission.amountCents / 100).toFixed(2)}`,
         description: `Commissione approvata da ${req.user.username || 'Admin'}`,
         payload: { commissionId: commission.id, approvedBy: req.user.id },
-        createdBy: req.user.id,
+        requestedBy: req.user.id,
       });
       
       res.json(updated);
@@ -23537,7 +23537,7 @@ export function registerRoutes(app: Express): Server {
         title: `Commissione rifiutata: €${(commission.amountCents / 100).toFixed(2)}`,
         description: `Commissione rifiutata da ${req.user.username || 'Admin'}: ${reason}`,
         payload: { commissionId: commission.id, rejectedBy: req.user.id, reason },
-        createdBy: req.user.id,
+        requestedBy: req.user.id,
       });
       
       res.json(updated);
@@ -23651,7 +23651,7 @@ export function registerRoutes(app: Express): Server {
         title: `Documento caricato: ${req.file.originalname}`,
         description: description,
         payload: { documentId: document.id, category: category },
-        createdBy: req.user.id,
+        requestedBy: req.user.id,
       });
       
       res.status(201).json(document);
@@ -23741,7 +23741,7 @@ export function registerRoutes(app: Express): Server {
         practiceId: document.practiceId,
         eventType: 'document_deleted',
         title: `Documento eliminato: ${document.fileName}`,
-        createdBy: req.user.id,
+        requestedBy: req.user.id,
       });
       
       res.status(204).send();
@@ -23817,7 +23817,7 @@ export function registerRoutes(app: Express): Server {
       const task = await storage.createUtilityPracticeTask({
         ...req.body,
         practiceId: req.params.id,
-        createdBy: req.user.id,
+        requestedBy: req.user.id,
       });
       
       // Create timeline event
@@ -23826,7 +23826,7 @@ export function registerRoutes(app: Express): Server {
         eventType: 'task_created',
         title: `Nuova attività: ${req.body.title}`,
         payload: { taskId: task.id },
-        createdBy: req.user.id,
+        requestedBy: req.user.id,
       });
       
       res.status(201).json(task);
@@ -23876,7 +23876,7 @@ export function registerRoutes(app: Express): Server {
           eventType: 'task_completed',
           title: `Attività completata: ${existingTask.title}`,
           payload: { taskId: existingTask.id },
-          createdBy: req.user.id,
+          requestedBy: req.user.id,
         });
       }
       
@@ -23996,7 +23996,7 @@ export function registerRoutes(app: Express): Server {
       const note = await storage.createUtilityPracticeNote({
         ...req.body,
         practiceId: req.params.id,
-        createdBy: req.user.id,
+        requestedBy: req.user.id,
       });
       
       // Create timeline event
@@ -24006,7 +24006,7 @@ export function registerRoutes(app: Express): Server {
         title: 'Nuova nota aggiunta',
         description: req.body.body.substring(0, 100) + (req.body.body.length > 100 ? '...' : ''),
         payload: { noteId: note.id, visibility: req.body.visibility },
-        createdBy: req.user.id,
+        requestedBy: req.user.id,
       });
       
       res.status(201).json(note);
@@ -24122,7 +24122,7 @@ export function registerRoutes(app: Express): Server {
         title: req.body.title,
         description: req.body.description,
         payload: req.body.payload,
-        createdBy: req.user.id,
+        requestedBy: req.user.id,
       });
       
       res.status(201).json(event);
@@ -24215,7 +24215,7 @@ export function registerRoutes(app: Express): Server {
         title: `Stato cambiato: ${practice.status} → ${status}`,
         description: reason,
         payload: { fromStatus: practice.status, toStatus: status },
-        createdBy: req.user.id,
+        requestedBy: req.user.id,
       });
       
       // Update practice with auto-populated dates based on status
@@ -24278,7 +24278,7 @@ export function registerRoutes(app: Express): Server {
               title: `Commissione maturata: €${(commissionAmount / 100).toFixed(2)}`,
               description: `Commissione riconosciuta a ${practice.resellerId ? 'Reseller' : 'Repair Center'}`,
               payload: { commissionId: commission.id, amountCents: commissionAmount },
-              createdBy: req.user.id,
+              requestedBy: req.user.id,
             });
           }
         }
@@ -24316,7 +24316,7 @@ export function registerRoutes(app: Express): Server {
             title: `Fattura generata: €${(invoiceAmount / 100).toFixed(2)}`,
             description: `Fattura ${invoiceNumber} creata automaticamente`,
             payload: { invoiceId: invoice.id, amountCents: invoiceAmount },
-            createdBy: req.user.id,
+            requestedBy: req.user.id,
           });
         }
       }
@@ -28001,7 +28001,7 @@ export function registerRoutes(app: Express): Server {
         referenceType: 'transfer',
         referenceId: destinationWarehouseId,
         notes: notes || `Trasferimento verso ${destWarehouse.name}`,
-        createdBy: req.user.id,
+        requestedBy: req.user.id,
       });
       await storage.updateWarehouseStockQuantity(sourceWarehouseId, productId, -quantity);
       
@@ -28014,7 +28014,7 @@ export function registerRoutes(app: Express): Server {
         referenceType: 'transfer',
         referenceId: sourceWarehouseId,
         notes: notes || `Trasferimento da ${sourceWarehouse.name}`,
-        createdBy: req.user.id,
+        requestedBy: req.user.id,
       });
       await storage.updateWarehouseStockQuantity(destinationWarehouseId, productId, quantity);
       
@@ -28125,7 +28125,7 @@ export function registerRoutes(app: Express): Server {
           movementType,
           quantity: Math.abs(quantity),
           notes,
-          createdBy: req.user.id,
+          requestedBy: req.user.id,
         });
       }
       res.json(stock);
@@ -28176,7 +28176,7 @@ export function registerRoutes(app: Express): Server {
         referenceType,
         referenceId,
         notes,
-        createdBy: req.user.id,
+        requestedBy: req.user.id,
       });
       
       const quantityDelta = ['carico', 'trasferimento_in'].includes(movementType) ? quantity : -quantity;
@@ -28297,7 +28297,7 @@ export function registerRoutes(app: Express): Server {
             quantity: item.shippedQuantity,
             referenceType: 'trasferimento',
             referenceId: transfer.id,
-            createdBy: req.user.id,
+            requestedBy: req.user.id,
           });
         }
       } else if (status === 'received' && items) {
@@ -28312,7 +28312,7 @@ export function registerRoutes(app: Express): Server {
             quantity: item.receivedQuantity,
             referenceType: 'trasferimento',
             referenceId: transfer.id,
-            createdBy: req.user.id,
+            requestedBy: req.user.id,
           });
         }
       }
@@ -28552,7 +28552,7 @@ export function registerRoutes(app: Express): Server {
             quantity: item.receivedQuantity,
             referenceType: 'transfer_request',
             referenceId: request.id,
-            createdBy: req.user.id,
+            requestedBy: req.user.id,
           });
         }
       }
@@ -28720,7 +28720,7 @@ export function registerRoutes(app: Express): Server {
               movementType: 'carico',
               quantity: item.receivedQuantity,
               notes: `Ricezione da richiesta interscambio ${request.requestNumber}`,
-              createdBy: req.user.id,
+              requestedBy: req.user.id,
             });
           }
         }
@@ -28939,7 +28939,7 @@ export function registerRoutes(app: Express): Server {
             quantity: item.shippedQuantity,
             referenceType: 'transfer_request',
             referenceId: request.id,
-            createdBy: req.user.id,
+            requestedBy: req.user.id,
           });
         }
       }
@@ -29244,7 +29244,7 @@ export function registerRoutes(app: Express): Server {
             quantity: item.shippedQuantity,
             referenceType: 'transfer_request',
             referenceId: request.id,
-            createdBy: req.user.id,
+            requestedBy: req.user.id,
           });
         }
       }
@@ -29601,7 +29601,7 @@ export function registerRoutes(app: Express): Server {
           referenceType: 'ordine_b2b',
           referenceId: order.id,
           notes: `Ordine B2B ${order.orderNumber} → ${resellerWarehouse.name}`,
-          createdBy: req.user.id,
+          requestedBy: req.user.id,
         });
         
         // Increment reseller warehouse stock (trasferimento_in = ingresso da admin)
@@ -29614,7 +29614,7 @@ export function registerRoutes(app: Express): Server {
           referenceType: 'ordine_b2b',
           referenceId: order.id,
           notes: `Ordine B2B ${order.orderNumber} ← ${adminWarehouse.name}`,
-          createdBy: req.user.id,
+          requestedBy: req.user.id,
         });
       }
       
@@ -30497,7 +30497,7 @@ export function registerRoutes(app: Express): Server {
         destinationWarehouseId: buyerWarehouse.id,
         status: 'received',
         notes: `Ordine Marketplace ${order.orderNumber}`,
-        createdBy: req.user.id,
+        requestedBy: req.user.id,
         approvedBy: req.user.id,
         completedAt: new Date(),
       });
@@ -31181,7 +31181,7 @@ export function registerRoutes(app: Express): Server {
           referenceType: 'ordine_rc_b2b',
           referenceId: order.id,
           notes: `Ordine RC B2B ${order.orderNumber}`,
-          createdBy: req.user.id,
+          requestedBy: req.user.id,
         });
         
         // Add to repair center
@@ -31194,7 +31194,7 @@ export function registerRoutes(app: Express): Server {
           referenceType: 'ordine_rc_b2b',
           referenceId: order.id,
           notes: `Ordine RC B2B ${order.orderNumber}`,
-          createdBy: req.user.id,
+          requestedBy: req.user.id,
         });
       }
       
