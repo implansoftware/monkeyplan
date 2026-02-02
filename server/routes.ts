@@ -13913,27 +13913,49 @@ export function registerRoutes(app: Express): Server {
       
       const { orderNumber } = req.params;
       
-      // Find marketplace order by number
-      const marketplaceOrder = await storage.getMarketplaceOrderByNumber(orderNumber);
-      if (!marketplaceOrder) {
+      // Check order type based on prefix
+      let order: any = null;
+      let orderType: "marketplace" | "rcb2b" = "marketplace";
+      
+      if (orderNumber.startsWith("RCB2B-") || orderNumber.startsWith("RES-RCB2B-")) {
+        order = await storage.getRepairCenterPurchaseOrderByNumber(orderNumber);
+        orderType = "rcb2b";
+      } else {
+        order = await storage.getMarketplaceOrderByNumber(orderNumber);
+      }
+      
+      
+      if (!order) {
         return res.status(404).json({ error: "Ordine non trovato" });
       }
       
-      // Find invoice by marketplace order ID
-      const invoice = await storage.getInvoiceByMarketplaceOrderId(marketplaceOrder.id);
+      // Find invoice based on order type
+      let invoice: any = null;
+      if (orderType === "rcb2b") {
+        invoice = await storage.getInvoiceByRepairCenterOrderId(order.id);
+      } else {
+        invoice = await storage.getInvoiceByMarketplaceOrderId(order.id);
+      }
       if (!invoice) {
         return res.status(404).json({ error: "Fattura non trovata per questo ordine" });
       }
       
-      // Access control: buyer or seller can download
+      // Access control based on order type
       const isAdmin = req.user.role === "admin";
-      const isBuyer = marketplaceOrder.buyerResellerId === req.user.id;
-      const isSeller = marketplaceOrder.sellerResellerId === req.user.id;
-      
-      if (!isAdmin && !isBuyer && !isSeller) {
-        return res.status(403).json({ error: "Accesso negato" });
+      let canAccess = isAdmin;
+      if (orderType === "rcb2b") {
+        const isRCUser = req.user.repairCenterId === order.repairCenterId;
+        const isSeller = order.resellerId === req.user.id;
+        canAccess = isAdmin || isRCUser || isSeller;
+      } else {
+        const isBuyer = order.buyerResellerId === req.user.id;
+        const isSeller = order.sellerResellerId === req.user.id;
+        canAccess = isAdmin || isBuyer || isSeller;
       }
       
+      if (!canAccess) {
+        return res.status(403).json({ error: "Accesso negato" });
+      }
       // Get issuer info (seller)
       let issuer: any = { name: "MonkeyPlan" };
       if (invoice.resellerId) {
@@ -13995,6 +14017,26 @@ export function registerRoutes(app: Express): Server {
               total: mkOrder.shippingCost,
             });
           }
+        }
+      }
+      // Load items for RCB2B orders
+      if (orderType === "rcb2b" && order) {
+        const orderItems = await storage.listRepairCenterPurchaseOrderItems(order.id);
+        for (const item of orderItems) {
+          items.push({
+            description: item.productName || "Prodotto",
+            quantity: item.quantity,
+            unitPrice: item.unitPrice,
+            total: item.quantity * item.unitPrice,
+          });
+        }
+        if (order.shippingCost && order.shippingCost > 0) {
+          items.push({
+            description: "Spese di spedizione",
+            quantity: 1,
+            unitPrice: order.shippingCost,
+            total: order.shippingCost,
+          });
         }
       }
       // Generate PDF

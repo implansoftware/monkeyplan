@@ -277,6 +277,8 @@ export interface IStorage {
   listInvoices(filters?: { customerId?: string; paymentStatus?: string; resellerId?: string; source?: string }): Promise<Invoice[]>;
   getInvoice(id: string): Promise<Invoice | undefined>;
   getInvoiceByMarketplaceOrderId(marketplaceOrderId: string): Promise<Invoice | undefined>;
+  getInvoiceByRepairCenterOrderId(repairCenterOrderId: string): Promise<Invoice | undefined>;
+  getInvoiceByOrderNumber(orderNumber: string): Promise<Invoice | undefined>;
   createInvoice(invoice: InsertInvoice): Promise<Invoice>;
   updateInvoice(id: string, updates: Partial<Pick<Invoice, 'paymentStatus' | 'paidDate' | 'notes' | 'paymentMethod'>>): Promise<Invoice>;
   getInvoicesByRepairCenter(repairCenterId: string, filters?: { source?: string; paymentStatus?: string }): Promise<Invoice[]>;
@@ -2869,6 +2871,24 @@ export class DatabaseStorage implements IStorage {
   async getInvoiceByMarketplaceOrderId(marketplaceOrderId: string): Promise<Invoice | undefined> {
     const [invoice] = await db.select().from(invoices).where(eq(invoices.marketplaceOrderId, marketplaceOrderId));
     return invoice || undefined;
+  }
+
+  async getInvoiceByRepairCenterOrderId(repairCenterOrderId: string): Promise<Invoice | undefined> {
+    // Get the order first to find its order number
+    const [order] = await db.select().from(repairCenterPurchaseOrders).where(eq(repairCenterPurchaseOrders.id, repairCenterOrderId));
+    if (!order) return undefined;
+    
+    // Search by order number pattern in notes
+    const allInvoices = await db.select().from(invoices)
+      .where(sql`notes ILIKE ${'%' + order.orderNumber + '%'}`);
+    return allInvoices[0] || undefined;
+  }
+
+  async getInvoiceByOrderNumber(orderNumber: string): Promise<Invoice | undefined> {
+    // Search by order number pattern in notes
+    const allInvoices = await db.select().from(invoices)
+      .where(sql`notes ILIKE ${'%' + orderNumber + '%'}`);
+    return allInvoices[0] || undefined;
   }
 
   async createInvoice(insertInvoice: InsertInvoice): Promise<Invoice> {
