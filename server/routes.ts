@@ -13972,12 +13972,38 @@ export function registerRoutes(app: Express): Server {
         }
       }
       
+      
+      // Load items for marketplace orders
+      let items: Array<{ description: string; quantity: number; unitPrice: number; total: number }> = [];
+      if (invoice.marketplaceOrderId) {
+        const mkOrder = await storage.getMarketplaceOrder(invoice.marketplaceOrderId);
+        if (mkOrder) {
+          const orderItems = await storage.listMarketplaceOrderItems(invoice.marketplaceOrderId);
+          for (const item of orderItems) {
+            items.push({
+              description: item.productName || "Prodotto",
+              quantity: item.quantity,
+              unitPrice: item.unitPrice,
+              total: item.quantity * item.unitPrice,
+            });
+          }
+          if (mkOrder.shippingCost && mkOrder.shippingCost > 0) {
+            items.push({
+              description: "Spese di spedizione",
+              quantity: 1,
+              unitPrice: mkOrder.shippingCost,
+              total: mkOrder.shippingCost,
+            });
+          }
+        }
+      }
       // Generate PDF
       const { generateInvoicePdf } = await import("./services/invoicePdf");
       const pdfBuffer = await generateInvoicePdf({
         invoice,
         issuer,
         customer,
+        items: items.length > 0 ? items : undefined,
       });
       
       res.setHeader("Content-Type", "application/pdf");
