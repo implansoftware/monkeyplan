@@ -30939,7 +30939,7 @@ export function registerRoutes(app: Express): Server {
         return res.status(401).json({ error: "Non autenticato" });
       }
       
-      const { items, paymentMethod, notes } = req.body;
+      const { items, paymentMethod, shippingMethodId, notes } = req.body;
       
       if (!items || !Array.isArray(items) || items.length === 0) {
         return res.status(400).json({ error: "L'ordine deve contenere almeno un prodotto" });
@@ -31019,13 +31019,23 @@ export function registerRoutes(app: Express): Server {
         });
       }
       
+      // Calculate shipping cost
+      let shippingCostCents = 0;
+      if (shippingMethodId) {
+        const shippingMethod = await storage.getShippingMethod(shippingMethodId);
+        if (shippingMethod) {
+          shippingCostCents = shippingMethod.priceCents || 0;
+        }
+      }
+      
       // Create order
       const order = await storage.createRepairCenterPurchaseOrder({
         repairCenterId: req.user.repairCenterId,
         resellerId: repairCenter.resellerId,
         status: 'pending',
         subtotal: totalCents,
-        total: totalCents,
+        shippingCost: shippingCostCents,
+        total: totalCents + shippingCostCents,
         paymentMethod: paymentMethod || 'bank_transfer',
         shippingMethodId: shippingMethodId || null,
         notes,
