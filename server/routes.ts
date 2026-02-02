@@ -14100,6 +14100,31 @@ export function registerRoutes(app: Express): Server {
             }
           }
         }
+        // Try Marketplace order via notes
+        else if (orderNumber.startsWith("MP-")) {
+          const mpOrder = await storage.getMarketplaceOrderByNumber(orderNumber);
+          if (mpOrder) {
+            const orderItems = await storage.listMarketplaceOrderItems(mpOrder.id);
+            for (const item of orderItems) {
+              const product = item.productId ? await storage.getProduct(item.productId) : null;
+              items.push({
+                description: product?.name || "Prodotto Marketplace",
+                quantity: item.quantity,
+                unitPrice: item.unitPrice,
+                total: item.quantity * item.unitPrice,
+              });
+            }
+            // Add shipping cost if present
+            if (mpOrder.shippingCost && mpOrder.shippingCost > 0) {
+              items.push({
+                description: "Spese di spedizione",
+                quantity: 1,
+                unitPrice: mpOrder.shippingCost,
+                total: mpOrder.shippingCost,
+              });
+            }
+          }
+        }
       }
       
       // Try marketplace order
