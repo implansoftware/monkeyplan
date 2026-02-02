@@ -361,15 +361,26 @@ export default function AdminB2BOrders() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">Subtotale:</span>
+                    <span className="text-muted-foreground">Imponibile:</span>
                     <span>{formatPrice(selectedOrder.subtotal || 0)}</span>
                   </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">IVA (22%):</span>
+                    <span>{formatPrice(Math.round((selectedOrder.subtotal || 0) * 0.22))}</span>
+                  </div>
+                  {(selectedOrder.shippingCost || 0) > 0 && (
+                    <div className="flex justify-between text-sm">
+                      <span className="text-muted-foreground">Costo Spedizione:</span>
+                      <span>{formatPrice(selectedOrder.shippingCost || 0)}</span>
+                    </div>
+                  )}
                   {(selectedOrder.discountAmount || 0) > 0 && (
                     <div className="flex justify-between text-sm text-green-600">
                       <span>Sconto:</span>
                       <span>-{formatPrice(selectedOrder.discountAmount || 0)}</span>
                     </div>
                   )}
+                  <Separator className="my-1" />
                   <div className="flex justify-between text-sm font-semibold">
                     <span>Totale:</span>
                     <span className="text-primary">{formatPrice(selectedOrder.total || 0)}</span>
