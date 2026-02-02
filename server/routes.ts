@@ -30299,7 +30299,7 @@ export function registerRoutes(app: Express): Server {
     try {
       if (!req.user) return res.status(401).json({ error: "Non autenticato" });
       
-      const { sellerResellerId, items, buyerNotes, paymentMethod } = req.body;
+      const { sellerResellerId, items, buyerNotes, paymentMethod, shippingMethodId } = req.body;
       
       if (!sellerResellerId || !items || items.length === 0) {
         return res.status(400).json({ error: "Dati ordine incompleti" });
