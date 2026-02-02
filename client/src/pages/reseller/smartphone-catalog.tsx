@@ -625,8 +625,14 @@ export default function SmartphoneCatalog() {
         
         // Update stock for each warehouse that changed
         const stockToUpdate = currentEditStock.filter(s => s.quantity !== s.originalQuantity);
+        console.log('[DEBUG] Stock update check:', { 
+          currentEditStock, 
+          stockToUpdate,
+          willUpdate: stockToUpdate.length > 0 
+        });
         if (stockToUpdate.length > 0) {
           try {
+            console.log('[DEBUG] Updating stock for:', stockToUpdate);
             await Promise.all(stockToUpdate.map(s => 
               updateStockMutation.mutateAsync({
                 productId: productId,
@@ -634,7 +640,9 @@ export default function SmartphoneCatalog() {
                 quantity: s.quantity,
               })
             ));
+            console.log('[DEBUG] Stock update successful');
           } catch (stockError: any) {
+            console.error('[DEBUG] Stock update error:', stockError);
             toast({ 
               title: "Attenzione", 
               description: "Smartphone salvato ma alcune giacenze non sono state aggiornate", 
