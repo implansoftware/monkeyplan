@@ -347,6 +347,20 @@ export default function AdminRCB2BOrders() {
                         </TableRow>
                       ))}
                       <TableRow>
+                        <TableCell colSpan={3} className="text-right text-muted-foreground">Imponibile</TableCell>
+                        <TableCell className="text-right">{formatPrice(selectedOrder.subtotal || selectedOrder.total)}</TableCell>
+                      </TableRow>
+                      <TableRow>
+                        <TableCell colSpan={3} className="text-right text-muted-foreground">IVA (22%)</TableCell>
+                        <TableCell className="text-right">{formatPrice(Math.round((selectedOrder.subtotal || selectedOrder.total) * 0.22))}</TableCell>
+                      </TableRow>
+                      {(selectedOrder.shippingCost || 0) > 0 && (
+                        <TableRow>
+                          <TableCell colSpan={3} className="text-right text-muted-foreground">Spedizione</TableCell>
+                          <TableCell className="text-right">{formatPrice(selectedOrder.shippingCost || 0)}</TableCell>
+                        </TableRow>
+                      )}
+                      <TableRow className="border-t-2">
                         <TableCell colSpan={3} className="text-right font-bold">Totale Ordine</TableCell>
                         <TableCell className="text-right font-bold text-lg">{formatPrice(selectedOrder.total)}</TableCell>
                       </TableRow>
