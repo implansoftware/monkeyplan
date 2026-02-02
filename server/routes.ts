@@ -8719,7 +8719,8 @@ export function registerRoutes(app: Express): Server {
       // If resellerId provided, get that reseller's methods, otherwise get admin's methods for B2B
       if (resellerId) {
         const methods = await storage.getShippingMethodsByCreator(resellerId);
-        const activeMethods = methods.filter(m => m.isActive && !m.isTemplate);
+        // For B2B orders, admin's templates ARE the available shipping methods
+        const activeMethods = methods.filter(m => m.isActive);
         return res.json(activeMethods);
       } else {
         // For B2B: get admin's shipping methods
@@ -8729,7 +8730,8 @@ export function registerRoutes(app: Express): Server {
           return res.json([]);
         }
         const methods = await storage.getShippingMethodsByCreator(adminId);
-        const activeMethods = methods.filter(m => m.isActive && !m.isTemplate);
+        // For B2B orders, admin's templates ARE the available shipping methods
+        const activeMethods = methods.filter(m => m.isActive);
         return res.json(activeMethods);
       }
     } catch (error: any) {
@@ -8753,7 +8755,8 @@ export function registerRoutes(app: Express): Server {
       }
       // Get parent reseller's shipping methods
       const methods = await storage.getShippingMethodsByCreator(parentReseller.id);
-      const activeMethods = methods.filter(m => m.isActive && !m.isTemplate);
+      // For B2B orders, admin's templates ARE the available shipping methods
+        const activeMethods = methods.filter(m => m.isActive);
       res.json(activeMethods);
     } catch (error: any) {
       res.status(500).json({ error: error.message });
