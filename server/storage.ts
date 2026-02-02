@@ -18,7 +18,7 @@ import {
   RepairCenterAvailability, InsertRepairCenterAvailability,
   RepairCenterBlackout, InsertRepairCenterBlackout,
   DeliveryAppointment, InsertDeliveryAppointment,
-  AdminSetting, InsertAdminSetting, ResellerSetting,
+  AdminSetting, InsertAdminSetting, ResellerSetting, RepairCenterSetting,
   Promotion, InsertPromotion, UnrepairableReason, InsertUnrepairableReason,
   ExternalLab, InsertExternalLab, DataRecoveryJob, InsertDataRecoveryJob, DataRecoveryEvent, InsertDataRecoveryEvent,
   CreateDataRecoveryJob, UpdateDataRecoveryJob,
@@ -57,7 +57,7 @@ import {
   repairQuotes, partsOrders, repairLogs, repairTestChecklist, repairDelivery,
   repairCenterAvailability, repairCenterBlackouts, deliveryAppointments,
   deviceTypes, deviceBrands, deviceModels, resellerDeviceBrands, resellerDeviceModels, issueTypes, aestheticDefects, accessoryTypes,
-  diagnosticFindings, damagedComponentTypes, estimatedRepairTimes, adminSettings, resellerSettings,
+  diagnosticFindings, damagedComponentTypes, estimatedRepairTimes, adminSettings, resellerSettings, repairCenterSettings,
   promotions, unrepairableReasons, externalLabs, dataRecoveryJobs, dataRecoveryEvents,
   suppliers, productSuppliers, supplierCatalogProducts, supplierSyncLogs, supplierOrders, supplierOrderItems, supplierReturns, supplierReturnItems, supplierCommunicationLogs,
   repairOrderStateHistory, supplierReturnStateHistory,
@@ -480,6 +480,14 @@ export interface IStorage {
   setResellerSetting(resellerId: string, key: string, value: string, description?: string): Promise<ResellerSetting>;
   getResellerSlaThresholds(resellerId: string): Promise<SlaThresholds>;
   updateResellerSlaThresholds(resellerId: string, thresholds: SlaThresholds): Promise<void>;
+  
+  // Repair Center Settings (hourly rate, SLA thresholds - with fallback to parent reseller)
+  getRepairCenterSetting(repairCenterId: string, key: string): Promise<RepairCenterSetting | undefined>;
+  setRepairCenterSetting(repairCenterId: string, key: string, value: string, description?: string): Promise<RepairCenterSetting>;
+  getRepairCenterHourlyRate(repairCenterId: string): Promise<{ hourlyRateCents: number; useParent: boolean; source: 'own' | 'reseller' | 'default' }>;
+  setRepairCenterHourlyRate(repairCenterId: string, hourlyRateCents: number, useParent: boolean): Promise<void>;
+  getRepairCenterSlaThresholds(repairCenterId: string): Promise<{ thresholds: SlaThresholds; useParent: boolean; source: 'own' | 'reseller' | 'default' }>;
+  updateRepairCenterSlaThresholds(repairCenterId: string, thresholds: SlaThresholds, useParent: boolean): Promise<void>;
   
   // Promotions (for "Non Conveniente" diagnosis outcome)
   listPromotions(activeOnly?: boolean): Promise<Promotion[]>;
@@ -5240,6 +5248,135 @@ export class DatabaseStorage implements IStorage {
       settingValue, 
       'Soglie SLA per stati riparazioni (valori in ore)'
     );
+  }
+
+  // Repair Center Settings (with fallback to parent reseller)
+  async getRepairCenterSetting(repairCenterId: string, key: string): Promise<RepairCenterSetting | undefined> {
+    const [setting] = await db.select()
+      .from(repairCenterSettings)
+      .where(and(
+        eq(repairCenterSettings.repairCenterId, repairCenterId),
+        eq(repairCenterSettings.settingKey, key)
+      ));
+    return setting || undefined;
+  }
+
+  async setRepairCenterSetting(repairCenterId: string, key: string, value: string, description?: string): Promise<RepairCenterSetting> {
+    const existing = await this.getRepairCenterSetting(repairCenterId, key);
+    
+    if (existing) {
+      const [updated] = await db.update(repairCenterSettings)
+        .set({ 
+          settingValue: value, 
+          description: description ?? existing.description,
+          updatedAt: new Date()
+        })
+        .where(and(
+          eq(repairCenterSettings.repairCenterId, repairCenterId),
+          eq(repairCenterSettings.settingKey, key)
+        ))
+        .returning();
+      return updated;
+    } else {
+      const [created] = await db.insert(repairCenterSettings)
+        .values({
+          repairCenterId,
+          settingKey: key,
+          settingValue: value,
+          description,
+          updatedAt: new Date()
+        })
+        .returning();
+      return created;
+    }
+  }
+
+  async getRepairCenterHourlyRate(repairCenterId: string): Promise<{ hourlyRateCents: number; useParent: boolean; source: 'own' | 'reseller' | 'default' }> {
+    const DEFAULT_HOURLY_RATE = 3500; // 35 EUR
+    
+    // Check if using parent config
+    const useParentSetting = await this.getRepairCenterSetting(repairCenterId, 'use_parent_hourly_rate');
+    const useParent = useParentSetting ? useParentSetting.settingValue === 'true' : true; // Default to use parent
+    
+    if (useParent) {
+      // Get parent reseller
+      const repairCenter = await this.getRepairCenter(repairCenterId);
+      if (repairCenter?.resellerId) {
+        const resellerSetting = await this.getResellerSetting(repairCenter.resellerId, 'hourly_rate');
+        if (resellerSetting) {
+          return {
+            hourlyRateCents: parseInt(resellerSetting.settingValue, 10) || DEFAULT_HOURLY_RATE,
+            useParent: true,
+            source: 'reseller'
+          };
+        }
+      }
+      return { hourlyRateCents: DEFAULT_HOURLY_RATE, useParent: true, source: 'default' };
+    }
+    
+    // Use own config
+    const ownSetting = await this.getRepairCenterSetting(repairCenterId, 'hourly_rate');
+    if (ownSetting) {
+      return {
+        hourlyRateCents: parseInt(ownSetting.settingValue, 10) || DEFAULT_HOURLY_RATE,
+        useParent: false,
+        source: 'own'
+      };
+    }
+    
+    return { hourlyRateCents: DEFAULT_HOURLY_RATE, useParent: false, source: 'default' };
+  }
+
+  async setRepairCenterHourlyRate(repairCenterId: string, hourlyRateCents: number, useParent: boolean): Promise<void> {
+    await this.setRepairCenterSetting(repairCenterId, 'use_parent_hourly_rate', useParent.toString(), 'Usa tariffa del reseller padre');
+    if (!useParent) {
+      await this.setRepairCenterSetting(repairCenterId, 'hourly_rate', hourlyRateCents.toString(), 'Tariffa oraria manodopera in centesimi');
+    }
+  }
+
+  async getRepairCenterSlaThresholds(repairCenterId: string): Promise<{ thresholds: SlaThresholds; useParent: boolean; source: 'own' | 'reseller' | 'default' }> {
+    // Check if using parent config
+    const useParentSetting = await this.getRepairCenterSetting(repairCenterId, 'use_parent_sla');
+    const useParent = useParentSetting ? useParentSetting.settingValue === 'true' : true; // Default to use parent
+    
+    if (useParent) {
+      // Get parent reseller
+      const repairCenter = await this.getRepairCenter(repairCenterId);
+      if (repairCenter?.resellerId) {
+        const resellerThresholds = await this.getResellerSlaThresholds(repairCenter.resellerId);
+        return {
+          thresholds: resellerThresholds,
+          useParent: true,
+          source: 'reseller'
+        };
+      }
+      return { thresholds: slaThresholdsSchema.parse({}), useParent: true, source: 'default' };
+    }
+    
+    // Use own config
+    const ownSetting = await this.getRepairCenterSetting(repairCenterId, 'sla_thresholds');
+    if (ownSetting) {
+      try {
+        const parsed = JSON.parse(ownSetting.settingValue);
+        return {
+          thresholds: slaThresholdsSchema.parse(parsed),
+          useParent: false,
+          source: 'own'
+        };
+      } catch {
+        return { thresholds: slaThresholdsSchema.parse({}), useParent: false, source: 'default' };
+      }
+    }
+    
+    return { thresholds: slaThresholdsSchema.parse({}), useParent: false, source: 'default' };
+  }
+
+  async updateRepairCenterSlaThresholds(repairCenterId: string, thresholds: SlaThresholds, useParent: boolean): Promise<void> {
+    await this.setRepairCenterSetting(repairCenterId, 'use_parent_sla', useParent.toString(), 'Usa SLA del reseller padre');
+    if (!useParent) {
+      const settingValue = JSON.stringify(thresholds);
+      await this.setRepairCenterSetting(repairCenterId, 'sla_thresholds', settingValue, 'Soglie SLA per stati riparazioni (valori in ore)');
+    }
   }
 
   // Promotions (for "Non Conveniente" diagnosis outcome)
