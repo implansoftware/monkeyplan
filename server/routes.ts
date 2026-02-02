@@ -14065,6 +14065,21 @@ export function registerRoutes(app: Express): Server {
           };
         }
       }
+      else if (invoice.repairCenterId) {
+        const rc = await storage.getRepairCenter(invoice.repairCenterId);
+        if (rc) {
+          customer = {
+            name: rc.name,
+            address: rc.address,
+            city: rc.city,
+            postalCode: rc.postalCode,
+            province: rc.province,
+            vatNumber: rc.vatNumber,
+            fiscalCode: rc.fiscalCode,
+            email: rc.email,
+          };
+        }
+      }
       
       // Load invoice items from linked order
       let items: Array<{ description: string; quantity: number; unitPrice: number; total: number }> = [];
