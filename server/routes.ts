@@ -13989,6 +13989,7 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+
   // GET /api/invoices/:id/pdf - Download invoice PDF by invoice ID
   app.get("/api/invoices/:id/pdf", requireAuth, async (req, res) => {
     try {
@@ -14065,12 +14066,75 @@ export function registerRoutes(app: Express): Server {
         }
       }
       
+      // Load invoice items from linked order
+      let items: Array<{ description: string; quantity: number; unitPrice: number; total: number }> = [];
+      
+      // Try to find order number from notes (format: "ordine B2B-2026-XXXXX" or "ORD-XXXXX")
+      const orderNumberMatch = invoice.notes?.match(/(B2B-\d{4}-\d+|ORD-\d+|MKT-\d{4}-\d+)/i);
+      
+      if (orderNumberMatch) {
+        const orderNumber = orderNumberMatch[1];
+        
+        // Try B2B Admin order
+        if (orderNumber.startsWith("B2B-")) {
+          const b2bOrder = await storage.getResellerPurchaseOrderByNumber(orderNumber);
+          if (b2bOrder) {
+            const orderItems = await storage.listResellerPurchaseOrderItems(b2bOrder.id);
+            for (const item of orderItems) {
+              const product = item.productId ? await storage.getProduct(item.productId) : null;
+              items.push({
+                description: product?.name || item.productName || "Prodotto",
+                quantity: item.quantity,
+                unitPrice: item.unitPrice,
+                total: item.quantity * item.unitPrice,
+              });
+            }
+            // Add shipping cost if present
+            if (b2bOrder.shippingCost && b2bOrder.shippingCost > 0) {
+              items.push({
+                description: "Spese di spedizione",
+                quantity: 1,
+                unitPrice: b2bOrder.shippingCost,
+                total: b2bOrder.shippingCost,
+              });
+            }
+          }
+        }
+      }
+      
+      // Try marketplace order
+      if (invoice.marketplaceOrderId) {
+        const mkOrder = await storage.getMarketplaceOrder(invoice.marketplaceOrderId);
+        if (mkOrder) {
+          const orderItems = await storage.listMarketplaceOrderItems(invoice.marketplaceOrderId);
+          for (const item of orderItems) {
+            const product = item.productId ? await storage.getProduct(item.productId) : null;
+            items.push({
+              description: product?.name || "Prodotto Marketplace",
+              quantity: item.quantity,
+              unitPrice: item.unitPrice,
+              total: item.quantity * item.unitPrice,
+            });
+          }
+          // Add shipping cost if present
+          if (mkOrder.shippingCost && mkOrder.shippingCost > 0) {
+            items.push({
+              description: "Spese di spedizione",
+              quantity: 1,
+              unitPrice: mkOrder.shippingCost,
+              total: mkOrder.shippingCost,
+            });
+          }
+        }
+      }
+      
       // Generate PDF
       const { generateInvoicePdf } = await import("./services/invoicePdf");
       const pdfBuffer = await generateInvoicePdf({
         invoice,
         issuer,
         customer,
+        items: items.length > 0 ? items : undefined,
       });
       
       res.setHeader("Content-Type", "application/pdf");
