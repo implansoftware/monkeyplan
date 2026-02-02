@@ -254,6 +254,7 @@ import CustomerTicketDetail from "@/pages/customer/ticket-detail";
 import CustomerInvoices from "@/pages/customer/invoices";
 import CustomerWarranties from "@/pages/customer/warranties";
 import CustomerOrders from "@/pages/customer/orders";
+import CustomerOrderDetail from "@/pages/customer/order-detail";
 import CustomerSalesReturns from "@/pages/customer/sales-returns";
 import CustomerProfile from "@/pages/customer/profile";
 import CustomerRemoteRequests from "@/pages/customer/remote-requests";
@@ -542,7 +543,7 @@ function Router() {
       <ProtectedRoute path="/customer/tickets" component={CustomerTickets} />
       <ProtectedRoute path="/customer/tickets/:id" component={CustomerTicketDetail} />
       <ProtectedRoute path="/customer/invoices" component={CustomerInvoices} />
-      <ProtectedRoute path="/customer/orders/:id" component={CustomerOrders} />
+      <ProtectedRoute path="/customer/orders/:id" component={CustomerOrderDetail} />
       <ProtectedRoute path="/customer/orders" component={CustomerOrders} />
       <ProtectedRoute path="/customer/sales-returns" component={CustomerSalesReturns} />
       <ProtectedRoute path="/customer/profile" component={CustomerProfile} />
