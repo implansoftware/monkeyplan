@@ -51,7 +51,8 @@ import { generateAndStoreReturnDocuments, getSignedDownloadUrl, generateTransfer
 import { generatePosReceiptPdf } from "./services/posReceipt";
 import { calculateRepairPriority } from "./helpers/priorityCalculation";
 import { db } from "./db";
-import { sql } from "drizzle-orm";
+import { sql, eq, and, desc } from "drizzle-orm";
+import { salesOrderPayments, salesOrders } from "@shared/schema";
 
 const scryptAsync = promisify(scrypt);
 
@@ -27868,6 +27869,60 @@ export function registerRoutes(app: Express): Server {
         ...req.body
       });
       res.json(payment);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // GET /api/reseller/payments - Pagamenti degli ordini del reseller
+  app.get("/api/reseller/payments", requireAuth, async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Non autenticato" });
+      if (!['reseller', 'reseller_staff', 'sub_reseller'].includes(req.user.role)) {
+        return res.status(403).json({ error: "Accesso negato" });
+      }
+      
+      // reseller_staff e sub_reseller usano resellerId, reseller usa il proprio id
+      const resellerId = ['reseller_staff', 'sub_reseller'].includes(req.user.role) 
+        ? req.user.resellerId 
+        : req.user.id;
+      
+      if (!resellerId) {
+        return res.status(400).json({ error: "Reseller non trovato" });
+      }
+      
+      const { status, method } = req.query;
+      
+      // Costruisci condizioni WHERE dinamicamente
+      const conditions = [eq(salesOrders.resellerId, resellerId)];
+      if (status && status !== 'all') {
+        conditions.push(eq(salesOrderPayments.status, status as any));
+      }
+      if (method && method !== 'all') {
+        conditions.push(eq(salesOrderPayments.method, method as any));
+      }
+      
+      // Query pagamenti degli ordini di questo reseller
+      const payments = await db.select({
+        id: salesOrderPayments.id,
+        orderId: salesOrderPayments.orderId,
+        orderType: salesOrderPayments.orderType,
+        method: salesOrderPayments.method,
+        status: salesOrderPayments.status,
+        amount: salesOrderPayments.amount,
+        currency: salesOrderPayments.currency,
+        transactionId: salesOrderPayments.transactionId,
+        paidAt: salesOrderPayments.paidAt,
+        notes: salesOrderPayments.notes,
+        createdAt: salesOrderPayments.createdAt,
+        updatedAt: salesOrderPayments.updatedAt
+      })
+      .from(salesOrderPayments)
+      .innerJoin(salesOrders, eq(salesOrderPayments.orderId, salesOrders.id))
+      .where(and(...conditions))
+      .orderBy(desc(salesOrderPayments.createdAt));
+      
+      res.json(payments);
     } catch (error: any) {
       res.status(500).json({ error: error.message });
     }

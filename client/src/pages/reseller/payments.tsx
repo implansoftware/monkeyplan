@@ -73,7 +73,7 @@ export default function ResellerPayments() {
       const params = new URLSearchParams();
       if (statusFilter && statusFilter !== "all") params.set('status', statusFilter);
       if (methodFilter && methodFilter !== "all") params.set('method', methodFilter);
-      const res = await fetch(`/api/payments?${params}`, { credentials: 'include' });
+      const res = await fetch(`/api/reseller/payments?${params}`, { credentials: 'include' });
       if (!res.ok) throw new Error('Errore nel caricamento pagamenti');
       return res.json();
     }
