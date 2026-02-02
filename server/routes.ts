@@ -8742,19 +8742,14 @@ export function registerRoutes(app: Express): Server {
   // RC public shipping methods: For repair center B2B checkout (get parent reseller's methods)
   app.get("/api/shipping-methods/rc-public", requireRole("repair_center", "repair_center_staff"), async (req, res) => {
     try {
-      if (!req.user) return res.status(401).send("Unauthorized");
-      // Get repair center's parent reseller
-      const rc = await storage.getRepairCenterByUserId(req.user.id);
+      if (!req.user || !req.user.repairCenterId) return res.status(401).send("Unauthorized");
+      // Get repair center
+      const rc = await storage.getRepairCenter(req.user.repairCenterId);
       if (!rc || !rc.resellerId) {
         return res.json([]);
       }
-      // Get parent reseller
-      const parentReseller = await storage.getUser(rc.resellerId);
-      if (!parentReseller) {
-        return res.json([]);
-      }
       // Get parent reseller's shipping methods
-      let methods = await storage.getShippingMethodsForSeller(parentReseller.id);
+      let methods = await storage.getShippingMethodsForSeller(rc.resellerId);
       let activeMethods = methods.filter(m => m.isActive);
       
       // Fallback to admin's shipping methods if reseller has none
