@@ -29,8 +29,11 @@ interface Order {
   id: string;
   orderNumber: string;
   status: string;
+  subtotal: number;
+  shippingCost: number;
   total: number;
   paymentMethod: string;
+  shippingMethodId?: string;
   notes?: string;
   rejectionReason?: string;
   trackingNumber?: string;
@@ -246,9 +249,25 @@ export default function RepairCenterB2BOrders() {
                 </TableBody>
               </Table>
               
-              <div className="flex justify-between items-center border-t pt-4">
-                <span className="text-lg font-bold">Totale Ordine:</span>
-                <span className="text-lg font-bold">{formatPrice(selectedOrder.total)}</span>
+              <div className="space-y-2 border-t pt-4">
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Imponibile:</span>
+                  <span>{formatPrice(selectedOrder.subtotal || selectedOrder.total)}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">IVA (22%):</span>
+                  <span>{formatPrice(Math.round((selectedOrder.subtotal || selectedOrder.total) * 0.22))}</span>
+                </div>
+                {(selectedOrder.shippingCost || 0) > 0 && (
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">Spedizione:</span>
+                    <span>{formatPrice(selectedOrder.shippingCost)}</span>
+                  </div>
+                )}
+                <div className="flex justify-between items-center pt-2 border-t">
+                  <span className="text-lg font-bold">Totale Ordine:</span>
+                  <span className="text-lg font-bold">{formatPrice(selectedOrder.total)}</span>
+                </div>
               </div>
               
               {selectedOrder.notes && (
