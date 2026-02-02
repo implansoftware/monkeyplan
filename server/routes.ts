@@ -10948,7 +10948,7 @@ export function registerRoutes(app: Express): Server {
       const { internalNotes } = req.body;
       
       const updated = await storage.updateServiceOrder(req.params.id, {
-        status: 'completed',
+        status: 'received',
         completedAt: new Date(),
         internalNotes: internalNotes || order.internalNotes
       });
@@ -29671,7 +29671,7 @@ export function registerRoutes(app: Express): Server {
         orderType: 'b2b',
         orderNumber: order.orderNumber,
         method: (order.paymentMethod as any) || 'bank_transfer',
-        status: 'completed',
+        status: 'received',
         amount: order.total,
         currency: 'EUR',
         paidAt: new Date(),
@@ -30066,7 +30066,7 @@ export function registerRoutes(app: Express): Server {
       }
       
       const updated = await storage.updateB2bReturn(returnDoc.id, {
-        status: 'completed',
+        status: 'received',
         receivedAt: new Date(),
         completedAt: new Date(),
         inspectionNotes,
@@ -30495,7 +30495,7 @@ export function registerRoutes(app: Express): Server {
         transferNumber,
         sourceWarehouseId: sellerWarehouse.id,
         destinationWarehouseId: buyerWarehouse.id,
-        status: 'completed',
+        status: 'received',
         notes: `Ordine Marketplace ${order.orderNumber}`,
         createdBy: req.user.id,
         approvedBy: req.user.id,
@@ -31533,7 +31533,7 @@ export function registerRoutes(app: Express): Server {
       const { inspectionNotes, creditAmount } = req.body;
       
       const updated = await storage.updateRcB2bReturn(returnDoc.id, {
-        status: 'completed',
+        status: 'received',
         receivedAt: new Date(),
         completedAt: new Date(),
         inspectionNotes,
