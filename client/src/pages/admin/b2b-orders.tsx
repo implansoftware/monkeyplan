@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { ResellerPurchaseOrder, ResellerPurchaseOrderItem, Product, User } from "@shared/schema";
+import { ResellerPurchaseOrder, ResellerPurchaseOrderItem, Product, User, ShippingMethod } from "@shared/schema";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -60,6 +60,16 @@ export default function AdminB2BOrders() {
   const { data: orders, isLoading } = useQuery<B2BOrderWithDetails[]>({
     queryKey: ['/api/admin/b2b-orders'],
   });
+
+  const { data: shippingMethods } = useQuery<ShippingMethod[]>({
+    queryKey: ['/api/shipping-methods/public'],
+  });
+
+  const getShippingMethodName = (methodId: string | null | undefined): string => {
+    if (!methodId) return "Non specificato";
+    const method = shippingMethods?.find(m => m.id === methodId);
+    return method?.name || "Metodo sconosciuto";
+  };
 
   const approveMutation = useMutation({
     mutationFn: async (orderId: string) => {
@@ -369,6 +379,10 @@ export default function AdminB2BOrders() {
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Pagamento:</span>
                     <span>{paymentMethodLabels[selectedOrder.paymentMethod || 'bank_transfer']}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Spedizione:</span>
+                    <span data-testid="text-shipping-method">{getShippingMethodName(selectedOrder.shippingMethodId)}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Creato il:</span>

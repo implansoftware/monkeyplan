@@ -56,7 +56,7 @@ export const b2bPaymentMethodEnum = pgEnum("b2b_payment_method", [
   "stripe",            // Pagamento Stripe
   "credit",            // Credito/Fido
 ]);
-export const notificationTypeEnum = pgEnum("notification_type", ["repair_update", "sla_warning", "review_request", "message", "system"]);
+export const notificationTypeEnum = pgEnum("notification_type", ["repair_update", "sla_warning", "review_request", "message", "system", "b2b_order_received"]);
 // RIMOSSO: diagnosisSeverityEnum - non più necessario
 export const quoteStatusEnum = pgEnum("quote_status", ["draft", "sent", "accepted", "rejected"]);
 export const repairPriorityEnum = pgEnum("repair_priority", ["low", "medium", "high", "urgent"]);
