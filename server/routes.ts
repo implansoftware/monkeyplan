@@ -7067,7 +7067,7 @@ export function registerRoutes(app: Express): Server {
         const movement = {
           warehouseId,
           productId: req.params.id,
-          movementType: quantity > currentQuantity ? 'in' : 'out',
+          movementType: quantity > currentQuantity ? 'carico' : 'scarico',
           quantity: Math.abs(quantity - currentQuantity),
           notes: notes || 'Modifica manuale stock',
           createdBy: req.user.id,
