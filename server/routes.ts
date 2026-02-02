@@ -31115,7 +31115,7 @@ export function registerRoutes(app: Express): Server {
       );
       const orders = allOrders.flat();
       
-      // Enrich orders with repair center, reseller info and items
+      // Enrich orders with repair center, reseller info, items, and shipping method name
       const enrichedOrders = await Promise.all(orders.map(async (order) => {
         const [repairCenter, reseller, items] = await Promise.all([
           storage.getRepairCenter(order.repairCenterId),
@@ -31126,11 +31126,18 @@ export function registerRoutes(app: Express): Server {
           const product = await storage.getProduct(item.productId);
           return { ...item, product };
         }));
+        // Get shipping method name
+        let shippingMethodName = null;
+        if (order.shippingMethodId) {
+          const shippingMethod = await storage.getShippingMethod(order.shippingMethodId);
+          shippingMethodName = shippingMethod?.name || null;
+        }
         return { 
           ...order, 
           repairCenter: repairCenter ? { id: repairCenter.id, name: repairCenter.name } : null,
           reseller: reseller ? { id: reseller.id, fullName: reseller.fullName } : null,
-          items: enrichedItems 
+          items: enrichedItems,
+          shippingMethodName
         };
       }));
       

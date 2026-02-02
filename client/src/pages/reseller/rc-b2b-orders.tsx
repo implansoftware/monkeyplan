@@ -38,6 +38,7 @@ interface Order {
   total: number;
   paymentMethod: string;
   shippingMethodId?: string;
+  shippingMethodName?: string;
   notes?: string;
   rejectionReason?: string;
   trackingNumber?: string;
@@ -99,9 +100,10 @@ export default function ResellerRCB2BOrders() {
     queryKey: ['/api/reseller/shipping-methods'],
   });
   
-  const getShippingMethodName = (methodId?: string) => {
-    if (!methodId || !shippingMethods) return 'Non specificato';
-    const method = shippingMethods.find(m => m.id === methodId);
+  const getShippingMethodName = (order: Order) => {
+    if (order.shippingMethodName) return order.shippingMethodName;
+    if (!order.shippingMethodId || !shippingMethods) return 'Non specificato';
+    const method = shippingMethods.find(m => m.id === order.shippingMethodId);
     return method?.name || 'Non specificato';
   };
 
@@ -299,7 +301,7 @@ export default function ResellerRCB2BOrders() {
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Metodo di Spedizione</p>
-                  <p className="font-medium">{getShippingMethodName(selectedOrder.shippingMethodId)}</p>
+                  <p className="font-medium">{getShippingMethodName(selectedOrder)}</p>
                 </div>
               </div>
               
