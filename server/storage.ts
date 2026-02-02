@@ -963,7 +963,8 @@ export interface IStorage {
   getWarehouseStockItem(warehouseId: string, productId: string): Promise<WarehouseStock | undefined>;
   getProductWarehouseStocks(productId: string): Promise<Array<WarehouseStock & { warehouse: Warehouse }>>;
   upsertWarehouseStock(data: InsertWarehouseStock): Promise<WarehouseStock>;
-  updateWarehouseStock(id: string, updates: { minStock?: number | null; location?: string | null }): Promise<WarehouseStock>;
+  updateWarehouseStock(id: string, updates: { minStock?: number | null; location?: string | null; quantity?: number }): Promise<WarehouseStock>;
+  getWarehouseStockById(id: string): Promise<WarehouseStock | undefined>;
   updateWarehouseStockQuantity(warehouseId: string, productId: string, quantityDelta: number, location?: string | null): Promise<WarehouseStock>;
   listWarehouseProductsWithStock(warehouseId: string, search?: string, productType?: string): Promise<Array<Product & { availableQuantity: number }>>;
   listAccessibleWarehouses(resellerId: string): Promise<Warehouse[]>;
@@ -8953,13 +8954,19 @@ export class DatabaseStorage implements IStorage {
     return created;
   }
 
-  async updateWarehouseStock(id: string, updates: { minStock?: number | null; location?: string | null }): Promise<WarehouseStock> {
+  async getWarehouseStockById(id: string): Promise<WarehouseStock | undefined> {
+    const [item] = await db.select().from(warehouseStock).where(eq(warehouseStock.id, id));
+    return item;
+  }
+
+  async updateWarehouseStock(id: string, updates: { minStock?: number | null; location?: string | null; quantity?: number }): Promise<WarehouseStock> {
+    const setData: any = { updatedAt: new Date() };
+    if (updates.minStock !== undefined) setData.minStock = updates.minStock;
+    if (updates.location !== undefined) setData.location = updates.location;
+    if (updates.quantity !== undefined) setData.quantity = updates.quantity;
+    
     const [updated] = await db.update(warehouseStock)
-      .set({ 
-        minStock: updates.minStock,
-        location: updates.location,
-        updatedAt: new Date() 
-      })
+      .set(setData)
       .where(eq(warehouseStock.id, id))
       .returning();
     return updated;

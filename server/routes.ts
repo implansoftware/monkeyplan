@@ -28190,8 +28190,25 @@ export function registerRoutes(app: Express): Server {
   app.patch("/api/warehouse-stock/:stockId", requireAuth, async (req, res) => {
     try {
       if (!req.user) return res.status(401).json({ error: "Non autenticato" });
-      const { minStock, location } = req.body;
-      const updated = await storage.updateWarehouseStock(req.params.stockId, { minStock, location });
+      const { minStock, location, quantity } = req.body;
+      
+      // If quantity is being changed, create a movement record
+      if (typeof quantity === "number") {
+        const currentStock = await storage.getWarehouseStockById(req.params.stockId);
+        if (currentStock && quantity !== currentStock.quantity) {
+          const quantityDiff = quantity - currentStock.quantity;
+          await storage.createWarehouseMovement({
+            warehouseId: currentStock.warehouseId,
+            productId: currentStock.productId,
+            movementType: quantityDiff > 0 ? "carico" : "scarico",
+            quantity: Math.abs(quantityDiff),
+            notes: "Modifica manuale quantità",
+            createdBy: req.user.id,
+          });
+        }
+      }
+      
+      const updated = await storage.updateWarehouseStock(req.params.stockId, { minStock, location, quantity });
       res.json(updated);
     } catch (error: any) {
       res.status(500).json({ error: error.message });

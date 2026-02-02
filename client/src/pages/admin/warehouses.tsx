@@ -40,7 +40,7 @@ export default function WarehousesPage() {
   const [showMovementDialog, setShowMovementDialog] = useState(false);
   const [showEditStockDialog, setShowEditStockDialog] = useState(false);
   const [editingStockItem, setEditingStockItem] = useState<EnrichedStock | null>(null);
-  const [editStockData, setEditStockData] = useState({ minStock: 0, location: "" });
+  const [editStockData, setEditStockData] = useState({ minStock: 0, location: "", quantity: 0 });
   const [movementData, setMovementData] = useState({
     productId: "",
     movementType: "carico" as string,
@@ -111,15 +111,17 @@ export default function WarehousesPage() {
   });
 
   const updateStockMutation = useMutation({
-    mutationFn: async (data: { stockId: string; minStock: number | null; location: string | null }) => {
+    mutationFn: async (data: { stockId: string; minStock: number | null; location: string | null; quantity: number }) => {
       return apiRequest("PATCH", `/api/warehouse-stock/${data.stockId}`, { 
         minStock: data.minStock, 
-        location: data.location 
+        location: data.location,
+        quantity: data.quantity
       });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/warehouses", warehouseId, "stock"] });
-      toast({ title: "Stock aggiornato", description: "Min. stock e posizione salvati" });
+      queryClient.invalidateQueries({ queryKey: ["/api/warehouses", warehouseId, "movements"] });
+      toast({ title: "Stock aggiornato", description: "Giacenza, min. stock e posizione salvati" });
       setShowEditStockDialog(false);
       setEditingStockItem(null);
     },
@@ -172,7 +174,8 @@ export default function WarehousesPage() {
     setEditingStockItem(item);
     setEditStockData({ 
       minStock: item.minStock || 0, 
-      location: item.location || "" 
+      location: item.location || "",
+      quantity: item.quantity || 0
     });
     setShowEditStockDialog(true);
   };
@@ -320,6 +323,17 @@ export default function WarehousesPage() {
                 Prodotto: <span className="font-medium text-foreground">{editingStockItem?.product?.name}</span>
               </p>
               <div className="space-y-2">
+                <Label>Giacenza</Label>
+                <Input 
+                  type="number" 
+                  min="0"
+                  value={editStockData.quantity}
+                  onChange={(e) => setEditStockData(prev => ({ ...prev, quantity: parseInt(e.target.value) || 0 }))}
+                  data-testid="input-quantity"
+                />
+                <p className="text-xs text-muted-foreground">Quantità attuale in magazzino</p>
+              </div>
+              <div className="space-y-2">
                 <Label>Scorta Minima</Label>
                 <Input 
                   type="number" 
@@ -346,7 +360,8 @@ export default function WarehousesPage() {
                     updateStockMutation.mutate({
                       stockId: editingStockItem.id,
                       minStock: editStockData.minStock || null,
-                      location: editStockData.location || null
+                      location: editStockData.location || null,
+                      quantity: editStockData.quantity
                     });
                   }
                 }}
