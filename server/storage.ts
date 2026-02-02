@@ -18,7 +18,7 @@ import {
   RepairCenterAvailability, InsertRepairCenterAvailability,
   RepairCenterBlackout, InsertRepairCenterBlackout,
   DeliveryAppointment, InsertDeliveryAppointment,
-  AdminSetting, InsertAdminSetting,
+  AdminSetting, InsertAdminSetting, ResellerSetting,
   Promotion, InsertPromotion, UnrepairableReason, InsertUnrepairableReason,
   ExternalLab, InsertExternalLab, DataRecoveryJob, InsertDataRecoveryJob, DataRecoveryEvent, InsertDataRecoveryEvent,
   CreateDataRecoveryJob, UpdateDataRecoveryJob,
@@ -57,7 +57,7 @@ import {
   repairQuotes, partsOrders, repairLogs, repairTestChecklist, repairDelivery,
   repairCenterAvailability, repairCenterBlackouts, deliveryAppointments,
   deviceTypes, deviceBrands, deviceModels, resellerDeviceBrands, resellerDeviceModels, issueTypes, aestheticDefects, accessoryTypes,
-  diagnosticFindings, damagedComponentTypes, estimatedRepairTimes, adminSettings,
+  diagnosticFindings, damagedComponentTypes, estimatedRepairTimes, adminSettings, resellerSettings,
   promotions, unrepairableReasons, externalLabs, dataRecoveryJobs, dataRecoveryEvents,
   suppliers, productSuppliers, supplierCatalogProducts, supplierSyncLogs, supplierOrders, supplierOrderItems, supplierReturns, supplierReturnItems, supplierCommunicationLogs,
   repairOrderStateHistory, supplierReturnStateHistory,
@@ -474,6 +474,12 @@ export interface IStorage {
   getAdminSetting(key: string): Promise<AdminSetting | undefined>;
   setAdminSetting(key: string, value: string, description?: string, updatedBy?: string): Promise<AdminSetting>;
   listAdminSettings(): Promise<AdminSetting[]>;
+  
+  // Reseller Settings (hourly rate, SLA thresholds)
+  getResellerSetting(resellerId: string, key: string): Promise<ResellerSetting | undefined>;
+  setResellerSetting(resellerId: string, key: string, value: string, description?: string): Promise<ResellerSetting>;
+  getResellerSlaThresholds(resellerId: string): Promise<SlaThresholds>;
+  updateResellerSlaThresholds(resellerId: string, thresholds: SlaThresholds): Promise<void>;
   
   // Promotions (for "Non Conveniente" diagnosis outcome)
   listPromotions(activeOnly?: boolean): Promise<Promotion[]>;
@@ -5174,6 +5180,66 @@ export class DatabaseStorage implements IStorage {
 
   async listAdminSettings(): Promise<AdminSetting[]> {
     return await db.select().from(adminSettings).orderBy(adminSettings.settingKey);
+  }
+
+  // Reseller Settings
+  async getResellerSetting(resellerId: string, key: string): Promise<ResellerSetting | undefined> {
+    const [setting] = await db.select()
+      .from(resellerSettings)
+      .where(and(
+        eq(resellerSettings.resellerId, resellerId),
+        eq(resellerSettings.settingKey, key)
+      ));
+    return setting || undefined;
+  }
+
+  async setResellerSetting(resellerId: string, key: string, value: string, description?: string): Promise<ResellerSetting> {
+    const existing = await this.getResellerSetting(resellerId, key);
+    
+    if (existing) {
+      const [updated] = await db.update(resellerSettings)
+        .set({ 
+          settingValue: value, 
+          description: description ?? existing.description,
+          updatedAt: new Date()
+        })
+        .where(and(
+          eq(resellerSettings.resellerId, resellerId),
+          eq(resellerSettings.settingKey, key)
+        ))
+        .returning();
+      return updated;
+    } else {
+      const [created] = await db.insert(resellerSettings)
+        .values({ resellerId, settingKey: key, settingValue: value, description })
+        .returning();
+      return created;
+    }
+  }
+
+  async getResellerSlaThresholds(resellerId: string): Promise<SlaThresholds> {
+    const setting = await this.getResellerSetting(resellerId, 'sla_thresholds');
+    
+    if (setting) {
+      try {
+        const parsed = JSON.parse(setting.settingValue);
+        return slaThresholdsSchema.parse(parsed);
+      } catch {
+        return slaThresholdsSchema.parse({});
+      }
+    }
+    
+    return slaThresholdsSchema.parse({});
+  }
+
+  async updateResellerSlaThresholds(resellerId: string, thresholds: SlaThresholds): Promise<void> {
+    const settingValue = JSON.stringify(thresholds);
+    await this.setResellerSetting(
+      resellerId, 
+      'sla_thresholds', 
+      settingValue, 
+      'Soglie SLA per stati riparazioni (valori in ore)'
+    );
   }
 
   // Promotions (for "Non Conveniente" diagnosis outcome)

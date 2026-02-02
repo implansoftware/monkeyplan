@@ -1844,6 +1844,16 @@ export const adminSettings = pgTable("admin_settings", {
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
 
+// Reseller Settings (Configurazione per reseller - tariffa oraria, SLA, etc.)
+export const resellerSettings = pgTable("reseller_settings", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  resellerId: varchar("reseller_id").notNull().references(() => users.id),
+  settingKey: text("setting_key").notNull(), // es: "hourly_rate", "sla_thresholds"
+  settingValue: text("setting_value").notNull(), // Valore come stringa JSON o numero
+  description: text("description"),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
 // ==========================================
 // DATA RECOVERY SYSTEM
 // ==========================================
@@ -5619,6 +5629,8 @@ export type SlaSeverity = "in_time" | "late" | "urgent";
 
 export type AdminSetting = typeof adminSettings.$inferSelect;
 export type InsertAdminSetting = z.infer<typeof insertAdminSettingSchema>;
+
+export type ResellerSetting = typeof resellerSettings.$inferSelect;
 
 // Data Recovery Types
 export type ExternalLab = typeof externalLabs.$inferSelect;
