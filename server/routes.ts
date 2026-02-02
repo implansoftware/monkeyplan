@@ -27547,6 +27547,7 @@ export function registerRoutes(app: Express): Server {
       const {
         shippingAddressId,
         billingAddressId,
+        shippingMethodId,
         deliveryType = 'shipping',
         paymentMethod,
         customerNotes
@@ -27575,6 +27576,21 @@ export function registerRoutes(app: Express): Server {
       const shippingAddress = shippingAddressId ? await storage.getCustomerAddress(shippingAddressId) : null;
       const billingAddress = billingAddressId ? await storage.getCustomerAddress(billingAddressId) : shippingAddress;
       
+      // Calcola costo spedizione dal metodo selezionato
+      let shippingCost = 0;
+      if (shippingMethodId) {
+        const shippingMethod = await storage.getShippingMethod(shippingMethodId);
+        if (shippingMethod) {
+          shippingCost = (shippingMethod.priceCents || 0) / 100;
+        }
+      }
+      
+      // Calcola IVA 22% (scorporata - i prezzi sono IVA inclusa)
+      const subtotal = cart.subtotal || 0;
+      const discount = cart.discount || 0;
+      const taxAmount = Math.round((subtotal * 22 / 122) * 100) / 100;
+      const total = subtotal - discount + shippingCost;
+      
       const orderNumber = await storage.generateOrderNumber(resellerId);
       
       const order = await storage.createSalesOrder({
@@ -27583,11 +27599,11 @@ export function registerRoutes(app: Express): Server {
         resellerId,
         status: 'pending',
         deliveryType: deliveryType as any,
-        subtotal: cart.subtotal,
-        discountAmount: cart.discount,
-        shippingCost: cart.shippingCost,
-        taxAmount: 0,
-        total: cart.total,
+        subtotal: subtotal,
+        discountAmount: discount,
+        shippingCost: shippingCost,
+        taxAmount: taxAmount,
+        total: total,
         shippingAddressId,
         shippingRecipient: shippingAddress?.recipientName,
         shippingAddress: shippingAddress?.address,
