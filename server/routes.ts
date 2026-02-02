@@ -8754,9 +8754,19 @@ export function registerRoutes(app: Express): Server {
         return res.json([]);
       }
       // Get parent reseller's shipping methods
-      const methods = await storage.getShippingMethodsForSeller(parentReseller.id);
-      // For B2B orders, admin's templates ARE the available shipping methods
-        const activeMethods = methods.filter(m => m.isActive);
+      let methods = await storage.getShippingMethodsForSeller(parentReseller.id);
+      let activeMethods = methods.filter(m => m.isActive);
+      
+      // Fallback to admin's shipping methods if reseller has none
+      if (activeMethods.length === 0) {
+        const admins = (await storage.listUsers()).filter((u: any) => u.role === "admin");
+        const adminId = admins[0]?.id;
+        if (adminId) {
+          methods = await storage.getShippingMethodsForSeller(adminId);
+          activeMethods = methods.filter(m => m.isActive);
+        }
+      }
+      
       res.json(activeMethods);
     } catch (error: any) {
       res.status(500).json({ error: error.message });
