@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Product, ShippingMethod } from "@shared/schema";
 import { Button } from "@/components/ui/button";
@@ -15,6 +15,7 @@ import { Separator } from "@/components/ui/separator";
 import { Package, Search, ShoppingCart, Plus, Minus, Trash2, Send, Box } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { calculateVatSummary } from "@/lib/utils";
 
 interface B2BCatalogItem {
   product: Product;
@@ -30,6 +31,15 @@ interface CartItem {
   unitPrice: number;
   minQty: number;
   maxQty: number;
+  vatRate?: number;
+}
+
+interface PaymentConfig {
+  bankTransfer: { enabled: boolean; iban: string | null; accountHolder: string | null; bankName: string | null; bic: string | null };
+  stripe: { enabled: boolean };
+  paypal: { enabled: boolean; email: string | null };
+  satispay: { enabled: boolean };
+  hasAnyMethod: boolean;
 }
 
 function formatPrice(cents: number): string {
@@ -59,12 +69,32 @@ export default function RepairCenterB2BCatalog() {
     },
   });
 
+  // Fetch parent reseller's payment configuration
+  const { data: paymentConfig, isLoading: paymentConfigLoading } = useQuery<PaymentConfig>({
+    queryKey: ['/api/repair-center/parent-payment-config'],
+  });
+
   // Auto-select first shipping method when loaded
   useEffect(() => {
     if (shippingMethods && shippingMethods.length > 0 && !selectedShippingMethod) {
       setSelectedShippingMethod(shippingMethods[0].id);
     }
   }, [shippingMethods, selectedShippingMethod]);
+  
+  // Auto-select first available payment method
+  useEffect(() => {
+    if (paymentConfig) {
+      if (paymentConfig.bankTransfer.enabled) {
+        setPaymentMethod('bank_transfer');
+      } else if (paymentConfig.stripe.enabled) {
+        setPaymentMethod('stripe');
+      } else if (paymentConfig.paypal.enabled) {
+        setPaymentMethod('paypal');
+      } else if (paymentConfig.satispay.enabled) {
+        setPaymentMethod('satispay');
+      }
+    }
+  }, [paymentConfig]);
 
   const createOrderMutation = useMutation({
     mutationFn: async (data: { items: { productId: string; quantity: number }[]; paymentMethod: string; shippingMethodId: string; notes: string }) => {
@@ -126,8 +156,26 @@ export default function RepairCenterB2BCatalog() {
     setCart(cart.filter(item => item.productId !== productId));
   };
 
-  const cartTotal = cart.reduce((sum, item) => sum + (item.unitPrice * item.quantity), 0);
   const cartItemCount = cart.reduce((sum, item) => sum + item.quantity, 0);
+  
+  // Calculate VAT summary
+  const cartVatSummary = useMemo(() => {
+    const items = cart.map(item => ({
+      priceCents: item.unitPrice * item.quantity,
+      quantity: 1,
+      vatRate: item.vatRate || 22,
+    }));
+    return calculateVatSummary(items);
+  }, [cart]);
+  
+  // Calculate selected shipping cost
+  const selectedShippingCost = useMemo(() => {
+    if (!selectedShippingMethod || !shippingMethods) return 0;
+    const method = shippingMethods.find(m => m.id === selectedShippingMethod);
+    return method?.priceCents || 0;
+  }, [selectedShippingMethod, shippingMethods]);
+  
+  const grandTotal = cartVatSummary.total + selectedShippingCost;
 
   const handleCheckout = () => {
     if (cart.length === 0) {
@@ -336,9 +384,26 @@ export default function RepairCenterB2BCatalog() {
           
           <Separator />
           
-          <div className="flex justify-between text-lg font-bold">
-            <span>Totale:</span>
-            <span>{formatPrice(cartTotal)}</span>
+          <div className="space-y-2">
+            <div className="flex justify-between text-sm">
+              <span className="text-muted-foreground">Imponibile:</span>
+              <span>{formatPrice(cartVatSummary.subtotal)}</span>
+            </div>
+            <div className="flex justify-between text-sm">
+              <span className="text-muted-foreground">IVA:</span>
+              <span>{formatPrice(cartVatSummary.vatAmount)}</span>
+            </div>
+            {selectedShippingCost > 0 && (
+              <div className="flex justify-between text-sm">
+                <span className="text-muted-foreground">Spedizione:</span>
+                <span>{formatPrice(selectedShippingCost)}</span>
+              </div>
+            )}
+            <Separator className="my-1" />
+            <div className="flex justify-between text-lg font-bold">
+              <span>Totale:</span>
+              <span>{formatPrice(grandTotal)}</span>
+            </div>
           </div>
           
           <div className="space-y-4">
@@ -368,16 +433,33 @@ export default function RepairCenterB2BCatalog() {
 
             <div className="space-y-2">
               <Label>Metodo di Pagamento</Label>
-              <Select value={paymentMethod} onValueChange={setPaymentMethod}>
-                <SelectTrigger data-testid="select-payment-method">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="bank_transfer">Bonifico Bancario</SelectItem>
-                  <SelectItem value="cash">Contanti</SelectItem>
-                  <SelectItem value="credit">Credito</SelectItem>
-                </SelectContent>
-              </Select>
+              {paymentConfigLoading ? (
+                <Skeleton className="h-10 w-full" />
+              ) : !paymentConfig?.hasAnyMethod ? (
+                <Card className="border-muted bg-muted/10 p-3">
+                  <p className="text-sm text-muted-foreground">Nessun metodo di pagamento configurato</p>
+                </Card>
+              ) : (
+                <Select value={paymentMethod} onValueChange={setPaymentMethod}>
+                  <SelectTrigger data-testid="select-payment-method">
+                    <SelectValue placeholder="Seleziona metodo di pagamento" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {paymentConfig.bankTransfer.enabled && (
+                      <SelectItem value="bank_transfer">Bonifico Bancario</SelectItem>
+                    )}
+                    {paymentConfig.stripe.enabled && (
+                      <SelectItem value="stripe">Carta di Credito (Stripe)</SelectItem>
+                    )}
+                    {paymentConfig.paypal.enabled && (
+                      <SelectItem value="paypal">PayPal</SelectItem>
+                    )}
+                    {paymentConfig.satispay.enabled && (
+                      <SelectItem value="satispay">Satispay</SelectItem>
+                    )}
+                  </SelectContent>
+                </Select>
+              )}
             </div>
             
             <div className="space-y-2">
@@ -397,7 +479,7 @@ export default function RepairCenterB2BCatalog() {
             </Button>
             <Button 
               onClick={submitOrder} 
-              disabled={createOrderMutation.isPending}
+              disabled={createOrderMutation.isPending || !paymentConfig?.hasAnyMethod || (!shippingMethods?.length && !shippingMethodsLoading)}
               data-testid="button-submit-order"
             >
               <Send className="h-4 w-4 mr-2" />
