@@ -1854,6 +1854,16 @@ export const resellerSettings = pgTable("reseller_settings", {
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
 
+// Repair Center Settings (Configurazione per centro riparazione - tariffa oraria, SLA, etc.)
+export const repairCenterSettings = pgTable("repair_center_settings", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  repairCenterId: varchar("repair_center_id").notNull().references(() => repairCenters.id),
+  settingKey: text("setting_key").notNull(), // es: "hourly_rate", "sla_thresholds", "use_parent_hourly_rate", "use_parent_sla"
+  settingValue: text("setting_value").notNull(), // Valore come stringa JSON o numero
+  description: text("description"),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
 // ==========================================
 // DATA RECOVERY SYSTEM
 // ==========================================
@@ -5631,6 +5641,8 @@ export type AdminSetting = typeof adminSettings.$inferSelect;
 export type InsertAdminSetting = z.infer<typeof insertAdminSettingSchema>;
 
 export type ResellerSetting = typeof resellerSettings.$inferSelect;
+
+export type RepairCenterSetting = typeof repairCenterSettings.$inferSelect;
 
 // Data Recovery Types
 export type ExternalLab = typeof externalLabs.$inferSelect;
