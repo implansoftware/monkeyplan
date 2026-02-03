@@ -87,6 +87,8 @@ const paymentFormSchema = z.object({
   bic: z.string().optional(),
   bankName: z.string().optional(),
   stripeEnabled: z.boolean().default(false),
+  stripePublishableKey: z.string().optional(),
+  stripeSecretKey: z.string().optional(),
   paypalEnabled: z.boolean().default(false),
   paypalEmail: z.string().optional(),
   paypalClientId: z.string().optional(),
@@ -116,6 +118,14 @@ const paymentFormSchema = z.object({
 }, {
   message: "Client ID è obbligatorio quando PayPal è abilitato",
   path: ["paypalClientId"],
+}).refine((data) => {
+  if (data.stripeEnabled) {
+    return data.stripePublishableKey && data.stripePublishableKey.trim().length > 0;
+  }
+  return true;
+}, {
+  message: "Publishable Key è obbligatoria quando Stripe è abilitato",
+  path: ["stripePublishableKey"],
 });
 
 type PaymentFormValues = z.infer<typeof paymentFormSchema>;
@@ -133,7 +143,7 @@ export default function AdminSettings() {
     queryKey: ["/api/admin/settings/sla-thresholds"],
   });
 
-  const { data: paymentConfig, isLoading: isLoadingPayment } = useQuery<(PaymentConfiguration & { hasPaypalSecret?: boolean }) | null>({
+  const { data: paymentConfig, isLoading: isLoadingPayment } = useQuery<(PaymentConfiguration & { hasPaypalSecret?: boolean; hasStripeSecret?: boolean }) | null>({
     queryKey: ['/api/admin/payment-config'],
   });
 
@@ -146,6 +156,8 @@ export default function AdminSettings() {
       bic: '',
       bankName: '',
       stripeEnabled: false,
+      stripePublishableKey: '',
+      stripeSecretKey: '',
       paypalEnabled: false,
       paypalEmail: '',
       paypalClientId: '',
@@ -163,6 +175,8 @@ export default function AdminSettings() {
         bic: paymentConfig.bic || '',
         bankName: paymentConfig.bankName || '',
         stripeEnabled: paymentConfig.stripeEnabled ?? false,
+        stripePublishableKey: paymentConfig.stripePublishableKey || '',
+        stripeSecretKey: '', // Never pre-fill secret for security
         paypalEnabled: paymentConfig.paypalEnabled ?? false,
         paypalEmail: paymentConfig.paypalEmail || '',
         paypalClientId: paymentConfig.paypalClientId || '',
@@ -194,6 +208,14 @@ export default function AdminSettings() {
   });
 
   const onPaymentSubmit = (data: PaymentFormValues) => {
+    // Validate: Secret Key is required when enabling Stripe for the first time
+    if (data.stripeEnabled && !paymentConfig?.hasStripeSecret && (!data.stripeSecretKey || !data.stripeSecretKey.trim())) {
+      paymentForm.setError("stripeSecretKey", {
+        type: "manual",
+        message: "Secret Key è obbligatoria per abilitare Stripe"
+      });
+      return;
+    }
     // Validate: Client Secret is required when enabling PayPal for the first time
     if (data.paypalEnabled && !paymentConfig?.hasPaypalSecret && (!data.paypalClientSecret || !data.paypalClientSecret.trim())) {
       paymentForm.setError("paypalClientSecret", {
@@ -725,6 +747,55 @@ export default function AdminSettings() {
                           </FormItem>
                         )}
                       />
+
+                      {paymentForm.watch("stripeEnabled") && (
+                        <div className="ml-12 space-y-4">
+                          <FormField
+                            control={paymentForm.control}
+                            name="stripePublishableKey"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Publishable Key</FormLabel>
+                                <FormControl>
+                                  <Input 
+                                    placeholder="pk_live_... o pk_test_..." 
+                                    {...field}
+                                    data-testid="input-admin-stripe-publishable-key"
+                                  />
+                                </FormControl>
+                                <FormDescription>
+                                  Disponibile su dashboard.stripe.com
+                                </FormDescription>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                          <FormField
+                            control={paymentForm.control}
+                            name="stripeSecretKey"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Secret Key</FormLabel>
+                                <FormControl>
+                                  <Input 
+                                    type="password"
+                                    placeholder="sk_live_... o sk_test_..." 
+                                    {...field}
+                                    data-testid="input-admin-stripe-secret-key"
+                                  />
+                                </FormControl>
+                                <FormDescription>
+                                  {(paymentConfig as any)?.hasStripeSecret 
+                                    ? "Lascia vuoto per mantenere il valore esistente"
+                                    : "Richiesto per abilitare Stripe"
+                                  }
+                                </FormDescription>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                        </div>
+                      )}
 
                       <FormField
                         control={paymentForm.control}

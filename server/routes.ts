@@ -8173,7 +8173,9 @@ export function registerRoutes(app: Express): Server {
       const response = config ? {
         ...config,
         hasPaypalSecret: config.paypalClientSecret && config.paypalClientSecret.length > 0,
-        paypalClientSecret: undefined
+        hasStripeSecret: config.stripeSecretKey && config.stripeSecretKey.length > 0,
+        paypalClientSecret: undefined,
+        stripeSecretKey: undefined
       } : null;
       res.json(response);
     } catch (error: any) {
@@ -8262,7 +8264,9 @@ export function registerRoutes(app: Express): Server {
       const formatConfig = (cfg: any) => cfg ? {
         ...cfg,
         hasPaypalSecret: cfg.paypalClientSecret && cfg.paypalClientSecret.length > 0,
-        paypalClientSecret: undefined
+        hasStripeSecret: cfg.stripeSecretKey && cfg.stripeSecretKey.length > 0,
+        paypalClientSecret: undefined,
+        stripeSecretKey: undefined
       } : null;
       
       res.json({
@@ -8354,7 +8358,9 @@ export function registerRoutes(app: Express): Server {
       const response = config ? {
         ...config,
         hasPaypalSecret: config.paypalClientSecret && config.paypalClientSecret.length > 0,
-        paypalClientSecret: undefined // Never send encrypted secret to client
+        hasStripeSecret: config.stripeSecretKey && config.stripeSecretKey.length > 0,
+        paypalClientSecret: undefined, // Never send encrypted secret to client
+        stripeSecretKey: undefined // Never send encrypted secret to client
       } : null;
       res.json(response);
     } catch (error: any) {
@@ -8492,6 +8498,7 @@ export function registerRoutes(app: Express): Server {
         },
         stripe: {
           enabled: config?.stripeEnabled || false,
+          publishableKey: config?.stripeEnabled ? config.stripePublishableKey : null,
         },
         paypal: {
           enabled: config?.paypalEnabled || false,
@@ -8544,6 +8551,7 @@ export function registerRoutes(app: Express): Server {
         },
         stripe: {
           enabled: config?.stripeEnabled || false,
+          publishableKey: config?.stripeEnabled ? config.stripePublishableKey : null,
         },
         paypal: {
           enabled: config?.paypalEnabled || false,
@@ -8680,6 +8688,7 @@ export function registerRoutes(app: Express): Server {
         },
         stripe: {
           enabled: config?.stripeEnabled || false,
+          publishableKey: config?.stripeEnabled ? config.stripePublishableKey : null,
         },
         paypal: {
           enabled: config?.paypalEnabled || false,

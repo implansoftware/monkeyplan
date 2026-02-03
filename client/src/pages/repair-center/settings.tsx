@@ -66,6 +66,9 @@ const paymentFormSchema = z.object({
   bankName: z.string().max(100).optional().nullable(),
   accountHolder: z.string().max(200).optional().nullable(),
   bic: z.string().max(11).optional().nullable(),
+  stripeEnabled: z.boolean().default(false),
+  stripePublishableKey: z.string().optional().nullable().or(z.literal('')),
+  stripeSecretKey: z.string().optional().nullable().or(z.literal('')),
   paypalEnabled: z.boolean().default(false),
   paypalEmail: z.string().email("Email PayPal non valida").optional().nullable().or(z.literal('')),
   paypalClientId: z.string().optional().nullable().or(z.literal('')),
@@ -77,9 +80,9 @@ const paymentFormSchema = z.object({
 type PaymentFormData = z.infer<typeof paymentFormSchema>;
 
 interface RepairCenterPaymentConfig {
-  ownConfig: (PaymentConfiguration & { hasPaypalSecret?: boolean }) | null;
-  parentConfig: (PaymentConfiguration & { hasPaypalSecret?: boolean }) | null;
-  effectiveConfig: (PaymentConfiguration & { hasPaypalSecret?: boolean }) | null;
+  ownConfig: (PaymentConfiguration & { hasPaypalSecret?: boolean; hasStripeSecret?: boolean }) | null;
+  parentConfig: (PaymentConfiguration & { hasPaypalSecret?: boolean; hasStripeSecret?: boolean }) | null;
+  effectiveConfig: (PaymentConfiguration & { hasPaypalSecret?: boolean; hasStripeSecret?: boolean }) | null;
   useParentConfig: boolean;
 }
 
@@ -300,6 +303,9 @@ export default function RepairCenterSettings() {
       bankName: '',
       accountHolder: '',
       bic: '',
+      stripeEnabled: false,
+      stripePublishableKey: '',
+      stripeSecretKey: '',
       paypalEnabled: false,
       paypalEmail: '',
       paypalClientId: '',
@@ -313,6 +319,9 @@ export default function RepairCenterSettings() {
       bankName: paymentConfigData.ownConfig.bankName || '',
       accountHolder: paymentConfigData.ownConfig.accountHolder || '',
       bic: paymentConfigData.ownConfig.bic || '',
+      stripeEnabled: paymentConfigData.ownConfig.stripeEnabled,
+      stripePublishableKey: paymentConfigData.ownConfig.stripePublishableKey || '',
+      stripeSecretKey: '',
       paypalEnabled: paymentConfigData.ownConfig.paypalEnabled,
       paypalEmail: paymentConfigData.ownConfig.paypalEmail || '',
       paypalClientId: paymentConfigData.ownConfig.paypalClientId || '',
@@ -464,6 +473,19 @@ export default function RepairCenterSettings() {
   };
 
   const onPaymentSubmit = (data: PaymentFormData) => {
+    // Validate: Secret Key is required when enabling Stripe for the first time
+    // Skip validation if using parent config (inheriting from reseller)
+    const hasOwnStripeSecret = paymentConfigData?.ownConfig?.hasStripeSecret;
+    const needsStripeSecret = data.stripeEnabled && !hasOwnStripeSecret && (!data.stripeSecretKey || !data.stripeSecretKey.trim());
+    
+    if (needsStripeSecret && !paymentConfigData?.useParentConfig) {
+      paymentForm.setError("stripeSecretKey", {
+        type: "manual",
+        message: "Secret Key è obbligatoria per abilitare Stripe"
+      });
+      return;
+    }
+    
     // Validate: Client Secret is required when enabling PayPal for the first time
     // Skip validation if using parent config (inheriting from reseller)
     const hasOwnSecret = paymentConfigData?.ownConfig?.hasPaypalSecret;
@@ -1563,6 +1585,96 @@ export default function RepairCenterSettings() {
                                             <FormControl>
                                               <Input {...field} value={field.value || ''} placeholder="UNCRITMMXXX" data-testid="input-bic" />
                                             </FormControl>
+                                            <FormMessage />
+                                          </FormItem>
+                                        )}
+                                      />
+                                    </div>
+                                  )}
+                                </CardContent>
+                              </Card>
+
+                              <Card>
+                                <CardHeader>
+                                  <div className="flex items-center gap-3">
+                                    <div className="p-2 bg-[#635bff]/10 rounded-lg">
+                                      <SiStripe className="h-6 w-6 text-[#635bff]" />
+                                    </div>
+                                    <div>
+                                      <CardTitle className="text-lg">Stripe API Keys</CardTitle>
+                                      <CardDescription>
+                                        Configura le tue chiavi API Stripe per pagamenti con carta
+                                      </CardDescription>
+                                    </div>
+                                  </div>
+                                </CardHeader>
+                                <CardContent className="space-y-4">
+                                  <FormField
+                                    control={paymentForm.control}
+                                    name="stripeEnabled"
+                                    render={({ field }) => (
+                                      <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                                        <div className="space-y-0.5">
+                                          <FormLabel className="text-base">Abilita Stripe</FormLabel>
+                                          <FormDescription>
+                                            Permetti ai clienti di pagare con carta di credito
+                                          </FormDescription>
+                                        </div>
+                                        <FormControl>
+                                          <Switch
+                                            checked={field.value}
+                                            onCheckedChange={field.onChange}
+                                            data-testid="switch-stripe"
+                                          />
+                                        </FormControl>
+                                      </FormItem>
+                                    )}
+                                  />
+
+                                  {paymentForm.watch("stripeEnabled") && (
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                      <FormField
+                                        control={paymentForm.control}
+                                        name="stripePublishableKey"
+                                        render={({ field }) => (
+                                          <FormItem>
+                                            <FormLabel>Publishable Key</FormLabel>
+                                            <FormControl>
+                                              <Input 
+                                                placeholder="pk_live_... o pk_test_..." 
+                                                {...field}
+                                                value={field.value || ''}
+                                                data-testid="input-stripe-publishable-key"
+                                              />
+                                            </FormControl>
+                                            <FormDescription>
+                                              Disponibile su dashboard.stripe.com
+                                            </FormDescription>
+                                            <FormMessage />
+                                          </FormItem>
+                                        )}
+                                      />
+                                      <FormField
+                                        control={paymentForm.control}
+                                        name="stripeSecretKey"
+                                        render={({ field }) => (
+                                          <FormItem>
+                                            <FormLabel>Secret Key</FormLabel>
+                                            <FormControl>
+                                              <Input 
+                                                type="password"
+                                                placeholder="sk_live_... o sk_test_..." 
+                                                {...field}
+                                                value={field.value || ''}
+                                                data-testid="input-stripe-secret-key"
+                                              />
+                                            </FormControl>
+                                            <FormDescription>
+                                              {(paymentConfigData?.ownConfig as any)?.hasStripeSecret 
+                                                ? "Lascia vuoto per mantenere il valore esistente"
+                                                : "Richiesta per abilitare Stripe"
+                                              }
+                                            </FormDescription>
                                             <FormMessage />
                                           </FormItem>
                                         )}

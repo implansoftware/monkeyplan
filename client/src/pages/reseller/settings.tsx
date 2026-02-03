@@ -87,6 +87,9 @@ const paymentFormSchema = z.object({
   bankName: z.string().max(100).optional().nullable(),
   accountHolder: z.string().max(200).optional().nullable(),
   bic: z.string().max(11).optional().nullable(),
+  stripeEnabled: z.boolean().default(false),
+  stripePublishableKey: z.string().optional().nullable().or(z.literal('')),
+  stripeSecretKey: z.string().optional().nullable().or(z.literal('')),
   paypalEnabled: z.boolean().default(false),
   paypalEmail: z.string().email("Email PayPal non valida").optional().nullable().or(z.literal('')),
   paypalClientId: z.string().optional().nullable().or(z.literal('')),
@@ -103,7 +106,7 @@ export default function ResellerSettings() {
   const [hourlyRateEuros, setHourlyRateEuros] = useState<string>("");
   const [slaThresholds, setSlaThresholds] = useState<SLAThresholdsResponse>(defaultSLAThresholds);
 
-  const { data: paymentConfig, isLoading: isLoadingPayment } = useQuery<(PaymentConfiguration & { hasPaypalSecret?: boolean }) | null>({
+  const { data: paymentConfig, isLoading: isLoadingPayment } = useQuery<(PaymentConfiguration & { hasPaypalSecret?: boolean; hasStripeSecret?: boolean }) | null>({
     queryKey: ['/api/reseller/payment-config'],
   });
 
@@ -140,6 +143,9 @@ export default function ResellerSettings() {
       bankName: '',
       accountHolder: '',
       bic: '',
+      stripeEnabled: false,
+      stripePublishableKey: '',
+      stripeSecretKey: '',
       paypalEnabled: false,
       paypalEmail: '',
       paypalClientId: '',
@@ -153,6 +159,9 @@ export default function ResellerSettings() {
       bankName: paymentConfig.bankName || '',
       accountHolder: paymentConfig.accountHolder || '',
       bic: paymentConfig.bic || '',
+      stripeEnabled: paymentConfig.stripeEnabled,
+      stripePublishableKey: paymentConfig.stripePublishableKey || '',
+      stripeSecretKey: '',
       paypalEnabled: paymentConfig.paypalEnabled,
       paypalEmail: paymentConfig.paypalEmail || '',
       paypalClientId: paymentConfig.paypalClientId || '',
@@ -278,6 +287,14 @@ export default function ResellerSettings() {
   });
 
   const onSubmit = (data: PaymentFormData) => {
+    // Validate: Secret Key is required when enabling Stripe for the first time
+    if (data.stripeEnabled && !paymentConfig?.hasStripeSecret && (!data.stripeSecretKey || !data.stripeSecretKey.trim())) {
+      form.setError("stripeSecretKey", {
+        type: "manual",
+        message: "Secret Key è obbligatoria per abilitare Stripe"
+      });
+      return;
+    }
     // Validate: Client Secret is required when enabling PayPal for the first time
     if (data.paypalEnabled && !paymentConfig?.hasPaypalSecret && (!data.paypalClientSecret || !data.paypalClientSecret.trim())) {
       form.setError("paypalClientSecret", {
@@ -909,6 +926,104 @@ export default function ResellerSettings() {
         </TabsContent>
 
         <TabsContent value="other" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-[#635bff]/10 rounded-lg">
+                  <SiStripe className="h-6 w-6 text-[#635bff]" />
+                </div>
+                <div>
+                  <CardTitle>Stripe API Keys</CardTitle>
+                  <CardDescription>
+                    Configura le tue chiavi API Stripe per pagamenti con carta
+                  </CardDescription>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <Form {...form}>
+                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                  <FormField
+                    control={form.control}
+                    name="stripeEnabled"
+                    render={({ field }) => (
+                      <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                        <div className="space-y-0.5">
+                          <FormLabel className="text-base">Abilita Stripe</FormLabel>
+                          <FormDescription>
+                            Permetti ai clienti di pagare con carta di credito
+                          </FormDescription>
+                        </div>
+                        <FormControl>
+                          <Switch
+                            checked={field.value}
+                            onCheckedChange={field.onChange}
+                            data-testid="switch-stripe"
+                          />
+                        </FormControl>
+                      </FormItem>
+                    )}
+                  />
+
+                  {form.watch('stripeEnabled') && (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <FormField
+                        control={form.control}
+                        name="stripePublishableKey"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Publishable Key</FormLabel>
+                            <FormControl>
+                              <Input 
+                                placeholder="pk_live_... o pk_test_..." 
+                                {...field}
+                                value={field.value || ''}
+                                data-testid="input-stripe-publishable-key"
+                              />
+                            </FormControl>
+                            <FormDescription>
+                              Disponibile su dashboard.stripe.com
+                            </FormDescription>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name="stripeSecretKey"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Secret Key</FormLabel>
+                            <FormControl>
+                              <Input 
+                                type="password"
+                                placeholder="sk_live_... o sk_test_..." 
+                                {...field}
+                                value={field.value || ''}
+                                data-testid="input-stripe-secret-key"
+                              />
+                            </FormControl>
+                            <FormDescription>
+                              {(paymentConfig as any)?.hasStripeSecret 
+                                ? "Lascia vuoto per mantenere il valore esistente"
+                                : "Richiesta per abilitare Stripe"
+                              }
+                            </FormDescription>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                  )}
+
+                  <Button type="submit" disabled={updatePaymentMutation.isPending} data-testid="button-save-stripe">
+                    {updatePaymentMutation.isPending ? "Salvataggio..." : "Salva configurazione Stripe"}
+                  </Button>
+                </form>
+              </Form>
+            </CardContent>
+          </Card>
+
           <Card>
             <CardHeader>
               <div className="flex items-center gap-3">
