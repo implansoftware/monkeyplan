@@ -27989,7 +27989,7 @@ export function registerRoutes(app: Express): Server {
         return res.status(403).json({ error: "Accesso negato" });
       }
       
-      const { status } = req.query;
+      const statusFilter = req.query.status as string | undefined;
       
       // Get reseller ID based on role
       let resellerId: string | null = null;
@@ -27997,34 +27997,42 @@ export function registerRoutes(app: Express): Server {
         resellerId = req.user.role === "reseller" ? req.user.id : req.user.resellerId || null;
       }
       
-      // Build WHERE condition
-      let whereCondition;
-      if (resellerId && status && status !== "all") {
-        whereCondition = and(
-          eq(salesOrders.resellerId, resellerId),
-          eq(salesOrderShipments.status, status as string)
-        );
-      } else if (resellerId) {
-        whereCondition = eq(salesOrders.resellerId, resellerId);
-      } else if (status && status !== "all") {
-        whereCondition = eq(salesOrderShipments.status, status as string);
+      // Use raw SQL to avoid Drizzle WHERE issues
+      let sql = `
+        SELECT sh.*, so.order_number, so.shipping_name as customer_name
+        FROM sales_order_shipments sh
+        INNER JOIN sales_orders so ON sh.order_id = so.id
+        WHERE 1=1
+      `;
+      const params: any[] = [];
+      
+      if (resellerId) {
+        params.push(resellerId);
+        sql += ` AND so.reseller_id = $${params.length}`;
+      }
+      if (statusFilter && statusFilter !== "all") {
+        params.push(statusFilter);
+        sql += ` AND sh.status = $${params.length}`;
       }
       
-      const results = await db.select({
-        shipment: salesOrderShipments,
-        orderNumber: salesOrders.orderNumber,
-        customerName: salesOrders.shippingName
-      })
-        .from(salesOrderShipments)
-        .innerJoin(salesOrders, eq(salesOrderShipments.orderId, salesOrders.id))
-        .where(whereCondition)
-        .orderBy(desc(salesOrderShipments.createdAt));
+      sql += ` ORDER BY sh.created_at DESC`;
       
-      // Flatten results
-      const shipments = results.map(r => ({
-        ...r.shipment,
-        orderNumber: r.orderNumber,
-        customerName: r.customerName
+      const result = await db.execute({ sql, params });
+      const shipments = result.rows.map((r: any) => ({
+        id: r.id,
+        orderId: r.order_id,
+        carrier: r.carrier,
+        trackingNumber: r.tracking_number,
+        trackingUrl: r.tracking_url,
+        status: r.status,
+        notes: r.notes,
+        shippedAt: r.shipped_at,
+        deliveredAt: r.delivered_at,
+        estimatedDelivery: r.estimated_delivery,
+        createdAt: r.created_at,
+        updatedAt: r.updated_at,
+        orderNumber: r.order_number,
+        customerName: r.customer_name
       }));
       
       res.json(shipments);
@@ -28032,6 +28040,7 @@ export function registerRoutes(app: Express): Server {
       res.status(500).json({ error: error.message });
     }
   });
+
 
 
 
