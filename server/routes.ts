@@ -9922,9 +9922,15 @@ export function registerRoutes(app: Express): Server {
       const user = await storage.getUser(req.user.id);
       if (!user) return res.status(404).send("User not found");
       
-      // Return safe profile data (no password)
+      // Get billing data from billing_data table
+      const billingData = await storage.getBillingDataByUserId(req.user.id);
+      
+      // Return safe profile data (no password) with billing data
       const { password: _, ...safeUser } = user;
-      res.json(safeUser);
+      res.json({
+        ...safeUser,
+        billingData,
+      });
     } catch (error: any) {
       res.status(500).send(error.message);
     }

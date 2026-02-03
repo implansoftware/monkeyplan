@@ -10,7 +10,11 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { Loader2, User, Mail, Phone, Building2, MapPin, FileText, Save, X, Pencil } from "lucide-react";
-import type { User as UserType } from "@shared/schema";
+import type { User as UserType, BillingData } from "@shared/schema";
+
+interface ProfileResponse extends UserType {
+  billingData?: BillingData | null;
+}
 
 export default function CustomerProfile() {
   const { user } = useAuth();
@@ -25,21 +29,24 @@ export default function CustomerProfile() {
   });
 
   const [fiscalData, setFiscalData] = useState({
-    ragioneSociale: user?.ragioneSociale || "",
-    partitaIva: user?.partitaIva || "",
-    codiceFiscale: user?.codiceFiscale || "",
-    indirizzo: user?.indirizzo || "",
-    citta: user?.citta || "",
-    cap: user?.cap || "",
-    provincia: user?.provincia || "",
-    pec: user?.pec || "",
-    codiceUnivoco: user?.codiceUnivoco || "",
+    ragioneSociale: "",
+    partitaIva: "",
+    codiceFiscale: "",
+    indirizzo: "",
+    citta: "",
+    cap: "",
+    provincia: "",
+    pec: "",
+    codiceUnivoco: "",
   });
 
-  const { data: profile, isLoading } = useQuery<UserType>({
+  const { data: profile, isLoading } = useQuery<ProfileResponse>({
     queryKey: ["/api/customer/profile"],
     enabled: !!user,
   });
+  
+  // Extract billing data with field mapping
+  const billingData = profile?.billingData;
 
   const updateMutation = useMutation({
     mutationFn: async (data: Partial<UserType>) => {
@@ -86,15 +93,15 @@ export default function CustomerProfile() {
 
   const handleCancelFiscal = () => {
     setFiscalData({
-      ragioneSociale: profile?.ragioneSociale || user?.ragioneSociale || "",
-      partitaIva: profile?.partitaIva || user?.partitaIva || "",
-      codiceFiscale: profile?.codiceFiscale || user?.codiceFiscale || "",
-      indirizzo: profile?.indirizzo || user?.indirizzo || "",
-      citta: profile?.citta || user?.citta || "",
-      cap: profile?.cap || user?.cap || "",
-      provincia: profile?.provincia || user?.provincia || "",
-      pec: profile?.pec || user?.pec || "",
-      codiceUnivoco: profile?.codiceUnivoco || user?.codiceUnivoco || "",
+      ragioneSociale: billingData?.companyName || "",
+      partitaIva: billingData?.vatNumber || "",
+      codiceFiscale: billingData?.fiscalCode || "",
+      indirizzo: billingData?.address || "",
+      citta: billingData?.city || "",
+      cap: billingData?.zipCode || "",
+      provincia: "",
+      pec: billingData?.pec || "",
+      codiceUnivoco: billingData?.codiceUnivoco || "",
     });
     setIsEditingFiscal(false);
   };
@@ -263,15 +270,15 @@ export default function CustomerProfile() {
               size="sm"
               onClick={() => {
                 setFiscalData({
-                  ragioneSociale: displayUser?.ragioneSociale || "",
-                  partitaIva: displayUser?.partitaIva || "",
-                  codiceFiscale: displayUser?.codiceFiscale || "",
-                  indirizzo: displayUser?.indirizzo || "",
-                  citta: displayUser?.citta || "",
-                  cap: displayUser?.cap || "",
-                  provincia: displayUser?.provincia || "",
-                  pec: displayUser?.pec || "",
-                  codiceUnivoco: displayUser?.codiceUnivoco || "",
+                  ragioneSociale: billingData?.companyName || "",
+                  partitaIva: billingData?.vatNumber || "",
+                  codiceFiscale: billingData?.fiscalCode || "",
+                  indirizzo: billingData?.address || "",
+                  citta: billingData?.city || "",
+                  cap: billingData?.zipCode || "",
+                  provincia: "",
+                  pec: billingData?.pec || "",
+                  codiceUnivoco: billingData?.codiceUnivoco || "",
                 });
                 setIsEditingFiscal(true);
               }}
@@ -401,21 +408,21 @@ export default function CustomerProfile() {
                 <Building2 className="h-4 w-4 text-muted-foreground" />
                 <div>
                   <p className="text-sm text-muted-foreground">Ragione Sociale</p>
-                  <p className="font-medium" data-testid="text-ragione-sociale">{displayUser?.ragioneSociale || "-"}</p>
+                  <p className="font-medium" data-testid="text-ragione-sociale">{billingData?.companyName || "-"}</p>
                 </div>
               </div>
               <div className="flex flex-wrap items-center gap-3">
                 <FileText className="h-4 w-4 text-muted-foreground" />
                 <div>
                   <p className="text-sm text-muted-foreground">Partita IVA</p>
-                  <p className="font-medium" data-testid="text-partita-iva">{displayUser?.partitaIva || "-"}</p>
+                  <p className="font-medium" data-testid="text-partita-iva">{billingData?.vatNumber || "-"}</p>
                 </div>
               </div>
               <div className="flex flex-wrap items-center gap-3">
                 <FileText className="h-4 w-4 text-muted-foreground" />
                 <div>
                   <p className="text-sm text-muted-foreground">Codice Fiscale</p>
-                  <p className="font-medium" data-testid="text-codice-fiscale">{displayUser?.codiceFiscale || "-"}</p>
+                  <p className="font-medium" data-testid="text-codice-fiscale">{billingData?.fiscalCode || "-"}</p>
                 </div>
               </div>
               <div className="flex flex-wrap items-center gap-3">
@@ -423,8 +430,8 @@ export default function CustomerProfile() {
                 <div>
                   <p className="text-sm text-muted-foreground">Indirizzo</p>
                   <p className="font-medium" data-testid="text-indirizzo">
-                    {displayUser?.indirizzo 
-                      ? `${displayUser.indirizzo}, ${displayUser.cap || ""} ${displayUser.citta || ""} (${displayUser.provincia || ""})`
+                    {billingData?.address 
+                      ? `${billingData.address}, ${billingData.zipCode || ""} ${billingData.city || ""}`
                       : "-"}
                   </p>
                 </div>
@@ -433,14 +440,14 @@ export default function CustomerProfile() {
                 <Mail className="h-4 w-4 text-muted-foreground" />
                 <div>
                   <p className="text-sm text-muted-foreground">PEC</p>
-                  <p className="font-medium" data-testid="text-pec">{displayUser?.pec || "-"}</p>
+                  <p className="font-medium" data-testid="text-pec">{billingData?.pec || "-"}</p>
                 </div>
               </div>
               <div className="flex flex-wrap items-center gap-3">
                 <FileText className="h-4 w-4 text-muted-foreground" />
                 <div>
                   <p className="text-sm text-muted-foreground">Codice Univoco SDI</p>
-                  <p className="font-medium" data-testid="text-codice-univoco">{displayUser?.codiceUnivoco || "-"}</p>
+                  <p className="font-medium" data-testid="text-codice-univoco">{billingData?.codiceUnivoco || "-"}</p>
                 </div>
               </div>
             </div>
