@@ -1,7 +1,7 @@
 // PayPal Checkout Button Component for B2B Orders
 // Based on Replit PayPal Blueprint
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
 
@@ -36,8 +36,10 @@ export default function PayPalButton({
   const [isLoading, setIsLoading] = useState(true);
   const [isProcessing, setIsProcessing] = useState(false);
   const [sdkReady, setSdkReady] = useState(false);
+  const paypalCheckoutRef = useRef<any>(null);
+  const buttonRef = useRef<HTMLButtonElement>(null);
 
-  const createOrder = async () => {
+  const createOrder = useCallback(async () => {
     const orderPayload = {
       amount: amount,
       currency: currency,
@@ -54,7 +56,7 @@ export default function PayPalButton({
     }
     const output = await response.json();
     return { orderId: output.id };
-  };
+  }, [amount, currency]);
 
   const captureOrder = async (orderId: string) => {
     const response = await fetch(`/paypal/order/${orderId}/capture`, {
@@ -71,7 +73,7 @@ export default function PayPalButton({
     return data;
   };
 
-  const onApprove = async (data: any) => {
+  const onApprove = useCallback(async (data: any) => {
     try {
       setIsProcessing(true);
       const orderData = await captureOrder(data.orderId);
@@ -81,16 +83,17 @@ export default function PayPalButton({
     } finally {
       setIsProcessing(false);
     }
-  };
+  }, [onSuccess, onError]);
 
-  const handleCancel = () => {
+  const handleCancel = useCallback(() => {
     onCancel();
-  };
+  }, [onCancel]);
 
-  const handleError = (data: any) => {
+  const handleError = useCallback((data: any) => {
     onError(data?.message || "Errore PayPal");
-  };
+  }, [onError]);
 
+  // Initialize PayPal SDK
   useEffect(() => {
     const loadPayPalSDK = async () => {
       try {
@@ -130,41 +133,17 @@ export default function PayPalButton({
           components: ["paypal-payments"],
         });
 
-        const paypalCheckout =
-          sdkInstance.createPayPalOneTimePaymentSession({
-            onApprove,
-            onCancel: handleCancel,
-            onError: handleError,
-          });
+        const paypalCheckout = sdkInstance.createPayPalOneTimePaymentSession({
+          onApprove,
+          onCancel: handleCancel,
+          onError: handleError,
+        });
 
-        const onClick = async () => {
-          try {
-            setIsProcessing(true);
-            const checkoutOptionsPromise = createOrder();
-            await paypalCheckout.start(
-              { paymentFlow: "auto" },
-              checkoutOptionsPromise,
-            );
-          } catch (e: any) {
-            console.error(e);
-            onError(e.message || "Errore checkout PayPal");
-            setIsProcessing(false);
-          }
-        };
-
-        const paypalButton = document.getElementById("paypal-b2b-button");
-        if (paypalButton) {
-          paypalButton.addEventListener("click", onClick);
-        }
+        // Store the checkout instance in ref for later use
+        paypalCheckoutRef.current = paypalCheckout;
 
         setSdkReady(true);
         setIsLoading(false);
-
-        return () => {
-          if (paypalButton) {
-            paypalButton.removeEventListener("click", onClick);
-          }
-        };
       } catch (e: any) {
         console.error(e);
         setIsLoading(false);
@@ -173,7 +152,25 @@ export default function PayPalButton({
     };
 
     loadPayPalSDK();
-  }, []);
+  }, [onApprove, handleCancel, handleError, onError]);
+
+  // Handle button click
+  const handleClick = useCallback(async () => {
+    if (!paypalCheckoutRef.current || disabled || isProcessing) return;
+    
+    try {
+      setIsProcessing(true);
+      const checkoutOptionsPromise = createOrder();
+      await paypalCheckoutRef.current.start(
+        { paymentFlow: "auto" },
+        checkoutOptionsPromise,
+      );
+    } catch (e: any) {
+      console.error(e);
+      onError(e.message || "Errore checkout PayPal");
+      setIsProcessing(false);
+    }
+  }, [createOrder, disabled, isProcessing, onError]);
 
   if (isLoading) {
     return (
@@ -194,7 +191,8 @@ export default function PayPalButton({
 
   return (
     <Button
-      id="paypal-b2b-button"
+      ref={buttonRef}
+      onClick={handleClick}
       disabled={disabled || isProcessing}
       className="w-full bg-[#0070ba] hover:bg-[#003087] text-white"
       data-testid="button-paypal-checkout"
