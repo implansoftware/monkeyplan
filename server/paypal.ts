@@ -49,7 +49,7 @@ function createPayPalClient(clientId: string, clientSecret: string) {
       oAuthClientSecret: clientSecret,
     },
     timeout: 0,
-    environment: Environment.Production, // Always use Production for live PayPal credentials
+    environment: Environment.Sandbox, // Use Sandbox for testing with sandbox credentials
     logging: {
       logLevel: LogLevel.Info,
       logRequest: { logBody: true },
