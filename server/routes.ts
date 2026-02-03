@@ -28001,7 +28001,7 @@ export function registerRoutes(app: Express): Server {
       let result;
       if (resellerId && statusFilter && statusFilter !== "all") {
         result = await db.execute(sql`
-          SELECT sh.*, so.order_number, so.shipping_name as customer_name
+          SELECT sh.*, so.order_number, so.shipping_recipient as customer_name
           FROM sales_order_shipments sh
           INNER JOIN sales_orders so ON sh.order_id = so.id
           WHERE so.reseller_id = ${resellerId} AND sh.status = ${statusFilter}
@@ -28009,7 +28009,7 @@ export function registerRoutes(app: Express): Server {
         `);
       } else if (resellerId) {
         result = await db.execute(sql`
-          SELECT sh.*, so.order_number, so.shipping_name as customer_name
+          SELECT sh.*, so.order_number, so.shipping_recipient as customer_name
           FROM sales_order_shipments sh
           INNER JOIN sales_orders so ON sh.order_id = so.id
           WHERE so.reseller_id = ${resellerId}
@@ -28017,7 +28017,7 @@ export function registerRoutes(app: Express): Server {
         `);
       } else if (statusFilter && statusFilter !== "all") {
         result = await db.execute(sql`
-          SELECT sh.*, so.order_number, so.shipping_name as customer_name
+          SELECT sh.*, so.order_number, so.shipping_recipient as customer_name
           FROM sales_order_shipments sh
           INNER JOIN sales_orders so ON sh.order_id = so.id
           WHERE sh.status = ${statusFilter}
@@ -28025,7 +28025,7 @@ export function registerRoutes(app: Express): Server {
         `);
       } else {
         result = await db.execute(sql`
-          SELECT sh.*, so.order_number, so.shipping_name as customer_name
+          SELECT sh.*, so.order_number, so.shipping_recipient as customer_name
           FROM sales_order_shipments sh
           INNER JOIN sales_orders so ON sh.order_id = so.id
           ORDER BY sh.created_at DESC
