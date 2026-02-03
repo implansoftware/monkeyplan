@@ -27979,6 +27979,56 @@ export function registerRoutes(app: Express): Server {
   // E-COMMERCE: SHIPMENTS
   // ==========================================
 
+  // GET /api/shipments - List all shipments for reseller
+  app.get("/api/shipments", requireAuth, async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Non autenticato" });
+      
+      const allowedRoles = ["admin", "admin_staff", "reseller", "reseller_staff", "sub_reseller"];
+      if (!allowedRoles.includes(req.user.role)) {
+        return res.status(403).json({ error: "Accesso negato" });
+      }
+      
+      const { status } = req.query;
+      
+      // Get reseller ID based on role
+      let resellerId: string | null = null;
+      if (["reseller", "reseller_staff", "sub_reseller"].includes(req.user.role)) {
+        resellerId = req.user.role === "reseller" ? req.user.id : req.user.resellerId || null;
+      }
+      
+      // Build query: join shipments with orders to filter by reseller
+      const conditions: any[] = [];
+      if (resellerId) {
+        conditions.push(eq(salesOrders.resellerId, resellerId));
+      }
+      if (status && status !== "all") {
+        conditions.push(eq(salesOrderShipments.status, status as string));
+      }
+      
+      const results = await db.select({
+        shipment: salesOrderShipments,
+        orderNumber: salesOrders.orderNumber,
+        customerName: salesOrders.shippingName
+      })
+        .from(salesOrderShipments)
+        .innerJoin(salesOrders, eq(salesOrderShipments.orderId, salesOrders.id))
+        .where(conditions.length > 0 ? and(...conditions) : undefined)
+        .orderBy(desc(salesOrderShipments.createdAt));
+      
+      // Flatten results
+      const shipments = results.map(r => ({
+        ...r.shipment,
+        orderNumber: r.orderNumber,
+        customerName: r.customerName
+      }));
+      
+      res.json(shipments);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   app.get("/api/sales-orders/:orderId/shipments", requireAuth, async (req, res) => {
     try {
       const shipments = await storage.listSalesOrderShipments(req.params.orderId);
