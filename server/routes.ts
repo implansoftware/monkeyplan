@@ -27788,10 +27788,12 @@ export function registerRoutes(app: Express): Server {
         }
       }
       
-      // Calcola IVA 22% (scorporata - i prezzi sono IVA inclusa)
+      // Calcola IVA dal listino prezzi cliente (scorporata - i prezzi sono IVA inclusa)
+      const customerPriceList = await storage.getPriceListForTarget(resellerId, "customer");
+      const vatRate = (customerPriceList as any)?.defaultVatRate ?? 22;
       const subtotal = cart.subtotal || 0;
       const discount = cart.discount || 0;
-      const taxAmount = Math.round((subtotal * 22 / 122) * 100) / 100;
+      const taxAmount = vatRate > 0 ? Math.round((subtotal * vatRate / (100 + vatRate)) * 100) / 100 : 0;
       const total = subtotal - discount + shippingCost;
       
       const orderNumber = await storage.generateOrderNumber(resellerId);
