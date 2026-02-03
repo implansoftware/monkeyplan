@@ -76,23 +76,41 @@ export async function createPayPalOrderHandler(
   clientSecret: string,
   amount: string,
   currency: string,
-  intent: string
+  intent: string,
+  returnUrl?: string,
+  cancelUrl?: string
 ) {
   const client = createPayPalClient(clientId, clientSecret);
   const ordersController = new OrdersController(client);
   
-  const collect = {
-    body: {
-      intent: intent as any, // CheckoutPaymentIntent enum value
-      purchaseUnits: [
-        {
-          amount: {
-            currencyCode: currency,
-            value: amount,
-          },
+  const orderBody: any = {
+    intent: intent as any, // CheckoutPaymentIntent enum value
+    purchaseUnits: [
+      {
+        amount: {
+          currencyCode: currency,
+          value: amount,
         },
-      ],
-    },
+      },
+    ],
+  };
+  
+  // Add application_context for proper redirect handling
+  if (returnUrl || cancelUrl) {
+    orderBody.paymentSource = {
+      paypal: {
+        experienceContext: {
+          returnUrl: returnUrl || cancelUrl,
+          cancelUrl: cancelUrl || returnUrl,
+          userAction: "PAY_NOW",
+          brandName: "MonkeyPlan",
+        },
+      },
+    };
+  }
+  
+  const collect = {
+    body: orderBody,
     prefer: "return=minimal",
   };
   

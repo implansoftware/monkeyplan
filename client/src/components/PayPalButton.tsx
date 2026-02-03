@@ -40,10 +40,13 @@ export default function PayPalButton({
   const buttonRef = useRef<HTMLButtonElement>(null);
 
   const createOrder = useCallback(async () => {
+    const currentUrl = window.location.href;
     const orderPayload = {
       amount: amount,
       currency: currency,
       intent: "CAPTURE",
+      returnUrl: currentUrl,
+      cancelUrl: currentUrl,
     };
     const response = await fetch("/paypal/order", {
       method: "POST",

@@ -8595,7 +8595,7 @@ export function registerRoutes(app: Express): Server {
   // POST /paypal/order - Create PayPal order
   app.post("/paypal/order", requireAuth, async (req, res) => {
     try {
-      const { amount, currency, intent } = req.body;
+      const { amount, currency, intent, returnUrl, cancelUrl } = req.body;
       
       if (!amount || isNaN(parseFloat(amount)) || parseFloat(amount) <= 0) {
         return res.status(400).json({ error: "Importo non valido" });
@@ -8618,7 +8618,7 @@ export function registerRoutes(app: Express): Server {
       }
       
       const decryptedSecret = decryptSecret(config.paypalClientSecret);
-      const result = await createPayPalOrderHandler(config.paypalClientId, decryptedSecret, amount, currency, intent);
+      const result = await createPayPalOrderHandler(config.paypalClientId, decryptedSecret, amount, currency, intent, returnUrl, cancelUrl);
       res.status(result.statusCode).json(result.body);
     } catch (error: any) {
       console.error("PayPal order creation error:", error);
