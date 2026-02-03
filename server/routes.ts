@@ -31680,7 +31680,7 @@ export function registerRoutes(app: Express): Server {
       
       // Validate items and calculate totals
       let subtotal = 0;
-      const orderItems: { productId: string; quantity: number; unitPrice: number }[] = [];
+      const orderItems: { productId: string; quantity: number; unitPrice: number; productName: string; productSku: string | null; totalPrice: number }[] = [];
       
       for (const item of items) {
         const product = await storage.getProduct(item.productId);
@@ -31700,11 +31700,15 @@ export function registerRoutes(app: Express): Server {
           return res.status(400).json({ error: `Prodotto ${product.name} non ha un prezzo valido` });
         }
         
-        subtotal += price * item.quantity;
+        const itemTotal = price * item.quantity;
+        subtotal += itemTotal;
         orderItems.push({
           productId: item.productId,
           quantity: item.quantity,
           unitPrice: price,
+          productName: product.name,
+          productSku: product.sku || null,
+          totalPrice: itemTotal,
         });
       }
       
@@ -31737,8 +31741,11 @@ export function registerRoutes(app: Express): Server {
         await storage.createRepairCenterPurchaseOrderItem({
           orderId: order.id,
           productId: item.productId,
+          productName: item.productName,
+          productSku: item.productSku,
           quantity: item.quantity,
           unitPrice: item.unitPrice,
+          totalPrice: item.totalPrice,
         });
       }
       
