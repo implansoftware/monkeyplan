@@ -31279,18 +31279,23 @@ export function registerRoutes(app: Express): Server {
         }
       }
       
+      // Determine if automatic payment method (PayPal/Stripe) - auto-approve
+      const finalPaymentMethod = paymentMethod || 'bank_transfer';
+      const isAutomaticPayment = finalPaymentMethod === 'paypal' || finalPaymentMethod === 'stripe';
+      
       // Create order
       const order = await storage.createMarketplaceOrder({
         buyerResellerId: req.user.id,
         sellerResellerId,
-        status: 'pending',
+        status: isAutomaticPayment ? 'approved' : 'pending',
         subtotal,
         discountAmount: 0,
         shippingCost,
         total: subtotal + shippingCost,
-        paymentMethod: paymentMethod || 'bank_transfer',
+        paymentMethod: finalPaymentMethod,
         shippingMethodId: shippingMethodId || null,
         buyerNotes,
+        approvedAt: isAutomaticPayment ? new Date() : null,
       });
       
       // Create order items
@@ -31301,6 +31306,77 @@ export function registerRoutes(app: Express): Server {
         });
       }
       
+      // For automatic payments (PayPal/Stripe): create payment record and transfer stock
+      if (isAutomaticPayment) {
+        // Create payment record
+        await storage.createSalesOrderPayment({
+          orderId: order.id,
+          orderType: 'marketplace',
+          amount: subtotal + shippingCost,
+          paymentMethod: finalPaymentMethod,
+          status: 'completed',
+          notes: `Pagamento automatico ${finalPaymentMethod.toUpperCase()} per ordine Marketplace ${order.orderNumber}`,
+        });
+        
+        // Get warehouses for stock transfer
+        const sellerWarehouseForTransfer = await storage.getWarehouseByOwner('reseller', sellerResellerId);
+        const buyerWarehouse = await storage.ensureDefaultWarehouse('reseller', req.user.id, 'Buyer Reseller');
+        
+        if (sellerWarehouseForTransfer && buyerWarehouse) {
+          // Create warehouse transfer
+          const transferNumber = await storage.generateTransferNumber();
+          const transfer = await storage.createWarehouseTransfer({
+            transferNumber,
+            sourceWarehouseId: sellerWarehouseForTransfer.id,
+            destinationWarehouseId: buyerWarehouse.id,
+            status: 'completed',
+            notes: `Ordine Marketplace ${order.orderNumber} (auto-approvato)`,
+            requestedBy: req.user.id,
+            completedAt: new Date(),
+          });
+          
+          // Transfer stock and create movements
+          for (const item of validatedItems) {
+            // Remove from seller
+            await storage.updateWarehouseStockQuantity(sellerWarehouseForTransfer.id, item.productId, -item.quantity);
+            await storage.createWarehouseMovement({
+              warehouseId: sellerWarehouseForTransfer.id,
+              productId: item.productId,
+              quantity: -item.quantity,
+              movementType: 'trasferimento_out',
+              referenceType: 'marketplace_order',
+              referenceId: order.id,
+              notes: `Vendita Marketplace ${order.orderNumber} → ${buyerWarehouse.name}`,
+              createdBy: req.user.id,
+            });
+            
+            // Add to buyer
+            await storage.updateWarehouseStockQuantity(buyerWarehouse.id, item.productId, item.quantity);
+            await storage.createWarehouseMovement({
+              warehouseId: buyerWarehouse.id,
+              productId: item.productId,
+              quantity: item.quantity,
+              movementType: 'trasferimento_in',
+              referenceType: 'marketplace_order',
+              referenceId: order.id,
+              notes: `Acquisto Marketplace ${order.orderNumber} ← ${sellerWarehouseForTransfer.name}`,
+              createdBy: req.user.id,
+            });
+            
+            // Create transfer item
+            await storage.createWarehouseTransferItem({
+              transferId: transfer.id,
+              productId: item.productId,
+              requestedQuantity: item.quantity,
+            });
+          }
+          
+          // Update order with transfer reference
+          await storage.updateMarketplaceOrder(order.id, {
+            warehouseTransferId: transfer.id,
+          });
+        }
+      }
       
       // Notify seller about new order
       const buyer = await storage.getUser(req.user.id);
@@ -31310,8 +31386,10 @@ export function registerRoutes(app: Express): Server {
       await storage.createNotification({
         userId: sellerResellerId,
         type: 'system',
-        title: 'Nuovo ordine Marketplace',
-        message: `${buyerName} ha effettuato un ordine di ${itemCount} prodotti per ${(subtotal / 100).toFixed(2)} €. Ordine #${order.orderNumber}`,
+        title: isAutomaticPayment ? 'Nuovo ordine Marketplace (Approvato)' : 'Nuovo ordine Marketplace',
+        message: isAutomaticPayment 
+          ? `${buyerName} ha acquistato ${itemCount} prodotti per ${(subtotal / 100).toFixed(2)} €. Ordine #${order.orderNumber} già approvato (pagamento ${finalPaymentMethod.toUpperCase()}).`
+          : `${buyerName} ha effettuato un ordine di ${itemCount} prodotti per ${(subtotal / 100).toFixed(2)} €. Ordine #${order.orderNumber}`,
         data: JSON.stringify({ orderId: order.id, orderNumber: order.orderNumber, buyerId: req.user.id }),
       });
       const createdItems = await storage.listMarketplaceOrderItems(order.id);
