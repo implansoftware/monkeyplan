@@ -368,14 +368,16 @@ export default function ResellerPayments() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <Label className="text-muted-foreground">Ordine</Label>
-                  <Link 
-                    href={`/reseller/sales-orders/${selectedPayment?.orderId}`}
-                    className="font-medium text-primary hover:underline cursor-pointer"
-                    onClick={() => setShowDetailDialog(false)}
-                    data-testid="link-order-detail"
-                  >
-                    {(selectedPayment as any)?.orderNumber || selectedPayment?.orderId?.slice(0, 12)}
-                  </Link>
+                  <p>
+                    <Link 
+                      href={`/reseller/sales-orders/${selectedPayment?.orderId}`}
+                      className="font-medium text-primary hover:underline cursor-pointer"
+                      onClick={() => setShowDetailDialog(false)}
+                      data-testid="link-order-detail"
+                    >
+                      {(selectedPayment as any)?.orderNumber || selectedPayment?.orderId?.slice(0, 12)}
+                    </Link>
+                  </p>
                 </div>
                 <div>
                   <Label className="text-muted-foreground">Totale Ordine</Label>
