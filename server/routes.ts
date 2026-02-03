@@ -31662,7 +31662,7 @@ export function registerRoutes(app: Express): Server {
         return res.status(401).json({ error: "Non autenticato" });
       }
       
-      const { sellerResellerId, items, paymentMethod, buyerNotes } = req.body;
+      const { sellerResellerId, items, paymentMethod, buyerNotes, shippingMethodId } = req.body;
       
       if (!sellerResellerId || !items || !Array.isArray(items) || items.length === 0) {
         return res.status(400).json({ error: "Dati ordine non validi" });
