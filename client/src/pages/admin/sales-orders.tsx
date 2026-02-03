@@ -456,14 +456,25 @@ export default function AdminSalesOrders() {
                       </div>
                     ) : orderDetail?.items && orderDetail.items.length > 0 ? (
                       orderDetail.items.map((item) => (
-                        <div key={item.id} className="flex justify-between items-center p-3 bg-muted/50 rounded-lg">
-                          <div className="flex-1">
-                            <p className="font-medium">{item.productName || 'Prodotto'}</p>
+                        <div key={item.id} className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
+                          <div className="h-12 w-12 rounded-lg bg-muted flex items-center justify-center overflow-hidden flex-shrink-0">
+                            {item.productImage ? (
+                              <img 
+                                src={item.productImage} 
+                                alt={item.productName || 'Prodotto'} 
+                                className="h-full w-full object-cover"
+                              />
+                            ) : (
+                              <Package className="h-6 w-6 text-muted-foreground" />
+                            )}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="font-medium truncate">{item.productName || 'Prodotto'}</p>
                             <p className="text-sm text-muted-foreground">
                               Qtà: {item.quantity} x {formatPrice(item.unitPrice)}
                             </p>
                           </div>
-                          <p className="font-semibold">{formatPrice(item.totalPrice)}</p>
+                          <p className="font-semibold flex-shrink-0">{formatPrice(item.totalPrice)}</p>
                         </div>
                       ))
                     ) : (
