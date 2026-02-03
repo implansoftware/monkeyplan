@@ -185,12 +185,10 @@ export default function CustomerOrderDetail() {
                 <span>{formatPrice(order.shippingCost)}</span>
               </div>
             )}
-            {order.taxAmount > 0 && (
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">IVA (22%)</span>
-                <span>{formatPrice(order.taxAmount)}</span>
-              </div>
-            )}
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">IVA ({order.vatRate ?? 22}%)</span>
+              <span>{formatPrice(order.taxAmount)}</span>
+            </div>
             <Separator />
             <div className="flex justify-between font-semibold text-lg">
               <span>Totale</span>

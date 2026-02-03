@@ -3601,6 +3601,7 @@ export const salesOrders = pgTable("sales_orders", {
   discountCode: text("discount_code"),
   shippingCost: real("shipping_cost").notNull().default(0),
   taxAmount: real("tax_amount").notNull().default(0),
+  vatRate: real("vat_rate").notNull().default(22), // Aliquota IVA % applicata
   total: real("total").notNull(),
   // Indirizzo spedizione (copia al momento ordine)
   shippingAddressId: varchar("shipping_address_id"),

@@ -27826,6 +27826,7 @@ export function registerRoutes(app: Express): Server {
         discountAmount: discount,
         shippingCost: shippingCost,
         taxAmount: taxAmount,
+        vatRate: vatRate,
         total: total,
         shippingAddressId,
         shippingRecipient: shippingAddress?.recipientName,
