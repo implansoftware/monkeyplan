@@ -6658,6 +6658,8 @@ export const paymentConfigurations = pgTable("payment_configurations", {
   paypalEnabled: boolean("paypal_enabled").notNull().default(false),
   paypalEmail: varchar("paypal_email", { length: 254 }),
   paypalMerchantId: varchar("paypal_merchant_id", { length: 50 }),
+  paypalClientId: varchar("paypal_client_id", { length: 100 }),
+  paypalClientSecret: varchar("paypal_client_secret", { length: 500 }), // Encrypted
   
   // Satispay configuration
   satispayEnabled: boolean("satispay_enabled").notNull().default(false),
