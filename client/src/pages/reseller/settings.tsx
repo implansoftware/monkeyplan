@@ -89,6 +89,8 @@ const paymentFormSchema = z.object({
   bic: z.string().max(11).optional().nullable(),
   paypalEnabled: z.boolean().default(false),
   paypalEmail: z.string().email("Email PayPal non valida").optional().nullable().or(z.literal('')),
+  paypalClientId: z.string().optional().nullable().or(z.literal('')),
+  paypalClientSecret: z.string().optional().nullable().or(z.literal('')),
   satispayEnabled: z.boolean().default(false),
   satispayShopId: z.string().max(50).optional().nullable(),
 });
@@ -101,7 +103,7 @@ export default function ResellerSettings() {
   const [hourlyRateEuros, setHourlyRateEuros] = useState<string>("");
   const [slaThresholds, setSlaThresholds] = useState<SLAThresholdsResponse>(defaultSLAThresholds);
 
-  const { data: paymentConfig, isLoading: isLoadingPayment } = useQuery<PaymentConfiguration | null>({
+  const { data: paymentConfig, isLoading: isLoadingPayment } = useQuery<(PaymentConfiguration & { hasPaypalSecret?: boolean }) | null>({
     queryKey: ['/api/reseller/payment-config'],
   });
 
@@ -140,6 +142,8 @@ export default function ResellerSettings() {
       bic: '',
       paypalEnabled: false,
       paypalEmail: '',
+      paypalClientId: '',
+      paypalClientSecret: '',
       satispayEnabled: false,
       satispayShopId: '',
     },
@@ -151,6 +155,8 @@ export default function ResellerSettings() {
       bic: paymentConfig.bic || '',
       paypalEnabled: paymentConfig.paypalEnabled,
       paypalEmail: paymentConfig.paypalEmail || '',
+      paypalClientId: paymentConfig.paypalClientId || '',
+      paypalClientSecret: '',
       satispayEnabled: paymentConfig.satispayEnabled,
       satispayShopId: paymentConfig.satispayShopId || '',
     } : undefined,
@@ -272,6 +278,14 @@ export default function ResellerSettings() {
   });
 
   const onSubmit = (data: PaymentFormData) => {
+    // Validate: Client Secret is required when enabling PayPal for the first time
+    if (data.paypalEnabled && !paymentConfig?.hasPaypalSecret && (!data.paypalClientSecret || !data.paypalClientSecret.trim())) {
+      form.setError("paypalClientSecret", {
+        type: "manual",
+        message: "Client Secret è obbligatorio per abilitare PayPal"
+      });
+      return;
+    }
     updatePaymentMutation.mutate(data);
   };
 
@@ -935,6 +949,7 @@ export default function ResellerSettings() {
                   />
 
                   {form.watch('paypalEnabled') && (
+                    <>
                     <FormField
                       control={form.control}
                       name="paypalEmail"
@@ -957,6 +972,56 @@ export default function ResellerSettings() {
                         </FormItem>
                       )}
                     />
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <FormField
+                        control={form.control}
+                        name="paypalClientId"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Client ID</FormLabel>
+                            <FormControl>
+                              <Input 
+                                placeholder="AVz..." 
+                                {...field}
+                                value={field.value || ''}
+                                data-testid="input-paypal-client-id"
+                              />
+                            </FormControl>
+                            <FormDescription>
+                              Il Client ID del tuo account PayPal Developer
+                            </FormDescription>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name="paypalClientSecret"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Client Secret</FormLabel>
+                            <FormControl>
+                              <Input 
+                                type="password"
+                                placeholder="••••••••••••" 
+                                {...field}
+                                value={field.value || ''}
+                                data-testid="input-paypal-client-secret"
+                              />
+                            </FormControl>
+                            <FormDescription>
+                              {paymentConfig?.hasPaypalSecret 
+                                ? "Lascia vuoto per mantenere il valore esistente"
+                                : "Richiesto per abilitare PayPal SDK"
+                              }
+                            </FormDescription>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                    </>
                   )}
 
                   <Separator />
