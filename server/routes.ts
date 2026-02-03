@@ -27957,7 +27957,18 @@ export function registerRoutes(app: Express): Server {
         return res.status(403).json({ error: "Accesso negato" });
       }
       
-      const updated = await storage.updateSalesOrderPayment(req.params.id, req.body);
+      const updates = { ...req.body };
+      if (updates.paidAt && typeof updates.paidAt === "string") {
+        updates.paidAt = new Date(updates.paidAt);
+      }
+      if (updates.failedAt && typeof updates.failedAt === "string") {
+        updates.failedAt = new Date(updates.failedAt);
+      }
+      if (updates.refundedAt && typeof updates.refundedAt === "string") {
+        updates.refundedAt = new Date(updates.refundedAt);
+      }
+      
+      const updated = await storage.updateSalesOrderPayment(req.params.id, updates);
       res.json(updated);
     } catch (error: any) {
       res.status(500).json({ error: error.message });
