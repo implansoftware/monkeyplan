@@ -27784,7 +27784,7 @@ export function registerRoutes(app: Express): Server {
       if (shippingMethodId) {
         const shippingMethod = await storage.getShippingMethod(shippingMethodId);
         if (shippingMethod) {
-          shippingCost = (shippingMethod.priceCents || 0) / 100;
+          shippingCost = shippingMethod.priceCents || 0;
         }
       }
       
