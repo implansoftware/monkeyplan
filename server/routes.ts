@@ -8170,7 +8170,12 @@ export function registerRoutes(app: Express): Server {
       const entityId = req.user.id;
       
       const config = await storage.getPaymentConfiguration(entityType, entityId);
-      res.json(config);
+      const response = config ? {
+        ...config,
+        hasPaypalSecret: config.paypalClientSecret && config.paypalClientSecret.length > 0,
+        paypalClientSecret: undefined
+      } : null;
+      res.json(response);
     } catch (error: any) {
       res.status(500).send(error.message);
     }
@@ -8184,8 +8189,35 @@ export function registerRoutes(app: Express): Server {
       const entityType = req.user.role === "sub_reseller" ? "sub_reseller" : "reseller";
       const entityId = req.user.id;
       
+      const { paypalEnabled, paypalEmail, paypalClientId, paypalClientSecret, ...restBody } = req.body;
+      
+      if (paypalEnabled && (!paypalEmail || !paypalEmail.trim())) {
+        return res.status(400).send("Email PayPal è obbligatoria quando PayPal è abilitato");
+      }
+      if (paypalEnabled && (!paypalClientId || !paypalClientId.trim())) {
+        return res.status(400).send("Client ID PayPal è obbligatorio quando PayPal è abilitato");
+      }
+      
+      const existingConfig = await storage.getPaymentConfiguration(entityType, entityId);
+      const hasExistingSecret = existingConfig?.paypalClientSecret && existingConfig.paypalClientSecret.length > 0;
+      
+      if (paypalEnabled && !paypalClientSecret && !hasExistingSecret) {
+        return res.status(400).send("Client Secret PayPal è obbligatorio per abilitare PayPal");
+      }
+      
+      let finalPaypalSecret = null;
+      if (paypalClientSecret) {
+        finalPaypalSecret = encryptSecret(paypalClientSecret);
+      } else if (hasExistingSecret) {
+        finalPaypalSecret = existingConfig.paypalClientSecret;
+      }
+      
       const data = {
-        ...req.body,
+        ...restBody,
+        paypalEnabled: paypalEnabled ?? false,
+        paypalEmail: paypalEmail || null,
+        paypalClientId: paypalClientId || null,
+        paypalClientSecret: finalPaypalSecret,
         entityType,
         entityId
       };
