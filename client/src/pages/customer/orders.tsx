@@ -38,8 +38,8 @@ export default function CustomerOrders() {
     queryKey: ['/api/my-orders']
   });
   
-  const formatPrice = (value: number) => {
-    return new Intl.NumberFormat('it-IT', { style: 'currency', currency: 'EUR' }).format(value);
+  const formatPrice = (cents: number) => {
+    return new Intl.NumberFormat('it-IT', { style: 'currency', currency: 'EUR' }).format(cents / 100);
   };
   
   const formatDate = (date: Date | string) => {
