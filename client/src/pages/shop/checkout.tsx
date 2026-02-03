@@ -17,6 +17,7 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useForm } from "react-hook-form";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import type { Cart, CartItem, CustomerAddress, ShippingMethod } from "@shared/schema";
+import PayPalButton from "@/components/PayPalButton";
 
 interface CartItemWithProduct extends CartItem {
   product: { name: string; images?: string[]; vatRate?: number } | null;
@@ -185,6 +186,7 @@ export default function ShopCheckout() {
   
   const selectedMethod = shippingMethods?.find(m => m.id === selectedShippingMethod);
   const shippingCost = selectedMethod ? selectedMethod.priceCents / 100 : 0;
+  const grandTotal = (cart?.subtotal || 0) - (cart?.discount || 0) + shippingCost;
   const canPlaceOrder = selectedShippingAddress && selectedShippingMethod && paymentMethod && paymentConfig?.hasAnyMethod;
   
   return (
@@ -550,25 +552,56 @@ export default function ShopCheckout() {
               )}
             </CardContent>
             <CardFooter>
-              <Button 
-                className="w-full" 
-                size="lg"
-                onClick={() => placeOrder.mutate()}
-                disabled={!canPlaceOrder || placeOrder.isPending}
-                data-testid="button-place-order"
-              >
-                {placeOrder.isPending ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Elaborazione...
-                  </>
-                ) : (
-                  <>
-                    <Check className="mr-2 h-4 w-4" />
-                    Conferma ordine
-                  </>
-                )}
-              </Button>
+              {paymentMethod === "paypal" && canPlaceOrder ? (
+                <PayPalButton
+                  amount={grandTotal.toFixed(2)}
+                  currency="EUR"
+                  onSuccess={(orderId) => {
+                    apiRequest('POST', `/api/shop/${resellerId}/checkout`, {
+                      shippingAddressId: selectedShippingAddress,
+                      billingAddressId: sameBillingAddress ? selectedShippingAddress : selectedBillingAddress,
+                      shippingMethodId: selectedShippingMethod,
+                      paymentMethod: "paypal",
+                      customerNotes: customerNotes ? `${customerNotes}\n[PayPal Order ID: ${orderId}]` : `[PayPal Order ID: ${orderId}]`
+                    })
+                      .then(res => res.json())
+                      .then((data: any) => {
+                        queryClient.invalidateQueries({ queryKey: ['/api/shop', resellerId, 'cart'] });
+                        toast({ title: "Ordine confermato!", description: `Ordine #${data.orderNumber}` });
+                        setLocation(`/customer/orders/${data.order?.id || ''}`);
+                      })
+                      .catch((error: any) => {
+                        toast({ title: "Errore", description: error.message, variant: "destructive" });
+                      });
+                  }}
+                  onError={(error) => {
+                    toast({ title: "Errore PayPal", description: error, variant: "destructive" });
+                  }}
+                  onCancel={() => {
+                    toast({ title: "Pagamento annullato", description: "Hai annullato il pagamento PayPal" });
+                  }}
+                />
+              ) : (
+                <Button 
+                  className="w-full" 
+                  size="lg"
+                  onClick={() => placeOrder.mutate()}
+                  disabled={!canPlaceOrder || placeOrder.isPending}
+                  data-testid="button-place-order"
+                >
+                  {placeOrder.isPending ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Elaborazione...
+                    </>
+                  ) : (
+                    <>
+                      <Check className="mr-2 h-4 w-4" />
+                      Conferma ordine
+                    </>
+                  )}
+                </Button>
+              )}
             </CardFooter>
           </Card>
         </div>
