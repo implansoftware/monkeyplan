@@ -554,7 +554,7 @@ export default function ShopCheckout() {
             <CardFooter>
               {paymentMethod === "paypal" && canPlaceOrder ? (
                 <PayPalButton
-                  amount={grandTotal.toFixed(2)}
+                  amount={(grandTotal / 100).toFixed(2)}
                   currency="EUR"
                   onSuccess={(orderId) => {
                     apiRequest('POST', `/api/shop/${resellerId}/checkout`, {
