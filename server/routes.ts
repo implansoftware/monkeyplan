@@ -27997,32 +27997,28 @@ export function registerRoutes(app: Express): Server {
         resellerId = req.user.role === "reseller" ? req.user.id : req.user.resellerId || null;
       }
       
-      // Build query with proper WHERE clause
-      let query = db.select({
+      // Build WHERE condition
+      let whereCondition;
+      if (resellerId && status && status !== "all") {
+        whereCondition = and(
+          eq(salesOrders.resellerId, resellerId),
+          eq(salesOrderShipments.status, status as string)
+        );
+      } else if (resellerId) {
+        whereCondition = eq(salesOrders.resellerId, resellerId);
+      } else if (status && status !== "all") {
+        whereCondition = eq(salesOrderShipments.status, status as string);
+      }
+      
+      const results = await db.select({
         shipment: salesOrderShipments,
         orderNumber: salesOrders.orderNumber,
         customerName: salesOrders.shippingName
       })
         .from(salesOrderShipments)
-        .innerJoin(salesOrders, eq(salesOrderShipments.orderId, salesOrders.id));
-      
-      // Apply filters
-      const conditions = [];
-      if (resellerId) {
-        conditions.push(eq(salesOrders.resellerId, resellerId));
-      }
-      if (status && status !== "all") {
-        conditions.push(eq(salesOrderShipments.status, status as string));
-      }
-      
-      let results;
-      if (conditions.length === 0) {
-        results = await query.orderBy(desc(salesOrderShipments.createdAt));
-      } else if (conditions.length === 1) {
-        results = await query.where(conditions[0]).orderBy(desc(salesOrderShipments.createdAt));
-      } else {
-        results = await query.where(and(...conditions)).orderBy(desc(salesOrderShipments.createdAt));
-      }
+        .innerJoin(salesOrders, eq(salesOrderShipments.orderId, salesOrders.id))
+        .where(whereCondition)
+        .orderBy(desc(salesOrderShipments.createdAt));
       
       // Flatten results
       const shipments = results.map(r => ({
@@ -28036,6 +28032,7 @@ export function registerRoutes(app: Express): Server {
       res.status(500).json({ error: error.message });
     }
   });
+
 
 
   app.get("/api/sales-orders/:orderId/shipments", requireAuth, async (req, res) => {
