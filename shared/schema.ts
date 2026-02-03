@@ -55,6 +55,7 @@ export const b2bPaymentMethodEnum = pgEnum("b2b_payment_method", [
   "bank_transfer",     // Bonifico bancario
   "stripe",            // Pagamento Stripe
   "credit",            // Credito/Fido
+  "paypal",            // Pagamento PayPal
 ]);
 export const notificationTypeEnum = pgEnum("notification_type", ["repair_update", "sla_warning", "review_request", "message", "system", "b2b_order_received"]);
 // RIMOSSO: diagnosisSeverityEnum - non più necessario

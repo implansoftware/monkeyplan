@@ -53,6 +53,7 @@ import { calculateRepairPriority } from "./helpers/priorityCalculation";
 import { db } from "./db";
 import { sql, eq, and, desc } from "drizzle-orm";
 import { salesOrderPayments, salesOrders, salesOrderShipments, users } from "@shared/schema";
+import { encryptSecret, decryptSecret, getPayPalClientToken, createPayPalOrderHandler, capturePayPalOrderHandler } from "./paypal";
 
 const scryptAsync = promisify(scrypt);
 
@@ -8169,7 +8170,7 @@ export function registerRoutes(app: Express): Server {
       const entityId = req.user.id;
       
       const config = await storage.getPaymentConfiguration(entityType, entityId);
-      res.json(config || null);
+      res.json(config);
     } catch (error: any) {
       res.status(500).send(error.message);
     }
@@ -8265,7 +8266,13 @@ export function registerRoutes(app: Express): Server {
       if (!req.user) return res.status(401).send("Unauthorized");
       
       const config = await storage.getPaymentConfiguration("admin", req.user.id);
-      res.json(config || null);
+      // Add hasPaypalSecret flag for frontend validation
+      const response = config ? {
+        ...config,
+        hasPaypalSecret: config.paypalClientSecret && config.paypalClientSecret.length > 0,
+        paypalClientSecret: undefined // Never send encrypted secret to client
+      } : null;
+      res.json(response);
     } catch (error: any) {
       res.status(500).send(error.message);
     }
@@ -8276,16 +8283,35 @@ export function registerRoutes(app: Express): Server {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
       
-      const { bankTransferEnabled, accountHolder, iban, bic, bankName, stripeEnabled, paypalEnabled, paypalEmail, satispayEnabled } = req.body;
+      const { bankTransferEnabled, accountHolder, iban, bic, bankName, stripeEnabled, paypalEnabled, paypalEmail, paypalClientId, paypalClientSecret, satispayEnabled } = req.body;
       
       // Validate: if bank transfer is enabled, require IBAN and account holder
       if (bankTransferEnabled && (!iban || !iban.trim() || !accountHolder || !accountHolder.trim())) {
         return res.status(400).send("IBAN e intestatario sono obbligatori quando il bonifico è abilitato");
       }
       
-      // Validate: if PayPal is enabled, require email
+      // Validate: if PayPal is enabled, require email and client credentials
       if (paypalEnabled && (!paypalEmail || !paypalEmail.trim())) {
         return res.status(400).send("Email PayPal è obbligatoria quando PayPal è abilitato");
+      }
+      if (paypalEnabled && (!paypalClientId || !paypalClientId.trim())) {
+        return res.status(400).send("Client ID PayPal è obbligatorio quando PayPal è abilitato");
+      }
+      
+      // Check if we need a new secret or can preserve existing one
+      const existingConfig = await storage.getPaymentConfiguration("admin", req.user.id);
+      const hasExistingSecret = existingConfig?.paypalClientSecret && existingConfig.paypalClientSecret.length > 0;
+      
+      if (paypalEnabled && !paypalClientSecret && !hasExistingSecret) {
+        return res.status(400).send("Client Secret PayPal è obbligatorio per abilitare PayPal");
+      }
+      
+      // Preserve existing secret if not provided
+      let finalPaypalSecret: string | null = null;
+      if (paypalClientSecret) {
+        finalPaypalSecret = encryptSecret(paypalClientSecret);
+      } else if (hasExistingSecret) {
+        finalPaypalSecret = existingConfig.paypalClientSecret;
       }
       
       const data = {
@@ -8297,6 +8323,8 @@ export function registerRoutes(app: Express): Server {
         stripeEnabled: stripeEnabled ?? false,
         paypalEnabled: paypalEnabled ?? false,
         paypalEmail: paypalEmail || null,
+        paypalClientId: paypalClientId || null,
+        paypalClientSecret: finalPaypalSecret,
         satispayEnabled: satispayEnabled ?? false,
         entityType: "admin" as const,
         entityId: req.user.id
@@ -8451,6 +8479,90 @@ export function registerRoutes(app: Express): Server {
       res.json(publicConfig);
     } catch (error: any) {
       res.status(500).json({ error: error.message });
+    }
+  });
+
+  // ==========================================
+  // PAYPAL CHECKOUT ENDPOINTS
+  // ==========================================
+
+  // GET /paypal/setup - Get PayPal client token for SDK initialization
+  app.get("/paypal/setup", requireAuth, async (req, res) => {
+    try {
+      // Get admin PayPal config
+      const allUsers = await storage.listUsers();
+      const admin = allUsers.find(u => u.role === "admin");
+      if (!admin) return res.status(500).json({ error: "Admin non trovato" });
+      
+      const config = await storage.getPaymentConfiguration("admin", admin.id);
+      if (!config?.paypalEnabled || !config.paypalClientId || !config.paypalClientSecret) {
+        return res.status(400).json({ error: "PayPal non configurato" });
+      }
+      
+      const decryptedSecret = decryptSecret(config.paypalClientSecret);
+      const clientToken = await getPayPalClientToken(config.paypalClientId, decryptedSecret);
+      res.json({ clientToken });
+    } catch (error: any) {
+      console.error("PayPal setup error:", error);
+      res.status(500).json({ error: "Errore configurazione PayPal" });
+    }
+  });
+
+  // POST /paypal/order - Create PayPal order
+  app.post("/paypal/order", requireAuth, async (req, res) => {
+    try {
+      const { amount, currency, intent } = req.body;
+      
+      if (!amount || isNaN(parseFloat(amount)) || parseFloat(amount) <= 0) {
+        return res.status(400).json({ error: "Importo non valido" });
+      }
+      if (!currency) {
+        return res.status(400).json({ error: "Valuta obbligatoria" });
+      }
+      if (!intent) {
+        return res.status(400).json({ error: "Intent obbligatorio" });
+      }
+      
+      // Get admin PayPal config
+      const allUsers = await storage.listUsers();
+      const admin = allUsers.find(u => u.role === "admin");
+      if (!admin) return res.status(500).json({ error: "Admin non trovato" });
+      
+      const config = await storage.getPaymentConfiguration("admin", admin.id);
+      if (!config?.paypalEnabled || !config.paypalClientId || !config.paypalClientSecret) {
+        return res.status(400).json({ error: "PayPal non configurato" });
+      }
+      
+      const decryptedSecret = decryptSecret(config.paypalClientSecret);
+      const result = await createPayPalOrderHandler(config.paypalClientId, decryptedSecret, amount, currency, intent);
+      res.status(result.statusCode).json(result.body);
+    } catch (error: any) {
+      console.error("PayPal order creation error:", error);
+      res.status(500).json({ error: "Errore creazione ordine PayPal" });
+    }
+  });
+
+  // POST /paypal/order/:orderID/capture - Capture PayPal payment
+  app.post("/paypal/order/:orderID/capture", requireAuth, async (req, res) => {
+    try {
+      const { orderID } = req.params;
+      
+      // Get admin PayPal config
+      const allUsers = await storage.listUsers();
+      const admin = allUsers.find(u => u.role === "admin");
+      if (!admin) return res.status(500).json({ error: "Admin non trovato" });
+      
+      const config = await storage.getPaymentConfiguration("admin", admin.id);
+      if (!config?.paypalEnabled || !config.paypalClientId || !config.paypalClientSecret) {
+        return res.status(400).json({ error: "PayPal non configurato" });
+      }
+      
+      const decryptedSecret = decryptSecret(config.paypalClientSecret);
+      const result = await capturePayPalOrderHandler(config.paypalClientId, decryptedSecret, orderID);
+      res.status(result.statusCode).json(result.body);
+    } catch (error: any) {
+      console.error("PayPal capture error:", error);
+      res.status(500).json({ error: "Errore cattura pagamento PayPal" });
     }
   });
 

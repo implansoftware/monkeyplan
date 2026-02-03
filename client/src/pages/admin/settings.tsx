@@ -89,6 +89,8 @@ const paymentFormSchema = z.object({
   stripeEnabled: z.boolean().default(false),
   paypalEnabled: z.boolean().default(false),
   paypalEmail: z.string().optional(),
+  paypalClientId: z.string().optional(),
+  paypalClientSecret: z.string().optional(),
   satispayEnabled: z.boolean().default(false),
 }).refine((data) => {
   if (data.bankTransferEnabled) {
@@ -105,7 +107,15 @@ const paymentFormSchema = z.object({
   return true;
 }, {
   message: "Email PayPal è obbligatoria quando PayPal è abilitato",
-  path: ["iban"],
+  path: ["paypalEmail"],
+}).refine((data) => {
+  if (data.paypalEnabled) {
+    return data.paypalClientId && data.paypalClientId.trim().length > 0;
+  }
+  return true;
+}, {
+  message: "Client ID è obbligatorio quando PayPal è abilitato",
+  path: ["paypalClientId"],
 });
 
 type PaymentFormValues = z.infer<typeof paymentFormSchema>;
@@ -123,7 +133,7 @@ export default function AdminSettings() {
     queryKey: ["/api/admin/settings/sla-thresholds"],
   });
 
-  const { data: paymentConfig, isLoading: isLoadingPayment } = useQuery<PaymentConfiguration | null>({
+  const { data: paymentConfig, isLoading: isLoadingPayment } = useQuery<(PaymentConfiguration & { hasPaypalSecret?: boolean }) | null>({
     queryKey: ['/api/admin/payment-config'],
   });
 
@@ -138,6 +148,8 @@ export default function AdminSettings() {
       stripeEnabled: false,
       paypalEnabled: false,
       paypalEmail: '',
+      paypalClientId: '',
+      paypalClientSecret: '',
       satispayEnabled: false,
     },
   });
@@ -153,6 +165,8 @@ export default function AdminSettings() {
         stripeEnabled: paymentConfig.stripeEnabled ?? false,
         paypalEnabled: paymentConfig.paypalEnabled ?? false,
         paypalEmail: paymentConfig.paypalEmail || '',
+        paypalClientId: paymentConfig.paypalClientId || '',
+        paypalClientSecret: '', // Never pre-fill secret for security
         satispayEnabled: paymentConfig.satispayEnabled ?? false,
       });
     }
@@ -180,6 +194,14 @@ export default function AdminSettings() {
   });
 
   const onPaymentSubmit = (data: PaymentFormValues) => {
+    // Validate: Client Secret is required when enabling PayPal for the first time
+    if (data.paypalEnabled && !paymentConfig?.hasPaypalSecret && (!data.paypalClientSecret || !data.paypalClientSecret.trim())) {
+      paymentForm.setError("paypalClientSecret", {
+        type: "manual",
+        message: "Client Secret è obbligatorio per abilitare PayPal"
+      });
+      return;
+    }
     updatePaymentMutation.mutate(data);
   };
 
@@ -732,23 +754,69 @@ export default function AdminSettings() {
                       />
 
                       {paymentForm.watch("paypalEnabled") && (
-                        <FormField
-                          control={paymentForm.control}
-                          name="paypalEmail"
-                          render={({ field }) => (
-                            <FormItem className="ml-12">
-                              <FormLabel>Email PayPal</FormLabel>
-                              <FormControl>
-                                <Input 
-                                  placeholder="email@paypal.com" 
-                                  {...field}
-                                  data-testid="input-admin-paypal-email"
-                                />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
+                        <div className="ml-12 space-y-4">
+                          <FormField
+                            control={paymentForm.control}
+                            name="paypalEmail"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Email PayPal</FormLabel>
+                                <FormControl>
+                                  <Input 
+                                    placeholder="email@paypal.com" 
+                                    {...field}
+                                    data-testid="input-admin-paypal-email"
+                                  />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                          <FormField
+                            control={paymentForm.control}
+                            name="paypalClientId"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Client ID</FormLabel>
+                                <FormControl>
+                                  <Input 
+                                    placeholder="AX..." 
+                                    {...field}
+                                    data-testid="input-admin-paypal-client-id"
+                                  />
+                                </FormControl>
+                                <FormDescription>
+                                  Disponibile su developer.paypal.com
+                                </FormDescription>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                          <FormField
+                            control={paymentForm.control}
+                            name="paypalClientSecret"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Client Secret</FormLabel>
+                                <FormControl>
+                                  <Input 
+                                    type="password"
+                                    placeholder="••••••••••••" 
+                                    {...field}
+                                    data-testid="input-admin-paypal-client-secret"
+                                  />
+                                </FormControl>
+                                <FormDescription>
+                                  {paymentConfig?.hasPaypalSecret 
+                                    ? "Lascia vuoto per mantenere il valore esistente"
+                                    : "Richiesto per abilitare PayPal"
+                                  }
+                                </FormDescription>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                        </div>
                       )}
 
                       <FormField
