@@ -19,7 +19,15 @@ import {
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import type { SalesOrder, User as UserType } from "@shared/schema";
+import type { SalesOrder, SalesOrderItem, User as UserType } from "@shared/schema";
+
+interface OrderDetailResponse {
+  order: SalesOrder;
+  items: SalesOrderItem[];
+  payments: any[];
+  shipments: any[];
+  history: any[];
+}
 
 const statusLabels: Record<string, string> = {
   pending: "In attesa",
@@ -89,6 +97,16 @@ export default function AdminSalesOrders() {
       if (!res.ok) throw new Error('Errore nel caricamento reseller');
       return res.json();
     }
+  });
+  
+  const { data: orderDetail, isLoading: isLoadingDetail } = useQuery<OrderDetailResponse>({
+    queryKey: ['/api/sales-orders', selectedOrder?.id],
+    queryFn: async () => {
+      const res = await fetch(`/api/sales-orders/${selectedOrder?.id}`, { credentials: 'include' });
+      if (!res.ok) throw new Error('Errore nel caricamento dettagli ordine');
+      return res.json();
+    },
+    enabled: !!selectedOrder?.id && showDetailDialog
   });
   
   const updateStatus = useMutation({
@@ -425,6 +443,32 @@ export default function AdminSalesOrders() {
                     <p>{selectedOrder.shippingAddress}</p>
                     <p>{selectedOrder.shippingPostalCode} {selectedOrder.shippingCity} ({selectedOrder.shippingProvince})</p>
                     <p>{selectedOrder.shippingCountry}</p>
+                  </div>
+                </div>
+                
+                <div>
+                  <Label className="text-muted-foreground">Prodotti</Label>
+                  <div className="mt-1 space-y-2">
+                    {isLoadingDetail ? (
+                      <div className="space-y-2">
+                        <Skeleton className="h-12 w-full" />
+                        <Skeleton className="h-12 w-full" />
+                      </div>
+                    ) : orderDetail?.items && orderDetail.items.length > 0 ? (
+                      orderDetail.items.map((item) => (
+                        <div key={item.id} className="flex justify-between items-center p-3 bg-muted/50 rounded-lg">
+                          <div className="flex-1">
+                            <p className="font-medium">{item.productName || 'Prodotto'}</p>
+                            <p className="text-sm text-muted-foreground">
+                              Qtà: {item.quantity} x {formatPrice(item.unitPrice)}
+                            </p>
+                          </div>
+                          <p className="font-semibold">{formatPrice(item.totalPrice)}</p>
+                        </div>
+                      ))
+                    ) : (
+                      <p className="text-muted-foreground text-sm p-3 bg-muted/50 rounded-lg">Nessun prodotto</p>
+                    )}
                   </div>
                 </div>
                 
