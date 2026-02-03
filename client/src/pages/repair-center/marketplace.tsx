@@ -16,6 +16,7 @@ import { Store, Search, ShoppingCart, Plus, Minus, Trash2, Send, Package, Users,
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { calculateVatSummary, DEFAULT_VAT_RATE } from "@/lib/utils";
+import PayPalButton from "@/components/PayPalButton";
 
 interface MarketplaceCatalogItem {
   product: Product;
@@ -578,14 +579,45 @@ export default function RepairCenterMarketplace() {
             <Button variant="outline" onClick={() => setCheckoutOpen(false)}>
               Annulla
             </Button>
-            <Button 
-              onClick={submitOrder}
-              disabled={createOrderMutation.isPending || cart.length === 0 || !selectedShippingMethod || shippingMethodsLoading || !paymentConfig?.hasAnyMethod}
-              data-testid="button-rc-submit-marketplace-order"
-            >
-              <Send className="h-4 w-4 mr-2" />
-              {createOrderMutation.isPending ? "Invio..." : "Invia Ordine"}
-            </Button>
+            {paymentMethod === "paypal" && paymentConfig?.paypal?.enabled ? (
+              <PayPalButton
+                amount={(grandTotal / 100).toFixed(2)}
+                currency="EUR"
+                disabled={cart.length === 0 || createOrderMutation.isPending || !selectedShippingMethod}
+                onSuccess={(paypalOrderId, captureData) => {
+                  const sellerResellerId = cart[0].sellerResellerId;
+                  createOrderMutation.mutate({
+                    sellerResellerId,
+                    items: cart.map(item => ({ productId: item.productId, quantity: item.quantity })),
+                    paymentMethod: "paypal",
+                    shippingMethodId: selectedShippingMethod,
+                    buyerNotes: notes + (notes ? "\n" : "") + `[PayPal Order ID: ${paypalOrderId}]`,
+                  });
+                }}
+                onError={(error) => {
+                  toast({
+                    title: "Errore PayPal",
+                    description: error,
+                    variant: "destructive",
+                  });
+                }}
+                onCancel={() => {
+                  toast({
+                    title: "Pagamento annullato",
+                    description: "Hai annullato il pagamento PayPal",
+                  });
+                }}
+              />
+            ) : (
+              <Button 
+                onClick={submitOrder}
+                disabled={createOrderMutation.isPending || cart.length === 0 || !selectedShippingMethod || shippingMethodsLoading || !paymentConfig?.hasAnyMethod}
+                data-testid="button-rc-submit-marketplace-order"
+              >
+                <Send className="h-4 w-4 mr-2" />
+                {createOrderMutation.isPending ? "Invio..." : "Invia Ordine"}
+              </Button>
+            )}
           </DialogFooter>
         </DialogContent>
       </Dialog>
