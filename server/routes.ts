@@ -27997,27 +27997,41 @@ export function registerRoutes(app: Express): Server {
         resellerId = req.user.role === "reseller" ? req.user.id : req.user.resellerId || null;
       }
       
-      // Use raw SQL to avoid Drizzle WHERE issues
-      let sql = `
-        SELECT sh.*, so.order_number, so.shipping_name as customer_name
-        FROM sales_order_shipments sh
-        INNER JOIN sales_orders so ON sh.order_id = so.id
-        WHERE 1=1
-      `;
-      const params: any[] = [];
-      
-      if (resellerId) {
-        params.push(resellerId);
-        sql += ` AND so.reseller_id = $${params.length}`;
+      // Build query using sql tagged template
+      let result;
+      if (resellerId && statusFilter && statusFilter !== "all") {
+        result = await db.execute(sql`
+          SELECT sh.*, so.order_number, so.shipping_name as customer_name
+          FROM sales_order_shipments sh
+          INNER JOIN sales_orders so ON sh.order_id = so.id
+          WHERE so.reseller_id = ${resellerId} AND sh.status = ${statusFilter}
+          ORDER BY sh.created_at DESC
+        `);
+      } else if (resellerId) {
+        result = await db.execute(sql`
+          SELECT sh.*, so.order_number, so.shipping_name as customer_name
+          FROM sales_order_shipments sh
+          INNER JOIN sales_orders so ON sh.order_id = so.id
+          WHERE so.reseller_id = ${resellerId}
+          ORDER BY sh.created_at DESC
+        `);
+      } else if (statusFilter && statusFilter !== "all") {
+        result = await db.execute(sql`
+          SELECT sh.*, so.order_number, so.shipping_name as customer_name
+          FROM sales_order_shipments sh
+          INNER JOIN sales_orders so ON sh.order_id = so.id
+          WHERE sh.status = ${statusFilter}
+          ORDER BY sh.created_at DESC
+        `);
+      } else {
+        result = await db.execute(sql`
+          SELECT sh.*, so.order_number, so.shipping_name as customer_name
+          FROM sales_order_shipments sh
+          INNER JOIN sales_orders so ON sh.order_id = so.id
+          ORDER BY sh.created_at DESC
+        `);
       }
-      if (statusFilter && statusFilter !== "all") {
-        params.push(statusFilter);
-        sql += ` AND sh.status = $${params.length}`;
-      }
       
-      sql += ` ORDER BY sh.created_at DESC`;
-      
-      const result = await db.execute({ sql, params });
       const shipments = result.rows.map((r: any) => ({
         id: r.id,
         orderId: r.order_id,
@@ -28037,6 +28051,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json(shipments);
     } catch (error: any) {
+      console.error("Shipments endpoint error:", error);
       res.status(500).json({ error: error.message });
     }
   });
