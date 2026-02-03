@@ -103,6 +103,7 @@ export default function ResellerMarketplaceSales() {
   const paymentMethodLabels: Record<string, string> = {
     bank_transfer: "Bonifico Bancario",
     stripe: "Carta di Credito",
+    paypal: "PayPal",
     credit: "Credito/Fido",
   };
 
@@ -414,7 +415,7 @@ export default function ResellerMarketplaceSales() {
               Chiudi
             </Button>
             
-            {selectedOrder?.status === 'pending' && (
+            {selectedOrder?.status === 'pending' && selectedOrder.paymentMethod === 'bank_transfer' && (
               <>
                 <Button 
                   variant="destructive"
