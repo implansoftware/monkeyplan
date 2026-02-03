@@ -27997,8 +27997,17 @@ export function registerRoutes(app: Express): Server {
         resellerId = req.user.role === "reseller" ? req.user.id : req.user.resellerId || null;
       }
       
-      // Build query: join shipments with orders to filter by reseller
-      const conditions: any[] = [];
+      // Build query with proper WHERE clause
+      let query = db.select({
+        shipment: salesOrderShipments,
+        orderNumber: salesOrders.orderNumber,
+        customerName: salesOrders.shippingName
+      })
+        .from(salesOrderShipments)
+        .innerJoin(salesOrders, eq(salesOrderShipments.orderId, salesOrders.id));
+      
+      // Apply filters
+      const conditions = [];
       if (resellerId) {
         conditions.push(eq(salesOrders.resellerId, resellerId));
       }
@@ -28006,15 +28015,14 @@ export function registerRoutes(app: Express): Server {
         conditions.push(eq(salesOrderShipments.status, status as string));
       }
       
-      const results = await db.select({
-        shipment: salesOrderShipments,
-        orderNumber: salesOrders.orderNumber,
-        customerName: salesOrders.shippingName
-      })
-        .from(salesOrderShipments)
-        .innerJoin(salesOrders, eq(salesOrderShipments.orderId, salesOrders.id))
-        .where(conditions.length > 0 ? and(...conditions) : undefined)
-        .orderBy(desc(salesOrderShipments.createdAt));
+      let results;
+      if (conditions.length === 0) {
+        results = await query.orderBy(desc(salesOrderShipments.createdAt));
+      } else if (conditions.length === 1) {
+        results = await query.where(conditions[0]).orderBy(desc(salesOrderShipments.createdAt));
+      } else {
+        results = await query.where(and(...conditions)).orderBy(desc(salesOrderShipments.createdAt));
+      }
       
       // Flatten results
       const shipments = results.map(r => ({
@@ -28028,6 +28036,7 @@ export function registerRoutes(app: Express): Server {
       res.status(500).json({ error: error.message });
     }
   });
+
 
   app.get("/api/sales-orders/:orderId/shipments", requireAuth, async (req, res) => {
     try {
