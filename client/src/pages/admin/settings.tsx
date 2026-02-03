@@ -88,6 +88,7 @@ const paymentFormSchema = z.object({
   bankName: z.string().optional(),
   stripeEnabled: z.boolean().default(false),
   paypalEnabled: z.boolean().default(false),
+  paypalEmail: z.string().optional(),
   satispayEnabled: z.boolean().default(false),
 }).refine((data) => {
   if (data.bankTransferEnabled) {
@@ -96,6 +97,14 @@ const paymentFormSchema = z.object({
   return true;
 }, {
   message: "IBAN e intestatario sono obbligatori quando il bonifico è abilitato",
+  path: ["iban"],
+}).refine((data) => {
+  if (data.paypalEnabled) {
+    return data.paypalEmail && data.paypalEmail.trim().length > 0;
+  }
+  return true;
+}, {
+  message: "Email PayPal è obbligatoria quando PayPal è abilitato",
   path: ["iban"],
 });
 
@@ -128,6 +137,7 @@ export default function AdminSettings() {
       bankName: '',
       stripeEnabled: false,
       paypalEnabled: false,
+      paypalEmail: '',
       satispayEnabled: false,
     },
   });
@@ -142,6 +152,7 @@ export default function AdminSettings() {
         bankName: paymentConfig.bankName || '',
         stripeEnabled: paymentConfig.stripeEnabled ?? false,
         paypalEnabled: paymentConfig.paypalEnabled ?? false,
+        paypalEmail: paymentConfig.paypalEmail || '',
         satispayEnabled: paymentConfig.satispayEnabled ?? false,
       });
     }
@@ -719,6 +730,26 @@ export default function AdminSettings() {
                           </FormItem>
                         )}
                       />
+
+                      {paymentForm.watch("paypalEnabled") && (
+                        <FormField
+                          control={paymentForm.control}
+                          name="paypalEmail"
+                          render={({ field }) => (
+                            <FormItem className="ml-12">
+                              <FormLabel>Email PayPal</FormLabel>
+                              <FormControl>
+                                <Input 
+                                  placeholder="email@paypal.com" 
+                                  {...field}
+                                  data-testid="input-admin-paypal-email"
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      )}
 
                       <FormField
                         control={paymentForm.control}

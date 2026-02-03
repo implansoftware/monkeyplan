@@ -8276,11 +8276,16 @@ export function registerRoutes(app: Express): Server {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
       
-      const { bankTransferEnabled, accountHolder, iban, bic, bankName, stripeEnabled, paypalEnabled, satispayEnabled } = req.body;
+      const { bankTransferEnabled, accountHolder, iban, bic, bankName, stripeEnabled, paypalEnabled, paypalEmail, satispayEnabled } = req.body;
       
       // Validate: if bank transfer is enabled, require IBAN and account holder
       if (bankTransferEnabled && (!iban || !iban.trim() || !accountHolder || !accountHolder.trim())) {
         return res.status(400).send("IBAN e intestatario sono obbligatori quando il bonifico è abilitato");
+      }
+      
+      // Validate: if PayPal is enabled, require email
+      if (paypalEnabled && (!paypalEmail || !paypalEmail.trim())) {
+        return res.status(400).send("Email PayPal è obbligatoria quando PayPal è abilitato");
       }
       
       const data = {
@@ -8291,6 +8296,7 @@ export function registerRoutes(app: Express): Server {
         bankName: bankName || null,
         stripeEnabled: stripeEnabled ?? false,
         paypalEnabled: paypalEnabled ?? false,
+        paypalEmail: paypalEmail || null,
         satispayEnabled: satispayEnabled ?? false,
         entityType: "admin" as const,
         entityId: req.user.id
