@@ -68,6 +68,8 @@ const paymentFormSchema = z.object({
   bic: z.string().max(11).optional().nullable(),
   paypalEnabled: z.boolean().default(false),
   paypalEmail: z.string().email("Email PayPal non valida").optional().nullable().or(z.literal('')),
+  paypalClientId: z.string().optional().nullable().or(z.literal('')),
+  paypalClientSecret: z.string().optional().nullable().or(z.literal('')),
   satispayEnabled: z.boolean().default(false),
   satispayShopId: z.string().max(50).optional().nullable(),
 });
@@ -75,9 +77,9 @@ const paymentFormSchema = z.object({
 type PaymentFormData = z.infer<typeof paymentFormSchema>;
 
 interface RepairCenterPaymentConfig {
-  ownConfig: PaymentConfiguration | null;
-  parentConfig: PaymentConfiguration | null;
-  effectiveConfig: PaymentConfiguration | null;
+  ownConfig: (PaymentConfiguration & { hasPaypalSecret?: boolean }) | null;
+  parentConfig: (PaymentConfiguration & { hasPaypalSecret?: boolean }) | null;
+  effectiveConfig: (PaymentConfiguration & { hasPaypalSecret?: boolean }) | null;
   useParentConfig: boolean;
 }
 
@@ -300,6 +302,8 @@ export default function RepairCenterSettings() {
       bic: '',
       paypalEnabled: false,
       paypalEmail: '',
+      paypalClientId: '',
+      paypalClientSecret: '',
       satispayEnabled: false,
       satispayShopId: '',
     },
@@ -311,6 +315,8 @@ export default function RepairCenterSettings() {
       bic: paymentConfigData.ownConfig.bic || '',
       paypalEnabled: paymentConfigData.ownConfig.paypalEnabled,
       paypalEmail: paymentConfigData.ownConfig.paypalEmail || '',
+      paypalClientId: paymentConfigData.ownConfig.paypalClientId || '',
+      paypalClientSecret: '',
       satispayEnabled: paymentConfigData.ownConfig.satispayEnabled,
       satispayShopId: paymentConfigData.ownConfig.satispayShopId || '',
     } : undefined,
@@ -458,6 +464,14 @@ export default function RepairCenterSettings() {
   };
 
   const onPaymentSubmit = (data: PaymentFormData) => {
+    // Validate: Client Secret is required when enabling PayPal for the first time
+    if (data.paypalEnabled && !paymentConfigData?.ownConfig?.hasPaypalSecret && (!data.paypalClientSecret || !data.paypalClientSecret.trim())) {
+      paymentForm.setError("paypalClientSecret", {
+        type: "manual",
+        message: "Client Secret è obbligatorio per abilitare PayPal"
+      });
+      return;
+    }
     updatePaymentMutation.mutate(data);
   };
 
@@ -1590,6 +1604,7 @@ export default function RepairCenterSettings() {
                                   />
 
                                   {paymentForm.watch("paypalEnabled") && (
+                                    <>
                                     <FormField
                                       control={paymentForm.control}
                                       name="paypalEmail"
@@ -1606,6 +1621,56 @@ export default function RepairCenterSettings() {
                                         </FormItem>
                                       )}
                                     />
+                                    
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4">
+                                      <FormField
+                                        control={paymentForm.control}
+                                        name="paypalClientId"
+                                        render={({ field }) => (
+                                          <FormItem>
+                                            <FormLabel>Client ID</FormLabel>
+                                            <FormControl>
+                                              <Input 
+                                                placeholder="AVz..." 
+                                                {...field}
+                                                value={field.value || ''}
+                                                data-testid="input-paypal-client-id"
+                                              />
+                                            </FormControl>
+                                            <FormDescription>
+                                              Il Client ID del tuo account PayPal Developer
+                                            </FormDescription>
+                                            <FormMessage />
+                                          </FormItem>
+                                        )}
+                                      />
+                                      <FormField
+                                        control={paymentForm.control}
+                                        name="paypalClientSecret"
+                                        render={({ field }) => (
+                                          <FormItem>
+                                            <FormLabel>Client Secret</FormLabel>
+                                            <FormControl>
+                                              <Input 
+                                                type="password"
+                                                placeholder="••••••••••••" 
+                                                {...field}
+                                                value={field.value || ''}
+                                                data-testid="input-paypal-client-secret"
+                                              />
+                                            </FormControl>
+                                            <FormDescription>
+                                              {paymentConfigData?.ownConfig?.hasPaypalSecret 
+                                                ? "Lascia vuoto per mantenere il valore esistente"
+                                                : "Richiesto per abilitare PayPal SDK"
+                                              }
+                                            </FormDescription>
+                                            <FormMessage />
+                                          </FormItem>
+                                        )}
+                                      />
+                                    </div>
+                                    </>
                                   )}
                                 </CardContent>
                               </Card>
