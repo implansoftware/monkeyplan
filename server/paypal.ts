@@ -49,7 +49,7 @@ function createPayPalClient(clientId: string, clientSecret: string) {
       oAuthClientSecret: clientSecret,
     },
     timeout: 0,
-    environment: process.env.NODE_ENV === "production" ? Environment.Production : Environment.Sandbox,
+    environment: Environment.Production, // Always use Production for live PayPal credentials
     logging: {
       logLevel: LogLevel.Info,
       logRequest: { logBody: true },
