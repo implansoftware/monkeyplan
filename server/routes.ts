@@ -10398,7 +10398,7 @@ export function registerRoutes(app: Express): Server {
       
       // Prima imposta lo stato received
       await storage.updateRemoteRepairRequest(req.params.id, {
-        status: 'received',
+        status: 'completed',
         receivedAt: new Date()
       });
       
@@ -10437,7 +10437,7 @@ export function registerRoutes(app: Express): Server {
       
       // First update status to received
       await storage.updateRemoteRepairRequest(req.params.id, {
-        status: 'received',
+        status: 'completed',
         receivedAt: new Date(),
         centerNotes: centerNotes || request.centerNotes
       });
@@ -11151,7 +11151,7 @@ export function registerRoutes(app: Express): Server {
       const { internalNotes } = req.body;
       
       const updated = await storage.updateServiceOrder(req.params.id, {
-        status: 'received',
+        status: 'completed',
         completedAt: new Date(),
         internalNotes: internalNotes || order.internalNotes
       });
@@ -29381,7 +29381,7 @@ export function registerRoutes(app: Express): Server {
       }
       
       const updated = await storage.updateTransferRequest(req.params.id, { 
-        status: 'received',
+        status: 'completed',
         receivedAt: new Date()
       });
       res.json(updated);
@@ -29550,7 +29550,7 @@ export function registerRoutes(app: Express): Server {
       }
       
       const updated = await storage.updateTransferRequest(req.params.id, {
-        status: 'received',
+        status: 'completed',
         receivedAt: new Date(),
       });
       
@@ -30251,7 +30251,7 @@ export function registerRoutes(app: Express): Server {
           orderType: 'b2b',
           orderNumber: order.orderNumber,
           method: finalPaymentMethod as any,
-          status: 'received',
+          status: 'completed',
           amount: order.total,
           currency: 'EUR',
           paidAt: new Date(),
@@ -30529,7 +30529,7 @@ export function registerRoutes(app: Express): Server {
         orderType: 'b2b',
         orderNumber: order.orderNumber,
         method: (order.paymentMethod as any) || 'bank_transfer',
-        status: 'received',
+        status: 'completed',
         amount: order.total,
         currency: 'EUR',
         paidAt: new Date(),
@@ -30621,7 +30621,7 @@ export function registerRoutes(app: Express): Server {
       }
       
       const updated = await storage.updateResellerPurchaseOrder(order.id, {
-        status: 'received',
+        status: 'completed',
         receivedAt: new Date(),
       });
       
@@ -30933,7 +30933,7 @@ export function registerRoutes(app: Express): Server {
       }
       
       const updated = await storage.updateB2bReturn(returnDoc.id, {
-        status: 'received',
+        status: 'completed',
         receivedAt: new Date(),
         completedAt: new Date(),
         inspectionNotes,
@@ -31362,7 +31362,7 @@ export function registerRoutes(app: Express): Server {
         transferNumber,
         sourceWarehouseId: sellerWarehouse.id,
         destinationWarehouseId: buyerWarehouse.id,
-        status: 'received',
+        status: 'completed',
         notes: `Ordine Marketplace ${order.orderNumber}`,
         requestedBy: req.user.id,
         approvedBy: req.user.id,
@@ -31507,7 +31507,7 @@ export function registerRoutes(app: Express): Server {
       }
       
       const updated = await storage.updateMarketplaceOrder(order.id, {
-        status: 'received',
+        status: 'completed',
         receivedAt: new Date(),
       });
       
@@ -31677,7 +31677,7 @@ export function registerRoutes(app: Express): Server {
           orderType: 'b2b',
           orderNumber: order.orderNumber,
           method: finalPaymentMethod as any,
-          status: 'received',
+          status: 'completed',
           amount: order.total,
           currency: 'EUR',
           paidAt: new Date(),
@@ -31988,7 +31988,7 @@ export function registerRoutes(app: Express): Server {
           orderType: 'b2b',
           orderNumber: order.orderNumber,
           method: finalPaymentMethod as any,
-          status: 'received',
+          status: 'completed',
           amount: order.total,
           currency: 'EUR',
           paidAt: new Date(),
@@ -32484,7 +32484,7 @@ export function registerRoutes(app: Express): Server {
       const { inspectionNotes, creditAmount } = req.body;
       
       const updated = await storage.updateRcB2bReturn(returnDoc.id, {
-        status: 'received',
+        status: 'completed',
         receivedAt: new Date(),
         completedAt: new Date(),
         inspectionNotes,
