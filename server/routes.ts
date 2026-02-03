@@ -15479,7 +15479,7 @@ export function registerRoutes(app: Express): Server {
             productName: product.name,
             productSku: product.sku || null,
             quantity,
-            unitPrice,
+            unitPrice: unitPriceCents,
             totalPrice: subtotal,
           });
         }
@@ -27656,13 +27656,13 @@ export function registerRoutes(app: Express): Server {
           }
         }
         
-        const unitPrice = effectivePrice / 100; // Converti in euro
+        const unitPriceCents = effectivePrice; // Mantieni in centesimi
         const item = await storage.addCartItem({
           cartId: cart.id,
           productId,
           quantity,
-          unitPrice,
-          totalPrice: unitPrice * quantity,
+          unitPrice: unitPriceCents,
+          totalPrice: unitPriceCents * quantity,
           discount: 0
         });
         res.json(item);
@@ -31262,7 +31262,7 @@ export function registerRoutes(app: Express): Server {
         validatedItems.push({
           productId: item.productId,
           quantity: item.quantity,
-          unitPrice,
+          unitPrice: unitPriceCents,
           totalPrice,
           productName: product.name,
           productSku: product.sku,
@@ -36468,7 +36468,7 @@ export function registerRoutes(app: Express): Server {
             isService: true,
             isTemporary: false,
             quantity: item.quantity,
-            unitPrice,
+            unitPrice: unitPriceCents,
             discount: itemDiscount,
             totalPrice,
             warehouseId: null,
@@ -36492,7 +36492,7 @@ export function registerRoutes(app: Express): Server {
           productBarcode: product.barcode || null,
           isTemporary: false,
           quantity: item.quantity,
-          unitPrice,
+          unitPrice: unitPriceCents,
           discount: itemDiscount,
           totalPrice,
           warehouseId: repairCenterWarehouseId,
@@ -38268,7 +38268,7 @@ export function registerRoutes(app: Express): Server {
             isService: true,
             isTemporary: false,
             quantity: item.quantity,
-            unitPrice,
+            unitPrice: unitPriceCents,
             discount: itemDiscount,
             totalPrice,
             warehouseId: null,
@@ -38292,7 +38292,7 @@ export function registerRoutes(app: Express): Server {
           productBarcode: product.barcode || null,
           isTemporary: false,
           quantity: item.quantity,
-          unitPrice,
+          unitPrice: unitPriceCents,
           discount: itemDiscount,
           totalPrice,
           warehouseId: repairCenterWarehouseId,
