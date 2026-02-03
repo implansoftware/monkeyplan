@@ -52,7 +52,7 @@ import { generatePosReceiptPdf } from "./services/posReceipt";
 import { calculateRepairPriority } from "./helpers/priorityCalculation";
 import { db } from "./db";
 import { sql, eq, and, desc } from "drizzle-orm";
-import { salesOrderPayments, salesOrders, users } from "@shared/schema";
+import { salesOrderPayments, salesOrders, salesOrderShipments, users } from "@shared/schema";
 
 const scryptAsync = promisify(scrypt);
 
