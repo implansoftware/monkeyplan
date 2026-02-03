@@ -1676,6 +1676,16 @@ export default function RepairCenterSettings() {
                                         )}
                                       />
                                     </div>
+                                    <div className="bg-muted/50 rounded-lg p-4 text-sm text-muted-foreground space-y-2">
+                                      <p className="font-medium text-foreground">Come ottenere Client ID e Client Secret:</p>
+                                      <ol className="list-decimal list-inside space-y-1">
+                                        <li>Accedi a <a href="https://developer.paypal.com" target="_blank" rel="noopener noreferrer" className="text-primary underline">developer.paypal.com</a></li>
+                                        <li>Vai su "Apps & Credentials" nel menu</li>
+                                        <li>Seleziona "Live" per le credenziali di produzione</li>
+                                        <li>Crea una nuova app o seleziona un'app esistente</li>
+                                        <li>Copia Client ID e Client Secret dalla pagina dell'app</li>
+                                      </ol>
+                                    </div>
                                     </>
                                   )}
                                 </CardContent>
