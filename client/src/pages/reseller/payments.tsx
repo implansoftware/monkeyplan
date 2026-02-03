@@ -66,6 +66,7 @@ export default function ResellerPayments() {
   const [methodFilter, setMethodFilter] = useState<string>("all");
   const [selectedPayment, setSelectedPayment] = useState<SalesOrderPayment | null>(null);
   const [showDetailDialog, setShowDetailDialog] = useState(false);
+  const [isConfirming, setIsConfirming] = useState(false);
   
   const { data: payments, isLoading } = useQuery<SalesOrderPayment[]>({
     queryKey: ['/api/reseller/payments', { status: statusFilter, method: methodFilter }],
@@ -78,6 +79,36 @@ export default function ResellerPayments() {
       return res.json();
     }
   });
+  
+  const confirmPaymentMutation = useMutation({
+    mutationFn: async (paymentId: string) => {
+      const res = await apiRequest('PUT', `/api/payments/${paymentId}`, {
+        status: 'completed',
+        paidAt: new Date().toISOString(),
+        notes: 'Confermato manualmente'
+      });
+      return res.json();
+    },
+    onSuccess: () => {
+      toast({ title: "Pagamento confermato", description: "Il pagamento è stato confermato con successo" });
+      queryClient.invalidateQueries({ queryKey: ['/api/reseller/payments'] });
+      setShowDetailDialog(false);
+      setSelectedPayment(null);
+    },
+    onError: (error: any) => {
+      toast({ title: "Errore", description: error.message, variant: "destructive" });
+    }
+  });
+  
+  const handleConfirmPayment = async () => {
+    if (!selectedPayment) return;
+    setIsConfirming(true);
+    try {
+      await confirmPaymentMutation.mutateAsync(selectedPayment.id);
+    } finally {
+      setIsConfirming(false);
+    }
+  };
   
   const formatPrice = (value: number) => {
     return new Intl.NumberFormat('it-IT', { style: 'currency', currency: 'EUR' }).format(value);
@@ -374,10 +405,20 @@ export default function ResellerPayments() {
               )}
             </div>
           </ScrollArea>
-          <DialogFooter>
+          <DialogFooter className="flex-wrap gap-2">
             <Button variant="outline" onClick={() => setShowDetailDialog(false)}>
               Chiudi
             </Button>
+            {selectedPayment?.status === 'pending' && (
+              <Button 
+                onClick={handleConfirmPayment}
+                disabled={isConfirming}
+                data-testid="button-confirm-payment"
+              >
+                <CheckCircle className="h-4 w-4 mr-2" />
+                {isConfirming ? "Confermo..." : "Conferma Pagamento"}
+              </Button>
+            )}
           </DialogFooter>
         </DialogContent>
       </Dialog>

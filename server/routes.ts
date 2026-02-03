@@ -27788,6 +27788,19 @@ export function registerRoutes(app: Express): Server {
         });
       }
       
+      // Auto-confirm pending bank transfer payment when order is shipped
+      if (status === 'shipped') {
+        const payment = await storage.getPaymentByOrderId(req.params.id, 'b2c');
+        if (payment && payment.status === 'pending' && payment.method === 'bank_transfer') {
+          await storage.updateSalesOrderPayment(payment.id, {
+            status: 'completed',
+            paidAt: new Date(),
+            confirmedBy: req.user.id,
+            notes: payment.notes ? payment.notes + ' | Confermato automaticamente alla spedizione' : 'Confermato automaticamente alla spedizione'
+          });
+        }
+      }
+      
       // Deduct stock from reseller warehouse when shipped
       if (status === 'shipped' && order.resellerId) {
         const resellerWarehouse = await storage.getWarehouseByOwner('reseller', order.resellerId);
