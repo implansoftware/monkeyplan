@@ -21,7 +21,7 @@ export default function ShopCart() {
   const { toast } = useToast();
   const { user } = useAuth();
   
-  const { data, isLoading } = useQuery<{ cart: Cart; items: CartItemWithProduct[] }>({
+  const { data, isLoading } = useQuery<{ cart: Cart; items: CartItemWithProduct[]; customerVatRate?: number }>({
     queryKey: ['/api/shop', resellerId, 'cart'],
     queryFn: async () => {
       const res = await fetch(`/api/shop/${resellerId}/cart`, { credentials: 'include' });
@@ -230,11 +230,12 @@ export default function ShopCart() {
                     <span>di cui IVA</span>
                     <span data-testid="text-vat-amount">
                       {formatPrice(
-                        items.reduce((sum, item) => {
-                          const vatRate = item.product?.vatRate ?? 22;
-                          const vatAmount = item.totalPrice - (item.totalPrice / (1 + vatRate / 100));
-                          return sum + vatAmount;
-                        }, 0)
+                        (() => {
+                          const vatRate = data?.customerVatRate ?? 22;
+                          if (vatRate === 0) return 0;
+                          const totalPrice = items.reduce((sum, item) => sum + item.totalPrice, 0);
+                          return totalPrice - (totalPrice / (1 + vatRate / 100));
+                        })()
                       )}
                     </span>
                   </div>

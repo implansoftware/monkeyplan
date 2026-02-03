@@ -52,7 +52,7 @@ export default function ShopCheckout() {
   const [customerNotes, setCustomerNotes] = useState("");
   const [showAddAddressDialog, setShowAddAddressDialog] = useState(false);
   
-  const { data: cartData, isLoading: isLoadingCart } = useQuery<{ cart: Cart; items: CartItemWithProduct[] }>({
+  const { data: cartData, isLoading: isLoadingCart } = useQuery<{ cart: Cart; items: CartItemWithProduct[]; customerVatRate?: number }>({
     queryKey: ['/api/shop', resellerId, 'cart'],
     queryFn: async () => {
       const res = await fetch(`/api/shop/${resellerId}/cart`, { credentials: 'include' });
@@ -541,11 +541,12 @@ export default function ShopCheckout() {
                   <span>di cui IVA</span>
                   <span data-testid="text-checkout-vat">
                     {formatPrice(
-                      items.reduce((sum, item) => {
-                        const vatRate = item.product?.vatRate ?? 22;
-                        const vatAmount = item.totalPrice - (item.totalPrice / (1 + vatRate / 100));
-                        return sum + vatAmount;
-                      }, 0)
+                      (() => {
+                        const vatRate = cartData?.customerVatRate ?? 22;
+                        if (vatRate === 0) return 0;
+                        const totalPrice = items.reduce((sum, item) => sum + item.totalPrice, 0);
+                        return totalPrice - (totalPrice / (1 + vatRate / 100));
+                      })()
                     )}
                   </span>
                 </div>

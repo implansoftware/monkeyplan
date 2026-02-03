@@ -27591,7 +27591,17 @@ export function registerRoutes(app: Express): Server {
         return { ...item, product };
       }));
       
-      res.json({ cart, items: itemsWithProducts });
+      // Get customer VAT rate from price list based on customer type
+      let customerVatRate = 22; // default
+      if (customerId) {
+        const billingData = await storage.getBillingDataByUserId(customerId);
+        const customerType = billingData?.customerType as "private" | "company" | undefined;
+        const priceList = await storage.getPriceListForCustomerType(resellerId, customerType);
+        if (priceList?.defaultVatRate !== undefined) {
+          customerVatRate = priceList.defaultVatRate;
+        }
+      }
+      res.json({ cart, items: itemsWithProducts, customerVatRate });
     } catch (error: any) {
       res.status(500).json({ error: error.message });
     }
