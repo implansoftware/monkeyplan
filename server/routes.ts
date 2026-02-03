@@ -30238,6 +30238,41 @@ export function registerRoutes(app: Express): Server {
         });
       }
       
+      // For automatic payment methods (PayPal, Stripe), create payment record and auto-approve
+      const automaticPaymentMethods = ['paypal', 'stripe'];
+      const finalPaymentMethod = paymentMethod || 'bank_transfer';
+      
+      if (automaticPaymentMethods.includes(finalPaymentMethod)) {
+        const resellerForPayment = await storage.getUser(req.user.id);
+        
+        // Create payment record
+        await storage.createSalesOrderPayment({
+          orderId: order.id,
+          orderType: 'b2b',
+          orderNumber: order.orderNumber,
+          method: finalPaymentMethod as any,
+          status: 'received',
+          amount: order.total,
+          currency: 'EUR',
+          paidAt: new Date(),
+          gatewayReference: notes?.match(/\[PayPal Order ID: ([^\]]+)\]/)?.[1] || null,
+          notes: `Pagamento automatico ${finalPaymentMethod.toUpperCase()} per ordine B2B ${order.orderNumber}`,
+          resellerId: order.resellerId,
+          resellerName: resellerForPayment?.fullName || resellerForPayment?.ragioneSociale || 'N/A',
+        });
+        
+        // Auto-approve the order
+        await storage.updateResellerPurchaseOrder(order.id, {
+          status: 'approved',
+          paymentConfirmedAt: new Date(),
+        });
+        
+        // Update order object for response
+        order.status = 'approved';
+        (order as any).paymentConfirmedAt = new Date();
+      }
+
+      
       // Notify admin about new B2B order
       const admins = (await storage.listUsers()).filter((u: any) => u.role === "admin");
       if (admins.length > 0) {
@@ -31629,6 +31664,41 @@ export function registerRoutes(app: Express): Server {
         });
       }
       
+      // For automatic payment methods (PayPal, Stripe), create payment record and auto-approve
+      const automaticPaymentMethods = ['paypal', 'stripe'];
+      const finalPaymentMethod = paymentMethod || 'bank_transfer';
+      
+      if (automaticPaymentMethods.includes(finalPaymentMethod)) {
+        const resellerForPayment = await storage.getUser(req.user.id);
+        
+        // Create payment record
+        await storage.createSalesOrderPayment({
+          orderId: order.id,
+          orderType: 'b2b',
+          orderNumber: order.orderNumber,
+          method: finalPaymentMethod as any,
+          status: 'received',
+          amount: order.total,
+          currency: 'EUR',
+          paidAt: new Date(),
+          gatewayReference: notes?.match(/\[PayPal Order ID: ([^\]]+)\]/)?.[1] || null,
+          notes: `Pagamento automatico ${finalPaymentMethod.toUpperCase()} per ordine B2B ${order.orderNumber}`,
+          resellerId: order.resellerId,
+          resellerName: resellerForPayment?.fullName || resellerForPayment?.ragioneSociale || 'N/A',
+        });
+        
+        // Auto-approve the order
+        await storage.updateResellerPurchaseOrder(order.id, {
+          status: 'approved',
+          paymentConfirmedAt: new Date(),
+        });
+        
+        // Update order object for response
+        order.status = 'approved';
+        (order as any).paymentConfirmedAt = new Date();
+      }
+
+      
       res.json(order);
     } catch (error: any) {
       res.status(500).json({ error: error.message });
@@ -31904,6 +31974,41 @@ export function registerRoutes(app: Express): Server {
           productName: item.productName,
         });
       }
+      
+      // For automatic payment methods (PayPal, Stripe), create payment record and auto-approve
+      const automaticPaymentMethods = ['paypal', 'stripe'];
+      const finalPaymentMethod = paymentMethod || 'bank_transfer';
+      
+      if (automaticPaymentMethods.includes(finalPaymentMethod)) {
+        const resellerForPayment = await storage.getUser(req.user.id);
+        
+        // Create payment record
+        await storage.createSalesOrderPayment({
+          orderId: order.id,
+          orderType: 'b2b',
+          orderNumber: order.orderNumber,
+          method: finalPaymentMethod as any,
+          status: 'received',
+          amount: order.total,
+          currency: 'EUR',
+          paidAt: new Date(),
+          gatewayReference: notes?.match(/\[PayPal Order ID: ([^\]]+)\]/)?.[1] || null,
+          notes: `Pagamento automatico ${finalPaymentMethod.toUpperCase()} per ordine B2B ${order.orderNumber}`,
+          resellerId: order.resellerId,
+          resellerName: resellerForPayment?.fullName || resellerForPayment?.ragioneSociale || 'N/A',
+        });
+        
+        // Auto-approve the order
+        await storage.updateResellerPurchaseOrder(order.id, {
+          status: 'approved',
+          paymentConfirmedAt: new Date(),
+        });
+        
+        // Update order object for response
+        order.status = 'approved';
+        (order as any).paymentConfirmedAt = new Date();
+      }
+
       
       const createdItems = await storage.listRepairCenterPurchaseOrderItems(order.id);
       res.status(201).json({ ...order, items: createdItems });

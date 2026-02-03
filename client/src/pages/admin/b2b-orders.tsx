@@ -423,7 +423,7 @@ export default function AdminB2BOrders() {
                   Chiudi
                 </Button>
                 
-                {selectedOrder.status === 'pending' && (
+                {selectedOrder.status === 'pending' && selectedOrder.paymentMethod === 'bank_transfer' && (
                   <>
                     <Button 
                       variant="destructive" 
