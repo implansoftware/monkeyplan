@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
+import { Link } from "wouter";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -367,7 +368,14 @@ export default function ResellerPayments() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <Label className="text-muted-foreground">Ordine</Label>
-                  <p className="font-medium">{(selectedPayment as any)?.orderNumber || selectedPayment?.orderId?.slice(0, 12)}</p>
+                  <Link 
+                    href={`/reseller/sales-orders/${selectedPayment?.orderId}`}
+                    className="font-medium text-primary hover:underline cursor-pointer"
+                    onClick={() => setShowDetailDialog(false)}
+                    data-testid="link-order-detail"
+                  >
+                    {(selectedPayment as any)?.orderNumber || selectedPayment?.orderId?.slice(0, 12)}
+                  </Link>
                 </div>
                 <div>
                   <Label className="text-muted-foreground">Totale Ordine</Label>
