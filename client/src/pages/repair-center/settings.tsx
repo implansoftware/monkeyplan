@@ -465,7 +465,13 @@ export default function RepairCenterSettings() {
 
   const onPaymentSubmit = (data: PaymentFormData) => {
     // Validate: Client Secret is required when enabling PayPal for the first time
-    if (data.paypalEnabled && !paymentConfigData?.ownConfig?.hasPaypalSecret && (!data.paypalClientSecret || !data.paypalClientSecret.trim())) {
+    // Skip validation if using parent config (inheriting from reseller)
+    const hasOwnSecret = paymentConfigData?.ownConfig?.hasPaypalSecret;
+    const hasParentSecret = paymentConfigData?.parentConfig?.hasPaypalSecret;
+    const needsSecret = data.paypalEnabled && !hasOwnSecret && (!data.paypalClientSecret || !data.paypalClientSecret.trim());
+    
+    // Only require secret if not using parent config OR parent doesn't have a secret
+    if (needsSecret && !paymentConfigData?.useParentConfig) {
       paymentForm.setError("paypalClientSecret", {
         type: "manual",
         message: "Client Secret è obbligatorio per abilitare PayPal"

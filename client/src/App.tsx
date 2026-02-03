@@ -481,7 +481,7 @@ function Router() {
       <ProtectedRoute path="/reseller/hr/sick-leave" component={ResellerHrSickLeave} allowedRoles={["reseller", "reseller_staff", "sub_reseller"]} />
       <ProtectedRoute path="/reseller/hr/calendar" component={ResellerHrCalendar} allowedRoles={["reseller", "reseller_staff", "sub_reseller"]} />
       <ProtectedRoute path="/reseller/hr" component={ResellerHrDashboard} allowedRoles={["reseller", "reseller_staff", "sub_reseller"]} />
-      <ProtectedRoute path="/reseller/settings" component={ResellerSettings} allowedRoles={["reseller"]} />
+      <ProtectedRoute path="/reseller/settings" component={ResellerSettings} allowedRoles={["reseller", "sub_reseller"]} />
       
       {/* Repair Center routes */}
       <ProtectedRoute path="/repair-center" component={RepairCenterDashboard} />
