@@ -8258,10 +8258,17 @@ export function registerRoutes(app: Express): Server {
         }
       }
       
+      // Add hasPaypalSecret flags and strip secrets
+      const formatConfig = (cfg: any) => cfg ? {
+        ...cfg,
+        hasPaypalSecret: cfg.paypalClientSecret && cfg.paypalClientSecret.length > 0,
+        paypalClientSecret: undefined
+      } : null;
+      
       res.json({
-        ownConfig: ownConfig || null,
-        parentConfig: parentConfig || null,
-        effectiveConfig: effectiveConfig || null,
+        ownConfig: formatConfig(ownConfig),
+        parentConfig: formatConfig(parentConfig),
+        effectiveConfig: formatConfig(effectiveConfig),
         useParentConfig: ownConfig?.useParentConfig ?? true
       });
     } catch (error: any) {
@@ -8279,8 +8286,53 @@ export function registerRoutes(app: Express): Server {
         return res.status(400).send("Nessun centro di riparazione associato");
       }
       
+      const { useParentConfig, paypalEnabled, paypalEmail, paypalClientId, paypalClientSecret, ...restBody } = req.body;
+      
+      // If only toggling useParentConfig, allow it
+      if (useParentConfig !== undefined && Object.keys(restBody).length === 0 && !paypalEnabled) {
+        const data = {
+          useParentConfig,
+          entityType: "repair_center" as const,
+          entityId: repairCenterId
+        };
+        const config = await storage.upsertPaymentConfiguration(data);
+        return res.json(config);
+      }
+      
+      // Validate PayPal when not using parent config
+      if (!useParentConfig && paypalEnabled) {
+        if (!paypalEmail || !paypalEmail.trim()) {
+          return res.status(400).send("Email PayPal è obbligatoria quando PayPal è abilitato");
+        }
+        if (!paypalClientId || !paypalClientId.trim()) {
+          return res.status(400).send("Client ID PayPal è obbligatorio quando PayPal è abilitato");
+        }
+        
+        const existingConfig = await storage.getPaymentConfiguration("repair_center", repairCenterId);
+        const hasExistingSecret = existingConfig?.paypalClientSecret && existingConfig.paypalClientSecret.length > 0;
+        
+        if (!paypalClientSecret && !hasExistingSecret) {
+          return res.status(400).send("Client Secret PayPal è obbligatorio per abilitare PayPal");
+        }
+      }
+      
+      const existingConfig = await storage.getPaymentConfiguration("repair_center", repairCenterId);
+      const hasExistingSecret = existingConfig?.paypalClientSecret && existingConfig.paypalClientSecret.length > 0;
+      
+      let finalPaypalSecret = null;
+      if (paypalClientSecret) {
+        finalPaypalSecret = encryptSecret(paypalClientSecret);
+      } else if (hasExistingSecret) {
+        finalPaypalSecret = existingConfig.paypalClientSecret;
+      }
+      
       const data = {
-        ...req.body,
+        ...restBody,
+        useParentConfig: useParentConfig ?? false,
+        paypalEnabled: paypalEnabled ?? false,
+        paypalEmail: paypalEmail || null,
+        paypalClientId: paypalClientId || null,
+        paypalClientSecret: finalPaypalSecret,
         entityType: "repair_center" as const,
         entityId: repairCenterId
       };
