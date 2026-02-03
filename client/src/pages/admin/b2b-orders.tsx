@@ -44,6 +44,7 @@ const statusConfig: Record<string, { label: string; variant: "default" | "second
 const paymentMethodLabels: Record<string, string> = {
   bank_transfer: "Bonifico Bancario",
   stripe: "Stripe",
+  paypal: "PayPal",
   credit: "Credito Reseller",
 };
 
