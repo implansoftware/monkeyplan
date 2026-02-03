@@ -27794,8 +27794,10 @@ export function registerRoutes(app: Express): Server {
         }
       }
       
-      // Calcola IVA dal listino prezzi cliente (scorporata - i prezzi sono IVA inclusa)
-      const customerPriceList = await storage.getPriceListForTarget(resellerId, "customer");
+      // Calcola IVA dal listino prezzi cliente basato sul tipo cliente (company/private)
+      const customerBillingData = await storage.getBillingDataByUserId(req.user.id);
+      const customerType = customerBillingData?.customerType as "private" | "company" | undefined;
+      const customerPriceList = await storage.getPriceListForCustomerType(resellerId, customerType);
       const vatRate = (customerPriceList as any)?.defaultVatRate ?? 22;
       const subtotal = cart.subtotal || 0;
       const discount = cart.discount || 0;

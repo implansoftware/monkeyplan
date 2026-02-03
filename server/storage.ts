@@ -1186,6 +1186,7 @@ export interface IStorage {
   deletePriceList(id: string): Promise<void>;
   getDefaultPriceList(ownerId: string): Promise<PriceList | undefined>;
   getPriceListForTarget(ownerId: string, targetAudience: string): Promise<PriceList | undefined>;
+  getPriceListForCustomerType(ownerId: string, customerType?: "private" | "company"): Promise<PriceList | undefined>;
   setDefaultPriceList(id: string, ownerId: string): Promise<PriceList>;
   copyPriceList(sourceId: string, newOwnerId: string, ownerType: PriceListOwnerType, newName: string, repairCenterId?: string): Promise<PriceList>;
   getInheritedPriceLists(childId: string, childRole: string, customerType?: 'private' | 'company'): Promise<PriceList[]>;
@@ -12556,6 +12557,36 @@ export class DatabaseStorage implements IStorage {
       .orderBy(desc(priceLists.isDefault), desc(priceLists.createdAt))
       .limit(1);
     return list || undefined;
+  }
+
+  async getPriceListForCustomerType(ownerId: string, customerType?: "private" | "company"): Promise<PriceList | undefined> {
+    // Se specificato customerType, cerca prima un listino con target_customer_type corrispondente
+    if (customerType) {
+      const [specificList] = await db.select().from(priceLists)
+        .where(and(
+          eq(priceLists.ownerId, ownerId),
+          eq(priceLists.isActive, true),
+          eq(priceLists.targetAudience, "customer"),
+          eq(priceLists.targetCustomerType, customerType)
+        ))
+        .orderBy(desc(priceLists.isDefault), desc(priceLists.createdAt))
+        .limit(1);
+      if (specificList) return specificList;
+    }
+    // Fallback: cerca listino generico per customer SENZA target_customer_type specifico (NULL)
+    const [genericList] = await db.select().from(priceLists)
+      .where(and(
+        eq(priceLists.ownerId, ownerId),
+        eq(priceLists.isActive, true),
+        or(
+          eq(priceLists.targetAudience, "customer"),
+          eq(priceLists.targetAudience, "all")
+        ),
+        isNull(priceLists.targetCustomerType)
+      ))
+      .orderBy(desc(priceLists.isDefault), desc(priceLists.createdAt))
+      .limit(1);
+    return genericList || undefined;
   }
 
   async setDefaultPriceList(id: string, ownerId: string): Promise<PriceList> {
