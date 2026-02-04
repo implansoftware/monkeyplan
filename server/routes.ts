@@ -32547,7 +32547,7 @@ export function registerRoutes(app: Express): Server {
         });
         
         // Auto-approve the order
-        await storage.updateResellerPurchaseOrder(order.id, {
+        await storage.updateRepairCenterPurchaseOrder(order.id, {
           status: 'approved',
           paymentConfirmedAt: new Date(),
         });
