@@ -6656,7 +6656,7 @@ export const paymentConfigurations = pgTable("payment_configurations", {
   stripeChargesEnabled: boolean("stripe_charges_enabled").notNull().default(false),
   stripePayoutsEnabled: boolean("stripe_payouts_enabled").notNull().default(false),
   stripePublishableKey: varchar("stripe_publishable_key", { length: 200 }), // pk_live_xxxxx or pk_test_xxxxx
-  stripeSecretKey: varchar("stripe_secret_key", { length: 200 }), // sk_live_xxxxx or sk_test_xxxxx (encrypted)
+  stripeSecretKey: varchar("stripe_secret_key", { length: 500 }), // sk_live_xxxxx or sk_test_xxxxx (encrypted)
   
   // PayPal configuration
   paypalEnabled: boolean("paypal_enabled").notNull().default(false),
