@@ -31751,7 +31751,7 @@ export function registerRoutes(app: Express): Server {
           orderId: order.id,
           orderType: 'marketplace',
           amount: subtotal + shippingCost,
-          paymentMethod: finalPaymentMethod,
+          method: finalPaymentMethod,
           status: 'completed',
           notes: `Pagamento automatico ${finalPaymentMethod.toUpperCase()} per ordine Marketplace ${order.orderNumber}`,
         });
