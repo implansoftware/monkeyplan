@@ -368,7 +368,6 @@ export default function CustomerServiceCatalog() {
                         case "bank_transfer": return <Building className="w-4 h-4" />;
                         case "card": return <CreditCard className="w-4 h-4" />;
                         case "paypal": return <Wallet className="w-4 h-4" />;
-                        case "satispay": return <Wallet className="w-4 h-4" />;
                         default: return <Banknote className="w-4 h-4" />;
                       }
                     };

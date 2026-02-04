@@ -58,7 +58,6 @@ export default function SalesHistoryPage() {
       cash: "Contanti",
       card: "Carta",
       pos_terminal: "POS",
-      satispay: "Satispay",
       mixed: "Misto",
     };
     return labels[method] || method;

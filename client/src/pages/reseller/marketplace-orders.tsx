@@ -53,7 +53,6 @@ function getPaymentMethodLabel(method: string): string {
     'bank_transfer': 'Bonifico Bancario',
     'stripe': 'Carta di Credito',
     'paypal': 'PayPal',
-    'satispay': 'Satispay',
     'cash': 'Contanti',
     'card': 'Carta',
     'pos_terminal': 'POS'

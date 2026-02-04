@@ -72,7 +72,6 @@ export default function RepairCenterMarketplace() {
     bankTransfer: { enabled: boolean; iban: string | null; accountHolder: string | null; bankName: string | null; bic: string | null };
     stripe: { enabled: boolean };
     paypal: { enabled: boolean; email: string | null };
-    satispay: { enabled: boolean };
     hasAnyMethod: boolean;
   }>({
     queryKey: [`/api/payment-config/${currentSellerId}/public`],
@@ -121,7 +120,6 @@ export default function RepairCenterMarketplace() {
     if (paymentConfig.bankTransfer?.enabled) methods.push('bank_transfer');
     if (paymentConfig.stripe?.enabled) methods.push('stripe');
     if (paymentConfig.paypal?.enabled) methods.push('paypal');
-    if (paymentConfig.satispay?.enabled) methods.push('satispay');
     // Only auto-select if current method is not in available methods
     if (methods.length > 0 && !methods.includes(paymentMethod)) {
       setPaymentMethod(methods[0]);
@@ -531,9 +529,6 @@ export default function RepairCenterMarketplace() {
                     )}
                     {paymentConfig?.paypal?.enabled && (
                       <SelectItem value="paypal">PayPal</SelectItem>
-                    )}
-                    {paymentConfig?.satispay?.enabled && (
-                      <SelectItem value="satispay">Satispay</SelectItem>
                     )}
                   </SelectContent>
                 </Select>

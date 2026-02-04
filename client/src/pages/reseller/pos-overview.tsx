@@ -37,7 +37,6 @@ interface PosStats {
     cash: number;
     card: number;
     pos_terminal: number;
-    satispay: number;
     mixed: number;
   };
   topRepairCenters: Array<{
@@ -107,7 +106,6 @@ interface RegisterStats {
     cash: number;
     card: number;
     pos: number;
-    satispay: number;
   };
   isDefault: boolean;
   isActive: boolean;
@@ -183,7 +181,6 @@ export default function ResellerPosOverview() {
       cash: "Contanti",
       card: "Carta",
       pos_terminal: "POS",
-      satispay: "Satispay",
       mixed: "Misto",
     };
     return labels[method] || method;

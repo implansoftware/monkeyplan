@@ -899,13 +899,6 @@ export default function AdminSettings() {
                         </>
                       )}
 
-                      <FormField
-                        control={paymentForm.control}
-                              />
-                            </FormControl>
-                          </FormItem>
-                        )}
-                      />
                     </div>
 
                     <Button 

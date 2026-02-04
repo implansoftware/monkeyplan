@@ -36,7 +36,7 @@ type TransactionDetail = {
     taxRate: number;
     taxAmount: number;
     total: number;
-    paymentMethod: "cash" | "card" | "pos_terminal" | "satispay" | "mixed";
+    paymentMethod: "cash" | "card" | "pos_terminal" | "mixed";
     cashReceived: number | null;
     changeGiven: number | null;
     status: "completed" | "refunded" | "partial_refund" | "voided";
@@ -75,7 +75,6 @@ const paymentMethodLabels: Record<string, { label: string; icon: typeof CreditCa
   cash: { label: "Contanti", icon: Banknote },
   card: { label: "Carta", icon: CreditCard },
   pos_terminal: { label: "POS", icon: CreditCard },
-  satispay: { label: "Satispay", icon: Wallet },
   mixed: { label: "Misto", icon: Calculator },
 };
 

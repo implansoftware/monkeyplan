@@ -60,7 +60,6 @@ function getPaymentMethodName(method: string): string {
     bank_transfer: 'Bonifico Bancario',
     stripe: 'Carta di Credito (Stripe)',
     paypal: 'PayPal',
-    satispay: 'Satispay',
     cash: 'Contanti',
     credit: 'Credito',
   };

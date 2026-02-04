@@ -40,7 +40,6 @@ interface PaymentConfig {
   bankTransfer: { enabled: boolean; iban: string | null; accountHolder: string | null; bankName: string | null; bic: string | null };
   stripe: { enabled: boolean };
   paypal: { enabled: boolean; email: string | null };
-  satispay: { enabled: boolean };
   hasAnyMethod: boolean;
 }
 
@@ -92,8 +91,6 @@ export default function RepairCenterB2BCatalog() {
         setPaymentMethod('stripe');
       } else if (paymentConfig.paypal.enabled) {
         setPaymentMethod('paypal');
-      } else if (paymentConfig.satispay.enabled) {
-        setPaymentMethod('satispay');
       }
     }
   }, [paymentConfig]);
@@ -455,9 +452,6 @@ export default function RepairCenterB2BCatalog() {
                     )}
                     {paymentConfig.paypal.enabled && (
                       <SelectItem value="paypal">PayPal</SelectItem>
-                    )}
-                    {paymentConfig.satispay.enabled && (
-                      <SelectItem value="satispay">Satispay</SelectItem>
                     )}
                   </SelectContent>
                 </Select>

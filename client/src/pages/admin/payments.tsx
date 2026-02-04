@@ -55,7 +55,6 @@ const methodLabels: Record<string, string> = {
   bank_transfer: "Bonifico",
   paypal: "PayPal",
   stripe: "Stripe",
-  satispay: "Satispay",
   pos: "POS",
   credit: "Credito"
 };
@@ -66,7 +65,6 @@ const methodIcons: Record<string, any> = {
   bank_transfer: Receipt,
   paypal: DollarSign,
   stripe: CreditCard,
-  satispay: DollarSign,
   pos: CreditCard,
   credit: Receipt
 };

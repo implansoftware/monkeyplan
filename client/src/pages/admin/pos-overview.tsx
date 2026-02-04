@@ -32,7 +32,6 @@ interface PosStats {
     cash: number;
     card: number;
     pos_terminal: number;
-    satispay: number;
     mixed: number;
   };
   topResellers: Array<{
@@ -109,7 +108,6 @@ export default function AdminPosOverview() {
       cash: "Contanti",
       card: "Carta",
       pos_terminal: "POS",
-      satispay: "Satispay",
       mixed: "Misto",
     };
     return labels[method] || method;

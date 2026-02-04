@@ -34,7 +34,6 @@ interface PaymentConfigPublic {
   };
   stripe: { enabled: boolean };
   paypal: { enabled: boolean; email: string | null };
-  satispay: { enabled: boolean };
   hasAnyMethod: boolean;
 }
 
@@ -105,8 +104,6 @@ export default function ShopCheckout() {
         setPaymentMethod("bank_transfer");
       } else if (paymentConfig.paypal.enabled) {
         setPaymentMethod("paypal");
-      } else if (paymentConfig.satispay.enabled) {
-        setPaymentMethod("satispay");
       } else {
         setPaymentMethod("");
       }
@@ -420,15 +417,6 @@ export default function ShopCheckout() {
                       <Label htmlFor="payment-transfer" className="flex-1 cursor-pointer">
                         <div className="font-medium">Bonifico bancario</div>
                         <div className="text-sm text-muted-foreground">Le coordinate bancarie saranno mostrate di seguito</div>
-                      </Label>
-                    </div>
-                  )}
-                  {paymentConfig.satispay.enabled && (
-                    <div className="flex items-start space-x-3 p-3 rounded-lg border hover-elevate" data-testid="payment-option-satispay">
-                      <RadioGroupItem value="satispay" id="payment-satispay" />
-                      <Label htmlFor="payment-satispay" className="flex-1 cursor-pointer">
-                        <div className="font-medium">Satispay</div>
-                        <div className="text-sm text-muted-foreground">Paga con la tua app Satispay</div>
                       </Label>
                     </div>
                   )}

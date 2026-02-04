@@ -1131,19 +1131,6 @@ export default function ResellerSettings() {
                     </>
                   )}
 
-                  <Separator />
-
-                  <div className="flex items-center gap-3 pt-2">
-                    <div className="p-2 bg-[#f64a4a]/10 rounded-lg">
-                      <CreditCard className="h-6 w-6 text-[#f64a4a]" />
-                    </div>
-                    <div>
-                    )}
-                  />
-
-                      )}
-                    />
-                  )}
 
                   <Button 
                     type="submit" 

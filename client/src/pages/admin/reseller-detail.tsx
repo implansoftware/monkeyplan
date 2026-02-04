@@ -340,22 +340,6 @@ export default function AdminResellerDetail() {
                   </span>
                 </div>
               </div>
-              <div className="p-3 bg-slate-50 dark:bg-slate-800/30 rounded-xl" data-testid="payment-satispay-status">
-                <div className="flex items-center gap-2 mb-1">
-                  <CreditCard className="h-4 w-4 text-[#FF4438]" />
-                  <p className="text-xs text-slate-500 uppercase tracking-wide">Satispay</p>
-                </div>
-                <div className="flex items-center gap-1">
-                  {paymentConfig.satispayEnabled && paymentConfig.satispayShopId ? (
-                    <Check className="h-4 w-4 text-emerald-500" />
-                  ) : (
-                    <X className="h-4 w-4 text-slate-400" />
-                  )}
-                  <span className={paymentConfig.satispayEnabled && paymentConfig.satispayShopId ? "text-emerald-600 font-medium text-sm" : "text-slate-400 text-sm"}>
-                    {paymentConfig.satispayEnabled && paymentConfig.satispayShopId ? "Configurato" : "Non attivo"}
-                  </span>
-                </div>
-              </div>
             </div>
           )}
         </CardContent>

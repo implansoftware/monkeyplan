@@ -11989,7 +11989,7 @@ export class DatabaseStorage implements IStorage {
     todayTransactions: number;
     todayRevenue: number;
     todayRefunds: number;
-    paymentBreakdown: { cash: number; card: number; pos_terminal: number; satispay: number; mixed: number };
+    paymentBreakdown: { cash: number; card: number; pos_terminal: number; mixed: number };
     topRepairCenters: { id: number; name: string; transactionCount: number; revenue: number }[];
     recentTransactions: { id: string; transactionNumber: string; type: string; paymentMethod: string; totalAmount: number; createdAt: string; repairCenterName: string }[];
   }> {
@@ -12018,7 +12018,7 @@ export class DatabaseStorage implements IStorage {
     if (centerIds.length === 0) {
       return {
         totalSessions: 0, activeSessions: 0, todayTransactions: 0, todayRevenue: 0, todayRefunds: 0,
-        paymentBreakdown: { cash: 0, card: 0, pos_terminal: 0, satispay: 0, mixed: 0 },
+        paymentBreakdown: { cash: 0, card: 0, pos_terminal: 0, mixed: 0 },
         topRepairCenters: [], recentTransactions: [],
       };
     }
@@ -12044,7 +12044,7 @@ export class DatabaseStorage implements IStorage {
 
     let todayRevenue = 0;
     let todayRefunds = 0;
-    const paymentBreakdown = { cash: 0, card: 0, pos_terminal: 0, satispay: 0, mixed: 0 };
+    const paymentBreakdown = { cash: 0, card: 0, pos_terminal: 0, mixed: 0 };
 
     for (const t of transactions) {
       if (t.tx.status === "completed") {
@@ -12100,7 +12100,7 @@ export class DatabaseStorage implements IStorage {
     todayTransactions: number;
     todayRevenue: number;
     todayRefunds: number;
-    paymentBreakdown: { cash: number; card: number; pos_terminal: number; satispay: number; mixed: number };
+    paymentBreakdown: { cash: number; card: number; pos_terminal: number; mixed: number };
     topRepairCenters: { id: number; name: string; transactionCount: number; revenue: number }[];
     recentTransactions: { id: string; transactionNumber: string; type: string; paymentMethod: string; totalAmount: number; createdAt: string; repairCenterName: string }[];
     recentSessions: { id: string; repairCenterName: string; registerName: string | null; operatorName: string; status: string; openedAt: string; closedAt: string | null; totalSales: number; totalTransactions: number }[];
@@ -12164,7 +12164,7 @@ export class DatabaseStorage implements IStorage {
 
     let todayRevenue = 0;
     let todayRefunds = 0;
-    const paymentBreakdown = { cash: 0, card: 0, pos_terminal: 0, satispay: 0, mixed: 0 };
+    const paymentBreakdown = { cash: 0, card: 0, pos_terminal: 0, mixed: 0 };
 
     for (const t of transactions) {
       if (t.tx.status === "completed") {

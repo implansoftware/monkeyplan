@@ -164,7 +164,7 @@ type PosTransaction = {
   taxRate: number;
   taxAmount: number;
   total: number;
-  paymentMethod: "cash" | "card" | "pos_terminal" | "satispay" | "mixed";
+  paymentMethod: "cash" | "card" | "pos_terminal" | "mixed";
   cashReceived: number | null;
   changeGiven: number | null;
   status: "completed" | "refunded" | "partial_refund" | "voided";
@@ -250,7 +250,6 @@ const paymentMethodLabels: Record<string, { label: string; icon: typeof CreditCa
   cash: { label: "Contanti", icon: Banknote },
   card: { label: "Carta", icon: CreditCard },
   pos_terminal: { label: "POS", icon: CreditCard },
-  satispay: { label: "Satispay", icon: Wallet },
   mixed: { label: "Misto", icon: Calculator },
 };
 
@@ -261,7 +260,7 @@ export default function PosPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [serviceSearchQuery, setServiceSearchQuery] = useState("");
   const [barcodeInput, setBarcodeInput] = useState("");
-  const [selectedPayment, setSelectedPayment] = useState<"cash" | "card" | "pos_terminal" | "satispay" | "mixed">("cash");
+  const [selectedPayment, setSelectedPayment] = useState<"cash" | "card" | "pos_terminal" | "mixed">("cash");
   const [cashReceived, setCashReceived] = useState<string>("");
   const [discountAmount, setDiscountAmount] = useState<string>("");
   const [transactionNotes, setTransactionNotes] = useState("");
@@ -1565,7 +1564,7 @@ export default function PosPage() {
           
           {/* Metodi di pagamento */}
           <div className="grid grid-cols-4 gap-1 w-full">
-            {(["cash", "card", "pos_terminal", "satispay"] as const).map((method) => {
+            {(["cash", "card", "pos_terminal"] as const).map((method) => {
               const { label, icon: Icon } = paymentMethodLabels[method];
               return (
                 <button
@@ -1658,7 +1657,7 @@ export default function PosPage() {
           
           <div className="space-y-3">
             <div className="grid grid-cols-4 gap-1">
-              {(["cash", "card", "pos_terminal", "satispay"] as const).map((method) => {
+              {(["cash", "card", "pos_terminal"] as const).map((method) => {
                 const { label, icon: Icon } = paymentMethodLabels[method];
                 return (
                   <button

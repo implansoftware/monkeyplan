@@ -1353,19 +1353,6 @@ export default function RepairCenterSettings() {
                                   </p>
                                 </div>
                               </div>
-                              <div className="flex items-center gap-3 p-3 bg-muted rounded-lg">
-                                <CircleDollarSign className="h-5 w-5 text-[#f24e4e]" />
-                                <div>
-                                  <p className="text-sm text-muted-foreground">
-                                      <span className="flex items-center gap-1 text-green-600">
-                                        <CheckCircle className="h-3 w-3" /> Attivo
-                                      </span>
-                                    ) : (
-                                      <span className="text-muted-foreground">Non attivo</span>
-                                    )}
-                                  </p>
-                                </div>
-                              </div>
                             </div>
                           </CardContent>
                         </Card>
@@ -1795,52 +1782,6 @@ export default function RepairCenterSettings() {
                                 </CardContent>
                               </Card>
 
-                              <Card>
-                                <CardHeader>
-                                  <div className="flex items-center gap-3">
-                                    <div className="p-2 bg-[#f24e4e]/10 rounded-lg">
-                                      <CircleDollarSign className="h-6 w-6 text-[#f24e4e]" />
-                                    </div>
-                                    <div>
-                                      <CardDescription>
-                                      </CardDescription>
-                                    </div>
-                                  </div>
-                                </CardHeader>
-                                <CardContent className="space-y-4">
-                                  <FormField
-                                    control={paymentForm.control}
-                                    render={({ field }) => (
-                                      <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                                        <div className="space-y-0.5">
-                                          <FormDescription>
-                                          </FormDescription>
-                                        </div>
-                                        <FormControl>
-                                          <Switch
-                                            checked={field.value}
-                                            onCheckedChange={field.onChange}
-                                          />
-                                        </FormControl>
-                                      </FormItem>
-                                    )}
-                                  />
-
-                                    <FormField
-                                      control={paymentForm.control}
-                                      render={({ field }) => (
-                                        <FormItem className="pt-4">
-                                          <FormControl>
-                                          </FormControl>
-                                          <FormDescription>
-                                          </FormDescription>
-                                          <FormMessage />
-                                        </FormItem>
-                                      )}
-                                    />
-                                  )}
-                                </CardContent>
-                              </Card>
 
                               <div className="flex justify-end">
                                 <Button type="submit" disabled={updatePaymentMutation.isPending} data-testid="button-save-payments">

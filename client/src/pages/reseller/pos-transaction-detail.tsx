@@ -168,7 +168,6 @@ export default function ResellerPosTransactionDetail() {
       cash: "Contanti",
       card: "Carta",
       pos_terminal: "POS",
-      satispay: "Satispay",
       mixed: "Misto",
     };
     return labels[method] || method;

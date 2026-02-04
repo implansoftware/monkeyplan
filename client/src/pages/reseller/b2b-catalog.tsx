@@ -49,7 +49,6 @@ interface PaymentConfigPublic {
   };
   stripe: { enabled: boolean };
   paypal: { enabled: boolean; email: string | null };
-  satispay: { enabled: boolean };
   hasAnyMethod: boolean;
 }
 
@@ -100,7 +99,6 @@ export default function ResellerB2BCatalog() {
     if (paymentConfig.bankTransfer?.enabled) methods.push('bank_transfer');
     if (paymentConfig.stripe?.enabled) methods.push('stripe');
     if (paymentConfig.paypal?.enabled) methods.push('paypal');
-    if (paymentConfig.satispay?.enabled) methods.push('satispay');
     
     if (methods.length > 0 && !methods.includes(paymentMethod)) {
       setPaymentMethod(methods[0]);
@@ -554,8 +552,6 @@ export default function ResellerB2BCatalog() {
                     {paymentConfig?.paypal?.enabled && (
                       <SelectItem value="paypal">PayPal</SelectItem>
                     )}
-                    {paymentConfig?.satispay?.enabled && (
-                      <SelectItem value="satispay">Satispay</SelectItem>
                     )}
                   </SelectContent>
                 </Select>

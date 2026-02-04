@@ -32,7 +32,6 @@ interface PaymentConfigPublic {
   };
   stripe: { enabled: boolean };
   paypal: { enabled: boolean; email: string | null };
-  satispay: { enabled: boolean };
   hasAnyMethod: boolean;
 }
 

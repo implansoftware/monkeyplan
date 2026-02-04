@@ -63,7 +63,6 @@ const paymentMethodLabels: Record<string, string> = {
   cash: "Contanti",
   card: "Carta",
   pos_terminal: "POS",
-  satispay: "Satispay",
   mixed: "Misto",
 };
 
