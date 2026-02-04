@@ -11,7 +11,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Loader2, ShoppingCart, Search, Wrench, Clock, Banknote, Building } from "lucide-react";
+import { Loader2, ShoppingCart, Search, Wrench, Clock, Banknote, Building, CreditCard, Wallet } from "lucide-react";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import type { ServiceItem, DeviceType, DeviceBrand, DeviceModel } from "@shared/schema";
 
@@ -19,6 +19,20 @@ type ServiceItemWithPrice = ServiceItem & {
   effectivePriceCents: number;
   effectiveLaborMinutes: number;
   priceSource: string;
+};
+
+type PaymentMethod = {
+  id: string;
+  name: string;
+  enabled: boolean;
+  details?: {
+    iban?: string;
+    accountHolder?: string;
+    bankName?: string;
+    bic?: string;
+    publishableKey?: string;
+    clientId?: string;
+  };
 };
 
 export default function CustomerServiceCatalog() {
@@ -37,7 +51,12 @@ export default function CustomerServiceCatalog() {
     serial: "",
     issueDescription: "",
     customerNotes: "",
-    paymentMethod: "in_person" as "in_person" | "bank_transfer",
+    paymentMethod: "in_person" as string,
+  });
+
+  const { data: paymentMethods } = useQuery<{ methods: PaymentMethod[]; configSource: string }>({
+    queryKey: ["/api/customer/payment-methods"],
+    enabled: !!user,
   });
 
   const { data: catalog, isLoading: catalogLoading } = useQuery<ServiceItemWithPrice[]>({
@@ -335,35 +354,60 @@ export default function CustomerServiceCatalog() {
 
             <div className="space-y-2">
               <Label>Metodo di pagamento</Label>
-              <RadioGroup
-                value={orderForm.paymentMethod}
-                onValueChange={(value) => setOrderForm({ ...orderForm, paymentMethod: value as "in_person" | "bank_transfer" })}
-              >
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="in_person" id="in_person" data-testid="radio-pay-in-person" />
-                  <Label htmlFor="in_person" className="flex flex-wrap items-center gap-2 cursor-pointer">
-                    <Banknote className="w-4 h-4" />
-                    Pagamento di persona
-                  </Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="bank_transfer" id="bank_transfer" data-testid="radio-pay-transfer" />
-                  <Label htmlFor="bank_transfer" className="flex flex-wrap items-center gap-2 cursor-pointer">
-                    <Building className="w-4 h-4" />
-                    Bonifico bancario
-                  </Label>
-                </div>
-              </RadioGroup>
-              {orderForm.paymentMethod === "bank_transfer" && myReseller && (
-                <div className="p-3 bg-muted rounded-md text-sm mt-2">
-                  <p className="font-medium mb-1">Dati per il bonifico</p>
-                  <p><span className="text-muted-foreground">Intestatario:</span> {myReseller.ragioneSociale || myReseller.fullName}</p>
-                  {myReseller.iban ? (
-                    <p><span className="text-muted-foreground">IBAN:</span> <span className="font-mono">{myReseller.iban}</span></p>
-                  ) : (
-                    <p className="text-amber-600">IBAN non ancora configurato - contatta il rivenditore</p>
-                  )}
-                </div>
+              {paymentMethods?.methods && paymentMethods.methods.length > 0 ? (
+                <RadioGroup
+                  value={orderForm.paymentMethod}
+                  onValueChange={(value) => setOrderForm({ ...orderForm, paymentMethod: value })}
+                >
+                  {paymentMethods.methods.map((method) => {
+                    const getIcon = (id: string) => {
+                      switch (id) {
+                        case "in_person": return <Banknote className="w-4 h-4" />;
+                        case "bank_transfer": return <Building className="w-4 h-4" />;
+                        case "card": return <CreditCard className="w-4 h-4" />;
+                        case "paypal": return <Wallet className="w-4 h-4" />;
+                        case "satispay": return <Wallet className="w-4 h-4" />;
+                        default: return <Banknote className="w-4 h-4" />;
+                      }
+                    };
+                    return (
+                      <div key={method.id} className="flex items-center space-x-2">
+                        <RadioGroupItem value={method.id} id={method.id} data-testid={`radio-pay-${method.id}`} />
+                        <Label htmlFor={method.id} className="flex flex-wrap items-center gap-2 cursor-pointer">
+                          {getIcon(method.id)}
+                          {method.name}
+                        </Label>
+                      </div>
+                    );
+                  })}
+                </RadioGroup>
+              ) : (
+                <p className="text-sm text-muted-foreground">Caricamento metodi di pagamento...</p>
+              )}
+              {orderForm.paymentMethod === "bank_transfer" && paymentMethods?.methods && (
+                (() => {
+                  const bankMethod = paymentMethods.methods.find(m => m.id === "bank_transfer");
+                  if (!bankMethod?.details) return null;
+                  return (
+                    <div className="p-3 bg-muted rounded-md text-sm mt-2">
+                      <p className="font-medium mb-1">Dati per il bonifico</p>
+                      {bankMethod.details.accountHolder && (
+                        <p><span className="text-muted-foreground">Intestatario:</span> {bankMethod.details.accountHolder}</p>
+                      )}
+                      {bankMethod.details.iban ? (
+                        <p><span className="text-muted-foreground">IBAN:</span> <span className="font-mono">{bankMethod.details.iban}</span></p>
+                      ) : (
+                        <p className="text-amber-600">IBAN non ancora configurato - contatta il rivenditore</p>
+                      )}
+                      {bankMethod.details.bankName && (
+                        <p><span className="text-muted-foreground">Banca:</span> {bankMethod.details.bankName}</p>
+                      )}
+                      {bankMethod.details.bic && (
+                        <p><span className="text-muted-foreground">BIC/SWIFT:</span> <span className="font-mono">{bankMethod.details.bic}</span></p>
+                      )}
+                    </div>
+                  );
+                })()
               )}
             </div>
           </div>

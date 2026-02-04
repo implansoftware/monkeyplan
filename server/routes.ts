@@ -10709,6 +10709,109 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // Customer: get available payment methods (from repair center or reseller with fallback)
+  app.get("/api/customer/payment-methods", requireRole("customer"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const resellerId = req.user.resellerId;
+      const repairCenterId = req.user.repairCenterId;
+      
+      if (!resellerId) {
+        return res.status(400).send("Nessun rivenditore associato");
+      }
+      
+      let effectiveConfig = null;
+      let configSource = "none";
+      
+      // If customer is associated with a repair center, try RC config first
+      if (repairCenterId) {
+        const rcConfig = await storage.getPaymentConfiguration("repair_center", repairCenterId);
+        
+        if (rcConfig && !rcConfig.useParentConfig) {
+          effectiveConfig = rcConfig;
+          configSource = "repair_center";
+        }
+      }
+      
+      // Fallback to reseller config
+      if (!effectiveConfig) {
+        effectiveConfig = await storage.getPaymentConfiguration("reseller", resellerId);
+        configSource = "reseller";
+      }
+      
+      // Build available methods list
+      const methods: {
+        id: string;
+        name: string;
+        enabled: boolean;
+        details?: any;
+      }[] = [];
+      
+      // In-person is always available
+      methods.push({
+        id: "in_person",
+        name: "Pagamento di persona",
+        enabled: true
+      });
+      
+      // Bank transfer
+      if (effectiveConfig?.bankTransferEnabled) {
+        methods.push({
+          id: "bank_transfer",
+          name: "Bonifico bancario",
+          enabled: true,
+          details: {
+            iban: effectiveConfig.iban,
+            accountHolder: effectiveConfig.accountHolder,
+            bankName: effectiveConfig.bankName,
+            bic: effectiveConfig.bic
+          }
+        });
+      }
+      
+      // Stripe
+      if (effectiveConfig?.stripeEnabled && effectiveConfig?.stripePublishableKey) {
+        methods.push({
+          id: "card",
+          name: "Carta di credito/debito",
+          enabled: true,
+          details: {
+            publishableKey: effectiveConfig.stripePublishableKey
+          }
+        });
+      }
+      
+      // PayPal
+      if (effectiveConfig?.paypalEnabled && effectiveConfig?.paypalClientId) {
+        methods.push({
+          id: "paypal",
+          name: "PayPal",
+          enabled: true,
+          details: {
+            clientId: effectiveConfig.paypalClientId
+          }
+        });
+      }
+      
+      // Satispay
+      if (effectiveConfig?.satispayEnabled) {
+        methods.push({
+          id: "satispay",
+          name: "Satispay",
+          enabled: true
+        });
+      }
+      
+      res.json({
+        methods,
+        configSource
+      });
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
   // Customer: get service catalog from their reseller
   app.get("/api/customer/service-catalog", requireRole("customer"), async (req, res) => {
     try {
