@@ -31700,7 +31700,7 @@ export function registerRoutes(app: Express): Server {
         validatedItems.push({
           productId: item.productId,
           quantity: item.quantity,
-          unitPrice: unitPriceCents,
+          unitPrice: unitPrice,
           totalPrice,
           productName: product.name,
           productSku: product.sku,
