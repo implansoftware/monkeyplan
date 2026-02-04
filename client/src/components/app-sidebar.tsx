@@ -133,6 +133,7 @@ const menuItems = {
     { title: "Catalogo Dispositivi", url: "/admin/device-catalog", icon: Package, group: "Cataloghi" },
     { title: "Compatibilità Dispositivi", url: "/admin/device-compatibilities", icon: Link2, group: "Cataloghi" },
     { title: "Listino Prezzi", url: "/admin/service-catalog", icon: Receipt, group: "Cataloghi" },
+    { title: "Ordini Interventi", url: "/admin/service-orders", icon: FileText, group: "Cataloghi" },
     { title: "Categorie Utility", url: "/admin/utility-categories", icon: FolderOpen, group: "Cataloghi" },
     { title: "Listini Network", url: "/admin/price-lists", icon: ListOrdered, group: "Configurazione" },
     { title: "Prodotti Garanzia", url: "/admin/warranty-products", icon: Shield, group: "Configurazione" },
@@ -291,6 +292,7 @@ const menuItems = {
     { title: "Lavorazioni", url: "/repair-center/repairs", icon: Wrench, group: "Lavorazioni" },
     { title: "Appuntamenti", url: "/repair-center/appointments", icon: CalendarCheck, group: "Lavorazioni" },
     { title: "Listino Interventi", url: "/repair-center/service-catalog", icon: Receipt, group: "Lavorazioni" },
+    { title: "Ordini Interventi", url: "/repair-center/service-orders", icon: FileText, group: "Lavorazioni" },
     { title: "Richieste Remote", url: "/repair-center/remote-requests", icon: Send, group: "Lavorazioni" },
     // Utility
     { title: "Utility", url: "/repair-center/utility", icon: Zap, group: "Utility" },

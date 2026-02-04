@@ -41808,5 +41808,206 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+
+  // ============================================================================
+  // REPAIR CENTER: SERVICE ORDERS
+  // ============================================================================
+
+  // Repair Center: List service orders assigned to this repair center
+  app.get("/api/repair-center/service-orders", requireRole("repair_center", "repair_center_staff"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const repairCenterId = req.user.repairCenterId;
+      if (!repairCenterId) {
+        return res.status(400).send("Repair center not found");
+      }
+      
+      const orders = await storage.listServiceOrders({ repairCenterId });
+      
+      const ordersWithDetails = await Promise.all(orders.map(async (order) => {
+        const customer = await storage.getUser(order.customerId);
+        const serviceItem = await storage.getServiceItem(order.serviceItemId);
+        return {
+          ...order,
+          customerName: customer?.fullName || customer?.username || 'N/A',
+          serviceName: serviceItem?.name || 'N/A',
+          serviceCode: serviceItem?.code || 'N/A'
+        };
+      }));
+      
+      res.json(ordersWithDetails);
+    } catch (error: any) {
+      console.error("Repair center service orders error:", error);
+      res.status(500).send(error.message);
+    }
+  });
+
+  // Repair Center: Get single service order
+  app.get("/api/repair-center/service-orders/:id", requireRole("repair_center", "repair_center_staff"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const repairCenterId = req.user.repairCenterId;
+      if (!repairCenterId) {
+        return res.status(400).send("Repair center not found");
+      }
+      
+      const order = await storage.getServiceOrder(req.params.id);
+      if (!order) return res.status(404).send("Ordine non trovato");
+      if (order.repairCenterId !== repairCenterId) {
+        return res.status(403).send("Accesso non autorizzato");
+      }
+      
+      const customer = await storage.getUser(order.customerId);
+      const serviceItem = await storage.getServiceItem(order.serviceItemId);
+      
+      res.json({
+        ...order,
+        customerName: customer?.fullName || customer?.username || 'N/A',
+        serviceName: serviceItem?.name || 'N/A',
+        serviceCode: serviceItem?.code || 'N/A'
+      });
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
+  // Repair Center: Start service order (set to in_progress)
+  app.patch("/api/repair-center/service-orders/:id/start", requireRole("repair_center", "repair_center_staff"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const repairCenterId = req.user.repairCenterId;
+      if (!repairCenterId) {
+        return res.status(400).send("Repair center not found");
+      }
+      
+      const order = await storage.getServiceOrder(req.params.id);
+      if (!order) return res.status(404).send("Ordine non trovato");
+      if (order.repairCenterId !== repairCenterId) {
+        return res.status(403).send("Accesso non autorizzato");
+      }
+      
+      if (order.status !== 'accepted' && order.status !== 'scheduled') {
+        return res.status(400).send("L'ordine deve essere accettato o programmato per avviare la lavorazione");
+      }
+      
+      const updated = await storage.updateServiceOrder(order.id, { status: 'in_progress' });
+      res.json(updated);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
+  // Repair Center: Complete service order
+  app.patch("/api/repair-center/service-orders/:id/complete", requireRole("repair_center", "repair_center_staff"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const repairCenterId = req.user.repairCenterId;
+      if (!repairCenterId) {
+        return res.status(400).send("Repair center not found");
+      }
+      
+      const order = await storage.getServiceOrder(req.params.id);
+      if (!order) return res.status(404).send("Ordine non trovato");
+      if (order.repairCenterId !== repairCenterId) {
+        return res.status(403).send("Accesso non autorizzato");
+      }
+      
+      if (order.status !== 'in_progress') {
+        return res.status(400).send("L'ordine deve essere in lavorazione per completarlo");
+      }
+      
+      const updated = await storage.updateServiceOrder(order.id, { status: 'completed' });
+      
+      // Notify customer
+      await storage.createNotification({
+        userId: order.customerId,
+        type: "system",
+        title: "Intervento completato",
+        message: "Il tuo intervento è stato completato",
+        data: JSON.stringify({ serviceOrderId: order.id })
+      });
+      broadcastNotification(order.customerId, {
+        type: "service_order_completed",
+        title: "Intervento completato",
+        message: "Il tuo intervento è stato completato",
+        orderId: order.id
+      });
+      
+      res.json(updated);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
+  // ============================================================================
+  // ADMIN: SERVICE ORDERS
+  // ============================================================================
+
+  // Admin: List all service orders
+  app.get("/api/admin/service-orders", requireRole("admin"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const orders = await storage.listServiceOrders();
+      
+      const ordersWithDetails = await Promise.all(orders.map(async (order) => {
+        const customer = await storage.getUser(order.customerId);
+        const reseller = await storage.getUser(order.resellerId);
+        const serviceItem = await storage.getServiceItem(order.serviceItemId);
+        let repairCenterName = null;
+        if (order.repairCenterId) {
+          const rc = await storage.getRepairCenter(order.repairCenterId);
+          repairCenterName = rc?.name || null;
+        }
+        return {
+          ...order,
+          customerName: customer?.fullName || customer?.username || 'N/A',
+          resellerName: reseller?.fullName || reseller?.ragioneSociale || 'N/A',
+          repairCenterName,
+          serviceName: serviceItem?.name || 'N/A',
+          serviceCode: serviceItem?.code || 'N/A'
+        };
+      }));
+      
+      res.json(ordersWithDetails);
+    } catch (error: any) {
+      console.error("Admin service orders error:", error);
+      res.status(500).send(error.message);
+    }
+  });
+
+  // Admin: Get single service order
+  app.get("/api/admin/service-orders/:id", requireRole("admin"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const order = await storage.getServiceOrder(req.params.id);
+      if (!order) return res.status(404).send("Ordine non trovato");
+      
+      const customer = await storage.getUser(order.customerId);
+      const reseller = await storage.getUser(order.resellerId);
+      const serviceItem = await storage.getServiceItem(order.serviceItemId);
+      let repairCenterName = null;
+      if (order.repairCenterId) {
+        const rc = await storage.getRepairCenter(order.repairCenterId);
+        repairCenterName = rc?.name || null;
+      }
+      
+      res.json({
+        ...order,
+        customerName: customer?.fullName || customer?.username || 'N/A',
+        resellerName: reseller?.fullName || reseller?.ragioneSociale || 'N/A',
+        repairCenterName,
+        serviceName: serviceItem?.name || 'N/A',
+        serviceCode: serviceItem?.code || 'N/A'
+      });
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
   return httpServer;
 }

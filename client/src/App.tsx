@@ -96,6 +96,7 @@ import AdminWarehouses from "@/pages/admin/warehouses";
 import AdminAllWarehouses from "@/pages/admin/all-warehouses";
 import AdminWarrantyProducts from "@/pages/admin/warranty-products";
 import AdminWarrantyAnalytics from "@/pages/admin/warranty-analytics";
+import AdminServiceOrders from "@/pages/admin/service-orders";
 import AdminUnrepairableReasons from "@/pages/admin/unrepairable-reasons";
 
 // Admin Utility pages
@@ -216,6 +217,7 @@ import RepairCenterUtility from "@/pages/repair-center/utility/index";
 import RepairCenterUtilitySuppliers from "@/pages/repair-center/utility/suppliers";
 import RepairCenterUtilityServices from "@/pages/repair-center/utility/services";
 import RepairCenterServiceCatalog from "@/pages/repair-center/service-catalog";
+import RepairCenterServiceOrders from "@/pages/repair-center/service-orders";
 import RepairCenterPriceLists from "@/pages/repair-center/price-lists";
 import RepairCenterPriceListDetail from "@/pages/repair-center/price-list-detail";
 import RepairCenterUtilityPractices from "@/pages/repair-center/utility/practices";
@@ -387,6 +389,7 @@ function Router() {
       <ProtectedRoute path="/admin/pos" component={AdminPosOverview} />
       <ProtectedRoute path="/admin/warranty-products" component={AdminWarrantyProducts} />
       <ProtectedRoute path="/admin/warranty-analytics" component={AdminWarrantyAnalytics} />
+      <ProtectedRoute path="/admin/service-orders" component={AdminServiceOrders} />
       
       {/* Reseller routes - accessible by reseller and reseller_staff */}
       <ProtectedRoute path="/reseller" component={ResellerDashboard} allowedRoles={["reseller", "reseller_staff", "sub_reseller"]} />
@@ -498,6 +501,7 @@ function Router() {
       <ProtectedRoute path="/repair-center/spare-parts-catalog" component={RepairCenterSparePartsCatalog} />
       <ProtectedRoute path="/repair-center/customers" component={RepairCenterCustomers} />
       <ProtectedRoute path="/repair-center/service-catalog" component={RepairCenterServiceCatalog} />
+      <ProtectedRoute path="/repair-center/service-orders" component={RepairCenterServiceOrders} />
       <ProtectedRoute path="/repair-center/price-lists/:id" component={RepairCenterPriceListDetail} />
       <ProtectedRoute path="/repair-center/price-lists" component={RepairCenterPriceLists} />
       <ProtectedRoute path="/repair-center/settings" component={RepairCenterSettings} />
