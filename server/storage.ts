@@ -5491,7 +5491,11 @@ export class DatabaseStorage implements IStorage {
   }
 
   async deleteUnrepairableReason(id: string): Promise<void> {
-    await db.delete(unrepairableReasons).where(eq(unrepairableReasons.id, id));
+    // Soft delete - set isActive to false instead of hard delete
+    // This preserves referential integrity with repair_diagnostics
+    await db.update(unrepairableReasons)
+      .set({ isActive: false, updatedAt: new Date() })
+      .where(eq(unrepairableReasons.id, id));
   }
 
   // ==========================================
