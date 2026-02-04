@@ -247,6 +247,7 @@ type ServiceItem = {
 // formatCurrency importato da @/lib/utils
 
 const paymentMethodLabels: Record<string, { label: string; icon: typeof CreditCard }> = {
+  stripe_link: { label: "Link Pagamento", icon: QrCode },
   cash: { label: "Contanti", icon: Banknote },
   card: { label: "Carta", icon: CreditCard },
   pos_terminal: { label: "POS", icon: CreditCard },
@@ -273,7 +274,7 @@ export default function PosPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [serviceSearchQuery, setServiceSearchQuery] = useState("");
   const [barcodeInput, setBarcodeInput] = useState("");
-  const [selectedPayment, setSelectedPayment] = useState<"cash" | "card" | "pos_terminal" | "mixed">("cash");
+  const [selectedPayment, setSelectedPayment] = useState<"cash" | "card" | "pos_terminal" | "stripe_link" | "mixed">("cash");
   const [cashReceived, setCashReceived] = useState<string>("");
   const [discountAmount, setDiscountAmount] = useState<string>("");
   const [transactionNotes, setTransactionNotes] = useState("");
@@ -281,6 +282,10 @@ export default function PosPage() {
   const [openSessionDialog, setOpenSessionDialog] = useState(false);
   const [closeSessionDialog, setCloseSessionDialog] = useState(false);
   const [paymentDialog, setPaymentDialog] = useState(false);
+  const [paymentLinkDialog, setPaymentLinkDialog] = useState(false);
+  const [paymentLinkUrl, setPaymentLinkUrl] = useState<string | null>(null);
+  const [paymentLinkTransactionId, setPaymentLinkTransactionId] = useState<string | null>(null);
+  const [paymentLinkStatus, setPaymentLinkStatus] = useState<"generating" | "ready" | "checking" | "completed" | "expired">("generating");
   const [openingCash, setOpeningCash] = useState<string>("");
   const [closingCash, setClosingCash] = useState<string>("");
   const [sessionNotes, setSessionNotes] = useState("");
@@ -423,11 +428,12 @@ export default function PosPage() {
 
   // Build available payment methods based on config
   const availablePaymentMethods = useMemo(() => {
-    const methods: Array<"cash" | "card" | "pos_terminal"> = ["cash"]; // Cash always available for POS
+    const methods: Array<"cash" | "card" | "pos_terminal" | "stripe_link"> = ["cash"]; // Cash always available for POS
     const config = paymentConfigData?.effectiveConfig;
     
     if (config?.stripeEnabled) {
       methods.push("card");
+      methods.push("stripe_link");
     }
     // POS terminal is always available as it's a physical device
     methods.push("pos_terminal");
@@ -552,13 +558,71 @@ export default function PosPage() {
           description: `Transazione e fattura ${data.invoice.invoiceNumber} create con successo` 
         });
       } else {
+        if (data.transaction.paymentMethod === "stripe_link") {
+        setPaymentLinkTransactionId(data.transaction.id);
+        setPaymentLinkStatus("generating");
+        setPaymentLinkDialog(true);
+        setPaymentDialog(false);
+        createPaymentLinkMutation.mutate(data.transaction.id);
+      } else {
         toast({ title: "Vendita registrata", description: "Transazione completata" });
+      }
       }
     },
     onError: (error: any) => {
       toast({ title: "Errore", description: error.message, variant: "destructive" });
     },
   });
+
+  // Mutation per generare payment link Stripe
+  const createPaymentLinkMutation = useMutation({
+    mutationFn: async (transactionId: string) => {
+      const res = await apiRequest("POST", "/api/repair-center/pos/create-payment-link", { transactionId });
+      return res.json();
+    },
+    onSuccess: (data: { paymentUrl: string; sessionId: string; expiresAt: string }) => {
+      setPaymentLinkUrl(data.paymentUrl);
+      setPaymentLinkStatus("ready");
+    },
+    onError: (error: any) => {
+      toast({ title: "Errore generazione link", description: error.message, variant: "destructive" });
+      setPaymentLinkStatus("expired");
+    },
+  });
+  
+  // Mutation per controllare stato pagamento
+  const checkPaymentStatusMutation = useMutation({
+    mutationFn: async (transactionId: string) => {
+      const res = await fetch(`/api/repair-center/pos/check-payment-status/${transactionId}`, { credentials: "include" });
+      return res.json();
+    },
+    onSuccess: (data: { status: string; paymentUrl: string | null }) => {
+      if (data.status === "completed") {
+        setPaymentLinkStatus("completed");
+        queryClient.invalidateQueries({ queryKey: ["/api/repair-center/pos/transactions", selectedRegisterId] });
+        queryClient.invalidateQueries({ queryKey: ["/api/repair-center/pos/session/current", selectedRegisterId] });
+        toast({ title: "Pagamento ricevuto!", description: "La transazione è stata completata" });
+      } else if (data.status === "expired") {
+        setPaymentLinkStatus("expired");
+      }
+    },
+  });
+  
+  // Rigenera link scaduto
+  const regeneratePaymentLinkMutation = useMutation({
+    mutationFn: async (transactionId: string) => {
+      const res = await apiRequest("POST", `/api/repair-center/pos/regenerate-payment-link/${transactionId}`, {});
+      return res.json();
+    },
+    onSuccess: (data: { paymentUrl: string }) => {
+      setPaymentLinkUrl(data.paymentUrl);
+      setPaymentLinkStatus("ready");
+    },
+    onError: (error: any) => {
+      toast({ title: "Errore", description: error.message, variant: "destructive" });
+    },
+  });
+
 
   // Calcoli IVA separata
   const cartVatSummary = useMemo(() => {
@@ -1938,6 +2002,182 @@ export default function PosPage() {
               Aggiungi al Carrello
             </Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Payment Link Dialog */}
+      <Dialog open={paymentLinkDialog} onOpenChange={(open) => {
+        if (!open && paymentLinkStatus !== "completed") {
+          // Solo chiudi se pagamento non ancora completato
+          setPaymentLinkDialog(false);
+          // Reset del carrello
+          setCart([]);
+          setCashReceived("");
+          setDiscountAmount("");
+          setTransactionNotes("");
+          setInvoiceRequested(false);
+          setSelectedCustomerId("");
+          setCustomerSearch("");
+          setCustomerType("guest");
+          setNewCustomerName("");
+          setNewCustomerEmail("");
+          setNewCustomerPhone("");
+        } else {
+          setPaymentLinkDialog(false);
+          setCart([]);
+          setCashReceived("");
+          setDiscountAmount("");
+          setTransactionNotes("");
+          setInvoiceRequested(false);
+          setSelectedCustomerId("");
+          setCustomerSearch("");
+          setCustomerType("guest");
+        }
+      }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <QrCode className="w-5 h-5" />
+              Link Pagamento
+            </DialogTitle>
+          </DialogHeader>
+          
+          <div className="space-y-4 py-4">
+            {paymentLinkStatus === "generating" && (
+              <div className="flex flex-col items-center gap-3 py-8">
+                <Loader2 className="w-8 h-8 animate-spin text-primary" />
+                <span className="text-muted-foreground">Generazione link in corso...</span>
+              </div>
+            )}
+            
+            {paymentLinkStatus === "ready" && paymentLinkUrl && (
+              <>
+                <div className="text-center space-y-2">
+                  <p className="text-sm text-muted-foreground">
+                    Scansiona il QR code o copia il link per pagare
+                  </p>
+                </div>
+                
+                {/* QR Code (usato canvas per QR) */}
+                <div className="flex justify-center p-4 bg-white rounded-lg">
+                  <img 
+                    src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(paymentLinkUrl)}`}
+                    alt="QR Code Pagamento"
+                    className="w-48 h-48"
+                  />
+                </div>
+                
+                {/* Link copiabile */}
+                <div className="flex gap-2">
+                  <Input 
+                    value={paymentLinkUrl} 
+                    readOnly 
+                    className="text-xs"
+                    data-testid="input-payment-link"
+                  />
+                  <Button 
+                    variant="outline" 
+                    onClick={() => {
+                      navigator.clipboard.writeText(paymentLinkUrl);
+                      toast({ title: "Link copiato!" });
+                    }}
+                    data-testid="button-copy-link"
+                  >
+                    Copia
+                  </Button>
+                </div>
+                
+                {/* Pulsante apri in nuova tab */}
+                <Button 
+                  className="w-full" 
+                  onClick={() => window.open(paymentLinkUrl, '_blank')}
+                  data-testid="button-open-payment-link"
+                >
+                  Apri Link Pagamento
+                </Button>
+                
+                {/* Verifica stato */}
+                <Button 
+                  variant="outline" 
+                  className="w-full"
+                  onClick={() => {
+                    if (paymentLinkTransactionId) {
+                      setPaymentLinkStatus("checking");
+                      checkPaymentStatusMutation.mutate(paymentLinkTransactionId);
+                    }
+                  }}
+                  disabled={checkPaymentStatusMutation.isPending}
+                  data-testid="button-check-payment"
+                >
+                  {checkPaymentStatusMutation.isPending ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Verifica in corso...
+                    </>
+                  ) : (
+                    <>
+                      <RotateCcw className="w-4 h-4 mr-2" />
+                      Verifica Pagamento
+                    </>
+                  )}
+                </Button>
+              </>
+            )}
+            
+            {paymentLinkStatus === "checking" && (
+              <div className="flex flex-col items-center gap-3 py-8">
+                <Loader2 className="w-8 h-8 animate-spin text-primary" />
+                <span className="text-muted-foreground">Verifica stato pagamento...</span>
+              </div>
+            )}
+            
+            {paymentLinkStatus === "completed" && (
+              <div className="flex flex-col items-center gap-3 py-8">
+                <div className="w-16 h-16 rounded-full bg-green-100 dark:bg-green-900 flex items-center justify-center">
+                  <Check className="w-8 h-8 text-green-600 dark:text-green-400" />
+                </div>
+                <span className="text-lg font-semibold text-green-600 dark:text-green-400">
+                  Pagamento Ricevuto!
+                </span>
+                <Button onClick={() => setPaymentLinkDialog(false)} data-testid="button-close-payment-success">
+                  Chiudi
+                </Button>
+              </div>
+            )}
+            
+            {paymentLinkStatus === "expired" && (
+              <div className="flex flex-col items-center gap-3 py-4">
+                <div className="w-16 h-16 rounded-full bg-orange-100 dark:bg-orange-900 flex items-center justify-center">
+                  <Clock className="w-8 h-8 text-orange-600 dark:text-orange-400" />
+                </div>
+                <span className="text-lg font-semibold text-orange-600 dark:text-orange-400">
+                  Link Scaduto
+                </span>
+                <Button 
+                  onClick={() => {
+                    if (paymentLinkTransactionId) {
+                      setPaymentLinkStatus("generating");
+                      regeneratePaymentLinkMutation.mutate(paymentLinkTransactionId);
+                    }
+                  }}
+                  disabled={regeneratePaymentLinkMutation.isPending}
+                  data-testid="button-regenerate-link"
+                >
+                  {regeneratePaymentLinkMutation.isPending ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Rigenerazione...
+                    </>
+                  ) : (
+                    <>
+                      <RotateCcw className="w-4 h-4 mr-2" />
+                      Rigenera Link
+                    </>
+                  )}
+                </Button>
+              </div>
+            )}
+          </div>
         </DialogContent>
       </Dialog>
     </div>
