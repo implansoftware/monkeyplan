@@ -27831,6 +27831,65 @@ export function registerRoutes(app: Express): Server {
   // E-COMMERCE: CHECKOUT
   // ==========================================
 
+  // Shop: Create Stripe PaymentIntent for customer checkout
+  app.post("/api/shop/:resellerId/stripe-payment-intent", requireAuth, async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Non autenticato" });
+      
+      const { resellerId } = req.params;
+      const { shippingMethodId } = req.body;
+      
+      // Get reseller payment config
+      const paymentConfig = await storage.getPaymentConfiguration("reseller", resellerId);
+      if (!paymentConfig?.stripeEnabled || !paymentConfig?.stripeSecretKey) {
+        return res.status(400).json({ error: "Stripe non configurato dal venditore" });
+      }
+      
+      // Get customer cart
+      const cart = await storage.getActiveCart(req.user.id, null, resellerId);
+      if (!cart) return res.status(400).json({ error: "Carrello vuoto" });
+      
+      const cartItems = await storage.listCartItems(cart.id);
+      if (cartItems.length === 0) return res.status(400).json({ error: "Carrello vuoto" });
+      
+      // Calculate total from cart
+      let total = cart.subtotal || 0;
+      
+      // Add shipping cost
+      if (shippingMethodId) {
+        const shippingMethod = await storage.getShippingMethod(shippingMethodId);
+        total += shippingMethod?.priceCents || 0;
+      }
+      
+      if (total <= 0) {
+        return res.status(400).json({ error: "Totale ordine non valido" });
+      }
+      
+      // Create Stripe instance with reseller's secret key
+      const stripeSecretDecrypted = decryptSecret(paymentConfig.stripeSecretKey);
+      const stripe = new Stripe(stripeSecretDecrypted);
+      
+      // Create PaymentIntent (amount already in cents)
+      const paymentIntent = await stripe.paymentIntents.create({
+        amount: total,
+        currency: 'eur',
+        metadata: {
+          customerId: req.user.id,
+          resellerId: resellerId,
+          type: 'shop_order'
+        }
+      });
+      
+      res.json({
+        clientSecret: paymentIntent.client_secret,
+        publishableKey: paymentConfig.stripePublishableKey,
+      });
+    } catch (error: any) {
+      console.error("Shop Stripe PaymentIntent error:", error);
+      res.status(500).json({ error: error.message || "Errore creazione pagamento Stripe" });
+    }
+  });
+
   app.post("/api/shop/:resellerId/checkout", requireAuth, async (req, res) => {
     try {
       if (!req.user) return res.status(401).json({ error: "Non autenticato" });

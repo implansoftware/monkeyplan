@@ -18,6 +18,7 @@ import { useForm } from "react-hook-form";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import type { Cart, CartItem, CustomerAddress, ShippingMethod } from "@shared/schema";
 import PayPalButton from "@/components/PayPalButton";
+import { StripeB2BCheckout } from "@/components/StripeB2BCheckout";
 
 interface CartItemWithProduct extends CartItem {
   product: { name: string; images?: string[]; vatRate?: number } | null;
@@ -580,6 +581,27 @@ export default function ShopCheckout() {
                   }}
                   onCancel={() => {
                     toast({ title: "Pagamento annullato", description: "Hai annullato il pagamento PayPal" });
+                  }}
+                />
+              ) : paymentMethod === "card" && canPlaceOrder ? (
+                <StripeB2BCheckout
+                  paymentIntentEndpoint={`/api/shop/${resellerId}/stripe-payment-intent`}
+                  createOrderEndpoint={`/api/shop/${resellerId}/checkout`}
+                  orderData={{
+                    shippingAddressId: selectedShippingAddress,
+                    billingAddressId: sameBillingAddress ? selectedShippingAddress : selectedBillingAddress,
+                    shippingMethodId: selectedShippingMethod,
+                    paymentMethod: "card",
+                    customerNotes
+                  }}
+                  shippingMethodId={selectedShippingMethod}
+                  onSuccess={(order) => {
+                    queryClient.invalidateQueries({ queryKey: ['/api/shop', resellerId, 'cart'] });
+                    toast({ title: "Ordine confermato!", description: `Ordine #${order.orderNumber}` });
+                    setLocation(`/customer/orders/${order.order?.id || order.id || ''}`);
+                  }}
+                  onError={(error) => {
+                    toast({ title: "Errore pagamento", description: error, variant: "destructive" });
                   }}
                 />
               ) : (
