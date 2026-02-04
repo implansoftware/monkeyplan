@@ -1339,6 +1339,21 @@ export default function RepairCenterSettings() {
                                 </div>
                               </div>
                               <div className="flex items-center gap-3 p-3 bg-muted rounded-lg">
+                                <SiStripe className="h-5 w-5 text-[#635bff]" />
+                                <div>
+                                  <p className="font-medium">Stripe</p>
+                                  <p className="text-sm text-muted-foreground">
+                                    {paymentConfigData.parentConfig.stripeEnabled ? (
+                                      <span className="flex items-center gap-1 text-green-600">
+                                        <CheckCircle className="h-3 w-3" /> Attivo
+                                      </span>
+                                    ) : (
+                                      <span className="text-muted-foreground">Non attivo</span>
+                                    )}
+                                  </p>
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-3 p-3 bg-muted rounded-lg">
                                 <SiPaypal className="h-5 w-5 text-[#003087]" />
                                 <div>
                                   <p className="font-medium">PayPal</p>
