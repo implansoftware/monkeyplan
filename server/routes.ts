@@ -31827,12 +31827,14 @@ export function registerRoutes(app: Express): Server {
           
           await storage.createInvoice({
             resellerId: sellerResellerId,
+            customerId: req.user.id,
             marketplaceOrderId: order.id,
             invoiceNumber: await storage.generateInvoiceNumber(),
             amount: subtotal, // in cents
             tax: taxAmountCents, // in cents
             total: subtotal + taxAmountCents, // in cents (NOT including shipping in invoice total)
             paymentStatus: 'paid',
+            paymentMethod: finalPaymentMethod,
             paidDate: new Date(),
             notes: `Fattura automatica per ordine Marketplace ${order.orderNumber}`,
           });
