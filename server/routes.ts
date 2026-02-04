@@ -8191,7 +8191,7 @@ export function registerRoutes(app: Express): Server {
       const entityType = req.user.role === "sub_reseller" ? "sub_reseller" : "reseller";
       const entityId = req.user.id;
       
-      const { paypalEnabled, paypalEmail, paypalClientId, paypalClientSecret, ...restBody } = req.body;
+      const { paypalEnabled, paypalEmail, paypalClientId, paypalClientSecret, stripeEnabled, stripePublishableKey, stripeSecretKey, ...restBody } = req.body;
       
       if (paypalEnabled && (!paypalEmail || !paypalEmail.trim())) {
         return res.status(400).send("Email PayPal è obbligatoria quando PayPal è abilitato");
@@ -8202,9 +8202,14 @@ export function registerRoutes(app: Express): Server {
       
       const existingConfig = await storage.getPaymentConfiguration(entityType, entityId);
       const hasExistingSecret = existingConfig?.paypalClientSecret && existingConfig.paypalClientSecret.length > 0;
+      const hasExistingStripeSecret = existingConfig?.stripeSecretKey && existingConfig.stripeSecretKey.length > 0;
       
       if (paypalEnabled && !paypalClientSecret && !hasExistingSecret) {
         return res.status(400).send("Client Secret PayPal è obbligatorio per abilitare PayPal");
+      }
+      
+      if (stripeEnabled && !stripeSecretKey && !hasExistingStripeSecret) {
+        return res.status(400).send("Secret Key Stripe è obbligatoria per abilitare Stripe");
       }
       
       let finalPaypalSecret = null;
@@ -8214,12 +8219,22 @@ export function registerRoutes(app: Express): Server {
         finalPaypalSecret = existingConfig.paypalClientSecret;
       }
       
+      let finalStripeSecretKey: string | null = null;
+      if (stripeSecretKey) {
+        finalStripeSecretKey = encryptSecret(stripeSecretKey);
+      } else if (hasExistingStripeSecret) {
+        finalStripeSecretKey = existingConfig.stripeSecretKey;
+      }
+      
       const data = {
         ...restBody,
         paypalEnabled: paypalEnabled ?? false,
         paypalEmail: paypalEmail || null,
         paypalClientId: paypalClientId || null,
         paypalClientSecret: finalPaypalSecret,
+        stripeEnabled: stripeEnabled ?? false,
+        stripePublishableKey: stripePublishableKey || null,
+        stripeSecretKey: finalStripeSecretKey,
         entityType,
         entityId
       };
@@ -8290,10 +8305,10 @@ export function registerRoutes(app: Express): Server {
         return res.status(400).send("Nessun centro di riparazione associato");
       }
       
-      const { useParentConfig, paypalEnabled, paypalEmail, paypalClientId, paypalClientSecret, ...restBody } = req.body;
+      const { useParentConfig, paypalEnabled, paypalEmail, paypalClientId, paypalClientSecret, stripeEnabled, stripePublishableKey, stripeSecretKey, ...restBody } = req.body;
       
       // If only toggling useParentConfig, allow it
-      if (useParentConfig !== undefined && Object.keys(restBody).length === 0 && !paypalEnabled) {
+      if (useParentConfig !== undefined && Object.keys(restBody).length === 0 && !paypalEnabled && !stripeEnabled) {
         const data = {
           useParentConfig,
           entityType: "repair_center" as const,
@@ -8322,12 +8337,25 @@ export function registerRoutes(app: Express): Server {
       
       const existingConfig = await storage.getPaymentConfiguration("repair_center", repairCenterId);
       const hasExistingSecret = existingConfig?.paypalClientSecret && existingConfig.paypalClientSecret.length > 0;
+      const hasExistingStripeSecret = existingConfig?.stripeSecretKey && existingConfig.stripeSecretKey.length > 0;
+      
+      // Validate Stripe when not using parent config
+      if (!useParentConfig && stripeEnabled && !stripeSecretKey && !hasExistingStripeSecret) {
+        return res.status(400).send("Secret Key Stripe è obbligatoria per abilitare Stripe");
+      }
       
       let finalPaypalSecret = null;
       if (paypalClientSecret) {
         finalPaypalSecret = encryptSecret(paypalClientSecret);
       } else if (hasExistingSecret) {
         finalPaypalSecret = existingConfig.paypalClientSecret;
+      }
+      
+      let finalStripeSecretKey: string | null = null;
+      if (stripeSecretKey) {
+        finalStripeSecretKey = encryptSecret(stripeSecretKey);
+      } else if (hasExistingStripeSecret) {
+        finalStripeSecretKey = existingConfig.stripeSecretKey;
       }
       
       const data = {
@@ -8337,6 +8365,9 @@ export function registerRoutes(app: Express): Server {
         paypalEmail: paypalEmail || null,
         paypalClientId: paypalClientId || null,
         paypalClientSecret: finalPaypalSecret,
+        stripeEnabled: stripeEnabled ?? false,
+        stripePublishableKey: stripePublishableKey || null,
+        stripeSecretKey: finalStripeSecretKey,
         entityType: "repair_center" as const,
         entityId: repairCenterId
       };
@@ -8373,7 +8404,7 @@ export function registerRoutes(app: Express): Server {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
       
-      const { bankTransferEnabled, accountHolder, iban, bic, bankName, stripeEnabled, paypalEnabled, paypalEmail, paypalClientId, paypalClientSecret, satispayEnabled } = req.body;
+      const { bankTransferEnabled, accountHolder, iban, bic, bankName, stripeEnabled, stripePublishableKey, stripeSecretKey, paypalEnabled, paypalEmail, paypalClientId, paypalClientSecret, satispayEnabled } = req.body;
       
       // Validate: if bank transfer is enabled, require IBAN and account holder
       if (bankTransferEnabled && (!iban || !iban.trim() || !accountHolder || !accountHolder.trim())) {
@@ -8391,9 +8422,14 @@ export function registerRoutes(app: Express): Server {
       // Check if we need a new secret or can preserve existing one
       const existingConfig = await storage.getPaymentConfiguration("admin", req.user.id);
       const hasExistingSecret = existingConfig?.paypalClientSecret && existingConfig.paypalClientSecret.length > 0;
+      const hasExistingStripeSecret = existingConfig?.stripeSecretKey && existingConfig.stripeSecretKey.length > 0;
       
       if (paypalEnabled && !paypalClientSecret && !hasExistingSecret) {
         return res.status(400).send("Client Secret PayPal è obbligatorio per abilitare PayPal");
+      }
+      
+      if (stripeEnabled && !stripeSecretKey && !hasExistingStripeSecret) {
+        return res.status(400).send("Secret Key Stripe è obbligatoria per abilitare Stripe");
       }
       
       // Preserve existing secret if not provided
@@ -8404,6 +8440,13 @@ export function registerRoutes(app: Express): Server {
         finalPaypalSecret = existingConfig.paypalClientSecret;
       }
       
+      let finalStripeSecretKey: string | null = null;
+      if (stripeSecretKey) {
+        finalStripeSecretKey = encryptSecret(stripeSecretKey);
+      } else if (hasExistingStripeSecret) {
+        finalStripeSecretKey = existingConfig.stripeSecretKey;
+      }
+      
       const data = {
         bankTransferEnabled: bankTransferEnabled ?? true,
         accountHolder: accountHolder || null,
@@ -8411,6 +8454,8 @@ export function registerRoutes(app: Express): Server {
         bic: bic || null,
         bankName: bankName || null,
         stripeEnabled: stripeEnabled ?? false,
+        stripePublishableKey: stripePublishableKey || null,
+        stripeSecretKey: finalStripeSecretKey,
         paypalEnabled: paypalEnabled ?? false,
         paypalEmail: paypalEmail || null,
         paypalClientId: paypalClientId || null,
