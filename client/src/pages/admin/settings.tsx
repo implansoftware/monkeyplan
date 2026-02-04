@@ -93,7 +93,6 @@ const paymentFormSchema = z.object({
   paypalEmail: z.string().optional(),
   paypalClientId: z.string().optional(),
   paypalClientSecret: z.string().optional(),
-  satispayEnabled: z.boolean().default(false),
 }).refine((data) => {
   if (data.bankTransferEnabled) {
     return data.iban && data.iban.trim().length > 0 && data.accountHolder && data.accountHolder.trim().length > 0;
@@ -162,7 +161,6 @@ export default function AdminSettings() {
       paypalEmail: '',
       paypalClientId: '',
       paypalClientSecret: '',
-      satispayEnabled: false,
     },
   });
 
@@ -181,7 +179,6 @@ export default function AdminSettings() {
         paypalEmail: paymentConfig.paypalEmail || '',
         paypalClientId: paymentConfig.paypalClientId || '',
         paypalClientSecret: '', // Never pre-fill secret for security
-        satispayEnabled: paymentConfig.satispayEnabled ?? false,
       });
     }
   }, [paymentConfig, paymentForm]);
@@ -904,25 +901,6 @@ export default function AdminSettings() {
 
                       <FormField
                         control={paymentForm.control}
-                        name="satispayEnabled"
-                        render={({ field }) => (
-                          <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                            <div className="flex items-center gap-3">
-                              <div className="p-2 bg-[#f64a4a]/10 rounded-lg">
-                                <CreditCard className="h-5 w-5 text-[#f64a4a]" />
-                              </div>
-                              <div className="space-y-0.5">
-                                <FormLabel className="text-base">Satispay</FormLabel>
-                                <FormDescription>
-                                  Pagamenti con Satispay
-                                </FormDescription>
-                              </div>
-                            </div>
-                            <FormControl>
-                              <Switch
-                                checked={field.value}
-                                onCheckedChange={field.onChange}
-                                data-testid="switch-admin-satispay"
                               />
                             </FormControl>
                           </FormItem>

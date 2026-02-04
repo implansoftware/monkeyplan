@@ -8754,7 +8754,7 @@ export function registerRoutes(app: Express): Server {
         hasAnyMethod: !!(
           config?.bankTransferEnabled ||
           config?.stripeEnabled ||
-          config?.paypalEnabled ||
+          config?.paypalEnabled
         ),
       };
       
@@ -8803,7 +8803,7 @@ export function registerRoutes(app: Express): Server {
         hasAnyMethod: !!(
           (config?.bankTransferEnabled ?? true) ||
           config?.stripeEnabled ||
-          config?.paypalEnabled ||
+          config?.paypalEnabled
         ),
       };
       
@@ -8939,7 +8939,7 @@ export function registerRoutes(app: Express): Server {
         hasAnyMethod: !!(
           (config?.bankTransferEnabled ?? true) ||
           config?.stripeEnabled ||
-          config?.paypalEnabled ||
+          config?.paypalEnabled
         ),
       };
       

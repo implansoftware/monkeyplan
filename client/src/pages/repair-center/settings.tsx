@@ -73,8 +73,6 @@ const paymentFormSchema = z.object({
   paypalEmail: z.string().email("Email PayPal non valida").optional().nullable().or(z.literal('')),
   paypalClientId: z.string().optional().nullable().or(z.literal('')),
   paypalClientSecret: z.string().optional().nullable().or(z.literal('')),
-  satispayEnabled: z.boolean().default(false),
-  satispayShopId: z.string().max(50).optional().nullable(),
 });
 
 type PaymentFormData = z.infer<typeof paymentFormSchema>;
@@ -310,8 +308,6 @@ export default function RepairCenterSettings() {
       paypalEmail: '',
       paypalClientId: '',
       paypalClientSecret: '',
-      satispayEnabled: false,
-      satispayShopId: '',
     },
     values: paymentConfigData?.ownConfig ? {
       bankTransferEnabled: paymentConfigData.ownConfig.bankTransferEnabled,
@@ -326,8 +322,6 @@ export default function RepairCenterSettings() {
       paypalEmail: paymentConfigData.ownConfig.paypalEmail || '',
       paypalClientId: paymentConfigData.ownConfig.paypalClientId || '',
       paypalClientSecret: '',
-      satispayEnabled: paymentConfigData.ownConfig.satispayEnabled,
-      satispayShopId: paymentConfigData.ownConfig.satispayShopId || '',
     } : undefined,
   });
 
@@ -1362,9 +1356,7 @@ export default function RepairCenterSettings() {
                               <div className="flex items-center gap-3 p-3 bg-muted rounded-lg">
                                 <CircleDollarSign className="h-5 w-5 text-[#f24e4e]" />
                                 <div>
-                                  <p className="font-medium">Satispay</p>
                                   <p className="text-sm text-muted-foreground">
-                                    {paymentConfigData.parentConfig.satispayEnabled ? (
                                       <span className="flex items-center gap-1 text-green-600">
                                         <CheckCircle className="h-3 w-3" /> Attivo
                                       </span>
@@ -1810,9 +1802,7 @@ export default function RepairCenterSettings() {
                                       <CircleDollarSign className="h-6 w-6 text-[#f24e4e]" />
                                     </div>
                                     <div>
-                                      <CardTitle className="text-lg">Satispay</CardTitle>
                                       <CardDescription>
-                                        Ricevi pagamenti tramite Satispay Business
                                       </CardDescription>
                                     </div>
                                   </div>
@@ -1820,38 +1810,29 @@ export default function RepairCenterSettings() {
                                 <CardContent className="space-y-4">
                                   <FormField
                                     control={paymentForm.control}
-                                    name="satispayEnabled"
                                     render={({ field }) => (
                                       <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
                                         <div className="space-y-0.5">
-                                          <FormLabel className="text-base">Abilita Satispay</FormLabel>
                                           <FormDescription>
-                                            Permetti ai clienti di pagare tramite Satispay
                                           </FormDescription>
                                         </div>
                                         <FormControl>
                                           <Switch
                                             checked={field.value}
                                             onCheckedChange={field.onChange}
-                                            data-testid="switch-satispay"
                                           />
                                         </FormControl>
                                       </FormItem>
                                     )}
                                   />
 
-                                  {paymentForm.watch("satispayEnabled") && (
                                     <FormField
                                       control={paymentForm.control}
-                                      name="satispayShopId"
                                       render={({ field }) => (
                                         <FormItem className="pt-4">
-                                          <FormLabel>Satispay Shop ID</FormLabel>
                                           <FormControl>
-                                            <Input {...field} value={field.value || ''} placeholder="Il tuo Shop ID Satispay" data-testid="input-satispay-shop-id" />
                                           </FormControl>
                                           <FormDescription>
-                                            Trova il tuo Shop ID nella dashboard Satispay Business
                                           </FormDescription>
                                           <FormMessage />
                                         </FormItem>
