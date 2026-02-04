@@ -379,17 +379,9 @@ export default function ResellerSettings() {
             <Timer className="h-4 w-4" />
             SLA
           </TabsTrigger>
-          <TabsTrigger value="stripe" className="gap-2" data-testid="tab-stripe">
-            <SiStripe className="h-4 w-4" />
-            Stripe
-          </TabsTrigger>
-          <TabsTrigger value="bank" className="gap-2" data-testid="tab-bank">
-            <Landmark className="h-4 w-4" />
-            Bonifico
-          </TabsTrigger>
-          <TabsTrigger value="other" className="gap-2" data-testid="tab-other">
-            <Wallet className="h-4 w-4" />
-            Altri
+          <TabsTrigger value="pagamenti" className="gap-2" data-testid="tab-pagamenti">
+            <CreditCard className="h-4 w-4" />
+            Pagamenti
           </TabsTrigger>
           <TabsTrigger value="shipping" className="gap-2" data-testid="tab-shipping">
             <Truck className="h-4 w-4" />
@@ -647,7 +639,7 @@ export default function ResellerSettings() {
           </Card>
         </TabsContent>
 
-        <TabsContent value="stripe" className="space-y-4">
+        <TabsContent value="pagamenti" className="space-y-4">
           <Card>
             <CardHeader>
               <div className="flex items-center justify-between">
@@ -789,9 +781,7 @@ export default function ResellerSettings() {
               )}
             </CardContent>
           </Card>
-        </TabsContent>
 
-        <TabsContent value="bank" className="space-y-4">
           <Card>
             <CardHeader>
               <div className="flex items-center gap-3">
@@ -923,9 +913,7 @@ export default function ResellerSettings() {
               </Form>
             </CardContent>
           </Card>
-        </TabsContent>
 
-        <TabsContent value="other" className="space-y-4">
           <Card>
             <CardHeader>
               <div className="flex items-center gap-3">
