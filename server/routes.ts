@@ -32498,14 +32498,18 @@ export function registerRoutes(app: Express): Server {
         }
       }
       
-      // Create order
+      // Calculate VAT (22%) on subtotal
+      const taxCents = Math.round(totalCents * 0.22);
+      
+      // Create order with proper tax calculation
       const order = await storage.createRepairCenterPurchaseOrder({
         repairCenterId: req.user.repairCenterId,
         resellerId: repairCenter.resellerId,
         status: 'pending',
         subtotal: totalCents,
+        tax: taxCents,
         shippingCost: shippingCostCents,
-        total: totalCents + shippingCostCents,
+        total: totalCents + taxCents + shippingCostCents,
         paymentMethod: paymentMethod || 'bank_transfer',
         shippingMethodId: shippingMethodId || null,
         notes,
@@ -32555,6 +32559,18 @@ export function registerRoutes(app: Express): Server {
         // Update order object for response
         order.status = 'approved';
         (order as any).paymentConfirmedAt = new Date();
+        
+        // Auto-create invoice for automatic payments (PayPal/Stripe)
+        const reseller = await storage.getUser(order.resellerId);
+        if (!reseller?.parentResellerId || reseller?.hasAutonomousInvoicing) {
+          await storage.createInvoiceForRepairCenterB2BOrder({
+            id: order.id,
+            orderNumber: order.orderNumber,
+            repairCenterId: order.repairCenterId,
+            resellerId: order.resellerId,
+            total: order.total,
+          });
+        }
       }
 
       
