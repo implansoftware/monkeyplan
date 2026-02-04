@@ -654,6 +654,13 @@ export default function ResellerB2BCatalog() {
                 items={cart.map(item => ({ productId: item.product.id, quantity: item.quantity }))}
                 shippingMethodId={selectedShippingMethod}
                 notes={notes}
+                totalAmount={grandTotal}
+                onSuccess={() => {
+                  queryClient.invalidateQueries({ queryKey: ["/api/reseller/b2b-orders"] });
+                  setCheckoutOpen(false);
+                  setCart([]);
+                  toast({ title: "Ordine completato", description: "Pagamento ricevuto con successo" });
+                }}
                 onError={(error) => {
                   toast({ title: "Errore", description: error, variant: "destructive" });
                 }}

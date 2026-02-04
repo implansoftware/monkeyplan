@@ -1,35 +1,176 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { loadStripe, Stripe } from "@stripe/stripe-js";
+import { Elements, PaymentElement, useStripe, useElements } from "@stripe/react-stripe-js";
 import { Button } from "@/components/ui/button";
-import { Loader2, CreditCard } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Loader2, CreditCard, ShieldCheck, X } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 
 interface StripeB2BCheckoutProps {
   items: { productId: string; quantity: number }[];
   shippingMethodId: string;
   notes: string;
+  totalAmount: number;
+  onSuccess: () => void;
   onError: (error: string) => void;
   disabled?: boolean;
+}
+
+interface PaymentIntentResponse {
+  clientSecret: string;
+  publishableKey: string;
+}
+
+function CheckoutForm({ 
+  onSuccess, 
+  onError,
+  onClose,
+  totalAmount,
+  items,
+  shippingMethodId,
+  notes
+}: { 
+  onSuccess: () => void; 
+  onError: (error: string) => void;
+  onClose: () => void;
+  totalAmount: number;
+  items: { productId: string; quantity: number }[];
+  shippingMethodId: string;
+  notes: string;
+}) {
+  const stripe = useStripe();
+  const elements = useElements();
+  const [isProcessing, setIsProcessing] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!stripe || !elements) {
+      return;
+    }
+
+    setIsProcessing(true);
+
+    try {
+      const { error, paymentIntent } = await stripe.confirmPayment({
+        elements,
+        confirmParams: {
+          return_url: window.location.origin + "/reseller/b2b-orders",
+        },
+        redirect: "if_required",
+      });
+
+      if (error) {
+        onError(error.message || "Errore nel pagamento");
+        setIsProcessing(false);
+        return;
+      }
+
+      if (paymentIntent && paymentIntent.status === "succeeded") {
+        const response = await apiRequest("POST", "/api/reseller/b2b-orders", {
+          items,
+          shippingMethodId,
+          notes,
+          paymentMethod: "stripe",
+          stripePaymentIntentId: paymentIntent.id,
+        });
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          throw new Error(errorText || "Errore nella creazione dell'ordine");
+        }
+
+        onSuccess();
+      }
+    } catch (err: any) {
+      onError(err.message || "Errore nel pagamento");
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const formatPrice = (cents: number) => {
+    return new Intl.NumberFormat('it-IT', { style: 'currency', currency: 'EUR' }).format(cents / 100);
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-6">
+      <div className="text-center pb-4 border-b">
+        <p className="text-sm text-muted-foreground">Totale da pagare</p>
+        <p className="text-3xl font-bold">{formatPrice(totalAmount)}</p>
+      </div>
+      
+      <div className="py-2">
+        <PaymentElement 
+          options={{
+            layout: 'tabs',
+            paymentMethodOrder: ['card'],
+          }}
+        />
+      </div>
+      
+      <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground py-2">
+        <ShieldCheck className="h-3.5 w-3.5" />
+        <span>Pagamento sicuro con crittografia SSL</span>
+      </div>
+      
+      <div className="flex gap-3 pt-2">
+        <Button 
+          type="button"
+          variant="outline"
+          onClick={onClose}
+          disabled={isProcessing}
+          className="flex-1"
+          data-testid="button-stripe-cancel"
+        >
+          Annulla
+        </Button>
+        <Button 
+          type="submit" 
+          disabled={!stripe || isProcessing}
+          className="flex-1"
+          data-testid="button-stripe-pay"
+        >
+          {isProcessing ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Elaborazione...
+            </>
+          ) : (
+            <>
+              <CreditCard className="mr-2 h-4 w-4" />
+              Paga Ora
+            </>
+          )}
+        </Button>
+      </div>
+    </form>
+  );
 }
 
 export function StripeB2BCheckout({ 
   items, 
   shippingMethodId, 
-  notes, 
+  notes,
+  totalAmount,
+  onSuccess, 
   onError,
   disabled 
 }: StripeB2BCheckoutProps) {
+  const [isOpen, setIsOpen] = useState(false);
+  const [stripePromise, setStripePromise] = useState<Promise<Stripe | null> | null>(null);
+  const [clientSecret, setClientSecret] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [initError, setInitError] = useState<string | null>(null);
 
-  const handleCheckout = async () => {
-    if (disabled || items.length === 0) return;
-    
-    setIsLoading(true);
-    
+  const initStripe = async () => {
     try {
-      const response = await apiRequest("POST", "/api/reseller/b2b-orders/stripe-checkout", {
+      setIsLoading(true);
+      setInitError(null);
+
+      const response = await apiRequest("POST", "/api/reseller/b2b-orders/stripe-payment-intent", {
         items,
         shippingMethodId,
-        notes,
       });
 
       if (!response.ok) {
@@ -37,17 +178,36 @@ export function StripeB2BCheckout({
         throw new Error(errorText || "Errore inizializzazione pagamento");
       }
 
-      const data = await response.json();
+      const data: PaymentIntentResponse = await response.json();
       
-      if (data.checkoutUrl) {
-        window.location.href = data.checkoutUrl;
-      } else {
-        throw new Error("URL checkout non ricevuto");
-      }
+      setStripePromise(loadStripe(data.publishableKey));
+      setClientSecret(data.clientSecret);
+      setIsOpen(true);
     } catch (err: any) {
+      setInitError(err.message || "Errore caricamento Stripe");
       onError(err.message || "Errore caricamento Stripe");
+    } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleOpen = () => {
+    if (!stripePromise || !clientSecret) {
+      initStripe();
+    } else {
+      setIsOpen(true);
+    }
+  };
+
+  const handleClose = () => {
+    setIsOpen(false);
+  };
+
+  const handleSuccess = () => {
+    setIsOpen(false);
+    setClientSecret(null);
+    setStripePromise(null);
+    onSuccess();
   };
 
   if (disabled) {
@@ -55,23 +215,101 @@ export function StripeB2BCheckout({
   }
 
   return (
-    <Button 
-      onClick={handleCheckout}
-      disabled={isLoading || items.length === 0}
-      className="w-full"
-      data-testid="button-stripe-checkout"
-    >
-      {isLoading ? (
-        <>
-          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-          Reindirizzamento a Stripe...
-        </>
-      ) : (
-        <>
-          <CreditCard className="mr-2 h-4 w-4" />
-          Paga con Carta di Credito
-        </>
-      )}
-    </Button>
+    <>
+      <Button 
+        onClick={handleOpen}
+        disabled={isLoading || items.length === 0}
+        className="w-full"
+        data-testid="button-stripe-open"
+      >
+        {isLoading ? (
+          <>
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            Preparazione pagamento...
+          </>
+        ) : (
+          <>
+            <CreditCard className="mr-2 h-4 w-4" />
+            Paga con Carta di Credito
+          </>
+        )}
+      </Button>
+
+      <Dialog open={isOpen} onOpenChange={setIsOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <CreditCard className="h-5 w-5" />
+              Pagamento con Carta
+            </DialogTitle>
+            <DialogDescription>
+              Inserisci i dati della tua carta per completare l'ordine
+            </DialogDescription>
+          </DialogHeader>
+          
+          {stripePromise && clientSecret ? (
+            <Elements 
+              stripe={stripePromise} 
+              options={{ 
+                clientSecret,
+                appearance: {
+                  theme: 'flat',
+                  variables: {
+                    colorPrimary: 'hsl(222.2 47.4% 11.2%)',
+                    colorBackground: 'hsl(0 0% 100%)',
+                    colorText: 'hsl(222.2 47.4% 11.2%)',
+                    colorDanger: 'hsl(0 84.2% 60.2%)',
+                    fontFamily: 'Inter, system-ui, sans-serif',
+                    spacingUnit: '4px',
+                    borderRadius: '6px',
+                    fontSizeBase: '14px',
+                  },
+                  rules: {
+                    '.Input': {
+                      border: '1px solid hsl(214.3 31.8% 91.4%)',
+                      boxShadow: 'none',
+                      padding: '10px 12px',
+                    },
+                    '.Input:focus': {
+                      border: '1px solid hsl(222.2 47.4% 11.2%)',
+                      boxShadow: '0 0 0 1px hsl(222.2 47.4% 11.2%)',
+                    },
+                    '.Label': {
+                      fontWeight: '500',
+                      fontSize: '14px',
+                      marginBottom: '6px',
+                    },
+                    '.Tab': {
+                      border: '1px solid hsl(214.3 31.8% 91.4%)',
+                      borderRadius: '6px',
+                    },
+                    '.Tab--selected': {
+                      backgroundColor: 'hsl(222.2 47.4% 11.2%)',
+                      color: 'white',
+                    },
+                  },
+                },
+                locale: 'it',
+              }}
+            >
+              <CheckoutForm 
+                onSuccess={handleSuccess}
+                onError={onError}
+                onClose={handleClose}
+                totalAmount={totalAmount}
+                items={items}
+                shippingMethodId={shippingMethodId}
+                notes={notes}
+              />
+            </Elements>
+          ) : (
+            <div className="flex flex-col items-center justify-center py-8 gap-3">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+              <span className="text-sm text-muted-foreground">Caricamento...</span>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
