@@ -401,7 +401,6 @@ export const paymentMethodEnum = pgEnum("payment_method", [
   "bank_transfer",     // Bonifico bancario
   "paypal",            // PayPal
   "stripe",            // Stripe
-  "satispay",          // Satispay
   "pos",               // POS in negozio
   "credit",            // Credito/Finanziamento
 ]);
@@ -5831,7 +5830,7 @@ export type InsertSalesOrderReturnItem = z.infer<typeof insertSalesOrderReturnIt
 
 // Sales Order Status Type
 export type SalesOrderStatus = "pending" | "confirmed" | "processing" | "ready_to_ship" | "shipped" | "delivered" | "completed" | "cancelled" | "refunded";
-export type PaymentMethod = "cash" | "card" | "bank_transfer" | "paypal" | "stripe" | "satispay" | "pos" | "credit";
+export type PaymentMethod = "cash" | "card" | "bank_transfer" | "paypal" | "stripe" | "pos" | "credit";
 export type SalesPaymentStatus = "pending" | "processing" | "completed" | "failed" | "refunded" | "partially_refunded";
 export type ShipmentStatus = "pending" | "preparing" | "ready" | "picked_up" | "in_transit" | "out_for_delivery" | "delivered" | "failed_delivery" | "returned";
 export type DeliveryType = "pickup" | "shipping" | "express";
@@ -6421,7 +6420,6 @@ export const posPaymentMethodEnum = pgEnum("pos_payment_method", [
   "cash",           // Contanti
   "card",           // Carta credito/debito
   "pos_terminal",   // Terminale POS
-  "satispay",       // Satispay
   "mixed",          // Pagamento misto
 ]);
 
@@ -6609,10 +6607,10 @@ export type InsertPosTransactionItem = z.infer<typeof insertPosTransactionItemSc
 
 export type PosSessionStatus = "open" | "closed";
 export type PosTransactionStatus = "completed" | "refunded" | "partial_refund" | "voided";
-export type PosPaymentMethod = "cash" | "card" | "pos_terminal" | "satispay" | "mixed";
+export type PosPaymentMethod = "cash" | "card" | "pos_terminal" | "mixed";
 
 // ==========================================
-// PAYMENT CONFIGURATIONS (Stripe Connect, Bank Transfer, PayPal, Satispay)
+// PAYMENT CONFIGURATIONS (Stripe Connect, Bank Transfer, PayPal)
 // ==========================================
 
 // Entity type enum for payment configurations
@@ -6667,10 +6665,6 @@ export const paymentConfigurations = pgTable("payment_configurations", {
   paypalMerchantId: varchar("paypal_merchant_id", { length: 50 }),
   paypalClientId: varchar("paypal_client_id", { length: 100 }),
   paypalClientSecret: varchar("paypal_client_secret", { length: 500 }), // Encrypted
-  
-  // Satispay configuration
-  satispayEnabled: boolean("satispay_enabled").notNull().default(false),
-  satispayShopId: varchar("satispay_shop_id", { length: 50 }),
   
   // Metadata
   createdAt: timestamp("created_at").notNull().defaultNow(),
