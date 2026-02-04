@@ -30247,25 +30247,26 @@ export function registerRoutes(app: Express): Server {
         return res.status(400).json({ error: "Stripe non configurato dall'amministratore" });
       }
       
-      // Calculate subtotal from items
-      let subtotal = 0;
+      // Get catalog to verify products and get correct B2B prices
+      const catalog = await storage.getAdminCatalogForReseller(req.user.id);
+      const catalogMap = new Map(catalog.map(c => [c.product.id, c]));
+      
+      // Calculate total with correct B2B prices and VAT per item
+      let total = 0;
       for (const item of items) {
-        const product = await storage.getProduct(item.productId);
-        if (product) {
-          subtotal += (product.b2bPrice || 0) * item.quantity;
+        const catalogItem = catalogMap.get(item.productId);
+        if (catalogItem) {
+          const itemSubtotal = catalogItem.b2bPrice * item.quantity;
+          const itemVat = Math.round(itemSubtotal * (catalogItem.vatRate / 100));
+          total += itemSubtotal + itemVat;
         }
       }
       
       // Add shipping cost
-      let shippingCost = 0;
       if (shippingMethodId) {
         const shippingMethod = await storage.getShippingMethod(shippingMethodId);
-        shippingCost = shippingMethod?.priceCents || 0;
+        total += shippingMethod?.priceCents || 0;
       }
-      
-      // Calculate with VAT (22%)
-      const vatAmount = Math.round(subtotal * 0.22);
-      const total = subtotal + vatAmount + shippingCost;
       
       if (total <= 0) {
         return res.status(400).json({ error: "Totale ordine non valido" });
