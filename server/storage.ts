@@ -9573,6 +9573,92 @@ export class DatabaseStorage implements IStorage {
     return catalog;
   }
 
+  async getResellerCatalogForRepairCenter(repairCenterId: string): Promise<Array<{
+    product: Product;
+    resellerStock: number;
+    b2bPrice: number;
+    minimumOrderQuantity: number;
+    priceSource: string;
+    vatRate: number;
+  }>> {
+    // Get repair center to find the owning reseller
+    const repairCenter = await this.getRepairCenter(repairCenterId);
+    if (!repairCenter || !repairCenter.resellerId) return [];
+    
+    // Get reseller's warehouse stock
+    const resellerWarehouse = await this.ensureDefaultWarehouse('reseller', repairCenter.resellerId, 'Reseller');
+    const stock = await this.listWarehouseStock(resellerWarehouse.id);
+    const stockWithQuantity = stock.filter(s => s.quantity > 0);
+    
+    if (stockWithQuantity.length === 0) return [];
+    
+    // Get product IDs and fetch active products
+    const productIds = stockWithQuantity.map(s => s.productId);
+    const productsWithStock = await db.select().from(products)
+      .where(and(
+        eq(products.isActive, true),
+        inArray(products.id, productIds)
+      ));
+    
+    // Create stock map
+    const stockMap = new Map(stockWithQuantity.map(s => [s.productId, s.quantity]));
+    
+    // Get reseller's price list for repair_center
+    const priceList = await this.getPriceListForTarget(repairCenter.resellerId, "repair_center");
+    
+    // Bulk load all price list items
+    const priceListItemsMap = new Map<string, { priceCents: number; vatRate: number }>();
+    if (priceList) {
+      const allPriceListItems = await this.listPriceListItems(priceList.id);
+      for (const pli of allPriceListItems) {
+        if (pli.productId && pli.isActive) {
+          priceListItemsMap.set(pli.productId, { 
+            priceCents: pli.priceCents, 
+            vatRate: (pli as any).vatRate ?? (priceList as any)?.defaultVatRate ?? 22 
+          });
+        }
+      }
+    }
+    
+    // Build catalog
+    const catalog: Array<{
+      product: Product;
+      resellerStock: number;
+      b2bPrice: number;
+      minimumOrderQuantity: number;
+      priceSource: string;
+      vatRate: number;
+    }> = [];
+    
+    for (const product of productsWithStock) {
+      const stockQty = stockMap.get(product.id) || 0;
+      
+      // B2B price priority: price_list > costPrice > unitPrice * 0.8
+      let b2bPrice: number;
+      let priceSource = 'fallback';
+      
+      const priceListItem = priceListItemsMap.get(product.id);
+      if (priceListItem) {
+        b2bPrice = priceListItem.priceCents;
+        priceSource = 'price_list';
+      } else {
+        b2bPrice = product.costPrice || Math.round((product.unitPrice || 0) * 0.8);
+        priceSource = product.costPrice ? 'cost_price' : 'calculated';
+      }
+      
+      catalog.push({
+        product,
+        resellerStock: stockQty,
+        b2bPrice,
+        minimumOrderQuantity: 1,
+        priceSource,
+        vatRate: priceListItem?.vatRate ?? 22,
+      });
+    }
+    
+    return catalog;
+  }
+
   // ==========================================
   // B2B RETURNS - Resi ordini B2B
   // ==========================================
