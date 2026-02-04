@@ -17,6 +17,7 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { calculateVatSummary, DEFAULT_VAT_RATE } from "@/lib/utils";
 import PayPalButton from "@/components/PayPalButton";
+import { StripeB2BCheckout } from "@/components/StripeB2BCheckout";
 
 interface MarketplaceCatalogItem {
   product: Product;
@@ -606,6 +607,27 @@ export default function RepairCenterMarketplace() {
                     title: "Pagamento annullato",
                     description: "Hai annullato il pagamento PayPal",
                   });
+                }}
+              />
+            ) : paymentMethod === "stripe" && paymentConfig?.stripe?.enabled ? (
+              <StripeB2BCheckout
+                items={cart.map(item => ({ productId: item.productId, quantity: item.quantity }))}
+                shippingMethodId={selectedShippingMethod}
+                notes={notes}
+                totalAmount={grandTotal}
+                sellerResellerId={cart[0]?.sellerResellerId}
+                paymentIntentEndpoint="/api/repair-center/marketplace/orders/stripe-payment-intent"
+                createOrderEndpoint="/api/repair-center/marketplace/orders"
+                returnUrl="/repair-center/marketplace"
+                onSuccess={() => {
+                  queryClient.invalidateQueries({ queryKey: ['/api/repair-center/marketplace/orders'] });
+                  setCheckoutOpen(false);
+                  setCart([]);
+                  setNotes("");
+                  toast({ title: "Ordine completato", description: "Pagamento ricevuto con successo" });
+                }}
+                onError={(error) => {
+                  toast({ title: "Errore", description: error, variant: "destructive" });
                 }}
               />
             ) : (

@@ -32268,11 +32268,24 @@ export function registerRoutes(app: Express): Server {
       
       // Get seller's payment config for Stripe keys
       const sellerPaymentConfig = await storage.getPaymentConfiguration('reseller', sellerResellerId);
-      if (!sellerPaymentConfig?.stripeEnabled || !sellerPaymentConfig?.stripeSecretKey) {
+      if (!sellerPaymentConfig?.stripeEnabled || !sellerPaymentConfig?.stripeSecretKey || !sellerPaymentConfig?.stripePublishableKey) {
         return res.status(400).json({ error: "Stripe non configurato dal venditore" });
       }
       
-      // Calculate total with correct prices and VAT
+      // Get seller's price list for accurate pricing (repair_center target)
+      const sellerPriceList = await storage.getPriceListForTarget(sellerResellerId, 'repair_center');
+      const priceListMap = new Map<string, { priceCents: number; vatRate: number }>();
+      const defaultVatRate = (sellerPriceList as any)?.defaultVatRate ?? 22;
+      if (sellerPriceList) {
+        const priceListItems = await storage.listPriceListItems(sellerPriceList.id);
+        for (const pli of priceListItems) {
+          if (pli.productId) {
+            priceListMap.set(pli.productId, { priceCents: pli.priceCents, vatRate: (pli as any).vatRate ?? defaultVatRate });
+          }
+        }
+      }
+      
+      // Calculate total with correct prices and VAT per item
       let total = 0;
       for (const item of items) {
         const product = await storage.getProduct(item.productId);
@@ -32288,9 +32301,14 @@ export function registerRoutes(app: Express): Server {
           return res.status(400).json({ error: `Prodotto ${product.name} non disponibile nel marketplace` });
         }
         
-        const unitPrice = product.marketplacePriceCents || product.costPrice || 0;
+        const priceListData = priceListMap.get(item.productId);
+        // Price priority: price_list > marketplacePriceCents > costPrice (all in cents)
+        const unitPrice = priceListData !== undefined 
+          ? priceListData.priceCents 
+          : (product.marketplacePriceCents || product.costPrice || 0);
+        const vatRate = priceListData?.vatRate ?? 22;
         const itemSubtotal = unitPrice * item.quantity;
-        const itemVat = Math.round(itemSubtotal * 0.22); // 22% VAT
+        const itemVat = Math.round(itemSubtotal * (vatRate / 100));
         total += itemSubtotal + itemVat;
       }
       
@@ -32306,12 +32324,13 @@ export function registerRoutes(app: Express): Server {
       
       // Decrypt seller's secret key and create Stripe instance
       const decryptedSecretKey = decryptSecret(sellerPaymentConfig.stripeSecretKey);
-      const stripe = new Stripe(decryptedSecretKey);
+      const stripe = new Stripe(decryptedSecretKey, { apiVersion: "2024-06-20" });
       
       // Create PaymentIntent
       const paymentIntent = await stripe.paymentIntents.create({
         amount: total,
         currency: 'eur',
+        automatic_payment_methods: { enabled: true },
         metadata: {
           repairCenterId: req.user.repairCenterId,
           sellerResellerId,
@@ -32328,6 +32347,7 @@ export function registerRoutes(app: Express): Server {
       res.status(500).json({ error: error.message || "Errore creazione pagamento Stripe" });
     }
   });
+
 
   // Repair Center: Get marketplace orders (from any reseller, not just owner)
   app.get("/api/repair-center/marketplace/orders", requireRole("repair_center"), async (req, res) => {
