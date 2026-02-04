@@ -32565,6 +32565,80 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // Repair Center: Create Stripe PaymentIntent for B2B order
+  app.post("/api/repair-center/b2b-orders/stripe-payment-intent", requireRole("repair_center"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Non autenticato" });
+      if (!req.user.repairCenterId) return res.status(400).json({ error: "Repair Center non associato" });
+      
+      const { items, shippingMethodId } = req.body;
+      
+      if (!items || !Array.isArray(items) || items.length === 0) {
+        return res.status(400).json({ error: "Nessun prodotto nell'ordine" });
+      }
+      
+      // Get repair center and its parent reseller
+      const repairCenter = await storage.getRepairCenter(req.user.repairCenterId);
+      if (!repairCenter || !repairCenter.resellerId) {
+        return res.status(400).json({ error: "Repair Center non associato a un rivenditore" });
+      }
+      
+      // Get parent reseller's payment config (RC buys from their parent reseller)
+      const parentConfig = await storage.getPaymentConfiguration("reseller", repairCenter.resellerId);
+      if (!parentConfig?.stripeEnabled || !parentConfig?.stripeSecretKey) {
+        return res.status(400).json({ error: "Stripe non configurato dal rivenditore" });
+      }
+      
+      // Get catalog to verify products and get correct B2B prices
+      const catalog = await storage.getResellerCatalogForRepairCenter(req.user.repairCenterId);
+      const catalogMap = new Map(catalog.map(c => [c.product.id, c]));
+      
+      // Calculate total with correct B2B prices and VAT per item
+      let total = 0;
+      for (const item of items) {
+        const catalogItem = catalogMap.get(item.productId);
+        if (catalogItem) {
+          const itemSubtotal = catalogItem.b2bPrice * item.quantity;
+          const itemVat = Math.round(itemSubtotal * ((catalogItem.vatRate || 22) / 100));
+          total += itemSubtotal + itemVat;
+        }
+      }
+      
+      // Add shipping cost
+      if (shippingMethodId) {
+        const shippingMethod = await storage.getShippingMethod(shippingMethodId);
+        total += shippingMethod?.priceCents || 0;
+      }
+      
+      if (total <= 0) {
+        return res.status(400).json({ error: "Totale ordine non valido" });
+      }
+      
+      // Create Stripe instance with parent reseller's secret key
+      const stripeSecretDecrypted = decryptSecret(parentConfig.stripeSecretKey);
+      const stripe = new Stripe(stripeSecretDecrypted);
+      
+      // Create PaymentIntent (amount in cents)
+      const paymentIntent = await stripe.paymentIntents.create({
+        amount: total,
+        currency: 'eur',
+        metadata: {
+          repairCenterId: req.user.repairCenterId,
+          resellerId: repairCenter.resellerId,
+          type: 'rc_b2b_order'
+        }
+      });
+      
+      res.json({
+        clientSecret: paymentIntent.client_secret,
+        publishableKey: parentConfig.stripePublishableKey,
+      });
+    } catch (error: any) {
+      console.error("RC Stripe PaymentIntent error:", error);
+      res.status(500).json({ error: error.message || "Errore creazione pagamento Stripe" });
+    }
+  });
+
   // Repair Center: Confirm receipt of B2B order
   app.post("/api/repair-center/b2b-orders/:id/receive", requireRole("repair_center"), async (req, res) => {
     try {

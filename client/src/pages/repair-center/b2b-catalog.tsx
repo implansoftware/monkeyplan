@@ -16,6 +16,7 @@ import { Package, Search, ShoppingCart, Plus, Minus, Trash2, Send, Box } from "l
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { calculateVatSummary } from "@/lib/utils";
+import { StripeB2BCheckout } from "@/components/StripeB2BCheckout";
 
 interface B2BCatalogItem {
   product: Product;
@@ -473,18 +474,46 @@ export default function RepairCenterB2BCatalog() {
             </div>
           </div>
           
-          <DialogFooter>
+          <DialogFooter className="flex-col sm:flex-row gap-2">
             <Button variant="outline" onClick={() => setCheckoutOpen(false)}>
               Annulla
             </Button>
-            <Button 
-              onClick={submitOrder} 
-              disabled={createOrderMutation.isPending || !paymentConfig?.hasAnyMethod || (!shippingMethods?.length && !shippingMethodsLoading)}
-              data-testid="button-submit-order"
-            >
-              <Send className="h-4 w-4 mr-2" />
-              {createOrderMutation.isPending ? "Invio..." : "Invia Ordine"}
-            </Button>
+            {paymentMethod === "stripe" && paymentConfig?.stripe?.enabled ? (
+              <StripeB2BCheckout
+                items={cart.map(item => ({ productId: item.productId, quantity: item.quantity }))}
+                shippingMethodId={selectedShippingMethod}
+                notes={notes}
+                totalAmount={grandTotal}
+                paymentIntentEndpoint="/api/repair-center/b2b-orders/stripe-payment-intent"
+                createOrderEndpoint="/api/repair-center/b2b-orders"
+                returnUrl="/repair-center/b2b-orders"
+                onSuccess={() => {
+                  queryClient.invalidateQueries({ queryKey: ['/api/repair-center/b2b-orders'] });
+                  setCheckoutOpen(false);
+                  setCart([]);
+                  setNotes("");
+                  toast({ title: "Ordine completato", description: "Pagamento ricevuto con successo" });
+                }}
+                onError={(error) => {
+                  toast({ title: "Errore", description: error, variant: "destructive" });
+                }}
+              />
+            ) : (
+              <Button 
+                onClick={submitOrder} 
+                disabled={createOrderMutation.isPending || !paymentConfig?.hasAnyMethod || (!shippingMethods?.length && !shippingMethodsLoading)}
+                data-testid="button-submit-order"
+              >
+                {createOrderMutation.isPending ? (
+                  "Invio in corso..."
+                ) : (
+                  <>
+                    <Send className="h-4 w-4 mr-2" />
+                    Invia Ordine
+                  </>
+                )}
+              </Button>
+            )}
           </DialogFooter>
         </DialogContent>
       </Dialog>
