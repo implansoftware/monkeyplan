@@ -31525,6 +31525,101 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // Reseller: Create Stripe PaymentIntent for marketplace order
+  app.post("/api/reseller/marketplace/orders/stripe-payment-intent", requireRole("reseller"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Non autenticato" });
+      
+      const { sellerResellerId, items, shippingMethodId } = req.body;
+      
+      if (!sellerResellerId || !items || items.length === 0) {
+        return res.status(400).json({ error: "Dati ordine incompleti" });
+      }
+      
+      // Get seller's payment config for Stripe keys
+      const sellerPaymentConfig = await storage.getPaymentConfiguration('reseller', sellerResellerId);
+      if (!sellerPaymentConfig?.stripeEnabled || !sellerPaymentConfig?.stripeSecretKey) {
+        return res.status(400).json({ error: "Stripe non configurato dal venditore" });
+      }
+      
+      // Get seller's price list for accurate pricing
+      const sellerPriceList = await storage.getPriceListForTarget(sellerResellerId, 'reseller');
+      const priceListMap = new Map<string, { priceCents: number; vatRate: number }>();
+      const defaultVatRate = sellerPriceList?.defaultVatRate ?? 22;
+      if (sellerPriceList) {
+        const priceListItems = await storage.listPriceListItems(sellerPriceList.id);
+        for (const pli of priceListItems) {
+          if (pli.productId) {
+            priceListMap.set(pli.productId, { priceCents: pli.priceCents, vatRate: pli.vatRate ?? defaultVatRate });
+          }
+        }
+      }
+      
+      // Calculate total with correct prices and VAT per item
+      let total = 0;
+      for (const item of items) {
+        const product = await storage.getProduct(item.productId);
+        if (!product) {
+          return res.status(400).json({ error: `Prodotto ${item.productId} non trovato` });
+        }
+        
+        // Validate product belongs to this seller
+        if (product.createdBy !== sellerResellerId) {
+          return res.status(400).json({ error: `Prodotto ${product.name} non appartiene al venditore` });
+        }
+        
+        // Validate product is marketplace enabled
+        if (!product.isMarketplaceEnabled) {
+          return res.status(400).json({ error: `Prodotto ${product.name} non disponibile nel marketplace` });
+        }
+        
+        const priceListData = priceListMap.get(item.productId);
+        // Price priority: price_list > marketplacePriceCents > costPrice (all in cents)
+        const unitPrice = priceListData !== undefined 
+          ? priceListData.priceCents 
+          : (product.marketplacePriceCents || product.costPrice || 0);
+        const vatRate = priceListData?.vatRate ?? 22;
+        const itemSubtotal = unitPrice * item.quantity;
+        const itemVat = Math.round(itemSubtotal * (vatRate / 100));
+        total += itemSubtotal + itemVat;
+      }
+      
+      // Add shipping cost
+      if (shippingMethodId) {
+        const shippingMethod = await storage.getShippingMethod(shippingMethodId);
+        total += shippingMethod?.priceCents || 0;
+      }
+      
+      if (total <= 0) {
+        return res.status(400).json({ error: "Importo non valido" });
+      }
+      
+      // Decrypt seller's secret key and create Stripe instance
+      const decryptedSecretKey = decryptSecret(sellerPaymentConfig.stripeSecretKey);
+      const stripe = new Stripe(decryptedSecretKey, { apiVersion: "2024-06-20" });
+      
+      // Create PaymentIntent
+      const paymentIntent = await stripe.paymentIntents.create({
+        amount: total,
+        currency: "eur",
+        automatic_payment_methods: { enabled: true },
+        metadata: {
+          buyerId: req.user.id,
+          sellerId: sellerResellerId,
+          orderType: "marketplace",
+        },
+      });
+      
+      res.json({
+        clientSecret: paymentIntent.client_secret,
+        publishableKey: sellerPaymentConfig.stripePublishableKey,
+      });
+    } catch (error: any) {
+      console.error("Stripe PaymentIntent error:", error);
+      res.status(500).json({ error: error.message || "Errore creazione PaymentIntent" });
+    }
+  });
+
   // Reseller: Create marketplace order (buy from another reseller)
   app.post("/api/reseller/marketplace/orders", requireRole("reseller"), async (req, res) => {
     try {

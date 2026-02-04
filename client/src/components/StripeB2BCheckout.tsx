@@ -14,6 +14,10 @@ interface StripeB2BCheckoutProps {
   onSuccess: () => void;
   onError: (error: string) => void;
   disabled?: boolean;
+  paymentIntentEndpoint?: string;
+  createOrderEndpoint?: string;
+  returnUrl?: string;
+  sellerResellerId?: string;
 }
 
 interface PaymentIntentResponse {
@@ -28,7 +32,10 @@ function CheckoutForm({
   totalAmount,
   items,
   shippingMethodId,
-  notes
+  notes,
+  createOrderEndpoint,
+  returnUrl,
+  sellerResellerId
 }: { 
   onSuccess: () => void; 
   onError: (error: string) => void;
@@ -37,6 +44,9 @@ function CheckoutForm({
   items: { productId: string; quantity: number }[];
   shippingMethodId: string;
   notes: string;
+  createOrderEndpoint: string;
+  returnUrl: string;
+  sellerResellerId?: string;
 }) {
   const stripe = useStripe();
   const elements = useElements();
@@ -55,7 +65,7 @@ function CheckoutForm({
       const { error, paymentIntent } = await stripe.confirmPayment({
         elements,
         confirmParams: {
-          return_url: window.location.origin + "/reseller/b2b-orders",
+          return_url: window.location.origin + returnUrl,
         },
         redirect: "if_required",
       });
@@ -67,13 +77,21 @@ function CheckoutForm({
       }
 
       if (paymentIntent && paymentIntent.status === "succeeded") {
-        const response = await apiRequest("POST", "/api/reseller/b2b-orders", {
+        const orderData: any = {
           items,
           shippingMethodId,
-          notes,
           paymentMethod: "stripe",
           stripePaymentIntentId: paymentIntent.id,
-        });
+        };
+        
+        if (sellerResellerId) {
+          orderData.sellerResellerId = sellerResellerId;
+          orderData.buyerNotes = notes;
+        } else {
+          orderData.notes = notes;
+        }
+        
+        const response = await apiRequest("POST", createOrderEndpoint, orderData);
 
         if (!response.ok) {
           const errorText = await response.text();
@@ -155,7 +173,11 @@ export function StripeB2BCheckout({
   totalAmount,
   onSuccess, 
   onError,
-  disabled 
+  disabled,
+  paymentIntentEndpoint = "/api/reseller/b2b-orders/stripe-payment-intent",
+  createOrderEndpoint = "/api/reseller/b2b-orders",
+  returnUrl = "/reseller/b2b-orders",
+  sellerResellerId
 }: StripeB2BCheckoutProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [stripePromise, setStripePromise] = useState<Promise<Stripe | null> | null>(null);
@@ -167,11 +189,13 @@ export function StripeB2BCheckout({
     try {
       setIsLoading(true);
       setInitError(null);
+      
+      const requestBody: any = { items, shippingMethodId };
+      if (sellerResellerId) {
+        requestBody.sellerResellerId = sellerResellerId;
+      }
 
-      const response = await apiRequest("POST", "/api/reseller/b2b-orders/stripe-payment-intent", {
-        items,
-        shippingMethodId,
-      });
+      const response = await apiRequest("POST", paymentIntentEndpoint, requestBody);
 
       if (!response.ok) {
         const errorText = await response.text();
@@ -300,6 +324,9 @@ export function StripeB2BCheckout({
                 items={items}
                 shippingMethodId={shippingMethodId}
                 notes={notes}
+                createOrderEndpoint={createOrderEndpoint}
+                returnUrl={returnUrl}
+                sellerResellerId={sellerResellerId}
               />
             </Elements>
           ) : (
