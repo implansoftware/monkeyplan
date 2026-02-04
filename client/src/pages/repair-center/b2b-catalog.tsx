@@ -484,6 +484,9 @@ export default function RepairCenterB2BCatalog() {
                 amount={(grandTotal / 100).toFixed(2)}
                 currency="EUR"
                 disabled={cart.length === 0 || createOrderMutation.isPending}
+                setupEndpoint="/api/repair-center/paypal/setup"
+                orderEndpoint="/api/repair-center/paypal/order"
+                captureEndpointBase="/api/repair-center/paypal/order"
                 onSuccess={(paypalOrderId, captureData) => {
                   createOrderMutation.mutate({
                     items: cart.map(item => ({ productId: item.productId, quantity: item.quantity })),
