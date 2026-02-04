@@ -31814,6 +31814,31 @@ export function registerRoutes(app: Express): Server {
             warehouseTransferId: transfer.id,
           });
         }
+        
+        // Create invoice for seller (automatic payment)
+        const buyerForInvoice = await storage.getUser(req.user.id);
+        const seller = await storage.getUser(sellerResellerId);
+        if (!seller?.parentResellerId || seller?.hasAutonomousInvoicing) {
+          await storage.createInvoice({
+            resellerId: sellerResellerId,
+            marketplaceOrderId: order.id,
+            invoiceNumber: await storage.generateInvoiceNumber(),
+            customerName: buyerForInvoice?.companyName || buyerForInvoice?.fullName || buyerForInvoice?.username || 'Acquirente',
+            customerEmail: buyerForInvoice?.email || '',
+            customerAddress: buyerForInvoice?.address || '',
+            customerVatNumber: buyerForInvoice?.vatNumber || '',
+            customerFiscalCode: buyerForInvoice?.fiscalCode || '',
+            subtotal: String(subtotal / 100),
+            taxAmount: String(validatedItems.reduce((sum, item) => {
+              const itemVat = (item.unitPrice * item.quantity * (item.vatRate || 22)) / 100;
+              return sum + itemVat;
+            }, 0) / 100),
+            total: String((subtotal + shippingCost) / 100),
+            status: 'paid',
+            paidAt: new Date(),
+            notes: `Fattura automatica per ordine Marketplace ${order.orderNumber}`,
+          });
+        }
       }
       
       // Notify seller about new order
