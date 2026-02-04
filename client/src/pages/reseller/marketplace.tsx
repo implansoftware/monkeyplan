@@ -565,7 +565,6 @@ export default function ResellerMarketplace() {
                     {paymentConfig?.paypal?.enabled && (
                       <SelectItem value="paypal">PayPal</SelectItem>
                     )}
-                    )}
                   </SelectContent>
                 </Select>
               )}
