@@ -32141,8 +32141,22 @@ export function registerRoutes(app: Express): Server {
         return res.status(404).json({ error: "Rivenditore non trovato" });
       }
       
-      // Validate items and calculate totals
+      // Get seller's price list for accurate pricing and VAT rates
+      const sellerPriceList = await storage.getPriceListForTarget(sellerResellerId, 'repair_center');
+      const priceListMap = new Map<string, { priceCents: number; vatRate: number }>();
+      const defaultVatRate = (sellerPriceList as any)?.defaultVatRate ?? 22;
+      if (sellerPriceList) {
+        const priceListItems = await storage.listPriceListItems(sellerPriceList.id);
+        for (const pli of priceListItems) {
+          if (pli.productId) {
+            priceListMap.set(pli.productId, { priceCents: pli.priceCents, vatRate: (pli as any).vatRate ?? defaultVatRate });
+          }
+        }
+      }
+      
+      // Validate items and calculate totals with VAT
       let subtotal = 0;
+      let totalTax = 0;
       const orderItems: { productId: string; quantity: number; unitPrice: number; productName: string; productSku: string | null; totalPrice: number }[] = [];
       
       for (const item of items) {
@@ -32157,14 +32171,21 @@ export function registerRoutes(app: Express): Server {
           return res.status(400).json({ error: `Prodotto ${product.name} non disponibile nel marketplace` });
         }
         
-        // Use marketplace price, fallback to unit price, ensure not zero
-        const price = product.marketplacePriceCents || product.unitPrice || 0;
+        // Price priority: price_list > marketplacePriceCents > unitPrice
+        const priceListData = priceListMap.get(item.productId);
+        const price = priceListData !== undefined 
+          ? priceListData.priceCents 
+          : (product.marketplacePriceCents || product.unitPrice || 0);
+        const vatRate = priceListData?.vatRate ?? 22;
+        
         if (price <= 0) {
           return res.status(400).json({ error: `Prodotto ${product.name} non ha un prezzo valido` });
         }
         
         const itemTotal = price * item.quantity;
+        const itemVat = Math.round(itemTotal * (vatRate / 100));
         subtotal += itemTotal;
+        totalTax += itemVat;
         orderItems.push({
           productId: item.productId,
           quantity: item.quantity,
@@ -32191,9 +32212,10 @@ export function registerRoutes(app: Express): Server {
         resellerId: sellerResellerId,
         status: 'pending',
         subtotal,
+        tax: totalTax,
         discountAmount: 0,
         shippingCost: shippingCostRC,
-        total: subtotal + shippingCostRC,
+        total: subtotal + totalTax + shippingCostRC,
         paymentMethod: paymentMethod || 'bank_transfer',
         shippingMethodId: shippingMethodId || null,
         notes: buyerNotes || null,
@@ -32244,6 +32266,19 @@ export function registerRoutes(app: Express): Server {
         // Update order object for response
         order.status = 'approved';
         (order as any).paymentConfirmedAt = new Date();
+        
+        // Auto-create invoice for automatic payments (PayPal/Stripe)
+        const sellerForInvoice = await storage.getUser(order.resellerId);
+        if (!sellerForInvoice?.parentResellerId || sellerForInvoice?.hasAutonomousInvoicing) {
+          await storage.createInvoiceForRepairCenterB2BOrder({
+            id: order.id,
+            orderNumber: order.orderNumber,
+            repairCenterId: order.repairCenterId,
+            resellerId: order.resellerId,
+            total: order.total,
+            paymentMethod: finalPaymentMethod,
+          });
+        }
       }
 
       
