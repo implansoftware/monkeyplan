@@ -32229,7 +32229,7 @@ export function registerRoutes(app: Express): Server {
           amount: order.total,
           currency: 'EUR',
           paidAt: new Date(),
-          gatewayReference: notes?.match(/\[PayPal Order ID: ([^\]]+)\]/)?.[1] || null,
+          gatewayReference: buyerNotes?.match(/\[PayPal Order ID: ([^\]]+)\]/)?.[1] || null,
           notes: `Pagamento automatico ${finalPaymentMethod.toUpperCase()} per ordine B2B ${order.orderNumber}`,
           resellerId: order.resellerId,
           resellerName: resellerForPayment?.fullName || resellerForPayment?.ragioneSociale || 'N/A',
