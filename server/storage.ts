@@ -289,7 +289,7 @@ export interface IStorage {
   createInvoiceForSalesOrder(order: { id: string; orderNumber: string; customerId: string; resellerId: string; total: number; taxAmount: number }): Promise<Invoice | null>;
   createInvoiceForB2BOrder(order: { id: string; orderNumber: string; resellerId: string; buyerId: string; total: number }): Promise<Invoice | null>;
   createInvoiceForAdminB2BOrder(order: { id: string; orderNumber: string; buyerId: string; total: number }): Promise<Invoice | null>;
-  createInvoiceForRepairCenterB2BOrder(order: { id: string; orderNumber: string; repairCenterId: string; resellerId: string; total: number }): Promise<Invoice | null>;
+  createInvoiceForRepairCenterB2BOrder(order: { id: string; orderNumber: string; repairCenterId: string; resellerId: string; total: number; paymentMethod?: string }): Promise<Invoice | null>;
   createInvoiceForWarranty(warranty: { id: string; customerId: string; sellerId: string; sellerType: string; priceSnapshot: number; productNameSnapshot: string; repairOrderId: string }): Promise<Invoice | null>;
   
   // Billing Data
@@ -3160,6 +3160,7 @@ export class DatabaseStorage implements IStorage {
     repairCenterId: string;
     resellerId: string;
     total: number;
+    paymentMethod?: string;
   }): Promise<Invoice | null> {
     // Check if invoice already exists
     const existingInvoices = await db.select().from(invoices).where(
@@ -3188,7 +3189,7 @@ export class DatabaseStorage implements IStorage {
       tax: taxCents,
       total: totalCents,
       paymentStatus: 'pending',
-      paymentMethod: 'bank_transfer',
+      paymentMethod: order.paymentMethod || 'bank_transfer',
       dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
       notes: `Fattura B2B per ordine RC ${order.orderNumber}`,
     }).returning();

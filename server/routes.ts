@@ -32569,6 +32569,7 @@ export function registerRoutes(app: Express): Server {
             repairCenterId: order.repairCenterId,
             resellerId: order.resellerId,
             total: order.total,
+            paymentMethod: finalPaymentMethod,
           });
         }
       }
@@ -32953,6 +32954,7 @@ export function registerRoutes(app: Express): Server {
           repairCenterId: order.repairCenterId,
           resellerId: order.resellerId,
           total: order.total,
+          paymentMethod: order.paymentMethod,
         });
       }
       
