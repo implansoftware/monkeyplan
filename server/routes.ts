@@ -27986,7 +27986,7 @@ export function registerRoutes(app: Express): Server {
           productId: item.productId,
           productName: product?.name || 'Prodotto',
           productSku: product?.sku,
-          productImage: product?.images?.[0],
+          productImage: product?.imageUrl,
           quantity: item.quantity,
           unitPrice: item.unitPrice,
           discount: item.discount,

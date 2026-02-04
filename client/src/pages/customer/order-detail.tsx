@@ -253,11 +253,24 @@ export default function CustomerOrderDetail() {
                 className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between p-4 rounded-lg bg-muted/50"
                 data-testid={`item-${item.id}`}
               >
-                <div className="flex-1">
-                  <p className="font-medium">{item.productName}</p>
-                  {item.productSku && (
-                    <p className="text-sm text-muted-foreground">SKU: {item.productSku}</p>
-                  )}
+                <div className="flex items-center gap-3 flex-1">
+                  <div className="w-12 h-12 rounded-md bg-muted flex items-center justify-center overflow-hidden shrink-0">
+                    {item.productImage ? (
+                      <img 
+                        src={item.productImage} 
+                        alt={item.productName}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <Package className="h-5 w-5 text-muted-foreground" />
+                    )}
+                  </div>
+                  <div>
+                    <p className="font-medium">{item.productName}</p>
+                    {item.productSku && (
+                      <p className="text-sm text-muted-foreground">SKU: {item.productSku}</p>
+                    )}
+                  </div>
                 </div>
                 <div className="flex flex-wrap items-center gap-4 text-sm">
                   <span className="text-muted-foreground">Qtà: {item.quantity}</span>
