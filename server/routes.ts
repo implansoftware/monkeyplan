@@ -11215,10 +11215,12 @@ export function registerRoutes(app: Express): Server {
       
       // Auto-approval for automatic payment methods (card/paypal)
       const isAutoPayment = paymentMethod === 'card' || paymentMethod === 'paypal';
+      const customerRepairCenterId = req.user.repairCenterId || undefined;
       
       const order = await storage.createServiceOrder({
         customerId: req.user.id,
         resellerId,
+        repairCenterId: customerRepairCenterId,
         serviceItemId,
         priceCents: effectivePrice.priceCents,
         deviceType,
@@ -11248,6 +11250,26 @@ export function registerRoutes(app: Express): Server {
         message: `${req.user.fullName} ha richiesto: ${serviceItem.name}`,
         orderId: order.id
       });
+      
+      // Notify repair center if customer has one assigned
+      if (customerRepairCenterId) {
+        const repairCenter = await storage.getRepairCenter(customerRepairCenterId);
+        if (repairCenter && repairCenter.userId) {
+          await storage.createNotification({
+            userId: repairCenter.userId,
+            type: "system",
+            title: "Nuovo ordine servizio",
+            message: `${req.user.fullName} ha richiesto: ${serviceItem.name}`,
+            data: JSON.stringify({ serviceOrderId: order.id, customerId: req.user.id })
+          });
+          broadcastNotification(repairCenter.userId, {
+            type: "new_service_order",
+            title: "Nuovo ordine servizio",
+            message: `${req.user.fullName} ha richiesto: ${serviceItem.name}`,
+            orderId: order.id
+          });
+        }
+      }
       
       setActivityEntity(res, { type: 'service_orders', id: order.id });
       res.status(201).json(order);
