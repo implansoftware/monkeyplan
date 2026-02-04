@@ -253,6 +253,19 @@ const paymentMethodLabels: Record<string, { label: string; icon: typeof CreditCa
   mixed: { label: "Misto", icon: Calculator },
 };
 
+interface PaymentConfiguration {
+  bankTransferEnabled?: boolean;
+  stripeEnabled?: boolean;
+  paypalEnabled?: boolean;
+}
+
+interface RepairCenterPaymentConfig {
+  ownConfig: PaymentConfiguration | null;
+  parentConfig: PaymentConfiguration | null;
+  effectiveConfig: PaymentConfiguration | null;
+  useParentConfig: boolean;
+}
+
 export default function PosPage() {
   const { toast } = useToast();
   const [, navigate] = useLocation();
@@ -402,6 +415,25 @@ export default function PosPage() {
       return res.json();
     },
   });
+
+  // Payment configuration (inherited from reseller or own)
+  const { data: paymentConfigData } = useQuery<RepairCenterPaymentConfig>({
+    queryKey: ['/api/repair-center/payment-config'],
+  });
+
+  // Build available payment methods based on config
+  const availablePaymentMethods = useMemo(() => {
+    const methods: Array<"cash" | "card" | "pos_terminal"> = ["cash"]; // Cash always available for POS
+    const config = paymentConfigData?.effectiveConfig;
+    
+    if (config?.stripeEnabled) {
+      methods.push("card");
+    }
+    // POS terminal is always available as it's a physical device
+    methods.push("pos_terminal");
+    
+    return methods;
+  }, [paymentConfigData]);
 
   const filteredServices = services.filter(s => 
     s.name.toLowerCase().includes(serviceSearchQuery.toLowerCase()) ||
@@ -1563,8 +1595,8 @@ export default function PosPage() {
           </div>
           
           {/* Metodi di pagamento */}
-          <div className="grid grid-cols-4 gap-1 w-full">
-            {(["cash", "card", "pos_terminal"] as const).map((method) => {
+          <div className={`grid gap-1 w-full ${availablePaymentMethods.length <= 2 ? 'grid-cols-2' : availablePaymentMethods.length === 3 ? 'grid-cols-3' : 'grid-cols-4'}`}>
+            {availablePaymentMethods.map((method) => {
               const { label, icon: Icon } = paymentMethodLabels[method];
               return (
                 <button
@@ -1656,8 +1688,8 @@ export default function PosPage() {
           </DialogHeader>
           
           <div className="space-y-3">
-            <div className="grid grid-cols-4 gap-1">
-              {(["cash", "card", "pos_terminal"] as const).map((method) => {
+            <div className={`grid gap-1 ${availablePaymentMethods.length <= 2 ? 'grid-cols-2' : availablePaymentMethods.length === 3 ? 'grid-cols-3' : 'grid-cols-4'}`}>
+              {availablePaymentMethods.map((method) => {
                 const { label, icon: Icon } = paymentMethodLabels[method];
                 return (
                   <button

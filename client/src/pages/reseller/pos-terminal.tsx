@@ -253,6 +253,12 @@ const paymentMethodLabels: Record<string, { label: string; icon: typeof CreditCa
   mixed: { label: "Misto", icon: Calculator },
 };
 
+interface ResellerPaymentConfig {
+  bankTransferEnabled?: boolean;
+  stripeEnabled?: boolean;
+  paypalEnabled?: boolean;
+}
+
 type RepairCenter = {
   id: string;
   name: string;
@@ -321,6 +327,24 @@ export default function ResellerPosTerminal() {
       return res.json();
     },
   });
+
+  // Payment configuration
+  const { data: paymentConfig } = useQuery<ResellerPaymentConfig>({
+    queryKey: ['/api/reseller/payment-config'],
+  });
+
+  // Build available payment methods based on config
+  const availablePaymentMethods = useMemo(() => {
+    const methods: Array<"cash" | "card" | "pos_terminal"> = ["cash"]; // Cash always available for POS
+    
+    if (paymentConfig?.stripeEnabled) {
+      methods.push("card");
+    }
+    // POS terminal is always available as it's a physical device
+    methods.push("pos_terminal");
+    
+    return methods;
+  }, [paymentConfig]);
   
   // Seleziona listino di default quando disponibile
   useEffect(() => {
@@ -1482,8 +1506,8 @@ export default function ResellerPosTerminal() {
           </DialogHeader>
           
           <div className="space-y-3">
-            <div className="grid grid-cols-4 gap-1">
-              {(["cash", "card", "pos_terminal"] as const).map((method) => {
+            <div className={`grid gap-1 ${availablePaymentMethods.length <= 2 ? 'grid-cols-2' : availablePaymentMethods.length === 3 ? 'grid-cols-3' : 'grid-cols-4'}`}>
+              {availablePaymentMethods.map((method) => {
                 const { label, icon: Icon } = paymentMethodLabels[method];
                 return (
                   <button
