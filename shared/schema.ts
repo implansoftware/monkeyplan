@@ -6409,10 +6409,12 @@ export const posSessionStatusEnum = pgEnum("pos_session_status", [
 
 // Enum stato transazione POS
 export const posTransactionStatusEnum = pgEnum("pos_transaction_status", [
+  "pending",         // In attesa di pagamento (Stripe Payment Link)
   "completed",       // Vendita completata
   "refunded",        // Completamente rimborsata
   "partial_refund",  // Parzialmente rimborsata
   "voided",          // Annullata
+  "expired",         // Link pagamento scaduto
 ]);
 
 // Enum metodo pagamento POS
@@ -6420,6 +6422,7 @@ export const posPaymentMethodEnum = pgEnum("pos_payment_method", [
   "cash",           // Contanti
   "card",           // Carta credito/debito
   "pos_terminal",   // Terminale POS
+  "stripe_link",    // Link pagamento Stripe
   "mixed",          // Pagamento misto
 ]);
 
@@ -6517,6 +6520,11 @@ export const posTransactions = pgTable("pos_transactions", {
   invoiceRequested: boolean("invoice_requested").notNull().default(false),
   invoiceId: varchar("invoice_id"),
   
+  // Stripe Payment Link
+  stripeSessionId: varchar("stripe_session_id"),
+  stripePaymentUrl: text("stripe_payment_url"),
+  stripePaymentExpiresAt: timestamp("stripe_payment_expires_at"),
+  
   // Meta
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
@@ -6606,8 +6614,8 @@ export type PosTransactionItem = typeof posTransactionItems.$inferSelect;
 export type InsertPosTransactionItem = z.infer<typeof insertPosTransactionItemSchema>;
 
 export type PosSessionStatus = "open" | "closed";
-export type PosTransactionStatus = "completed" | "refunded" | "partial_refund" | "voided";
-export type PosPaymentMethod = "cash" | "card" | "pos_terminal" | "mixed";
+export type PosTransactionStatus = "pending" | "completed" | "refunded" | "partial_refund" | "voided" | "expired";
+export type PosPaymentMethod = "cash" | "card" | "pos_terminal" | "stripe_link" | "mixed";
 
 // ==========================================
 // PAYMENT CONFIGURATIONS (Stripe Connect, Bank Transfer, PayPal)
