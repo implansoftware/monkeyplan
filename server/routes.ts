@@ -10918,8 +10918,8 @@ export function registerRoutes(app: Express): Server {
         return res.status(400).send("Servizio richiesto");
       }
       
-      if (!paymentMethod || !['in_person', 'bank_transfer'].includes(paymentMethod)) {
-        return res.status(400).send("Metodo di pagamento richiesto (in_person o bank_transfer)");
+      if (!paymentMethod || !['in_person', 'bank_transfer', 'card', 'paypal'].includes(paymentMethod)) {
+        return res.status(400).send("Metodo di pagamento non valido");
       }
       
       const serviceItem = await storage.getServiceItem(serviceItemId);
@@ -11135,6 +11135,234 @@ export function registerRoutes(app: Express): Server {
       res.json({ url: signedUrl });
     } catch (error: any) {
       res.status(500).send(error.message);
+    }
+  });
+
+  // Customer: create Stripe PaymentIntent for service order
+  app.post("/api/customer/service-orders/stripe-payment-intent", requireRole("customer"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Non autenticato" });
+      
+      const { orderData, totalAmount } = req.body;
+      
+      // Extract serviceItemId from orderData
+      const serviceItemId = orderData?.serviceItemId;
+      
+      if (!serviceItemId) {
+        return res.status(400).json({ error: "Servizio non specificato" });
+      }
+      
+      const resellerId = req.user.resellerId;
+      const repairCenterId = req.user.repairCenterId;
+      
+      // Validate price server-side by fetching effective price
+      const effectivePrice = await storage.getEffectiveServicePrice(serviceItemId, resellerId, undefined);
+      const serverPriceCents = effectivePrice.priceCents;
+      
+      // If client sent a different price, use server-validated price
+      const finalAmount = serverPriceCents;
+      
+      // Get payment config with fallback logic: RC -> Reseller
+      let paymentConfig = null;
+      
+      if (repairCenterId) {
+        const rcConfig = await storage.getPaymentConfiguration("repair_center", repairCenterId);
+        if (rcConfig && !rcConfig.useParentConfig && rcConfig.stripeEnabled && rcConfig.stripeSecretKey) {
+          paymentConfig = rcConfig;
+        }
+      }
+      
+      if (!paymentConfig && resellerId) {
+        const resellerConfig = await storage.getPaymentConfiguration("reseller", resellerId);
+        if (resellerConfig?.stripeEnabled && resellerConfig?.stripeSecretKey) {
+          paymentConfig = resellerConfig;
+        }
+      }
+      
+      if (!paymentConfig) {
+        return res.status(400).json({ error: "Stripe non configurato" });
+      }
+      
+      if (!paymentConfig.stripePublishableKey) {
+        return res.status(400).json({ error: "Chiave Stripe pubblica non configurata" });
+      }
+      
+      // Create Stripe instance with secret key
+      const stripeSecretDecrypted = decryptSecret(paymentConfig.stripeSecretKey);
+      const stripe = new Stripe(stripeSecretDecrypted);
+      
+      // Create PaymentIntent with server-validated amount
+      const paymentIntent = await stripe.paymentIntents.create({
+        amount: finalAmount,
+        currency: 'eur',
+        metadata: {
+          customerId: req.user.id,
+          serviceItemId: serviceItemId,
+          type: 'service_order'
+        }
+      });
+      
+      res.json({
+        clientSecret: paymentIntent.client_secret,
+        publishableKey: paymentConfig.stripePublishableKey,
+      });
+    } catch (error: any) {
+      console.error("Service Order Stripe PaymentIntent error:", error);
+      res.status(500).json({ error: error.message || "Errore creazione pagamento Stripe" });
+    }
+  });
+
+  // Customer: create PayPal order for service order
+  app.post("/api/customer/service-orders/paypal-create", requireRole("customer"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Non autenticato" });
+      
+      const { serviceItemId, currency } = req.body;
+      
+      if (!serviceItemId) {
+        return res.status(400).json({ error: "Servizio non specificato" });
+      }
+      
+      const resellerId = req.user.resellerId;
+      const repairCenterId = req.user.repairCenterId;
+      
+      // Validate price server-side
+      const effectivePrice = await storage.getEffectiveServicePrice(serviceItemId, resellerId, undefined);
+      const amountInEur = (effectivePrice.priceCents / 100).toFixed(2);
+      
+      // Get payment config with fallback logic: RC -> Reseller
+      let paymentConfig = null;
+      
+      if (repairCenterId) {
+        const rcConfig = await storage.getPaymentConfiguration("repair_center", repairCenterId);
+        if (rcConfig && !rcConfig.useParentConfig && rcConfig.paypalEnabled && rcConfig.paypalClientId && rcConfig.paypalClientSecret) {
+          paymentConfig = rcConfig;
+        }
+      }
+      
+      if (!paymentConfig && resellerId) {
+        const resellerConfig = await storage.getPaymentConfiguration("reseller", resellerId);
+        if (resellerConfig?.paypalEnabled && resellerConfig?.paypalClientId && resellerConfig?.paypalClientSecret) {
+          paymentConfig = resellerConfig;
+        }
+      }
+      
+      if (!paymentConfig) {
+        return res.status(400).json({ error: "PayPal non configurato" });
+      }
+      
+      const clientId = decryptSecret(paymentConfig.paypalClientId!);
+      const clientSecret = decryptSecret(paymentConfig.paypalClientSecret!);
+      
+      // Get PayPal access token
+      const tokenResponse = await fetch("https://api-m.sandbox.paypal.com/v1/oauth2/token", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+          "Authorization": `Basic ${Buffer.from(`${clientId}:${clientSecret}`).toString("base64")}`
+        },
+        body: "grant_type=client_credentials"
+      });
+      
+      const tokenData = await tokenResponse.json() as any;
+      if (!tokenData.access_token) {
+        return res.status(500).json({ error: "Errore autenticazione PayPal" });
+      }
+      
+      // Create PayPal order with server-validated amount
+      const orderResponse = await fetch("https://api-m.sandbox.paypal.com/v2/checkout/orders", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${tokenData.access_token}`
+        },
+        body: JSON.stringify({
+          intent: "CAPTURE",
+          purchase_units: [{
+            amount: {
+              currency_code: currency || "EUR",
+              value: amountInEur
+            }
+          }]
+        })
+      });
+      
+      const orderData = await orderResponse.json() as any;
+      res.json({ orderID: orderData.id });
+    } catch (error: any) {
+      console.error("PayPal create order error:", error);
+      res.status(500).json({ error: error.message || "Errore creazione ordine PayPal" });
+    }
+  });
+
+  // Customer: capture PayPal payment for service order
+  app.post("/api/customer/service-orders/paypal-capture", requireRole("customer"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Non autenticato" });
+      
+      const { orderID } = req.body;
+      
+      const resellerId = req.user.resellerId;
+      const repairCenterId = req.user.repairCenterId;
+      
+      // Get payment config with fallback logic
+      let paymentConfig = null;
+      
+      if (repairCenterId) {
+        const rcConfig = await storage.getPaymentConfiguration("repair_center", repairCenterId);
+        if (rcConfig && !rcConfig.useParentConfig && rcConfig.paypalEnabled && rcConfig.paypalClientId && rcConfig.paypalClientSecret) {
+          paymentConfig = rcConfig;
+        }
+      }
+      
+      if (!paymentConfig && resellerId) {
+        const resellerConfig = await storage.getPaymentConfiguration("reseller", resellerId);
+        if (resellerConfig?.paypalEnabled && resellerConfig?.paypalClientId && resellerConfig?.paypalClientSecret) {
+          paymentConfig = resellerConfig;
+        }
+      }
+      
+      if (!paymentConfig) {
+        return res.status(400).json({ error: "PayPal non configurato" });
+      }
+      
+      const clientId = decryptSecret(paymentConfig.paypalClientId!);
+      const clientSecret = decryptSecret(paymentConfig.paypalClientSecret!);
+      
+      // Get PayPal access token
+      const tokenResponse = await fetch("https://api-m.sandbox.paypal.com/v1/oauth2/token", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+          "Authorization": `Basic ${Buffer.from(`${clientId}:${clientSecret}`).toString("base64")}`
+        },
+        body: "grant_type=client_credentials"
+      });
+      
+      const tokenData = await tokenResponse.json() as any;
+      if (!tokenData.access_token) {
+        return res.status(500).json({ error: "Errore autenticazione PayPal" });
+      }
+      
+      // Capture the payment
+      const captureResponse = await fetch(`https://api-m.sandbox.paypal.com/v2/checkout/orders/${orderID}/capture`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${tokenData.access_token}`
+        }
+      });
+      
+      const captureData = await captureResponse.json() as any;
+      
+      if (captureData.status === "COMPLETED") {
+        res.json({ success: true, orderID: captureData.id });
+      } else {
+        res.status(400).json({ error: "Pagamento non completato" });
+      }
+    } catch (error: any) {
+      console.error("PayPal capture error:", error);
+      res.status(500).json({ error: error.message || "Errore cattura pagamento PayPal" });
     }
   });
   

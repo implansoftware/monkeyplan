@@ -13,6 +13,8 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Loader2, ShoppingCart, Search, Wrench, Clock, Banknote, Building, CreditCard, Wallet } from "lucide-react";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { StripeB2BCheckout } from "@/components/StripeB2BCheckout";
+import PayPalButton from "@/components/PayPalButton";
 import type { ServiceItem, DeviceType, DeviceBrand, DeviceModel } from "@shared/schema";
 
 type ServiceItemWithPrice = ServiceItem & {
@@ -412,18 +414,87 @@ export default function CustomerServiceCatalog() {
             </div>
           </div>
 
-          <DialogFooter>
+          <DialogFooter className="flex-col sm:flex-row gap-2">
             <Button variant="outline" onClick={() => setIsOrderDialogOpen(false)}>
               Annulla
             </Button>
-            <Button onClick={handleSubmitOrder} disabled={createOrderMutation.isPending} data-testid="button-submit-order">
-              {createOrderMutation.isPending ? (
-                <Loader2 className="w-4 h-4 animate-spin mr-2" />
-              ) : (
-                <ShoppingCart className="w-4 h-4 mr-2" />
-              )}
-              Invia Richiesta
-            </Button>
+            
+            {orderForm.paymentMethod === "card" && selectedService ? (
+              <StripeB2BCheckout
+                items={[]}
+                totalAmount={selectedService.effectivePriceCents}
+                orderData={{
+                  serviceItemId: selectedService.id,
+                  priceCents: selectedService.effectivePriceCents,
+                  deviceType: orderForm.deviceType || undefined,
+                  brand: deviceBrands?.find(b => b.id === orderForm.brandId)?.name || undefined,
+                  model: filteredModels?.find(m => m.id === orderForm.model)?.modelName || undefined,
+                  deviceModelId: orderForm.model || undefined,
+                  imei: orderForm.imei || undefined,
+                  serial: orderForm.serial || undefined,
+                  issueDescription: orderForm.issueDescription || undefined,
+                  customerNotes: orderForm.customerNotes || undefined,
+                  paymentMethod: "card",
+                }}
+                onSuccess={() => {
+                  queryClient.invalidateQueries({ queryKey: ["/api/customer/service-orders"] });
+                  toast({ title: "Ordine completato!", description: "Pagamento effettuato con successo" });
+                  setIsOrderDialogOpen(false);
+                  setSelectedService(null);
+                }}
+                onError={(error) => {
+                  toast({ title: "Errore pagamento", description: error, variant: "destructive" });
+                }}
+                paymentIntentEndpoint="/api/customer/service-orders/stripe-payment-intent"
+                createOrderEndpoint="/api/customer/service-orders"
+                returnUrl="/customer/service-orders"
+              />
+            ) : orderForm.paymentMethod === "paypal" && selectedService ? (
+              <PayPalButton
+                amount={(selectedService.effectivePriceCents / 100).toFixed(2)}
+                currency="EUR"
+                serviceItemId={selectedService.id}
+                onSuccess={(paypalOrderId) => {
+                  apiRequest('POST', '/api/customer/service-orders', {
+                    serviceItemId: selectedService.id,
+                    priceCents: selectedService.effectivePriceCents,
+                    deviceType: orderForm.deviceType || undefined,
+                    brand: deviceBrands?.find(b => b.id === orderForm.brandId)?.name || undefined,
+                    model: filteredModels?.find(m => m.id === orderForm.model)?.modelName || undefined,
+                    deviceModelId: orderForm.model || undefined,
+                    imei: orderForm.imei || undefined,
+                    serial: orderForm.serial || undefined,
+                    issueDescription: orderForm.issueDescription || undefined,
+                    customerNotes: orderForm.customerNotes ? `${orderForm.customerNotes}\n[PayPal: ${paypalOrderId}]` : `[PayPal: ${paypalOrderId}]`,
+                    paymentMethod: "paypal",
+                  })
+                    .then(res => res.json())
+                    .then(() => {
+                      queryClient.invalidateQueries({ queryKey: ["/api/customer/service-orders"] });
+                      toast({ title: "Ordine completato!", description: "Pagamento PayPal effettuato" });
+                      setIsOrderDialogOpen(false);
+                      setSelectedService(null);
+                    })
+                    .catch((err: Error) => {
+                      toast({ title: "Errore", description: err.message, variant: "destructive" });
+                    });
+                }}
+                onError={(error) => {
+                  toast({ title: "Errore PayPal", description: error, variant: "destructive" });
+                }}
+                createOrderEndpoint="/api/customer/service-orders/paypal-create"
+                captureOrderEndpoint="/api/customer/service-orders/paypal-capture"
+              />
+            ) : (
+              <Button onClick={handleSubmitOrder} disabled={createOrderMutation.isPending} data-testid="button-submit-order">
+                {createOrderMutation.isPending ? (
+                  <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                ) : (
+                  <ShoppingCart className="w-4 h-4 mr-2" />
+                )}
+                Invia Richiesta
+              </Button>
+            )}
           </DialogFooter>
         </DialogContent>
       </Dialog>

@@ -21,11 +21,15 @@ interface PayPalButtonProps {
   currency: string;
   onSuccess: (paypalOrderId: string, captureData: any) => void;
   onError: (error: string) => void;
-  onCancel: () => void;
+  onCancel?: () => void;
   disabled?: boolean;
   setupEndpoint?: string;
   orderEndpoint?: string;
   captureEndpointBase?: string;
+  createOrderEndpoint?: string;
+  captureOrderEndpoint?: string;
+  serviceItemId?: string;
+  extraPayload?: Record<string, any>;
 }
 
 export default function PayPalButton({
@@ -38,6 +42,10 @@ export default function PayPalButton({
   setupEndpoint = "/paypal/setup",
   orderEndpoint = "/paypal/order",
   captureEndpointBase = "/paypal/order",
+  createOrderEndpoint,
+  captureOrderEndpoint,
+  serviceItemId,
+  extraPayload,
 }: PayPalButtonProps) {
   const [isLoading, setIsLoading] = useState(true);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -47,14 +55,21 @@ export default function PayPalButton({
 
   const createOrder = useCallback(async () => {
     const currentUrl = window.location.href;
-    const orderPayload = {
+    const endpoint = createOrderEndpoint || orderEndpoint;
+    const orderPayload: Record<string, any> = {
       amount: amount,
       currency: currency,
       intent: "CAPTURE",
       returnUrl: currentUrl,
       cancelUrl: currentUrl,
     };
-    const response = await fetch(orderEndpoint, {
+    if (serviceItemId) {
+      orderPayload.serviceItemId = serviceItemId;
+    }
+    if (extraPayload) {
+      Object.assign(orderPayload, extraPayload);
+    }
+    const response = await fetch(endpoint, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       credentials: "include",
@@ -65,16 +80,18 @@ export default function PayPalButton({
       throw new Error(error.error || "Errore creazione ordine PayPal");
     }
     const output = await response.json();
-    return { orderId: output.id };
-  }, [amount, currency, orderEndpoint]);
+    return { orderId: output.orderID || output.id };
+  }, [amount, currency, orderEndpoint, createOrderEndpoint, serviceItemId, extraPayload]);
 
   const captureOrder = async (orderId: string) => {
-    const response = await fetch(`${captureEndpointBase}/${orderId}/capture`, {
+    const endpoint = captureOrderEndpoint || `${captureEndpointBase}/${orderId}/capture`;
+    const response = await fetch(endpoint, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
       credentials: "include",
+      body: JSON.stringify({ orderID: orderId }),
     });
     if (!response.ok) {
       const error = await response.json();
@@ -97,7 +114,7 @@ export default function PayPalButton({
   }, [onSuccess, onError]);
 
   const handleCancel = useCallback(() => {
-    onCancel();
+    onCancel?.();
   }, [onCancel]);
 
   const handleError = useCallback((data: any) => {

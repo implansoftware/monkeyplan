@@ -212,6 +212,12 @@ export function StripeB2BCheckout({
       if (sellerResellerId) {
         requestBody.sellerResellerId = sellerResellerId;
       }
+      if (orderData) {
+        requestBody.orderData = orderData;
+      }
+      if (totalAmount !== undefined) {
+        requestBody.totalAmount = totalAmount;
+      }
 
       const response = await apiRequest("POST", paymentIntentEndpoint, requestBody);
 
@@ -260,7 +266,7 @@ export function StripeB2BCheckout({
     <>
       <Button 
         onClick={handleOpen}
-        disabled={isLoading || (items && items.length === 0)}
+        disabled={isLoading || (items && items.length === 0 && !orderData && !totalAmount)}
         className="w-full"
         data-testid="button-stripe-open"
       >
