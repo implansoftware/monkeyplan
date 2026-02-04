@@ -15522,7 +15522,7 @@ export function registerRoutes(app: Express): Server {
           const b2bOrder = await storage.createRepairCenterPurchaseOrder({
             repairCenterId: repairOrder.repairCenterId,
             resellerId: repairCenter.resellerId,
-            status: 'pending',
+            status: paymentMethod === 'card' || paymentMethod === 'paypal' ? 'approved' : 'pending',
             subtotal,
             discountAmount: 0,
             shippingCost: 0,
@@ -24968,7 +24968,7 @@ export function registerRoutes(app: Express): Server {
               periodMonth: now.getMonth() + 1, // 1-12
               periodYear: now.getFullYear(),
               amountCents: commissionAmount,
-              status: 'pending',
+              status: paymentMethod === 'card' || paymentMethod === 'paypal' ? 'approved' : 'pending',
               accruedAt: now,
               notes: `Commissione automatica per pratica ${practice.practiceNumber}`,
             });
@@ -27952,7 +27952,7 @@ export function registerRoutes(app: Express): Server {
         orderNumber,
         customerId: req.user.id,
         resellerId,
-        status: 'pending',
+        status: paymentMethod === 'card' || paymentMethod === 'paypal' ? 'approved' : 'pending',
         deliveryType: deliveryType as any,
         subtotal: subtotal,
         discountAmount: discount,
@@ -27998,7 +27998,7 @@ export function registerRoutes(app: Express): Server {
         await storage.createSalesOrderPayment({
           orderId: order.id,
           method: paymentMethod,
-          status: 'pending',
+          status: paymentMethod === 'card' || paymentMethod === 'paypal' ? 'completed' : 'pending',
           amount: cart.total,
           currency: 'EUR'
         });
@@ -29230,7 +29230,7 @@ export function registerRoutes(app: Express): Server {
         sourceWarehouseId,
         destinationWarehouseId,
         requestedBy: req.user.id,
-        status: 'pending',
+        status: paymentMethod === 'card' || paymentMethod === 'paypal' ? 'approved' : 'pending',
         notes,
       });
       
@@ -29470,7 +29470,7 @@ export function registerRoutes(app: Express): Server {
         requesterWarehouseId: requesterWarehouse.id,
         sourceWarehouseId: finalSourceWarehouseId,
         targetResellerId: repairCenter.resellerId,
-        status: 'pending',
+        status: paymentMethod === 'card' || paymentMethod === 'paypal' ? 'approved' : 'pending',
         notes,
       });
       
@@ -29631,7 +29631,7 @@ export function registerRoutes(app: Express): Server {
         requesterWarehouseId: requesterWarehouse.id,
         sourceWarehouseId: finalSourceWarehouseId,
         targetResellerId: user.parentResellerId,
-        status: 'pending',
+        status: paymentMethod === 'card' || paymentMethod === 'paypal' ? 'approved' : 'pending',
         notes,
       });
       
@@ -30637,7 +30637,7 @@ export function registerRoutes(app: Express): Server {
       // Create order
       const order = await storage.createResellerPurchaseOrder({
         resellerId: req.user.id,
-        status: 'pending',
+        status: paymentMethod === 'card' || paymentMethod === 'paypal' ? 'approved' : 'pending',
         subtotal: totalCents,
         shippingCost: shippingCostB2B,
         total: totalCents + shippingCostB2B,
@@ -32287,7 +32287,7 @@ export function registerRoutes(app: Express): Server {
       const order = await storage.createRepairCenterPurchaseOrder({
         repairCenterId: req.user.repairCenterId,
         resellerId: sellerResellerId,
-        status: 'pending',
+        status: paymentMethod === 'card' || paymentMethod === 'paypal' ? 'approved' : 'pending',
         subtotal,
         tax: totalTax,
         discountAmount: 0,
@@ -32713,7 +32713,7 @@ export function registerRoutes(app: Express): Server {
       const order = await storage.createRepairCenterPurchaseOrder({
         repairCenterId: req.user.repairCenterId,
         resellerId: repairCenter.resellerId,
-        status: 'pending',
+        status: paymentMethod === 'card' || paymentMethod === 'paypal' ? 'approved' : 'pending',
         subtotal: totalCents,
         tax: taxCents,
         shippingCost: shippingCostCents,

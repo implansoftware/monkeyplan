@@ -129,7 +129,7 @@ function CheckoutForm({
     <form onSubmit={handleSubmit} className="space-y-6">
       <div className="text-center pb-4 border-b">
         <p className="text-sm text-muted-foreground">Totale da pagare</p>
-        <p className="text-3xl font-bold">{formatPrice(totalAmount)}</p>
+        <p className="text-3xl font-bold">{formatPrice(totalAmount ?? 0)}</p>
       </div>
       
       <div className="py-2">
