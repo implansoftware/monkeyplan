@@ -11213,6 +11213,9 @@ export function registerRoutes(app: Express): Server {
       
       const effectivePrice = await storage.getEffectiveServicePrice(serviceItemId, resellerId, undefined);
       
+      // Auto-approval for automatic payment methods (card/paypal)
+      const isAutoPayment = paymentMethod === 'card' || paymentMethod === 'paypal';
+      
       const order = await storage.createServiceOrder({
         customerId: req.user.id,
         resellerId,
@@ -11226,7 +11229,9 @@ export function registerRoutes(app: Express): Server {
         serial,
         issueDescription,
         customerNotes,
-        paymentMethod
+        paymentMethod,
+        status: isAutoPayment ? 'accepted' : 'pending',
+        paymentStatus: isAutoPayment ? 'paid' : 'pending'
       });
       
       // Notify reseller about new service order
