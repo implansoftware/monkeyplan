@@ -30223,12 +30223,12 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
-  // Reseller: Create Stripe PaymentIntent for B2B order
-  app.post("/api/reseller/b2b-orders/stripe-payment-intent", requireRole("reseller"), async (req, res) => {
+  // Reseller: Create Stripe Checkout Session for B2B order
+  app.post("/api/reseller/b2b-orders/stripe-checkout", requireRole("reseller"), async (req, res) => {
     try {
       if (!req.user) return res.status(401).json({ error: "Non autenticato" });
       
-      const { items, shippingMethodId } = req.body;
+      const { items, shippingMethodId, notes } = req.body;
       
       if (!items || !Array.isArray(items) || items.length === 0) {
         return res.status(400).json({ error: "Nessun prodotto nell'ordine" });
@@ -30247,52 +30247,173 @@ export function registerRoutes(app: Express): Server {
         return res.status(400).json({ error: "Stripe non configurato dall'amministratore" });
       }
       
-      // Calculate subtotal from items
+      // Build line items for Stripe
+      const lineItems: Stripe.Checkout.SessionCreateParams.LineItem[] = [];
       let subtotal = 0;
+      
       for (const item of items) {
         const product = await storage.getProduct(item.productId);
         if (product) {
-          subtotal += (product.b2bPrice || 0) * item.quantity;
+          const unitPrice = product.b2bPrice || 0;
+          subtotal += unitPrice * item.quantity;
+          
+          lineItems.push({
+            price_data: {
+              currency: 'eur',
+              product_data: {
+                name: product.name,
+                description: product.description || undefined,
+              },
+              unit_amount: unitPrice,
+            },
+            quantity: item.quantity,
+          });
         }
       }
       
-      // Add shipping cost
+      // Add shipping as line item
       let shippingCost = 0;
       if (shippingMethodId) {
         const shippingMethod = await storage.getShippingMethod(shippingMethodId);
-        shippingCost = shippingMethod?.priceCents || 0;
+        if (shippingMethod) {
+          shippingCost = shippingMethod.priceCents || 0;
+          if (shippingCost > 0) {
+            lineItems.push({
+              price_data: {
+                currency: 'eur',
+                product_data: {
+                  name: `Spedizione: ${shippingMethod.name}`,
+                },
+                unit_amount: shippingCost,
+              },
+              quantity: 1,
+            });
+          }
+        }
       }
       
-      // Calculate with VAT (22%)
+      // Add VAT as line item (22%)
       const vatAmount = Math.round(subtotal * 0.22);
-      const total = subtotal + vatAmount + shippingCost;
-      
-      if (total <= 0) {
-        return res.status(400).json({ error: "Totale ordine non valido" });
+      if (vatAmount > 0) {
+        lineItems.push({
+          price_data: {
+            currency: 'eur',
+            product_data: {
+              name: 'IVA 22%',
+            },
+            unit_amount: vatAmount,
+          },
+          quantity: 1,
+        });
       }
       
       // Create Stripe instance with admin's secret key
       const stripeSecretDecrypted = decryptSecret(adminConfig.stripeSecretKey);
       const stripe = new Stripe(stripeSecretDecrypted);
       
-      // Create PaymentIntent (amount in cents)
-      const paymentIntent = await stripe.paymentIntents.create({
-        amount: total,
-        currency: 'eur',
-        metadata: {
-          resellerId: req.user.id,
-          type: 'b2b_order'
-        }
+      // Store order data in metadata for later retrieval
+      const orderMetadata = {
+        resellerId: req.user.id,
+        items: JSON.stringify(items),
+        shippingMethodId: shippingMethodId || '',
+        notes: notes || '',
+        type: 'b2b_order'
+      };
+      
+      // Create Checkout Session
+      const session = await stripe.checkout.sessions.create({
+        payment_method_types: ['card'],
+        line_items: lineItems,
+        mode: 'payment',
+        success_url: `${req.headers.origin}/reseller/b2b-orders?stripe_session_id={CHECKOUT_SESSION_ID}&success=true`,
+        cancel_url: `${req.headers.origin}/reseller/b2b-catalog?cancelled=true`,
+        metadata: orderMetadata,
+        locale: 'it',
       });
       
-      res.json({
-        clientSecret: paymentIntent.client_secret,
-        publishableKey: adminConfig.stripePublishableKey,
-        orderId: null
-      });
+      res.json({ checkoutUrl: session.url });
     } catch (error: any) {
-      console.error("Stripe PaymentIntent error:", error);
-      res.status(500).json({ error: error.message || "Errore creazione pagamento Stripe" });
+      console.error("Stripe Checkout error:", error);
+      res.status(500).json({ error: error.message || "Errore creazione sessione Stripe" });
+    }
+  });
+  
+  // Handle Stripe Checkout success - create order
+  app.get("/api/reseller/b2b-orders/stripe-success", requireRole("reseller"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Non autenticato" });
+      
+      const { session_id } = req.query;
+      if (!session_id || typeof session_id !== 'string') {
+        return res.status(400).json({ error: "Session ID mancante" });
+      }
+      
+      // Get admin for payment configuration
+      const allUsers = await storage.listUsers();
+      const admin = allUsers.find(u => u.role === 'admin');
+      if (!admin) {
+        return res.status(500).json({ error: "Admin non trovato" });
+      }
+      
+      const adminConfig = await storage.getPaymentConfiguration("admin", admin.id);
+      if (!adminConfig?.stripeSecretKey) {
+        return res.status(400).json({ error: "Stripe non configurato" });
+      }
+      
+      const stripeSecretDecrypted = decryptSecret(adminConfig.stripeSecretKey);
+      const stripe = new Stripe(stripeSecretDecrypted);
+      
+      // Retrieve session to verify payment
+      const session = await stripe.checkout.sessions.retrieve(session_id);
+      
+      if (session.payment_status !== 'paid') {
+        return res.status(400).json({ error: "Pagamento non completato" });
+      }
+      
+      // Check if order already exists for this session
+      const existingOrders = await storage.listB2BOrders();
+      const existingOrder = existingOrders.find(o => o.stripePaymentIntentId === session.payment_intent);
+      if (existingOrder) {
+        return res.json({ orderId: existingOrder.id, alreadyCreated: true });
+      }
+      
+      // Extract order data from metadata
+      const metadata = session.metadata || {};
+      const items = JSON.parse(metadata.items || '[]');
+      const shippingMethodId = metadata.shippingMethodId || undefined;
+      const notes = metadata.notes || '';
+      
+      // Create order items with pricing
+      const orderItems = [];
+      for (const item of items) {
+        const product = await storage.getProduct(item.productId);
+        if (product) {
+          orderItems.push({
+            productId: item.productId,
+            quantity: item.quantity,
+            unitPrice: product.b2bPrice || 0,
+            vatRate: 22,
+          });
+        }
+      }
+      
+      // Create the B2B order
+      const order = await storage.createB2BOrder({
+        buyerId: req.user.id,
+        sellerId: admin.id,
+        items: orderItems,
+        paymentMethod: 'stripe',
+        stripePaymentIntentId: session.payment_intent as string,
+        notes,
+        shippingMethodId: shippingMethodId || undefined,
+        status: 'approved',
+        paymentStatus: 'paid',
+      });
+      
+      res.json({ orderId: order.id, success: true });
+    } catch (error: any) {
+      console.error("Stripe success handler error:", error);
+      res.status(500).json({ error: error.message || "Errore elaborazione ordine" });
     }
   });
 

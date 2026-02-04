@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { ResellerPurchaseOrder, ResellerPurchaseOrderItem, Product, B2bReturn } from "@shared/schema";
 import { Button } from "@/components/ui/button";
@@ -79,6 +79,46 @@ export default function ResellerB2BOrders() {
   const [selectedItems, setSelectedItems] = useState<Record<string, number>>({});
   const { toast } = useToast();
   const [, navigate] = useLocation();
+
+  // Handle Stripe Checkout return
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const stripeSessionId = urlParams.get('stripe_session_id');
+    const isSuccess = urlParams.get('success') === 'true';
+    
+    if (stripeSessionId && isSuccess) {
+      // Clean URL
+      window.history.replaceState({}, '', '/reseller/b2b-orders');
+      
+      // Create order from Stripe session
+      const createOrderFromStripe = async () => {
+        try {
+          const response = await apiRequest('GET', `/api/reseller/b2b-orders/stripe-success?session_id=${stripeSessionId}`);
+          if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(errorText || 'Errore creazione ordine');
+          }
+          
+          const data = await response.json();
+          if (data.alreadyCreated) {
+            toast({ title: "Ordine esistente", description: "L'ordine è già stato creato" });
+          } else {
+            toast({ title: "Ordine completato!", description: "Pagamento ricevuto e ordine creato con successo" });
+          }
+          
+          queryClient.invalidateQueries({ queryKey: ['/api/reseller/b2b-orders'] });
+        } catch (error: any) {
+          toast({ 
+            title: "Errore", 
+            description: error.message || "Errore durante la creazione dell'ordine", 
+            variant: "destructive" 
+          });
+        }
+      };
+      
+      createOrderFromStripe();
+    }
+  }, [toast]);
 
   const { data: orders, isLoading } = useQuery<B2BOrderWithItems[]>({
     queryKey: ['/api/reseller/b2b-orders'],
