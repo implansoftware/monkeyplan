@@ -648,6 +648,7 @@ export function registerRoutes(app: Express): Server {
       const [fileContents] = await file.download();
       res.send(fileContents);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       console.error("Error serving object:", error);
       res.status(500).send("Error retrieving file");
     }
@@ -676,6 +677,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json({ signedUrl });
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       console.error("Error signing object URL:", error);
       res.status(500).json({ error: error.message });
     }
@@ -696,6 +698,7 @@ export function registerRoutes(app: Express): Server {
         updatedAt: setting.updatedAt,
       });
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -723,6 +726,7 @@ export function registerRoutes(app: Express): Server {
         updatedAt: setting.updatedAt,
       });
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -735,6 +739,7 @@ export function registerRoutes(app: Express): Server {
         hourlyRateCents: setting ? parseInt(setting.settingValue) : 3500,
       });
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -778,6 +783,7 @@ export function registerRoutes(app: Express): Server {
         ...results,
       });
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       console.error("[WAREHOUSE BACKFILL] Error:", error);
       res.status(500).send(error.message);
     }
@@ -793,6 +799,7 @@ export function registerRoutes(app: Express): Server {
       const items = await storage.listServiceItems();
       res.json(items);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -806,6 +813,7 @@ export function registerRoutes(app: Express): Server {
       }
       res.json(item);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -817,6 +825,7 @@ export function registerRoutes(app: Express): Server {
       const item = await storage.createServiceItem(validatedData);
       res.status(201).json(item);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(400).send(error.message);
     }
   });
@@ -828,6 +837,7 @@ export function registerRoutes(app: Express): Server {
       const item = await storage.updateServiceItem(req.params.id, validatedData);
       res.json(item);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(400).send(error.message);
     }
   });
@@ -838,6 +848,7 @@ export function registerRoutes(app: Express): Server {
       await storage.deleteServiceItem(req.params.id);
       res.sendStatus(204);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -852,6 +863,7 @@ export function registerRoutes(app: Express): Server {
       const prices = await storage.listServiceItemPrices(req.params.id);
       res.json(prices);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -863,6 +875,7 @@ export function registerRoutes(app: Express): Server {
       const price = await storage.createServiceItemPrice(validatedData);
       res.status(201).json(price);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(400).send(error.message);
     }
   });
@@ -874,6 +887,7 @@ export function registerRoutes(app: Express): Server {
       const price = await storage.updateServiceItemPrice(req.params.id, validatedData);
       res.json(price);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(400).send(error.message);
     }
   });
@@ -884,6 +898,7 @@ export function registerRoutes(app: Express): Server {
       await storage.deleteServiceItemPrice(req.params.id);
       res.sendStatus(204);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -909,6 +924,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json(enrichedLists);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -924,6 +940,7 @@ export function registerRoutes(app: Express): Server {
       const items = await storage.listPriceListItems(id);
       res.json({ ...list, items });
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -958,6 +975,7 @@ export function registerRoutes(app: Express): Server {
         estimatedCompletionDate: repair.estimatedCompletionDate,
       });
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -1016,6 +1034,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json(itemsWithPrices);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -1038,6 +1057,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json(effectivePrice);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(400).send(error.message);
     }
   });
@@ -1099,6 +1119,7 @@ export function registerRoutes(app: Express): Server {
         repairCenters: myRepairCenters,
       });
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -1158,6 +1179,7 @@ export function registerRoutes(app: Express): Server {
         res.status(201).json(created);
       }
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(400).send(error.message);
     }
   });
@@ -1193,6 +1215,7 @@ export function registerRoutes(app: Express): Server {
       await storage.deleteServiceItemPrice(req.params.id);
       res.sendStatus(204);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -1212,6 +1235,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json(myItems);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -1241,6 +1265,7 @@ export function registerRoutes(app: Express): Server {
       
       res.status(201).json(created);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       if (error.message?.includes("duplicate key") || error.message?.includes("unique constraint")) {
         return res.status(400).send("Un intervento con questo codice esiste già");
       }
@@ -1278,6 +1303,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json(updated);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       if (error.message?.includes("duplicate key") || error.message?.includes("unique constraint")) {
         return res.status(400).send("Un intervento con questo codice esiste già");
       }
@@ -1303,6 +1329,7 @@ export function registerRoutes(app: Express): Server {
       await storage.deleteServiceItem(req.params.id);
       res.sendStatus(204);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -1313,6 +1340,7 @@ export function registerRoutes(app: Express): Server {
       const thresholds = await storage.getSlaThresholds();
       res.json(thresholds);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -1328,6 +1356,7 @@ export function registerRoutes(app: Express): Server {
       const updated = await storage.getSlaThresholds();
       res.json(updated);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(400).send(error.message);
     }
   });
@@ -1363,6 +1392,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json({ severity, hoursInState: Math.round(hoursInState * 10) / 10 });
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -1397,6 +1427,7 @@ export function registerRoutes(app: Express): Server {
       const history = await storage.listRepairOrderStateHistory(req.params.id);
       res.json(history);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -1418,6 +1449,7 @@ export function registerRoutes(app: Express): Server {
         currentState: currentState || null
       });
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -1490,6 +1522,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json(accessories);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -1500,6 +1533,7 @@ export function registerRoutes(app: Express): Server {
       const history = await storage.listSupplierReturnStateHistory(req.params.id);
       res.json(history);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -1526,6 +1560,7 @@ export function registerRoutes(app: Express): Server {
 
       res.json(stats);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -1544,6 +1579,7 @@ export function registerRoutes(app: Express): Server {
       });
       res.json(logs);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -1573,6 +1609,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json({ deletedCount, retentionDays });
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -1583,6 +1620,7 @@ export function registerRoutes(app: Express): Server {
       const users = await storage.listUsers();
       res.json(users);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -1610,6 +1648,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json(resellersWithCounts);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -1724,6 +1763,7 @@ export function registerRoutes(app: Express): Server {
       setActivityEntity(res, { type: 'users', id: resellerId });
       res.sendStatus(204);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       console.error("Error deleting reseller:", error);
       res.status(500).send(error.message);
     }
@@ -1787,6 +1827,7 @@ export function registerRoutes(app: Express): Server {
       setActivityEntity(res, { type: 'users', id: resellerId });
       res.json({ assignedRepairCenters: assignedCenters });
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       console.error("Error assigning repair centers to reseller:", error);
       res.status(500).send(error.message);
     }
@@ -1828,6 +1869,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json(staffWithPermissions);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -1887,6 +1929,7 @@ export function registerRoutes(app: Express): Server {
         assignedRepairCenters
       });
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       console.error("Error creating reseller staff by admin:", error);
       res.status(400).send(error.message);
     }
@@ -1948,6 +1991,7 @@ export function registerRoutes(app: Express): Server {
         assignedRepairCenters
       });
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       console.error("Error updating reseller staff by admin:", error);
       res.status(400).send(error.message);
     }
@@ -1981,6 +2025,7 @@ export function registerRoutes(app: Express): Server {
       setActivityEntity(res, { type: 'users', id: staffId });
       res.status(200).send("Membro staff eliminato");
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       console.error("Error deleting reseller staff by admin:", error);
       res.status(400).send(error.message);
     }
@@ -2000,6 +2045,7 @@ export function registerRoutes(app: Express): Server {
       const repairCenters = await storage.getRepairCentersForReseller(resellerId);
       res.json(repairCenters);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -2023,6 +2069,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json(subResellers);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -2070,6 +2117,7 @@ export function registerRoutes(app: Express): Server {
         staff,
       });
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -2129,6 +2177,7 @@ export function registerRoutes(app: Express): Server {
       const { password: _, ...safeUser } = user;
       res.status(201).json({ customer: safeUser, tempPassword: password });
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(400).send(error.message);
     }
   });
@@ -2171,6 +2220,7 @@ export function registerRoutes(app: Express): Server {
       setActivityEntity(res, { type: 'users', id: userId });
       res.sendStatus(204);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -2204,6 +2254,7 @@ export function registerRoutes(app: Express): Server {
       setActivityEntity(res, { type: 'users', id: userId });
       res.json({ message: "Password aggiornata con successo" });
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       console.error("Error resetting user password:", error);
       res.status(500).send(error.message);
     }
@@ -2236,6 +2287,7 @@ export function registerRoutes(app: Express): Server {
       setActivityEntity(res, { type: 'users', id: repairCenterUser.id });
       res.json({ message: "Password aggiornata con successo" });
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       console.error("Error resetting repair center password:", error);
       res.status(500).send(error.message);
     }
@@ -2263,6 +2315,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json(staffWithPermissions);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -2332,6 +2385,7 @@ export function registerRoutes(app: Express): Server {
         permissions: staffPermissions
       });
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       console.error("Error creating admin staff:", error);
       res.status(400).send(error.message);
     }
@@ -2399,6 +2453,7 @@ export function registerRoutes(app: Express): Server {
         permissions: staffPermissions
       });
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       console.error("Error updating admin staff:", error);
       res.status(400).send(error.message);
     }
@@ -2426,6 +2481,7 @@ export function registerRoutes(app: Express): Server {
       setActivityEntity(res, { type: 'users', id: staffId });
       res.status(200).send("Membro staff eliminato");
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       console.error("Error deleting admin staff:", error);
       res.status(400).send(error.message);
     }
@@ -2447,6 +2503,7 @@ export function registerRoutes(app: Express): Server {
       const permissions = await storage.getAdminStaffPermissions(staffId);
       res.json(permissions);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -2485,6 +2542,7 @@ export function registerRoutes(app: Express): Server {
       setActivityEntity(res, { type: 'users', id: staffId });
       res.json(updatedPermissions);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       console.error("Error updating admin staff permissions:", error);
       res.status(400).send(error.message);
     }
@@ -2496,6 +2554,7 @@ export function registerRoutes(app: Express): Server {
       const centers = await storage.listRepairCenters();
       res.json(centers);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -2566,6 +2625,7 @@ export function registerRoutes(app: Express): Server {
         };
       }));
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -2579,6 +2639,7 @@ export function registerRoutes(app: Express): Server {
       }
       res.json(center);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -2656,6 +2717,7 @@ export function registerRoutes(app: Express): Server {
       setActivityEntity(res, { type: 'repair-centers', id: center.id });
       res.status(201).json(center);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(400).send(error.message);
     }
   });
@@ -2703,6 +2765,7 @@ export function registerRoutes(app: Express): Server {
       setActivityEntity(res, { type: 'repair-centers', id: center.id });
       res.json(center);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(400).send(error.message);
     }
   });
@@ -2713,6 +2776,7 @@ export function registerRoutes(app: Express): Server {
       setActivityEntity(res, { type: 'repair-centers', id: req.params.id });
       res.sendStatus(204);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -2745,6 +2809,7 @@ export function registerRoutes(app: Express): Server {
         })),
       });
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -2838,6 +2903,7 @@ export function registerRoutes(app: Express): Server {
         errors,
       });
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -2972,6 +3038,7 @@ export function registerRoutes(app: Express): Server {
         servicesMap,
       });
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -2982,6 +3049,7 @@ export function registerRoutes(app: Express): Server {
       const products = await storage.listProducts();
       res.json(products);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -3004,6 +3072,7 @@ export function registerRoutes(app: Express): Server {
       setActivityEntity(res, { type: 'products', id: product.id });
       res.status(201).json(product);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(400).send(error.message);
     }
   });
@@ -3019,6 +3088,7 @@ export function registerRoutes(app: Express): Server {
         errors: result.errors,
       });
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -3029,6 +3099,7 @@ export function registerRoutes(app: Express): Server {
       setActivityEntity(res, { type: 'products', id: req.params.id });
       res.sendStatus(204);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -3044,6 +3115,7 @@ export function registerRoutes(app: Express): Server {
       setActivityEntity(res, { type: 'products', id: req.params.id });
       res.json(product);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -3090,6 +3162,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json({ imageUrl });
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       console.error("Error uploading product image:", error);
       res.status(500).send(error.message);
     }
@@ -3108,6 +3181,7 @@ export function registerRoutes(app: Express): Server {
       
       res.sendStatus(204);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       console.error('[ERROR] GET /api/products:', error);
       res.status(500).send(error.message);
     }
@@ -3125,6 +3199,7 @@ export function registerRoutes(app: Express): Server {
       const productsWithStock = await storage.getAllProductsWithStock();
       res.json(productsWithStock);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -3135,6 +3210,7 @@ export function registerRoutes(app: Express): Server {
       const counts = await storage.getProductCompatibilitiesCount();
       res.json(counts);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -3228,6 +3304,7 @@ export function registerRoutes(app: Express): Server {
         compatibilities,
       });
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       console.error("Error fetching product details:", error);
       res.status(500).send(error.message);
     }
@@ -3258,6 +3335,7 @@ export function registerRoutes(app: Express): Server {
 
       res.json(compatibilities);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -3317,6 +3395,7 @@ export function registerRoutes(app: Express): Server {
 
       res.json(enriched);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(400).send(error.message);
     }
   });
@@ -3348,6 +3427,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json(pricesWithReseller);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -3360,6 +3440,7 @@ export function registerRoutes(app: Express): Server {
       }
       res.json(price);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -3406,6 +3487,7 @@ export function registerRoutes(app: Express): Server {
       
       res.status(201).json(price);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(400).send(error.message);
     }
   });
@@ -3427,6 +3509,7 @@ export function registerRoutes(app: Express): Server {
       const price = await storage.updateProductPrice(req.params.id, updates);
       res.json(price);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(400).send(error.message);
     }
   });
@@ -3441,6 +3524,7 @@ export function registerRoutes(app: Express): Server {
       await storage.deleteProductPrice(req.params.id);
       res.sendStatus(204);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -3476,6 +3560,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json(result);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -3512,6 +3597,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json(result);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -3535,6 +3621,7 @@ export function registerRoutes(app: Express): Server {
       const assignments = await storage.assignProductToResellers(req.params.productId, resellerIds);
       res.json({ message: `Prodotto assegnato a ${assignments.length} reseller`, assignments });
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(400).send(error.message);
     }
   });
@@ -3544,6 +3631,7 @@ export function registerRoutes(app: Express): Server {
       await storage.removeProductFromReseller(req.params.productId, req.params.resellerId);
       res.sendStatus(204);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -3566,6 +3654,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json(result);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -3590,6 +3679,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json(enrichedRepairs);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -3668,6 +3758,7 @@ export function registerRoutes(app: Express): Server {
         totalPages: result.totalPages,
       });
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -3684,6 +3775,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json(repair);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(400).send(error.message);
     }
   });
@@ -3726,6 +3818,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json(updated);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       console.error("Error skipping diagnosis:", error);
       res.status(400).send(error.message);
     }
@@ -3737,6 +3830,7 @@ export function registerRoutes(app: Express): Server {
       const tickets = await storage.listTickets();
       res.json(tickets);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -3746,6 +3840,7 @@ export function registerRoutes(app: Express): Server {
       const messages = await storage.listTicketMessages(req.params.id);
       res.json(messages);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -3772,6 +3867,7 @@ export function registerRoutes(app: Express): Server {
       setActivityEntity(res, { type: 'ticket-messages', id: message.id });
       res.status(201).json(message);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(400).send(error.message);
     }
   });
@@ -3784,6 +3880,7 @@ export function registerRoutes(app: Express): Server {
       setActivityEntity(res, { type: 'tickets', id: req.params.id });
       res.json(ticket);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(400).send(error.message);
     }
   });
@@ -3794,6 +3891,7 @@ export function registerRoutes(app: Express): Server {
       const inventory = await storage.listInventoryStock();
       res.json(inventory);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -3804,6 +3902,7 @@ export function registerRoutes(app: Express): Server {
       const invoices = await storage.listInvoices();
       res.json(invoices);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -3819,6 +3918,7 @@ export function registerRoutes(app: Express): Server {
       
       res.status(201).json(invoice);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(400).send(error.message);
     }
   });
@@ -3831,6 +3931,7 @@ export function registerRoutes(app: Express): Server {
       setActivityEntity(res, { type: 'billing-data', id: billing.id });
       res.status(201).json(billing);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(400).send(error.message);
     }
   });
@@ -3845,6 +3946,7 @@ export function registerRoutes(app: Express): Server {
       setActivityEntity(res, { type: 'inventory', id: movement.id });
       res.status(201).json(movement);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(400).send(error.message);
     }
   });
@@ -4028,6 +4130,7 @@ export function registerRoutes(app: Express): Server {
       await workbook.xlsx.write(res);
       res.end();
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       console.error('Export error:', error);
       res.status(500).send(error.message);
     }
@@ -4058,6 +4161,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json(data);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -4089,6 +4193,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json(data);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -4120,6 +4225,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json(data);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -4148,6 +4254,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json(data);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -4204,6 +4311,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json({ logoUrl });
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       console.error("Error uploading reseller logo:", error);
       res.status(500).send(error.message);
     }
@@ -4242,6 +4350,7 @@ export function registerRoutes(app: Express): Server {
       
       res.sendStatus(204);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -4300,6 +4409,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json({ logoUrl });
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       console.error("Error uploading sub-reseller logo:", error);
       res.status(500).send(error.message);
     }
@@ -4343,6 +4453,7 @@ export function registerRoutes(app: Express): Server {
       
       res.sendStatus(204);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -4400,6 +4511,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json({ logoUrl });
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       console.error("Error uploading repair center logo:", error);
       res.status(500).send(error.message);
     }
@@ -4443,6 +4555,7 @@ export function registerRoutes(app: Express): Server {
       
       res.sendStatus(204);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -4490,6 +4603,7 @@ export function registerRoutes(app: Express): Server {
         })),
       });
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -4540,6 +4654,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json(enrichedResellers);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -4586,6 +4701,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json(ecommerceData);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -4621,6 +4737,7 @@ export function registerRoutes(app: Express): Server {
         repairCentersCount: repairCenters.length,
       });
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -4679,6 +4796,7 @@ export function registerRoutes(app: Express): Server {
       const { password: _, ...safeUser } = user;
       res.status(201).json(safeUser);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(400).send(error.message);
     }
   });
@@ -4757,6 +4875,7 @@ export function registerRoutes(app: Express): Server {
       const { password: _, ...safeUser } = updated;
       res.json(safeUser);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(400).send(error.message);
     }
   });
@@ -4809,6 +4928,7 @@ export function registerRoutes(app: Express): Server {
       setActivityEntity(res, { type: 'users', id });
       res.json({ success: true });
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -4843,6 +4963,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json(safeStaff);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -4880,6 +5001,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json(safeStaff);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -4935,6 +5057,7 @@ export function registerRoutes(app: Express): Server {
         assignments: results 
       });
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(400).send(error.message);
     }
   });
@@ -4981,6 +5104,7 @@ export function registerRoutes(app: Express): Server {
         actingAs: (req.session as any).actingAs 
       });
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -4995,6 +5119,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json({ success: true, actingAs: null });
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -5008,6 +5133,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json({ actingAs });
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -5040,6 +5166,7 @@ export function registerRoutes(app: Express): Server {
 
       res.json(stats);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -5081,6 +5208,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json(allRepairs);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -5162,6 +5290,7 @@ export function registerRoutes(app: Express): Server {
         totalPages: result.totalPages,
       });
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -5234,6 +5363,7 @@ export function registerRoutes(app: Express): Server {
       
       res.status(201).json(repair);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(400).send(error.message);
     }
   });
@@ -5323,6 +5453,7 @@ export function registerRoutes(app: Express): Server {
       const buffer = await workbook.xlsx.writeBuffer();
       res.send(buffer);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       console.error("Error exporting reseller repairs:", error);
       res.status(500).send(error.message);
     }
@@ -5371,6 +5502,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json(updated);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       console.error("Error skipping diagnosis:", error);
       res.status(400).send(error.message);
     }
@@ -5409,6 +5541,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json(customersWithRepairCenters);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -5492,6 +5625,7 @@ export function registerRoutes(app: Express): Server {
       const { password: _, ...safeUser } = user;
       res.status(201).json({ customer: safeUser, tempPassword: password });
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(400).send(error.message);
     }
   });
@@ -5551,6 +5685,7 @@ export function registerRoutes(app: Express): Server {
         utilityPractices,
       });
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -5670,6 +5805,7 @@ export function registerRoutes(app: Express): Server {
       setActivityEntity(res, { type: 'users', id: customerId });
       res.json({ ...updatedUser, assignedRepairCenters, billingData: billingInfo });
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(400).send(error.message);
     }
   });
@@ -5712,6 +5848,7 @@ export function registerRoutes(app: Express): Server {
       setActivityEntity(res, { type: 'users', id: customerId });
       res.json({ success: true, message: "Cliente eliminato con successo" });
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -5748,6 +5885,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json(staffWithPermissions);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -5807,6 +5945,7 @@ export function registerRoutes(app: Express): Server {
         assignedSubResellerIds
       });
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       console.error("Error creating staff member:", error);
       res.status(400).send(error.message);
     }
@@ -5869,6 +6008,7 @@ export function registerRoutes(app: Express): Server {
         assignedSubResellerIds
       });
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       console.error("Error updating staff member:", error);
       res.status(400).send(error.message);
     }
@@ -5899,6 +6039,7 @@ export function registerRoutes(app: Express): Server {
       setActivityEntity(res, { type: 'users', id: staffId });
       res.json({ message: "Password aggiornata con successo" });
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       console.error("Error resetting staff password:", error);
       res.status(400).send(error.message);
     }
@@ -5926,6 +6067,7 @@ export function registerRoutes(app: Express): Server {
       setActivityEntity(res, { type: 'users', id: staffId });
       res.status(200).send("Membro staff eliminato");
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       console.error("Error deleting staff member:", error);
       res.status(400).send(error.message);
     }
@@ -5947,6 +6089,7 @@ export function registerRoutes(app: Express): Server {
       const permissions = await storage.getStaffPermissions(staffId);
       res.json(permissions);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -5974,6 +6117,7 @@ export function registerRoutes(app: Express): Server {
       setActivityEntity(res, { type: 'permissions', id: staffId });
       res.json(updatedPermissions);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       console.error("Error updating permissions:", error);
       res.status(400).send(error.message);
     }
@@ -5999,6 +6143,7 @@ export function registerRoutes(app: Express): Server {
         });
       }
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -6013,6 +6158,7 @@ export function registerRoutes(app: Express): Server {
       const staff = await storage.listRepairCenterStaffHierarchical(resellerId);
       res.json(staff);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -6053,6 +6199,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json(customBrands.map(b => ({ ...b, isGlobal: false, isCustom: true })));
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -6078,6 +6225,7 @@ export function registerRoutes(app: Express): Server {
       setActivityEntity(res, { type: 'reseller_device_brand', id: brand.id });
       res.status(201).json({ ...brand, isGlobal: false, isCustom: true });
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(400).send(error.message);
     }
   });
@@ -6107,6 +6255,7 @@ export function registerRoutes(app: Express): Server {
       setActivityEntity(res, { type: 'reseller_device_brand', id: brandId });
       res.json({ ...updated, isGlobal: false, isCustom: true });
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(400).send(error.message);
     }
   });
@@ -6130,6 +6279,7 @@ export function registerRoutes(app: Express): Server {
       setActivityEntity(res, { type: 'reseller_device_brand', id: brandId });
       res.status(204).send();
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(400).send(error.message);
     }
   });
@@ -6189,6 +6339,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json([...unified, ...legacy]);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -6228,6 +6379,7 @@ export function registerRoutes(app: Express): Server {
       setActivityEntity(res, { type: 'device_model', id: model.id });
       res.status(201).json({ ...model, isGlobal: false, isCustom: true });
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(400).send(error.message);
     }
   });
@@ -6272,6 +6424,7 @@ export function registerRoutes(app: Express): Server {
       setActivityEntity(res, { type: 'reseller_device_model', id: modelId });
       res.json({ ...updated, isGlobal: false, isCustom: true });
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(400).send(error.message);
     }
   });
@@ -6294,6 +6447,7 @@ export function registerRoutes(app: Express): Server {
       setActivityEntity(res, { type: 'reseller_device_model', id: modelId });
       res.status(204).send();
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(400).send(error.message);
     }
   });
@@ -6354,6 +6508,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json(enrichedInventory);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -6426,6 +6581,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json(enrichedProducts);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -6509,6 +6665,7 @@ export function registerRoutes(app: Express): Server {
 
       res.status(201).json(product);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(400).send(error.message);
     }
   });
@@ -6553,6 +6710,7 @@ export function registerRoutes(app: Express): Server {
       const updated = await storage.updateProduct(req.params.id, updates);
       res.json(updated);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(400).send(error.message);
     }
   });
@@ -6579,6 +6737,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json(result.filter(r => r.product !== undefined));
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -6610,6 +6769,7 @@ export function registerRoutes(app: Express): Server {
       const updated = await storage.updateResellerProduct(req.params.assignmentId, { isPublished });
       res.json(updated);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(400).send(error.message);
     }
   });
@@ -6654,6 +6814,7 @@ export function registerRoutes(app: Express): Server {
       });
       res.json(updated);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(400).send(error.message);
     }
   });
@@ -6735,6 +6896,7 @@ export function registerRoutes(app: Express): Server {
       const result = [...assignedProducts, ...uniqueOwnCatalog];
       res.json(result);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -6758,6 +6920,7 @@ export function registerRoutes(app: Express): Server {
       const updated = await storage.updateResellerProduct(assignment.id, { isPublished: true });
       res.json(updated);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(400).send(error.message);
     }
   });
@@ -6785,6 +6948,7 @@ export function registerRoutes(app: Express): Server {
       const updated = await storage.updateResellerProduct(assignment.id, { isPublished: false });
       res.json(updated);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(400).send(error.message);
     }
   });
@@ -6818,6 +6982,7 @@ export function registerRoutes(app: Express): Server {
       });
       res.json(updated);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(400).send(error.message);
     }
   });
@@ -6840,6 +7005,7 @@ export function registerRoutes(app: Express): Server {
       await storage.deleteProduct(req.params.id);
       res.sendStatus(204);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -6891,6 +7057,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json({ imageUrl });
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       console.error("Error uploading product image:", error);
       res.status(500).send(error.message);
     }
@@ -6914,6 +7081,7 @@ export function registerRoutes(app: Express): Server {
       
       res.sendStatus(204);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -6958,6 +7126,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json(updatedAssignment);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -6975,6 +7144,7 @@ export function registerRoutes(app: Express): Server {
       const productsWithStock = await storage.getResellerProductsWithStock(context.resellerId);
       res.json(productsWithStock);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -7001,6 +7171,7 @@ export function registerRoutes(app: Express): Server {
       const stockByWarehouse = await storage.getResellerFullWarehouseStock(req.params.id, effectiveResellerId);
       res.json(stockByWarehouse);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -7108,6 +7279,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json(updatedStock);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -7150,6 +7322,7 @@ export function registerRoutes(app: Express): Server {
       setActivityEntity(res, { type: 'inventory_movement', id: movement.id });
       res.status(201).json(movement);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -7208,6 +7381,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json(filteredMovements);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -7240,6 +7414,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json(centersWithUserId);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -7258,6 +7433,7 @@ export function registerRoutes(app: Express): Server {
       }
       res.json(center);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -7350,6 +7526,7 @@ export function registerRoutes(app: Express): Server {
       setActivityEntity(res, { type: 'repair-centers', id: center.id });
       res.status(201).json(center);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(400).send(error.message);
     }
   });
@@ -7414,6 +7591,7 @@ export function registerRoutes(app: Express): Server {
       setActivityEntity(res, { type: 'repair-centers', id: center.id });
       res.json(center);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(400).send(error.message);
     }
   });
@@ -7436,6 +7614,7 @@ export function registerRoutes(app: Express): Server {
       setActivityEntity(res, { type: 'repair-centers', id: req.params.id });
       res.status(204).send();
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(400).send(error.message);
     }
   });
@@ -7481,6 +7660,7 @@ export function registerRoutes(app: Express): Server {
       setActivityEntity(res, { type: 'users', id: repairCenterUser.id });
       res.json({ message: "Password aggiornata con successo" });
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       console.error("Error resetting repair center password:", error);
       res.status(500).send(error.message);
     }
@@ -7505,6 +7685,7 @@ export function registerRoutes(app: Express): Server {
 
       res.json(detail);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       console.error("Error getting repair center detail:", error);
       res.status(500).send(error.message);
     }
@@ -7544,6 +7725,7 @@ export function registerRoutes(app: Express): Server {
       const result = await storage.getRepairCenterRepairs(centerId, { limit, offset, status });
       res.json(result);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       console.error("Error getting repair center repairs:", error);
       res.status(500).send(error.message);
     }
@@ -7592,6 +7774,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json(result);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -7621,6 +7804,7 @@ export function registerRoutes(app: Express): Server {
       setActivityEntity(res, { type: 'suppliers', id: supplier.id });
       res.status(201).json(supplier);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(400).send(error.message);
     }
   });
@@ -7647,6 +7831,7 @@ export function registerRoutes(app: Express): Server {
       setActivityEntity(res, { type: 'suppliers', id: supplier.id });
       res.json(supplier);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(400).send(error.message);
     }
   });
@@ -7673,6 +7858,7 @@ export function registerRoutes(app: Express): Server {
       setActivityEntity(res, { type: 'suppliers', id: req.params.id });
       res.status(204).send();
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(400).send(error.message);
     }
   });
@@ -7717,6 +7903,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json(enrichedOrders);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -7763,6 +7950,7 @@ export function registerRoutes(app: Express): Server {
         repairCenter: center ? { id: center.id, name: center.name, city: center.city } : null,
       });
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -7807,6 +7995,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json(enrichedReturns);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -7853,6 +8042,7 @@ export function registerRoutes(app: Express): Server {
         repairCenter: center ? { id: center.id, name: center.name, city: center.city } : null,
       });
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -7987,6 +8177,7 @@ export function registerRoutes(app: Express): Server {
       
       res.status(201).json(appointment);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -8078,6 +8269,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json({ closed: false, slots });
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -8101,6 +8293,7 @@ export function registerRoutes(app: Express): Server {
         updatedAt: setting.updatedAt,
       });
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -8129,6 +8322,7 @@ export function registerRoutes(app: Express): Server {
         updatedAt: setting.updatedAt,
       });
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -8141,6 +8335,7 @@ export function registerRoutes(app: Express): Server {
       const thresholds = await storage.getResellerSlaThresholds(req.user.id);
       res.json(thresholds);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -8156,6 +8351,7 @@ export function registerRoutes(app: Express): Server {
       const updated = await storage.getResellerSlaThresholds(req.user.id);
       res.json(updated);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(400).send(error.message);
     }
   });
@@ -8180,6 +8376,7 @@ export function registerRoutes(app: Express): Server {
       } : null;
       res.json(response);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -8243,6 +8440,7 @@ export function registerRoutes(app: Express): Server {
       const config = await storage.upsertPaymentConfiguration(data);
       res.json(config);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -8292,6 +8490,7 @@ export function registerRoutes(app: Express): Server {
         useParentConfig: ownConfig?.useParentConfig ?? true
       });
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -8376,6 +8575,7 @@ export function registerRoutes(app: Express): Server {
       const config = await storage.upsertPaymentConfiguration(data);
       res.json(config);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -8396,6 +8596,7 @@ export function registerRoutes(app: Express): Server {
       } : null;
       res.json(response);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -8469,6 +8670,7 @@ export function registerRoutes(app: Express): Server {
       const config = await storage.upsertPaymentConfiguration(data);
       res.json(config);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -8505,6 +8707,7 @@ export function registerRoutes(app: Express): Server {
         )
       });
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -8563,6 +8766,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json(publicConfig);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -8616,6 +8820,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json(publicConfig);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -8641,6 +8846,7 @@ export function registerRoutes(app: Express): Server {
       const clientToken = await getPayPalClientToken(config.paypalClientId, decryptedSecret);
       res.json({ clientToken });
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       console.error("PayPal setup error:", error);
       res.status(500).json({ error: "Errore configurazione PayPal" });
     }
@@ -8675,6 +8881,7 @@ export function registerRoutes(app: Express): Server {
       const result = await createPayPalOrderHandler(config.paypalClientId, decryptedSecret, amount, currency, intent, returnUrl, cancelUrl);
       res.status(result.statusCode).json(result.body);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       console.error("PayPal order creation error:", error);
       res.status(500).json({ error: "Errore creazione ordine PayPal" });
     }
@@ -8699,6 +8906,7 @@ export function registerRoutes(app: Express): Server {
       const result = await capturePayPalOrderHandler(config.paypalClientId, decryptedSecret, orderID);
       res.status(result.statusCode).json(result.body);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       console.error("PayPal capture error:", error);
       res.status(500).json({ error: "Errore cattura pagamento PayPal" });
     }
@@ -8753,6 +8961,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json(publicConfig);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -8768,6 +8977,7 @@ export function registerRoutes(app: Express): Server {
       const methods = await storage.listAllShippingMethods();
       res.json(methods);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -8778,6 +8988,7 @@ export function registerRoutes(app: Express): Server {
       const templates = await storage.listShippingMethods({ isTemplate: true });
       res.json(templates);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -8792,6 +9003,7 @@ export function registerRoutes(app: Express): Server {
       });
       res.status(201).json(method);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -8802,6 +9014,7 @@ export function registerRoutes(app: Express): Server {
       const method = await storage.updateShippingMethod(req.params.id, req.body);
       res.json(method);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -8812,6 +9025,7 @@ export function registerRoutes(app: Express): Server {
       await storage.deleteShippingMethod(req.params.id);
       res.status(204).send();
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -8823,6 +9037,7 @@ export function registerRoutes(app: Express): Server {
       const methods = await storage.listShippingMethods({ createdBy: req.user.id });
       res.json(methods);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -8838,6 +9053,7 @@ export function registerRoutes(app: Express): Server {
       });
       res.status(201).json(method);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -8853,6 +9069,7 @@ export function registerRoutes(app: Express): Server {
       const method = await storage.updateShippingMethod(req.params.id, req.body);
       res.json(method);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -8868,6 +9085,7 @@ export function registerRoutes(app: Express): Server {
       await storage.deleteShippingMethod(req.params.id);
       res.status(204).send();
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -8883,6 +9101,7 @@ export function registerRoutes(app: Express): Server {
       const methods = await storage.getShippingMethodsForRepairCenter(req.user.repairCenterId, repairCenter.resellerId);
       res.json(methods);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -8899,6 +9118,7 @@ export function registerRoutes(app: Express): Server {
       });
       res.status(201).json(method);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -8914,6 +9134,7 @@ export function registerRoutes(app: Express): Server {
       const method = await storage.updateShippingMethod(req.params.id, req.body);
       res.json(method);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -8929,6 +9150,7 @@ export function registerRoutes(app: Express): Server {
       await storage.deleteShippingMethod(req.params.id);
       res.status(204).send();
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -8939,6 +9161,7 @@ export function registerRoutes(app: Express): Server {
       const methods = await storage.getShippingMethodsForSeller(req.params.sellerId);
       res.json(methods);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -8966,6 +9189,7 @@ export function registerRoutes(app: Express): Server {
       });
       res.status(201).json(newMethod);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -8993,6 +9217,7 @@ export function registerRoutes(app: Express): Server {
         return res.json(activeMethods);
       }
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -9022,6 +9247,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json(activeMethods);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -9104,6 +9330,7 @@ export function registerRoutes(app: Express): Server {
         onboardingUrl: accountLink.url 
       });
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       console.error("Stripe Connect error:", error);
       res.status(500).send(error.message);
     }
@@ -9171,6 +9398,7 @@ export function registerRoutes(app: Express): Server {
         payoutsEnabled: account.payouts_enabled
       });
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       console.error("Stripe status check error:", error);
       res.status(500).send(error.message);
     }
@@ -9221,6 +9449,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json({ onboardingUrl: accountLink.url });
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       console.error("Stripe refresh link error:", error);
       res.status(500).send(error.message);
     }
@@ -9263,6 +9492,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json({ dashboardUrl: loginLink.url });
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       console.error("Stripe dashboard link error:", error);
       res.status(500).send(error.message);
     }
@@ -9286,6 +9516,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json(repairCenter);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -9321,6 +9552,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json(updated);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       if (error.name === 'ZodError') {
         return res.status(400).json({ errors: error.errors });
       }
@@ -9341,6 +9573,7 @@ export function registerRoutes(app: Express): Server {
       const result = await storage.getRepairCenterHourlyRate(req.user.repairCenterId);
       res.json(result);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -9363,6 +9596,7 @@ export function registerRoutes(app: Express): Server {
       const result = await storage.getRepairCenterHourlyRate(req.user.repairCenterId);
       res.json(result);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -9374,6 +9608,7 @@ export function registerRoutes(app: Express): Server {
       const result = await storage.getRepairCenterSlaThresholds(req.user.repairCenterId);
       res.json(result);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -9401,6 +9636,7 @@ export function registerRoutes(app: Express): Server {
       const result = await storage.getRepairCenterSlaThresholds(req.user.repairCenterId);
       res.json(result);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -9485,6 +9721,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json(itemsWithPrices);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -9549,6 +9786,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json(itemsWithPrices);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -9585,6 +9823,7 @@ export function registerRoutes(app: Express): Server {
       
       res.status(201).json(newItem);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       if (error.message?.includes('duplicate key') || error.code === '23505') {
         return res.status(400).json({ error: "Codice intervento già esistente" });
       }
@@ -9626,6 +9865,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json(updated);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -9654,6 +9894,7 @@ export function registerRoutes(app: Express): Server {
       await storage.deleteServiceItem(id);
       res.status(204).send();
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -9676,6 +9917,7 @@ export function registerRoutes(app: Express): Server {
 
       res.json(stats);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -9686,6 +9928,7 @@ export function registerRoutes(app: Express): Server {
       const repairs = await storage.listRepairOrders({ repairCenterId: req.user.repairCenterId || undefined });
       res.json(repairs);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -9755,6 +9998,7 @@ export function registerRoutes(app: Express): Server {
         totalPages: result.totalPages,
       });
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -9765,6 +10009,7 @@ export function registerRoutes(app: Express): Server {
       const inventory = await storage.listInventoryStock(req.user.repairCenterId || undefined);
       res.json(inventory);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -9790,6 +10035,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json(updated);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(400).send(error.message);
     }
   });
@@ -9840,6 +10086,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json(updated);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       console.error("Error skipping diagnosis:", error);
       res.status(400).send(error.message);
     }
@@ -9862,6 +10109,7 @@ export function registerRoutes(app: Express): Server {
       setActivityEntity(res, { type: 'inventory', id: movement.id });
       res.status(201).json(movement);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(400).send(error.message);
     }
   });
@@ -9884,6 +10132,7 @@ export function registerRoutes(app: Express): Server {
 
       res.json(stats);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -9894,6 +10143,7 @@ export function registerRoutes(app: Express): Server {
       const repairs = await storage.listRepairOrders({ customerId: req.user.id });
       res.json(repairs);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -9928,6 +10178,7 @@ export function registerRoutes(app: Express): Server {
         repairCenterInfo,
       });
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -9938,6 +10189,7 @@ export function registerRoutes(app: Express): Server {
       const tickets = await storage.listTickets({ customerId: req.user.id });
       res.json(tickets);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -9964,6 +10216,7 @@ export function registerRoutes(app: Express): Server {
       setActivityEntity(res, { type: 'tickets', id: ticket.id });
       res.status(201).json(ticket);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(400).send(error.message);
     }
   });
@@ -9987,6 +10240,7 @@ export function registerRoutes(app: Express): Server {
         billingData,
       });
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -10025,6 +10279,7 @@ export function registerRoutes(app: Express): Server {
       const { password: _, ...safeUser } = updatedUser;
       res.json(safeUser);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       if (error.name === 'ZodError') {
         return res.status(400).json({ message: "Dati non validi", errors: error.errors });
       }
@@ -10086,6 +10341,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json(enrichedRequests);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -10105,6 +10361,7 @@ export function registerRoutes(app: Express): Server {
       setActivityEntity(res, { type: 'remote_repair_requests', id: request.id });
       res.status(201).json(request);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       if (error.name === 'ZodError') {
         return res.status(400).json({ message: "Dati non validi", errors: error.errors });
       }
@@ -10126,6 +10383,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json(request);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -10159,6 +10417,7 @@ export function registerRoutes(app: Express): Server {
       setActivityEntity(res, { type: 'remote_repair_requests', id: updated.id });
       res.json(updated);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -10224,6 +10483,7 @@ export function registerRoutes(app: Express): Server {
       res.setHeader('Content-Disposition', `attachment; filename="DDT-${request.requestNumber}.pdf"`);
       res.send(pdfBuffer);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       console.error('Error generating DDT:', error);
       res.status(500).send(error.message);
     }
@@ -10273,6 +10533,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json({ photos: photoUrls });
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       console.error("Error uploading photos:", error);
       res.status(500).send(error.message);
     }
@@ -10339,6 +10600,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json(enrichedRequests);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -10375,6 +10637,7 @@ export function registerRoutes(app: Express): Server {
       setActivityEntity(res, { type: 'remote_repair_requests', id: updated.id });
       res.json(updated);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -10405,6 +10668,7 @@ export function registerRoutes(app: Express): Server {
       setActivityEntity(res, { type: 'remote_repair_requests', id: updated.id });
       res.json(updated);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -10438,6 +10702,7 @@ export function registerRoutes(app: Express): Server {
       setActivityEntity(res, { type: 'remote_repair_requests', id: updated.id });
       res.json(updated);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -10473,6 +10738,7 @@ export function registerRoutes(app: Express): Server {
         message: `Lavorazione ${repairOrder.orderNumber} creata automaticamente`
       });
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -10513,6 +10779,7 @@ export function registerRoutes(app: Express): Server {
         message: `Ricezione forzata. Lavorazione ${repairOrder.orderNumber} creata automaticamente`
       });
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -10544,6 +10811,7 @@ export function registerRoutes(app: Express): Server {
       setActivityEntity(res, { type: 'remote_repair_requests', id: updated.id });
       res.json(updated);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -10565,6 +10833,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json({ count: pendingCount });
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -10587,6 +10856,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json(requests);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -10632,6 +10902,7 @@ export function registerRoutes(app: Express): Server {
       setActivityEntity(res, { type: 'remote_repair_requests', id: updated.id });
       res.json(updated);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -10653,6 +10924,7 @@ export function registerRoutes(app: Express): Server {
       const count = await storage.getResellerRemoteRequestPendingCount(resellerId);
       res.json({ count });
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -10662,6 +10934,7 @@ export function registerRoutes(app: Express): Server {
       const requests = await storage.listRemoteRepairRequests();
       res.json(requests);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -10672,6 +10945,7 @@ export function registerRoutes(app: Express): Server {
       if (!request) return res.status(404).send("Richiesta non trovata");
       res.json(request);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -10705,6 +10979,7 @@ export function registerRoutes(app: Express): Server {
         phone: reseller.phone,
       });
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -10808,6 +11083,7 @@ export function registerRoutes(app: Express): Server {
         configSource
       });
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -10871,6 +11147,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json(itemsWithPrices);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -10883,6 +11160,7 @@ export function registerRoutes(app: Express): Server {
       const orders = await storage.listServiceOrders({ customerId: req.user.id });
       res.json(orders);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -10898,6 +11176,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json(order);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -10968,6 +11247,7 @@ export function registerRoutes(app: Express): Server {
       setActivityEntity(res, { type: 'service_orders', id: order.id });
       res.status(201).json(order);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -10993,6 +11273,7 @@ export function registerRoutes(app: Express): Server {
       setActivityEntity(res, { type: 'service_orders', id: updated.id });
       res.json(updated);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -11088,6 +11369,7 @@ export function registerRoutes(app: Express): Server {
       setActivityEntity(res, { type: 'service_orders', id: updated.id });
       res.json(updated);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -11114,6 +11396,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json(updated);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -11134,6 +11417,7 @@ export function registerRoutes(app: Express): Server {
       const signedUrl = await getSignedDownloadUrl(order.ddtUrl);
       res.json({ url: signedUrl });
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -11207,6 +11491,7 @@ export function registerRoutes(app: Express): Server {
         publishableKey: paymentConfig.stripePublishableKey,
       });
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       console.error("Service Order Stripe PaymentIntent error:", error);
       res.status(500).json({ error: error.message || "Errore creazione pagamento Stripe" });
     }
@@ -11290,6 +11575,7 @@ export function registerRoutes(app: Express): Server {
       const orderData = await orderResponse.json() as any;
       res.json({ orderID: orderData.id });
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       console.error("PayPal create order error:", error);
       res.status(500).json({ error: error.message || "Errore creazione ordine PayPal" });
     }
@@ -11361,6 +11647,7 @@ export function registerRoutes(app: Express): Server {
         res.status(400).json({ error: "Pagamento non completato" });
       }
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       console.error("PayPal capture error:", error);
       res.status(500).json({ error: error.message || "Errore cattura pagamento PayPal" });
     }
@@ -11391,6 +11678,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json(ordersWithDetails);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -11409,6 +11697,7 @@ export function registerRoutes(app: Express): Server {
       const orders = await storage.listServiceOrders({ resellerId, status: 'pending' });
       res.json({ count: orders.length });
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -11427,6 +11716,7 @@ export function registerRoutes(app: Express): Server {
       const tickets = await storage.listTickets({ resellerId, status: 'open' });
       res.json({ count: tickets.length });
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -11454,6 +11744,7 @@ export function registerRoutes(app: Express): Server {
         serviceCode: serviceItem?.code || 'N/A'
       });
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -11489,6 +11780,7 @@ export function registerRoutes(app: Express): Server {
       setActivityEntity(res, { type: 'service_orders', id: updated.id });
       res.json(updated);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -11518,6 +11810,7 @@ export function registerRoutes(app: Express): Server {
       setActivityEntity(res, { type: 'service_orders', id: updated.id });
       res.json(updated);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -11551,6 +11844,7 @@ export function registerRoutes(app: Express): Server {
       setActivityEntity(res, { type: 'service_orders', id: updated.id });
       res.json(updated);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -11584,6 +11878,7 @@ export function registerRoutes(app: Express): Server {
       setActivityEntity(res, { type: 'service_orders', id: updated.id });
       res.json(updated);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -11623,6 +11918,7 @@ export function registerRoutes(app: Express): Server {
       setActivityEntity(res, { type: 'service_orders', id: updated.id });
       res.json(updated);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -11701,6 +11997,7 @@ export function registerRoutes(app: Express): Server {
       setActivityEntity(res, { type: 'service_orders', id: updated.id });
       res.json({ serviceOrder: updated, repairOrder, acceptance });
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -11728,6 +12025,7 @@ export function registerRoutes(app: Express): Server {
       const signedUrl = await getSignedDownloadUrl(order.ddtUrl);
       res.json({ url: signedUrl });
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -11743,6 +12041,7 @@ export function registerRoutes(app: Express): Server {
       const notifications = await storage.listNotifications(req.user.id, { isRead, limit });
       res.json(notifications);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -11755,6 +12054,7 @@ export function registerRoutes(app: Express): Server {
       setActivityEntity(res, { type: 'notifications', id: notification.id });
       res.json(notification);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(403).send(error.message);
     }
   });
@@ -11776,6 +12076,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json(preferences);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -11796,6 +12097,7 @@ export function registerRoutes(app: Express): Server {
       setActivityEntity(res, { type: 'notification_preferences', id: preferences.id });
       res.json(preferences);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(400).send(error.message);
     }
   });
@@ -11820,6 +12122,7 @@ export function registerRoutes(app: Express): Server {
       const pref = await storage.getDashboardPreference(req.user.id, role);
       res.json(pref || null);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -11845,6 +12148,7 @@ export function registerRoutes(app: Express): Server {
       const pref = await storage.saveDashboardPreference(req.user.id, role, layout);
       res.json(pref);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -11912,6 +12216,7 @@ export function registerRoutes(app: Express): Server {
       // No access
       return res.status(403).json({ error: "Non hai accesso a questa riparazione" });
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -11965,6 +12270,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json({ ...repairOrder, customer });
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -12050,6 +12356,7 @@ export function registerRoutes(app: Express): Server {
       setActivityEntity(res, { type: 'repair_attachments', id: attachment.id });
       res.json(attachment);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       console.error('Upload error:', error);
       res.status(500).send(error.message);
     }
@@ -12087,6 +12394,7 @@ export function registerRoutes(app: Express): Server {
       const attachments = await storage.listRepairAttachments(repairOrderId);
       res.json(attachments);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -12113,6 +12421,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json(attachment);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -12152,6 +12461,7 @@ export function registerRoutes(app: Express): Server {
       setActivityEntity(res, { type: 'repair_attachments', id: attachment.id });
       res.json({ message: 'Attachment deleted successfully' });
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -12195,6 +12505,7 @@ export function registerRoutes(app: Express): Server {
       const [fileContents] = await file.download();
       res.send(fileContents);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       console.error('Download error:', error);
       res.status(500).send(error.message);
     }
@@ -12260,6 +12571,7 @@ export function registerRoutes(app: Express): Server {
         fileName: attachment.fileName
       });
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       console.error('Upload error:', error);
       res.status(500).send(error.message);
     }
@@ -12273,6 +12585,7 @@ export function registerRoutes(app: Express): Server {
       const staffUsers = await storage.listStaffUsers();
       res.json(staffUsers);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -12317,6 +12630,7 @@ export function registerRoutes(app: Express): Server {
       const tickets = await storage.listTickets(filters);
       res.json(tickets);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -12377,6 +12691,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json(ticket);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -12413,6 +12728,7 @@ export function registerRoutes(app: Express): Server {
       setActivityEntity(res, { type: 'ticket', id: ticket.id });
       res.json(ticket);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(400).send(error.message);
     }
   });
@@ -12441,6 +12757,7 @@ export function registerRoutes(app: Express): Server {
       const tickets = await storage.listInternalTickets(filters);
       res.json(tickets);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -12510,6 +12827,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json(ticket);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(400).send(error.message);
     }
   });
@@ -12590,6 +12908,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json(updatedTicket);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -12647,6 +12966,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json(updatedTicket);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -12688,6 +13008,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json(updatedTicket);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -12726,6 +13047,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json(filteredMessages);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -12806,6 +13128,7 @@ export function registerRoutes(app: Express): Server {
         size: req.file.size,
       });
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       console.error("Error uploading ticket attachment:", error);
       res.status(500).send(error.message);
     }
@@ -12890,6 +13213,7 @@ export function registerRoutes(app: Express): Server {
       setActivityEntity(res, { type: 'ticket_message', id: ticketMessage.id });
       res.json(ticketMessage);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(400).send(error.message);
     }
   });
@@ -13022,6 +13346,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json(filteredOrders);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -13210,6 +13535,7 @@ export function registerRoutes(app: Express): Server {
         res.json(order);
       }
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(400).send(error.message);
     }
   });
@@ -13295,6 +13621,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json(updatedOrder);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -13334,6 +13661,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json(products);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -13352,6 +13680,7 @@ export function registerRoutes(app: Express): Server {
       const productsWithStock = await storage.getAllProductsWithStock();
       res.json(productsWithStock);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -13365,6 +13694,7 @@ export function registerRoutes(app: Express): Server {
       }
       res.json(product);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -13456,6 +13786,7 @@ export function registerRoutes(app: Express): Server {
       }
       res.status(201).json(product);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(400).send(error.message);
     }
   });
@@ -13512,6 +13843,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json(updated);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(400).send(error.message);
     }
   });
@@ -13534,6 +13866,7 @@ export function registerRoutes(app: Express): Server {
       
       res.status(204).send();
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -13554,6 +13887,7 @@ export function registerRoutes(app: Express): Server {
       const stockByCenter = await storage.getProductStockByCenter(req.params.id);
       res.json(stockByCenter);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -13598,6 +13932,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json(updatedStock);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -13644,6 +13979,7 @@ export function registerRoutes(app: Express): Server {
         totalQuantity,
       });
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       console.error("Error in /api/products/:id/warehouse-stocks:", error);
       res.status(500).send(error.message);
     }
@@ -13723,6 +14059,7 @@ export function registerRoutes(app: Express): Server {
         totalQuantity,
       });
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       console.error("Error in POST /api/products/:id/warehouse-stock:", error);
       res.status(500).send(error.message);
     }
@@ -13771,6 +14108,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json(smartphonesWithExtras);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -13785,6 +14123,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json(specs);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -13935,6 +14274,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json({ ...createdProduct, imageUrl: imageUrl || createdProduct.imageUrl, specs: createdSpecs });
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -13978,6 +14318,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json({ ...updatedProduct, specs: updatedSpecs });
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -14006,6 +14347,7 @@ export function registerRoutes(app: Express): Server {
       const updatedSpecs = await storage.updateSmartphoneSpecs(req.params.productId, req.body);
       res.json(updatedSpecs);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -14037,6 +14379,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json({ success: true });
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -14065,6 +14408,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json(updatedProduct);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -14125,6 +14469,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json(accessoriesWithExtras);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -14139,6 +14484,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json(specs);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -14291,6 +14637,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json({ ...createdProduct, imageUrl: imageUrl || createdProduct.imageUrl, specs: createdSpecs });
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -14335,6 +14682,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json({ ...updatedProduct, specs: updatedSpecs });
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -14358,6 +14706,7 @@ export function registerRoutes(app: Express): Server {
       const updatedSpecs = await storage.updateAccessorySpecs(req.params.productId, req.body);
       res.json(updatedSpecs);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -14384,6 +14733,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json({ success: true });
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -14412,6 +14762,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json(updatedProduct);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -14455,6 +14806,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json(updatedProduct);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -14496,6 +14848,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json(invoices);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -14663,6 +15016,7 @@ export function registerRoutes(app: Express): Server {
       res.setHeader("Content-Disposition", `attachment; filename="Fattura-${invoice.invoiceNumber}.pdf"`);
       res.send(pdfBuffer);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       console.error("Error generating invoice PDF:", error);
       res.status(500).json({ error: error.message });
     }
@@ -14885,6 +15239,7 @@ export function registerRoutes(app: Express): Server {
       res.setHeader("Content-Disposition", `attachment; filename="Fattura-${invoice.invoiceNumber}.pdf"`);
       res.send(pdfBuffer);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       console.error("Error generating invoice PDF:", error);
       res.status(500).json({ error: error.message });
     }
@@ -14921,6 +15276,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json(invoice);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -14971,6 +15327,7 @@ export function registerRoutes(app: Express): Server {
       setActivityEntity(res, { type: 'invoice', id: invoice.id });
       res.status(201).json(invoice);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(400).send(error.message);
     }
   });
@@ -15008,6 +15365,7 @@ export function registerRoutes(app: Express): Server {
       setActivityEntity(res, { type: 'invoice', id: updatedInvoice.id });
       res.json(updatedInvoice);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(400).send(error.message);
     }
   });
@@ -15040,6 +15398,7 @@ export function registerRoutes(app: Express): Server {
       const attachments = await storage.listRepairAttachments(req.params.repairOrderId);
       res.json(attachments);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -15083,6 +15442,7 @@ export function registerRoutes(app: Express): Server {
       setActivityEntity(res, { type: 'repair_attachment', id: attachment.id });
       res.status(201).json(attachment);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(400).send(error.message);
     }
   });
@@ -15110,6 +15470,7 @@ export function registerRoutes(app: Express): Server {
       await storage.deleteRepairAttachment(req.params.id);
       res.status(204).send();
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -15131,6 +15492,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json(diagnostics);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -15173,6 +15535,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json(diagnostics);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -15215,6 +15578,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json(acceptance);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -15299,6 +15663,7 @@ export function registerRoutes(app: Express): Server {
       setActivityEntity(res, { type: 'repair_diagnostics', id: diagnostics.id });
       res.status(201).json(diagnostics);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(400).send(error.message);
     }
   });
@@ -15373,6 +15738,7 @@ export function registerRoutes(app: Express): Server {
       setActivityEntity(res, { type: 'repair_diagnostics', id: diagnostics.id });
       res.json(diagnostics);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(400).send(error.message);
     }
   });
@@ -15395,6 +15761,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json(quotes);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -15436,6 +15803,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json(quote);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(400).send(error.message);
     }
   });
@@ -15559,6 +15927,7 @@ export function registerRoutes(app: Express): Server {
       setActivityEntity(res, { type: 'repair_quote', id: quote.id });
       res.status(201).json(quote);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(400).send(error.message);
     }
   });
@@ -15631,6 +16000,7 @@ export function registerRoutes(app: Express): Server {
       setActivityEntity(res, { type: 'repair_quote', id: quote.id });
       res.json(quote);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(400).send(error.message);
     }
   });
@@ -15669,6 +16039,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json({ message: "Quote accepted successfully" });
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(400).send(error.message);
     }
   });
@@ -15707,6 +16078,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json({ message: "Quote rejected successfully" });
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(400).send(error.message);
     }
   });
@@ -15769,6 +16141,7 @@ export function registerRoutes(app: Express): Server {
         nextStatus 
       });
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(400).send(error.message);
     }
   });
@@ -15802,6 +16175,7 @@ export function registerRoutes(app: Express): Server {
       const parts = await storage.listPartsOrders(req.params.id);
       res.json(parts);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(400).send(error.message);
     }
   });
@@ -15899,6 +16273,7 @@ export function registerRoutes(app: Express): Server {
       
       res.status(201).json(partsOrder);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(400).send(error.message);
     }
   });
@@ -15930,6 +16305,7 @@ export function registerRoutes(app: Express): Server {
       const orders = await storage.listAllPartsOrders(filters);
       res.json(orders);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -15989,6 +16365,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json(updated);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(400).send(error.message);
     }
   });
@@ -16021,6 +16398,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json(ordersWithItems);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(400).send(error.message);
     }
   });
@@ -16131,6 +16509,7 @@ export function registerRoutes(app: Express): Server {
       
       res.status(201).json({ ...purchaseOrder, items: createdItems });
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(400).send(error.message);
     }
   });
@@ -16177,6 +16556,7 @@ export function registerRoutes(app: Express): Server {
       const updated = await storage.updatePartsPurchaseOrder(req.params.id, updates);
       res.json(updated);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(400).send(error.message);
     }
   });
@@ -16188,6 +16568,7 @@ export function registerRoutes(app: Express): Server {
       const suppliers = await storage.listSuppliers();
       res.json(suppliers);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(400).send(error.message);
     }
   });
@@ -16228,6 +16609,7 @@ export function registerRoutes(app: Express): Server {
       const logs = await storage.listRepairLogs(req.params.id);
       res.json(logs);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(400).send(error.message);
     }
   });
@@ -16271,6 +16653,7 @@ export function registerRoutes(app: Express): Server {
       
       res.status(201).json(log);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(400).send(error.message);
     }
   });
@@ -16320,6 +16703,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json({ message: "Repair started" });
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(400).send(error.message);
     }
   });
@@ -16360,6 +16744,7 @@ export function registerRoutes(app: Express): Server {
       const checklist = await storage.getTestChecklist(req.params.id);
       res.json(checklist || null);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(400).send(error.message);
     }
   });
@@ -16437,6 +16822,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json(checklist);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(400).send(error.message);
     }
   });
@@ -16487,6 +16873,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json({ message: "Device marked as ready for pickup" });
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(400).send(error.message);
     }
   });
@@ -16579,6 +16966,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json({ delivery, invoice });
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(400).send(error.message);
     }
   });
@@ -16610,6 +16998,7 @@ export function registerRoutes(app: Express): Server {
       const delivery = await storage.getDelivery(req.params.id);
       res.json(delivery || null);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(400).send(error.message);
     }
   });
@@ -16644,6 +17033,7 @@ export function registerRoutes(app: Express): Server {
       const availability = await storage.listRepairCenterAvailability(req.params.id);
       res.json(availability);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(400).send(error.message);
     }
   });
@@ -16697,6 +17087,7 @@ export function registerRoutes(app: Express): Server {
       const created = await storage.setRepairCenterAvailability(req.params.id, validatedItems);
       res.json(created);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(400).send(error.message);
     }
   });
@@ -16732,6 +17123,7 @@ export function registerRoutes(app: Express): Server {
       );
       res.json(blackouts);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(400).send(error.message);
     }
   });
@@ -16773,6 +17165,7 @@ export function registerRoutes(app: Express): Server {
       const blackout = await storage.createRepairCenterBlackout(validationResult.data);
       res.json(blackout);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(400).send(error.message);
     }
   });
@@ -16801,6 +17194,7 @@ export function registerRoutes(app: Express): Server {
       await storage.deleteRepairCenterBlackout(req.params.blackoutId);
       res.json({ message: "Blackout deleted" });
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(400).send(error.message);
     }
   });
@@ -16888,6 +17282,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json({ slots, isClosed: false });
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(400).send(error.message);
     }
   });
@@ -16967,6 +17362,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json(enriched);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(400).send(error.message);
     }
   });
@@ -16998,6 +17394,7 @@ export function registerRoutes(app: Express): Server {
       const appointment = await storage.getDeliveryAppointmentByRepairOrder(req.params.id);
       res.json(appointment || null);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(400).send(error.message);
     }
   });
@@ -17089,6 +17486,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json(appointment);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(400).send(error.message);
     }
   });
@@ -17219,6 +17617,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json(updated);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(400).send(error.message);
     }
   });
@@ -17254,6 +17653,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json(appointment);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(400).send(error.message);
     }
   });
@@ -17462,6 +17862,7 @@ export function registerRoutes(app: Express): Server {
       
       doc.end();
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(400).send(error.message);
     }
   });
@@ -17688,6 +18089,7 @@ export function registerRoutes(app: Express): Server {
       
       doc.end();
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(400).send(error.message);
     }
   });
@@ -17893,6 +18295,7 @@ export function registerRoutes(app: Express): Server {
       
       doc.end();
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(400).send(error.message);
     }
   });
@@ -18094,6 +18497,7 @@ export function registerRoutes(app: Express): Server {
       
       doc.end();
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(400).send(error.message);
     }
   });
@@ -18352,6 +18756,7 @@ export function registerRoutes(app: Express): Server {
       
       doc.end();
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(400).send(error.message);
     }
   });
@@ -18411,6 +18816,7 @@ export function registerRoutes(app: Express): Server {
         res.json(repairs);
       }
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -18461,6 +18867,7 @@ export function registerRoutes(app: Express): Server {
         res.json(movements);
       }
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -18480,6 +18887,7 @@ export function registerRoutes(app: Express): Server {
       const staffUsers = allUsers.filter(u => u.role !== 'customer');
       res.json(staffUsers);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -18511,6 +18919,7 @@ export function registerRoutes(app: Express): Server {
       const { password, ...safeUser } = user;
       res.json(safeUser);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -18557,6 +18966,7 @@ export function registerRoutes(app: Express): Server {
         ragioneSociale: parentReseller.ragioneSociale,
       });
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -18575,6 +18985,7 @@ export function registerRoutes(app: Express): Server {
         }));
       res.json(resellers);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -18594,6 +19005,7 @@ export function registerRoutes(app: Express): Server {
         }));
       res.json(subResellers);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -18615,6 +19027,7 @@ export function registerRoutes(app: Express): Server {
         }));
       res.json(mySubResellers);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -18660,6 +19073,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json(result);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -18755,6 +19169,7 @@ export function registerRoutes(app: Express): Server {
       setActivityEntity(res, { type: 'user', id: updatedUser.id });
       res.json(updatedUser);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(400).send(error.message);
     }
   });
@@ -18794,6 +19209,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json(customers);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -18870,6 +19286,7 @@ export function registerRoutes(app: Express): Server {
         utilityPractices: enrichedUtilityPractices,
       });
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -18937,6 +19354,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json(billingData);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -19068,6 +19486,7 @@ export function registerRoutes(app: Express): Server {
       setActivityEntity(res, { type: 'users', id: customer.id });
       res.status(201).json(customerWithoutPassword);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       if (error instanceof z.ZodError) {
         return res.status(400).send(error.errors[0]?.message || "Dati non validi");
       }
@@ -19217,6 +19636,7 @@ export function registerRoutes(app: Express): Server {
         billing: result.billing,
       });
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       if (error.name === 'ZodError') {
         return res.status(400).json({ error: "Validation failed", details: error.errors });
       }
@@ -19248,6 +19668,7 @@ export function registerRoutes(app: Express): Server {
       const branches = await storage.listCustomerBranches(customerId);
       res.json(branches);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -19276,6 +19697,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json(branch);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -19332,6 +19754,7 @@ export function registerRoutes(app: Express): Server {
       
       res.status(201).json(branch);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       if (error.name === 'ZodError') {
         return res.status(400).json({ error: "Validation failed", details: error.errors });
       }
@@ -19395,6 +19818,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json(updatedBranch);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -19436,6 +19860,7 @@ export function registerRoutes(app: Express): Server {
       
       res.status(204).send();
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -19790,6 +20215,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json(stats);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -20145,6 +20571,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json(tasks);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -20264,6 +20691,7 @@ export function registerRoutes(app: Express): Server {
       const deviceTypes = await storage.listDeviceTypes(activeOnly);
       res.json(deviceTypes);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -20275,6 +20703,7 @@ export function registerRoutes(app: Express): Server {
       const deviceBrands = await storage.listDeviceBrands(activeOnly);
       res.json(deviceBrands);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -20289,6 +20718,7 @@ export function registerRoutes(app: Express): Server {
       const deviceModels = await storage.listDeviceModels({ typeId, brandId, activeOnly });
       res.json(deviceModels);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -20371,6 +20801,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json(result.rows[0]);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       console.error("Error looking up device by market code:", error);
       res.status(500).send(error.message);
     }
@@ -20382,6 +20813,7 @@ export function registerRoutes(app: Express): Server {
       const deviceTypes = await storage.listDeviceTypes(activeOnly);
       res.json(deviceTypes);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -20393,6 +20825,7 @@ export function registerRoutes(app: Express): Server {
       const deviceBrands = await storage.listDeviceBrands(activeOnly);
       res.json(deviceBrands);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -20406,6 +20839,7 @@ export function registerRoutes(app: Express): Server {
       const deviceModels = await storage.listDeviceModels({ activeOnly, typeId, brandId });
       res.json(deviceModels);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -20417,6 +20851,7 @@ export function registerRoutes(app: Express): Server {
       const deviceType = await storage.createDeviceType(validated);
       res.status(201).json(deviceType);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(400).send(error.message);
     }
   });
@@ -20428,6 +20863,7 @@ export function registerRoutes(app: Express): Server {
       const deviceType = await storage.updateDeviceType(req.params.id, updates);
       res.json(deviceType);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(400).send(error.message);
     }
   });
@@ -20449,6 +20885,7 @@ export function registerRoutes(app: Express): Server {
       await storage.deleteDeviceType(req.params.id);
       res.status(204).send();
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       // Provide clearer error message for foreign key violations
       if (error.message?.includes('foreign key constraint')) {
         res.status(400).json({ 
@@ -20467,6 +20904,7 @@ export function registerRoutes(app: Express): Server {
       const deviceBrand = await storage.createDeviceBrand(validated);
       res.status(201).json(deviceBrand);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(400).send(error.message);
     }
   });
@@ -20478,6 +20916,7 @@ export function registerRoutes(app: Express): Server {
       const deviceBrand = await storage.updateDeviceBrand(req.params.id, updates);
       res.json(deviceBrand);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(400).send(error.message);
     }
   });
@@ -20488,6 +20927,7 @@ export function registerRoutes(app: Express): Server {
       await storage.deleteDeviceBrand(req.params.id);
       res.status(204).send();
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(400).send(error.message);
     }
   });
@@ -20510,6 +20950,7 @@ export function registerRoutes(app: Express): Server {
       const deviceModel = await storage.createDeviceModel(validated);
       res.status(201).json(deviceModel);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(400).send(error.message);
     }
   });
@@ -20533,6 +20974,7 @@ export function registerRoutes(app: Express): Server {
       const deviceModel = await storage.updateDeviceModel(req.params.id, updates);
       res.json(deviceModel);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(400).send(error.message);
     }
   });
@@ -20543,6 +20985,7 @@ export function registerRoutes(app: Express): Server {
       await storage.deleteDeviceModel(req.params.id);
       res.status(204).send();
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(400).send(error.message);
     }
   });
@@ -20720,6 +21163,7 @@ export function registerRoutes(app: Express): Server {
         errors: errors.slice(0, 50)
       });
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       console.error("Error importing Excel:", error);
       res.status(500).json({ error: error.message });
     }
@@ -20734,6 +21178,7 @@ export function registerRoutes(app: Express): Server {
       const issueTypes = await storage.listIssueTypes(deviceTypeId, activeOnly);
       res.json(issueTypes);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -20748,6 +21193,7 @@ export function registerRoutes(app: Express): Server {
       const defects = await storage.listAestheticDefects(deviceTypeId, activeOnly);
       res.json(defects);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -20762,6 +21208,7 @@ export function registerRoutes(app: Express): Server {
       const accessories = await storage.listAccessoryTypes(deviceTypeId, activeOnly);
       res.json(accessories);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -20776,6 +21223,7 @@ export function registerRoutes(app: Express): Server {
       const findings = await storage.listDiagnosticFindings(deviceTypeId, activeOnly);
       res.json(findings);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -20790,6 +21238,7 @@ export function registerRoutes(app: Express): Server {
       const components = await storage.listDamagedComponentTypes(deviceTypeId, activeOnly);
       res.json(components);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -20804,6 +21253,7 @@ export function registerRoutes(app: Express): Server {
       const times = await storage.listEstimatedRepairTimes(deviceTypeId, activeOnly);
       res.json(times);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -20817,6 +21267,7 @@ export function registerRoutes(app: Express): Server {
       const promotions = await storage.listPromotions(activeOnly);
       res.json(promotions);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -20827,6 +21278,7 @@ export function registerRoutes(app: Express): Server {
       const promotion = await storage.createPromotion(req.body);
       res.status(201).json(promotion);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -20837,6 +21289,7 @@ export function registerRoutes(app: Express): Server {
       const promotion = await storage.updatePromotion(req.params.id, req.body);
       res.json(promotion);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -20847,6 +21300,7 @@ export function registerRoutes(app: Express): Server {
       await storage.deletePromotion(req.params.id);
       res.status(204).send();
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -20861,6 +21315,7 @@ export function registerRoutes(app: Express): Server {
       const reasons = await storage.listUnrepairableReasons(deviceTypeId, activeOnly);
       res.json(reasons);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -20871,6 +21326,7 @@ export function registerRoutes(app: Express): Server {
       const reason = await storage.createUnrepairableReason(req.body);
       res.status(201).json(reason);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -20881,6 +21337,7 @@ export function registerRoutes(app: Express): Server {
       const reason = await storage.updateUnrepairableReason(req.params.id, req.body);
       res.json(reason);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -20891,6 +21348,7 @@ export function registerRoutes(app: Express): Server {
       await storage.deleteUnrepairableReason(req.params.id);
       res.status(204).send();
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -20906,6 +21364,7 @@ export function registerRoutes(app: Express): Server {
       const labs = await storage.listExternalLabs(activeOnly);
       res.json(labs);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -20919,6 +21378,7 @@ export function registerRoutes(app: Express): Server {
       }
       res.json(lab);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -20929,6 +21389,7 @@ export function registerRoutes(app: Express): Server {
       const lab = await storage.createExternalLab(req.body);
       res.status(201).json(lab);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -20939,6 +21400,7 @@ export function registerRoutes(app: Express): Server {
       const lab = await storage.updateExternalLab(req.params.id, req.body);
       res.json(lab);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -20949,6 +21411,7 @@ export function registerRoutes(app: Express): Server {
       await storage.deleteExternalLab(req.params.id);
       res.status(204).send();
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -21010,6 +21473,7 @@ export function registerRoutes(app: Express): Server {
         assignedUser: assignedUser ? { id: assignedUser.id, fullName: assignedUser.fullName, username: assignedUser.username } : null
       });
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -21074,6 +21538,7 @@ export function registerRoutes(app: Express): Server {
       
       res.status(201).json(job);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -21141,6 +21606,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json(updatedJob);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -21182,6 +21648,7 @@ export function registerRoutes(app: Express): Server {
       
       res.status(201).json(event);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -21196,6 +21663,7 @@ export function registerRoutes(app: Express): Server {
       const jobs = await storage.listDataRecoveryJobs(filters);
       res.json(jobs);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -21227,6 +21695,7 @@ export function registerRoutes(app: Express): Server {
         assignedUser: assignedUser ? { id: assignedUser.id, fullName: assignedUser.fullName, username: assignedUser.username } : null
       });
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -21348,6 +21817,7 @@ export function registerRoutes(app: Express): Server {
       
       doc.end();
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -21428,6 +21898,7 @@ export function registerRoutes(app: Express): Server {
       
       doc.end();
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -21443,6 +21914,7 @@ export function registerRoutes(app: Express): Server {
       const suppliers = await storage.listSuppliers(activeOnly);
       res.json(suppliers);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -21456,6 +21928,7 @@ export function registerRoutes(app: Express): Server {
       }
       res.json(supplier);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -21474,6 +21947,7 @@ export function registerRoutes(app: Express): Server {
       const supplier = await storage.createSupplier(validated);
       res.status(201).json(supplier);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(400).send(error.message);
     }
   });
@@ -21484,6 +21958,7 @@ export function registerRoutes(app: Express): Server {
       const supplier = await storage.updateSupplier(req.params.id, req.body);
       res.json(supplier);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(400).send(error.message);
     }
   });
@@ -21494,6 +21969,7 @@ export function registerRoutes(app: Express): Server {
       await storage.deleteSupplier(req.params.id);
       res.status(204).send();
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(400).send(error.message);
     }
   });
@@ -21590,6 +22066,7 @@ export function registerRoutes(app: Express): Server {
         });
       }
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       console.error("Supplier connection test error:", error);
       res.status(500).json({ 
         success: false, 
@@ -21784,6 +22261,7 @@ export function registerRoutes(app: Express): Server {
           productsSynced: created + updated,
         });
       } catch (error: any) {
+      console.error("Service order creation error:", error);
         console.error("Catalog sync error:", error);
 
         // Update supplier and log with error
@@ -21804,6 +22282,7 @@ export function registerRoutes(app: Express): Server {
         });
       }
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       console.error("Sync catalog error:", error);
       res.status(500).send(error.message);
     }
@@ -21815,6 +22294,7 @@ export function registerRoutes(app: Express): Server {
       const products = await storage.listSupplierCatalogProducts(req.params.id);
       res.json(products);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -21825,6 +22305,7 @@ export function registerRoutes(app: Express): Server {
       const logs = await storage.listSupplierSyncLogs(req.params.id);
       res.json(logs);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -21838,6 +22319,7 @@ export function registerRoutes(app: Express): Server {
       const result = await fonedayApi.getOrders();
       res.json(result);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       console.error("Foneday orders error:", error);
       res.status(500).json({ 
         success: false, 
@@ -21854,6 +22336,7 @@ export function registerRoutes(app: Express): Server {
       const result = await fonedayApi.getInvoices();
       res.json(result);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       console.error("Foneday invoices error:", error);
       res.status(500).json({ 
         success: false, 
@@ -21874,6 +22357,7 @@ export function registerRoutes(app: Express): Server {
       const result = await fonedayApi.getInvoicePdf(invoiceNumber);
       res.json(result);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       console.error("Foneday invoice PDF error:", error);
       res.status(500).json({ 
         success: false, 
@@ -21894,6 +22378,7 @@ export function registerRoutes(app: Express): Server {
       const xml = await fonedayApi.getInvoiceXml(invoiceNumber);
       res.type('application/xml').send(xml);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       console.error("Foneday invoice XML error:", error);
       res.status(500).json({ 
         success: false, 
@@ -21909,6 +22394,7 @@ export function registerRoutes(app: Express): Server {
       const result = await fonedayApi.getProduct(req.params.sku);
       res.json(result);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       console.error("Foneday product error:", error);
       res.status(500).json({ 
         success: false, 
@@ -21930,6 +22416,7 @@ export function registerRoutes(app: Express): Server {
       const credential = await storage.getTrovausatiCredentialByReseller(resellerId);
       res.json(credential || null);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -21960,6 +22447,7 @@ export function registerRoutes(app: Express): Server {
       
       res.status(201).json(credential);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -21988,6 +22476,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json(updated);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -22007,6 +22496,7 @@ export function registerRoutes(app: Express): Server {
       await storage.deleteTrovausatiCredential(req.params.id);
       res.status(204).send();
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -22052,6 +22542,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json(result);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ success: false, message: error.message });
     }
   });
@@ -22080,6 +22571,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json(models);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -22109,6 +22601,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json(model);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -22135,6 +22628,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json(products);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -22169,6 +22663,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json(order);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -22193,6 +22688,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json(orders);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -22228,6 +22724,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json(order);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -22255,6 +22752,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json(valuation);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -22307,6 +22805,7 @@ export function registerRoutes(app: Express): Server {
         }
       });
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -22327,6 +22826,7 @@ export function registerRoutes(app: Express): Server {
       const shops = await storage.listTrovausatiShops(credential.id);
       res.json(shops);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -22355,6 +22855,7 @@ export function registerRoutes(app: Express): Server {
       
       res.status(201).json(shop);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -22384,6 +22885,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json(updated);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -22406,6 +22908,7 @@ export function registerRoutes(app: Express): Server {
       await storage.deleteTrovausatiShop(req.params.id);
       res.status(204).send();
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -22438,6 +22941,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json(result);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -22462,6 +22966,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json(coupon);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -22490,6 +22995,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json(coupon);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -22519,6 +23025,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json(token);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -22538,6 +23045,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json(enriched);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -22555,6 +23063,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json(enriched);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -22570,6 +23079,7 @@ export function registerRoutes(app: Express): Server {
       const productSupplier = await storage.createProductSupplier(validated);
       res.status(201).json(productSupplier);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(400).send(error.message);
     }
   });
@@ -22580,6 +23090,7 @@ export function registerRoutes(app: Express): Server {
       const updated = await storage.updateProductSupplier(req.params.id, req.body);
       res.json(updated);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(400).send(error.message);
     }
   });
@@ -22590,6 +23101,7 @@ export function registerRoutes(app: Express): Server {
       await storage.deleteProductSupplier(req.params.id);
       res.status(204).send();
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(400).send(error.message);
     }
   });
@@ -22600,6 +23112,7 @@ export function registerRoutes(app: Express): Server {
       await storage.deleteAllProductSuppliers(req.params.id);
       res.status(204).send();
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(400).send(error.message);
     }
   });
@@ -22610,6 +23123,7 @@ export function registerRoutes(app: Express): Server {
       await storage.setPreferredSupplier(req.params.productId, req.params.supplierId);
       res.json({ success: true });
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(400).send(error.message);
     }
   });
@@ -22706,6 +23220,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json(enriched);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -22764,6 +23279,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json({ ...order, supplier, owner, repairCenter, items: enrichedItems });
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -22799,6 +23315,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json(enrichedItems);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -22849,6 +23366,7 @@ export function registerRoutes(app: Express): Server {
       const order = await storage.createSupplierOrder(validated);
       res.status(201).json(order);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(400).send(error.message);
     }
   });
@@ -22882,6 +23400,7 @@ export function registerRoutes(app: Express): Server {
       const updated = await storage.updateSupplierOrder(req.params.id, req.body);
       res.json(updated);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(400).send(error.message);
     }
   });
@@ -22945,6 +23464,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json(updated);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(400).send(error.message);
     }
   });
@@ -23004,6 +23524,7 @@ export function registerRoutes(app: Express): Server {
       
       res.status(201).json(item);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(400).send(error.message);
     }
   });
@@ -23061,6 +23582,7 @@ export function registerRoutes(app: Express): Server {
       
       res.status(204).send();
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(400).send(error.message);
     }
   });
@@ -23146,6 +23668,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json(item);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(400).send(error.message);
     }
   });
@@ -23185,6 +23708,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json(enriched);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -23211,6 +23735,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json({ ...returnData, supplier, items });
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -23240,6 +23765,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json(enrichedItems);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -23266,6 +23792,7 @@ export function registerRoutes(app: Express): Server {
       const returnData = await storage.createSupplierReturn(validated);
       res.status(201).json(returnData);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(400).send(error.message);
     }
   });
@@ -23287,6 +23814,7 @@ export function registerRoutes(app: Express): Server {
       const updated = await storage.updateSupplierReturn(req.params.id, req.body);
       res.json(updated);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(400).send(error.message);
     }
   });
@@ -23329,6 +23857,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json(updated);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(400).send(error.message);
     }
   });
@@ -23361,6 +23890,7 @@ export function registerRoutes(app: Express): Server {
       
       res.status(201).json(item);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(400).send(error.message);
     }
   });
@@ -23385,6 +23915,7 @@ export function registerRoutes(app: Express): Server {
       const logs = await storage.listSupplierCommunicationLogs(filters);
       res.json(logs);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -23402,6 +23933,7 @@ export function registerRoutes(app: Express): Server {
       const log = await storage.createSupplierCommunicationLog(validated);
       res.status(201).json(log);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(400).send(error.message);
     }
   });
@@ -23437,6 +23969,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json(configuredCodes);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -23581,6 +24114,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json(integrations);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       console.error("Error fetching integrations summary:", error);
       res.status(500).send(error.message);
     }
@@ -23598,6 +24132,7 @@ export function registerRoutes(app: Express): Server {
         res.json(integrations);
       }
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -23615,6 +24150,7 @@ export function registerRoutes(app: Express): Server {
       }
       res.json(integration);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -23625,6 +24161,7 @@ export function registerRoutes(app: Express): Server {
       const integration = await storage.createExternalIntegration(req.body);
       res.status(201).json(integration);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(400).send(error.message);
     }
   });
@@ -23635,6 +24172,7 @@ export function registerRoutes(app: Express): Server {
       const integration = await storage.updateExternalIntegration(req.params.id, req.body);
       res.json(integration);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(400).send(error.message);
     }
   });
@@ -23645,6 +24183,7 @@ export function registerRoutes(app: Express): Server {
       await storage.deleteExternalIntegration(req.params.id);
       res.status(204).send();
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(400).send(error.message);
     }
   });
@@ -23663,6 +24202,7 @@ export function registerRoutes(app: Express): Server {
       const orders = await storage.listAllPartsOrders(filters);
       res.json(orders);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -23680,6 +24220,7 @@ export function registerRoutes(app: Express): Server {
       const categories = await storage.listUtilityCategories(activeOnly);
       res.json(categories);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -23693,6 +24234,7 @@ export function registerRoutes(app: Express): Server {
       }
       res.json(category);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -23704,6 +24246,7 @@ export function registerRoutes(app: Express): Server {
       const category = await storage.createUtilityCategory(validatedData);
       res.status(201).json(category);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       if (error.name === 'ZodError') {
         return res.status(422).json({ error: 'Dati non validi', details: error.errors });
       }
@@ -23718,6 +24261,7 @@ export function registerRoutes(app: Express): Server {
       const category = await storage.updateUtilityCategory(req.params.id, validatedData);
       res.json(category);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       if (error.name === 'ZodError') {
         return res.status(422).json({ error: 'Dati non validi', details: error.errors });
       }
@@ -23731,6 +24275,7 @@ export function registerRoutes(app: Express): Server {
       await storage.deleteUtilityCategory(req.params.id);
       res.status(204).send();
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(400).send(error.message);
     }
   });
@@ -23756,6 +24301,7 @@ export function registerRoutes(app: Express): Server {
       const suppliers = await storage.listUtilitySuppliers(filters);
       res.json(suppliers);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -23785,6 +24331,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json(supplier);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -23812,6 +24359,7 @@ export function registerRoutes(app: Express): Server {
       const supplier = await storage.createUtilitySupplier(validated);
       res.status(201).json(supplier);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(400).send(error.message);
     }
   });
@@ -23838,6 +24386,7 @@ export function registerRoutes(app: Express): Server {
       const supplier = await storage.updateUtilitySupplier(req.params.id, req.body);
       res.json(supplier);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(400).send(error.message);
     }
   });
@@ -23862,6 +24411,7 @@ export function registerRoutes(app: Express): Server {
       await storage.deleteUtilitySupplier(req.params.id);
       res.status(204).send();
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -23875,6 +24425,7 @@ export function registerRoutes(app: Express): Server {
       const services = await storage.listUtilityServices(supplierId);
       res.json(services);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -23888,6 +24439,7 @@ export function registerRoutes(app: Express): Server {
       }
       res.json(service);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -23899,6 +24451,7 @@ export function registerRoutes(app: Express): Server {
       const service = await storage.createUtilityService(validated);
       res.status(201).json(service);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(400).send(error.message);
     }
   });
@@ -23909,6 +24462,7 @@ export function registerRoutes(app: Express): Server {
       const service = await storage.updateUtilityService(req.params.id, req.body);
       res.json(service);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(400).send(error.message);
     }
   });
@@ -23919,6 +24473,7 @@ export function registerRoutes(app: Express): Server {
       await storage.deleteUtilityService(req.params.id);
       res.status(204).send();
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -24023,6 +24578,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json(enrichedPractices);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -24118,6 +24674,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json({ ...practice, supplier, service, product, practiceProducts: productsWithDetails, reseller, parentReseller, repairCenter });
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -24219,6 +24776,7 @@ export function registerRoutes(app: Express): Server {
       const practice = await storage.createUtilityPractice(validated);
       res.status(201).json(practice);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(400).send(error.message);
     }
   });
@@ -24314,6 +24872,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json(updated);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(400).send(error.message);
     }
   });
@@ -24324,6 +24883,7 @@ export function registerRoutes(app: Express): Server {
       await storage.deleteUtilityPractice(req.params.id);
       res.status(204).send();
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -24382,6 +24942,7 @@ export function registerRoutes(app: Express): Server {
       const commissions = await storage.listUtilityCommissions(filters);
       res.json(commissions);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -24426,6 +24987,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json(commission);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -24437,6 +24999,7 @@ export function registerRoutes(app: Express): Server {
       const commission = await storage.createUtilityCommission(validated);
       res.status(201).json(commission);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(400).send(error.message);
     }
   });
@@ -24447,6 +25010,7 @@ export function registerRoutes(app: Express): Server {
       const commission = await storage.updateUtilityCommission(req.params.id, req.body);
       res.json(commission);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(400).send(error.message);
     }
   });
@@ -24457,6 +25021,7 @@ export function registerRoutes(app: Express): Server {
       await storage.deleteUtilityCommission(req.params.id);
       res.status(204).send();
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -24513,6 +25078,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json(updated);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(400).send(error.message);
     }
   });
@@ -24575,6 +25141,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json(updated);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(400).send(error.message);
     }
   });
@@ -24613,6 +25180,7 @@ export function registerRoutes(app: Express): Server {
       const documents = await storage.listUtilityPracticeDocuments(req.params.id);
       res.json(documents);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -24689,6 +25257,7 @@ export function registerRoutes(app: Express): Server {
       
       res.status(201).json(document);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       console.error("Error uploading utility document:", error);
       res.status(400).send(error.message);
     }
@@ -24733,6 +25302,7 @@ export function registerRoutes(app: Express): Server {
       // Stream file to response
       file.createReadStream().pipe(res);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       console.error("Error downloading utility document:", error);
       res.status(500).send(error.message);
     }
@@ -24779,6 +25349,7 @@ export function registerRoutes(app: Express): Server {
       
       res.status(204).send();
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -24817,6 +25388,7 @@ export function registerRoutes(app: Express): Server {
       const tasks = await storage.listUtilityPracticeTasks(req.params.id);
       res.json(tasks);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -24864,6 +25436,7 @@ export function registerRoutes(app: Express): Server {
       
       res.status(201).json(task);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(400).send(error.message);
     }
   });
@@ -24916,6 +25489,7 @@ export function registerRoutes(app: Express): Server {
       const task = await storage.updateUtilityPracticeTask(req.params.id, updates);
       res.json(task);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(400).send(error.message);
     }
   });
@@ -24952,6 +25526,7 @@ export function registerRoutes(app: Express): Server {
       await storage.deleteUtilityPracticeTask(req.params.id);
       res.status(204).send();
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -24996,6 +25571,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json(notes);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -25044,6 +25620,7 @@ export function registerRoutes(app: Express): Server {
       
       res.status(201).json(note);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(400).send(error.message);
     }
   });
@@ -25081,6 +25658,7 @@ export function registerRoutes(app: Express): Server {
       await storage.deleteUtilityPracticeNote(req.params.id);
       res.status(204).send();
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -25119,6 +25697,7 @@ export function registerRoutes(app: Express): Server {
       const timeline = await storage.listUtilityPracticeTimeline(req.params.id);
       res.json(timeline);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -25160,6 +25739,7 @@ export function registerRoutes(app: Express): Server {
       
       res.status(201).json(event);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(400).send(error.message);
     }
   });
@@ -25198,6 +25778,7 @@ export function registerRoutes(app: Express): Server {
       const history = await storage.listUtilityPracticeStateHistory(req.params.id);
       res.json(history);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -25356,6 +25937,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json({ practice: updated, invoice });
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(400).send(error.message);
     }
   });
@@ -25439,6 +26021,7 @@ export function registerRoutes(app: Express): Server {
         supplierCount: suppliers.length,
       });
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -25465,6 +26048,7 @@ export function registerRoutes(app: Express): Server {
         hasClientKey: !!credential.clientKey,
       });
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -25504,6 +26088,7 @@ export function registerRoutes(app: Express): Server {
         hasClientKey: !!credential.clientKey,
       });
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(400).send(error.message);
     }
   });
@@ -25529,6 +26114,7 @@ export function registerRoutes(app: Express): Server {
       const result = await sifarService.testConnection(storeCode);
       res.json(result);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(400).send(error.message);
     }
   });
@@ -25546,6 +26132,7 @@ export function registerRoutes(app: Express): Server {
       const stores = await storage.listSifarStores(credential.id);
       res.json(stores);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -25586,6 +26173,7 @@ export function registerRoutes(app: Express): Server {
       
       res.status(201).json(store);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(400).send(error.message);
     }
   });
@@ -25608,6 +26196,7 @@ export function registerRoutes(app: Express): Server {
       await storage.deleteSifarStore(req.params.id);
       res.status(204).send();
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(400).send(error.message);
     }
   });
@@ -25633,6 +26222,7 @@ export function registerRoutes(app: Express): Server {
       const brands = await sifarService.getBrands(storeCode);
       res.json(brands);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(400).send(error.message);
     }
   });
@@ -25660,6 +26250,7 @@ export function registerRoutes(app: Express): Server {
       const models = await sifarService.getModelsByBrand(storeCode, brandCode);
       res.json(models);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(400).send(error.message);
     }
   });
@@ -25685,6 +26276,7 @@ export function registerRoutes(app: Express): Server {
       const categories = await sifarService.getCategories(storeCode);
       res.json(categories);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(400).send(error.message);
     }
   });
@@ -25710,6 +26302,7 @@ export function registerRoutes(app: Express): Server {
       const groups = await sifarService.getGroups(storeCode);
       res.json(groups);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(400).send(error.message);
     }
   });
@@ -25739,6 +26332,7 @@ export function registerRoutes(app: Express): Server {
       const articles = await sifarService.getArticlesByModel(storeCode, modelCode, categoryCode, groupCode);
       res.json(articles);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(400).send(error.message);
     }
   });
@@ -25764,6 +26358,7 @@ export function registerRoutes(app: Express): Server {
       const article = await sifarService.getArticleDetail(storeCode, req.params.code);
       res.json(article);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(400).send(error.message);
     }
   });
@@ -25789,6 +26384,7 @@ export function registerRoutes(app: Express): Server {
       const cart = await sifarService.getCartDetail(storeCode);
       res.json(cart);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(400).send(error.message);
     }
   });
@@ -25815,6 +26411,7 @@ export function registerRoutes(app: Express): Server {
       await sifarService.addToCart(storeCode, articleCode, quantity);
       res.json({ success: true });
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(400).send(error.message);
     }
   });
@@ -25841,6 +26438,7 @@ export function registerRoutes(app: Express): Server {
       await sifarService.updateCartItem(storeCode, articleCode, quantity);
       res.json({ success: true });
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(400).send(error.message);
     }
   });
@@ -25868,6 +26466,7 @@ export function registerRoutes(app: Express): Server {
       await sifarService.removeFromCart(storeCode, articleCode);
       res.json({ success: true });
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(400).send(error.message);
     }
   });
@@ -25893,6 +26492,7 @@ export function registerRoutes(app: Express): Server {
       await sifarService.clearCart(storeCode);
       res.json({ success: true });
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(400).send(error.message);
     }
   });
@@ -25918,6 +26518,7 @@ export function registerRoutes(app: Express): Server {
       const couriers = await sifarService.getCouriers(storeCode);
       res.json(couriers);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(400).send(error.message);
     }
   });
@@ -25944,6 +26545,7 @@ export function registerRoutes(app: Express): Server {
       const order = await sifarService.submitOrder(storeCode, courierId);
       res.json(order);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(400).send(error.message);
     }
   });
@@ -25969,6 +26571,7 @@ export function registerRoutes(app: Express): Server {
       const orders = await sifarService.getOrders(storeCode);
       res.json(orders);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(400).send(error.message);
     }
   });
@@ -25994,6 +26597,7 @@ export function registerRoutes(app: Express): Server {
       const order = await sifarService.getOrderDetail(storeCode, req.params.id);
       res.json(order);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(400).send(error.message);
     }
   });
@@ -26010,6 +26614,7 @@ export function registerRoutes(app: Express): Server {
       const credential = await storage.getFonedayCredentialByReseller(req.user.id);
       res.json(credential || null);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -26041,6 +26646,7 @@ export function registerRoutes(app: Express): Server {
         res.json(created);
       }
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -26058,6 +26664,7 @@ export function registerRoutes(app: Express): Server {
       await storage.deleteFonedayCredential(existing.id);
       res.json({ success: true });
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -26085,6 +26692,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json(result);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(400).send(error.message);
     }
   });
@@ -26105,6 +26713,7 @@ export function registerRoutes(app: Express): Server {
       const categories = await fonedayService.getCategories();
       res.json(categories);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(400).send(error.message);
     }
   });
@@ -26125,6 +26734,7 @@ export function registerRoutes(app: Express): Server {
       const brands = await fonedayService.getBrands();
       res.json(brands);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(400).send(error.message);
     }
   });
@@ -26231,6 +26841,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json({ ...products, cached: false });
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(400).send(error.message);
     }
   });
@@ -26271,6 +26882,7 @@ export function registerRoutes(app: Express): Server {
         isExpired,
       });
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(400).send(error.message);
     }
   });
@@ -26364,6 +26976,7 @@ export function registerRoutes(app: Express): Server {
         });
       }
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(400).send(error.message);
     }
   });
@@ -26384,6 +26997,7 @@ export function registerRoutes(app: Express): Server {
       const product = await fonedayService.getProduct(req.params.sku);
       res.json(product);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(400).send(error.message);
     }
   });
@@ -26402,6 +27016,7 @@ export function registerRoutes(app: Express): Server {
       const cart = fonedayCartCache.get(req.user.id) || [];
       res.json({ cart });
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(400).send(error.message);
     }
   });
@@ -26451,6 +27066,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json({ cart: currentCart });
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(400).send(error.message);
     }
   });
@@ -26495,6 +27111,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json({ cart: currentCart });
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(400).send(error.message);
     }
   });
@@ -26507,6 +27124,7 @@ export function registerRoutes(app: Express): Server {
       fonedayCartCache.set(req.user.id, []);
       res.json({ cart: [] });
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(400).send(error.message);
     }
   });
@@ -26527,6 +27145,7 @@ export function registerRoutes(app: Express): Server {
       const methods = await fonedayService.getShippingMethods();
       res.json(methods);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(400).send(error.message);
     }
   });
@@ -26562,6 +27181,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json(order);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(400).send(error.message);
     }
   });
@@ -26585,6 +27205,7 @@ export function registerRoutes(app: Express): Server {
       const orders = await fonedayService.getOrders(page, perPage);
       res.json(orders);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(400).send(error.message);
     }
   });
@@ -26605,6 +27226,7 @@ export function registerRoutes(app: Express): Server {
       const order = await fonedayService.getOrder(req.params.id);
       res.json(order);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(400).send(error.message);
     }
   });
@@ -26628,6 +27250,7 @@ export function registerRoutes(app: Express): Server {
       const invoices = await fonedayService.getInvoices(page, perPage);
       res.json(invoices);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(400).send(error.message);
     }
   });
@@ -26648,6 +27271,7 @@ export function registerRoutes(app: Express): Server {
       const invoice = await fonedayService.getInvoice(req.params.id);
       res.json(invoice);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(400).send(error.message);
     }
   });
@@ -26668,6 +27292,7 @@ export function registerRoutes(app: Express): Server {
       const result = await fonedayService.downloadInvoicePdf(req.params.id);
       res.json(result);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(400).send(error.message);
     }
   });
@@ -26683,6 +27308,7 @@ export function registerRoutes(app: Express): Server {
       const credential = await storage.getMobilesentrixCredentialByReseller(req.user.id);
       res.json(credential || null);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -26720,6 +27346,7 @@ export function registerRoutes(app: Express): Server {
         res.json(created);
       }
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -26735,6 +27362,7 @@ export function registerRoutes(app: Express): Server {
       }
       res.json({ success: true });
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -26763,6 +27391,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json({ authorizeUrl, callbackUrl });
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -26923,6 +27552,7 @@ export function registerRoutes(app: Express): Server {
       }
       
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send("Errore OAuth: " + error.message);
     }
   });
@@ -27001,6 +27631,7 @@ export function registerRoutes(app: Express): Server {
         message: "Access Token ottenuto e salvato con successo!",
       });
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -27027,6 +27658,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json(result);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(400).send(error.message);
     }
   });
@@ -27051,6 +27683,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json({ items, totalItems, totalAmount });
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(400).send(error.message);
     }
   });
@@ -27070,6 +27703,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json({ count });
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(400).send(error.message);
     }
   });
@@ -27117,6 +27751,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json(item);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(400).send(error.message);
     }
   });
@@ -27147,6 +27782,7 @@ export function registerRoutes(app: Express): Server {
       const updated = await storage.updateMobilesentrixCartItem(id, { quantity });
       res.json(updated);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(400).send(error.message);
     }
   });
@@ -27172,6 +27808,7 @@ export function registerRoutes(app: Express): Server {
       await storage.deleteMobilesentrixCartItem(id);
       res.json({ success: true });
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(400).send(error.message);
     }
   });
@@ -27189,6 +27826,7 @@ export function registerRoutes(app: Express): Server {
       await storage.clearMobilesentrixCart(credential.id);
       res.json({ success: true });
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(400).send(error.message);
     }
   });
@@ -27263,6 +27901,7 @@ export function registerRoutes(app: Express): Server {
         });
       }
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(400).send(error.message);
     }
   });
@@ -27312,6 +27951,7 @@ export function registerRoutes(app: Express): Server {
         res.json(orders);
       }
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       console.error("MobileSentrix orders error:", error);
       res.status(400).send(error.message);
     }
@@ -27338,6 +27978,7 @@ export function registerRoutes(app: Express): Server {
       const items = await storage.getMobilesentrixOrderItems(id);
       res.json({ ...order, items });
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(400).send(error.message);
     }
   });
@@ -27359,6 +28000,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json({ success: true, data: orderDetails });
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       console.error("Error fetching order details:", error);
       res.status(400).json({ success: false, message: error.message });
     }
@@ -27382,6 +28024,7 @@ export function registerRoutes(app: Express): Server {
       const addresses = await mobilesentrixService.getCustomerAddresses();
       res.json(addresses);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(400).send(error.message);
     }
   });
@@ -27401,6 +28044,7 @@ export function registerRoutes(app: Express): Server {
       const categories = await mobilesentrixService.getCategories();
       res.json(categories);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(400).send(error.message);
     }
   });
@@ -27420,6 +28064,7 @@ export function registerRoutes(app: Express): Server {
       const brands = await mobilesentrixService.getBrands();
       res.json(brands);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(400).send(error.message);
     }
   });
@@ -27447,6 +28092,7 @@ export function registerRoutes(app: Express): Server {
       const result = await mobilesentrixService.searchProducts(params);
       res.json(result);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(400).send(error.message);
     }
   });
@@ -27466,6 +28112,7 @@ export function registerRoutes(app: Express): Server {
       const product = await mobilesentrixService.getProduct(req.params.id);
       res.json(product);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(400).send(error.message);
     }
   });
@@ -27498,6 +28145,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json({ methods, defaultMethod, countryId });
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(400).send(error.message);
     }
   });
@@ -27517,6 +28165,7 @@ export function registerRoutes(app: Express): Server {
       const accountInfo = await mobilesentrixService.getAccountInfo();
       res.json(accountInfo);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(400).send(error.message);
     }
   });
@@ -27603,6 +28252,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json({ suggestions });
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       console.error("Geocode autocomplete error:", error.message);
       res.json({ suggestions: [] });
     }
@@ -27658,6 +28308,7 @@ export function registerRoutes(app: Express): Server {
         country: "IT"
       });
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       console.error("Geocode retrieve error:", error.message);
       res.status(500).json({ error: error.message });
     }
@@ -27673,6 +28324,7 @@ export function registerRoutes(app: Express): Server {
       const addresses = await storage.listCustomerAddresses(req.user.id);
       res.json(addresses);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -27684,6 +28336,7 @@ export function registerRoutes(app: Express): Server {
       if (address.customerId !== req.user?.id) return res.status(403).json({ error: "Accesso negato" });
       res.json(address);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -27698,6 +28351,7 @@ export function registerRoutes(app: Express): Server {
       });
       res.json(address);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -27710,6 +28364,7 @@ export function registerRoutes(app: Express): Server {
       const updated = await storage.updateCustomerAddress(req.params.id, req.body);
       res.json(updated);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -27722,6 +28377,7 @@ export function registerRoutes(app: Express): Server {
       await storage.deleteCustomerAddress(req.params.id);
       res.json({ success: true });
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -27735,6 +28391,7 @@ export function registerRoutes(app: Express): Server {
       await storage.setDefaultAddress(req.user.id, req.params.id, req.body.isBilling || false);
       res.json({ success: true });
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -27791,6 +28448,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json({ products: paginatedProducts, total, limit: limitNum, offset: offsetNum });
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -27846,6 +28504,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json(result);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -27876,6 +28535,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json({ products: paginatedProducts, total, limit: limitNum, offset: offsetNum });
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -27945,6 +28605,7 @@ export function registerRoutes(app: Express): Server {
         hasValidSellers: sellers.length > 0,
       });
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -27964,6 +28625,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json({ product, specs });
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -28007,6 +28669,7 @@ export function registerRoutes(app: Express): Server {
       }
       res.json({ cart, items: itemsWithProducts, customerVatRate });
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -28094,6 +28757,7 @@ export function registerRoutes(app: Express): Server {
       await storage.updateCart(cart.id, { subtotal, total: subtotal });
       
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -28126,6 +28790,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json(updated);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -28145,6 +28810,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json({ success: true });
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -28154,6 +28820,7 @@ export function registerRoutes(app: Express): Server {
       await storage.clearCart(req.params.cartId);
       res.json({ success: true });
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -28216,6 +28883,7 @@ export function registerRoutes(app: Express): Server {
         publishableKey: paymentConfig.stripePublishableKey,
       });
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       console.error("Shop Stripe PaymentIntent error:", error);
       res.status(500).json({ error: error.message || "Errore creazione pagamento Stripe" });
     }
@@ -28354,6 +29022,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json({ order, orderNumber: order.orderNumber });
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -28368,6 +29037,7 @@ export function registerRoutes(app: Express): Server {
       const orders = await storage.listSalesOrders({ customerId: req.user.id });
       res.json(orders);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -28385,6 +29055,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json({ order, items, payments, shipments });
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -28412,6 +29083,7 @@ export function registerRoutes(app: Express): Server {
       const orders = await storage.listSalesOrders(filters);
       res.json(orders);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -28437,6 +29109,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json({ order, items, payments, shipments, history });
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -28519,6 +29192,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json({ ...updated, generatedInvoice: invoice });
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -28543,6 +29217,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json(payments);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -28552,6 +29227,7 @@ export function registerRoutes(app: Express): Server {
       const payments = await storage.listSalesOrderPayments(req.params.orderId);
       res.json(payments);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -28569,6 +29245,7 @@ export function registerRoutes(app: Express): Server {
       });
       res.json(payment);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -28632,6 +29309,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json(payments);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -28657,6 +29335,7 @@ export function registerRoutes(app: Express): Server {
       const updated = await storage.updateSalesOrderPayment(req.params.id, updates);
       res.json(updated);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -28737,6 +29416,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json(shipments);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       console.error("Shipments endpoint error:", error);
       res.status(500).json({ error: error.message });
     }
@@ -28750,6 +29430,7 @@ export function registerRoutes(app: Express): Server {
       const shipments = await storage.listSalesOrderShipments(req.params.orderId);
       res.json(shipments);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -28767,6 +29448,7 @@ export function registerRoutes(app: Express): Server {
       });
       res.json(shipment);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -28781,6 +29463,7 @@ export function registerRoutes(app: Express): Server {
       const updated = await storage.updateSalesOrderShipment(req.params.id, req.body);
       res.json(updated);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -28790,6 +29473,7 @@ export function registerRoutes(app: Express): Server {
       const events = await storage.listShipmentTrackingEvents(req.params.id);
       res.json(events);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -28807,6 +29491,7 @@ export function registerRoutes(app: Express): Server {
       });
       res.json(event);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -28839,6 +29524,7 @@ export function registerRoutes(app: Express): Server {
       const returns = await storage.listSalesOrderReturns(filters);
       res.json(returns);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -28866,6 +29552,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json(returnOrder);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -28918,6 +29605,7 @@ export function registerRoutes(app: Express): Server {
       
       res.status(201).json(returnData);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -28933,6 +29621,7 @@ export function registerRoutes(app: Express): Server {
       const updated = await storage.updateSalesOrderReturn(req.params.id, req.body);
       res.json(updated);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -28943,6 +29632,7 @@ export function registerRoutes(app: Express): Server {
       const items = await storage.listSalesOrderReturnItems(req.params.returnId);
       res.json(items);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -28958,6 +29648,7 @@ export function registerRoutes(app: Express): Server {
       });
       res.status(201).json(item);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -28973,6 +29664,7 @@ export function registerRoutes(app: Express): Server {
       const updated = await storage.updateSalesOrderReturnItem(req.params.id, req.body);
       res.json(updated);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -28985,6 +29677,7 @@ export function registerRoutes(app: Express): Server {
       await storage.deleteSalesOrderReturnItem(req.params.id);
       res.status(204).send();
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -29037,6 +29730,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json(enrichedWarehouses);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -29063,6 +29757,7 @@ export function registerRoutes(app: Express): Server {
       const warehouses = await storage.listWarehouses(filters);
       res.json(warehouses);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -29139,6 +29834,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json(enriched);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -29149,6 +29845,7 @@ export function registerRoutes(app: Express): Server {
       if (!warehouse) return res.status(404).json({ error: "Magazzino non trovato" });
       res.json(warehouse);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -29180,6 +29877,7 @@ export function registerRoutes(app: Express): Server {
       const warehouse = await storage.ensureDefaultWarehouse(ownerType, ownerId, ownerName);
       res.json(warehouse);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -29317,6 +30015,7 @@ export function registerRoutes(app: Express): Server {
         destinationWarehouse: { id: destWarehouse.id, name: destWarehouse.name },
       });
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       console.error("Transfer error:", error);
       res.status(500).json({ error: error.message });
     }
@@ -29331,6 +30030,7 @@ export function registerRoutes(app: Express): Server {
       const warehouse = await storage.createWarehouse(req.body);
       res.status(201).json(warehouse);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -29341,6 +30041,7 @@ export function registerRoutes(app: Express): Server {
       const updated = await storage.updateWarehouse(req.params.id, req.body);
       res.json(updated);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -29354,6 +30055,7 @@ export function registerRoutes(app: Express): Server {
       await storage.deleteWarehouse(req.params.id);
       res.status(204).send();
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -29368,6 +30070,7 @@ export function registerRoutes(app: Express): Server {
       }));
       res.json(enrichedStock);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       console.error('[ERROR] GET /api/warehouses/:warehouseId/stock:', error);
       res.status(500).json({ error: error.message });
     }
@@ -29391,6 +30094,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json(productsWithStock);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -29420,6 +30124,7 @@ export function registerRoutes(app: Express): Server {
       }
       res.json(stock);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -29449,6 +30154,7 @@ export function registerRoutes(app: Express): Server {
       }));
       res.json(enrichedMovements);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -29473,6 +30179,7 @@ export function registerRoutes(app: Express): Server {
       await storage.updateWarehouseStockQuantity(req.params.warehouseId, productId, quantityDelta);
       res.status(201).json(movement);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -29501,6 +30208,7 @@ export function registerRoutes(app: Express): Server {
       const updated = await storage.updateWarehouseStock(req.params.stockId, { minStock, location, quantity });
       res.json(updated);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -29529,6 +30237,7 @@ export function registerRoutes(app: Express): Server {
       }));
       res.json(enrichedTransfers);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -29548,6 +30257,7 @@ export function registerRoutes(app: Express): Server {
       const dest = await storage.getWarehouse(transfer.destinationWarehouseId);
       res.json({ ...transfer, sourceWarehouse: source, destinationWarehouse: dest, items: enrichedItems });
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -29576,6 +30286,7 @@ export function registerRoutes(app: Express): Server {
       }
       res.status(201).json(transfer);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -29627,6 +30338,7 @@ export function registerRoutes(app: Express): Server {
       const updated = await storage.updateWarehouseTransfer(req.params.id, updates);
       res.json(updated);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -29661,6 +30373,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json(results);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       console.error("searchProductsWithStock error:", error);
       res.status(500).json({ error: error.message });
     }
@@ -29713,6 +30426,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json({ active, history, stats });
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -29739,6 +30453,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json(enriched);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -29761,6 +30476,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json({ ...request, items: enrichedItems, sourceWarehouse, requesterWarehouse });
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -29816,6 +30532,7 @@ export function registerRoutes(app: Express): Server {
       }
       res.status(201).json(request);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -29832,6 +30549,7 @@ export function registerRoutes(app: Express): Server {
       const updated = await storage.updateTransferRequest(req.params.id, { status: 'cancelled' });
       res.json(updated);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -29870,6 +30588,7 @@ export function registerRoutes(app: Express): Server {
       });
       res.json(updated);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -29894,6 +30613,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json(results);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -29924,6 +30644,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json(enriched);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -29977,6 +30698,7 @@ export function registerRoutes(app: Express): Server {
       }
       res.status(201).json(request);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -30040,6 +30762,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json(updated);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -30053,6 +30776,7 @@ export function registerRoutes(app: Express): Server {
       const pendingCount = await storage.countIncomingTransferRequests(resellerId, 'pending');
       res.json({ pendingCount });
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -30118,6 +30842,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json({ incoming, outgoing, history, stats });
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -30146,6 +30871,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json(enriched);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -30171,6 +30897,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json({ ...request, items: enrichedItems, sourceWarehouse, requesterWarehouse, requester });
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -30211,6 +30938,7 @@ export function registerRoutes(app: Express): Server {
         res.status(400).json({ error: "Decisione non valida" });
       }
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -30261,6 +30989,7 @@ export function registerRoutes(app: Express): Server {
       });
       res.json(updated);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -30365,6 +31094,7 @@ export function registerRoutes(app: Express): Server {
       res.setHeader("Content-Disposition", `attachment; filename="${request.ddtNumber}.pdf"`);
       res.send(pdfBuffer);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -30426,6 +31156,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json({ active, history, stats });
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -30469,6 +31200,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json(enrichedRequests);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -30488,6 +31220,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json({ ...request, items: enrichedItems });
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -30526,6 +31259,7 @@ export function registerRoutes(app: Express): Server {
         res.status(400).json({ error: "Decisione non valida" });
       }
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -30563,6 +31297,7 @@ export function registerRoutes(app: Express): Server {
       });
       res.json(updated);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -30578,6 +31313,7 @@ export function registerRoutes(app: Express): Server {
       const catalog = await storage.getAdminCatalogForReseller(req.user.id);
       res.json(catalog);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -30602,6 +31338,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json(enrichedOrders);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -30627,6 +31364,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json({ ...order, items: enrichedItems, returns });
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -30699,6 +31437,7 @@ export function registerRoutes(app: Express): Server {
         publishableKey: adminConfig.stripePublishableKey,
       });
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       console.error("Stripe PaymentIntent error:", error);
       res.status(500).json({ error: error.message || "Errore creazione pagamento Stripe" });
     }
@@ -30814,6 +31553,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json({ checkoutUrl: session.url });
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       console.error("Stripe Checkout error:", error);
       res.status(500).json({ error: error.message || "Errore creazione sessione Stripe" });
     }
@@ -30893,6 +31633,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json({ orderId: order.id, success: true });
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       console.error("Stripe success handler error:", error);
       res.status(500).json({ error: error.message || "Errore elaborazione ordine" });
     }
@@ -31041,6 +31782,7 @@ export function registerRoutes(app: Express): Server {
       const createdItems = await storage.listResellerPurchaseOrderItems(order.id);
       res.status(201).json({ ...order, items: createdItems });
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -31076,6 +31818,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json(enrichedOrders);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -31104,6 +31847,7 @@ export function registerRoutes(app: Express): Server {
         items: enrichedItems 
       });
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -31133,6 +31877,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json(enrichedOrders);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -31160,6 +31905,7 @@ export function registerRoutes(app: Express): Server {
         items: enrichedItems 
       });
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -31236,6 +31982,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json(updated);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -31298,6 +32045,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json({ ...updated, paymentId: payment.id });
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -31322,6 +32070,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json(updated);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -31355,6 +32104,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json({ ...updated, generatedInvoice: invoice });
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -31378,6 +32128,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json(updated);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -31393,6 +32144,7 @@ export function registerRoutes(app: Express): Server {
       const returns = await storage.listB2bReturns({ resellerId: req.user.id });
       res.json(returns);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -31408,6 +32160,7 @@ export function registerRoutes(app: Express): Server {
       const items = await storage.listB2bReturnItems(returnDoc.id);
       res.json({ ...returnDoc, items });
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -31466,6 +32219,7 @@ export function registerRoutes(app: Express): Server {
       const returnItems = await storage.listB2bReturnItems(returnDoc.id);
       res.status(201).json({ ...returnDoc, items: returnItems });
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -31493,6 +32247,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json(updated);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -31507,6 +32262,7 @@ export function registerRoutes(app: Express): Server {
       });
       res.json(returns);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -31537,6 +32293,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json({ ...returnDoc, items: enrichedItems, reseller, order });
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -31600,6 +32357,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json(updated);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -31624,6 +32382,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json(updated);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -31693,6 +32452,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json(updated);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -31719,6 +32479,7 @@ export function registerRoutes(app: Express): Server {
       
       file.createReadStream().pipe(res);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -31745,6 +32506,7 @@ export function registerRoutes(app: Express): Server {
       
       file.createReadStream().pipe(res);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -31767,6 +32529,7 @@ export function registerRoutes(app: Express): Server {
       
       file.createReadStream().pipe(res);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -31789,6 +32552,7 @@ export function registerRoutes(app: Express): Server {
       
       file.createReadStream().pipe(res);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -31834,6 +32598,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json(updated);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -31849,6 +32614,7 @@ export function registerRoutes(app: Express): Server {
       const catalog = await storage.listMarketplaceCatalog(req.user.id);
       res.json(catalog);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -31872,6 +32638,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json(enrichedOrders);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -31901,6 +32668,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json(enrichedOrders);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -31929,6 +32697,7 @@ export function registerRoutes(app: Express): Server {
         buyerName: buyer?.fullName || buyer?.ragioneSociale || 'Rivenditore'
       });
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -32023,6 +32792,7 @@ export function registerRoutes(app: Express): Server {
         publishableKey: sellerPaymentConfig.stripePublishableKey,
       });
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       console.error("Stripe PaymentIntent error:", error);
       res.status(500).json({ error: error.message || "Errore creazione PaymentIntent" });
     }
@@ -32266,6 +33036,7 @@ export function registerRoutes(app: Express): Server {
       const createdItems = await storage.listMarketplaceOrderItems(order.id);
       res.json({ ...order, items: createdItems });
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -32365,6 +33136,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json(updated);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -32395,6 +33167,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json(updated);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -32437,6 +33210,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json({ ...updated, generatedInvoice: invoice });
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -32462,6 +33236,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json(updated);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -32487,6 +33262,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json(updated);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -32521,6 +33297,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json(validCatalog);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -32692,6 +33469,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json(order);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -32786,6 +33564,7 @@ export function registerRoutes(app: Express): Server {
         publishableKey: sellerPaymentConfig.stripePublishableKey,
       });
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       console.error("RC Marketplace Stripe PaymentIntent error:", error);
       res.status(500).json({ error: error.message || "Errore creazione pagamento Stripe" });
     }
@@ -32815,6 +33594,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json(enrichedOrders);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -32887,6 +33667,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json(catalog.filter(Boolean));
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -32912,6 +33693,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json(enrichedOrders);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -32937,6 +33719,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json({ ...order, items: enrichedItems });
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -33117,6 +33900,7 @@ export function registerRoutes(app: Express): Server {
       const createdItems = await storage.listRepairCenterPurchaseOrderItems(order.id);
       res.status(201).json({ ...order, items: createdItems });
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -33190,6 +33974,7 @@ export function registerRoutes(app: Express): Server {
         publishableKey: parentConfig.stripePublishableKey,
       });
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       console.error("RC Stripe PaymentIntent error:", error);
       res.status(500).json({ error: error.message || "Errore creazione pagamento Stripe" });
     }
@@ -33216,6 +34001,7 @@ export function registerRoutes(app: Express): Server {
       const clientToken = await getPayPalClientToken(config.paypalClientId, decryptedSecret);
       res.json({ clientToken });
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       console.error("RC PayPal setup error:", error);
       res.status(500).json({ error: "Errore configurazione PayPal" });
     }
@@ -33256,6 +34042,7 @@ export function registerRoutes(app: Express): Server {
       );
       res.status(result.statusCode).json(result.body);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       console.error("RC PayPal order creation error:", error);
       res.status(500).json({ error: "Errore creazione ordine PayPal" });
     }
@@ -33284,6 +34071,7 @@ export function registerRoutes(app: Express): Server {
       const result = await capturePayPalOrderHandler(config.paypalClientId, decryptedSecret, orderID);
       res.status(result.statusCode).json(result.body);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       console.error("RC PayPal capture error:", error);
       res.status(500).json({ error: "Errore cattura pagamento PayPal" });
     }
@@ -33312,6 +34100,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json(updated);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -33369,6 +34158,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json(enrichedOrders);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -33429,6 +34219,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json(updated);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -33456,6 +34247,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json(updated);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -33499,6 +34291,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json({ ...updated, generatedInvoice: invoice });
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -33516,6 +34309,7 @@ export function registerRoutes(app: Express): Server {
       const returns = await storage.listRcB2bReturns({ repairCenterId: req.user.repairCenterId });
       res.json(returns);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -33536,6 +34330,7 @@ export function registerRoutes(app: Express): Server {
       const items = await storage.listRcB2bReturnItems(returnDoc.id);
       res.json({ ...returnDoc, items });
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -33642,6 +34437,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json(returnDoc);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -33673,6 +34469,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json(updated);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -33684,6 +34481,7 @@ export function registerRoutes(app: Express): Server {
       const returns = await storage.listRcB2bReturns({ resellerId: req.user.id });
       res.json(returns);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -33709,6 +34507,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json(updated);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -33736,6 +34535,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json(updated);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -33766,6 +34566,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json(updated);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -33871,6 +34672,7 @@ export function registerRoutes(app: Express): Server {
       const { password: _, ...safeUser } = user;
       res.status(201).json({ customer: safeUser, tempPassword: password });
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(400).send(error.message);
     }
   });
@@ -33912,6 +34714,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json(customersWithStats);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -33940,6 +34743,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json({ ...customer, repairs });
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -33980,6 +34784,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json(catalog);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -34016,6 +34821,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json(catalog);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -34056,6 +34862,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json(catalog);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -34092,6 +34899,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json(configuredCodes);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -34125,6 +34933,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json(enriched);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -34147,6 +34956,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json(enriched);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -34173,6 +34983,7 @@ export function registerRoutes(app: Express): Server {
         hasClientKey: !!cred.clientKey,
       });
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -34193,6 +35004,7 @@ export function registerRoutes(app: Express): Server {
       const stores = await storage.listSifarStores(cred.id);
       res.json(stores);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -34212,6 +35024,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json({ id: cred.id, isActive: cred.isActive });
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -34237,6 +35050,7 @@ export function registerRoutes(app: Express): Server {
         createdAt: cred.createdAt,
       });
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -34257,6 +35071,7 @@ export function registerRoutes(app: Express): Server {
       const shops = await storage.listTrovausatiShops(cred.id);
       res.json(shops);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -34276,6 +35091,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json({ id: cred.id, isActive: cred.isActive });
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -34294,6 +35110,7 @@ export function registerRoutes(app: Express): Server {
       const profiles = await storage.listHrWorkProfilesHierarchical(resellerId);
       res.json(profiles);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -34314,6 +35131,7 @@ export function registerRoutes(app: Express): Server {
       });
       res.json(profile);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -34337,6 +35155,7 @@ export function registerRoutes(app: Express): Server {
       }
       res.json(profile);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -34357,6 +35176,7 @@ export function registerRoutes(app: Express): Server {
       }
       res.json({ success: true });
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -34466,6 +35286,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json(profile);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -34561,6 +35382,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json({ synced, skipped, total: repairCenters.length });
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -34604,6 +35426,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json(filteredEvents);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -34635,6 +35458,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json(event);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -34662,6 +35486,7 @@ export function registerRoutes(app: Express): Server {
       const updated = await storage.updateHrClockEvent(req.params.id, updateData);
       res.json(updated);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -34704,6 +35529,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json(filteredRequests);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -34743,6 +35569,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json(request);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -34783,6 +35610,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json(request);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -34825,6 +35653,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json(filteredSickLeaves);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -34845,6 +35674,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json(sickLeave);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -34863,6 +35693,7 @@ export function registerRoutes(app: Express): Server {
       const sickLeave = await storage.updateHrSickLeave(req.params.id, updateData);
       res.json(sickLeave);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -34931,6 +35762,7 @@ export function registerRoutes(app: Express): Server {
 
       res.json(certificate);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       console.error("Error uploading sick leave certificate:", error);
       res.status(500).json({ error: error.message });
     }
@@ -34969,6 +35801,7 @@ export function registerRoutes(app: Express): Server {
         downloadUrl: signedUrl
       });
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -35010,6 +35843,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json(filteredReports);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -35028,6 +35862,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json(report);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -35061,6 +35896,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json(report);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -35084,6 +35920,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json({ success: true });
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -35095,6 +35932,7 @@ export function registerRoutes(app: Express): Server {
       const items = await storage.listHrExpenseItems(req.params.reportId);
       res.json(items);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -35107,6 +35945,7 @@ export function registerRoutes(app: Express): Server {
       });
       res.json(item);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -35116,6 +35955,7 @@ export function registerRoutes(app: Express): Server {
       await storage.deleteHrExpenseItem(req.params.id);
       res.json({ success: true });
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -35164,6 +36004,7 @@ export function registerRoutes(app: Express): Server {
       const signedUrl = await signObjectURL({ bucketName: bName, objectName: oName, method: "GET", ttlSec: 3600 });
       res.json({ ...updatedItem, signedReceiptUrl: signedUrl });
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -35190,6 +36031,7 @@ export function registerRoutes(app: Express): Server {
       const signedUrl = await signObjectURL({ bucketName: bn, objectName: on, method: "GET", ttlSec: 3600 });
       res.json({ signedUrl, fileName: item.receiptFileName });
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -35223,6 +36065,7 @@ export function registerRoutes(app: Express): Server {
 
       res.json({ success: true, item: updatedItem });
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -35268,6 +36111,7 @@ export function registerRoutes(app: Express): Server {
       const signedUrl = await signObjectURL({ bucketName: bName, objectName: oName, method: "GET", ttlSec: 3600 });
       res.json({ ...updatedReport, signedReceiptUrl: signedUrl });
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -35291,6 +36135,7 @@ export function registerRoutes(app: Express): Server {
       const signedUrl = await signObjectURL({ bucketName, objectName, method: "GET", ttlSec: 3600 });
       res.json({ signedUrl, fileName: report.receiptFileName });
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -35321,6 +36166,7 @@ export function registerRoutes(app: Express): Server {
 
       res.json({ success: true, report: updatedReport });
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -35340,6 +36186,7 @@ export function registerRoutes(app: Express): Server {
       });
       res.json(absences);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -35358,6 +36205,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json(absence);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -35377,6 +36225,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json(justification);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -35393,6 +36242,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json(justification);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -35407,6 +36257,7 @@ export function registerRoutes(app: Express): Server {
       const entities = await storage.getAccessibleEntitiesForCalendar(resellerId);
       res.json(entities);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -35455,6 +36306,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json(filteredData);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -35499,6 +36351,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json(entities);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -35526,6 +36379,7 @@ export function registerRoutes(app: Express): Server {
       });
       res.json(requests);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -35553,6 +36407,7 @@ export function registerRoutes(app: Express): Server {
       });
       res.json(sickLeaves);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -35580,6 +36435,7 @@ export function registerRoutes(app: Express): Server {
       });
       res.json(reports);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -35608,6 +36464,7 @@ export function registerRoutes(app: Express): Server {
       });
       res.json(events);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -35642,6 +36499,7 @@ export function registerRoutes(app: Express): Server {
       const events = await storage.getHrCalendarData(resellerIds, start, end);
       res.json(events);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -35671,6 +36529,7 @@ export function registerRoutes(app: Express): Server {
       }
       res.json(profiles);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -35702,6 +36561,7 @@ export function registerRoutes(app: Express): Server {
       const updated = await storage.updateHrLeaveRequest(req.params.id, updateData);
       res.json(updated);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -35730,6 +36590,7 @@ export function registerRoutes(app: Express): Server {
       const updated = await storage.updateHrSickLeave(req.params.id, updateData);
       res.json(updated);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -35756,6 +36617,7 @@ export function registerRoutes(app: Express): Server {
       const updated = await storage.updateHrExpenseReport(req.params.id, updateData);
       res.json(updated);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -35766,6 +36628,7 @@ export function registerRoutes(app: Express): Server {
       const items = await storage.listHrExpenseItems(req.params.reportId);
       res.json(items);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -35779,6 +36642,7 @@ export function registerRoutes(app: Express): Server {
       });
       res.json(item);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -35789,6 +36653,7 @@ export function registerRoutes(app: Express): Server {
       await storage.deleteHrExpenseItem(req.params.id);
       res.json({ success: true });
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -35832,6 +36697,7 @@ export function registerRoutes(app: Express): Server {
       const signedUrl = await signObjectURL({ bucketName: bName, objectName: oName, method: "GET", ttlSec: 3600 });
       res.json({ ...updatedItem, signedReceiptUrl: signedUrl });
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -35850,6 +36716,7 @@ export function registerRoutes(app: Express): Server {
       const signedUrl = await signObjectURL({ bucketName: bn, objectName: on, method: "GET", ttlSec: 3600 });
       res.json({ signedUrl, fileName: item.receiptFileName });
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -35875,6 +36742,7 @@ export function registerRoutes(app: Express): Server {
 
       res.json({ success: true, item: updatedItem });
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -35915,6 +36783,7 @@ export function registerRoutes(app: Express): Server {
       const signedUrl = await signObjectURL({ bucketName: bName, objectName: oName, method: "GET", ttlSec: 3600 });
       res.json({ ...updatedReport, signedReceiptUrl: signedUrl });
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -35933,6 +36802,7 @@ export function registerRoutes(app: Express): Server {
       const signedUrl = await signObjectURL({ bucketName, objectName, method: "GET", ttlSec: 3600 });
       res.json({ signedUrl, fileName: report.receiptFileName });
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -35958,6 +36828,7 @@ export function registerRoutes(app: Express): Server {
 
       res.json({ success: true, report: updatedReport });
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -35977,6 +36848,7 @@ export function registerRoutes(app: Express): Server {
       const updated = await storage.updateHrClockEvent(req.params.id, updateData);
       res.json(updated);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -35997,6 +36869,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json(notifications);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -36014,6 +36887,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json(notification);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -36023,6 +36897,7 @@ export function registerRoutes(app: Express): Server {
       const notification = await storage.markHrNotificationRead(req.params.id);
       res.json(notification);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -36043,6 +36918,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json(logs);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -36083,6 +36959,7 @@ export function registerRoutes(app: Express): Server {
         pendingAbsences: absencesThisMonth.length
       });
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -36095,6 +36972,7 @@ export function registerRoutes(app: Express): Server {
       const balance = await storage.getHrLeaveBalance(req.params.userId, new Date().getFullYear());
       res.json(balance || { vacationDays: 0, sickDays: 0, personalDays: 0, usedVacation: 0, usedSick: 0, usedPersonal: 0 });
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -36111,6 +36989,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json(balance);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -36125,6 +37004,7 @@ export function registerRoutes(app: Express): Server {
       const policy = await storage.getHrClockingPolicy(resellerId);
       res.json(policy || { requireGps: false, allowedLocations: [], toleranceMinutes: 15 });
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -36141,6 +37021,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json(policy);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -36187,6 +37068,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json(team);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -36216,6 +37098,7 @@ export function registerRoutes(app: Express): Server {
       
       res.status(201).json({ ...user, password: undefined });
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -36230,6 +37113,7 @@ export function registerRoutes(app: Express): Server {
       const user = await storage.updateRepairCenterStaff(userId, repairCenterId, updates);
       res.json({ ...user, password: undefined });
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -36243,6 +37127,7 @@ export function registerRoutes(app: Express): Server {
       await storage.deleteRepairCenterStaff(userId, repairCenterId);
       res.json({ success: true });
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -36261,6 +37146,7 @@ export function registerRoutes(app: Express): Server {
       await storage.resetRepairCenterStaffPassword(userId, repairCenterId, newPassword);
       res.json({ success: true });
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -36315,6 +37201,7 @@ export function registerRoutes(app: Express): Server {
         pendingSickLeaves: sickLeaves.filter((sl: any) => rcStaffIds.has(sl.userId) && (!sl.endDate || new Date(sl.endDate) >= today)).length
       });
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -36344,6 +37231,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json(events.filter((e: any) => rcStaffIds.has(e.userId)));
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -36369,6 +37257,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json(event);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -36399,6 +37288,7 @@ export function registerRoutes(app: Express): Server {
       const updated = await storage.updateHrClockEvent(req.params.id, updateData);
       res.json(updated);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -36419,6 +37309,7 @@ export function registerRoutes(app: Express): Server {
       const requests = await storage.listHrLeaveRequests({ resellerId: parentResellerId });
       res.json(requests.filter((r: any) => rcStaffIds.has(r.userId)));
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -36454,6 +37345,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json(request);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -36570,6 +37462,7 @@ export function registerRoutes(app: Express): Server {
       const sickLeaves = await storage.listHrSickLeaves({ resellerId: parentResellerId });
       res.json(sickLeaves.filter((sl: any) => rcStaffIds.has(sl.userId)));
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -36594,6 +37487,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json(sickLeave);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -36659,6 +37553,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json(certificate);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       console.error("Error uploading certificate:", error);
       res.status(500).json({ error: error.message });
     }
@@ -36681,6 +37576,7 @@ export function registerRoutes(app: Express): Server {
       const reports = await storage.listHrExpenseReports({ resellerId: parentResellerId });
       res.json(reports.filter((r: any) => rcStaffIds.has(r.userId)));
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -36706,6 +37602,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json(report);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -36738,6 +37635,7 @@ export function registerRoutes(app: Express): Server {
       const updated = await storage.updateHrExpenseReport(req.params.id, updateData);
       res.json(updated);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -36748,6 +37646,7 @@ export function registerRoutes(app: Express): Server {
       const items = await storage.listHrExpenseItems(req.params.reportId);
       res.json(items);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -36761,6 +37660,7 @@ export function registerRoutes(app: Express): Server {
       });
       res.json(item);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -36771,6 +37671,7 @@ export function registerRoutes(app: Express): Server {
       await storage.deleteHrExpenseItem(req.params.id);
       res.json({ success: true });
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -36819,6 +37720,7 @@ export function registerRoutes(app: Express): Server {
       const signedUrl = await signObjectURL({ bucketName: bName, objectName: oName, method: "GET", ttlSec: 3600 });
       res.json({ ...updatedItem, signedReceiptUrl: signedUrl });
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -36845,6 +37747,7 @@ export function registerRoutes(app: Express): Server {
       const signedUrl = await signObjectURL({ bucketName: bn, objectName: on, method: "GET", ttlSec: 3600 });
       res.json({ signedUrl, fileName: item.receiptFileName });
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -36878,6 +37781,7 @@ export function registerRoutes(app: Express): Server {
 
       res.json({ success: true, item: updatedItem });
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -36923,6 +37827,7 @@ export function registerRoutes(app: Express): Server {
       const signedUrl = await signObjectURL({ bucketName: bName, objectName: oName, method: "GET", ttlSec: 3600 });
       res.json({ ...updatedReport, signedReceiptUrl: signedUrl });
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -36946,6 +37851,7 @@ export function registerRoutes(app: Express): Server {
       const signedUrl = await signObjectURL({ bucketName, objectName, method: "GET", ttlSec: 3600 });
       res.json({ signedUrl, fileName: report.receiptFileName });
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -36976,6 +37882,7 @@ export function registerRoutes(app: Express): Server {
 
       res.json({ success: true, report: updatedReport });
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -36992,6 +37899,7 @@ export function registerRoutes(app: Express): Server {
       const allProfiles = await storage.listHrWorkProfiles(parentResellerId);
       res.json(allProfiles.filter((p: any) => p.sourceType === 'repair_center' && p.sourceEntityId === repairCenterId));
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -37023,6 +37931,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json(profile);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -37053,6 +37962,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json(updated);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -37075,6 +37985,7 @@ export function registerRoutes(app: Express): Server {
       await storage.deleteHrWorkProfile(req.params.id);
       res.json({ success: true });
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -37098,6 +38009,7 @@ export function registerRoutes(app: Express): Server {
       const calendarData = await storage.getHrCalendarData([parentResellerId], startDate, endDate);
       res.json(calendarData.filter((event: any) => rcStaffIds.has(event.userId)));
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -37116,6 +38028,7 @@ export function registerRoutes(app: Express): Server {
       const registers = await storage.getPosRegistersByRepairCenter(repairCenterId);
       res.json(registers);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -37129,6 +38042,7 @@ export function registerRoutes(app: Express): Server {
       sessions.forEach(s => { sessionMap[s.registerId] = true; });
       res.json(sessionMap);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -37153,6 +38067,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json(register);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -37177,6 +38092,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json(updated);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -37200,6 +38116,7 @@ export function registerRoutes(app: Express): Server {
       await storage.deletePosRegister(registerId);
       res.json({ success: true });
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -37213,6 +38130,7 @@ export function registerRoutes(app: Express): Server {
       const customers = await storage.searchPosCustomers(repairCenterId, search);
       res.json(customers);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -37240,6 +38158,7 @@ export function registerRoutes(app: Express): Server {
         phone: customer.phone,
       });
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -37252,6 +38171,7 @@ export function registerRoutes(app: Express): Server {
       const session = await storage.getOpenPosSession(repairCenterId, registerId);
       res.json(session || null);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -37264,6 +38184,7 @@ export function registerRoutes(app: Express): Server {
       const lastSession = await storage.getLastClosedPosSession(repairCenterId, registerId);
       res.json(lastSession || null);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -37303,6 +38224,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json(session);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -37345,6 +38267,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json(closedSession);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -37358,6 +38281,7 @@ export function registerRoutes(app: Express): Server {
       const sessions = await storage.getPosSessionsByRepairCenter(repairCenterId, { limit, registerId });
       res.json(sessions);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -37578,6 +38502,7 @@ export function registerRoutes(app: Express): Server {
       }
       
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       console.error("Export sessions error:", error);
       res.status(500).json({ error: error.message });
     }
@@ -37763,6 +38688,7 @@ export function registerRoutes(app: Express): Server {
 
       res.json({ transaction, items: transactionItems, invoice });
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       console.error("POS transaction error:", error);
       res.status(500).json({ error: error.message });
     }
@@ -37777,6 +38703,7 @@ export function registerRoutes(app: Express): Server {
       if (detail.transaction.repairCenterId !== repairCenterId) return res.status(403).json({ error: "Non autorizzato" });
       res.json(detail);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       console.error("Transaction detail error:", error);
       res.status(500).json({ error: error.message });
     }
@@ -37816,6 +38743,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json({ invoice, billingData });
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       console.error("POS invoice generation error:", error);
       res.status(500).json({ error: error.message });
     }
@@ -37895,6 +38823,7 @@ export function registerRoutes(app: Express): Server {
       res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
       res.send(pdfBuffer);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       console.error("POS receipt PDF error:", error);
       res.status(500).json({ error: error.message });
     }
@@ -37909,6 +38838,7 @@ export function registerRoutes(app: Express): Server {
       const transactions = await storage.getPosTransactionsBySession(session.id);
       res.json(transactions);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -37924,6 +38854,7 @@ export function registerRoutes(app: Express): Server {
       });
       res.json(invoices);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -37935,6 +38866,7 @@ export function registerRoutes(app: Express): Server {
       const invoices = await storage.getPosInvoicesByRepairCenter(repairCenterId);
       res.json(invoices);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -37946,6 +38878,7 @@ export function registerRoutes(app: Express): Server {
       const transactions = await storage.getPosTransactionHistoryByRepairCenter(repairCenterId);
       res.json(transactions);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -37988,6 +38921,7 @@ export function registerRoutes(app: Express): Server {
 
       res.json(updated);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -38048,6 +38982,7 @@ export function registerRoutes(app: Express): Server {
 
       res.json(updated);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       console.error("Void transaction error:", error);
       res.status(500).json({ error: error.message });
     }
@@ -38062,6 +38997,7 @@ export function registerRoutes(app: Express): Server {
       const stats = await storage.getPosDailySummary(repairCenterId, date, registerId);
       res.json(stats);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -38076,6 +39012,7 @@ export function registerRoutes(app: Express): Server {
       const inheritedLists = await storage.getInheritedPriceLists(repairCenterId, 'repair_center', undefined, true);
       res.json(inheritedLists);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -38161,6 +39098,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json(productsWithStock);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -38171,6 +39109,7 @@ export function registerRoutes(app: Express): Server {
       if (products.length === 0) return res.status(404).json({ error: "Prodotto non trovato" });
       res.json(products[0]);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -38280,6 +39219,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json(servicesWithPrices);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -38296,6 +39236,7 @@ export function registerRoutes(app: Express): Server {
       });
       res.json(invoices);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -38496,6 +39437,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json({ sales: unifiedSales, summary, repairCenters, subResellers });
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       console.error("Error fetching reseller sales:", error);
       res.status(500).send(error.message);
     }
@@ -38510,6 +39452,7 @@ export function registerRoutes(app: Express): Server {
       const sessions = await storage.getPosSessionsForReseller(resellerId, { startDate, endDate, limit });
       res.json(sessions);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -38521,6 +39464,7 @@ export function registerRoutes(app: Express): Server {
       const stats = await storage.getResellerPosOverviewStats(resellerId, period, req.query.repairCenterId as string | undefined);
       res.json(stats);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -38616,6 +39560,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json(registerStats);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -38640,6 +39585,7 @@ export function registerRoutes(app: Express): Server {
         transactions 
       });
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -38655,6 +39601,7 @@ export function registerRoutes(app: Express): Server {
       if (!center || center.resellerId !== resellerId) return res.status(403).json({ error: "Non autorizzato" });
       res.json({ ...detail, repairCenterName: center.name });
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -38668,6 +39615,7 @@ export function registerRoutes(app: Express): Server {
       const stats = await storage.getAdminPosOverviewStats(period, resellerId);
       res.json(stats);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -38682,6 +39630,7 @@ export function registerRoutes(app: Express): Server {
       const transactions = await storage.getAllPosTransactions({ startDate, endDate, status, limit, offset });
       res.json(transactions);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -38693,6 +39642,7 @@ export function registerRoutes(app: Express): Server {
       const stats = await storage.getAdminPosOverviewStats(period, resellerId);
       res.json(stats.recentSessions);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -38710,6 +39660,7 @@ export function registerRoutes(app: Express): Server {
       const transactions = await storage.getPosTransactionsForReseller(resellerId, { startDate, endDate, status, repairCenterId, limit, offset });
       res.json(transactions);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -38721,6 +39672,7 @@ export function registerRoutes(app: Express): Server {
       const sessions = await storage.getResellerPosSessionsFeed(resellerId, { limit, repairCenterId });
       res.json(sessions);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -38780,6 +39732,7 @@ export function registerRoutes(app: Express): Server {
 
       res.json(updated);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -38826,6 +39779,7 @@ export function registerRoutes(app: Express): Server {
 
       res.json(updated);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -38896,6 +39850,7 @@ export function registerRoutes(app: Express): Server {
       res.setHeader("Content-Disposition", `inline; filename="scontrino-${transaction.transactionNumber}.pdf"`);
       res.send(pdfBuffer);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       console.error("Error generating receipt:", error);
       res.status(500).json({ error: error.message });
     }
@@ -38927,6 +39882,7 @@ export function registerRoutes(app: Express): Server {
       }
       res.json(allRegisters);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -38960,6 +39916,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json(register);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -38988,6 +39945,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json(updated);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -39014,6 +39972,7 @@ export function registerRoutes(app: Express): Server {
       await storage.deletePosRegister(registerId);
       res.json({ success: true });
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -39075,6 +40034,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json(session);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -39123,6 +40083,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json(closedSession);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -39144,6 +40105,7 @@ export function registerRoutes(app: Express): Server {
       const session = await storage.getOpenPosSession(register.repairCenterId, registerId);
       res.json({ session: session || null });
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -39263,6 +40225,7 @@ export function registerRoutes(app: Express): Server {
         res.status(400).json({ error: "Formato non supportato. Usa csv o xlsx" });
       }
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       console.error("Error exporting sessions:", error);
       res.status(500).json({ error: error.message });
     }
@@ -39363,6 +40326,7 @@ export function registerRoutes(app: Express): Server {
         res.status(400).json({ error: "Formato non supportato. Usa csv o xlsx" });
       }
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       console.error("Error exporting transactions:", error);
       res.status(500).json({ error: error.message });
     }
@@ -39563,6 +40527,7 @@ export function registerRoutes(app: Express): Server {
 
       res.json({ transaction, items: transactionItems, invoice });
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       console.error("Reseller POS transaction error:", error);
       res.status(500).json({ error: error.message });
     }
@@ -39650,6 +40615,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json(productsWithStock);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -39745,6 +40711,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json(servicesWithPrices);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -39764,6 +40731,7 @@ export function registerRoutes(app: Express): Server {
       const customers = await storage.searchPosCustomers(repairCenterId, search);
       res.json(customers);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
       console.error("POS customers error:", error);
     }
@@ -39787,6 +40755,7 @@ export function registerRoutes(app: Express): Server {
       const transactions = await storage.getPosTransactionsBySession(session.id);
       res.json(transactions);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -39817,6 +40786,7 @@ export function registerRoutes(app: Express): Server {
       res.set("Cache-Control", "public, max-age=31536000");
       res.send(png);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       console.error("Barcode generation error:", error);
       res.status(500).send("Errore generazione barcode");
     }
@@ -39831,6 +40801,7 @@ export function registerRoutes(app: Express): Server {
     try {
       res.json({ available: true, message: "Sibill integration is available" });
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -39860,6 +40831,7 @@ export function registerRoutes(app: Express): Server {
         updatedAt: credential.updatedAt,
       });
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       console.error("Error fetching Sibill credentials:", error);
       res.status(500).json({ error: error.message });
     }
@@ -39899,6 +40871,7 @@ export function registerRoutes(app: Express): Server {
         res.json(created);
       }
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       console.error("Error saving Sibill credentials:", error);
       res.status(500).json({ error: error.message });
     }
@@ -39930,6 +40903,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json(result);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       console.error("Error testing Sibill connection:", error);
       res.status(500).json({ error: error.message, success: false });
     }
@@ -39949,6 +40923,7 @@ export function registerRoutes(app: Express): Server {
       const companies = await storage.listSibillCompanies(credential.id);
       res.json(companies);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       console.error("Error fetching Sibill companies:", error);
       res.status(500).json({ error: error.message });
     }
@@ -40002,6 +40977,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json({ success: true, syncedCount: synced });
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       console.error("Error syncing Sibill companies:", error);
       res.status(500).json({ error: error.message });
     }
@@ -40022,6 +40998,7 @@ export function registerRoutes(app: Express): Server {
       const documents = await storage.listSibillDocuments(credential.id);
       res.json(documents);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       console.error("Error fetching Sibill documents:", error);
       res.status(500).json({ error: error.message });
     }
@@ -40090,6 +41067,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json({ success: true, syncedCount: synced });
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       console.error("Error syncing Sibill documents:", error);
       res.status(500).json({ error: error.message });
     }
@@ -40109,6 +41087,7 @@ export function registerRoutes(app: Express): Server {
       const accounts = await storage.listSibillAccounts(credential.id);
       res.json(accounts);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       console.error("Error fetching Sibill accounts:", error);
       res.status(500).json({ error: error.message });
     }
@@ -40171,6 +41150,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json({ success: true, syncedCount: synced });
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       console.error("Error syncing Sibill accounts:", error);
       res.status(500).json({ error: error.message });
     }
@@ -40197,6 +41177,7 @@ export function registerRoutes(app: Express): Server {
       });
       res.json(transactions);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       console.error("Error fetching Sibill transactions:", error);
       res.status(500).json({ error: error.message });
     }
@@ -40270,6 +41251,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json({ success: true, syncedCount: totalSynced });
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       console.error("Error syncing Sibill transactions:", error);
       res.status(500).json({ error: error.message });
     }
@@ -40290,6 +41272,7 @@ export function registerRoutes(app: Express): Server {
       await storage.deleteSibillCredential(credential.id);
       res.json({ success: true, message: "Credenziali Sibill eliminate" });
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       console.error("Error deleting Sibill credentials:", error);
       res.status(500).json({ error: error.message });
     }
@@ -40321,6 +41304,7 @@ export function registerRoutes(app: Express): Server {
       const lists = await storage.listPriceLists({ ownerId, isActive: true });
       res.json(lists);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       console.error("Error fetching price lists:", error);
       res.status(500).json({ error: error.message });
     }
@@ -40342,6 +41326,7 @@ export function registerRoutes(app: Express): Server {
       const lists = await storage.getInheritedPriceLists(childId, childRole);
       res.json(lists);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       console.error("Error fetching inherited price lists:", error);
       res.status(500).json({ error: error.message });
     }
@@ -40395,6 +41380,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json({ ...list, items: enrichedItems });
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       console.error("Error fetching inherited price list:", error);
       res.status(500).json({ error: error.message });
     }
@@ -40424,6 +41410,7 @@ export function registerRoutes(app: Express): Server {
       const items = await storage.listPriceListItems(list.id);
       res.json({ ...list, items });
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       console.error("Error fetching price list:", error);
       res.status(500).json({ error: error.message });
     }
@@ -40475,6 +41462,7 @@ export function registerRoutes(app: Express): Server {
       
       res.status(201).json(list);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       console.error("Error creating price list:", error);
       res.status(500).json({ error: error.message });
     }
@@ -40514,6 +41502,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json(updated);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       console.error("Error updating price list:", error);
       res.status(500).json({ error: error.message });
     }
@@ -40543,6 +41532,7 @@ export function registerRoutes(app: Express): Server {
       await storage.deletePriceList(req.params.id);
       res.json({ success: true, message: "Listino eliminato" });
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       console.error("Error deleting price list:", error);
       res.status(500).json({ error: error.message });
     }
@@ -40572,6 +41562,7 @@ export function registerRoutes(app: Express): Server {
       const updated = await storage.setDefaultPriceList(req.params.id, ownerId);
       res.json(updated);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       console.error("Error setting default price list:", error);
       res.status(500).json({ error: error.message });
     }
@@ -40615,6 +41606,7 @@ export function registerRoutes(app: Express): Server {
       const newList = await storage.copyPriceList(req.params.sourceId, ownerId, ownerType, name, repairCenterId);
       res.status(201).json(newList);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       console.error("Error copying price list:", error);
       res.status(500).json({ error: error.message });
     }
@@ -40663,6 +41655,7 @@ export function registerRoutes(app: Express): Server {
       
       res.status(201).json(item);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       console.error("Error adding price list item:", error);
       res.status(500).json({ error: error.message });
     }
@@ -40703,6 +41696,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json(updated);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       console.error("Error updating price list item:", error);
       res.status(500).json({ error: error.message });
     }
@@ -40737,6 +41731,7 @@ export function registerRoutes(app: Express): Server {
       await storage.deletePriceListItem(req.params.id);
       res.json({ success: true, message: "Voce eliminata" });
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       console.error("Error deleting price list item:", error);
       res.status(500).json({ error: error.message });
     }
@@ -40780,6 +41775,7 @@ export function registerRoutes(app: Express): Server {
       const created = await storage.bulkCreatePriceListItems(itemsToCreate);
       res.status(201).json(created);
     } catch (error: any) {
+      console.error("Service order creation error:", error);
       console.error("Error bulk adding price list items:", error);
       res.status(500).json({ error: error.message });
     }
