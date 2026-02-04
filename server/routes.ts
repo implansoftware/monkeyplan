@@ -31767,7 +31767,7 @@ export function registerRoutes(app: Express): Server {
             transferNumber,
             sourceWarehouseId: sellerWarehouseForTransfer.id,
             destinationWarehouseId: buyerWarehouse.id,
-            status: 'completed',
+            status: 'received',
             notes: `Ordine Marketplace ${order.orderNumber} (auto-approvato)`,
             requestedBy: req.user.id,
             completedAt: new Date(),
