@@ -31829,7 +31829,7 @@ export function registerRoutes(app: Express): Server {
             resellerId: sellerResellerId,
             customerId: req.user.id,
             marketplaceOrderId: order.id,
-            invoiceNumber: await storage.generateInvoiceNumber(),
+            invoiceNumber: await storage.generateResellerInvoiceNumber(sellerResellerId),
             amount: subtotal, // in cents
             tax: taxAmountCents, // in cents
             total: subtotal + taxAmountCents, // in cents (NOT including shipping in invoice total)
