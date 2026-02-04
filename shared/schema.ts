@@ -3657,7 +3657,7 @@ export const salesOrderItems = pgTable("sales_order_items", {
 });
 
 // Order type enum for payments
-export const paymentOrderTypeEnum = pgEnum("payment_order_type", ["b2c", "b2b"]);
+export const paymentOrderTypeEnum = pgEnum("payment_order_type", ["b2c", "b2b", "marketplace"]);
 
 // Sales Order Payments - Pagamenti ordine (B2C e B2B)
 export const salesOrderPayments = pgTable("sales_order_payments", {
