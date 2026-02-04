@@ -32253,6 +32253,82 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // Repair Center: Create Stripe PaymentIntent for marketplace order
+  app.post("/api/repair-center/marketplace/orders/stripe-payment-intent", requireRole("repair_center"), async (req, res) => {
+    try {
+      if (!req.user || !req.user.repairCenterId) {
+        return res.status(401).json({ error: "Non autenticato" });
+      }
+      
+      const { sellerResellerId, items, shippingMethodId } = req.body;
+      
+      if (!sellerResellerId || !items || items.length === 0) {
+        return res.status(400).json({ error: "Dati ordine incompleti" });
+      }
+      
+      // Get seller's payment config for Stripe keys
+      const sellerPaymentConfig = await storage.getPaymentConfiguration('reseller', sellerResellerId);
+      if (!sellerPaymentConfig?.stripeEnabled || !sellerPaymentConfig?.stripeSecretKey) {
+        return res.status(400).json({ error: "Stripe non configurato dal venditore" });
+      }
+      
+      // Calculate total with correct prices and VAT
+      let total = 0;
+      for (const item of items) {
+        const product = await storage.getProduct(item.productId);
+        if (!product) {
+          return res.status(400).json({ error: `Prodotto ${item.productId} non trovato` });
+        }
+        
+        if (product.createdBy !== sellerResellerId) {
+          return res.status(400).json({ error: `Prodotto ${product.name} non appartiene al venditore` });
+        }
+        
+        if (!product.isMarketplaceEnabled) {
+          return res.status(400).json({ error: `Prodotto ${product.name} non disponibile nel marketplace` });
+        }
+        
+        const unitPrice = product.marketplacePriceCents || product.costPrice || 0;
+        const itemSubtotal = unitPrice * item.quantity;
+        const itemVat = Math.round(itemSubtotal * 0.22); // 22% VAT
+        total += itemSubtotal + itemVat;
+      }
+      
+      // Add shipping cost
+      if (shippingMethodId) {
+        const shippingMethod = await storage.getShippingMethod(shippingMethodId);
+        total += shippingMethod?.priceCents || 0;
+      }
+      
+      if (total <= 0) {
+        return res.status(400).json({ error: "Importo non valido" });
+      }
+      
+      // Decrypt seller's secret key and create Stripe instance
+      const decryptedSecretKey = decryptSecret(sellerPaymentConfig.stripeSecretKey);
+      const stripe = new Stripe(decryptedSecretKey);
+      
+      // Create PaymentIntent
+      const paymentIntent = await stripe.paymentIntents.create({
+        amount: total,
+        currency: 'eur',
+        metadata: {
+          repairCenterId: req.user.repairCenterId,
+          sellerResellerId,
+          type: 'rc_marketplace_order'
+        }
+      });
+      
+      res.json({
+        clientSecret: paymentIntent.client_secret,
+        publishableKey: sellerPaymentConfig.stripePublishableKey,
+      });
+    } catch (error: any) {
+      console.error("RC Marketplace Stripe PaymentIntent error:", error);
+      res.status(500).json({ error: error.message || "Errore creazione pagamento Stripe" });
+    }
+  });
+
   // Repair Center: Get marketplace orders (from any reseller, not just owner)
   app.get("/api/repair-center/marketplace/orders", requireRole("repair_center"), async (req, res) => {
     try {
