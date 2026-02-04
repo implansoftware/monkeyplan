@@ -8606,7 +8606,7 @@ export function registerRoutes(app: Express): Server {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
       
-      const { bankTransferEnabled, accountHolder, iban, bic, bankName, stripeEnabled, stripePublishableKey, stripeSecretKey, paypalEnabled, paypalEmail, paypalClientId, paypalClientSecret, satispayEnabled } = req.body;
+      const { bankTransferEnabled, accountHolder, iban, bic, bankName, stripeEnabled, stripePublishableKey, stripeSecretKey, paypalEnabled, paypalEmail, paypalClientId, paypalClientSecret } = req.body;
       
       // Validate: if bank transfer is enabled, require IBAN and account holder
       if (bankTransferEnabled && (!iban || !iban.trim() || !accountHolder || !accountHolder.trim())) {
@@ -8662,7 +8662,6 @@ export function registerRoutes(app: Express): Server {
         paypalEmail: paypalEmail || null,
         paypalClientId: paypalClientId || null,
         paypalClientSecret: finalPaypalSecret,
-        satispayEnabled: satispayEnabled ?? false,
         entityType: "admin" as const,
         entityId: req.user.id
       };
@@ -8702,7 +8701,6 @@ export function registerRoutes(app: Express): Server {
           config.bankTransferEnabled || 
           config.stripeEnabled || 
           config.paypalEnabled || 
-          config.satispayEnabled ||
           config.useParentConfig
         )
       });
@@ -8753,14 +8751,10 @@ export function registerRoutes(app: Express): Server {
           enabled: config?.paypalEnabled || false,
           email: config?.paypalEnabled ? config.paypalEmail : null,
         },
-        satispay: {
-          enabled: config?.satispayEnabled || false,
-        },
         hasAnyMethod: !!(
           config?.bankTransferEnabled ||
           config?.stripeEnabled ||
           config?.paypalEnabled ||
-          config?.satispayEnabled
         ),
       };
       
@@ -8784,7 +8778,6 @@ export function registerRoutes(app: Express): Server {
           bankTransfer: { enabled: true, iban: null, accountHolder: null, bankName: null, bic: null },
           stripe: { enabled: false },
           paypal: { enabled: false },
-          satispay: { enabled: false },
           hasAnyMethod: true,
         });
       }
@@ -8807,14 +8800,10 @@ export function registerRoutes(app: Express): Server {
           enabled: config?.paypalEnabled || false,
           email: config?.paypalEnabled ? config.paypalEmail : null,
         },
-        satispay: {
-          enabled: config?.satispayEnabled || false,
-        },
         hasAnyMethod: !!(
           (config?.bankTransferEnabled ?? true) ||
           config?.stripeEnabled ||
           config?.paypalEnabled ||
-          config?.satispayEnabled
         ),
       };
       
@@ -8925,7 +8914,6 @@ export function registerRoutes(app: Express): Server {
           bankTransfer: { enabled: true, iban: null, accountHolder: null, bankName: null, bic: null },
           stripe: { enabled: false },
           paypal: { enabled: false },
-          satispay: { enabled: false },
           hasAnyMethod: true,
         });
       }
@@ -8948,14 +8936,10 @@ export function registerRoutes(app: Express): Server {
           enabled: config?.paypalEnabled || false,
           email: config?.paypalEnabled ? config.paypalEmail : null,
         },
-        satispay: {
-          enabled: config?.satispayEnabled || false,
-        },
         hasAnyMethod: !!(
           (config?.bankTransferEnabled ?? true) ||
           config?.stripeEnabled ||
           config?.paypalEnabled ||
-          config?.satispayEnabled
         ),
       };
       
@@ -9310,7 +9294,6 @@ export function registerRoutes(app: Express): Server {
         stripeOnboardingComplete: false,
         bankTransferEnabled: false,
         paypalEnabled: false,
-        satispayEnabled: false,
         useParentConfig: false
       });
       
@@ -11069,14 +11052,6 @@ export function registerRoutes(app: Express): Server {
         });
       }
       
-      // Satispay
-      if (effectiveConfig?.satispayEnabled) {
-        methods.push({
-          id: "satispay",
-          name: "Satispay",
-          enabled: true
-        });
-      }
       
       res.json({
         methods,
@@ -28937,7 +28912,6 @@ export function registerRoutes(app: Express): Server {
           card: paymentConfig?.stripeEnabled,
           bank_transfer: paymentConfig?.bankTransferEnabled,
           paypal: paymentConfig?.paypalEnabled,
-          satispay: paymentConfig?.satispayEnabled,
         };
         if (!methodEnabled[paymentMethod as keyof typeof methodEnabled]) {
           return res.status(400).json({ error: "Metodo di pagamento non disponibile" });
@@ -39563,7 +39537,6 @@ export function registerRoutes(app: Express): Server {
           cash: regTxs.filter(tx => tx.paymentMethod === "cash").length,
           card: regTxs.filter(tx => tx.paymentMethod === "card").length,
           pos: regTxs.filter(tx => tx.paymentMethod === "pos_terminal").length,
-          satispay: regTxs.filter(tx => tx.paymentMethod === "satispay").length,
         };
         
         const center = centers.find(c => c.id === reg.repairCenterId);
@@ -40300,7 +40273,7 @@ export function registerRoutes(app: Express): Server {
       const formatDate = (date: Date) => new Date(date).toLocaleString('it-IT');
       
       const statusLabels: Record<string, string> = { completed: 'Completata', voided: 'Annullata', refunded: 'Rimborsata', pending: 'In attesa' };
-      const paymentLabels: Record<string, string> = { cash: 'Contanti', card: 'Carta', pos_terminal: 'POS', satispay: 'Satispay', mixed: 'Misto' };
+      const paymentLabels: Record<string, string> = { cash: 'Contanti', card: 'Carta', pos_terminal: 'POS', mixed: 'Misto' };
       
       const exportData = allTransactions.map(t => ({
         'Numero': t.transactionNumber,
