@@ -663,6 +663,7 @@ export default function ResellerB2BCatalog() {
                 onError={(error) => {
                   toast({ title: "Errore", description: error, variant: "destructive" });
                 }}
+                onCancel={() => setCheckoutOpen(false)}
               />
             ) : (
               <Button 
