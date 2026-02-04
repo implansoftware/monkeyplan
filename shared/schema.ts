@@ -1205,6 +1205,7 @@ export const repairCenterPurchaseOrders = pgTable("repair_center_purchase_orders
   status: resellerPurchaseOrderStatusEnum("status").notNull().default("pending"),
   
   subtotal: integer("subtotal").notNull().default(0),
+  tax: integer("tax").notNull().default(0),
   discountAmount: integer("discount_amount").notNull().default(0),
   shippingCost: integer("shipping_cost").notNull().default(0),
   total: integer("total").notNull().default(0),
