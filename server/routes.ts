@@ -14515,8 +14515,8 @@ export function registerRoutes(app: Express): Server {
         }
       }
       
-      // Try marketplace order
-      if (invoice.marketplaceOrderId) {
+      // Try marketplace order (only if items not already loaded from notes)
+      if (invoice.marketplaceOrderId && items.length === 0) {
         const mkOrder = await storage.getMarketplaceOrder(invoice.marketplaceOrderId);
         if (mkOrder) {
           const orderItems = await storage.listMarketplaceOrderItems(invoice.marketplaceOrderId);
