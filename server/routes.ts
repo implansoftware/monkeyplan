@@ -39242,6 +39242,277 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+
+  // ==== STRIPE PAYMENT LINK FOR POS ====
+  
+  // Create Stripe Checkout Session for POS transaction (generates payment link)
+  app.post("/api/repair-center/pos/create-payment-link", requireRole("repair_center", "repair_center_staff"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const repairCenterId = req.user.repairCenterId;
+      if (!repairCenterId) return res.status(400).send("Repair center not found");
+      
+      const { transactionId } = req.body;
+      if (!transactionId) return res.status(400).json({ error: "Transaction ID required" });
+      
+      // Get transaction
+      const transaction = await storage.getPosTransaction(transactionId);
+      if (!transaction) return res.status(404).json({ error: "Transaction not found" });
+      if (transaction.repairCenterId !== repairCenterId) return res.status(403).json({ error: "Not authorized" });
+      if (transaction.status !== "pending") return res.status(400).json({ error: "Transaction must be pending" });
+      
+      // Get repair center and its payment config
+      const repairCenter = await storage.getRepairCenter(repairCenterId);
+      if (!repairCenter) return res.status(404).json({ error: "Repair center not found" });
+      
+      // Get payment config (from RC or parent reseller)
+      let paymentConfig = await storage.getRepairCenterPaymentConfig(repairCenterId);
+      if (!paymentConfig || paymentConfig.useParentConfig) {
+        if (repairCenter.resellerId) {
+          paymentConfig = await storage.getResellerPaymentConfig(repairCenter.resellerId);
+        }
+      }
+      
+      if (!paymentConfig?.stripeEnabled || !paymentConfig?.stripeSecretKey) {
+        return res.status(400).json({ error: "Stripe not configured" });
+      }
+      
+      // Decrypt Stripe secret key
+      const stripeSecretDecrypted = decryptSecret(paymentConfig.stripeSecretKey);
+      const stripe = new Stripe(stripeSecretDecrypted, { apiVersion: "2025-02-24.acacia" });
+      
+      // Get transaction items
+      const items = await storage.getPosTransactionItems(transactionId);
+      
+      // Build line items for Stripe
+      const lineItems = items.map(item => ({
+        price_data: {
+          currency: "eur",
+          product_data: {
+            name: item.productName,
+            description: item.isService ? "Servizio" : (item.productSku || undefined),
+          },
+          unit_amount: item.unitPrice, // Already in cents
+        },
+        quantity: item.quantity,
+      }));
+      
+      // Create Checkout Session
+      const baseUrl = process.env.REPLIT_DOMAINS?.split(',')[0] 
+        ? `https://${process.env.REPLIT_DOMAINS.split(',')[0]}`
+        : 'http://localhost:5000';
+      
+      const session = await stripe.checkout.sessions.create({
+        payment_method_types: ["card"],
+        line_items: lineItems,
+        mode: "payment",
+        success_url: `${baseUrl}/pos-payment-success?session_id={CHECKOUT_SESSION_ID}&transaction_id=${transactionId}`,
+        cancel_url: `${baseUrl}/pos-payment-cancel?transaction_id=${transactionId}`,
+        expires_at: Math.floor(Date.now() / 1000) + (24 * 60 * 60), // 24 hours
+        metadata: {
+          transactionId,
+          repairCenterId,
+          type: "pos_payment",
+        },
+      });
+      
+      // Update transaction with Stripe session info
+      await storage.updatePosTransaction(transactionId, {
+        stripeSessionId: session.id,
+        stripePaymentUrl: session.url,
+        stripePaymentExpiresAt: new Date(session.expires_at * 1000),
+      });
+      
+      res.json({
+        paymentUrl: session.url,
+        sessionId: session.id,
+        expiresAt: new Date(session.expires_at * 1000).toISOString(),
+      });
+    } catch (error: any) {
+      console.error("POS Payment Link error:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+  
+  // Check payment status for POS transaction
+  app.get("/api/repair-center/pos/check-payment-status/:transactionId", requireRole("repair_center", "repair_center_staff"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const repairCenterId = req.user.repairCenterId;
+      if (!repairCenterId) return res.status(400).send("Repair center not found");
+      
+      const { transactionId } = req.params;
+      
+      // Get transaction
+      const transaction = await storage.getPosTransaction(transactionId);
+      if (!transaction) return res.status(404).json({ error: "Transaction not found" });
+      if (transaction.repairCenterId !== repairCenterId) return res.status(403).json({ error: "Not authorized" });
+      
+      // If already completed or expired, return current status
+      if (transaction.status !== "pending") {
+        return res.json({ status: transaction.status, paymentUrl: transaction.stripePaymentUrl });
+      }
+      
+      // Check if link expired
+      if (transaction.stripePaymentExpiresAt && new Date(transaction.stripePaymentExpiresAt) < new Date()) {
+        await storage.updatePosTransaction(transactionId, { status: "expired" });
+        return res.json({ status: "expired", paymentUrl: null });
+      }
+      
+      // Check Stripe session status
+      if (!transaction.stripeSessionId) {
+        return res.json({ status: "pending", paymentUrl: transaction.stripePaymentUrl });
+      }
+      
+      // Get payment config
+      const repairCenter = await storage.getRepairCenter(repairCenterId);
+      let paymentConfig = await storage.getRepairCenterPaymentConfig(repairCenterId);
+      if (!paymentConfig || paymentConfig.useParentConfig) {
+        if (repairCenter?.resellerId) {
+          paymentConfig = await storage.getResellerPaymentConfig(repairCenter.resellerId);
+        }
+      }
+      
+      if (!paymentConfig?.stripeSecretKey) {
+        return res.status(400).json({ error: "Stripe not configured" });
+      }
+      
+      const stripeSecretDecrypted = decryptSecret(paymentConfig.stripeSecretKey);
+      const stripe = new Stripe(stripeSecretDecrypted, { apiVersion: "2025-02-24.acacia" });
+      
+      // Retrieve session from Stripe
+      const session = await stripe.checkout.sessions.retrieve(transaction.stripeSessionId);
+      
+      if (session.payment_status === "paid") {
+        // Payment completed - update transaction
+        await storage.updatePosTransaction(transactionId, { 
+          status: "completed",
+          paymentReference: session.payment_intent as string,
+        });
+        
+        // Update session totals if there's a session
+        if (transaction.sessionId) {
+          const sessionData = await storage.getPosSession(transaction.sessionId);
+          if (sessionData) {
+            await storage.updatePosSession(transaction.sessionId, {
+              totalSales: (sessionData.totalSales || 0) + transaction.total,
+              totalCard: (sessionData.totalCard || 0) + transaction.total,
+              transactionCount: (sessionData.transactionCount || 0) + 1,
+            });
+          }
+        }
+        
+        return res.json({ status: "completed", paymentUrl: null });
+      } else if (session.status === "expired") {
+        await storage.updatePosTransaction(transactionId, { status: "expired" });
+        return res.json({ status: "expired", paymentUrl: null });
+      }
+      
+      return res.json({ status: "pending", paymentUrl: transaction.stripePaymentUrl });
+    } catch (error: any) {
+      console.error("POS Check Payment Status error:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+  
+  // Regenerate payment link for expired transaction
+  app.post("/api/repair-center/pos/regenerate-payment-link/:transactionId", requireRole("repair_center", "repair_center_staff"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const repairCenterId = req.user.repairCenterId;
+      if (!repairCenterId) return res.status(400).send("Repair center not found");
+      
+      const { transactionId } = req.params;
+      
+      // Get transaction
+      const transaction = await storage.getPosTransaction(transactionId);
+      if (!transaction) return res.status(404).json({ error: "Transaction not found" });
+      if (transaction.repairCenterId !== repairCenterId) return res.status(403).json({ error: "Not authorized" });
+      
+      // Only allow regeneration for pending or expired
+      if (transaction.status !== "pending" && transaction.status !== "expired") {
+        return res.status(400).json({ error: "Cannot regenerate link for this transaction" });
+      }
+      
+      // Reset to pending
+      await storage.updatePosTransaction(transactionId, { 
+        status: "pending",
+        stripeSessionId: null,
+        stripePaymentUrl: null,
+        stripePaymentExpiresAt: null,
+      });
+      
+      // Get repair center and payment config
+      const repairCenter = await storage.getRepairCenter(repairCenterId);
+      if (!repairCenter) return res.status(404).json({ error: "Repair center not found" });
+      
+      let paymentConfig = await storage.getRepairCenterPaymentConfig(repairCenterId);
+      if (!paymentConfig || paymentConfig.useParentConfig) {
+        if (repairCenter.resellerId) {
+          paymentConfig = await storage.getResellerPaymentConfig(repairCenter.resellerId);
+        }
+      }
+      
+      if (!paymentConfig?.stripeEnabled || !paymentConfig?.stripeSecretKey) {
+        return res.status(400).json({ error: "Stripe not configured" });
+      }
+      
+      const stripeSecretDecrypted = decryptSecret(paymentConfig.stripeSecretKey);
+      const stripe = new Stripe(stripeSecretDecrypted, { apiVersion: "2025-02-24.acacia" });
+      
+      const items = await storage.getPosTransactionItems(transactionId);
+      
+      const lineItems = items.map(item => ({
+        price_data: {
+          currency: "eur",
+          product_data: {
+            name: item.productName,
+            description: item.isService ? "Servizio" : (item.productSku || undefined),
+          },
+          unit_amount: item.unitPrice,
+        },
+        quantity: item.quantity,
+      }));
+      
+      const baseUrl = process.env.REPLIT_DOMAINS?.split(',')[0] 
+        ? `https://${process.env.REPLIT_DOMAINS.split(',')[0]}`
+        : 'http://localhost:5000';
+      
+      const session = await stripe.checkout.sessions.create({
+        payment_method_types: ["card"],
+        line_items: lineItems,
+        mode: "payment",
+        success_url: `${baseUrl}/pos-payment-success?session_id={CHECKOUT_SESSION_ID}&transaction_id=${transactionId}`,
+        cancel_url: `${baseUrl}/pos-payment-cancel?transaction_id=${transactionId}`,
+        expires_at: Math.floor(Date.now() / 1000) + (24 * 60 * 60),
+        metadata: {
+          transactionId,
+          repairCenterId,
+          type: "pos_payment",
+        },
+      });
+      
+      await storage.updatePosTransaction(transactionId, {
+        stripeSessionId: session.id,
+        stripePaymentUrl: session.url,
+        stripePaymentExpiresAt: new Date(session.expires_at * 1000),
+      });
+      
+      res.json({
+        paymentUrl: session.url,
+        sessionId: session.id,
+        expiresAt: new Date(session.expires_at * 1000).toISOString(),
+      });
+    } catch (error: any) {
+      console.error("POS Regenerate Payment Link error:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+
   // ==== RESELLER POS API ====
 
 

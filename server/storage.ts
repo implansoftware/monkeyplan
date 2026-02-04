@@ -11597,6 +11597,28 @@ export class DatabaseStorage implements IStorage {
     return transaction;
   }
 
+  // Generic update for POS transaction (used by Stripe payment links)
+  async updatePosTransaction(id: string, data: Partial<{
+    status: PosTransactionStatus;
+    stripeSessionId: string | null;
+    stripePaymentUrl: string | null;
+    stripePaymentExpiresAt: Date | null;
+    paymentReference: string | null;
+  }>): Promise<PosTransaction | undefined> {
+    const updateData: Record<string, unknown> = { updatedAt: new Date() };
+    if (data.status !== undefined) updateData.status = data.status;
+    if (data.stripeSessionId !== undefined) updateData.stripeSessionId = data.stripeSessionId;
+    if (data.stripePaymentUrl !== undefined) updateData.stripePaymentUrl = data.stripePaymentUrl;
+    if (data.stripePaymentExpiresAt !== undefined) updateData.stripePaymentExpiresAt = data.stripePaymentExpiresAt;
+    if (data.paymentReference !== undefined) updateData.paymentReference = data.paymentReference;
+    
+    const [transaction] = await db.update(posTransactions)
+      .set(updateData)
+      .where(eq(posTransactions.id, id))
+      .returning();
+    return transaction;
+  }
+
   async generatePosTransactionNumber(repairCenterId: string): Promise<string> {
     const now = new Date();
     const yymm = `${now.getFullYear().toString().slice(-2)}${(now.getMonth() + 1).toString().padStart(2, '0')}`;
