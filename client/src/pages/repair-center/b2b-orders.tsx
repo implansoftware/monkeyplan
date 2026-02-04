@@ -30,6 +30,7 @@ interface Order {
   orderNumber: string;
   status: string;
   subtotal: number;
+  tax?: number;
   shippingCost: number;
   total: number;
   paymentMethod: string;
@@ -256,7 +257,7 @@ export default function RepairCenterB2BOrders() {
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">IVA (22%):</span>
-                  <span>{formatPrice(Math.round((selectedOrder.subtotal || selectedOrder.total) * 0.22))}</span>
+                  <span>{formatPrice(selectedOrder.tax ?? Math.round((selectedOrder.subtotal || 0) * 0.22))}</span>
                 </div>
                 {(selectedOrder.shippingCost || 0) > 0 && (
                   <div className="flex justify-between text-sm">
