@@ -634,6 +634,7 @@ export default function ResellerSettings() {
         </TabsContent>
 
         <TabsContent value="pagamenti" className="space-y-4">
+          {/* Stripe Connect temporarily hidden
           <Card>
             <CardHeader>
               <div className="flex items-center justify-between">
@@ -775,6 +776,7 @@ export default function ResellerSettings() {
               )}
             </CardContent>
           </Card>
+          */}
 
           <Card>
             <CardHeader>
