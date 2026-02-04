@@ -585,6 +585,7 @@ export default function ShopCheckout() {
                 />
               ) : paymentMethod === "card" && canPlaceOrder ? (
                 <StripeB2BCheckout
+                  totalAmount={grandTotal}
                   paymentIntentEndpoint={`/api/shop/${resellerId}/stripe-payment-intent`}
                   createOrderEndpoint={`/api/shop/${resellerId}/checkout`}
                   orderData={{
