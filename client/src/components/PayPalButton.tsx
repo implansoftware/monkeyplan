@@ -23,6 +23,9 @@ interface PayPalButtonProps {
   onError: (error: string) => void;
   onCancel: () => void;
   disabled?: boolean;
+  setupEndpoint?: string;
+  orderEndpoint?: string;
+  captureEndpointBase?: string;
 }
 
 export default function PayPalButton({
@@ -32,6 +35,9 @@ export default function PayPalButton({
   onError,
   onCancel,
   disabled = false,
+  setupEndpoint = "/paypal/setup",
+  orderEndpoint = "/paypal/order",
+  captureEndpointBase = "/paypal/order",
 }: PayPalButtonProps) {
   const [isLoading, setIsLoading] = useState(true);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -48,9 +54,10 @@ export default function PayPalButton({
       returnUrl: currentUrl,
       cancelUrl: currentUrl,
     };
-    const response = await fetch("/paypal/order", {
+    const response = await fetch(orderEndpoint, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
+      credentials: "include",
       body: JSON.stringify(orderPayload),
     });
     if (!response.ok) {
@@ -59,14 +66,15 @@ export default function PayPalButton({
     }
     const output = await response.json();
     return { orderId: output.id };
-  }, [amount, currency]);
+  }, [amount, currency, orderEndpoint]);
 
   const captureOrder = async (orderId: string) => {
-    const response = await fetch(`/paypal/order/${orderId}/capture`, {
+    const response = await fetch(`${captureEndpointBase}/${orderId}/capture`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
+      credentials: "include",
     });
     if (!response.ok) {
       const error = await response.json();
@@ -122,7 +130,7 @@ export default function PayPalButton({
 
     const initPayPal = async () => {
       try {
-        const clientToken: string = await fetch("/paypal/setup")
+        const clientToken: string = await fetch(setupEndpoint, { credentials: "include" })
           .then((res) => {
             if (!res.ok) throw new Error("PayPal non configurato");
             return res.json();
@@ -155,7 +163,7 @@ export default function PayPalButton({
     };
 
     loadPayPalSDK();
-  }, [onApprove, handleCancel, handleError, onError]);
+  }, [onApprove, handleCancel, handleError, onError, setupEndpoint]);
 
   // Handle button click
   const handleClick = useCallback(async () => {
