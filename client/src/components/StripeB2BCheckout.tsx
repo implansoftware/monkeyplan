@@ -7,11 +7,12 @@ import { Loader2, CreditCard, ShieldCheck, X } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 
 interface StripeB2BCheckoutProps {
-  items: { productId: string; quantity: number }[];
-  shippingMethodId: string;
-  notes: string;
-  totalAmount: number;
-  onSuccess: () => void;
+  items?: { productId: string; quantity: number }[];
+  shippingMethodId?: string | null;
+  notes?: string;
+  totalAmount?: number;
+  orderData?: any;
+  onSuccess: (order?: any) => void;
   onError: (error: string) => void;
   disabled?: boolean;
   paymentIntentEndpoint?: string;
@@ -33,17 +34,19 @@ function CheckoutForm({
   items,
   shippingMethodId,
   notes,
+  orderData: externalOrderData,
   createOrderEndpoint,
   returnUrl,
   sellerResellerId
 }: { 
-  onSuccess: () => void; 
+  onSuccess: (order?: any) => void; 
   onError: (error: string) => void;
   onClose: () => void;
-  totalAmount: number;
-  items: { productId: string; quantity: number }[];
-  shippingMethodId: string;
-  notes: string;
+  totalAmount?: number;
+  items?: { productId: string; quantity: number }[];
+  shippingMethodId?: string | null;
+  notes?: string;
+  orderData?: any;
   createOrderEndpoint: string;
   returnUrl: string;
   sellerResellerId?: string;
@@ -77,18 +80,28 @@ function CheckoutForm({
       }
 
       if (paymentIntent && paymentIntent.status === "succeeded") {
-        const orderData: any = {
-          items,
-          shippingMethodId,
-          paymentMethod: "stripe",
-          stripePaymentIntentId: paymentIntent.id,
-        };
-        
-        if (sellerResellerId) {
-          orderData.sellerResellerId = sellerResellerId;
-          orderData.buyerNotes = notes;
+        // Use external orderData if provided, otherwise build from items
+        let orderData: any;
+        if (externalOrderData) {
+          orderData = {
+            ...externalOrderData,
+            paymentMethod: "card",
+            stripePaymentIntentId: paymentIntent.id,
+          };
         } else {
-          orderData.notes = notes;
+          orderData = {
+            items,
+            shippingMethodId,
+            paymentMethod: "stripe",
+            stripePaymentIntentId: paymentIntent.id,
+          };
+          
+          if (sellerResellerId) {
+            orderData.sellerResellerId = sellerResellerId;
+            orderData.buyerNotes = notes;
+          } else {
+            orderData.notes = notes;
+          }
         }
         
         const response = await apiRequest("POST", createOrderEndpoint, orderData);
@@ -98,7 +111,8 @@ function CheckoutForm({
           throw new Error(errorText || "Errore nella creazione dell'ordine");
         }
 
-        onSuccess();
+        const order = await response.json();
+        onSuccess(order);
       }
     } catch (err: any) {
       onError(err.message || "Errore nel pagamento");
@@ -171,6 +185,7 @@ export function StripeB2BCheckout({
   shippingMethodId, 
   notes,
   totalAmount,
+  orderData,
   onSuccess, 
   onError,
   disabled,
@@ -190,7 +205,10 @@ export function StripeB2BCheckout({
       setIsLoading(true);
       setInitError(null);
       
-      const requestBody: any = { items, shippingMethodId };
+      const requestBody: any = { shippingMethodId };
+      if (items && items.length > 0) {
+        requestBody.items = items;
+      }
       if (sellerResellerId) {
         requestBody.sellerResellerId = sellerResellerId;
       }
@@ -227,11 +245,11 @@ export function StripeB2BCheckout({
     setIsOpen(false);
   };
 
-  const handleSuccess = () => {
+  const handleSuccess = (order?: any) => {
     setIsOpen(false);
     setClientSecret(null);
     setStripePromise(null);
-    onSuccess();
+    onSuccess(order);
   };
 
   if (disabled) {
@@ -242,7 +260,7 @@ export function StripeB2BCheckout({
     <>
       <Button 
         onClick={handleOpen}
-        disabled={isLoading || items.length === 0}
+        disabled={isLoading || (items && items.length === 0)}
         className="w-full"
         data-testid="button-stripe-open"
       >
@@ -324,6 +342,7 @@ export function StripeB2BCheckout({
                 items={items}
                 shippingMethodId={shippingMethodId}
                 notes={notes}
+                orderData={orderData}
                 createOrderEndpoint={createOrderEndpoint}
                 returnUrl={returnUrl}
                 sellerResellerId={sellerResellerId}
