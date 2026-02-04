@@ -19,6 +19,7 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { formatCurrency, addVat, calculateVatSummary, DEFAULT_VAT_RATE } from "@/lib/utils";
 import PayPalButton from "@/components/PayPalButton";
+import { StripeB2BCheckout } from "@/components/StripeB2BCheckout";
 
 interface B2BCatalogItem {
   product: Product;
@@ -646,6 +647,21 @@ export default function ResellerB2BCatalog() {
                     title: "Pagamento annullato",
                     description: "Hai annullato il pagamento PayPal",
                   });
+                }}
+              />
+            ) : paymentMethod === "stripe" && paymentConfig?.stripe?.enabled ? (
+              <StripeB2BCheckout
+                items={cart.map(item => ({ productId: item.product.id, quantity: item.quantity }))}
+                shippingMethodId={selectedShippingMethod}
+                notes={notes}
+                onSuccess={() => {
+                  queryClient.invalidateQueries({ queryKey: ["/api/reseller/b2b-orders"] });
+                  setCheckoutOpen(false);
+                  setCart([]);
+                  toast({ title: "Ordine completato", description: "Pagamento ricevuto con successo" });
+                }}
+                onError={(error) => {
+                  toast({ title: "Errore", description: error, variant: "destructive" });
                 }}
               />
             ) : (

@@ -54,6 +54,7 @@ import { db } from "./db";
 import { sql, eq, and, desc } from "drizzle-orm";
 import { salesOrderPayments, salesOrders, salesOrderShipments, users } from "@shared/schema";
 import { encryptSecret, decryptSecret, getPayPalClientToken, createPayPalOrderHandler, capturePayPalOrderHandler } from "./paypal";
+import Stripe from 'stripe';
 
 const scryptAsync = promisify(scrypt);
 
@@ -30219,6 +30220,79 @@ export function registerRoutes(app: Express): Server {
       res.json({ ...order, items: enrichedItems, returns });
     } catch (error: any) {
       res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Reseller: Create Stripe PaymentIntent for B2B order
+  app.post("/api/reseller/b2b-orders/stripe-payment-intent", requireRole("reseller"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Non autenticato" });
+      
+      const { items, shippingMethodId } = req.body;
+      
+      if (!items || !Array.isArray(items) || items.length === 0) {
+        return res.status(400).json({ error: "Nessun prodotto nell'ordine" });
+      }
+      
+      // Get admin for payment configuration
+      const allUsers = await storage.listUsers();
+      const admin = allUsers.find(u => u.role === 'admin');
+      if (!admin) {
+        return res.status(500).json({ error: "Admin non trovato" });
+      }
+      
+      // Get admin payment config
+      const adminConfig = await storage.getPaymentConfiguration("admin", admin.id);
+      if (!adminConfig?.stripeEnabled || !adminConfig?.stripeSecretKey) {
+        return res.status(400).json({ error: "Stripe non configurato dall'amministratore" });
+      }
+      
+      // Calculate subtotal from items
+      let subtotal = 0;
+      for (const item of items) {
+        const product = await storage.getProduct(item.productId);
+        if (product) {
+          subtotal += (product.b2bPrice || 0) * item.quantity;
+        }
+      }
+      
+      // Add shipping cost
+      let shippingCost = 0;
+      if (shippingMethodId) {
+        const shippingMethod = await storage.getShippingMethod(shippingMethodId);
+        shippingCost = shippingMethod?.priceCents || 0;
+      }
+      
+      // Calculate with VAT (22%)
+      const vatAmount = Math.round(subtotal * 0.22);
+      const total = subtotal + vatAmount + shippingCost;
+      
+      if (total <= 0) {
+        return res.status(400).json({ error: "Totale ordine non valido" });
+      }
+      
+      // Create Stripe instance with admin's secret key
+      const stripeSecretDecrypted = decryptSecret(adminConfig.stripeSecretKey);
+      const stripe = new Stripe(stripeSecretDecrypted);
+      
+      // Create PaymentIntent (amount in cents)
+      const paymentIntent = await stripe.paymentIntents.create({
+        amount: total,
+        currency: 'eur',
+        metadata: {
+          resellerId: req.user.id,
+          type: 'b2b_order'
+        }
+      });
+      
+      res.json({
+        clientSecret: paymentIntent.client_secret,
+        publishableKey: adminConfig.stripePublishableKey,
+        orderId: null
+      });
+    } catch (error: any) {
+      console.error("Stripe PaymentIntent error:", error);
+      res.status(500).json({ error: error.message || "Errore creazione pagamento Stripe" });
     }
   });
 
