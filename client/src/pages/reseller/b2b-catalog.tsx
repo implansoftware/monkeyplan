@@ -552,7 +552,6 @@ export default function ResellerB2BCatalog() {
                     {paymentConfig?.paypal?.enabled && (
                       <SelectItem value="paypal">PayPal</SelectItem>
                     )}
-                    )}
                   </SelectContent>
                 </Select>
               )}
