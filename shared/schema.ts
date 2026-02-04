@@ -3183,6 +3183,8 @@ export const serviceItemPrices = pgTable("service_item_prices", {
 export const serviceOrderPaymentMethodEnum = pgEnum("service_order_payment_method", [
   "in_person",      // Pagamento in negozio
   "bank_transfer",  // Bonifico bancario
+  "card",           // Carta di credito (Stripe)
+  "paypal",         // PayPal
 ]);
 
 export const serviceOrderPaymentStatusEnum = pgEnum("service_order_payment_status", [
