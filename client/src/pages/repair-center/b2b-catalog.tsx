@@ -17,6 +17,7 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { calculateVatSummary } from "@/lib/utils";
 import { StripeB2BCheckout } from "@/components/StripeB2BCheckout";
+import PayPalButton from "@/components/PayPalButton";
 
 interface B2BCatalogItem {
   product: Product;
@@ -478,7 +479,34 @@ export default function RepairCenterB2BCatalog() {
             <Button variant="outline" onClick={() => setCheckoutOpen(false)}>
               Annulla
             </Button>
-            {paymentMethod === "stripe" && paymentConfig?.stripe?.enabled ? (
+            {paymentMethod === "paypal" && paymentConfig?.paypal?.enabled ? (
+              <PayPalButton
+                amount={(grandTotal / 100).toFixed(2)}
+                currency="EUR"
+                disabled={cart.length === 0 || createOrderMutation.isPending}
+                onSuccess={(paypalOrderId, captureData) => {
+                  createOrderMutation.mutate({
+                    items: cart.map(item => ({ productId: item.productId, quantity: item.quantity })),
+                    paymentMethod: "paypal",
+                    shippingMethodId: selectedShippingMethod,
+                    notes: notes + (notes ? "\n" : "") + `[PayPal Order ID: ${paypalOrderId}]`,
+                  });
+                }}
+                onError={(error) => {
+                  toast({
+                    title: "Errore PayPal",
+                    description: error,
+                    variant: "destructive",
+                  });
+                }}
+                onCancel={() => {
+                  toast({
+                    title: "Pagamento annullato",
+                    description: "Hai annullato il pagamento PayPal",
+                  });
+                }}
+              />
+            ) : paymentMethod === "stripe" && paymentConfig?.stripe?.enabled ? (
               <StripeB2BCheckout
                 items={cart.map(item => ({ productId: item.productId, quantity: item.quantity }))}
                 shippingMethodId={selectedShippingMethod}
