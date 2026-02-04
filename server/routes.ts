@@ -32639,6 +32639,100 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // Repair Center: PayPal setup - Get client token using parent reseller's credentials
+  app.get("/api/repair-center/paypal/setup", requireRole("repair_center"), async (req, res) => {
+    try {
+      if (!req.user || !req.user.repairCenterId) {
+        return res.status(401).json({ error: "Non autenticato" });
+      }
+      
+      const repairCenter = await storage.getRepairCenter(req.user.repairCenterId);
+      if (!repairCenter?.resellerId) {
+        return res.status(400).json({ error: "Repair Center non associato a un rivenditore" });
+      }
+      
+      const config = await storage.getPaymentConfiguration("reseller", repairCenter.resellerId);
+      if (!config?.paypalEnabled || !config.paypalClientId || !config.paypalClientSecret) {
+        return res.status(400).json({ error: "PayPal non configurato dal rivenditore" });
+      }
+      
+      const decryptedSecret = decryptSecret(config.paypalClientSecret);
+      const clientToken = await getPayPalClientToken(config.paypalClientId, decryptedSecret);
+      res.json({ clientToken });
+    } catch (error: any) {
+      console.error("RC PayPal setup error:", error);
+      res.status(500).json({ error: "Errore configurazione PayPal" });
+    }
+  });
+
+  // Repair Center: Create PayPal order using parent reseller's credentials
+  app.post("/api/repair-center/paypal/order", requireRole("repair_center"), async (req, res) => {
+    try {
+      if (!req.user || !req.user.repairCenterId) {
+        return res.status(401).json({ error: "Non autenticato" });
+      }
+      
+      const { amount, currency, intent, returnUrl, cancelUrl } = req.body;
+      
+      if (!amount || isNaN(parseFloat(amount)) || parseFloat(amount) <= 0) {
+        return res.status(400).json({ error: "Importo non valido" });
+      }
+      
+      const repairCenter = await storage.getRepairCenter(req.user.repairCenterId);
+      if (!repairCenter?.resellerId) {
+        return res.status(400).json({ error: "Repair Center non associato a un rivenditore" });
+      }
+      
+      const config = await storage.getPaymentConfiguration("reseller", repairCenter.resellerId);
+      if (!config?.paypalEnabled || !config.paypalClientId || !config.paypalClientSecret) {
+        return res.status(400).json({ error: "PayPal non configurato dal rivenditore" });
+      }
+      
+      const decryptedSecret = decryptSecret(config.paypalClientSecret);
+      const result = await createPayPalOrderHandler(
+        config.paypalClientId, 
+        decryptedSecret, 
+        amount, 
+        currency || "EUR", 
+        intent || "CAPTURE", 
+        returnUrl, 
+        cancelUrl
+      );
+      res.status(result.statusCode).json(result.body);
+    } catch (error: any) {
+      console.error("RC PayPal order creation error:", error);
+      res.status(500).json({ error: "Errore creazione ordine PayPal" });
+    }
+  });
+
+  // Repair Center: Capture PayPal payment using parent reseller's credentials
+  app.post("/api/repair-center/paypal/order/:orderID/capture", requireRole("repair_center"), async (req, res) => {
+    try {
+      if (!req.user || !req.user.repairCenterId) {
+        return res.status(401).json({ error: "Non autenticato" });
+      }
+      
+      const { orderID } = req.params;
+      
+      const repairCenter = await storage.getRepairCenter(req.user.repairCenterId);
+      if (!repairCenter?.resellerId) {
+        return res.status(400).json({ error: "Repair Center non associato a un rivenditore" });
+      }
+      
+      const config = await storage.getPaymentConfiguration("reseller", repairCenter.resellerId);
+      if (!config?.paypalEnabled || !config.paypalClientId || !config.paypalClientSecret) {
+        return res.status(400).json({ error: "PayPal non configurato dal rivenditore" });
+      }
+      
+      const decryptedSecret = decryptSecret(config.paypalClientSecret);
+      const result = await capturePayPalOrderHandler(config.paypalClientId, decryptedSecret, orderID);
+      res.status(result.statusCode).json(result.body);
+    } catch (error: any) {
+      console.error("RC PayPal capture error:", error);
+      res.status(500).json({ error: "Errore cattura pagamento PayPal" });
+    }
+  });
+
   // Repair Center: Confirm receipt of B2B order
   app.post("/api/repair-center/b2b-orders/:id/receive", requireRole("repair_center"), async (req, res) => {
     try {
