@@ -20104,10 +20104,28 @@ export function registerRoutes(app: Express): Server {
   // Delete device type (admin only)
   app.delete("/api/admin/device-types/:id", requireRole("admin"), async (req, res) => {
     try {
+      const cascade = req.query.cascade === 'true';
+      
+      if (cascade) {
+        // First delete all models associated with this type
+        const models = await storage.listDeviceModels();
+        const modelsToDelete = models.filter(m => m.typeId === req.params.id);
+        for (const model of modelsToDelete) {
+          await storage.deleteDeviceModel(model.id);
+        }
+      }
+      
       await storage.deleteDeviceType(req.params.id);
       res.status(204).send();
     } catch (error: any) {
-      res.status(400).send(error.message);
+      // Provide clearer error message for foreign key violations
+      if (error.message?.includes('foreign key constraint')) {
+        res.status(400).json({ 
+          error: 'Non puoi eliminare questo tipo perché ci sono modelli associati. Usa ?cascade=true per eliminarli insieme.' 
+        });
+      } else {
+        res.status(400).send(error.message);
+      }
     }
   });
 

@@ -110,7 +110,7 @@ export default function AdminDeviceCatalog() {
 
   const deleteTypeMutation = useMutation({
     mutationFn: async (id: string) => {
-      return apiRequest("DELETE", `/api/admin/device-types/${id}`);
+      return apiRequest("DELETE", `/api/admin/device-types/${id}?cascade=true`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/device-types"] });
