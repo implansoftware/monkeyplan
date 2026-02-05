@@ -40,11 +40,17 @@ interface PosRegister {
   updatedAt: string;
 }
 
-interface PaymentConfig {
-  bankTransferEnabled: boolean;
-  stripeEnabled: boolean;
-  paypalEnabled: boolean;
-  satispayEnabled: boolean;
+interface PaymentConfigItem {
+  bankTransferEnabled?: boolean;
+  stripeEnabled?: boolean;
+  paypalEnabled?: boolean;
+  satispayEnabled?: boolean;
+}
+
+interface PaymentConfigResponse {
+  ownConfig: PaymentConfigItem | null;
+  parentConfig: PaymentConfigItem | null;
+  effectiveConfig: PaymentConfigItem | null;
 }
 
 const PAYMENT_METHODS = [
@@ -70,9 +76,11 @@ export default function PosRegisterSettingsPage() {
     enabled: !!id,
   });
 
-  const { data: paymentConfig } = useQuery<PaymentConfig>({
+  const { data: paymentConfigResponse } = useQuery<PaymentConfigResponse>({
     queryKey: ["/api/repair-center/payment-config"],
   });
+  
+  const effectivePaymentConfig = paymentConfigResponse?.effectiveConfig;
 
   useEffect(() => {
     if (register) {
@@ -124,8 +132,8 @@ export default function PosRegisterSettingsPage() {
   const isMethodConfigured = (method: typeof PAYMENT_METHODS[0]): boolean => {
     if (method.alwaysEnabled) return true;
     if (!method.requiresConfig) return true;
-    if (!paymentConfig) return false;
-    return paymentConfig[method.requiresConfig as keyof PaymentConfig] === true;
+    if (!effectivePaymentConfig) return false;
+    return effectivePaymentConfig[method.requiresConfig as keyof PaymentConfigItem] === true;
   };
 
   if (isLoading) {
