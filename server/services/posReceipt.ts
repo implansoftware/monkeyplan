@@ -178,7 +178,7 @@ function generateA4Invoice(
   );
   y += 25;
 
-  if (billingData) {
+  if (billingData || customer) {
     doc.moveTo(margin, y).lineTo(pageWidth - margin, y).stroke();
     y += 15;
     
@@ -187,18 +187,22 @@ function generateA4Invoice(
     y += 16;
     
     doc.font("Helvetica").fontSize(10);
-    if (billingData.companyName) {
+    if (billingData?.companyName) {
       doc.text(billingData.companyName, margin, y);
       y += 14;
     } else if (customer?.fullName) {
       doc.text(customer.fullName, margin, y);
       y += 14;
     }
-    if (billingData.address) {
+    if (customer?.email) {
+      doc.text(`Email: ${customer.email}`, margin, y);
+      y += 14;
+    }
+    if (billingData?.address) {
       doc.text(billingData.address, margin, y);
       y += 14;
     }
-    if (billingData.city) {
+    if (billingData?.city) {
       let addr = "";
       if (billingData.postalCode) addr = `${billingData.postalCode} `;
       addr += billingData.city;
@@ -206,11 +210,11 @@ function generateA4Invoice(
       doc.text(addr, margin, y);
       y += 14;
     }
-    if (billingData.fiscalCode) {
+    if (billingData?.fiscalCode) {
       doc.text(`C.F.: ${billingData.fiscalCode}`, margin, y);
       y += 14;
     }
-    if (billingData.vatNumber) {
+    if (billingData?.vatNumber) {
       doc.text(`P.IVA: ${billingData.vatNumber}`, margin, y);
       y += 14;
     }
