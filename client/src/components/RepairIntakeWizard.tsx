@@ -306,7 +306,11 @@ export function RepairIntakeWizard({
   }, [currentStep]);
 
   // Queries
-  const customerEndpoint = (user?.role === "reseller" || user?.role === "reseller_staff") ? "/api/reseller/customers" : "/api/customers";
+  const customerEndpoint = (user?.role === "reseller" || user?.role === "reseller_staff") 
+    ? "/api/reseller/customers" 
+    : (user?.role === "repair_center" || user?.role === "repair_center_staff")
+    ? "/api/repair-center/customers"
+    : "/api/customers";
 
   // Mutation per creare nuovo cliente rapido
   const createCustomerMutation = useMutation({
