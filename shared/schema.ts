@@ -6423,6 +6423,7 @@ export const posPaymentMethodEnum = pgEnum("pos_payment_method", [
   "card",           // Carta credito/debito
   "pos_terminal",   // Terminale POS
   "stripe_link",    // Link pagamento Stripe
+  "paypal",         // PayPal
   "mixed",          // Pagamento misto
 ]);
 
