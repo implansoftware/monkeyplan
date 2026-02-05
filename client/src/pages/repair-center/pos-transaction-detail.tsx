@@ -404,9 +404,9 @@ export default function PosTransactionDetailPage() {
                   <User className="w-5 h-5" />
                   {customer.fullName}
                 </div>
-                <div className="text-sm text-muted-foreground mt-1">
+                <div className="text-sm text-muted-foreground mt-1 break-all">
                   {customer.email}
-                  {customer.phone && ` • ${customer.phone}`}
+                  {customer.phone && <span className="whitespace-nowrap"> • {customer.phone}</span>}
                 </div>
               </>
             ) : (
