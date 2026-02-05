@@ -210,6 +210,7 @@ import RepairCenterSmartphoneCatalog from "@/pages/repair-center/smartphone-cata
 import RepairCenterAccessoryCatalog from "@/pages/repair-center/accessory-catalog";
 import RepairCenterSparePartsCatalog from "@/pages/repair-center/spare-parts-catalog";
 import RepairCenterCustomers from "@/pages/repair-center/customers";
+import RepairCenterCustomerDetail from "@/pages/repair-center/customer-detail";
 import RepairCenterB2BReturns from "@/pages/repair-center/b2b-returns";
 import RepairCenterSettings from "@/pages/repair-center/settings";
 import RepairCenterMarketplace from "@/pages/repair-center/marketplace";
@@ -502,6 +503,7 @@ function Router() {
       <ProtectedRoute path="/repair-center/dispositivi" component={RepairCenterSmartphoneCatalog} />
       <ProtectedRoute path="/repair-center/accessory-catalog" component={RepairCenterAccessoryCatalog} />
       <ProtectedRoute path="/repair-center/spare-parts-catalog" component={RepairCenterSparePartsCatalog} />
+      <ProtectedRoute path="/repair-center/customers/:id" component={RepairCenterCustomerDetail} />
       <ProtectedRoute path="/repair-center/customers" component={RepairCenterCustomers} />
       <ProtectedRoute path="/repair-center/service-catalog" component={RepairCenterServiceCatalog} />
       <ProtectedRoute path="/repair-center/service-orders" component={RepairCenterServiceOrders} />

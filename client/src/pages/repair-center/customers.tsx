@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Link } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useQuery } from "@tanstack/react-query";
 import { Badge } from "@/components/ui/badge";
@@ -7,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Users, Search, Phone, Mail, MapPin, Wrench, Eye, CheckCircle, Clock, User, Plus } from "lucide-react";
+import { Users, Search, Phone, Mail, MapPin, Wrench, Eye, CheckCircle, Clock, User, Plus, Pencil } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { queryClient } from "@/lib/queryClient";
@@ -228,17 +229,29 @@ export default function RepairCenterCustomers() {
                         </div>
                       </TableCell>
                       <TableCell className="text-right">
-                        <Button 
-                          size="icon" 
-                          variant="ghost"
-                          onClick={() => {
-                            setSelectedCustomer(customer);
-                            setDetailDialogOpen(true);
-                          }}
-                          data-testid={`button-view-${customer.id}`}
-                        >
-                          <Eye className="h-4 w-4" />
-                        </Button>
+                        <div className="flex items-center justify-end gap-1">
+                          <Button 
+                            size="icon" 
+                            variant="ghost"
+                            onClick={() => {
+                              setSelectedCustomer(customer);
+                              setDetailDialogOpen(true);
+                            }}
+                            data-testid={`button-quick-view-${customer.id}`}
+                          >
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                          <Button 
+                            size="icon" 
+                            variant="ghost"
+                            asChild
+                            data-testid={`button-edit-${customer.id}`}
+                          >
+                            <Link href={`/repair-center/customers/${customer.id}`}>
+                              <Pencil className="h-4 w-4" />
+                            </Link>
+                          </Button>
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))}

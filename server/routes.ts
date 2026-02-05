@@ -8446,7 +8446,7 @@ export function registerRoutes(app: Express): Server {
   });
 
   // GET /api/repair-center/payment-config - Get repair center's payment configuration (with parent fallback)
-  app.get("/api/repair-center/payment-config", requireRole("repair_center"), async (req, res) => {
+  app.get("/api/repair-center/payment-config", requireRole(["repair_center", "repair_center_staff"]), async (req, res) => {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
       
@@ -8496,7 +8496,7 @@ export function registerRoutes(app: Express): Server {
   });
 
   // PUT /api/repair-center/payment-config - Update repair center's payment configuration
-  app.put("/api/repair-center/payment-config", requireRole("repair_center"), async (req, res) => {
+  app.put("/api/repair-center/payment-config", requireRole(["repair_center", "repair_center_staff"]), async (req, res) => {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
       
@@ -9006,7 +9006,7 @@ export function registerRoutes(app: Express): Server {
   });
 
   // GET /api/repair-center/parent-payment-config - Get parent reseller's payment config for RC B2B orders
-  app.get("/api/repair-center/parent-payment-config", requireRole("repair_center"), async (req, res) => {
+  app.get("/api/repair-center/parent-payment-config", requireRole(["repair_center", "repair_center_staff"]), async (req, res) => {
     try {
       if (!req.user || !req.user.repairCenterId) {
         return res.status(401).json({ error: "Non autenticato" });
@@ -9179,7 +9179,7 @@ export function registerRoutes(app: Express): Server {
   });
 
   // Repair Center: List available shipping methods (own + parent reseller)
-  app.get("/api/repair-center/shipping-methods", requireRole("repair_center"), async (req, res) => {
+  app.get("/api/repair-center/shipping-methods", requireRole(["repair_center", "repair_center_staff"]), async (req, res) => {
     try {
       if (!req.user?.repairCenterId) return res.status(401).json({ error: "Non autenticato" });
       const repairCenter = await storage.getRepairCenter(req.user.repairCenterId);
@@ -9195,7 +9195,7 @@ export function registerRoutes(app: Express): Server {
   });
 
   // Repair Center: Create own shipping method
-  app.post("/api/repair-center/shipping-methods", requireRole("repair_center"), async (req, res) => {
+  app.post("/api/repair-center/shipping-methods", requireRole(["repair_center", "repair_center_staff"]), async (req, res) => {
     try {
       if (!req.user?.repairCenterId) return res.status(401).json({ error: "Non autenticato" });
       const method = await storage.createShippingMethod({
@@ -9212,7 +9212,7 @@ export function registerRoutes(app: Express): Server {
   });
 
   // Repair Center: Update own shipping method
-  app.put("/api/repair-center/shipping-methods/:id", requireRole("repair_center"), async (req, res) => {
+  app.put("/api/repair-center/shipping-methods/:id", requireRole(["repair_center", "repair_center_staff"]), async (req, res) => {
     try {
       if (!req.user?.repairCenterId) return res.status(401).json({ error: "Non autenticato" });
       const existing = await storage.getShippingMethod(req.params.id);
@@ -9228,7 +9228,7 @@ export function registerRoutes(app: Express): Server {
   });
 
   // Repair Center: Delete own shipping method
-  app.delete("/api/repair-center/shipping-methods/:id", requireRole("repair_center"), async (req, res) => {
+  app.delete("/api/repair-center/shipping-methods/:id", requireRole(["repair_center", "repair_center_staff"]), async (req, res) => {
     try {
       if (!req.user?.repairCenterId) return res.status(401).json({ error: "Non autenticato" });
       const existing = await storage.getShippingMethod(req.params.id);
@@ -9587,7 +9587,7 @@ export function registerRoutes(app: Express): Server {
 
 
   // GET /api/repair-center/settings - Get repair center profile settings
-  app.get("/api/repair-center/settings", requireRole("repair_center"), async (req, res) => {
+  app.get("/api/repair-center/settings", requireRole(["repair_center", "repair_center_staff"]), async (req, res) => {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
       
@@ -9609,7 +9609,7 @@ export function registerRoutes(app: Express): Server {
   });
 
   // PATCH /api/repair-center/settings - Update repair center profile settings
-  app.patch("/api/repair-center/settings", requireRole("repair_center"), async (req, res) => {
+  app.patch("/api/repair-center/settings", requireRole(["repair_center", "repair_center_staff"]), async (req, res) => {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
       
@@ -9654,7 +9654,7 @@ export function registerRoutes(app: Express): Server {
   // ==========================================
 
   // GET /api/repair-center/settings/hourly-rate - Get hourly rate with parent fallback
-  app.get("/api/repair-center/settings/hourly-rate", requireRole("repair_center"), async (req, res) => {
+  app.get("/api/repair-center/settings/hourly-rate", requireRole(["repair_center", "repair_center_staff"]), async (req, res) => {
     try {
       if (!req.user?.repairCenterId) return res.status(401).json({ error: "Non autenticato" });
       const result = await storage.getRepairCenterHourlyRate(req.user.repairCenterId);
@@ -9666,7 +9666,7 @@ export function registerRoutes(app: Express): Server {
   });
 
   // PATCH /api/repair-center/settings/hourly-rate - Update hourly rate config
-  app.patch("/api/repair-center/settings/hourly-rate", requireRole("repair_center"), async (req, res) => {
+  app.patch("/api/repair-center/settings/hourly-rate", requireRole(["repair_center", "repair_center_staff"]), async (req, res) => {
     try {
       if (!req.user?.repairCenterId) return res.status(401).json({ error: "Non autenticato" });
       const { hourlyRateCents, useParent } = req.body;
@@ -9689,7 +9689,7 @@ export function registerRoutes(app: Express): Server {
   });
 
   // GET /api/repair-center/settings/sla-thresholds - Get SLA thresholds with parent fallback
-  app.get("/api/repair-center/settings/sla-thresholds", requireRole("repair_center"), async (req, res) => {
+  app.get("/api/repair-center/settings/sla-thresholds", requireRole(["repair_center", "repair_center_staff"]), async (req, res) => {
     try {
       if (!req.user?.repairCenterId) return res.status(401).json({ error: "Non autenticato" });
       const result = await storage.getRepairCenterSlaThresholds(req.user.repairCenterId);
@@ -9701,7 +9701,7 @@ export function registerRoutes(app: Express): Server {
   });
 
   // PUT /api/repair-center/settings/sla-thresholds - Update SLA thresholds config
-  app.put("/api/repair-center/settings/sla-thresholds", requireRole("repair_center"), async (req, res) => {
+  app.put("/api/repair-center/settings/sla-thresholds", requireRole(["repair_center", "repair_center_staff"]), async (req, res) => {
     try {
       if (!req.user?.repairCenterId) return res.status(401).json({ error: "Non autenticato" });
       const { thresholds, useParent } = req.body;
@@ -9728,7 +9728,7 @@ export function registerRoutes(app: Express): Server {
     }
   });
   // GET /api/repair-center/service-catalog - View service catalog with prices
-  app.get("/api/repair-center/service-catalog", requireRole("repair_center"), async (req, res) => {
+  app.get("/api/repair-center/service-catalog", requireRole(["repair_center", "repair_center_staff"]), async (req, res) => {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
       
@@ -9881,7 +9881,7 @@ export function registerRoutes(app: Express): Server {
   // =============================================
 
   // POST /api/repair-center/service-items - Create new service item
-  app.post("/api/repair-center/service-items", requireRole("repair_center"), async (req, res) => {
+  app.post("/api/repair-center/service-items", requireRole(["repair_center", "repair_center_staff"]), async (req, res) => {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
       
@@ -9919,7 +9919,7 @@ export function registerRoutes(app: Express): Server {
   });
 
   // PATCH /api/repair-center/service-items/:id - Update service item
-  app.patch("/api/repair-center/service-items/:id", requireRole("repair_center"), async (req, res) => {
+  app.patch("/api/repair-center/service-items/:id", requireRole(["repair_center", "repair_center_staff"]), async (req, res) => {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
       
@@ -9958,7 +9958,7 @@ export function registerRoutes(app: Express): Server {
   });
 
   // DELETE /api/repair-center/service-items/:id - Delete service item
-  app.delete("/api/repair-center/service-items/:id", requireRole("repair_center"), async (req, res) => {
+  app.delete("/api/repair-center/service-items/:id", requireRole(["repair_center", "repair_center_staff"]), async (req, res) => {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
       
@@ -9985,7 +9985,7 @@ export function registerRoutes(app: Express): Server {
       res.status(500).send(error.message);
     }
   });
-  app.get("/api/repair-center/stats", requireRole("repair_center"), async (req, res) => {
+  app.get("/api/repair-center/stats", requireRole(["repair_center", "repair_center_staff"]), async (req, res) => {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
 
@@ -10009,7 +10009,7 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
-  app.get("/api/repair-center/repairs", requireRole("repair_center"), async (req, res) => {
+  app.get("/api/repair-center/repairs", requireRole(["repair_center", "repair_center_staff"]), async (req, res) => {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
       const repairs = await storage.listRepairOrders({ repairCenterId: req.user.repairCenterId || undefined });
@@ -10021,7 +10021,7 @@ export function registerRoutes(app: Express): Server {
   });
 
   // Paginated Repair Orders (Repair Center) - for advanced search and filtering
-  app.get("/api/repair-center/repairs/paginated", requireRole("repair_center"), async (req, res) => {
+  app.get("/api/repair-center/repairs/paginated", requireRole(["repair_center", "repair_center_staff"]), async (req, res) => {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
       if (!req.user.repairCenterId) return res.json({ data: [], page: 1, pageSize: 25, total: 0, totalPages: 0 });
@@ -10090,7 +10090,7 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
-  app.get("/api/repair-center/inventory", requireRole("repair_center"), async (req, res) => {
+  app.get("/api/repair-center/inventory", requireRole(["repair_center", "repair_center_staff"]), async (req, res) => {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
       const inventory = await storage.listInventoryStock(req.user.repairCenterId || undefined);
@@ -10101,7 +10101,7 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
-  app.patch("/api/repair-center/repairs/:id/status", requireRole("repair_center"), async (req, res) => {
+  app.patch("/api/repair-center/repairs/:id/status", requireRole(["repair_center", "repair_center_staff"]), async (req, res) => {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
       
@@ -10132,7 +10132,7 @@ export function registerRoutes(app: Express): Server {
     reason: z.string().optional(),
   });
 
-  app.post("/api/repair-center/repairs/:id/skip-diagnosis", requireRole("repair_center"), async (req, res) => {
+  app.post("/api/repair-center/repairs/:id/skip-diagnosis", requireRole(["repair_center", "repair_center_staff"]), async (req, res) => {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
       
@@ -10179,7 +10179,7 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
-  app.post("/api/repair-center/inventory/movements", requireRole("repair_center"), async (req, res) => {
+  app.post("/api/repair-center/inventory/movements", requireRole(["repair_center", "repair_center_staff"]), async (req, res) => {
     try {
       if (!req.user || !req.user.repairCenterId) {
         return res.status(401).send("Unauthorized or no repair center assigned");
@@ -10627,7 +10627,7 @@ export function registerRoutes(app: Express): Server {
   });
 
   // Repair Center endpoints
-  app.get("/api/repair-center/remote-requests", requireRole("repair_center"), async (req, res) => {
+  app.get("/api/repair-center/remote-requests", requireRole(["repair_center", "repair_center_staff"]), async (req, res) => {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
       
@@ -10692,7 +10692,7 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
-  app.patch("/api/repair-center/remote-requests/:id/accept", requireRole("repair_center"), async (req, res) => {
+  app.patch("/api/repair-center/remote-requests/:id/accept", requireRole(["repair_center", "repair_center_staff"]), async (req, res) => {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
       
@@ -10729,7 +10729,7 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
-  app.patch("/api/repair-center/remote-requests/:id/reject", requireRole("repair_center"), async (req, res) => {
+  app.patch("/api/repair-center/remote-requests/:id/reject", requireRole(["repair_center", "repair_center_staff"]), async (req, res) => {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
       
@@ -10760,7 +10760,7 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
-  app.patch("/api/repair-center/remote-requests/:id/ready-for-shipping", requireRole("repair_center"), async (req, res) => {
+  app.patch("/api/repair-center/remote-requests/:id/ready-for-shipping", requireRole(["repair_center", "repair_center_staff"]), async (req, res) => {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
       
@@ -10794,7 +10794,7 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
-  app.patch("/api/repair-center/remote-requests/:id/received", requireRole("repair_center"), async (req, res) => {
+  app.patch("/api/repair-center/remote-requests/:id/received", requireRole(["repair_center", "repair_center_staff"]), async (req, res) => {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
       
@@ -10831,7 +10831,7 @@ export function registerRoutes(app: Express): Server {
   });
 
   // Force received - when customer doesn't ship, center can force confirm
-  app.patch("/api/repair-center/remote-requests/:id/force-received", requireRole("repair_center"), async (req, res) => {
+  app.patch("/api/repair-center/remote-requests/:id/force-received", requireRole(["repair_center", "repair_center_staff"]), async (req, res) => {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
       
@@ -10872,7 +10872,7 @@ export function registerRoutes(app: Express): Server {
   });
 
   // Cancel request - when customer doesn't respond
-  app.patch("/api/repair-center/remote-requests/:id/cancel", requireRole("repair_center"), async (req, res) => {
+  app.patch("/api/repair-center/remote-requests/:id/cancel", requireRole(["repair_center", "repair_center_staff"]), async (req, res) => {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
       
@@ -10904,7 +10904,7 @@ export function registerRoutes(app: Express): Server {
   });
 
   // Repair Center Remote Requests - pending count for badge
-  app.get("/api/repair-center/remote-requests/pending-count", requireRole("repair_center"), async (req, res) => {
+  app.get("/api/repair-center/remote-requests/pending-count", requireRole(["repair_center", "repair_center_staff"]), async (req, res) => {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
       
@@ -30474,7 +30474,7 @@ export function registerRoutes(app: Express): Server {
   // ==========================================
 
   // Repair Center: Search products with warehouse stock for transfer requests
-  app.get("/api/repair-center/transfer-requests/search-products", requireRole("repair_center"), async (req, res) => {
+  app.get("/api/repair-center/transfer-requests/search-products", requireRole(["repair_center", "repair_center_staff"]), async (req, res) => {
     try {
       if (!req.user) return res.status(401).json({ error: "Non autenticato" });
       if (!req.user.repairCenterId) return res.status(404).json({ error: "Centro di riparazione non trovato" });
@@ -30506,7 +30506,7 @@ export function registerRoutes(app: Express): Server {
   });
 
   // Repair Center: Overview of own transfer requests with stats
-  app.get("/api/repair-center/transfer-requests/overview", requireRole("repair_center"), async (req, res) => {
+  app.get("/api/repair-center/transfer-requests/overview", requireRole(["repair_center", "repair_center_staff"]), async (req, res) => {
     try {
       if (!req.user) return res.status(401).json({ error: "Non autenticato" });
       
@@ -30558,7 +30558,7 @@ export function registerRoutes(app: Express): Server {
   });
 
   // Repair Center: List own transfer requests
-  app.get("/api/repair-center/transfer-requests", requireRole("repair_center"), async (req, res) => {
+  app.get("/api/repair-center/transfer-requests", requireRole(["repair_center", "repair_center_staff"]), async (req, res) => {
     try {
       if (!req.user) return res.status(401).json({ error: "Non autenticato" });
       const requests = await storage.listTransferRequests({ 
@@ -30585,7 +30585,7 @@ export function registerRoutes(app: Express): Server {
   });
 
   // Repair Center: Get single transfer request
-  app.get("/api/repair-center/transfer-requests/:id", requireRole("repair_center"), async (req, res) => {
+  app.get("/api/repair-center/transfer-requests/:id", requireRole(["repair_center", "repair_center_staff"]), async (req, res) => {
     try {
       if (!req.user) return res.status(401).json({ error: "Non autenticato" });
       const request = await storage.getTransferRequest(req.params.id);
@@ -30608,7 +30608,7 @@ export function registerRoutes(app: Express): Server {
   });
 
   // Repair Center: Create transfer request
-  app.post("/api/repair-center/transfer-requests", requireRole("repair_center"), async (req, res) => {
+  app.post("/api/repair-center/transfer-requests", requireRole(["repair_center", "repair_center_staff"]), async (req, res) => {
     try {
       if (!req.user) return res.status(401).json({ error: "Non autenticato" });
       if (!req.user.repairCenterId) return res.status(404).json({ error: "Centro di riparazione non trovato" });
@@ -30664,7 +30664,7 @@ export function registerRoutes(app: Express): Server {
   });
 
   // Repair Center: Cancel own transfer request (if still pending)
-  app.patch("/api/repair-center/transfer-requests/:id/cancel", requireRole("repair_center"), async (req, res) => {
+  app.patch("/api/repair-center/transfer-requests/:id/cancel", requireRole(["repair_center", "repair_center_staff"]), async (req, res) => {
     try {
       if (!req.user) return res.status(401).json({ error: "Non autenticato" });
       const request = await storage.getTransferRequest(req.params.id);
@@ -30681,7 +30681,7 @@ export function registerRoutes(app: Express): Server {
   });
 
   // Repair Center: Confirm receipt of shipped items
-  app.patch("/api/repair-center/transfer-requests/:id/receive", requireRole("repair_center"), async (req, res) => {
+  app.patch("/api/repair-center/transfer-requests/:id/receive", requireRole(["repair_center", "repair_center_staff"]), async (req, res) => {
     try {
       if (!req.user) return res.status(401).json({ error: "Non autenticato" });
       const request = await storage.getTransferRequest(req.params.id);
@@ -33399,7 +33399,7 @@ export function registerRoutes(app: Express): Server {
 
   // Repair Center: Get marketplace catalog (products from ALL resellers with marketplace enabled)
   // Optimized: uses single query with joins instead of N+1 queries
-  app.get("/api/repair-center/marketplace/catalog", requireRole("repair_center"), async (req, res) => {
+  app.get("/api/repair-center/marketplace/catalog", requireRole(["repair_center", "repair_center_staff"]), async (req, res) => {
     try {
       if (!req.user || !req.user.repairCenterId) {
         return res.status(401).json({ error: "Non autenticato o centro riparazione non configurato" });
@@ -33430,7 +33430,7 @@ export function registerRoutes(app: Express): Server {
 
   // Repair Center: Create marketplace order (buy from any reseller)
   // Uses repair_center_purchase_orders table for proper data integrity
-  app.post("/api/repair-center/marketplace/orders", requireRole("repair_center"), async (req, res) => {
+  app.post("/api/repair-center/marketplace/orders", requireRole(["repair_center", "repair_center_staff"]), async (req, res) => {
     try {
       if (!req.user || !req.user.repairCenterId) {
         return res.status(401).json({ error: "Non autenticato" });
@@ -33601,7 +33601,7 @@ export function registerRoutes(app: Express): Server {
   });
 
   // Repair Center: Create Stripe PaymentIntent for marketplace order
-  app.post("/api/repair-center/marketplace/orders/stripe-payment-intent", requireRole("repair_center"), async (req, res) => {
+  app.post("/api/repair-center/marketplace/orders/stripe-payment-intent", requireRole(["repair_center", "repair_center_staff"]), async (req, res) => {
     try {
       if (!req.user || !req.user.repairCenterId) {
         return res.status(401).json({ error: "Non autenticato" });
@@ -33698,7 +33698,7 @@ export function registerRoutes(app: Express): Server {
 
 
   // Repair Center: Get marketplace orders (from any reseller, not just owner)
-  app.get("/api/repair-center/marketplace/orders", requireRole("repair_center"), async (req, res) => {
+  app.get("/api/repair-center/marketplace/orders", requireRole(["repair_center", "repair_center_staff"]), async (req, res) => {
     try {
       if (!req.user || !req.user.repairCenterId) {
         return res.status(401).json({ error: "Non autenticato" });
@@ -33730,7 +33730,7 @@ export function registerRoutes(app: Express): Server {
   // ==========================================
 
   // Repair Center: Get reseller catalog (products with stock available for B2B purchase)
-  app.get("/api/repair-center/b2b-catalog", requireRole("repair_center"), async (req, res) => {
+  app.get("/api/repair-center/b2b-catalog", requireRole(["repair_center", "repair_center_staff"]), async (req, res) => {
     try {
       if (!req.user) return res.status(401).json({ error: "Non autenticato" });
       
@@ -33799,7 +33799,7 @@ export function registerRoutes(app: Express): Server {
   });
 
   // Repair Center: List own B2B orders
-  app.get("/api/repair-center/b2b-orders", requireRole("repair_center"), async (req, res) => {
+  app.get("/api/repair-center/b2b-orders", requireRole(["repair_center", "repair_center_staff"]), async (req, res) => {
     try {
       if (!req.user || !req.user.repairCenterId) {
         return res.status(401).json({ error: "Non autenticato o centro riparazione non configurato" });
@@ -33825,7 +33825,7 @@ export function registerRoutes(app: Express): Server {
   });
 
   // Repair Center: Get single B2B order with items
-  app.get("/api/repair-center/b2b-orders/:id", requireRole("repair_center"), async (req, res) => {
+  app.get("/api/repair-center/b2b-orders/:id", requireRole(["repair_center", "repair_center_staff"]), async (req, res) => {
     try {
       if (!req.user || !req.user.repairCenterId) {
         return res.status(401).json({ error: "Non autenticato" });
@@ -33851,7 +33851,7 @@ export function registerRoutes(app: Express): Server {
   });
 
   // Repair Center: Create B2B order (purchase from reseller)
-  app.post("/api/repair-center/b2b-orders", requireRole("repair_center"), async (req, res) => {
+  app.post("/api/repair-center/b2b-orders", requireRole(["repair_center", "repair_center_staff"]), async (req, res) => {
     try {
       if (!req.user || !req.user.repairCenterId) {
         return res.status(401).json({ error: "Non autenticato" });
@@ -34032,7 +34032,7 @@ export function registerRoutes(app: Express): Server {
   });
 
   // Repair Center: Create Stripe PaymentIntent for B2B order
-  app.post("/api/repair-center/b2b-orders/stripe-payment-intent", requireRole("repair_center"), async (req, res) => {
+  app.post("/api/repair-center/b2b-orders/stripe-payment-intent", requireRole(["repair_center", "repair_center_staff"]), async (req, res) => {
     try {
       if (!req.user) return res.status(401).json({ error: "Non autenticato" });
       if (!req.user.repairCenterId) return res.status(400).json({ error: "Repair Center non associato" });
@@ -34107,7 +34107,7 @@ export function registerRoutes(app: Express): Server {
   });
 
   // Repair Center: PayPal setup - Get client token using parent reseller's credentials
-  app.get("/api/repair-center/paypal/setup", requireRole("repair_center"), async (req, res) => {
+  app.get("/api/repair-center/paypal/setup", requireRole(["repair_center", "repair_center_staff"]), async (req, res) => {
     try {
       if (!req.user || !req.user.repairCenterId) {
         return res.status(401).json({ error: "Non autenticato" });
@@ -34134,7 +34134,7 @@ export function registerRoutes(app: Express): Server {
   });
 
   // Repair Center: Create PayPal order using parent reseller's credentials
-  app.post("/api/repair-center/paypal/order", requireRole("repair_center"), async (req, res) => {
+  app.post("/api/repair-center/paypal/order", requireRole(["repair_center", "repair_center_staff"]), async (req, res) => {
     try {
       if (!req.user || !req.user.repairCenterId) {
         return res.status(401).json({ error: "Non autenticato" });
@@ -34175,7 +34175,7 @@ export function registerRoutes(app: Express): Server {
   });
 
   // Repair Center: Capture PayPal payment using parent reseller's credentials
-  app.post("/api/repair-center/paypal/order/:orderID/capture", requireRole("repair_center"), async (req, res) => {
+  app.post("/api/repair-center/paypal/order/:orderID/capture", requireRole(["repair_center", "repair_center_staff"]), async (req, res) => {
     try {
       if (!req.user || !req.user.repairCenterId) {
         return res.status(401).json({ error: "Non autenticato" });
@@ -34204,7 +34204,7 @@ export function registerRoutes(app: Express): Server {
   });
 
   // Repair Center: Confirm receipt of B2B order
-  app.post("/api/repair-center/b2b-orders/:id/receive", requireRole("repair_center"), async (req, res) => {
+  app.post("/api/repair-center/b2b-orders/:id/receive", requireRole(["repair_center", "repair_center_staff"]), async (req, res) => {
     try {
       if (!req.user || !req.user.repairCenterId) {
         return res.status(401).json({ error: "Non autenticato" });
@@ -34427,7 +34427,7 @@ export function registerRoutes(app: Express): Server {
   // ==========================================
 
   // Repair Center: List my B2B returns
-  app.get("/api/repair-center/b2b-returns", requireRole("repair_center"), async (req, res) => {
+  app.get("/api/repair-center/b2b-returns", requireRole(["repair_center", "repair_center_staff"]), async (req, res) => {
     try {
       if (!req.user || !req.user.repairCenterId) {
         return res.status(401).json({ error: "Non autenticato" });
@@ -34441,7 +34441,7 @@ export function registerRoutes(app: Express): Server {
   });
 
   // Repair Center: Get B2B return details
-  app.get("/api/repair-center/b2b-returns/:id", requireRole("repair_center"), async (req, res) => {
+  app.get("/api/repair-center/b2b-returns/:id", requireRole(["repair_center", "repair_center_staff"]), async (req, res) => {
     try {
       if (!req.user || !req.user.repairCenterId) {
         return res.status(401).json({ error: "Non autenticato" });
@@ -34462,7 +34462,7 @@ export function registerRoutes(app: Express): Server {
   });
 
   // Repair Center: Create B2B return request
-  app.post("/api/repair-center/b2b-returns", requireRole("repair_center"), async (req, res) => {
+  app.post("/api/repair-center/b2b-returns", requireRole(["repair_center", "repair_center_staff"]), async (req, res) => {
     try {
       if (!req.user || !req.user.repairCenterId) {
         return res.status(401).json({ error: "Non autenticato" });
@@ -34569,7 +34569,7 @@ export function registerRoutes(app: Express): Server {
   });
 
   // Repair Center: Mark return as shipped
-  app.post("/api/repair-center/b2b-returns/:id/ship", requireRole("repair_center"), async (req, res) => {
+  app.post("/api/repair-center/b2b-returns/:id/ship", requireRole(["repair_center", "repair_center_staff"]), async (req, res) => {
     try {
       if (!req.user || !req.user.repairCenterId) {
         return res.status(401).json({ error: "Non autenticato" });
@@ -34803,7 +34803,7 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
-  app.get("/api/repair-center/customers", requireRole("repair_center"), async (req, res) => {
+  app.get("/api/repair-center/customers", requireRole(["repair_center", "repair_center_staff"]), async (req, res) => {
     try {
       if (!req.user || !req.user.repairCenterId) {
         return res.status(401).json({ error: "Non autenticato" });
@@ -34846,7 +34846,7 @@ export function registerRoutes(app: Express): Server {
   });
 
   // Repair Center: Get single customer details
-  app.get("/api/repair-center/customers/:id", requireRole("repair_center"), async (req, res) => {
+  app.get("/api/repair-center/customers/:id", requireRole(["repair_center", "repair_center_staff"]), async (req, res) => {
     try {
       if (!req.user || !req.user.repairCenterId) {
         return res.status(401).json({ error: "Non autenticato" });
@@ -34874,12 +34874,103 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+
+  // PATCH: Update customer by repair center
+  app.patch("/api/repair-center/customers/:id", requireRole(["repair_center", "repair_center_staff"]), async (req, res) => {
+    try {
+      if (!req.user || !req.user.repairCenterId) {
+        return res.status(401).json({ error: "Non autenticato" });
+      }
+
+      // Verify customer is assigned to this repair center
+      const customerIds = await storage.listCustomerIdsForRepairCenter(req.user.repairCenterId);
+      if (!customerIds.includes(req.params.id)) {
+        return res.status(403).json({ error: "Cliente non associato a questo centro" });
+      }
+
+      const customer = await storage.getUser(req.params.id);
+      if (!customer || customer.role !== "customer") {
+        return res.status(404).json({ error: "Cliente non trovato" });
+      }
+
+      // Validate request body
+      const updateSchema = z.object({
+        fullName: z.string().min(2).optional(),
+        email: z.string().email().optional(),
+        phone: z.string().optional().nullable(),
+        password: z.string().min(6).optional(),
+        isActive: z.boolean().optional(),
+        billingData: z.object({
+          customerType: z.enum(["private", "company"]).optional(),
+          companyName: z.string().optional().nullable(),
+          vatNumber: z.string().optional().nullable(),
+          fiscalCode: z.string().optional().nullable(),
+          pec: z.string().email().optional().nullable(),
+          codiceUnivoco: z.string().max(7).optional().nullable(),
+          iban: z.string().optional().nullable(),
+          address: z.string().optional().nullable(),
+          city: z.string().optional().nullable(),
+          zipCode: z.string().optional().nullable(),
+          country: z.string().optional().nullable(),
+        }).optional(),
+      });
+
+      const validatedBody = updateSchema.parse(req.body);
+      const { fullName, email, phone, password, isActive, billingData } = validatedBody;
+
+      // Update user fields
+      const updateData: Record<string, any> = {};
+      if (fullName) updateData.fullName = fullName;
+      if (email) updateData.email = email;
+      if (phone !== undefined) updateData.phone = phone;
+      if (isActive !== undefined) updateData.isActive = isActive;
+      if (password && password.length >= 6) {
+        updateData.password = await hashPassword(password);
+      }
+
+      if (Object.keys(updateData).length > 0) {
+        await storage.updateUser(req.params.id, updateData);
+      }
+
+      // Update billing data
+      if (billingData) {
+        const existingBilling = await storage.getBillingDataByUserId(req.params.id);
+        const billingPayload = {
+          userId: req.params.id,
+          customerType: billingData.customerType || "private",
+          companyName: billingData.companyName || null,
+          vatNumber: billingData.vatNumber || null,
+          fiscalCode: billingData.fiscalCode || null,
+          pec: billingData.pec || null,
+          codiceUnivoco: billingData.codiceUnivoco || null,
+          address: billingData.address || null,
+          city: billingData.city || null,
+          zipCode: billingData.zipCode || null,
+          country: billingData.country || "IT",
+        };
+
+        if (existingBilling) {
+          await storage.updateBillingData(existingBilling.id, billingPayload);
+        } else {
+          await storage.createBillingData(billingPayload);
+        }
+      }
+
+      // Return updated customer
+      const updatedCustomer = await storage.getUser(req.params.id);
+      const updatedBilling = await storage.getBillingDataByUserId(req.params.id);
+      res.json({ customer: updatedCustomer, billingData: updatedBilling });
+    } catch (error: any) {
+      console.error("Error updating customer:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
   // ==========================================
   // REPAIR CENTER PRODUCT CATALOGS (READ-ONLY FROM RESELLER)
   // ==========================================
 
   // Repair Center: Get smartphone catalog from reseller (devices available for B2B purchase)
-  app.get("/api/repair-center/smartphone-catalog", requireRole("repair_center"), async (req, res) => {
+  app.get("/api/repair-center/smartphone-catalog", requireRole(["repair_center", "repair_center_staff"]), async (req, res) => {
     try {
       if (!req.user) return res.status(401).json({ error: "Non autenticato" });
       
@@ -34916,7 +35007,7 @@ export function registerRoutes(app: Express): Server {
   });
 
   // Repair Center: Get accessory catalog from reseller
-  app.get("/api/repair-center/accessory-catalog", requireRole("repair_center"), async (req, res) => {
+  app.get("/api/repair-center/accessory-catalog", requireRole(["repair_center", "repair_center_staff"]), async (req, res) => {
     try {
       if (!req.user) return res.status(401).json({ error: "Non autenticato" });
       
@@ -34953,7 +35044,7 @@ export function registerRoutes(app: Express): Server {
   });
 
   // Repair Center: Get spare parts catalog from reseller
-  app.get("/api/repair-center/spare-parts-catalog", requireRole("repair_center"), async (req, res) => {
+  app.get("/api/repair-center/spare-parts-catalog", requireRole(["repair_center", "repair_center_staff"]), async (req, res) => {
     try {
       if (!req.user) return res.status(401).json({ error: "Non autenticato" });
       
@@ -34998,7 +35089,7 @@ export function registerRoutes(app: Express): Server {
   // ============================================================================
 
   // GET /api/repair-center/configured-integrations - Get integrations configured by parent reseller
-  app.get("/api/repair-center/configured-integrations", requireAuth, requireRole("repair_center"), async (req, res) => {
+  app.get("/api/repair-center/configured-integrations", requireAuth, requireRole(["repair_center", "repair_center_staff"]), async (req, res) => {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
       
@@ -35031,7 +35122,7 @@ export function registerRoutes(app: Express): Server {
   });
 
   // GET /api/repair-center/suppliers - View global suppliers + reseller's suppliers
-  app.get("/api/repair-center/suppliers", requireRole("repair_center"), async (req, res) => {
+  app.get("/api/repair-center/suppliers", requireRole(["repair_center", "repair_center_staff"]), async (req, res) => {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
       
@@ -35065,7 +35156,7 @@ export function registerRoutes(app: Express): Server {
   });
 
   // GET /api/repair-center/supplier-orders - View own supplier orders
-  app.get("/api/repair-center/supplier-orders", requireRole("repair_center"), async (req, res) => {
+  app.get("/api/repair-center/supplier-orders", requireRole(["repair_center", "repair_center_staff"]), async (req, res) => {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
       
@@ -35088,7 +35179,7 @@ export function registerRoutes(app: Express): Server {
   });
 
   // GET /api/repair-center/sifar/credentials - Get parent reseller's SIFAR credentials
-  app.get("/api/repair-center/sifar/credentials", requireRole("repair_center"), async (req, res) => {
+  app.get("/api/repair-center/sifar/credentials", requireRole(["repair_center", "repair_center_staff"]), async (req, res) => {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
       
@@ -35115,7 +35206,7 @@ export function registerRoutes(app: Express): Server {
   });
 
   // GET /api/repair-center/sifar/stores - Get parent reseller's SIFAR stores
-  app.get("/api/repair-center/sifar/stores", requireRole("repair_center"), async (req, res) => {
+  app.get("/api/repair-center/sifar/stores", requireRole(["repair_center", "repair_center_staff"]), async (req, res) => {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
       
@@ -35136,7 +35227,7 @@ export function registerRoutes(app: Express): Server {
   });
 
   // GET /api/repair-center/foneday/credentials - Get parent reseller's Foneday credentials
-  app.get("/api/repair-center/foneday/credentials", requireRole("repair_center"), async (req, res) => {
+  app.get("/api/repair-center/foneday/credentials", requireRole(["repair_center", "repair_center_staff"]), async (req, res) => {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
       
@@ -35156,7 +35247,7 @@ export function registerRoutes(app: Express): Server {
   });
 
   // GET /api/repair-center/trovausati/credentials - Get parent reseller's TrovaUsati credentials
-  app.get("/api/repair-center/trovausati/credentials", requireRole("repair_center"), async (req, res) => {
+  app.get("/api/repair-center/trovausati/credentials", requireRole(["repair_center", "repair_center_staff"]), async (req, res) => {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
       
@@ -35182,7 +35273,7 @@ export function registerRoutes(app: Express): Server {
   });
 
   // GET /api/repair-center/trovausati/shops - Get parent reseller's TrovaUsati shops
-  app.get("/api/repair-center/trovausati/shops", requireRole("repair_center"), async (req, res) => {
+  app.get("/api/repair-center/trovausati/shops", requireRole(["repair_center", "repair_center_staff"]), async (req, res) => {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
       
@@ -35203,7 +35294,7 @@ export function registerRoutes(app: Express): Server {
   });
 
   // GET /api/repair-center/mobilesentrix/credentials - Get parent reseller's MobileSentrix credentials
-  app.get("/api/repair-center/mobilesentrix/credentials", requireRole("repair_center"), async (req, res) => {
+  app.get("/api/repair-center/mobilesentrix/credentials", requireRole(["repair_center", "repair_center_staff"]), async (req, res) => {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
       
@@ -37198,7 +37289,7 @@ export function registerRoutes(app: Express): Server {
       res.status(500).json({ error: error.message });
     }
   });
-  app.post("/api/repair-center/team", requireRole("repair_center"), async (req, res) => {
+  app.post("/api/repair-center/team", requireRole(["repair_center", "repair_center_staff"]), async (req, res) => {
     try {
       if (!req.user) return res.status(401).json({ error: "Non autenticato" });
       const repairCenterId = req.user.id;
@@ -37229,7 +37320,7 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
-  app.put("/api/repair-center/team/:id", requireRole("repair_center"), async (req, res) => {
+  app.put("/api/repair-center/team/:id", requireRole(["repair_center", "repair_center_staff"]), async (req, res) => {
     try {
       if (!req.user) return res.status(401).json({ error: "Non autenticato" });
       const repairCenterId = req.user.id;
@@ -37244,7 +37335,7 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
-  app.delete("/api/repair-center/team/:id", requireRole("repair_center"), async (req, res) => {
+  app.delete("/api/repair-center/team/:id", requireRole(["repair_center", "repair_center_staff"]), async (req, res) => {
     try {
       if (!req.user) return res.status(401).json({ error: "Non autenticato" });
       const repairCenterId = req.user.id;
@@ -37258,7 +37349,7 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
-  app.post("/api/repair-center/team/:id/reset-password", requireRole("repair_center"), async (req, res) => {
+  app.post("/api/repair-center/team/:id/reset-password", requireRole(["repair_center", "repair_center_staff"]), async (req, res) => {
     try {
       if (!req.user) return res.status(401).json({ error: "Non autenticato" });
       const repairCenterId = req.user.id;
@@ -38030,7 +38121,7 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
-  app.post("/api/repair-center/hr/work-profiles", requireRole("repair_center"), async (req, res) => {
+  app.post("/api/repair-center/hr/work-profiles", requireRole(["repair_center", "repair_center_staff"]), async (req, res) => {
     try {
       if (!req.user) return res.status(401).json({ error: "Non autenticato" });
       const repairCenterId = getRepairCenterIdFromUser(req.user);
@@ -38062,7 +38153,7 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
-  app.patch("/api/repair-center/hr/work-profiles/:id", requireRole("repair_center"), async (req, res) => {
+  app.patch("/api/repair-center/hr/work-profiles/:id", requireRole(["repair_center", "repair_center_staff"]), async (req, res) => {
     try {
       if (!req.user) return res.status(401).json({ error: "Non autenticato" });
       const repairCenterId = getRepairCenterIdFromUser(req.user);
@@ -38093,7 +38184,7 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
-  app.delete("/api/repair-center/hr/work-profiles/:id", requireRole("repair_center"), async (req, res) => {
+  app.delete("/api/repair-center/hr/work-profiles/:id", requireRole(["repair_center", "repair_center_staff"]), async (req, res) => {
     try {
       if (!req.user) return res.status(401).json({ error: "Non autenticato" });
       const repairCenterId = getRepairCenterIdFromUser(req.user);
