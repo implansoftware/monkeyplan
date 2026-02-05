@@ -306,11 +306,12 @@ export default function ResellerPosTerminal() {
   const [tempProductName, setTempProductName] = useState("");
   const [tempProductPrice, setTempProductPrice] = useState("");
   
-  // Stato per Payment Link Stripe
+  // Stato per Payment Link Stripe/PayPal
   const [paymentLinkDialog, setPaymentLinkDialog] = useState(false);
   const [paymentLinkUrl, setPaymentLinkUrl] = useState<string | null>(null);
   const [paymentLinkTransactionId, setPaymentLinkTransactionId] = useState<string | null>(null);
   const [paymentLinkStatus, setPaymentLinkStatus] = useState<"generating" | "ready" | "checking" | "completed" | "expired">("generating");
+  const [paymentLinkType, setPaymentLinkType] = useState<"stripe" | "paypal">("stripe");
   
   const barcodeInputRef = useRef<HTMLInputElement>(null);
   
@@ -583,13 +584,21 @@ export default function ResellerPosTerminal() {
           description: `Transazione e fattura ${data.invoice.invoiceNumber} create con successo` 
         });
       } else {
-        // Per stripe_link, apri il dialog con QR code
+        // Per stripe_link o paypal, apri il dialog con link pagamento
         if (data.transaction.paymentMethod === "stripe_link") {
           setPaymentLinkTransactionId(data.transaction.id);
+          setPaymentLinkType("stripe");
           setPaymentLinkStatus("generating");
           setPaymentLinkDialog(true);
           setPaymentDialog(false);
           createPaymentLinkMutation.mutate(data.transaction.id);
+        } else if (data.transaction.paymentMethod === "paypal") {
+          setPaymentLinkTransactionId(data.transaction.id);
+          setPaymentLinkType("paypal");
+          setPaymentLinkStatus("generating");
+          setPaymentLinkDialog(true);
+          setPaymentDialog(false);
+          createPaypalOrderMutation.mutate(data.transaction.id);
         } else {
           toast({ title: "Vendita registrata", description: "Transazione completata" });
         }
@@ -654,6 +663,44 @@ export default function ResellerPosTerminal() {
     onError: (error: any) => {
       toast({ title: "Errore rigenerazione", description: error.message, variant: "destructive" });
       setPaymentLinkStatus("expired");
+    },
+  });
+
+  // Mutation per creare ordine PayPal
+  const createPaypalOrderMutation = useMutation({
+    mutationFn: async (transactionId: string) => {
+      const res = await apiRequest("POST", "/api/reseller/pos/create-paypal-order", { transactionId });
+      return res.json();
+    },
+    onSuccess: (data: { orderId: string; approvalUrl: string }) => {
+      setPaymentLinkUrl(data.approvalUrl);
+      setPaymentLinkStatus("ready");
+    },
+    onError: (error: any) => {
+      toast({ title: "Errore creazione PayPal", description: error.message, variant: "destructive" });
+      setPaymentLinkDialog(false);
+    },
+  });
+
+  // Mutation per verificare stato pagamento PayPal
+  const checkPaypalStatusMutation = useMutation({
+    mutationFn: async (transactionId: string) => {
+      const res = await apiRequest("GET", `/api/reseller/pos/check-paypal-status/${transactionId}`);
+      return res.json();
+    },
+    onSuccess: (data: { status: string; paid: boolean }) => {
+      if (data.paid) {
+        setPaymentLinkStatus("completed");
+        queryClient.invalidateQueries({ queryKey: ["/api/reseller/pos", repairCenterId, "session-transactions", selectedRegisterId] });
+        toast({ title: "Pagamento PayPal ricevuto!", description: "Il pagamento è stato completato con successo" });
+      } else {
+        setPaymentLinkStatus("ready");
+        toast({ title: "In attesa", description: "Il cliente non ha ancora completato il pagamento PayPal" });
+      }
+    },
+    onError: (error: any) => {
+      toast({ title: "Errore verifica PayPal", description: error.message, variant: "destructive" });
+      setPaymentLinkStatus("ready");
     },
   });
 
@@ -1951,8 +1998,8 @@ export default function ResellerPosTerminal() {
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <QrCode className="w-5 h-5" />
-              Link Pagamento
+              {paymentLinkType === "paypal" ? <Wallet className="w-5 h-5" /> : <QrCode className="w-5 h-5" />}
+              {paymentLinkType === "paypal" ? "Pagamento PayPal" : "Link Pagamento"}
             </DialogTitle>
           </DialogHeader>
           
@@ -2013,13 +2060,17 @@ export default function ResellerPosTerminal() {
                   onClick={() => {
                     if (paymentLinkTransactionId) {
                       setPaymentLinkStatus("checking");
-                      checkPaymentStatusMutation.mutate(paymentLinkTransactionId);
+                      if (paymentLinkType === "paypal") {
+                        checkPaypalStatusMutation.mutate(paymentLinkTransactionId);
+                      } else {
+                        checkPaymentStatusMutation.mutate(paymentLinkTransactionId);
+                      }
                     }
                   }}
-                  disabled={checkPaymentStatusMutation.isPending}
+                  disabled={checkPaymentStatusMutation.isPending || checkPaypalStatusMutation.isPending}
                   data-testid="button-check-payment"
                 >
-                  {checkPaymentStatusMutation.isPending ? (
+                  {(checkPaymentStatusMutation.isPending || checkPaypalStatusMutation.isPending) ? (
                     <>
                       <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                       Verifica in corso...
