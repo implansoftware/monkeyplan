@@ -140,10 +140,22 @@ export async function getPayPalOrderStatus(
   clientSecret: string,
   orderId: string
 ): Promise<{ status: string; id: string }> {
-  const client = createPayPalClient(clientId, clientSecret);
-  const ordersController = new OrdersController(client);
-  
-  const { body } = await ordersController.getOrder({ id: orderId });
-  const parsed = JSON.parse(String(body));
-  return { status: parsed.status, id: parsed.id };
+  try {
+    const client = createPayPalClient(clientId, clientSecret);
+    const ordersController = new OrdersController(client);
+    
+    console.log("Calling PayPal getOrder for:", orderId);
+    const response = await ordersController.getOrder({ id: orderId });
+    console.log("PayPal getOrder raw response:", response);
+    
+    const parsed = typeof response.body === 'string' 
+      ? JSON.parse(response.body) 
+      : response.body;
+    console.log("PayPal getOrder parsed:", parsed);
+    
+    return { status: parsed.status, id: parsed.id };
+  } catch (error: any) {
+    console.error("getPayPalOrderStatus error:", error.message, error);
+    throw error;
+  }
 }
