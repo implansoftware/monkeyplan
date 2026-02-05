@@ -173,6 +173,7 @@ export function RepairIntakeWizard({
     fullName: "", 
     email: "", 
     phone: "",
+    customerType: "private" as "private" | "company",
     // Campi avanzati
     codiceFiscale: "",
     partitaIva: "",
@@ -261,7 +262,7 @@ export function RepairIntakeWizard({
       setSelectedResellerId("");
       setSelectedSubResellerId("");
       setShowNewCustomerForm(false);
-      setNewCustomerForm({ fullName: "", email: "", phone: "", codiceFiscale: "", partitaIva: "", ragioneSociale: "", indirizzo: "", cap: "", citta: "", provincia: "", pec: "", codiceUnivoco: "" });
+      setNewCustomerForm({ fullName: "", email: "", phone: "", customerType: "private", codiceFiscale: "", partitaIva: "", ragioneSociale: "", indirizzo: "", cap: "", citta: "", provincia: "", pec: "", codiceUnivoco: "" });
       setShowNewBrandForm(false);
       setNewBrandName("");
       setShowNewModelForm(false);
@@ -313,6 +314,7 @@ export function RepairIntakeWizard({
       fullName: string; 
       email?: string; 
       phone?: string;
+      customerType?: "private" | "company";
       codiceFiscale?: string;
       partitaIva?: string;
       ragioneSociale?: string;
@@ -333,7 +335,7 @@ export function RepairIntakeWizard({
       form.setValue("customerId", newCustomer.id);
       // Chiudi il form e resetta
       setShowNewCustomerForm(false);
-      setNewCustomerForm({ fullName: "", email: "", phone: "", codiceFiscale: "", partitaIva: "", ragioneSociale: "", indirizzo: "", cap: "", citta: "", provincia: "", pec: "", codiceUnivoco: "" });
+      setNewCustomerForm({ fullName: "", email: "", phone: "", customerType: "private", codiceFiscale: "", partitaIva: "", ragioneSociale: "", indirizzo: "", cap: "", citta: "", provincia: "", pec: "", codiceUnivoco: "" });
       toast({ 
         title: "Cliente creato", 
         description: `${newCustomer.fullName} è stato aggiunto` 
@@ -1011,7 +1013,7 @@ export function RepairIntakeWizard({
                           size="icon"
                           onClick={() => {
                             setShowNewCustomerForm(false);
-                            setNewCustomerForm({ fullName: "", email: "", phone: "", codiceFiscale: "", partitaIva: "", ragioneSociale: "", indirizzo: "", cap: "", citta: "", provincia: "", pec: "", codiceUnivoco: "" });
+                            setNewCustomerForm({ fullName: "", email: "", phone: "", customerType: "private", codiceFiscale: "", partitaIva: "", ragioneSociale: "", indirizzo: "", cap: "", citta: "", provincia: "", pec: "", codiceUnivoco: "" });
                           }}
                           data-testid="button-cancel-new-customer"
                         >
@@ -1067,6 +1069,44 @@ export function RepairIntakeWizard({
                           </div>
                         </div>
 
+                        <div className="pt-2">
+                          <Label className="text-sm font-medium">Tipo Cliente</Label>
+                          <div className="flex gap-2 mt-2">
+                            <Button
+                              type="button"
+                              variant={newCustomerForm.customerType === "private" ? "default" : "outline"}
+                              size="sm"
+                              className="flex-1"
+                              onClick={() => setNewCustomerForm(prev => ({ 
+                                ...prev, 
+                                customerType: "private",
+                                partitaIva: "",
+                                ragioneSociale: "",
+                                pec: "",
+                                codiceUnivoco: ""
+                              }))}
+                              data-testid="button-customer-type-private"
+                            >
+                              <User className="h-4 w-4 mr-2" />
+                              Privato
+                            </Button>
+                            <Button
+                              type="button"
+                              variant={newCustomerForm.customerType === "company" ? "default" : "outline"}
+                              size="sm"
+                              className="flex-1"
+                              onClick={() => {
+                                setNewCustomerForm(prev => ({ ...prev, customerType: "company" }));
+                                setShowAdvancedCustomerFields(true);
+                              }}
+                              data-testid="button-customer-type-company"
+                            >
+                              <Building2 className="h-4 w-4 mr-2" />
+                              Azienda
+                            </Button>
+                          </div>
+                        </div>
+
                         <Button
                           type="button"
                           variant="ghost"
@@ -1077,7 +1117,7 @@ export function RepairIntakeWizard({
                         >
                           <span className="flex items-center gap-2">
                             <Building2 className="h-4 w-4" />
-                            Dati completi (fiscali/indirizzo)
+                            {newCustomerForm.customerType === "company" ? "Dati azienda (fiscali/indirizzo)" : "Dati completi (fiscali/indirizzo)"}
                           </span>
                           {showAdvancedCustomerFields ? (
                             <ChevronUp className="h-4 w-4" />
@@ -1088,7 +1128,7 @@ export function RepairIntakeWizard({
 
                         {showAdvancedCustomerFields && (
                           <div className="space-y-3 pt-2 border-t">
-                            <div className="grid grid-cols-2 gap-3">
+                            {newCustomerForm.customerType === "private" ? (
                               <div>
                                 <Label htmlFor="new-customer-codice-fiscale">Codice Fiscale</Label>
                                 <Input
@@ -1100,33 +1140,76 @@ export function RepairIntakeWizard({
                                   data-testid="input-new-customer-codice-fiscale"
                                 />
                               </div>
-                              <div>
-                                <Label htmlFor="new-customer-partita-iva">Partita IVA</Label>
-                                <Input
-                                  id="new-customer-partita-iva"
-                                  placeholder="IT12345678901"
-                                  value={newCustomerForm.partitaIva}
-                                  onChange={(e) => setNewCustomerForm(prev => ({ ...prev, partitaIva: e.target.value.toUpperCase() }))}
-                                  className="mt-1"
-                                  data-testid="input-new-customer-partita-iva"
-                                />
-                              </div>
-                            </div>
-
-                            <div>
-                              <Label htmlFor="new-customer-ragione-sociale">Ragione Sociale</Label>
-                              <div className="relative mt-1">
-                                <Building className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                                <Input
-                                  id="new-customer-ragione-sociale"
-                                  placeholder="Azienda S.r.l."
-                                  value={newCustomerForm.ragioneSociale}
-                                  onChange={(e) => setNewCustomerForm(prev => ({ ...prev, ragioneSociale: e.target.value }))}
-                                  className="pl-10"
-                                  data-testid="input-new-customer-ragione-sociale"
-                                />
-                              </div>
-                            </div>
+                            ) : (
+                              <>
+                                <div>
+                                  <Label htmlFor="new-customer-ragione-sociale">Ragione Sociale *</Label>
+                                  <div className="relative mt-1">
+                                    <Building className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                                    <Input
+                                      id="new-customer-ragione-sociale"
+                                      placeholder="Azienda S.r.l."
+                                      value={newCustomerForm.ragioneSociale}
+                                      onChange={(e) => setNewCustomerForm(prev => ({ ...prev, ragioneSociale: e.target.value }))}
+                                      className="pl-10"
+                                      data-testid="input-new-customer-ragione-sociale"
+                                    />
+                                  </div>
+                                </div>
+                                <div className="grid grid-cols-2 gap-3">
+                                  <div>
+                                    <Label htmlFor="new-customer-partita-iva">Partita IVA *</Label>
+                                    <Input
+                                      id="new-customer-partita-iva"
+                                      placeholder="IT12345678901"
+                                      value={newCustomerForm.partitaIva}
+                                      onChange={(e) => setNewCustomerForm(prev => ({ ...prev, partitaIva: e.target.value.toUpperCase() }))}
+                                      className="mt-1"
+                                      data-testid="input-new-customer-partita-iva"
+                                    />
+                                  </div>
+                                  <div>
+                                    <Label htmlFor="new-customer-codice-fiscale">Codice Fiscale</Label>
+                                    <Input
+                                      id="new-customer-codice-fiscale"
+                                      placeholder="RSSMRA80A01H501T"
+                                      value={newCustomerForm.codiceFiscale}
+                                      onChange={(e) => setNewCustomerForm(prev => ({ ...prev, codiceFiscale: e.target.value.toUpperCase() }))}
+                                      className="mt-1"
+                                      data-testid="input-new-customer-codice-fiscale"
+                                    />
+                                  </div>
+                                </div>
+                                <div className="grid grid-cols-2 gap-3">
+                                  <div>
+                                    <Label htmlFor="new-customer-pec">PEC</Label>
+                                    <div className="relative mt-1">
+                                      <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                                      <Input
+                                        id="new-customer-pec"
+                                        type="email"
+                                        placeholder="azienda@pec.it"
+                                        value={newCustomerForm.pec}
+                                        onChange={(e) => setNewCustomerForm(prev => ({ ...prev, pec: e.target.value.toLowerCase() }))}
+                                        className="pl-10"
+                                        data-testid="input-new-customer-pec"
+                                      />
+                                    </div>
+                                  </div>
+                                  <div>
+                                    <Label htmlFor="new-customer-codice-univoco">Codice SDI</Label>
+                                    <Input
+                                      id="new-customer-codice-univoco"
+                                      placeholder="XXXXXXX"
+                                      value={newCustomerForm.codiceUnivoco}
+                                      onChange={(e) => setNewCustomerForm(prev => ({ ...prev, codiceUnivoco: e.target.value.toUpperCase() }))}
+                                      className="mt-1"
+                                      data-testid="input-new-customer-codice-univoco"
+                                    />
+                                  </div>
+                                </div>
+                              </>
+                            )}
 
                             <div>
                               <Label htmlFor="new-customer-indirizzo">Indirizzo</Label>
@@ -1179,33 +1262,6 @@ export function RepairIntakeWizard({
                                 />
                               </div>
                             </div>
-
-                            <div className="grid grid-cols-2 gap-3">
-                              <div>
-                                <Label htmlFor="new-customer-pec">PEC</Label>
-                                <Input
-                                  id="new-customer-pec"
-                                  type="email"
-                                  placeholder="azienda@pec.it"
-                                  value={newCustomerForm.pec}
-                                  onChange={(e) => setNewCustomerForm(prev => ({ ...prev, pec: e.target.value }))}
-                                  className="mt-1"
-                                  data-testid="input-new-customer-pec"
-                                />
-                              </div>
-                              <div>
-                                <Label htmlFor="new-customer-codice-univoco">Codice SDI</Label>
-                                <Input
-                                  id="new-customer-codice-univoco"
-                                  placeholder="XXXXXXX"
-                                  maxLength={7}
-                                  value={newCustomerForm.codiceUnivoco}
-                                  onChange={(e) => setNewCustomerForm(prev => ({ ...prev, codiceUnivoco: e.target.value.toUpperCase() }))}
-                                  className="mt-1"
-                                  data-testid="input-new-customer-codice-univoco"
-                                />
-                              </div>
-                            </div>
                           </div>
                         )}
                       </div>
@@ -1217,7 +1273,7 @@ export function RepairIntakeWizard({
                           className="flex-1"
                           onClick={() => {
                             setShowNewCustomerForm(false);
-                            setNewCustomerForm({ fullName: "", email: "", phone: "", codiceFiscale: "", partitaIva: "", ragioneSociale: "", indirizzo: "", cap: "", citta: "", provincia: "", pec: "", codiceUnivoco: "" });
+                            setNewCustomerForm({ fullName: "", email: "", phone: "", customerType: "private", codiceFiscale: "", partitaIva: "", ragioneSociale: "", indirizzo: "", cap: "", citta: "", provincia: "", pec: "", codiceUnivoco: "" });
                           }}
                         >
                           Annulla
@@ -1231,6 +1287,7 @@ export function RepairIntakeWizard({
                               fullName: newCustomerForm.fullName.trim(),
                               email: newCustomerForm.email.trim() || undefined,
                               phone: newCustomerForm.phone.trim() || undefined,
+                              customerType: newCustomerForm.customerType,
                               codiceFiscale: newCustomerForm.codiceFiscale.trim() || undefined,
                               partitaIva: newCustomerForm.partitaIva.trim() || undefined,
                               ragioneSociale: newCustomerForm.ragioneSociale.trim() || undefined,

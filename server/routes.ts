@@ -19482,6 +19482,7 @@ export function registerRoutes(app: Express): Server {
         email: z.string().email("Email non valida").optional().nullable(),
         phone: z.string().optional().nullable(),
         subResellerId: z.string().optional().nullable(),
+        customerType: z.enum(["private", "company"]).default("private"),
         // Campi avanzati opzionali
         codiceFiscale: z.string().optional().nullable(),
         partitaIva: z.string().optional().nullable(),
@@ -19584,6 +19585,7 @@ export function registerRoutes(app: Express): Server {
         isActive: true,
         resellerId: assignedResellerId,
         subResellerId: assignedSubResellerId,
+        customerType: validatedData.customerType,
         // Campi avanzati
         codiceFiscale: validatedData.codiceFiscale || null,
         partitaIva: validatedData.partitaIva || null,
