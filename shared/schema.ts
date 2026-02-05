@@ -61,6 +61,19 @@ export const notificationTypeEnum = pgEnum("notification_type", ["repair_update"
 // RIMOSSO: diagnosisSeverityEnum - non più necessario
 export const quoteStatusEnum = pgEnum("quote_status", ["draft", "sent", "accepted", "rejected"]);
 export const repairPriorityEnum = pgEnum("repair_priority", ["low", "medium", "high", "urgent"]);
+
+// Customer Relationship Types (gradi di parentela)
+export const customerRelationshipTypeEnum = pgEnum("customer_relationship_type", [
+  "genitore",   // madre/padre
+  "figlio",     // figlio/figlia
+  "coniuge",    // marito/moglie
+  "fratello",   // fratello/sorella
+  "cugino",     // cugino/cugina
+  "zio",        // zio/zia
+  "nipote",     // nipote
+  "nonno",      // nonno/nonna
+  "altro"       // altro (con nota)
+]);
 export const partsOrderStatusEnum = pgEnum("parts_order_status", ["ordered", "in_transit", "received", "cancelled"]);
 
 // Parts Purchase Order Status - Stato ordine raggruppato ricambi
@@ -520,6 +533,24 @@ export const users = pgTable("users", {
   logoUrl: text("logo_url"), // URL del logo per reseller
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
+
+// Customer Relationships (Gradi di parentela tra clienti)
+export const customerRelationships = pgTable("customer_relationships", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  customerId: varchar("customer_id").notNull().references(() => users.id, { onDelete: "cascade" }), // Cliente principale
+  relatedCustomerId: varchar("related_customer_id").notNull().references(() => users.id, { onDelete: "cascade" }), // Cliente correlato
+  relationshipType: customerRelationshipTypeEnum("relationship_type").notNull(), // Tipo di parentela
+  notes: text("notes"), // Note opzionali (utile per "altro")
+  createdBy: varchar("created_by").notNull().references(() => users.id, { onDelete: "cascade" }), // Chi ha creato la relazione
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const insertCustomerRelationshipSchema = createInsertSchema(customerRelationships).omit({
+  id: true,
+  createdAt: true,
+});
+export type InsertCustomerRelationship = z.infer<typeof insertCustomerRelationshipSchema>;
+export type CustomerRelationship = typeof customerRelationships.$inferSelect;
 
 // Reseller Staff Permissions - Permessi granulari per modulo per utenti staff del rivenditore
 export const resellerStaffPermissions = pgTable("reseller_staff_permissions", {

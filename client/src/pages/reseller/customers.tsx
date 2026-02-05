@@ -12,6 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Switch } from "@/components/ui/switch";
 import { Users, Plus, Search, Mail, Building2, Wrench, Pencil, X, Check, Trash2, Phone, UserCheck, Eye, ChevronRight, TrendingUp, Filter } from "lucide-react";
 import { Link } from "wouter";
+import { CustomerRelationshipsCard } from "@/components/CustomerRelationshipsCard";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { Skeleton } from "@/components/ui/skeleton";
 import { format } from "date-fns";
@@ -588,10 +589,11 @@ export default function ResellerCustomers() {
               </div>
             ) : (
               <Tabs defaultValue="info" className="w-full">
-                <TabsList className="grid w-full grid-cols-3">
+                <TabsList className="grid w-full grid-cols-4">
                   <TabsTrigger value="info" data-testid="tab-customer-info">Informazioni</TabsTrigger>
                   <TabsTrigger value="branches" data-testid="tab-customer-branches">Filiali</TabsTrigger>
                   <TabsTrigger value="repairs" data-testid="tab-customer-repairs">Riparazioni</TabsTrigger>
+                  <TabsTrigger value="relationships" data-testid="tab-customer-relationships">Parentele</TabsTrigger>
                 </TabsList>
                 
                 <TabsContent value="info" className="space-y-4 mt-4">
@@ -682,6 +684,12 @@ export default function ResellerCustomers() {
                         ))}
                       </TableBody>
                     </Table>
+                  )}
+                </TabsContent>
+
+                <TabsContent value="relationships" className="mt-4">
+                  {selectedCustomer && (
+                    <CustomerRelationshipsCard customerId={selectedCustomer.id} />
                   )}
                 </TabsContent>
               </Tabs>

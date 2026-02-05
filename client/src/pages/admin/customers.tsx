@@ -21,6 +21,7 @@ import { format } from "date-fns";
 import { it } from "date-fns/locale";
 import type { DateRange } from "react-day-picker";
 import { CustomerWizardDialog } from "@/components/CustomerWizardDialog";
+import { CustomerRelationshipsCard } from "@/components/CustomerRelationshipsCard";
 import { Link } from "wouter";
 
 interface CustomerEditFormData {
@@ -531,6 +532,7 @@ export default function AdminCustomers() {
                 <TabsTrigger value="personal" className="rounded-lg" data-testid="tab-personal">Dati Personali</TabsTrigger>
                 <TabsTrigger value="assignment" className="rounded-lg" data-testid="tab-assignment">Assegnazione</TabsTrigger>
                 <TabsTrigger value="billing" className="rounded-lg" data-testid="tab-billing">Fatturazione</TabsTrigger>
+                <TabsTrigger value="relationships" className="rounded-lg" data-testid="tab-relationships">Parentele</TabsTrigger>
               </TabsList>
               
               <TabsContent value="personal" className="space-y-4 mt-4">
@@ -704,6 +706,12 @@ export default function AdminCustomers() {
                     />
                   </div>
                 </div>
+              </TabsContent>
+              
+              <TabsContent value="relationships" className="mt-4">
+                {editingCustomer && (
+                  <CustomerRelationshipsCard customerId={editingCustomer.id} />
+                )}
               </TabsContent>
             </Tabs>
           )}

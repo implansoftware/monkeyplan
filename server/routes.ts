@@ -370,6 +370,22 @@ function setActivityEntity(res: Response, entity: { type?: string; id?: string }
   res.locals.activityEntity = entity;
 }
 
+// Helper function to get inverse relationship type for bidirectional customer relationships
+function getInverseRelationshipType(type: string): string {
+  const inverseMap: Record<string, string> = {
+    'genitore': 'figlio',
+    'figlio': 'genitore',
+    'coniuge': 'coniuge',
+    'fratello': 'fratello',
+    'cugino': 'cugino',
+    'zio': 'nipote',
+    'nipote': 'zio',
+    'nonno': 'nipote',
+    'altro': 'altro',
+  };
+  return inverseMap[type] || 'altro';
+}
+
 // Middleware for automatic activity logging
 async function logActivity(
   userId: string,
@@ -20008,6 +20024,175 @@ export function registerRoutes(app: Express): Server {
       res.status(204).send();
     } catch (error: any) {
       console.error("Service order creation error:", error);
+      res.status(500).send(error.message);
+    }
+  });
+
+
+  // ============ CUSTOMER RELATIONSHIPS (PARENTELA) ============
+
+  // GET /api/customers/:customerId/relationships - List customer relationships
+  app.get("/api/customers/:customerId/relationships", requireAuth, async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const { customerId } = req.params;
+      
+      // Only managers can view relationships
+      if (!['admin', 'admin_staff', 'reseller', 'reseller_staff', 'repair_center', 'repair_center_staff'].includes(req.user.role)) {
+        return res.status(403).send("Forbidden");
+      }
+      
+      // Check access based on role
+      const customer = await storage.getUser(customerId);
+      if (!customer || customer.role !== 'customer') {
+        return res.status(404).send("Customer not found");
+      }
+      
+      // Verify access rights
+      if (req.user.role === 'reseller' || req.user.role === 'reseller_staff') {
+        if (customer.resellerId !== (req.user.role === 'reseller' ? req.user.id : req.user.resellerId)) {
+          return res.status(403).send("Forbidden");
+        }
+      } else if (req.user.role === 'repair_center' || req.user.role === 'repair_center_staff') {
+        const customerCenters = await storage.listRepairCentersForCustomer(customerId);
+        const hasAccess = customerCenters.some(c => c.id === req.user!.repairCenterId);
+        if (!hasAccess) {
+          return res.status(403).send("Forbidden");
+        }
+      }
+      
+      const relationships = await storage.listCustomerRelationships(customerId);
+      res.json(relationships);
+    } catch (error: any) {
+      console.error("Customer relationships list error:", error);
+      res.status(500).send(error.message);
+    }
+  });
+
+  // POST /api/customers/:customerId/relationships - Create customer relationship (with bidirectional creation)
+  app.post("/api/customers/:customerId/relationships", requireAuth, async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const { customerId } = req.params;
+      const { relatedCustomerId, relationshipType, notes } = req.body;
+      
+      // Only managers can create relationships
+      if (!['admin', 'admin_staff', 'reseller', 'reseller_staff', 'repair_center', 'repair_center_staff'].includes(req.user.role)) {
+        return res.status(403).send("Forbidden");
+      }
+      
+      // Validate required fields
+      if (!relatedCustomerId || !relationshipType) {
+        return res.status(400).send("relatedCustomerId and relationshipType are required");
+      }
+      
+      // Cannot relate to self
+      if (customerId === relatedCustomerId) {
+        return res.status(400).send("Cannot create relationship with self");
+      }
+      
+      // Check both customers exist
+      const customer = await storage.getUser(customerId);
+      const relatedCustomer = await storage.getUser(relatedCustomerId);
+      
+      if (!customer || customer.role !== 'customer') {
+        return res.status(404).send("Customer not found");
+      }
+      if (!relatedCustomer || relatedCustomer.role !== 'customer') {
+        return res.status(404).send("Related customer not found");
+      }
+      
+      // Verify access rights
+      if (req.user.role === 'reseller' || req.user.role === 'reseller_staff') {
+        const resellerId = req.user.role === 'reseller' ? req.user.id : req.user.resellerId;
+        if (customer.resellerId !== resellerId || relatedCustomer.resellerId !== resellerId) {
+          return res.status(403).send("Both customers must belong to your organization");
+        }
+      } else if (req.user.role === 'repair_center' || req.user.role === 'repair_center_staff') {
+        const customerCenters = await storage.listRepairCentersForCustomer(customerId);
+        const relatedCenters = await storage.listRepairCentersForCustomer(relatedCustomerId);
+        const hasAccessCustomer = customerCenters.some(c => c.id === req.user!.repairCenterId);
+        const hasAccessRelated = relatedCenters.some(c => c.id === req.user!.repairCenterId);
+        if (!hasAccessCustomer || !hasAccessRelated) {
+          return res.status(403).send("Both customers must belong to your repair center");
+        }
+      }
+      
+      // Create the primary relationship
+      const relationship = await storage.createCustomerRelationship({
+        customerId,
+        relatedCustomerId,
+        relationshipType,
+        notes,
+        createdBy: req.user.id,
+      });
+      
+      // Create the inverse relationship (bidirectional)
+      const inverseType = getInverseRelationshipType(relationshipType);
+      await storage.createCustomerRelationship({
+        customerId: relatedCustomerId,
+        relatedCustomerId: customerId,
+        relationshipType: inverseType,
+        notes,
+        createdBy: req.user.id,
+      });
+      
+      res.status(201).json(relationship);
+    } catch (error: any) {
+      console.error("Customer relationship creation error:", error);
+      res.status(500).send(error.message);
+    }
+  });
+
+  // DELETE /api/customer-relationships/:id - Delete customer relationship (and inverse)
+  app.delete("/api/customer-relationships/:id", requireAuth, async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      // Only managers can delete relationships
+      if (!['admin', 'admin_staff', 'reseller', 'reseller_staff', 'repair_center', 'repair_center_staff'].includes(req.user.role)) {
+        return res.status(403).send("Forbidden");
+      }
+      
+      const relationship = await storage.getCustomerRelationship(req.params.id);
+      if (!relationship) {
+        return res.status(404).send("Relationship not found");
+      }
+      
+      // Check access
+      const customer = await storage.getUser(relationship.customerId);
+      if (!customer) {
+        return res.status(404).send("Customer not found");
+      }
+      
+      if (req.user.role === 'reseller' || req.user.role === 'reseller_staff') {
+        const resellerId = req.user.role === 'reseller' ? req.user.id : req.user.resellerId;
+        if (customer.resellerId !== resellerId) {
+          return res.status(403).send("Forbidden");
+        }
+      } else if (req.user.role === 'repair_center' || req.user.role === 'repair_center_staff') {
+        const customerCenters = await storage.listRepairCentersForCustomer(relationship.customerId);
+        const hasAccess = customerCenters.some(c => c.id === req.user!.repairCenterId);
+        if (!hasAccess) {
+          return res.status(403).send("Forbidden");
+        }
+      }
+      
+      // Delete the relationship
+      await storage.deleteCustomerRelationship(req.params.id);
+      
+      // Also delete the inverse relationship if it exists
+      const inverseRelationships = await storage.listCustomerRelationships(relationship.relatedCustomerId);
+      const inverseRel = inverseRelationships.find(r => r.relatedCustomerId === relationship.customerId);
+      if (inverseRel) {
+        await storage.deleteCustomerRelationship(inverseRel.id);
+      }
+      
+      res.status(204).send();
+    } catch (error: any) {
+      console.error("Customer relationship deletion error:", error);
       res.status(500).send(error.message);
     }
   });

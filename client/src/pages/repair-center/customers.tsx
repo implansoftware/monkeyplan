@@ -7,7 +7,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { CustomerRelationshipsCard } from "@/components/CustomerRelationshipsCard";
 import { Users, Search, Phone, Mail, MapPin, Wrench, Eye, CheckCircle, Clock, User, Plus, Pencil } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -271,7 +273,13 @@ export default function RepairCenterCustomers() {
             </DialogTitle>
           </DialogHeader>
           {selectedCustomer && (
-            <div className="space-y-6">
+            <Tabs defaultValue="info" className="w-full">
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="info" data-testid="tab-customer-info">Informazioni</TabsTrigger>
+                <TabsTrigger value="relationships" data-testid="tab-customer-relationships">Parentele</TabsTrigger>
+              </TabsList>
+              
+              <TabsContent value="info" className="space-y-6 mt-4">
               <div className="flex gap-4 items-start">
                 <Avatar className="h-16 w-16">
                   <AvatarFallback className="bg-primary/10 text-primary text-xl">
@@ -369,7 +377,12 @@ export default function RepairCenterCustomers() {
                   </ScrollArea>
                 </div>
               )}
-            </div>
+              </TabsContent>
+              
+              <TabsContent value="relationships" className="mt-4">
+                <CustomerRelationshipsCard customerId={selectedCustomer.id} />
+              </TabsContent>
+            </Tabs>
           )}
           <DialogFooter>
             <Button variant="outline" onClick={() => setDetailDialogOpen(false)}>Chiudi</Button>

@@ -78,6 +78,7 @@ import {
   smartphoneSpecs, SmartphoneSpecs, InsertSmartphoneSpecs,
   accessorySpecs, AccessorySpecs, InsertAccessorySpecs,
   customerAddresses, CustomerAddress, InsertCustomerAddress,
+  customerRelationships, CustomerRelationship, InsertCustomerRelationship,
   carts, Cart, InsertCart,
   cartItems, CartItem, InsertCartItem,
   salesOrders, SalesOrder, InsertSalesOrder,
@@ -173,6 +174,12 @@ export interface IStorage {
   listCustomerIdsForRepairCenter(repairCenterId: string): Promise<string[]>;
   searchPosCustomers(repairCenterId: string, search?: string): Promise<Array<{ id: string; fullName: string; email: string; phone: string | null; customerType: 'private' | 'company' }>>;
   createQuickCustomer(repairCenterId: string, data: { fullName: string; email?: string; phone?: string }): Promise<User>;
+  
+  // Customer Relationships (Parentela)
+  listCustomerRelationships(customerId: string): Promise<Array<CustomerRelationship & { relatedCustomer: User }>>;
+  createCustomerRelationship(data: InsertCustomerRelationship): Promise<CustomerRelationship>;
+  deleteCustomerRelationship(id: string): Promise<void>;
+  getCustomerRelationship(id: string): Promise<CustomerRelationship | undefined>;
   
   // Staff-RepairCenter Many-to-Many
   listRepairCentersForStaff(staffId: string): Promise<RepairCenter[]>;
@@ -1506,6 +1513,37 @@ export class DatabaseStorage implements IStorage {
     await this.ensureCustomerRepairCenterAssociation(newUser.id, repairCenterId);
     
     return newUser;
+  }
+
+  // Customer Relationships (Parentela)
+  async listCustomerRelationships(customerId: string): Promise<Array<CustomerRelationship & { relatedCustomer: User }>> {
+    const results = await db
+      .select({
+        relationship: customerRelationships,
+        relatedCustomer: users,
+      })
+      .from(customerRelationships)
+      .innerJoin(users, eq(customerRelationships.relatedCustomerId, users.id))
+      .where(eq(customerRelationships.customerId, customerId));
+    
+    return results.map(r => ({
+      ...r.relationship,
+      relatedCustomer: r.relatedCustomer,
+    }));
+  }
+
+  async createCustomerRelationship(data: InsertCustomerRelationship): Promise<CustomerRelationship> {
+    const [relationship] = await db.insert(customerRelationships).values(data).returning();
+    return relationship;
+  }
+
+  async deleteCustomerRelationship(id: string): Promise<void> {
+    await db.delete(customerRelationships).where(eq(customerRelationships.id, id));
+  }
+
+  async getCustomerRelationship(id: string): Promise<CustomerRelationship | undefined> {
+    const [relationship] = await db.select().from(customerRelationships).where(eq(customerRelationships.id, id));
+    return relationship;
   }
 
   // Staff-RepairCenter Many-to-Many
