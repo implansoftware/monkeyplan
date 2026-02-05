@@ -53,7 +53,7 @@ import { calculateRepairPriority } from "./helpers/priorityCalculation";
 import { db } from "./db";
 import { sql, eq, and, desc } from "drizzle-orm";
 import { salesOrderPayments, salesOrders, salesOrderShipments, users } from "@shared/schema";
-import { encryptSecret, decryptSecret, getPayPalClientToken, createPayPalOrderHandler, capturePayPalOrderHandler } from "./paypal";
+import { encryptSecret, decryptSecret, getPayPalClientToken, createPayPalOrderHandler, capturePayPalOrderHandler, getPayPalOrderStatus } from "./paypal";
 import Stripe from 'stripe';
 
 const scryptAsync = promisify(scrypt);
@@ -39555,40 +39555,69 @@ export function registerRoutes(app: Express): Server {
         return res.status(400).json({ error: "PayPal not configured" });
       }
       
-      // Capture the PayPal payment
+      // First check order status before attempting capture
       const decryptedSecret = decryptSecret(paymentConfig.paypalClientSecret);
       try {
-        const captureResult = await capturePayPalOrderHandler(
+        const orderStatus = await getPayPalOrderStatus(
           paymentConfig.paypalClientId,
           decryptedSecret,
           transaction.paypalOrderId
         );
         
-        if (captureResult.body.status === "COMPLETED" && transaction.status === "pending") {
-          // Update transaction to completed
-          await storage.updatePosTransaction(transactionId, { 
-            status: "completed",
-            paymentReference: captureResult.body.id
-          });
-          
-          // Update session totals if we have a sessionId
-          if (transaction.sessionId) {
-            const sessionData = await storage.getPosSession(transaction.sessionId);
-            if (sessionData) {
-              await storage.updatePosSessionTotals(transaction.sessionId, {
-                totalSales: (sessionData.totalSales || 0) + transaction.total,
-                totalTransactions: (sessionData.totalTransactions || 0) + 1,
-                totalCardSales: (sessionData.totalCardSales || 0) + transaction.total,
-              });
+        // If already completed, update transaction
+        if (orderStatus.status === "COMPLETED") {
+          if (transaction.status === "pending") {
+            await storage.updatePosTransaction(transactionId, { 
+              status: "completed",
+              paymentReference: orderStatus.id
+            });
+            
+            if (transaction.sessionId) {
+              const sessionData = await storage.getPosSession(transaction.sessionId);
+              if (sessionData) {
+                await storage.updatePosSessionTotals(transaction.sessionId, {
+                  totalSales: (sessionData.totalSales || 0) + transaction.total,
+                  totalTransactions: (sessionData.totalTransactions || 0) + 1,
+                  totalCardSales: (sessionData.totalCardSales || 0) + transaction.total,
+                });
+              }
             }
           }
-          
           return res.json({ status: "completed", paid: true });
         }
         
+        // If approved, capture the payment
+        if (orderStatus.status === "APPROVED") {
+          const captureResult = await capturePayPalOrderHandler(
+            paymentConfig.paypalClientId,
+            decryptedSecret,
+            transaction.paypalOrderId
+          );
+          
+          if (captureResult.body.status === "COMPLETED") {
+            await storage.updatePosTransaction(transactionId, { 
+              status: "completed",
+              paymentReference: captureResult.body.id
+            });
+            
+            if (transaction.sessionId) {
+              const sessionData = await storage.getPosSession(transaction.sessionId);
+              if (sessionData) {
+                await storage.updatePosSessionTotals(transaction.sessionId, {
+                  totalSales: (sessionData.totalSales || 0) + transaction.total,
+                  totalTransactions: (sessionData.totalTransactions || 0) + 1,
+                  totalCardSales: (sessionData.totalCardSales || 0) + transaction.total,
+                });
+              }
+            }
+            return res.json({ status: "completed", paid: true });
+          }
+        }
+        
+        // Still pending
         return res.json({ status: "pending", paid: false, approvalUrl: transaction.paypalApprovalUrl });
-      } catch (captureError: any) {
-        // If capture fails, payment is not ready yet
+      } catch (checkError: any) {
+        console.error("PayPal check error:", checkError);
         return res.json({ status: "pending", paid: false, approvalUrl: transaction.paypalApprovalUrl });
       }
     } catch (error: any) {
@@ -40576,40 +40605,69 @@ export function registerRoutes(app: Express): Server {
         return res.status(400).json({ error: "PayPal not configured" });
       }
       
-      // Try to capture the PayPal payment
+      // First check order status before attempting capture
       const decryptedSecret = decryptSecret(paymentConfig.paypalClientSecret);
       try {
-        const captureResult = await capturePayPalOrderHandler(
+        const orderStatus = await getPayPalOrderStatus(
           paymentConfig.paypalClientId,
           decryptedSecret,
           transaction.paypalOrderId
         );
         
-        if (captureResult.body.status === "COMPLETED" && transaction.status === "pending") {
-          // Update transaction to completed
-          await storage.updatePosTransaction(transactionId, { 
-            status: "completed",
-            paymentReference: captureResult.body.id
-          });
-          
-          // Update session totals if we have a sessionId
-          if (transaction.sessionId) {
-            const sessionData = await storage.getPosSession(transaction.sessionId);
-            if (sessionData) {
-              await storage.updatePosSessionTotals(transaction.sessionId, {
-                totalSales: (sessionData.totalSales || 0) + transaction.total,
-                totalTransactions: (sessionData.totalTransactions || 0) + 1,
-                totalCardSales: (sessionData.totalCardSales || 0) + transaction.total,
-              });
+        // If already completed, update transaction
+        if (orderStatus.status === "COMPLETED") {
+          if (transaction.status === "pending") {
+            await storage.updatePosTransaction(transactionId, { 
+              status: "completed",
+              paymentReference: orderStatus.id
+            });
+            
+            if (transaction.sessionId) {
+              const sessionData = await storage.getPosSession(transaction.sessionId);
+              if (sessionData) {
+                await storage.updatePosSessionTotals(transaction.sessionId, {
+                  totalSales: (sessionData.totalSales || 0) + transaction.total,
+                  totalTransactions: (sessionData.totalTransactions || 0) + 1,
+                  totalCardSales: (sessionData.totalCardSales || 0) + transaction.total,
+                });
+              }
             }
           }
-          
           return res.json({ status: "completed", paid: true });
         }
         
+        // If approved, capture the payment
+        if (orderStatus.status === "APPROVED") {
+          const captureResult = await capturePayPalOrderHandler(
+            paymentConfig.paypalClientId,
+            decryptedSecret,
+            transaction.paypalOrderId
+          );
+          
+          if (captureResult.body.status === "COMPLETED") {
+            await storage.updatePosTransaction(transactionId, { 
+              status: "completed",
+              paymentReference: captureResult.body.id
+            });
+            
+            if (transaction.sessionId) {
+              const sessionData = await storage.getPosSession(transaction.sessionId);
+              if (sessionData) {
+                await storage.updatePosSessionTotals(transaction.sessionId, {
+                  totalSales: (sessionData.totalSales || 0) + transaction.total,
+                  totalTransactions: (sessionData.totalTransactions || 0) + 1,
+                  totalCardSales: (sessionData.totalCardSales || 0) + transaction.total,
+                });
+              }
+            }
+            return res.json({ status: "completed", paid: true });
+          }
+        }
+        
+        // Still pending
         return res.json({ status: "pending", paid: false, approvalUrl: transaction.paypalApprovalUrl });
-      } catch (captureError: any) {
-        // If capture fails, payment is not ready yet
+      } catch (checkError: any) {
+        console.error("PayPal check error:", checkError);
         return res.json({ status: "pending", paid: false, approvalUrl: transaction.paypalApprovalUrl });
       }
     } catch (error: any) {

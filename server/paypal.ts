@@ -134,3 +134,16 @@ export async function capturePayPalOrderHandler(
   const { body, ...httpResponse } = await ordersController.captureOrder(collect);
   return { body: JSON.parse(String(body)), statusCode: httpResponse.statusCode };
 }
+
+export async function getPayPalOrderStatus(
+  clientId: string,
+  clientSecret: string,
+  orderId: string
+): Promise<{ status: string; id: string }> {
+  const client = createPayPalClient(clientId, clientSecret);
+  const ordersController = new OrdersController(client);
+  
+  const { body } = await ordersController.getOrder({ id: orderId });
+  const parsed = JSON.parse(String(body));
+  return { status: parsed.status, id: parsed.id };
+}
