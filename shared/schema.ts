@@ -1486,6 +1486,7 @@ export const unrepairableReasons = pgTable("unrepairable_reasons", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   name: text("name").notNull(), // es: "Ossidazione Diffusa", "CPU Danneggiata"
   description: text("description"),
+  icon: text("icon"), // Nome icona Lucide (es: "AlertTriangle", "Cpu", "Droplets")
   deviceTypeId: varchar("device_type_id").references(() => deviceTypes.id), // null = tutti i tipi
   isActive: boolean("is_active").notNull().default(true),
   sortOrder: integer("sort_order").notNull().default(0),

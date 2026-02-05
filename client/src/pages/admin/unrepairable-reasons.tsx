@@ -32,7 +32,44 @@ import {
 } from "@/components/ui/table";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
-import { AlertTriangle, Plus, Pencil, Trash2, GripVertical, Filter } from "lucide-react";
+import { 
+  AlertTriangle, Plus, Pencil, Trash2, GripVertical, Filter,
+  AlertCircle, Ban, XCircle, Flame, Droplets, Cpu, Battery, Zap, 
+  Shield, Wrench, HardDrive, Smartphone, Monitor, CircuitBoard,
+  Skull, ThermometerSun, Waves, Bug, Bomb, ShieldX, CircleSlash,
+  type LucideIcon
+} from "lucide-react";
+
+const AVAILABLE_ICONS: { name: string; icon: LucideIcon; label: string }[] = [
+  { name: "AlertTriangle", icon: AlertTriangle, label: "Attenzione" },
+  { name: "AlertCircle", icon: AlertCircle, label: "Avviso" },
+  { name: "Ban", icon: Ban, label: "Vietato" },
+  { name: "XCircle", icon: XCircle, label: "Errore" },
+  { name: "Flame", icon: Flame, label: "Bruciato" },
+  { name: "Droplets", icon: Droplets, label: "Ossidazione" },
+  { name: "Cpu", icon: Cpu, label: "CPU" },
+  { name: "Battery", icon: Battery, label: "Batteria" },
+  { name: "Zap", icon: Zap, label: "Corto circuito" },
+  { name: "Shield", icon: Shield, label: "Protezione" },
+  { name: "ShieldX", icon: ShieldX, label: "Non protetto" },
+  { name: "Wrench", icon: Wrench, label: "Meccanico" },
+  { name: "HardDrive", icon: HardDrive, label: "Storage" },
+  { name: "Smartphone", icon: Smartphone, label: "Display" },
+  { name: "Monitor", icon: Monitor, label: "Schermo" },
+  { name: "CircuitBoard", icon: CircuitBoard, label: "Scheda madre" },
+  { name: "Skull", icon: Skull, label: "Irreparabile" },
+  { name: "ThermometerSun", icon: ThermometerSun, label: "Surriscaldamento" },
+  { name: "Waves", icon: Waves, label: "Liquido" },
+  { name: "Bug", icon: Bug, label: "Difetto" },
+  { name: "Bomb", icon: Bomb, label: "Esplosione" },
+  { name: "CircleSlash", icon: CircleSlash, label: "Non disponibile" },
+];
+
+function getIconComponent(iconName: string | null | undefined): LucideIcon | null {
+  if (!iconName) return null;
+  const found = AVAILABLE_ICONS.find(i => i.name === iconName);
+  return found?.icon || null;
+}
 import type { UnrepairableReason, DeviceType } from "@shared/schema";
 
 export default function AdminUnrepairableReasons() {
@@ -43,6 +80,7 @@ export default function AdminUnrepairableReasons() {
   const [formData, setFormData] = useState({
     name: "",
     description: "",
+    icon: "",
     deviceTypeId: "",
     isActive: true,
     sortOrder: 0,
@@ -131,6 +169,7 @@ export default function AdminUnrepairableReasons() {
     setFormData({
       name: "",
       description: "",
+      icon: "",
       deviceTypeId: "",
       isActive: true,
       sortOrder: reasons.length + 1,
@@ -143,6 +182,7 @@ export default function AdminUnrepairableReasons() {
     setFormData({
       name: reason.name,
       description: reason.description || "",
+      icon: reason.icon || "",
       deviceTypeId: reason.deviceTypeId || "",
       isActive: reason.isActive,
       sortOrder: reason.sortOrder,
@@ -245,6 +285,7 @@ export default function AdminUnrepairableReasons() {
             <TableHeader>
               <TableRow>
                 <TableHead className="w-12">#</TableHead>
+                <TableHead className="w-16">Icona</TableHead>
                 <TableHead>Nome</TableHead>
                 <TableHead>Descrizione</TableHead>
                 <TableHead>Tipo Dispositivo</TableHead>
@@ -253,10 +294,19 @@ export default function AdminUnrepairableReasons() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {sortedReasons.map((reason) => (
+              {sortedReasons.map((reason) => {
+                const ReasonIcon = getIconComponent(reason.icon);
+                return (
                 <TableRow key={reason.id} data-testid={`row-reason-${reason.id}`}>
                   <TableCell>
                     <GripVertical className="h-4 w-4 text-muted-foreground" />
+                  </TableCell>
+                  <TableCell>
+                    {ReasonIcon ? (
+                      <ReasonIcon className="h-5 w-5 text-muted-foreground" />
+                    ) : (
+                      <span className="text-muted-foreground">-</span>
+                    )}
                   </TableCell>
                   <TableCell className="font-medium">{reason.name}</TableCell>
                   <TableCell className="text-muted-foreground max-w-xs truncate">
@@ -302,10 +352,11 @@ export default function AdminUnrepairableReasons() {
                     </div>
                   </TableCell>
                 </TableRow>
-              ))}
+              );
+              })}
               {reasons.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
+                  <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
                     Nessun motivo configurato. Clicca "Nuovo Motivo" per aggiungerne uno.
                   </TableCell>
                 </TableRow>
@@ -332,6 +383,43 @@ export default function AdminUnrepairableReasons() {
                 placeholder="es. Ossidazione Diffusa"
                 data-testid="input-reason-name"
               />
+            </div>
+            <div className="space-y-2">
+              <Label>Icona</Label>
+              <div className="grid grid-cols-6 gap-2 p-3 border rounded-md max-h-48 overflow-y-auto">
+                <button
+                  type="button"
+                  onClick={() => setFormData({ ...formData, icon: "" })}
+                  className={`p-2 rounded-md flex flex-col items-center gap-1 text-xs transition-colors ${
+                    !formData.icon 
+                      ? "bg-primary text-primary-foreground" 
+                      : "hover-elevate"
+                  }`}
+                  data-testid="button-icon-none"
+                >
+                  <CircleSlash className="h-5 w-5" />
+                  <span>Nessuna</span>
+                </button>
+                {AVAILABLE_ICONS.map((iconItem) => {
+                  const IconComp = iconItem.icon;
+                  return (
+                    <button
+                      type="button"
+                      key={iconItem.name}
+                      onClick={() => setFormData({ ...formData, icon: iconItem.name })}
+                      className={`p-2 rounded-md flex flex-col items-center gap-1 text-xs transition-colors ${
+                        formData.icon === iconItem.name 
+                          ? "bg-primary text-primary-foreground" 
+                          : "hover-elevate"
+                      }`}
+                      data-testid={`button-icon-${iconItem.name}`}
+                    >
+                      <IconComp className="h-5 w-5" />
+                      <span className="truncate w-full text-center">{iconItem.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
             </div>
             <div className="space-y-2">
               <Label htmlFor="description">Descrizione</Label>
