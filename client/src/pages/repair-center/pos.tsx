@@ -938,8 +938,8 @@ export default function PosPage() {
               ))}
             </SelectContent>
           </Select>
-          <Link href="/repair-center/pos/registers">
-            <Button variant="ghost" size="icon" className="h-10 w-10" data-testid="button-manage-registers-closed">
+          <Link href={`/repair-center/pos/registers/${selectedRegisterId}/settings`}>
+            <Button variant="ghost" size="icon" className="h-10 w-10" data-testid="button-register-settings-closed">
               <Settings className="w-4 h-4" />
             </Button>
           </Link>
@@ -1092,8 +1092,8 @@ export default function PosPage() {
               </Select>
               
               <div className="flex items-center gap-1 ml-auto">
-                <Link href="/repair-center/pos/registers">
-                  <Button variant="outline" size="icon" className="h-8 w-8 bg-white/20 backdrop-blur-sm text-white border-white/30 hover:bg-white/30" data-testid="button-manage-registers">
+                <Link href={`/repair-center/pos/registers/${selectedRegisterId}/settings`}>
+                  <Button variant="outline" size="icon" className="h-8 w-8 bg-white/20 backdrop-blur-sm text-white border-white/30 hover:bg-white/30" data-testid="button-register-settings">
                     <Settings className="w-4 h-4" />
                   </Button>
                 </Link>
