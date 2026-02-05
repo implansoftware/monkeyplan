@@ -39267,7 +39267,7 @@ export function registerRoutes(app: Express): Server {
       if (!repairCenter) return res.status(404).json({ error: "Repair center not found" });
       
       // Get payment config (from RC or parent reseller)
-      let paymentConfig = await storage.getRepairCenterPaymentConfig(repairCenterId);
+      let paymentConfig = await storage.getPaymentConfiguration('repair_center', repairCenterId);
       if (!paymentConfig || paymentConfig.useParentConfig) {
         if (repairCenter.resellerId) {
           paymentConfig = await storage.getResellerPaymentConfig(repairCenter.resellerId);
@@ -39357,7 +39357,7 @@ export function registerRoutes(app: Express): Server {
       if (!repairCenter) return res.status(404).json({ error: "Repair center not found" });
       
       // Get payment config (from RC or parent reseller)
-      let paymentConfig = await storage.getRepairCenterPaymentConfig(repairCenterId);
+      let paymentConfig = await storage.getPaymentConfiguration('repair_center', repairCenterId);
       if (!paymentConfig || paymentConfig.useParentConfig) {
         if (repairCenter.resellerId) {
           paymentConfig = await storage.getResellerPaymentConfig(repairCenter.resellerId);
@@ -39440,7 +39440,7 @@ export function registerRoutes(app: Express): Server {
       
       // Get payment config
       const repairCenter = await storage.getRepairCenter(repairCenterId);
-      let paymentConfig = await storage.getRepairCenterPaymentConfig(repairCenterId);
+      let paymentConfig = await storage.getPaymentConfiguration('repair_center', repairCenterId);
       if (!paymentConfig || paymentConfig.useParentConfig) {
         if (repairCenter?.resellerId) {
           paymentConfig = await storage.getResellerPaymentConfig(repairCenter.resellerId);
@@ -39526,7 +39526,7 @@ export function registerRoutes(app: Express): Server {
       
       // Get payment config
       const repairCenter = await storage.getRepairCenter(repairCenterId);
-      let paymentConfig = await storage.getRepairCenterPaymentConfig(repairCenterId);
+      let paymentConfig = await storage.getPaymentConfiguration('repair_center', repairCenterId);
       if (!paymentConfig || paymentConfig.useParentConfig) {
         if (repairCenter?.resellerId) {
           paymentConfig = await storage.getResellerPaymentConfig(repairCenter.resellerId);
@@ -39607,7 +39607,7 @@ export function registerRoutes(app: Express): Server {
       const repairCenter = await storage.getRepairCenter(repairCenterId);
       if (!repairCenter) return res.status(404).json({ error: "Repair center not found" });
       
-      let paymentConfig = await storage.getRepairCenterPaymentConfig(repairCenterId);
+      let paymentConfig = await storage.getPaymentConfiguration('repair_center', repairCenterId);
       if (!paymentConfig || paymentConfig.useParentConfig) {
         if (repairCenter.resellerId) {
           paymentConfig = await storage.getResellerPaymentConfig(repairCenter.resellerId);
