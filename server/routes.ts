@@ -39575,7 +39575,7 @@ export function registerRoutes(app: Express): Server {
           if (transaction.sessionId) {
             const sessionData = await storage.getPosSession(transaction.sessionId);
             if (sessionData) {
-              await storage.updatePosSession(transaction.sessionId, {
+              await storage.updatePosSessionTotals(transaction.sessionId, {
                 totalSales: (sessionData.totalSales || 0) + transaction.total,
                 totalTransactions: (sessionData.totalTransactions || 0) + 1,
                 totalCardSales: (sessionData.totalCardSales || 0) + transaction.total,
@@ -39658,7 +39658,7 @@ export function registerRoutes(app: Express): Server {
         if (transaction.sessionId) {
           const sessionData = await storage.getPosSession(transaction.sessionId);
           if (sessionData) {
-            await storage.updatePosSession(transaction.sessionId, {
+            await storage.updatePosSessionTotals(transaction.sessionId, {
               totalSales: (sessionData.totalSales || 0) + transaction.total,
               totalCard: (sessionData.totalCard || 0) + transaction.total,
               transactionCount: (sessionData.transactionCount || 0) + 1,
@@ -40596,7 +40596,7 @@ export function registerRoutes(app: Express): Server {
           if (transaction.sessionId) {
             const sessionData = await storage.getPosSession(transaction.sessionId);
             if (sessionData) {
-              await storage.updatePosSession(transaction.sessionId, {
+              await storage.updatePosSessionTotals(transaction.sessionId, {
                 totalSales: (sessionData.totalSales || 0) + transaction.total,
                 totalTransactions: (sessionData.totalTransactions || 0) + 1,
                 totalCardSales: (sessionData.totalCardSales || 0) + transaction.total,
@@ -40665,7 +40665,7 @@ export function registerRoutes(app: Express): Server {
             if (transaction.sessionId) {
               const sessionData = await storage.getPosSession(transaction.sessionId);
               if (sessionData) {
-                await storage.updatePosSession(transaction.sessionId, {
+                await storage.updatePosSessionTotals(transaction.sessionId, {
                   totalSales: (sessionData.totalSales || 0) + transaction.total,
                   totalTransactions: (sessionData.totalTransactions || 0) + 1,
                   totalCardSales: (sessionData.totalCardSales || 0) + transaction.total,
