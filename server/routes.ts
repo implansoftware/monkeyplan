@@ -39270,7 +39270,7 @@ export function registerRoutes(app: Express): Server {
       let paymentConfig = await storage.getPaymentConfiguration('repair_center', repairCenterId);
       if (!paymentConfig || paymentConfig.useParentConfig) {
         if (repairCenter.resellerId) {
-          paymentConfig = await storage.getResellerPaymentConfig(repairCenter.resellerId);
+          paymentConfig = await storage.getPaymentConfiguration('reseller', repairCenter.resellerId);
         }
       }
       
@@ -39360,7 +39360,7 @@ export function registerRoutes(app: Express): Server {
       let paymentConfig = await storage.getPaymentConfiguration('repair_center', repairCenterId);
       if (!paymentConfig || paymentConfig.useParentConfig) {
         if (repairCenter.resellerId) {
-          paymentConfig = await storage.getResellerPaymentConfig(repairCenter.resellerId);
+          paymentConfig = await storage.getPaymentConfiguration('reseller', repairCenter.resellerId);
         }
       }
       
@@ -39443,7 +39443,7 @@ export function registerRoutes(app: Express): Server {
       let paymentConfig = await storage.getPaymentConfiguration('repair_center', repairCenterId);
       if (!paymentConfig || paymentConfig.useParentConfig) {
         if (repairCenter?.resellerId) {
-          paymentConfig = await storage.getResellerPaymentConfig(repairCenter.resellerId);
+          paymentConfig = await storage.getPaymentConfiguration('reseller', repairCenter.resellerId);
         }
       }
       
@@ -39529,7 +39529,7 @@ export function registerRoutes(app: Express): Server {
       let paymentConfig = await storage.getPaymentConfiguration('repair_center', repairCenterId);
       if (!paymentConfig || paymentConfig.useParentConfig) {
         if (repairCenter?.resellerId) {
-          paymentConfig = await storage.getResellerPaymentConfig(repairCenter.resellerId);
+          paymentConfig = await storage.getPaymentConfiguration('reseller', repairCenter.resellerId);
         }
       }
       
@@ -39610,7 +39610,7 @@ export function registerRoutes(app: Express): Server {
       let paymentConfig = await storage.getPaymentConfiguration('repair_center', repairCenterId);
       if (!paymentConfig || paymentConfig.useParentConfig) {
         if (repairCenter.resellerId) {
-          paymentConfig = await storage.getResellerPaymentConfig(repairCenter.resellerId);
+          paymentConfig = await storage.getPaymentConfiguration('reseller', repairCenter.resellerId);
         }
       }
       
@@ -40305,7 +40305,7 @@ export function registerRoutes(app: Express): Server {
       if (transaction.status !== "pending") return res.status(400).json({ error: "Transaction must be pending" });
       
       // Get reseller payment config
-      let paymentConfig = await storage.getResellerPaymentConfig(resellerId);
+      let paymentConfig = await storage.getPaymentConfiguration('reseller', resellerId);
       
       if (!paymentConfig?.stripeEnabled || !paymentConfig?.stripeSecretKey) {
         return res.status(400).json({ error: "Stripe not configured" });
@@ -40388,7 +40388,7 @@ export function registerRoutes(app: Express): Server {
       if (transaction.status !== "pending") return res.status(400).json({ error: "Transaction must be pending" });
       
       // Get reseller payment config
-      let paymentConfig = await storage.getResellerPaymentConfig(resellerId);
+      let paymentConfig = await storage.getPaymentConfiguration('reseller', resellerId);
       
       if (!paymentConfig?.paypalEnabled || !paymentConfig?.paypalClientId || !paymentConfig?.paypalClientSecret) {
         return res.status(400).json({ error: "PayPal not configured" });
@@ -40466,7 +40466,7 @@ export function registerRoutes(app: Express): Server {
       }
       
       // Get reseller payment config
-      let paymentConfig = await storage.getResellerPaymentConfig(resellerId);
+      let paymentConfig = await storage.getPaymentConfiguration('reseller', resellerId);
       
       if (!paymentConfig?.paypalClientId || !paymentConfig?.paypalClientSecret) {
         return res.status(400).json({ error: "PayPal not configured" });
@@ -40545,7 +40545,7 @@ export function registerRoutes(app: Express): Server {
       // Check with Stripe if we have a session
       if (transaction.stripeSessionId) {
         // Get reseller payment config
-        let paymentConfig = await storage.getResellerPaymentConfig(resellerId);
+        let paymentConfig = await storage.getPaymentConfiguration('reseller', resellerId);
         
         if (paymentConfig?.stripeSecretKey) {
           const stripeSecretDecrypted = decryptSecret(paymentConfig.stripeSecretKey);
@@ -40609,7 +40609,7 @@ export function registerRoutes(app: Express): Server {
       }
       
       // Get reseller payment config
-      let paymentConfig = await storage.getResellerPaymentConfig(resellerId);
+      let paymentConfig = await storage.getPaymentConfiguration('reseller', resellerId);
       
       if (!paymentConfig?.stripeEnabled || !paymentConfig?.stripeSecretKey) {
         return res.status(400).json({ error: "Stripe not configured" });
