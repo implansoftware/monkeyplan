@@ -85,10 +85,27 @@ export default function PosRegisterSettingsPage() {
   useEffect(() => {
     if (register) {
       setDefaultPaymentMethod(register.defaultPaymentMethod || "cash");
-      setEnabledPaymentMethods(register.enabledPaymentMethods || ["cash"]);
+      
+      // Se la cassa ha già metodi salvati, usare quelli
+      // Altrimenti, preselezionare i metodi configurati dal reseller/repair center
+      if (register.enabledPaymentMethods && register.enabledPaymentMethods.length > 0) {
+        setEnabledPaymentMethods(register.enabledPaymentMethods);
+      } else if (effectivePaymentConfig) {
+        const defaultMethods: string[] = ["cash"];
+        if (effectivePaymentConfig.stripeEnabled) {
+          defaultMethods.push("stripe_link");
+        }
+        if (effectivePaymentConfig.paypalEnabled) {
+          defaultMethods.push("paypal");
+        }
+        setEnabledPaymentMethods(defaultMethods);
+      } else {
+        setEnabledPaymentMethods(["cash"]);
+      }
+      
       setAutoPrintReceipt(register.autoPrintReceipt);
     }
-  }, [register]);
+  }, [register, effectivePaymentConfig]);
 
   const updateMutation = useMutation({
     mutationFn: async (data: { defaultPaymentMethod: string; enabledPaymentMethods: string[]; autoPrintReceipt: boolean }) => {
