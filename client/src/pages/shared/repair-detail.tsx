@@ -728,6 +728,38 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
     return 0;
   };
 
+  const handleStepClick = (stepKey: string, isCompleted: boolean, isSkipped: boolean) => {
+    if (!isCompleted || isSkipped) return;
+    
+    switch (stepKey) {
+      case 'in_diagnosi':
+        if (diagnosis) {
+          setDiagnosisDialogOpen(true);
+        }
+        break;
+      case 'preventivo_emesso':
+        if (quote) {
+          setQuoteDialogOpen(true);
+        }
+        break;
+      default:
+        break;
+    }
+  };
+
+  const isStepClickable = (stepKey: string, isCompleted: boolean, isSkipped: boolean): boolean => {
+    if (!isCompleted || isSkipped) return false;
+    
+    switch (stepKey) {
+      case 'in_diagnosi':
+        return !!diagnosis;
+      case 'preventivo_emesso':
+        return !!quote;
+      default:
+        return false;
+    }
+  };
+
   const getSLADisplay = () => {
     if (!slaState?.status || !slaState?.stateEnteredAt) return null;
     const { severity, minutesInState, phase } = computeSLASeverity(slaState.status, slaState.stateEnteredAt);
@@ -896,12 +928,15 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
                     }
                     const isCurrent = index === currentStepIndex + 1 && repair.status !== 'preventivo_rifiutato';
                     const Icon = step.icon;
+                    const clickable = isStepClickable(step.key, isCompleted, isSkipped);
                     
                     return (
                       <div
                         key={step.key}
-                        className="flex flex-col items-center relative group"
+                        className={`flex flex-col items-center relative group ${clickable ? 'cursor-pointer' : ''}`}
                         data-testid={`workflow-step-${step.key}`}
+                        onClick={() => clickable && handleStepClick(step.key, isCompleted, isSkipped)}
+                        title={clickable ? `Clicca per visualizzare ${step.label}` : undefined}
                       >
                         <div className={`relative z-10 h-12 w-12 rounded-xl flex items-center justify-center transition-all duration-300 ${
                           isRejected
