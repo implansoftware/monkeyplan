@@ -11597,13 +11597,15 @@ export class DatabaseStorage implements IStorage {
     return transaction;
   }
 
-  // Generic update for POS transaction (used by Stripe payment links)
+  // Generic update for POS transaction (used by Stripe payment links and PayPal)
   async updatePosTransaction(id: string, data: Partial<{
     status: PosTransactionStatus;
     stripeSessionId: string | null;
     stripePaymentUrl: string | null;
     stripePaymentExpiresAt: Date | null;
     paymentReference: string | null;
+    paypalOrderId: string | null;
+    paypalApprovalUrl: string | null;
   }>): Promise<PosTransaction | undefined> {
     const updateData: Record<string, unknown> = { updatedAt: new Date() };
     if (data.status !== undefined) updateData.status = data.status;
@@ -11611,6 +11613,8 @@ export class DatabaseStorage implements IStorage {
     if (data.stripePaymentUrl !== undefined) updateData.stripePaymentUrl = data.stripePaymentUrl;
     if (data.stripePaymentExpiresAt !== undefined) updateData.stripePaymentExpiresAt = data.stripePaymentExpiresAt;
     if (data.paymentReference !== undefined) updateData.paymentReference = data.paymentReference;
+    if (data.paypalOrderId !== undefined) updateData.paypalOrderId = data.paypalOrderId;
+    if (data.paypalApprovalUrl !== undefined) updateData.paypalApprovalUrl = data.paypalApprovalUrl;
     
     const [transaction] = await db.update(posTransactions)
       .set(updateData)
