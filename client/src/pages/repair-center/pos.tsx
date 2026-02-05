@@ -552,13 +552,8 @@ export default function PosPage() {
       setNewCustomerPhone("");
       setPaymentDialog(false);
       
-      if (data.invoice) {
-        toast({ 
-          title: "Vendita con fattura", 
-          description: `Transazione e fattura ${data.invoice.invoiceNumber} create con successo` 
-        });
-      } else {
-        if (data.transaction.paymentMethod === "stripe_link") {
+      // Gestione link pagamento (stripe_link o paypal) - funziona anche con fattura
+      if (data.transaction.paymentMethod === "stripe_link") {
         setPaymentLinkTransactionId(data.transaction.id);
         setPaymentLinkType("stripe");
         setPaymentLinkStatus("generating");
@@ -573,8 +568,15 @@ export default function PosPage() {
         setPaymentDialog(false);
         createPaypalOrderMutation.mutate(data.transaction.id);
       } else {
-        toast({ title: "Vendita registrata", description: "Transazione completata" });
-      }
+        // Pagamento immediato (contanti, carta, ecc.)
+        if (data.invoice) {
+          toast({ 
+            title: "Vendita con fattura", 
+            description: `Transazione e fattura ${data.invoice.invoiceNumber} create con successo` 
+          });
+        } else {
+          toast({ title: "Vendita registrata", description: "Transazione completata" });
+        }
       }
     },
     onError: (error: any) => {
