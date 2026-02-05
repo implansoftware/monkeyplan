@@ -6435,6 +6435,12 @@ export const posRegisters = pgTable("pos_registers", {
   description: text("description"),
   isActive: boolean("is_active").notNull().default(true),
   isDefault: boolean("is_default").notNull().default(false),
+  
+  // Impostazioni cassa
+  defaultPaymentMethod: varchar("default_payment_method", { length: 20 }).default("cash"),
+  enabledPaymentMethods: text("enabled_payment_methods").array(),
+  autoPrintReceipt: boolean("auto_print_receipt").notNull().default(false),
+  
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });

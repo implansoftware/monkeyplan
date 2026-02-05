@@ -11385,7 +11385,7 @@ export class DatabaseStorage implements IStorage {
     return register;
   }
 
-  async updatePosRegister(id: string, updates: Partial<Pick<PosRegister, 'name' | 'description' | 'isActive' | 'isDefault'>>): Promise<PosRegister | undefined> {
+  async updatePosRegister(id: string, updates: Partial<Pick<PosRegister, 'name' | 'description' | 'isActive' | 'isDefault' | 'defaultPaymentMethod' | 'enabledPaymentMethods' | 'autoPrintReceipt'>>): Promise<PosRegister | undefined> {
     if (updates.isDefault) {
       const current = await this.getPosRegister(id);
       if (current) {
