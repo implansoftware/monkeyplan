@@ -6525,6 +6525,10 @@ export const posTransactions = pgTable("pos_transactions", {
   stripePaymentUrl: text("stripe_payment_url"),
   stripePaymentExpiresAt: timestamp("stripe_payment_expires_at"),
   
+  // PayPal Payment Link
+  paypalOrderId: varchar("paypal_order_id"),
+  paypalApprovalUrl: text("paypal_approval_url"),
+  
   // Meta
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),

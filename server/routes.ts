@@ -39334,6 +39334,164 @@ export function registerRoutes(app: Express): Server {
       res.status(500).json({ error: error.message });
     }
   });
+
+  // PayPal Payment Link for POS (Repair Center)
+  app.post("/api/repair-center/pos/create-paypal-order", requireRole("repair_center", "repair_center_staff"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const repairCenterId = req.user.repairCenterId;
+      if (!repairCenterId) return res.status(400).send("Repair center not found");
+      
+      const { transactionId } = req.body;
+      if (!transactionId) return res.status(400).json({ error: "Transaction ID required" });
+      
+      // Get transaction
+      const transaction = await storage.getPosTransaction(transactionId);
+      if (!transaction) return res.status(404).json({ error: "Transaction not found" });
+      if (transaction.repairCenterId !== repairCenterId) return res.status(403).json({ error: "Not authorized" });
+      if (transaction.status !== "pending") return res.status(400).json({ error: "Transaction must be pending" });
+      
+      // Get repair center and its payment config
+      const repairCenter = await storage.getRepairCenter(repairCenterId);
+      if (!repairCenter) return res.status(404).json({ error: "Repair center not found" });
+      
+      // Get payment config (from RC or parent reseller)
+      let paymentConfig = await storage.getRepairCenterPaymentConfig(repairCenterId);
+      if (!paymentConfig || paymentConfig.useParentConfig) {
+        if (repairCenter.resellerId) {
+          paymentConfig = await storage.getResellerPaymentConfig(repairCenter.resellerId);
+        }
+      }
+      
+      if (!paymentConfig?.paypalEnabled || !paymentConfig?.paypalClientId || !paymentConfig?.paypalClientSecret) {
+        return res.status(400).json({ error: "PayPal not configured" });
+      }
+      
+      // Decrypt PayPal secret
+      const decryptedSecret = decryptSecret(paymentConfig.paypalClientSecret);
+      
+      // Calculate amount in EUR (from cents to decimal string)
+      const amount = (transaction.total / 100).toFixed(2);
+      
+      // Build return/cancel URLs
+      const baseUrl = process.env.REPLIT_DOMAINS?.split(',')[0] 
+        ? `https://${process.env.REPLIT_DOMAINS.split(',')[0]}`
+        : 'http://localhost:5000';
+      
+      const returnUrl = `${baseUrl}/pos-payment-success?transaction_id=${transactionId}&type=paypal`;
+      const cancelUrl = `${baseUrl}/pos-payment-cancel?transaction_id=${transactionId}`;
+      
+      // Create PayPal order
+      const result = await createPayPalOrderHandler(
+        paymentConfig.paypalClientId,
+        decryptedSecret,
+        amount,
+        "EUR",
+        "CAPTURE",
+        returnUrl,
+        cancelUrl
+      );
+      
+      // Find approval URL from PayPal response
+      const approvalLink = result.body.links?.find((l: any) => l.rel === "payer-action" || l.rel === "approve");
+      const approvalUrl = approvalLink?.href || null;
+      
+      // Update transaction with PayPal order info
+      await storage.updatePosTransaction(transactionId, {
+        paypalOrderId: result.body.id,
+        paypalApprovalUrl: approvalUrl,
+      });
+      
+      res.json({
+        orderId: result.body.id,
+        approvalUrl: approvalUrl,
+      });
+    } catch (error: any) {
+      console.error("POS PayPal order error:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Check PayPal payment status for POS transaction
+  app.get("/api/repair-center/pos/check-paypal-status/:transactionId", requireRole("repair_center", "repair_center_staff"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const repairCenterId = req.user.repairCenterId;
+      if (!repairCenterId) return res.status(400).send("Repair center not found");
+      
+      const { transactionId } = req.params;
+      
+      // Get transaction
+      const transaction = await storage.getPosTransaction(transactionId);
+      if (!transaction) return res.status(404).json({ error: "Transaction not found" });
+      if (transaction.repairCenterId !== repairCenterId) return res.status(403).json({ error: "Not authorized" });
+      
+      // If already completed, return status
+      if (transaction.status === "completed") {
+        return res.json({ status: "completed", paid: true });
+      }
+      
+      // If no PayPal order, return pending
+      if (!transaction.paypalOrderId) {
+        return res.json({ status: "pending", paid: false, approvalUrl: transaction.paypalApprovalUrl });
+      }
+      
+      // Get payment config
+      const repairCenter = await storage.getRepairCenter(repairCenterId);
+      let paymentConfig = await storage.getRepairCenterPaymentConfig(repairCenterId);
+      if (!paymentConfig || paymentConfig.useParentConfig) {
+        if (repairCenter?.resellerId) {
+          paymentConfig = await storage.getResellerPaymentConfig(repairCenter.resellerId);
+        }
+      }
+      
+      if (!paymentConfig?.paypalClientId || !paymentConfig?.paypalClientSecret) {
+        return res.status(400).json({ error: "PayPal not configured" });
+      }
+      
+      // Capture the PayPal payment
+      const decryptedSecret = decryptSecret(paymentConfig.paypalClientSecret);
+      try {
+        const captureResult = await capturePayPalOrderHandler(
+          paymentConfig.paypalClientId,
+          decryptedSecret,
+          transaction.paypalOrderId
+        );
+        
+        if (captureResult.body.status === "COMPLETED" && transaction.status === "pending") {
+          // Update transaction to completed
+          await storage.updatePosTransaction(transactionId, { 
+            status: "completed",
+            paymentReference: captureResult.body.id
+          });
+          
+          // Update session totals if we have a sessionId
+          if (transaction.sessionId) {
+            const sessionData = await storage.getPosSession(transaction.sessionId);
+            if (sessionData) {
+              await storage.updatePosSession(transaction.sessionId, {
+                totalSales: (sessionData.totalSales || 0) + transaction.total,
+                totalTransactions: (sessionData.totalTransactions || 0) + 1,
+                totalCardSales: (sessionData.totalCardSales || 0) + transaction.total,
+              });
+            }
+          }
+          
+          return res.json({ status: "completed", paid: true });
+        }
+        
+        return res.json({ status: "pending", paid: false, approvalUrl: transaction.paypalApprovalUrl });
+      } catch (captureError: any) {
+        // If capture fails, payment is not ready yet
+        return res.json({ status: "pending", paid: false, approvalUrl: transaction.paypalApprovalUrl });
+      }
+    } catch (error: any) {
+      console.error("POS PayPal status error:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
   
   // Check payment status for POS transaction
   app.get("/api/repair-center/pos/check-payment-status/:transactionId", requireRole("repair_center", "repair_center_staff"), async (req, res) => {
@@ -40209,6 +40367,152 @@ export function registerRoutes(app: Express): Server {
       console.error("Create payment link error:", error);
       res.status(500).json({ error: error.message });
     }
+
+  // PayPal Payment Link for POS (Reseller)
+  app.post("/api/reseller/pos/create-paypal-order", requireRole("reseller", "reseller_staff", "sub_reseller"), async (req, res) => {
+    try {
+      const { resellerId } = getEffectiveContext(req);
+      if (!resellerId) return res.status(403).json({ error: "Not authorized" });
+      
+      const { transactionId } = req.body;
+      if (!transactionId) return res.status(400).json({ error: "Transaction ID required" });
+      
+      // Get transaction
+      const transaction = await storage.getPosTransaction(transactionId);
+      if (!transaction) return res.status(404).json({ error: "Transaction not found" });
+      
+      // Verify reseller owns this repair center
+      const repairCenter = await storage.getRepairCenter(transaction.repairCenterId);
+      if (!repairCenter || repairCenter.resellerId !== resellerId) return res.status(403).json({ error: "Not authorized" });
+      
+      if (transaction.status !== "pending") return res.status(400).json({ error: "Transaction must be pending" });
+      
+      // Get reseller payment config
+      let paymentConfig = await storage.getResellerPaymentConfig(resellerId);
+      
+      if (!paymentConfig?.paypalEnabled || !paymentConfig?.paypalClientId || !paymentConfig?.paypalClientSecret) {
+        return res.status(400).json({ error: "PayPal not configured" });
+      }
+      
+      // Decrypt PayPal secret
+      const decryptedSecret = decryptSecret(paymentConfig.paypalClientSecret);
+      
+      // Calculate amount in EUR (from cents to decimal string)
+      const amount = (transaction.total / 100).toFixed(2);
+      
+      // Build return/cancel URLs
+      const baseUrl = process.env.REPLIT_DOMAINS?.split(',')[0] 
+        ? `https://${process.env.REPLIT_DOMAINS.split(',')[0]}`
+        : 'http://localhost:5000';
+      
+      const returnUrl = `${baseUrl}/pos-payment-success?transaction_id=${transactionId}&type=paypal`;
+      const cancelUrl = `${baseUrl}/pos-payment-cancel?transaction_id=${transactionId}`;
+      
+      // Create PayPal order
+      const result = await createPayPalOrderHandler(
+        paymentConfig.paypalClientId,
+        decryptedSecret,
+        amount,
+        "EUR",
+        "CAPTURE",
+        returnUrl,
+        cancelUrl
+      );
+      
+      // Find approval URL from PayPal response
+      const approvalLink = result.body.links?.find((l: any) => l.rel === "payer-action" || l.rel === "approve");
+      const approvalUrl = approvalLink?.href || null;
+      
+      // Update transaction with PayPal order info
+      await storage.updatePosTransaction(transactionId, {
+        paypalOrderId: result.body.id,
+        paypalApprovalUrl: approvalUrl,
+      });
+      
+      res.json({
+        orderId: result.body.id,
+        approvalUrl: approvalUrl,
+      });
+    } catch (error: any) {
+      console.error("Reseller POS PayPal order error:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Check PayPal payment status for POS transaction (Reseller)
+  app.get("/api/reseller/pos/check-paypal-status/:transactionId", requireRole("reseller", "reseller_staff", "sub_reseller"), async (req, res) => {
+    try {
+      const { resellerId } = getEffectiveContext(req);
+      if (!resellerId) return res.status(403).json({ error: "Not authorized" });
+      
+      const transactionId = req.params.transactionId;
+      
+      // Get transaction
+      const transaction = await storage.getPosTransaction(transactionId);
+      if (!transaction) return res.status(404).json({ error: "Transaction not found" });
+      
+      // Verify reseller owns this repair center
+      const repairCenter = await storage.getRepairCenter(transaction.repairCenterId);
+      if (!repairCenter || repairCenter.resellerId !== resellerId) return res.status(403).json({ error: "Not authorized" });
+      
+      // If already completed, return status
+      if (transaction.status === "completed") {
+        return res.json({ status: "completed", paid: true });
+      }
+      
+      // If no PayPal order, return pending
+      if (!transaction.paypalOrderId) {
+        return res.json({ status: "pending", paid: false, approvalUrl: transaction.paypalApprovalUrl });
+      }
+      
+      // Get reseller payment config
+      let paymentConfig = await storage.getResellerPaymentConfig(resellerId);
+      
+      if (!paymentConfig?.paypalClientId || !paymentConfig?.paypalClientSecret) {
+        return res.status(400).json({ error: "PayPal not configured" });
+      }
+      
+      // Try to capture the PayPal payment
+      const decryptedSecret = decryptSecret(paymentConfig.paypalClientSecret);
+      try {
+        const captureResult = await capturePayPalOrderHandler(
+          paymentConfig.paypalClientId,
+          decryptedSecret,
+          transaction.paypalOrderId
+        );
+        
+        if (captureResult.body.status === "COMPLETED" && transaction.status === "pending") {
+          // Update transaction to completed
+          await storage.updatePosTransaction(transactionId, { 
+            status: "completed",
+            paymentReference: captureResult.body.id
+          });
+          
+          // Update session totals if we have a sessionId
+          if (transaction.sessionId) {
+            const sessionData = await storage.getPosSession(transaction.sessionId);
+            if (sessionData) {
+              await storage.updatePosSession(transaction.sessionId, {
+                totalSales: (sessionData.totalSales || 0) + transaction.total,
+                totalTransactions: (sessionData.totalTransactions || 0) + 1,
+                totalCardSales: (sessionData.totalCardSales || 0) + transaction.total,
+              });
+            }
+          }
+          
+          return res.json({ status: "completed", paid: true });
+        }
+        
+        return res.json({ status: "pending", paid: false, approvalUrl: transaction.paypalApprovalUrl });
+      } catch (captureError: any) {
+        // If capture fails, payment is not ready yet
+        return res.json({ status: "pending", paid: false, approvalUrl: transaction.paypalApprovalUrl });
+      }
+    } catch (error: any) {
+      console.error("Reseller POS PayPal status error:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
   });
 
   // Reseller POS: Check payment status
