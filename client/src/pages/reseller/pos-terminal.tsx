@@ -251,6 +251,7 @@ const paymentMethodLabels: Record<string, { label: string; icon: typeof CreditCa
   card: { label: "Carta", icon: CreditCard },
   pos_terminal: { label: "POS", icon: CreditCard },
   stripe_link: { label: "Link Pagamento", icon: QrCode },
+  paypal: { label: "PayPal", icon: Wallet },
   mixed: { label: "Misto", icon: Calculator },
 };
 
@@ -279,7 +280,7 @@ export default function ResellerPosTerminal() {
   const [searchQuery, setSearchQuery] = useState("");
   const [serviceSearchQuery, setServiceSearchQuery] = useState("");
   const [barcodeInput, setBarcodeInput] = useState("");
-  const [selectedPayment, setSelectedPayment] = useState<"cash" | "card" | "pos_terminal" | "stripe_link" | "mixed">("cash");
+  const [selectedPayment, setSelectedPayment] = useState<"cash" | "card" | "pos_terminal" | "stripe_link" | "paypal" | "mixed">("cash");
   const [cashReceived, setCashReceived] = useState<string>("");
   const [discountAmount, setDiscountAmount] = useState<string>("");
   const [transactionNotes, setTransactionNotes] = useState("");
@@ -342,11 +343,14 @@ export default function ResellerPosTerminal() {
 
   // Build available payment methods based on config
   const availablePaymentMethods = useMemo(() => {
-    const methods: Array<"cash" | "card" | "pos_terminal" | "stripe_link"> = ["cash"]; // Cash always available for POS
+    const methods: Array<"cash" | "card" | "pos_terminal" | "stripe_link" | "paypal"> = ["cash"]; // Cash always available for POS
     
     if (paymentConfig?.stripeEnabled) {
       methods.push("card");
       methods.push("stripe_link"); // Stripe Payment Links for remote/QR payments
+    }
+    if (paymentConfig?.paypalEnabled) {
+      methods.push("paypal");
     }
     // POS terminal is always available as it's a physical device
     methods.push("pos_terminal");
