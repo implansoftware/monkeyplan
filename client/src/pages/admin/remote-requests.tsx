@@ -1,8 +1,10 @@
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, Package, Truck, Check, Clock, Building2, User, Store } from "lucide-react";
-import type { RemoteRepairRequest, User as UserType, RepairCenter } from "@shared/schema";
+import { Loader2, Package, Truck, Check, Clock, Building2, User, Store, Smartphone, Image } from "lucide-react";
+import type { RemoteRepairRequest, User as UserType, RepairCenter, RemoteRepairRequestDevice } from "@shared/schema";
+
+type EnrichedRemoteRequest = RemoteRepairRequest & { devices: RemoteRepairRequestDevice[] };
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
 
@@ -19,7 +21,7 @@ const statusLabels: Record<string, { label: string; variant: "default" | "second
 };
 
 export default function AdminRemoteRequests() {
-  const { data: requests, isLoading } = useQuery<RemoteRepairRequest[]>({
+  const { data: requests, isLoading } = useQuery<EnrichedRemoteRequest[]>({
     queryKey: ["/api/admin/remote-requests"],
   });
 
@@ -139,46 +141,90 @@ export default function AdminRemoteRequests() {
                 {requests?.map((request) => (
                   <div
                     key={request.id}
-                    className="flex items-center justify-between p-4 border rounded-lg"
+                    className="p-4 border rounded-lg space-y-3"
                     data-testid={`row-request-${request.id}`}
                   >
-                    <div className="flex flex-wrap items-center gap-4">
+                    <div className="flex flex-wrap items-center justify-between gap-4">
                       <div>
                         <div className="flex flex-wrap items-center gap-2">
                           <span className="font-medium">{request.requestNumber}</span>
                           <Badge {...statusLabels[request.status]}>
                             {statusLabels[request.status]?.label}
                           </Badge>
+                          {request.devices?.length > 0 && (
+                            <Badge variant="secondary" className="text-xs">
+                              <Smartphone className="h-3 w-3 mr-1" />
+                              {request.devices.length} dispositiv{request.devices.length === 1 ? 'o' : 'i'}
+                            </Badge>
+                          )}
                         </div>
                         <p className="text-sm text-muted-foreground">
                           {format(new Date(request.createdAt), "d MMM yyyy HH:mm", { locale: it })}
                         </p>
                       </div>
-                    </div>
-                    <div className="flex flex-wrap items-center gap-6">
-                      <div className="text-sm">
-                        <p className="text-muted-foreground">Dispositivo</p>
-                        <p className="font-medium">{request.brand} {request.model}</p>
-                      </div>
-                      <div className="text-sm">
-                        <p className="text-muted-foreground flex items-center gap-1">
-                          <User className="h-3 w-3" /> Cliente
-                        </p>
-                        <p className="font-medium">{getCustomerName(request.customerId)}</p>
-                      </div>
-                      <div className="text-sm">
-                        <p className="text-muted-foreground flex items-center gap-1">
-                          <Store className="h-3 w-3" /> Reseller
-                        </p>
-                        <p className="font-medium">{getResellerName(request.resellerId)}</p>
-                      </div>
-                      <div className="text-sm">
-                        <p className="text-muted-foreground flex items-center gap-1">
-                          <Building2 className="h-3 w-3" /> Centro
-                        </p>
-                        <p className="font-medium">{getCenterName(request.assignedCenterId)}</p>
+                      <div className="flex flex-wrap items-center gap-6">
+                        <div className="text-sm">
+                          <p className="text-muted-foreground flex items-center gap-1">
+                            <User className="h-3 w-3" /> Cliente
+                          </p>
+                          <p className="font-medium">{getCustomerName(request.customerId)}</p>
+                        </div>
+                        <div className="text-sm">
+                          <p className="text-muted-foreground flex items-center gap-1">
+                            <Store className="h-3 w-3" /> Reseller
+                          </p>
+                          <p className="font-medium">{getResellerName(request.resellerId)}</p>
+                        </div>
+                        <div className="text-sm">
+                          <p className="text-muted-foreground flex items-center gap-1">
+                            <Building2 className="h-3 w-3" /> Centro
+                          </p>
+                          <p className="font-medium">{getCenterName(request.assignedCenterId)}</p>
+                        </div>
                       </div>
                     </div>
+                    {request.devices?.map((device) => (
+                      <div key={device.id} className="p-3 border rounded-md space-y-2" data-testid={`device-${device.id}`}>
+                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                          <div>
+                            <p className="text-xs text-muted-foreground">Dispositivo</p>
+                            <p className="text-sm font-medium">{device.deviceType}</p>
+                          </div>
+                          <div>
+                            <p className="text-xs text-muted-foreground">Marca / Modello</p>
+                            <p className="text-sm font-medium">{device.brand} {device.model}</p>
+                          </div>
+                          <div>
+                            <p className="text-xs text-muted-foreground">Quantità</p>
+                            <p className="text-sm font-medium">{device.quantity}</p>
+                          </div>
+                          <div>
+                            <p className="text-xs text-muted-foreground">Stato</p>
+                            <Badge variant={statusLabels[device.status]?.variant || "secondary"} className="text-xs">
+                              {statusLabels[device.status]?.label || device.status}
+                            </Badge>
+                          </div>
+                        </div>
+                        <div>
+                          <p className="text-xs text-muted-foreground">Problema</p>
+                          <p className="text-sm">{device.issueDescription}</p>
+                        </div>
+                        {device.photos && device.photos.length > 0 && (
+                          <div>
+                            <p className="text-xs text-muted-foreground flex items-center gap-1 mb-1">
+                              <Image className="h-3 w-3" /> Foto
+                            </p>
+                            <div className="flex flex-wrap gap-1">
+                              {device.photos.map((photo: string, pi: number) => (
+                                <a key={pi} href={photo} target="_blank" rel="noopener noreferrer">
+                                  <img src={photo} alt={`Foto ${pi + 1}`} className="w-16 h-16 object-cover rounded-md border hover:opacity-80 transition-opacity" />
+                                </a>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    ))}
                   </div>
                 ))}
               </div>

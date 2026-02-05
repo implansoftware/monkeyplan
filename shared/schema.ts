@@ -1610,45 +1610,47 @@ export const repairAttachments = pgTable("repair_attachments", {
 // Remote Repair Requests - Richieste di riparazione a distanza
 export const remoteRepairRequests = pgTable("remote_repair_requests", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  requestNumber: text("request_number").notNull().unique(), // Numero progressivo richiesta
+  requestNumber: text("request_number").notNull().unique(),
   customerId: varchar("customer_id").notNull().references(() => users.id),
   resellerId: varchar("reseller_id").notNull().references(() => users.id),
-  subResellerId: varchar("sub_reseller_id").references(() => users.id), // Sotto-rivenditore (opzionale)
-  requestedCenterId: varchar("requested_center_id").references(() => users.id), // Centro richiesto dal cliente (opzionale)
-  assignedCenterId: varchar("assigned_center_id").references(() => users.id), // Centro assegnato
-  
-  // Informazioni dispositivo
-  deviceType: text("device_type").notNull(), // smartphone, tablet, laptop, etc.
-  brand: text("brand").notNull(),
-  model: text("model").notNull(),
-  deviceModelId: varchar("device_model_id"), // FK to device catalog (opzionale)
-  imei: text("imei"), // IMEI o seriale
-  serial: text("serial"),
-  issueDescription: text("issue_description").notNull(), // Descrizione problema
-  photos: text("photos").array(), // Array URL foto del dispositivo
-  
-  // Stato e workflow
+  subResellerId: varchar("sub_reseller_id").references(() => users.id),
+  requestedCenterId: varchar("requested_center_id").references(() => users.id),
+  assignedCenterId: varchar("assigned_center_id").references(() => users.id),
+
   status: remoteRepairRequestStatusEnum("status").notNull().default("pending"),
-  rejectionReason: text("rejection_reason"), // Motivo rifiuto (se rejected)
-  forwardedFrom: varchar("forwarded_from").references(() => users.id), // Centro che ha inoltrato
-  forwardReason: text("forward_reason"), // Motivo inoltro
-  
-  // Spedizione
-  customerAddress: text("customer_address"), // Indirizzo mittente cliente
+  rejectionReason: text("rejection_reason"),
+  forwardedFrom: varchar("forwarded_from").references(() => users.id),
+  forwardReason: text("forward_reason"),
+
+  customerAddress: text("customer_address"),
   customerCity: text("customer_city"),
   customerCap: text("customer_cap"),
   customerProvince: text("customer_province"),
-  courierName: text("courier_name"), // Nome corriere
-  trackingNumber: text("tracking_number"), // Numero tracking
-  shippedAt: timestamp("shipped_at"), // Data spedizione cliente
-  receivedAt: timestamp("received_at"), // Data ricezione centro
-  
-  // Link alla riparazione creata
+  courierName: text("courier_name"),
+  trackingNumber: text("tracking_number"),
+  shippedAt: timestamp("shipped_at"),
+  receivedAt: timestamp("received_at"),
+
+  customerNotes: text("customer_notes"),
+  centerNotes: text("center_notes"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+export const remoteRepairRequestDevices = pgTable("remote_repair_request_devices", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  requestId: varchar("request_id").notNull().references(() => remoteRepairRequests.id, { onDelete: "cascade" }),
+  deviceType: text("device_type").notNull(),
+  brand: text("brand").notNull(),
+  model: text("model").notNull(),
+  deviceModelId: varchar("device_model_id"),
+  imei: text("imei"),
+  serial: text("serial"),
+  quantity: integer("quantity").notNull().default(1),
+  issueDescription: text("issue_description").notNull(),
+  photos: text("photos").array(),
+  status: remoteRepairRequestStatusEnum("status").notNull().default("pending"),
   repairOrderId: varchar("repair_order_id").references(() => repairOrders.id),
-  
-  // Note e timestamps
-  customerNotes: text("customer_notes"), // Note aggiuntive cliente
-  centerNotes: text("center_notes"), // Note del centro
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
@@ -4493,7 +4495,6 @@ export const updateRemoteRepairRequestSchema = z.object({
   trackingNumber: z.string().optional().nullable(),
   shippedAt: z.date().optional().nullable(),
   receivedAt: z.date().optional().nullable(),
-  repairOrderId: z.string().optional().nullable(),
   centerNotes: z.string().optional().nullable(),
   customerAddress: z.string().optional().nullable(),
   customerCity: z.string().optional().nullable(),
@@ -4501,8 +4502,23 @@ export const updateRemoteRepairRequestSchema = z.object({
   customerProvince: z.string().optional().nullable(),
 });
 
+export const insertRemoteRepairRequestDeviceSchema = createInsertSchema(remoteRepairRequestDevices).omit({
+  id: true,
+  status: true,
+  repairOrderId: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const updateRemoteRepairRequestDeviceSchema = z.object({
+  status: z.enum(["pending", "assigned", "accepted", "rejected", "awaiting_shipment", "in_transit", "received", "repair_created", "cancelled"]).optional(),
+  repairOrderId: z.string().optional().nullable(),
+});
+
 export type InsertRemoteRepairRequest = z.infer<typeof insertRemoteRepairRequestSchema>;
 export type UpdateRemoteRepairRequest = z.infer<typeof updateRemoteRepairRequestSchema>;
+export type InsertRemoteRepairRequestDevice = z.infer<typeof insertRemoteRepairRequestDeviceSchema>;
+export type UpdateRemoteRepairRequestDevice = z.infer<typeof updateRemoteRepairRequestDeviceSchema>;
 
 export const insertRepairCenterSchema = createInsertSchema(repairCenters).omit({
   id: true,
@@ -5429,6 +5445,7 @@ export type RepairOrder = typeof repairOrders.$inferSelect;
 export type InsertRepairOrder = z.infer<typeof insertRepairOrderSchema>;
 
 export type RemoteRepairRequest = typeof remoteRepairRequests.$inferSelect;
+export type RemoteRepairRequestDevice = typeof remoteRepairRequestDevices.$inferSelect;
 
 export type DeviceType = typeof deviceTypes.$inferSelect;
 export type InsertDeviceType = z.infer<typeof insertDeviceTypeSchema>;

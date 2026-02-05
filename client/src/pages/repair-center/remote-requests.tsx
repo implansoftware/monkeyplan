@@ -11,8 +11,10 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Loader2, Package, Truck, Check, X, Clock, CheckCircle2, XCircle, PackageCheck, MapPin, Image } from "lucide-react";
-import type { RemoteRepairRequest } from "@shared/schema";
+import { Loader2, Package, Truck, Check, X, Clock, CheckCircle2, XCircle, PackageCheck, MapPin, Image, Smartphone } from "lucide-react";
+import type { RemoteRepairRequest, RemoteRepairRequestDevice } from "@shared/schema";
+
+type EnrichedRemoteRequest = RemoteRepairRequest & { devices: RemoteRepairRequestDevice[] };
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
 
@@ -47,7 +49,7 @@ export default function RepairCenterRemoteRequests() {
     customerProvince: "",
   });
 
-  const { data: requests, isLoading } = useQuery<RemoteRepairRequest[]>({
+  const { data: requests, isLoading } = useQuery<EnrichedRemoteRequest[]>({
     queryKey: ["/api/repair-center/remote-requests"],
   });
 
@@ -139,7 +141,7 @@ export default function RepairCenterRemoteRequests() {
       queryClient.invalidateQueries({ queryKey: ["/api/repair-center/repairs"] });
       toast({
         title: "Dispositivo ricevuto",
-        description: data.repairOrder ? `Lavorazione ${data.repairOrder.orderNumber} creata` : "Dispositivo contrassegnato come ricevuto",
+        description: data.repairOrders?.length ? `${data.repairOrders.length} lavorazion${data.repairOrders.length === 1 ? 'e creata' : 'i create'}` : "Dispositivo contrassegnato come ricevuto",
       });
     },
     onError: (error: Error) => {
@@ -165,7 +167,7 @@ export default function RepairCenterRemoteRequests() {
       setForceReceivedNotes("");
       toast({
         title: "Ricezione confermata",
-        description: data.repairOrder ? `Lavorazione ${data.repairOrder.orderNumber} creata` : "Ricezione forzata con successo",
+        description: data.repairOrders?.length ? `${data.repairOrders.length} lavorazion${data.repairOrders.length === 1 ? 'e creata' : 'i create'}` : "Ricezione forzata con successo",
       });
     },
     onError: (error: Error) => {
@@ -288,6 +290,12 @@ export default function RepairCenterRemoteRequests() {
                             <Badge {...statusLabels[request.status]}>
                               {statusLabels[request.status]?.label}
                             </Badge>
+                            {request.devices?.length > 0 && (
+                              <Badge variant="secondary" className="text-xs">
+                                <Smartphone className="h-3 w-3 mr-1" />
+                                {request.devices.length} dispositiv{request.devices.length === 1 ? 'o' : 'i'}
+                              </Badge>
+                            )}
                           </CardTitle>
                           <CardDescription>
                             Ricevuta il {format(new Date(request.createdAt), "d MMMM yyyy 'alle' HH:mm", { locale: it })}
@@ -314,56 +322,52 @@ export default function RepairCenterRemoteRequests() {
                       </div>
                     </CardHeader>
                     <CardContent>
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div>
-                          <p className="text-sm text-muted-foreground">Dispositivo</p>
-                          <p className="font-medium">{request.deviceType}</p>
-                        </div>
-                        <div>
-                          <p className="text-sm text-muted-foreground">Marca</p>
-                          <p className="font-medium">{request.brand}</p>
-                        </div>
-                        <div>
-                          <p className="text-sm text-muted-foreground">Modello</p>
-                          <p className="font-medium">{request.model}</p>
-                        </div>
-                        {request.imei && (
-                          <div>
-                            <p className="text-sm text-muted-foreground">IMEI</p>
-                            <p className="font-medium">{request.imei}</p>
+                      <div className="space-y-3">
+                        {request.devices?.map((device) => (
+                          <div key={device.id} className="p-3 border rounded-md space-y-2" data-testid={`device-${device.id}`}>
+                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                              <div>
+                                <p className="text-xs text-muted-foreground">Dispositivo</p>
+                                <p className="text-sm font-medium">{device.deviceType}</p>
+                              </div>
+                              <div>
+                                <p className="text-xs text-muted-foreground">Marca / Modello</p>
+                                <p className="text-sm font-medium">{device.brand} {device.model}</p>
+                              </div>
+                              <div>
+                                <p className="text-xs text-muted-foreground">Quantità</p>
+                                <p className="text-sm font-medium">{device.quantity}</p>
+                              </div>
+                              <div>
+                                <p className="text-xs text-muted-foreground">Stato</p>
+                                <Badge variant={statusLabels[device.status]?.variant || "secondary"} className="text-xs">
+                                  {statusLabels[device.status]?.label || device.status}
+                                </Badge>
+                              </div>
+                            </div>
+                            <div>
+                              <p className="text-xs text-muted-foreground">Problema</p>
+                              <p className="text-sm">{device.issueDescription}</p>
+                            </div>
+                            {device.photos && device.photos.length > 0 && (
+                              <div>
+                                <p className="text-xs text-muted-foreground flex items-center gap-1 mb-1">
+                                  <Image className="h-3 w-3" /> Foto
+                                </p>
+                                <div className="flex flex-wrap gap-1">
+                                  {device.photos.map((photo: string, pi: number) => (
+                                    <a key={pi} href={photo} target="_blank" rel="noopener noreferrer">
+                                      <img src={photo} alt={`Foto ${pi + 1}`} className="w-16 h-16 object-cover rounded-md border hover:opacity-80 transition-opacity" />
+                                    </a>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
                           </div>
-                        )}
+                        ))}
                       </div>
-                      <div className="mt-4">
-                        <p className="text-sm text-muted-foreground">Problema</p>
-                        <p className="text-sm">{request.issueDescription}</p>
-                      </div>
-                      {request.photos && request.photos.length > 0 && (
-                        <div className="mt-4">
-                          <p className="text-sm text-muted-foreground flex items-center gap-1 mb-2">
-                            <Image className="h-3 w-3" /> Foto del dispositivo
-                          </p>
-                          <div className="flex flex-wrap gap-2">
-                            {request.photos.map((photo, index) => (
-                              <a
-                                key={index}
-                                href={photo}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="block"
-                              >
-                                <img
-                                  src={photo}
-                                  alt={`Foto ${index + 1}`}
-                                  className="w-24 h-24 object-cover rounded-md border hover:opacity-80 transition-opacity"
-                                />
-                              </a>
-                            ))}
-                          </div>
-                        </div>
-                      )}
                       {request.customerNotes && (
-                        <div className="mt-2">
+                        <div className="mt-3">
                           <p className="text-sm text-muted-foreground">Note cliente</p>
                           <p className="text-sm">{request.customerNotes}</p>
                         </div>
@@ -392,6 +396,12 @@ export default function RepairCenterRemoteRequests() {
                             <Badge {...statusLabels[request.status]}>
                               {statusLabels[request.status]?.label}
                             </Badge>
+                            {request.devices?.length > 0 && (
+                              <Badge variant="secondary" className="text-xs">
+                                <Smartphone className="h-3 w-3 mr-1" />
+                                {request.devices.length} dispositiv{request.devices.length === 1 ? 'o' : 'i'}
+                              </Badge>
+                            )}
                           </CardTitle>
                           <CardDescription>
                             {format(new Date(request.createdAt), "d MMMM yyyy", { locale: it })}
@@ -437,7 +447,7 @@ export default function RepairCenterRemoteRequests() {
                       </div>
                     </CardHeader>
                     <CardContent>
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-3">
                         <div>
                           <p className="text-sm text-muted-foreground">Cliente</p>
                           <p className="font-medium">{request.customerName || '-'}</p>
@@ -448,39 +458,56 @@ export default function RepairCenterRemoteRequests() {
                             <p className="text-xs text-muted-foreground">{request.customerPhone}</p>
                           )}
                         </div>
-                        <div>
-                          <p className="text-sm text-muted-foreground">Dispositivo</p>
-                          <p className="font-medium">{request.brand} {request.model}</p>
-                          {request.imei && (
-                            <p className="text-xs text-muted-foreground">IMEI: {request.imei}</p>
-                          )}
-                        </div>
-                        <div>
-                          <p className="text-sm text-muted-foreground">Problema</p>
-                          <p className="text-sm">{request.issueDescription}</p>
-                        </div>
+                      </div>
+                      <div className="space-y-3">
+                        {request.devices?.map((device) => (
+                          <div key={device.id} className="p-3 border rounded-md space-y-2" data-testid={`device-${device.id}`}>
+                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                              <div>
+                                <p className="text-xs text-muted-foreground">Dispositivo</p>
+                                <p className="text-sm font-medium">{device.deviceType}</p>
+                              </div>
+                              <div>
+                                <p className="text-xs text-muted-foreground">Marca / Modello</p>
+                                <p className="text-sm font-medium">{device.brand} {device.model}</p>
+                              </div>
+                              <div>
+                                <p className="text-xs text-muted-foreground">Quantità</p>
+                                <p className="text-sm font-medium">{device.quantity}</p>
+                              </div>
+                              <div>
+                                <p className="text-xs text-muted-foreground">Stato</p>
+                                <Badge variant={statusLabels[device.status]?.variant || "secondary"} className="text-xs">
+                                  {statusLabels[device.status]?.label || device.status}
+                                </Badge>
+                              </div>
+                            </div>
+                            <div>
+                              <p className="text-xs text-muted-foreground">Problema</p>
+                              <p className="text-sm">{device.issueDescription}</p>
+                            </div>
+                            {device.photos && device.photos.length > 0 && (
+                              <div>
+                                <p className="text-xs text-muted-foreground flex items-center gap-1 mb-1">
+                                  <Image className="h-3 w-3" /> Foto
+                                </p>
+                                <div className="flex flex-wrap gap-1">
+                                  {device.photos.map((photo: string, pi: number) => (
+                                    <a key={pi} href={photo} target="_blank" rel="noopener noreferrer">
+                                      <img src={photo} alt={`Foto ${pi + 1}`} className="w-16 h-16 object-cover rounded-md border hover:opacity-80 transition-opacity" />
+                                    </a>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        ))}
                       </div>
                       {request.trackingNumber && (
                         <div className="mt-3 p-2 bg-muted rounded-md">
                           <p className="text-sm">
                             <span className="font-medium">Tracking:</span> {request.courierName}: {request.trackingNumber}
                           </p>
-                        </div>
-                      )}
-                      {request.photos && request.photos.length > 0 && (
-                        <div className="mt-3">
-                          <p className="text-sm text-muted-foreground mb-2">Foto dispositivo</p>
-                          <div className="flex gap-2 flex-wrap">
-                            {request.photos.map((photo: string, index: number) => (
-                              <a key={index} href={photo} target="_blank" rel="noopener noreferrer">
-                                <img
-                                  src={photo}
-                                  alt={`Foto ${index + 1}`}
-                                  className="w-20 h-20 object-cover rounded-md border hover:opacity-80 transition-opacity"
-                                />
-                              </a>
-                            ))}
-                          </div>
                         </div>
                       )}
                       {request.customerNotes && (
@@ -512,13 +539,19 @@ export default function RepairCenterRemoteRequests() {
                           <Badge {...statusLabels[request.status]}>
                             {statusLabels[request.status]?.label}
                           </Badge>
+                          {request.devices?.length > 0 && (
+                            <Badge variant="secondary" className="text-xs">
+                              <Smartphone className="h-3 w-3 mr-1" />
+                              {request.devices.length} dispositiv{request.devices.length === 1 ? 'o' : 'i'}
+                            </Badge>
+                          )}
                         </div>
                         <div className="flex flex-wrap items-center gap-3">
                           <span className="text-sm text-muted-foreground">
-                            {request.brand} {request.model}
+                            {request.devices?.map(d => `${d.brand} ${d.model}`).join(', ') || '-'}
                           </span>
-                          {request.repairOrderId && request.status === 'repair_created' && (
-                            <Link href={`/repair-center/repairs/${request.repairOrderId}`}>
+                          {request.devices?.some(d => d.repairOrderId && d.status === 'repair_created') && (
+                            <Link href={`/repair-center/repairs/${request.devices.find(d => d.repairOrderId)?.repairOrderId}`}>
                               <Button size="sm" variant="outline" data-testid={`button-view-repair-${request.id}`}>
                                 Vai alla Lavorazione
                               </Button>

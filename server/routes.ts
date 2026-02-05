@@ -10421,27 +10421,27 @@ export function registerRoutes(app: Express): Server {
         customerId: req.user.id
       });
       
-      // Enrich with signed photo URLs and center data
       const enrichedRequests = await Promise.all(requests.map(async (r) => {
-        // Generate signed URLs for photos
-        let photoUrls: string[] = [];
-        if (r.photos && r.photos.length > 0) {
-          photoUrls = await Promise.all(
-            r.photos.map(async (photoKey: string) => {
-              try {
-                return await getSignedDownloadUrl(photoKey);
-              } catch {
-                return photoKey;
-              }
-            })
-          );
-        }
+        const devices = await storage.listRemoteRepairRequestDevices(r.id);
+        const enrichedDevices = await Promise.all(devices.map(async (d) => {
+          let photoUrls: string[] = [];
+          if (d.photos && d.photos.length > 0) {
+            photoUrls = await Promise.all(
+              d.photos.map(async (photoKey: string) => {
+                try {
+                  return await getSignedDownloadUrl(photoKey);
+                } catch {
+                  return photoKey;
+                }
+              })
+            );
+          }
+          return { ...d, photos: photoUrls };
+        }));
         
-        // Get assigned center info for display
         let centerName = null;
         let centerData: any = null;
         if (r.assignedCenterId) {
-          // Get the repair center user to find their repairCenterId
           const centerUser = await storage.getUser(r.assignedCenterId);
           if (centerUser?.repairCenterId) {
             const repairCenter = await storage.getRepairCenter(centerUser.repairCenterId);
@@ -10452,7 +10452,7 @@ export function registerRoutes(app: Express): Server {
         
         return {
           ...r,
-          photos: photoUrls,
+          devices: enrichedDevices,
           centerName,
           centerAddress: centerData?.address || null,
           centerCity: centerData?.city || null,
@@ -10473,16 +10473,31 @@ export function registerRoutes(app: Express): Server {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
       
+      const { devices, ...requestData } = req.body;
+      
+      if (!devices || !Array.isArray(devices) || devices.length === 0) {
+        return res.status(400).json({ message: "Almeno un dispositivo è richiesto" });
+      }
+      
       const { insertRemoteRepairRequestSchema } = await import("@shared/schema");
       const validatedData = insertRemoteRepairRequestSchema.parse({
-        ...req.body,
+        ...requestData,
         customerId: req.user.id,
       });
       
       const request = await storage.createRemoteRepairRequest(validatedData);
       
+      const createdDevices = [];
+      for (const device of devices) {
+        const createdDevice = await storage.createRemoteRepairRequestDevice({
+          ...device,
+          requestId: request.id
+        });
+        createdDevices.push(createdDevice);
+      }
+      
       setActivityEntity(res, { type: 'remote_repair_requests', id: request.id });
-      res.status(201).json(request);
+      res.status(201).json({ ...request, devices: createdDevices });
     } catch (error: any) {
       console.error("Service order creation error:", error);
       if (error.name === 'ZodError') {
@@ -10693,31 +10708,32 @@ export function registerRoutes(app: Express): Server {
         }
       }
       
-      // Enrich with customer data and signed photo URLs
       const enrichedRequests = await Promise.all(allRequests.map(async (r) => {
-        // Get customer data
         const customer = r.customerId ? await storage.getUser(r.customerId) : null;
         
-        // Generate signed URLs for photos
-        let photoUrls: string[] = [];
-        if (r.photos && r.photos.length > 0) {
-          photoUrls = await Promise.all(
-            r.photos.map(async (photoKey: string) => {
-              try {
-                return await getSignedDownloadUrl(photoKey);
-              } catch {
-                return photoKey;
-              }
-            })
-          );
-        }
+        const devices = await storage.listRemoteRepairRequestDevices(r.id);
+        const enrichedDevices = await Promise.all(devices.map(async (d) => {
+          let photoUrls: string[] = [];
+          if (d.photos && d.photos.length > 0) {
+            photoUrls = await Promise.all(
+              d.photos.map(async (photoKey: string) => {
+                try {
+                  return await getSignedDownloadUrl(photoKey);
+                } catch {
+                  return photoKey;
+                }
+              })
+            );
+          }
+          return { ...d, photos: photoUrls };
+        }));
         
         return {
           ...r,
+          devices: enrichedDevices,
           customerName: customer?.username || customer?.email || null,
           customerEmail: customer?.email || null,
-          customerPhone: customer?.phone || null,
-          photos: photoUrls
+          customerPhone: customer?.phone || null
         };
       }));
       
@@ -10757,6 +10773,11 @@ export function registerRoutes(app: Express): Server {
         customerProvince: repairCenter?.provincia || null
       });
       
+      const devices = await storage.listRemoteRepairRequestDevices(req.params.id);
+      for (const d of devices) {
+        await storage.updateRemoteRepairRequestDevice(d.id, { status: 'awaiting_shipment' });
+      }
+      
       setActivityEntity(res, { type: 'remote_repair_requests', id: updated.id });
       res.json(updated);
     } catch (error: any) {
@@ -10787,6 +10808,11 @@ export function registerRoutes(app: Express): Server {
         status: 'rejected',
         rejectionReason
       });
+      
+      const devices = await storage.listRemoteRepairRequestDevices(req.params.id);
+      for (const d of devices) {
+        await storage.updateRemoteRepairRequestDevice(d.id, { status: 'rejected' });
+      }
       
       setActivityEntity(res, { type: 'remote_repair_requests', id: updated.id });
       res.json(updated);
@@ -10845,20 +10871,26 @@ export function registerRoutes(app: Express): Server {
         return res.status(400).send("La richiesta non è in transito");
       }
       
-      // Prima imposta lo stato received
       await storage.updateRemoteRepairRequest(req.params.id, {
-        status: 'completed',
+        status: 'received',
         receivedAt: new Date()
       });
       
-      // Poi crea automaticamente la lavorazione
-      const { repairOrder, remoteRequest } = await storage.createRepairFromRemoteRequest(req.params.id);
+      const devices = await storage.listRemoteRepairRequestDevices(req.params.id);
+      const repairOrders = [];
+      for (const d of devices) {
+        await storage.updateRemoteRepairRequestDevice(d.id, { status: 'received' });
+        const { repairOrder } = await storage.createRepairFromRemoteRequestDevice(d.id);
+        repairOrders.push(repairOrder);
+      }
       
-      setActivityEntity(res, { type: 'remote_repair_requests', id: remoteRequest.id });
+      const remoteRequest = await storage.getRemoteRepairRequest(req.params.id);
+      
+      setActivityEntity(res, { type: 'remote_repair_requests', id: req.params.id });
       res.json({ 
         remoteRequest, 
-        repairOrder,
-        message: `Lavorazione ${repairOrder.orderNumber} creata automaticamente`
+        repairOrders,
+        message: `${repairOrders.length} lavorazione/i creata/e automaticamente`
       });
     } catch (error: any) {
       console.error("Service order creation error:", error);
@@ -10885,21 +10917,27 @@ export function registerRoutes(app: Express): Server {
       
       const { centerNotes } = req.body;
       
-      // First update status to received
       await storage.updateRemoteRepairRequest(req.params.id, {
-        status: 'completed',
+        status: 'received',
         receivedAt: new Date(),
         centerNotes: centerNotes || request.centerNotes
       });
       
-      // Then create the repair order automatically
-      const { repairOrder, remoteRequest } = await storage.createRepairFromRemoteRequest(req.params.id);
+      const devices = await storage.listRemoteRepairRequestDevices(req.params.id);
+      const repairOrders = [];
+      for (const d of devices) {
+        await storage.updateRemoteRepairRequestDevice(d.id, { status: 'received' });
+        const { repairOrder } = await storage.createRepairFromRemoteRequestDevice(d.id);
+        repairOrders.push(repairOrder);
+      }
       
-      setActivityEntity(res, { type: 'remote_repair_requests', id: remoteRequest.id });
+      const remoteRequest = await storage.getRemoteRepairRequest(req.params.id);
+      
+      setActivityEntity(res, { type: 'remote_repair_requests', id: req.params.id });
       res.json({ 
         remoteRequest, 
-        repairOrder,
-        message: `Ricezione forzata. Lavorazione ${repairOrder.orderNumber} creata automaticamente`
+        repairOrders,
+        message: `Ricezione forzata. ${repairOrders.length} lavorazione/i creata/e automaticamente`
       });
     } catch (error: any) {
       console.error("Service order creation error:", error);
@@ -10930,6 +10968,11 @@ export function registerRoutes(app: Express): Server {
         status: 'cancelled',
         centerNotes: cancellationReason || 'Annullata dal centro per mancata spedizione del cliente'
       });
+      
+      const devices = await storage.listRemoteRepairRequestDevices(req.params.id);
+      for (const d of devices) {
+        await storage.updateRemoteRepairRequestDevice(d.id, { status: 'cancelled' });
+      }
       
       setActivityEntity(res, { type: 'remote_repair_requests', id: updated.id });
       res.json(updated);
@@ -10977,7 +11020,27 @@ export function registerRoutes(app: Express): Server {
         });
       }
       
-      res.json(requests);
+      const enrichedRequests = await Promise.all(requests.map(async (r: any) => {
+        const devices = await storage.listRemoteRepairRequestDevices(r.id);
+        const enrichedDevices = await Promise.all(devices.map(async (d) => {
+          let photoUrls: string[] = [];
+          if (d.photos && d.photos.length > 0) {
+            photoUrls = await Promise.all(
+              d.photos.map(async (photoKey: string) => {
+                try {
+                  return await getSignedDownloadUrl(photoKey);
+                } catch {
+                  return photoKey;
+                }
+              })
+            );
+          }
+          return { ...d, photos: photoUrls };
+        }));
+        return { ...r, devices: enrichedDevices };
+      }));
+      
+      res.json(enrichedRequests);
     } catch (error: any) {
       console.error("Service order creation error:", error);
       res.status(500).send(error.message);
@@ -11022,6 +11085,11 @@ export function registerRoutes(app: Express): Server {
         assignedCenterId: centerUser.id // Use user ID, not repair_center table ID
       });
       
+      const devices = await storage.listRemoteRepairRequestDevices(req.params.id);
+      for (const d of devices) {
+        await storage.updateRemoteRepairRequestDevice(d.id, { status: 'assigned' });
+      }
+      
       setActivityEntity(res, { type: 'remote_repair_requests', id: updated.id });
       res.json(updated);
     } catch (error: any) {
@@ -11055,7 +11123,26 @@ export function registerRoutes(app: Express): Server {
   app.get("/api/admin/remote-requests", requireRole("admin"), async (req, res) => {
     try {
       const requests = await storage.listRemoteRepairRequests();
-      res.json(requests);
+      const enrichedRequests = await Promise.all(requests.map(async (r: any) => {
+        const devices = await storage.listRemoteRepairRequestDevices(r.id);
+        const enrichedDevices = await Promise.all(devices.map(async (d) => {
+          let photoUrls: string[] = [];
+          if (d.photos && d.photos.length > 0) {
+            photoUrls = await Promise.all(
+              d.photos.map(async (photoKey: string) => {
+                try {
+                  return await getSignedDownloadUrl(photoKey);
+                } catch {
+                  return photoKey;
+                }
+              })
+            );
+          }
+          return { ...d, photos: photoUrls };
+        }));
+        return { ...r, devices: enrichedDevices };
+      }));
+      res.json(enrichedRequests);
     } catch (error: any) {
       console.error("Service order creation error:", error);
       res.status(500).send(error.message);
@@ -11066,7 +11153,23 @@ export function registerRoutes(app: Express): Server {
     try {
       const request = await storage.getRemoteRepairRequest(req.params.id);
       if (!request) return res.status(404).send("Richiesta non trovata");
-      res.json(request);
+      const devices = await storage.listRemoteRepairRequestDevices(req.params.id);
+      const enrichedDevices = await Promise.all(devices.map(async (d) => {
+        let photoUrls: string[] = [];
+        if (d.photos && d.photos.length > 0) {
+          photoUrls = await Promise.all(
+            d.photos.map(async (photoKey: string) => {
+              try {
+                return await getSignedDownloadUrl(photoKey);
+              } catch {
+                return photoKey;
+              }
+            })
+          );
+        }
+        return { ...d, photos: photoUrls };
+      }));
+      res.json({ ...request, devices: enrichedDevices });
     } catch (error: any) {
       console.error("Service order creation error:", error);
       res.status(500).send(error.message);

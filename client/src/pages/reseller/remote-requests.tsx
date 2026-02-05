@@ -9,10 +9,11 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
-import { Loader2, Package, Truck, Check, X, Clock, Building2, UserCheck, Image } from "lucide-react";
-import type { RemoteRepairRequest, RepairCenter } from "@shared/schema";
+import { Loader2, Package, Truck, Check, X, Clock, Building2, UserCheck, Image, Smartphone } from "lucide-react";
+import type { RemoteRepairRequest, RepairCenter, RemoteRepairRequestDevice } from "@shared/schema";
 
 type RepairCenterWithUserId = RepairCenter & { userId: string | null };
+type EnrichedRemoteRequest = RemoteRepairRequest & { devices: RemoteRepairRequestDevice[] };
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
 
@@ -35,7 +36,7 @@ export default function ResellerRemoteRequests() {
   const [selectedRequest, setSelectedRequest] = useState<RemoteRepairRequest | null>(null);
   const [selectedCenterId, setSelectedCenterId] = useState("");
 
-  const { data: requests, isLoading } = useQuery<RemoteRepairRequest[]>({
+  const { data: requests, isLoading } = useQuery<EnrichedRemoteRequest[]>({
     queryKey: ["/api/reseller/remote-requests"],
   });
 
@@ -172,6 +173,12 @@ export default function ResellerRemoteRequests() {
                             <Badge {...statusLabels[request.status]}>
                               {statusLabels[request.status]?.label}
                             </Badge>
+                            {request.devices?.length > 0 && (
+                              <Badge variant="secondary" className="text-xs">
+                                <Smartphone className="h-3 w-3 mr-1" />
+                                {request.devices.length} dispositiv{request.devices.length === 1 ? 'o' : 'i'}
+                              </Badge>
+                            )}
                           </CardTitle>
                           <CardDescription>
                             {format(new Date(request.createdAt), "d MMMM yyyy 'alle' HH:mm", { locale: it })}
@@ -184,50 +191,51 @@ export default function ResellerRemoteRequests() {
                       </div>
                     </CardHeader>
                     <CardContent>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
-                        <div>
-                          <p className="text-sm text-muted-foreground">Dispositivo</p>
-                          <p className="font-medium">{request.deviceType}</p>
-                        </div>
-                        <div>
-                          <p className="text-sm text-muted-foreground">Marca/Modello</p>
-                          <p className="font-medium">{request.brand} {request.model}</p>
-                        </div>
-                        <div>
-                          <p className="text-sm text-muted-foreground">Problema</p>
-                          <p className="text-sm truncate">{request.issueDescription}</p>
-                        </div>
-                        {request.photos && request.photos.length > 0 && (
-                          <div className="mt-2">
-                            <p className="text-sm text-muted-foreground flex items-center gap-1 mb-1">
-                              <Image className="h-3 w-3" /> {request.photos.length} foto
-                            </p>
-                            <div className="flex flex-wrap gap-1">
-                              {request.photos.slice(0, 3).map((photo, index) => (
-                                <a
-                                  key={index}
-                                  href={photo}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="block"
-                                >
-                                  <img
-                                    src={photo}
-                                    alt={`Foto ${index + 1}`}
-                                    className="w-16 h-16 object-cover rounded-md border hover:opacity-80 transition-opacity"
-                                  />
-                                </a>
-                              ))}
-                              {request.photos.length > 3 && (
-                                <span className="text-xs text-muted-foreground self-center ml-1">
-                                  +{request.photos.length - 3}
-                                </span>
-                              )}
+                      <div className="space-y-3">
+                        {request.devices?.map((device) => (
+                          <div key={device.id} className="p-3 border rounded-md space-y-2" data-testid={`device-${device.id}`}>
+                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                              <div>
+                                <p className="text-xs text-muted-foreground">Dispositivo</p>
+                                <p className="text-sm font-medium">{device.deviceType}</p>
+                              </div>
+                              <div>
+                                <p className="text-xs text-muted-foreground">Marca / Modello</p>
+                                <p className="text-sm font-medium">{device.brand} {device.model}</p>
+                              </div>
+                              <div>
+                                <p className="text-xs text-muted-foreground">Quantità</p>
+                                <p className="text-sm font-medium">{device.quantity}</p>
+                              </div>
+                              <div>
+                                <p className="text-xs text-muted-foreground">Stato</p>
+                                <Badge variant={statusLabels[device.status]?.variant || "secondary"} className="text-xs">
+                                  {statusLabels[device.status]?.label || device.status}
+                                </Badge>
+                              </div>
                             </div>
+                            <div>
+                              <p className="text-xs text-muted-foreground">Problema</p>
+                              <p className="text-sm">{device.issueDescription}</p>
+                            </div>
+                            {device.photos && device.photos.length > 0 && (
+                              <div>
+                                <p className="text-xs text-muted-foreground flex items-center gap-1 mb-1">
+                                  <Image className="h-3 w-3" /> Foto
+                                </p>
+                                <div className="flex flex-wrap gap-1">
+                                  {device.photos.map((photo: string, pi: number) => (
+                                    <a key={pi} href={photo} target="_blank" rel="noopener noreferrer">
+                                      <img src={photo} alt={`Foto ${pi + 1}`} className="w-16 h-16 object-cover rounded-md border hover:opacity-80 transition-opacity" />
+                                    </a>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
                           </div>
-                        )}
+                        ))}
                         {request.requestedCenterId && (
-                          <div>
+                          <div className="mt-2">
                             <p className="text-sm text-muted-foreground">Centro Preferito</p>
                             <p className="text-sm">
                               {repairCenters?.find(c => c.id === request.requestedCenterId)?.name || "N/D"}
@@ -258,9 +266,15 @@ export default function ResellerRemoteRequests() {
                           <Badge {...statusLabels[request.status]}>
                             {statusLabels[request.status]?.label}
                           </Badge>
+                          {request.devices?.length > 0 && (
+                            <Badge variant="secondary" className="text-xs">
+                              <Smartphone className="h-3 w-3 mr-1" />
+                              {request.devices.length} dispositiv{request.devices.length === 1 ? 'o' : 'i'}
+                            </Badge>
+                          )}
                         </div>
                         <div className="flex flex-wrap items-center gap-4 text-sm">
-                          <span>{request.brand} {request.model}</span>
+                          <span>{request.devices?.map(d => `${d.brand} ${d.model}`).join(', ') || '-'}</span>
                           <span className="text-muted-foreground">
                             <Building2 className="h-4 w-4 inline mr-1" />
                             {repairCenters?.find(c => c.userId === request.assignedCenterId)?.name || "N/D"}
@@ -290,9 +304,15 @@ export default function ResellerRemoteRequests() {
                           <Badge {...statusLabels[request.status]}>
                             {statusLabels[request.status]?.label}
                           </Badge>
+                          {request.devices?.length > 0 && (
+                            <Badge variant="secondary" className="text-xs">
+                              <Smartphone className="h-3 w-3 mr-1" />
+                              {request.devices.length} dispositiv{request.devices.length === 1 ? 'o' : 'i'}
+                            </Badge>
+                          )}
                         </div>
                         <div className="flex flex-wrap items-center gap-4 text-sm">
-                          <span>{request.brand} {request.model}</span>
+                          <span>{request.devices?.map(d => `${d.brand} ${d.model}`).join(', ') || '-'}</span>
                           <span className="text-muted-foreground">
                             <Building2 className="h-4 w-4 inline mr-1" />
                             {repairCenters?.find(c => c.userId === request.assignedCenterId)?.name || "N/D"}
@@ -322,9 +342,15 @@ export default function ResellerRemoteRequests() {
                           <Badge {...statusLabels[request.status]}>
                             {statusLabels[request.status]?.label}
                           </Badge>
+                          {request.devices?.length > 0 && (
+                            <Badge variant="secondary" className="text-xs">
+                              <Smartphone className="h-3 w-3 mr-1" />
+                              {request.devices.length} dispositiv{request.devices.length === 1 ? 'o' : 'i'}
+                            </Badge>
+                          )}
                         </div>
                         <span className="text-sm text-muted-foreground">
-                          {request.brand} {request.model}
+                          {request.devices?.map(d => `${d.brand} ${d.model}`).join(', ') || '-'}
                         </span>
                       </div>
                     </CardHeader>

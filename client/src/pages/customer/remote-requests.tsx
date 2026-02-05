@@ -11,10 +11,20 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Loader2, Plus, Package, Truck, Check, X, Clock, Send, Phone, MapPin, Upload, Image, Globe } from "lucide-react";
-import type { RemoteRepairRequest, RepairCenter, DeviceType, DeviceBrand, DeviceModel } from "@shared/schema";
+import { Loader2, Plus, Package, Truck, Check, X, Clock, Send, MapPin, Upload, Image, Globe, Trash2, Smartphone } from "lucide-react";
+import type { RemoteRepairRequest, RemoteRepairRequestDevice, DeviceType, DeviceBrand, DeviceModel } from "@shared/schema";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
+
+type EnrichedRequest = RemoteRepairRequest & {
+  devices: RemoteRepairRequestDevice[];
+  centerName?: string | null;
+  centerAddress?: string | null;
+  centerCity?: string | null;
+  centerCap?: string | null;
+  centerProvince?: string | null;
+  centerPhone?: string | null;
+};
 
 const statusLabels: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
   pending: { label: "In attesa", variant: "secondary" },
@@ -28,42 +38,52 @@ const statusLabels: Record<string, { label: string; variant: "default" | "second
   cancelled: { label: "Annullata", variant: "destructive" },
 };
 
+interface DeviceEntry {
+  deviceType: string;
+  brandId: string;
+  brand: string;
+  model: string;
+  imei: string;
+  serial: string;
+  quantity: number;
+  issueDescription: string;
+  photos: File[];
+  photoPreviewUrls: string[];
+}
+
+const emptyDevice = (): DeviceEntry => ({
+  deviceType: "",
+  brandId: "",
+  brand: "",
+  model: "",
+  imei: "",
+  serial: "",
+  quantity: 1,
+  issueDescription: "",
+  photos: [],
+  photoPreviewUrls: [],
+});
+
 export default function CustomerRemoteRequests() {
   const { user } = useAuth();
   const { toast } = useToast();
   const [isNewRequestOpen, setIsNewRequestOpen] = useState(false);
   const [isShippingOpen, setIsShippingOpen] = useState(false);
-  const [selectedRequest, setSelectedRequest] = useState<RemoteRepairRequest | null>(null);
+  const [selectedRequest, setSelectedRequest] = useState<EnrichedRequest | null>(null);
 
-  const [newRequest, setNewRequest] = useState({
-    deviceType: "",
-    brandId: "", // ID for filtering models
-    brand: "", // Name for database
-    model: "",
-    imei: "",
-    serial: "",
-    issueDescription: "",
-    customerNotes: "",
-    resellerId: user?.resellerId || "",
-    requestedCenterId: "",
-  });
+  const [devices, setDevices] = useState<DeviceEntry[]>([emptyDevice()]);
+  const [customerNotes, setCustomerNotes] = useState("");
+  const [requestedCenterId, setRequestedCenterId] = useState("");
 
   const [shippingInfo, setShippingInfo] = useState({
     courierName: "",
     trackingNumber: "",
   });
 
-  const [selectedPhotos, setSelectedPhotos] = useState<File[]>([]);
-  const [photoPreviewUrls, setPhotoPreviewUrls] = useState<string[]>([]);
-  const [uploadedPhotoUrls, setUploadedPhotoUrls] = useState<string[]>([]);
   const [isUploading, setIsUploading] = useState(false);
 
-  const { data: requests, isLoading } = useQuery<RemoteRepairRequest[]>({
+  const { data: requests, isLoading } = useQuery<EnrichedRequest[]>({
     queryKey: ["/api/customer/remote-requests"],
-  });
-
-  const { data: repairCenters } = useQuery<RepairCenter[]>({
-    queryKey: ["/api/repair-centers"],
   });
 
   const { data: deviceTypes } = useQuery<DeviceType[]>({
@@ -78,47 +98,79 @@ export default function CustomerRemoteRequests() {
     queryKey: ["/api/device-models"],
   });
 
-  // Filter models by selected brand
-  const filteredModels = (deviceModels || []).filter(
-    (model) => model.brandId === newRequest.brandId
-  );
+  const getFilteredModels = (brandId: string) =>
+    (deviceModels || []).filter((m) => m.brandId === brandId);
+
+  const updateDevice = (index: number, updates: Partial<DeviceEntry>) => {
+    setDevices((prev) => prev.map((d, i) => (i === index ? { ...d, ...updates } : d)));
+  };
+
+  const addDevice = () => {
+    setDevices((prev) => [...prev, emptyDevice()]);
+  };
+
+  const removeDevice = (index: number) => {
+    setDevices((prev) => {
+      const removed = prev[index];
+      removed.photoPreviewUrls.forEach((url) => URL.revokeObjectURL(url));
+      return prev.filter((_, i) => i !== index);
+    });
+  };
+
+  const handleDevicePhotoChange = (index: number, e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    if (files.length > 5) {
+      toast({ title: "Troppi file", description: "Massimo 5 foto per dispositivo", variant: "destructive" });
+      return;
+    }
+    const urls = files.map((f) => URL.createObjectURL(f));
+    updateDevice(index, { photos: files, photoPreviewUrls: urls });
+  };
+
+  const removeDevicePhoto = (deviceIndex: number, photoIndex: number) => {
+    setDevices((prev) =>
+      prev.map((d, i) => {
+        if (i !== deviceIndex) return d;
+        const newPhotos = [...d.photos];
+        newPhotos.splice(photoIndex, 1);
+        const newUrls = [...d.photoPreviewUrls];
+        URL.revokeObjectURL(newUrls[photoIndex]);
+        newUrls.splice(photoIndex, 1);
+        return { ...d, photos: newPhotos, photoPreviewUrls: newUrls };
+      })
+    );
+  };
+
+  const uploadPhotos = async (photos: File[]): Promise<string[]> => {
+    if (photos.length === 0) return [];
+    const formData = new FormData();
+    photos.forEach((p) => formData.append("photos", p));
+    const response = await fetch("/api/customer/remote-requests/upload-photos", {
+      method: "POST",
+      body: formData,
+      credentials: "include",
+    });
+    if (!response.ok) throw new Error(await response.text());
+    const { photos: urls } = await response.json();
+    return urls;
+  };
 
   const createMutation = useMutation({
-    mutationFn: async (data: Omit<typeof newRequest, 'requestedCenterId'> & { requestedCenterId: string | null; photos?: string[] }) => {
+    mutationFn: async (data: any) => {
       const res = await apiRequest("POST", "/api/customer/remote-requests", data);
       return await res.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/customer/remote-requests"] });
       setIsNewRequestOpen(false);
-      setNewRequest({
-        deviceType: "",
-        brandId: "",
-        brand: "",
-        model: "",
-        imei: "",
-        serial: "",
-        issueDescription: "",
-        customerNotes: "",
-        resellerId: user?.resellerId || "",
-        requestedCenterId: "",
-      });
-      // Reset photos
-      setSelectedPhotos([]);
-      photoPreviewUrls.forEach(url => URL.revokeObjectURL(url));
-      setPhotoPreviewUrls([]);
-      setUploadedPhotoUrls([]);
-      toast({
-        title: "Richiesta inviata",
-        description: "La tua richiesta di riparazione remota è stata inviata con successo",
-      });
+      devices.forEach((d) => d.photoPreviewUrls.forEach((u) => URL.revokeObjectURL(u)));
+      setDevices([emptyDevice()]);
+      setCustomerNotes("");
+      setRequestedCenterId("");
+      toast({ title: "Richiesta inviata", description: "La tua richiesta di riparazione remota è stata inviata con successo" });
     },
     onError: (error: Error) => {
-      toast({
-        title: "Errore",
-        description: error.message,
-        variant: "destructive",
-      });
+      toast({ title: "Errore", description: error.message, variant: "destructive" });
     },
   });
 
@@ -132,96 +184,61 @@ export default function CustomerRemoteRequests() {
       setIsShippingOpen(false);
       setSelectedRequest(null);
       setShippingInfo({ courierName: "", trackingNumber: "" });
-      toast({
-        title: "Spedizione confermata",
-        description: "I dati della spedizione sono stati salvati",
-      });
+      toast({ title: "Spedizione confermata", description: "I dati della spedizione sono stati salvati" });
     },
     onError: (error: Error) => {
-      toast({
-        title: "Errore",
-        description: error.message,
-        variant: "destructive",
-      });
+      toast({ title: "Errore", description: error.message, variant: "destructive" });
     },
   });
 
-  const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.target.files || []);
-    if (files.length > 5) {
-      toast({
-        title: "Troppi file",
-        description: "Puoi caricare al massimo 5 foto",
-        variant: "destructive",
-      });
-      return;
-    }
-    setSelectedPhotos(files);
-    // Create preview URLs
-    const urls = files.map(file => URL.createObjectURL(file));
-    setPhotoPreviewUrls(urls);
-  };
-
-  const removePhoto = (index: number) => {
-    const newPhotos = [...selectedPhotos];
-    newPhotos.splice(index, 1);
-    setSelectedPhotos(newPhotos);
-    
-    const newUrls = [...photoPreviewUrls];
-    URL.revokeObjectURL(newUrls[index]);
-    newUrls.splice(index, 1);
-    setPhotoPreviewUrls(newUrls);
-  };
-
-  const uploadPhotos = async (): Promise<string[]> => {
-    if (selectedPhotos.length === 0) return [];
-    
-    setIsUploading(true);
-    try {
-      const formData = new FormData();
-      selectedPhotos.forEach(photo => {
-        formData.append("photos", photo);
-      });
-      
-      const response = await fetch("/api/customer/remote-requests/upload-photos", {
-        method: "POST",
-        body: formData,
-        credentials: "include",
-      });
-      
-      if (!response.ok) {
-        throw new Error(await response.text());
-      }
-      
-      const { photos } = await response.json();
-      return photos;
-    } finally {
-      setIsUploading(false);
-    }
-  };
-
   const handleCreateRequest = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    try {
-      // First upload photos if any
-      let photoUrls: string[] = [];
-      if (selectedPhotos.length > 0) {
-        photoUrls = await uploadPhotos();
+    if (devices.length === 0) {
+      toast({ title: "Errore", description: "Aggiungi almeno un dispositivo", variant: "destructive" });
+      return;
+    }
+    for (const d of devices) {
+      if (!d.deviceType || !d.brand || !d.model || !d.issueDescription) {
+        toast({ title: "Errore", description: "Compila tutti i campi obbligatori per ogni dispositivo", variant: "destructive" });
+        return;
       }
-      
-      const dataToSend = {
-        ...newRequest,
-        requestedCenterId: newRequest.requestedCenterId === "none" || newRequest.requestedCenterId === "" ? null : newRequest.requestedCenterId,
-        photos: photoUrls.length > 0 ? photoUrls : undefined,
-      };
-      createMutation.mutate(dataToSend);
-    } catch (error: any) {
-      toast({
-        title: "Errore upload foto",
-        description: error.message,
-        variant: "destructive",
+      if (d.quantity < 1) {
+        toast({ title: "Errore", description: "La quantità deve essere almeno 1", variant: "destructive" });
+        return;
+      }
+    }
+
+    try {
+      setIsUploading(true);
+      const devicesData = await Promise.all(
+        devices.map(async (d) => {
+          let photoUrls: string[] = [];
+          if (d.photos.length > 0) {
+            photoUrls = await uploadPhotos(d.photos);
+          }
+          return {
+            deviceType: d.deviceType,
+            brand: d.brand,
+            model: d.model,
+            imei: d.imei || undefined,
+            serial: d.serial || undefined,
+            quantity: d.quantity,
+            issueDescription: d.issueDescription,
+            photos: photoUrls.length > 0 ? photoUrls : undefined,
+          };
+        })
+      );
+
+      createMutation.mutate({
+        resellerId: user?.resellerId || "",
+        requestedCenterId: requestedCenterId === "none" || requestedCenterId === "" ? null : requestedCenterId,
+        customerNotes: customerNotes || undefined,
+        devices: devicesData,
       });
+    } catch (error: any) {
+      toast({ title: "Errore upload foto", description: error.message, variant: "destructive" });
+    } finally {
+      setIsUploading(false);
     }
   };
 
@@ -232,7 +249,7 @@ export default function CustomerRemoteRequests() {
     }
   };
 
-  const openShippingDialog = (request: RemoteRepairRequest) => {
+  const openShippingDialog = (request: EnrichedRequest) => {
     setSelectedRequest(request);
     setIsShippingOpen(true);
   };
@@ -245,12 +262,13 @@ export default function CustomerRemoteRequests() {
     );
   }
 
+  const totalDeviceCount = devices.reduce((sum, d) => sum + d.quantity, 0);
+
   return (
     <div className="container max-w-6xl mx-auto py-6 space-y-6">
-      {/* Hero Header */}
       <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-500 p-6">
         <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl animate-pulse" />
-        <div className="absolute bottom-0 left-0 w-48 h-48 bg-cyan-300/20 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
+        <div className="absolute bottom-0 left-0 w-48 h-48 bg-cyan-300/20 rounded-full blur-3xl animate-pulse" style={{ animationDelay: "1s" }} />
         <div className="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div className="flex flex-wrap items-center gap-4">
             <div className="h-12 w-12 rounded-xl bg-white/20 backdrop-blur-sm border border-white/30 flex items-center justify-center">
@@ -260,9 +278,7 @@ export default function CustomerRemoteRequests() {
               <h1 className="text-2xl font-bold text-white" data-testid="text-page-title">
                 Richieste di Riparazione Remota
               </h1>
-              <p className="text-white/80 text-sm">
-                Richiedi una riparazione senza recarti in negozio
-              </p>
+              <p className="text-white/80 text-sm">Richiedi una riparazione senza recarti in negozio</p>
             </div>
           </div>
           <Dialog open={isNewRequestOpen} onOpenChange={setIsNewRequestOpen}>
@@ -272,191 +288,202 @@ export default function CustomerRemoteRequests() {
                 Nuova Richiesta
               </Button>
             </DialogTrigger>
-          <DialogContent className="max-w-2xl">
-            <DialogHeader>
-              <DialogTitle>Nuova Richiesta di Riparazione</DialogTitle>
-              <DialogDescription>
-                Compila i dati del dispositivo e descrivi il problema
-              </DialogDescription>
-            </DialogHeader>
-            <form onSubmit={handleCreateRequest} className="space-y-4">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="deviceType">Tipo Dispositivo</Label>
-                  <Select
-                    value={newRequest.deviceType}
-                    onValueChange={(value) => setNewRequest({ ...newRequest, deviceType: value })}
-                  >
-                    <SelectTrigger data-testid="select-device-type">
-                      <SelectValue placeholder="Seleziona tipo" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {deviceTypes?.map((type) => (
-                        <SelectItem key={type.id} value={type.name}>
-                          {type.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="brand">Marca</Label>
-                  <Select
-                    value={newRequest.brandId || "none"}
-                    onValueChange={(value) => {
-                      const selectedBrand = deviceBrands?.find(b => b.id === value);
-                      setNewRequest({ 
-                        ...newRequest, 
-                        brandId: value === "none" ? "" : value,
-                        brand: selectedBrand?.name || "", 
-                        model: "" 
-                      });
-                    }}
-                  >
-                    <SelectTrigger data-testid="select-brand">
-                      <SelectValue placeholder="Seleziona marca" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="none">Seleziona marca</SelectItem>
-                      {deviceBrands?.map((brand) => (
-                        <SelectItem key={brand.id} value={brand.id}>
-                          {brand.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="model">Modello</Label>
-                <Select
-                  value={newRequest.model || "none"}
-                  onValueChange={(value) => setNewRequest({ ...newRequest, model: value === "none" ? "" : value })}
-                  disabled={!newRequest.brandId}
-                >
-                  <SelectTrigger data-testid="select-model">
-                    <SelectValue placeholder={newRequest.brandId ? "Seleziona modello" : "Seleziona prima la marca"} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">Seleziona modello</SelectItem>
-                    {filteredModels.map((model) => (
-                      <SelectItem key={model.id} value={model.modelName}>
-                        {model.modelName}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="imei">IMEI (opzionale)</Label>
-                  <Input
-                    id="imei"
-                    value={newRequest.imei}
-                    onChange={(e) => setNewRequest({ ...newRequest, imei: e.target.value })}
-                    placeholder="IMEI del dispositivo"
-                    data-testid="input-imei"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="serial">Seriale (opzionale)</Label>
-                  <Input
-                    id="serial"
-                    value={newRequest.serial}
-                    onChange={(e) => setNewRequest({ ...newRequest, serial: e.target.value })}
-                    placeholder="Numero di serie"
-                    data-testid="input-serial"
-                  />
-                </div>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="issueDescription">Descrizione Problema</Label>
-                <Textarea
-                  id="issueDescription"
-                  value={newRequest.issueDescription}
-                  onChange={(e) => setNewRequest({ ...newRequest, issueDescription: e.target.value })}
-                  placeholder="Descrivi il problema del dispositivo in dettaglio..."
-                  rows={4}
-                  data-testid="input-issue-description"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="customerNotes">Note Aggiuntive (opzionale)</Label>
-                <Textarea
-                  id="customerNotes"
-                  value={newRequest.customerNotes}
-                  onChange={(e) => setNewRequest({ ...newRequest, customerNotes: e.target.value })}
-                  placeholder="Altre informazioni utili..."
-                  rows={2}
-                  data-testid="input-customer-notes"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>Foto del Dispositivo (opzionale, max 5)</Label>
-                <div className="flex flex-wrap items-center gap-2">
-                  <label className="cursor-pointer">
-                    <input
-                      type="file"
-                      accept="image/*"
-                      multiple
-                      onChange={handlePhotoChange}
-                      className="hidden"
-                      data-testid="input-photos"
-                    />
-                    <div className="flex flex-wrap items-center gap-2 px-4 py-2 border rounded-md hover-elevate">
-                      <Upload className="h-4 w-4" />
-                      <span>Seleziona foto</span>
-                    </div>
-                  </label>
-                  {selectedPhotos.length > 0 && (
-                    <span className="text-sm text-muted-foreground">
-                      {selectedPhotos.length} foto selezionate
-                    </span>
-                  )}
-                </div>
-                {photoPreviewUrls.length > 0 && (
-                  <div className="flex flex-wrap gap-2 mt-2">
-                    {photoPreviewUrls.map((url, index) => (
-                      <div key={index} className="relative group">
-                        <img
-                          src={url}
-                          alt={`Preview ${index + 1}`}
-                          className="w-20 h-20 object-cover rounded-md border"
-                        />
-                        <button
-                          type="button"
-                          onClick={() => removePhoto(index)}
-                          className="absolute -top-2 -right-2 bg-destructive text-destructive-foreground rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
-                          data-testid={`button-remove-photo-${index}`}
-                        >
-                          <X className="h-3 w-3" />
-                        </button>
+            <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle>Nuova Richiesta di Riparazione</DialogTitle>
+                <DialogDescription>Aggiungi uno o più dispositivi e descrivi il problema</DialogDescription>
+              </DialogHeader>
+              <form onSubmit={handleCreateRequest} className="space-y-4">
+                {devices.map((device, idx) => (
+                  <Card key={idx} data-testid={`card-device-form-${idx}`}>
+                    <CardHeader className="pb-3">
+                      <div className="flex items-center justify-between gap-2">
+                        <CardTitle className="text-base flex items-center gap-2">
+                          <Smartphone className="h-4 w-4" />
+                          Dispositivo {idx + 1}
+                        </CardTitle>
+                        {devices.length > 1 && (
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => removeDevice(idx)}
+                            data-testid={`button-remove-device-${idx}`}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        )}
                       </div>
-                    ))}
+                    </CardHeader>
+                    <CardContent className="space-y-3">
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                        <div className="space-y-1">
+                          <Label>Tipo Dispositivo</Label>
+                          <Select value={device.deviceType} onValueChange={(v) => updateDevice(idx, { deviceType: v })}>
+                            <SelectTrigger data-testid={`select-device-type-${idx}`}>
+                              <SelectValue placeholder="Seleziona tipo" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {deviceTypes?.map((t) => (
+                                <SelectItem key={t.id} value={t.name}>{t.name}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div className="space-y-1">
+                          <Label>Marca</Label>
+                          <Select
+                            value={device.brandId || "none"}
+                            onValueChange={(v) => {
+                              const b = deviceBrands?.find((br) => br.id === v);
+                              updateDevice(idx, { brandId: v === "none" ? "" : v, brand: b?.name || "", model: "" });
+                            }}
+                          >
+                            <SelectTrigger data-testid={`select-brand-${idx}`}>
+                              <SelectValue placeholder="Seleziona marca" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="none">Seleziona marca</SelectItem>
+                              {deviceBrands?.map((b) => (
+                                <SelectItem key={b.id} value={b.id}>{b.name}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div className="space-y-1">
+                          <Label>Modello</Label>
+                          <Select
+                            value={device.model || "none"}
+                            onValueChange={(v) => updateDevice(idx, { model: v === "none" ? "" : v })}
+                            disabled={!device.brandId}
+                          >
+                            <SelectTrigger data-testid={`select-model-${idx}`}>
+                              <SelectValue placeholder={device.brandId ? "Seleziona modello" : "Prima la marca"} />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="none">Seleziona modello</SelectItem>
+                              {getFilteredModels(device.brandId).map((m) => (
+                                <SelectItem key={m.id} value={m.modelName}>{m.modelName}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                        <div className="space-y-1">
+                          <Label>Quantità</Label>
+                          <Input
+                            type="number"
+                            min={1}
+                            value={device.quantity}
+                            onChange={(e) => updateDevice(idx, { quantity: Math.max(1, parseInt(e.target.value) || 1) })}
+                            data-testid={`input-quantity-${idx}`}
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <Label>IMEI (opzionale)</Label>
+                          <Input
+                            value={device.imei}
+                            onChange={(e) => updateDevice(idx, { imei: e.target.value })}
+                            placeholder="IMEI"
+                            data-testid={`input-imei-${idx}`}
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <Label>Seriale (opzionale)</Label>
+                          <Input
+                            value={device.serial}
+                            onChange={(e) => updateDevice(idx, { serial: e.target.value })}
+                            placeholder="Numero di serie"
+                            data-testid={`input-serial-${idx}`}
+                          />
+                        </div>
+                      </div>
+                      <div className="space-y-1">
+                        <Label>Descrizione Problema</Label>
+                        <Textarea
+                          value={device.issueDescription}
+                          onChange={(e) => updateDevice(idx, { issueDescription: e.target.value })}
+                          placeholder="Descrivi il problema del dispositivo in dettaglio..."
+                          rows={3}
+                          data-testid={`input-issue-${idx}`}
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <Label>Foto (opzionale, max 5)</Label>
+                        <div className="flex flex-wrap items-center gap-2">
+                          <label className="cursor-pointer">
+                            <input type="file" accept="image/*" multiple onChange={(e) => handleDevicePhotoChange(idx, e)} className="hidden" data-testid={`input-photos-${idx}`} />
+                            <div className="flex flex-wrap items-center gap-2 px-4 py-2 border rounded-md hover-elevate">
+                              <Upload className="h-4 w-4" />
+                              <span className="text-sm">Seleziona foto</span>
+                            </div>
+                          </label>
+                          {device.photos.length > 0 && (
+                            <span className="text-sm text-muted-foreground">{device.photos.length} foto</span>
+                          )}
+                        </div>
+                        {device.photoPreviewUrls.length > 0 && (
+                          <div className="flex flex-wrap gap-2 mt-1">
+                            {device.photoPreviewUrls.map((url, pi) => (
+                              <div key={pi} className="relative group">
+                                <img src={url} alt={`Preview ${pi + 1}`} className="w-16 h-16 object-cover rounded-md border" />
+                                <button
+                                  type="button"
+                                  onClick={() => removeDevicePhoto(idx, pi)}
+                                  className="absolute -top-2 -right-2 bg-destructive text-destructive-foreground rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                                >
+                                  <X className="h-3 w-3" />
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+
+                <Button type="button" variant="outline" className="w-full" onClick={addDevice} data-testid="button-add-device">
+                  <Plus className="h-4 w-4 mr-2" />
+                  Aggiungi altro dispositivo
+                </Button>
+
+                <div className="space-y-2">
+                  <Label>Note Aggiuntive (opzionale)</Label>
+                  <Textarea
+                    value={customerNotes}
+                    onChange={(e) => setCustomerNotes(e.target.value)}
+                    placeholder="Altre informazioni utili..."
+                    rows={2}
+                    data-testid="input-customer-notes"
+                  />
+                </div>
+
+                <DialogFooter className="flex-col sm:flex-row gap-2">
+                  <div className="text-sm text-muted-foreground mr-auto">
+                    {devices.length} dispositiv{devices.length === 1 ? "o" : "i"} - {totalDeviceCount} unit&agrave; totali
                   </div>
-                )}
-              </div>
-              <DialogFooter>
-                <Button type="button" variant="outline" onClick={() => setIsNewRequestOpen(false)}>
-                  Annulla
-                </Button>
-                <Button type="submit" disabled={createMutation.isPending || isUploading} data-testid="button-submit-request">
-                  {createMutation.isPending ? (
-                    <>
-                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      Invio...
-                    </>
-                  ) : (
-                    <>
-                      <Send className="h-4 w-4 mr-2" />
-                      Invia Richiesta
-                    </>
-                  )}
-                </Button>
-              </DialogFooter>
-            </form>
-          </DialogContent>
-        </Dialog>
+                  <Button type="button" variant="outline" onClick={() => setIsNewRequestOpen(false)}>
+                    Annulla
+                  </Button>
+                  <Button type="submit" disabled={createMutation.isPending || isUploading} data-testid="button-submit-request">
+                    {createMutation.isPending || isUploading ? (
+                      <>
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        Invio...
+                      </>
+                    ) : (
+                      <>
+                        <Send className="h-4 w-4 mr-2" />
+                        Invia Richiesta
+                      </>
+                    )}
+                  </Button>
+                </DialogFooter>
+              </form>
+            </DialogContent>
+          </Dialog>
         </div>
       </div>
 
@@ -480,22 +507,25 @@ export default function CustomerRemoteRequests() {
                 <div className="flex items-center justify-between">
                   <div>
                     <CardTitle className="text-lg flex items-center gap-2">
-                      <span data-testid={`text-request-number-${request.id}`}>
-                        {request.requestNumber}
-                      </span>
+                      <span data-testid={`text-request-number-${request.id}`}>{request.requestNumber}</span>
                       <Badge {...statusLabels[request.status]} data-testid={`badge-status-${request.id}`}>
                         {statusLabels[request.status]?.label || request.status}
                       </Badge>
+                      {request.devices && request.devices.length > 0 && (
+                        <Badge variant="secondary" className="text-xs">
+                          {request.devices.length} dispositiv{request.devices.length === 1 ? "o" : "i"}
+                        </Badge>
+                      )}
                     </CardTitle>
                     <CardDescription>
                       Creata il {format(new Date(request.createdAt), "d MMMM yyyy 'alle' HH:mm", { locale: it })}
                     </CardDescription>
                   </div>
-                  {request.status === 'awaiting_shipment' && (
+                  {request.status === "awaiting_shipment" && (
                     <div className="flex gap-2">
-                      <Button 
+                      <Button
                         variant="outline"
-                        onClick={() => window.open(`/api/customer/remote-requests/${request.id}/ddt`, '_blank')}
+                        onClick={() => window.open(`/api/customer/remote-requests/${request.id}/ddt`, "_blank")}
                         data-testid={`button-download-ddt-${request.id}`}
                       >
                         <Package className="h-4 w-4 mr-2" />
@@ -509,74 +539,63 @@ export default function CustomerRemoteRequests() {
                   )}
                 </div>
               </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
-                  <div>
-                    <p className="text-sm text-muted-foreground">Dispositivo</p>
-                    <p className="font-medium">{request.deviceType}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">Marca</p>
-                    <p className="font-medium">{request.brand}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">Modello</p>
-                    <p className="font-medium">{request.model}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">Stato</p>
-                    <p className="font-medium flex items-center gap-1">
-                      {request.status === 'pending' && <Clock className="h-4 w-4 text-yellow-500" />}
-                      {request.status === 'accepted' && <Check className="h-4 w-4 text-green-500" />}
-                      {request.status === 'rejected' && <X className="h-4 w-4 text-red-500" />}
-                      {request.status === 'in_transit' && <Truck className="h-4 w-4 text-blue-500" />}
-                      {statusLabels[request.status]?.label || request.status}
-                    </p>
-                  </div>
-                </div>
-                <div className="mt-4">
-                  <p className="text-sm text-muted-foreground">Problema</p>
-                  <p className="text-sm">{request.issueDescription}</p>
-                </div>
-                {request.photos && request.photos.length > 0 && (
-                  <div className="mt-4">
-                    <p className="text-sm text-muted-foreground flex items-center gap-1 mb-2">
-                      <Image className="h-3 w-3" /> Foto del dispositivo
-                    </p>
-                    <div className="flex flex-wrap gap-2">
-                      {request.photos.map((photo, index) => (
-                        <a
-                          key={index}
-                          href={photo}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="block"
-                        >
-                          <img
-                            src={photo}
-                            alt={`Foto ${index + 1}`}
-                            className="w-24 h-24 object-cover rounded-md border hover:opacity-80 transition-opacity"
-                            data-testid={`img-photo-${request.id}-${index}`}
-                          />
-                        </a>
-                      ))}
+              <CardContent className="space-y-3">
+                {request.devices?.map((device, di) => (
+                  <div key={device.id} className="p-3 border rounded-md space-y-2" data-testid={`device-${device.id}`}>
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                      <div>
+                        <p className="text-xs text-muted-foreground">Dispositivo</p>
+                        <p className="text-sm font-medium">{device.deviceType}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-muted-foreground">Marca / Modello</p>
+                        <p className="text-sm font-medium">{device.brand} {device.model}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-muted-foreground">Quantità</p>
+                        <p className="text-sm font-medium">{device.quantity}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-muted-foreground">Stato</p>
+                        <Badge variant={statusLabels[device.status]?.variant || "secondary"} className="text-xs">
+                          {statusLabels[device.status]?.label || device.status}
+                        </Badge>
+                      </div>
                     </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">Problema</p>
+                      <p className="text-sm">{device.issueDescription}</p>
+                    </div>
+                    {device.photos && device.photos.length > 0 && (
+                      <div>
+                        <p className="text-xs text-muted-foreground flex items-center gap-1 mb-1">
+                          <Image className="h-3 w-3" /> Foto
+                        </p>
+                        <div className="flex flex-wrap gap-1">
+                          {device.photos.map((photo: string, pi: number) => (
+                            <a key={pi} href={photo} target="_blank" rel="noopener noreferrer">
+                              <img src={photo} alt={`Foto ${pi + 1}`} className="w-16 h-16 object-cover rounded-md border hover:opacity-80 transition-opacity" />
+                            </a>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
-                )}
+                ))}
                 {request.rejectionReason && (
-                  <div className="mt-4 p-3 bg-destructive/10 rounded-md">
+                  <div className="p-3 bg-destructive/10 rounded-md">
                     <p className="text-sm text-muted-foreground">Motivo Rifiuto</p>
                     <p className="text-sm text-destructive">{request.rejectionReason}</p>
                   </div>
                 )}
                 {request.trackingNumber && (
-                  <div className="mt-4 p-3 bg-muted rounded-md">
+                  <div className="p-3 bg-muted rounded-md">
                     <p className="text-sm text-muted-foreground">Tracking</p>
                     <p className="font-medium">{request.courierName}: {request.trackingNumber}</p>
                   </div>
                 )}
                 {request.customerAddress && (
-                  <div className="mt-4 p-3 bg-muted rounded-md">
+                  <div className="p-3 bg-muted rounded-md">
                     <p className="text-sm text-muted-foreground flex items-center gap-1">
                       <MapPin className="h-3 w-3" /> Indirizzo di Spedizione
                     </p>
@@ -585,11 +604,11 @@ export default function CustomerRemoteRequests() {
                     </p>
                   </div>
                 )}
-                {request.status === 'repair_created' && request.repairOrderId && (
-                  <div className="mt-4 p-3 bg-green-100 dark:bg-green-900/30 rounded-md">
+                {request.status === "repair_created" && (
+                  <div className="p-3 bg-green-100 dark:bg-green-900/30 rounded-md">
                     <p className="text-sm font-medium text-green-700 dark:text-green-300 flex items-center gap-2">
                       <Check className="h-4 w-4" />
-                      La riparazione è stata avviata! Il centro di riparazione sta lavorando al tuo dispositivo.
+                      La riparazione è stata avviata! Il centro sta lavorando ai tuoi dispositivi.
                     </p>
                   </div>
                 )}
@@ -603,17 +622,12 @@ export default function CustomerRemoteRequests() {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Dati Spedizione</DialogTitle>
-            <DialogDescription>
-              Inserisci i dati del corriere e il numero di tracking
-            </DialogDescription>
+            <DialogDescription>Inserisci i dati del corriere e il numero di tracking</DialogDescription>
           </DialogHeader>
           <form onSubmit={handleShippingSubmit} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="courierName">Nome Corriere</Label>
-              <Select
-                value={shippingInfo.courierName}
-                onValueChange={(value) => setShippingInfo({ ...shippingInfo, courierName: value })}
-              >
+              <Select value={shippingInfo.courierName} onValueChange={(v) => setShippingInfo({ ...shippingInfo, courierName: v })}>
                 <SelectTrigger data-testid="select-courier-name">
                   <SelectValue placeholder="Seleziona corriere..." />
                 </SelectTrigger>
@@ -642,15 +656,9 @@ export default function CustomerRemoteRequests() {
               />
             </div>
             <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => setIsShippingOpen(false)}>
-                Annulla
-              </Button>
+              <Button type="button" variant="outline" onClick={() => setIsShippingOpen(false)}>Annulla</Button>
               <Button type="submit" disabled={shippingMutation.isPending} data-testid="button-confirm-shipping">
-                {shippingMutation.isPending ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  "Conferma Spedizione"
-                )}
+                {shippingMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Conferma Spedizione"}
               </Button>
             </DialogFooter>
           </form>

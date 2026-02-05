@@ -108,6 +108,7 @@ import {
   transferRequests, TransferRequest, InsertTransferRequest,
   transferRequestItems, TransferRequestItem, InsertTransferRequestItem,
   remoteRepairRequests, RemoteRepairRequest, InsertRemoteRepairRequest, UpdateRemoteRepairRequest,
+  remoteRepairRequestDevices, RemoteRepairRequestDevice, InsertRemoteRepairRequestDevice, UpdateRemoteRepairRequestDevice,
   serviceOrders, ServiceOrder, InsertServiceOrder,
   hrWorkProfiles, HrWorkProfile, InsertHrWorkProfile,
   hrWorkProfileVersions, HrWorkProfileVersion, InsertHrWorkProfileVersion,
@@ -1128,7 +1129,12 @@ export interface IStorage {
   updateRemoteRepairRequest(id: string, updates: UpdateRemoteRepairRequest): Promise<RemoteRepairRequest>;
   generateRemoteRequestNumber(): Promise<string>;
   getResellerRemoteRequestPendingCount(resellerId: string): Promise<number>;
-  createRepairFromRemoteRequest(remoteRequestId: string): Promise<{ repairOrder: RepairOrder; remoteRequest: RemoteRepairRequest }>;
+  createRepairFromRemoteRequestDevice(deviceId: string): Promise<{ repairOrder: RepairOrder; device: RemoteRepairRequestDevice }>;
+  // Remote Repair Request Devices
+  listRemoteRepairRequestDevices(requestId: string): Promise<RemoteRepairRequestDevice[]>;
+  createRemoteRepairRequestDevice(data: InsertRemoteRepairRequestDevice): Promise<RemoteRepairRequestDevice>;
+  updateRemoteRepairRequestDevice(id: string, updates: UpdateRemoteRepairRequestDevice): Promise<RemoteRepairRequestDevice>;
+  deleteRemoteRepairRequestDevice(id: string): Promise<void>;
   
   // Service Orders
   listServiceOrders(filters?: { customerId?: string; resellerId?: string; repairCenterId?: string; status?: string }): Promise<ServiceOrder[]>;
@@ -10377,62 +10383,97 @@ export class DatabaseStorage implements IStorage {
     return parseInt((result.rows[0] as any)?.count) || 0;
   }
 
-  async createRepairFromRemoteRequest(remoteRequestId: string): Promise<{ repairOrder: RepairOrder; remoteRequest: RemoteRepairRequest }> {
-    const request = await this.getRemoteRepairRequest(remoteRequestId);
+  async createRepairFromRemoteRequestDevice(deviceId: string): Promise<{ repairOrder: RepairOrder; device: RemoteRepairRequestDevice }> {
+    const [device] = await db.select().from(remoteRepairRequestDevices).where(eq(remoteRepairRequestDevices.id, deviceId));
+    if (!device) {
+      throw new Error("Dispositivo non trovato");
+    }
+
+    if (device.status !== 'received') {
+      throw new Error("Il dispositivo deve essere nello stato 'received' per creare la lavorazione");
+    }
+
+    if (device.repairOrderId) {
+      throw new Error("La lavorazione è già stata creata per questo dispositivo");
+    }
+
+    const request = await this.getRemoteRepairRequest(device.requestId);
     if (!request) {
       throw new Error("Richiesta remota non trovata");
     }
-    
-    if (request.status !== 'received') {
-      throw new Error("La richiesta deve essere nello stato 'received' per creare la lavorazione");
-    }
-    
-    if (request.repairOrderId) {
-      throw new Error("La lavorazione è già stata creata per questa richiesta");
-    }
-    
-    // Get the repair center ID from the assigned user (assignedCenterId stores user ID, not repair_center ID)
+
     const centerUser = request.assignedCenterId ? await this.getUser(request.assignedCenterId) : null;
     if (!centerUser?.repairCenterId) {
       throw new Error("Centro di riparazione non trovato per l'utente assegnato");
     }
-    
+
     const count = await db.select().from(repairOrders);
     const orderNumber = `ORD-${Date.now()}-${count.length + 1}`;
-    
+
     const [repairOrder] = await db.insert(repairOrders).values({
       orderNumber,
       customerId: request.customerId,
       resellerId: request.resellerId,
       repairCenterId: centerUser.repairCenterId,
-      deviceType: request.deviceType,
-      deviceModel: request.model,
-      brand: request.brand,
-      deviceModelId: request.deviceModelId,
-      imei: request.imei,
-      serial: request.serial,
-      issueDescription: request.issueDescription,
+      deviceType: device.deviceType,
+      deviceModel: device.model,
+      brand: device.brand,
+      deviceModelId: device.deviceModelId,
+      imei: device.imei,
+      serial: device.serial,
+      issueDescription: device.issueDescription,
       status: 'ingressato',
       ingressatoAt: new Date(),
-      notes: `Creato da richiesta remota ${request.requestNumber}`,
+      notes: `Creato da richiesta remota ${request.requestNumber} - Qtà: ${device.quantity}`,
     }).returning();
-    
+
     await this.createRepairOrderStateHistory({
       repairOrderId: repairOrder.id,
       status: 'ingressato' as any,
       enteredAt: new Date(),
     });
-    
-    const [updatedRequest] = await db.update(remoteRepairRequests)
+
+    const [updatedDevice] = await db.update(remoteRepairRequestDevices)
       .set({
         repairOrderId: repairOrder.id,
         status: 'repair_created',
         updatedAt: new Date(),
       })
-      .where(eq(remoteRepairRequests.id, remoteRequestId))
+      .where(eq(remoteRepairRequestDevices.id, deviceId))
       .returning();
-    
-    return { repairOrder, remoteRequest: updatedRequest };
+
+    const allDevices = await this.listRemoteRepairRequestDevices(device.requestId);
+    const allCreated = allDevices.every(d => d.status === 'repair_created' || d.id === deviceId);
+    if (allCreated) {
+      await db.update(remoteRepairRequests)
+        .set({ status: 'repair_created', updatedAt: new Date() })
+        .where(eq(remoteRepairRequests.id, device.requestId));
+    }
+
+    return { repairOrder, device: updatedDevice };
+  }
+
+  async listRemoteRepairRequestDevices(requestId: string): Promise<RemoteRepairRequestDevice[]> {
+    return db.select().from(remoteRepairRequestDevices)
+      .where(eq(remoteRepairRequestDevices.requestId, requestId))
+      .orderBy(remoteRepairRequestDevices.createdAt);
+  }
+
+  async createRemoteRepairRequestDevice(data: InsertRemoteRepairRequestDevice): Promise<RemoteRepairRequestDevice> {
+    const [result] = await db.insert(remoteRepairRequestDevices).values(data).returning();
+    return result;
+  }
+
+  async updateRemoteRepairRequestDevice(id: string, updates: UpdateRemoteRepairRequestDevice): Promise<RemoteRepairRequestDevice> {
+    const [result] = await db.update(remoteRepairRequestDevices)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(remoteRepairRequestDevices.id, id))
+      .returning();
+    return result;
+  }
+
+  async deleteRemoteRepairRequestDevice(id: string): Promise<void> {
+    await db.delete(remoteRepairRequestDevices).where(eq(remoteRepairRequestDevices.id, id));
   }
   
   // Service Orders
