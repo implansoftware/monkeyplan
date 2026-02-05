@@ -39557,12 +39557,14 @@ export function registerRoutes(app: Express): Server {
       
       // First check order status before attempting capture
       const decryptedSecret = decryptSecret(paymentConfig.paypalClientSecret);
+      console.log("Checking PayPal order status for:", transaction.paypalOrderId);
       try {
         const orderStatus = await getPayPalOrderStatus(
           paymentConfig.paypalClientId,
           decryptedSecret,
           transaction.paypalOrderId
         );
+        console.log("PayPal order status result:", orderStatus);
         
         // If already completed, update transaction
         if (orderStatus.status === "COMPLETED") {
