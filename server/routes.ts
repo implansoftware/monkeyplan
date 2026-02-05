@@ -38748,7 +38748,7 @@ export function registerRoutes(app: Express): Server {
         notes: notes || null,
         customerNotes: customerNotes || null,
         invoiceRequested: invoiceRequested || false,
-        status: paymentMethod === "stripe_link" ? "pending" : "completed",
+        status: "completed",
       });
 
       const transactionItems = await storage.createPosTransactionItems(
@@ -39650,7 +39650,7 @@ export function registerRoutes(app: Express): Server {
       if (session.payment_status === "paid" && transaction.status === "pending") {
         // Payment completed - update transaction
         await storage.updatePosTransaction(transactionId, { 
-          status: paymentMethod === "stripe_link" ? "pending" : "completed",
+          status: "completed",
           paymentReference: session.payment_intent as string,
         });
         
@@ -39666,7 +39666,7 @@ export function registerRoutes(app: Express): Server {
           }
         }
         
-        return res.json({ status: paymentMethod === "stripe_link" ? "pending" : "completed", paymentUrl: null });
+        return res.json({ status: "completed", paymentUrl: null });
       } else if (session.status === "expired") {
         await storage.updatePosTransaction(transactionId, { status: "expired" });
         return res.json({ status: "expired", paymentUrl: null });
@@ -41413,7 +41413,7 @@ export function registerRoutes(app: Express): Server {
         notes: notes || null,
         customerNotes: customerNotes || null,
         invoiceRequested: invoiceRequested || false,
-        status: paymentMethod === "stripe_link" ? "pending" : "completed",
+        status: "completed",
       });
 
       const transactionItems = await storage.createPosTransactionItems(
