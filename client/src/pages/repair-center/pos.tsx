@@ -1725,6 +1725,17 @@ export default function PosPage() {
             })}
           </div>
 
+          {/* Switch Richiedi Fattura */}
+          <div className="flex items-center justify-between p-2 bg-muted/50 rounded-md border w-full">
+            <Label htmlFor="invoice-switch-inline" className="text-sm font-medium cursor-pointer">Richiedi Fattura</Label>
+            <Switch
+              id="invoice-switch-inline"
+              checked={invoiceRequested}
+              onCheckedChange={setInvoiceRequested}
+              data-testid="switch-invoice-inline"
+            />
+          </div>
+
           {/* Tastierino numerico per contante */}
           {selectedPayment === "cash" && (
             <div className="w-full space-y-2">
