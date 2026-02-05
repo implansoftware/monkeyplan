@@ -310,11 +310,13 @@ import TransferRequests from "@/pages/reseller/transfer-requests";
 import ResellerWarrantyProducts from "@/pages/reseller/warranty-products";
 import ResellerWarrantyAnalytics from "@/pages/reseller/warranty-analytics";
 import RepairCenterWarrantyAnalytics from "@/pages/repair-center/warranty-analytics";
+import PosPaymentSuccess from "@/pages/pos-payment-success";
 
 function Router() {
   return (
     <Switch>
       <Route path="/auth" component={AuthPage} />
+      <Route path="/pos-payment-success" component={PosPaymentSuccess} />
       
       {/* Shared routes (all roles) */}
       <ProtectedRoute path="/profile" component={ProfilePage} />
