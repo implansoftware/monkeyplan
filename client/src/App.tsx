@@ -236,6 +236,7 @@ import PosTransactionDetail from "@/pages/repair-center/pos-transaction-detail";
 import SalesHistory from "@/pages/repair-center/pos-invoices";
 import PosSessions from "@/pages/repair-center/pos-sessions";
 import PosRegisters from "@/pages/repair-center/pos-registers";
+import PosRegisterSettings from "@/pages/repair-center/pos-register-settings";
 import RepairCenterInvoices from "@/pages/repair-center/invoices";
 
 // Repair Center HR pages
@@ -539,6 +540,7 @@ function Router() {
       <ProtectedRoute path="/repair-center/pos/sales-history" component={SalesHistory} />
       <ProtectedRoute path="/repair-center/pos/sessions" component={PosSessions} />
       <ProtectedRoute path="/repair-center/pos/registers" component={PosRegisters} />
+      <ProtectedRoute path="/repair-center/pos/registers/:id/settings" component={PosRegisterSettings} />
       <ProtectedRoute path="/repair-center/pos/transaction/:id" component={PosTransactionDetail} />
       
       {/* Customer routes */}

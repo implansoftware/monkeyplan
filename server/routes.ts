@@ -38176,13 +38176,31 @@ export function registerRoutes(app: Express): Server {
       res.status(500).json({ error: error.message });
     }
   });
+  // Ottieni singolo registro di cassa
+  app.get("/api/repair-center/pos/registers/:registerId", requireRole("repair_center", "repair_center_staff"), async (req, res) => {
+    try {
+      const repairCenterId = req.user!.repairCenterId || req.user!.id;
+      const { registerId } = req.params;
+      
+      const register = await storage.getPosRegister(registerId);
+      if (!register) return res.status(404).json({ error: "Cassa non trovata" });
+      if (register.repairCenterId !== repairCenterId) return res.status(403).json({ error: "Non autorizzato" });
+      
+      res.json(register);
+    } catch (error: any) {
+      console.error("Error fetching register:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+
 
   // Aggiorna registro di cassa
   app.patch("/api/repair-center/pos/registers/:registerId", requireRole("repair_center", "repair_center_staff"), async (req, res) => {
     try {
       const repairCenterId = req.user!.repairCenterId || req.user!.id;
       const { registerId } = req.params;
-      const { name, description, isActive, isDefault } = req.body;
+      const { name, description, isActive, isDefault, defaultPaymentMethod, enabledPaymentMethods, autoPrintReceipt } = req.body;
       
       const register = await storage.getPosRegister(registerId);
       if (!register) return res.status(404).json({ error: "Cassa non trovata" });
@@ -38193,6 +38211,9 @@ export function registerRoutes(app: Express): Server {
         description: description?.trim(),
         isActive,
         isDefault,
+        defaultPaymentMethod,
+        enabledPaymentMethods,
+        autoPrintReceipt,
       });
       
       res.json(updated);
@@ -40917,7 +40938,7 @@ export function registerRoutes(app: Express): Server {
     try {
       const { resellerId } = getEffectiveContext(req);
       const { registerId } = req.params;
-      const { name, description, isActive, isDefault } = req.body;
+      const { name, description, isActive, isDefault, defaultPaymentMethod, enabledPaymentMethods, autoPrintReceipt } = req.body;
       
       const register = await storage.getPosRegister(registerId);
       if (!register) return res.status(404).json({ error: "Cassa non trovata" });
@@ -40932,6 +40953,9 @@ export function registerRoutes(app: Express): Server {
         description: description?.trim(),
         isActive,
         isDefault,
+        defaultPaymentMethod,
+        enabledPaymentMethods,
+        autoPrintReceipt,
       });
       
       res.json(updated);
