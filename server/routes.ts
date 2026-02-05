@@ -38748,7 +38748,7 @@ export function registerRoutes(app: Express): Server {
         notes: notes || null,
         customerNotes: customerNotes || null,
         invoiceRequested: invoiceRequested || false,
-        status: "completed",
+        status: (paymentMethod === "stripe_link" || paymentMethod === "paypal") ? "pending" : "completed",
       });
 
       const transactionItems = await storage.createPosTransactionItems(
@@ -41413,7 +41413,7 @@ export function registerRoutes(app: Express): Server {
         notes: notes || null,
         customerNotes: customerNotes || null,
         invoiceRequested: invoiceRequested || false,
-        status: "completed",
+        status: (paymentMethod === "stripe_link" || paymentMethod === "paypal") ? "pending" : "completed",
       });
 
       const transactionItems = await storage.createPosTransactionItems(
