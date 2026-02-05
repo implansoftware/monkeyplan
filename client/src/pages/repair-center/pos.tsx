@@ -1818,16 +1818,14 @@ export default function PosPage() {
               })}
             </div>
 
-            <div className="flex flex-wrap items-center gap-2">
-              <div className="flex items-center gap-2">
-                <Switch
-                  id="invoice-switch"
-                  checked={invoiceRequested}
-                  onCheckedChange={setInvoiceRequested}
-                  data-testid="switch-invoice-requested"
-                />
-                <Label htmlFor="invoice-switch" className="text-xs">Richiedi Fattura</Label>
-              </div>
+            <div className="flex items-center justify-between p-2 bg-muted/50 rounded-md border">
+              <Label htmlFor="invoice-switch" className="text-sm font-medium cursor-pointer">Richiedi Fattura</Label>
+              <Switch
+                id="invoice-switch"
+                checked={invoiceRequested}
+                onCheckedChange={setInvoiceRequested}
+                data-testid="switch-invoice-requested"
+              />
             </div>
 
             {selectedPayment === "cash" && (
