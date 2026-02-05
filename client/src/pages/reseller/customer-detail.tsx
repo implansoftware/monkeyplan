@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { CustomerRelationshipsCard } from "@/components/CustomerRelationshipsCard";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
@@ -320,6 +321,10 @@ export default function ResellerCustomerDetail() {
             Utility
             <Badge variant="secondary" className="ml-1 h-5 px-1.5 text-xs">{utilityPractices.length}</Badge>
           </TabsTrigger>
+          <TabsTrigger value="relationships" className="text-xs gap-1.5" data-testid="tab-relationships">
+            <UserCheck className="h-3.5 w-3.5" />
+            Parentele
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="repairs" className="mt-4">
@@ -492,6 +497,10 @@ export default function ResellerCustomerDetail() {
               )}
             </CardContent>
           </Card>
+        </TabsContent>
+
+        <TabsContent value="relationships" className="mt-4">
+          <CustomerRelationshipsCard customerId={customerId} />
         </TabsContent>
       </Tabs>
 
