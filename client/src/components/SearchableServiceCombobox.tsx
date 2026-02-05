@@ -69,12 +69,9 @@ export function SearchableServiceCombobox({
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebounce(search, 250);
 
-  // Use by-device endpoint when device filters are provided, otherwise use standard endpoint
-  const useDeviceFilter = !!(deviceTypeId || brandId || modelId);
-
   const { data: services = [], isLoading } = useQuery<ServiceItemWithPrice[]>({
     queryKey: [
-      useDeviceFilter ? "/api/service-items/by-device" : "/api/service-items",
+      "/api/service-items",
       { search: debouncedSearch, repairCenterId, resellerId, deviceTypeId, brandId, modelId, limit: 20 },
     ],
     queryFn: async () => {
@@ -87,8 +84,7 @@ export function SearchableServiceCombobox({
       if (modelId) params.set("modelId", modelId);
       params.set("limit", "20");
       
-      const endpoint = useDeviceFilter ? "/api/service-items/by-device" : "/api/service-items";
-      const res = await fetch(`${endpoint}?${params.toString()}`, {
+      const res = await fetch(`/api/service-items?${params.toString()}`, {
         credentials: "include",
       });
       if (!res.ok) throw new Error(`${res.status}: ${await res.text()}`);

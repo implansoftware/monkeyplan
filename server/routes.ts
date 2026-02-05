@@ -992,9 +992,29 @@ export function registerRoutes(app: Express): Server {
       
       const search = req.query.search as string | undefined;
       const limit = req.query.limit ? parseInt(req.query.limit as string) : undefined;
+      const deviceTypeId = req.query.deviceTypeId as string | undefined;
+      const brandId = req.query.brandId as string | undefined;
+      const modelId = req.query.modelId as string | undefined;
       
       const items = await storage.listServiceItems();
       let activeItems = items.filter(item => item.isActive);
+      
+      // Filter by device compatibility (cascade filter: type → brand → model)
+      if (deviceTypeId) {
+        activeItems = activeItems.filter(item => 
+          !item.deviceTypeId || item.deviceTypeId === deviceTypeId
+        );
+      }
+      if (brandId) {
+        activeItems = activeItems.filter(item => 
+          !item.brandId || item.brandId === brandId
+        );
+      }
+      if (modelId) {
+        activeItems = activeItems.filter(item => 
+          !item.modelId || item.modelId === modelId
+        );
+      }
       
       // Filter by search term if provided (case-insensitive on name, code, category)
       if (search && search.trim()) {
@@ -1034,7 +1054,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json(itemsWithPrices);
     } catch (error: any) {
-      console.error("Service order creation error:", error);
+      console.error("Service items list error:", error);
       res.status(500).send(error.message);
     }
   });
