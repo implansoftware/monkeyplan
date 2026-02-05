@@ -124,7 +124,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
-import { FileText, User, UserPlus, Store, Settings, List } from "lucide-react";
+import { FileText, User, UserPlus, Store, Settings, List, Printer } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
@@ -2197,9 +2197,24 @@ export default function PosPage() {
                 <span className="text-lg font-semibold text-green-600 dark:text-green-400">
                   Pagamento Ricevuto!
                 </span>
-                <Button onClick={() => setPaymentLinkDialog(false)} data-testid="button-close-payment-success">
-                  Chiudi
-                </Button>
+                <div className="flex gap-2 w-full">
+                  <Button 
+                    variant="outline"
+                    className="flex-1"
+                    onClick={() => {
+                      if (paymentLinkTransactionId) {
+                        window.open(`/api/repair-center/pos/transaction/${paymentLinkTransactionId}/receipt`, '_blank');
+                      }
+                    }}
+                    data-testid="button-print-receipt"
+                  >
+                    <Printer className="w-4 h-4 mr-2" />
+                    {invoiceRequested ? "Stampa Fattura" : "Stampa Scontrino"}
+                  </Button>
+                  <Button onClick={() => setPaymentLinkDialog(false)} data-testid="button-close-payment-success">
+                    Chiudi
+                  </Button>
+                </div>
               </div>
             )}
             
