@@ -1417,7 +1417,7 @@ export function registerRoutes(app: Express): Server {
         if (!canManage) {
           return res.status(403).send("Access denied");
         }
-      } else if (req.user.role === 'repair_center') {
+      } else if ((req.user.role === 'repair_center' || req.user.role === 'repair_center_staff') && req.user.repairCenterId) {
         if (repair.repairCenterId !== req.user.repairCenterId) {
           return res.status(403).send("Access denied");
         }
@@ -1474,7 +1474,7 @@ export function registerRoutes(app: Express): Server {
             return res.status(403).send("Access denied");
           }
         }
-      } else if (req.user.role === 'repair_center') {
+      } else if ((req.user.role === 'repair_center' || req.user.role === 'repair_center_staff') && req.user.repairCenterId) {
         if (repair.repairCenterId !== req.user.repairCenterId) {
           return res.status(403).send("Access denied");
         }
@@ -2598,7 +2598,7 @@ export function registerRoutes(app: Express): Server {
         }
         
         centers = centers.filter(c => allowedCenterIds.includes(c.id));
-      } else if (req.user.role === 'repair_center') {
+      } else if ((req.user.role === 'repair_center' || req.user.role === 'repair_center_staff') && req.user.repairCenterId) {
         // Repair center users see only active centers (they typically work at one)
         centers = centers.filter(c => c.isActive);
       } else {
@@ -12712,7 +12712,7 @@ export function registerRoutes(app: Express): Server {
       } else if (req.user.role === 'reseller') {
         // Resellers see tickets from their customers
         filters.resellerId = req.user.id;
-      } else if (req.user.role === 'repair_center') {
+      } else if ((req.user.role === 'repair_center' || req.user.role === 'repair_center_staff') && req.user.repairCenterId) {
         // Repair centers see assigned tickets
         filters.assignedTo = req.user.id;
       } else if (req.user.role === 'reseller_staff') {
@@ -13349,7 +13349,7 @@ export function registerRoutes(app: Express): Server {
           // This will return orders where resellerId matches OR orders of customers belonging to this reseller
           filters.resellerId = context.resellerId;
         }
-      } else if (req.user.role === 'repair_center') {
+      } else if ((req.user.role === 'repair_center' || req.user.role === 'repair_center_staff') && req.user.repairCenterId) {
         // Repair centers see only orders explicitly assigned to their center
         if (!req.user.repairCenterId) {
           // Repair center without configured ID sees nothing
@@ -13700,7 +13700,7 @@ export function registerRoutes(app: Express): Server {
           }
           updates.repairCenterId = req.body.repairCenterId;
         }
-      } else if (req.user.role === 'repair_center') {
+      } else if ((req.user.role === 'repair_center' || req.user.role === 'repair_center_staff') && req.user.repairCenterId) {
         // Repair center can only update orders assigned to their center
         if (!req.user.repairCenterId) {
           return res.status(403).send("Repair center ID not configured");
@@ -15495,7 +15495,7 @@ export function registerRoutes(app: Express): Server {
       if (req.user.role === 'reseller' && order.resellerId !== req.user.id) {
         return res.status(403).send("Access denied");
       }
-      if (req.user.role === 'repair_center') {
+      if ((req.user.role === 'repair_center' || req.user.role === 'repair_center_staff') && req.user.repairCenterId) {
         if (!req.user.repairCenterId || order.repairCenterId !== req.user.repairCenterId) {
           return res.status(403).send("Access denied");
         }
@@ -15526,7 +15526,7 @@ export function registerRoutes(app: Express): Server {
       if (req.user.role === 'reseller' && order.resellerId !== req.user.id) {
         return res.status(403).send("Access denied");
       }
-      if (req.user.role === 'repair_center') {
+      if ((req.user.role === 'repair_center' || req.user.role === 'repair_center_staff') && req.user.repairCenterId) {
         if (!req.user.repairCenterId || order.repairCenterId !== req.user.repairCenterId) {
           return res.status(403).send("Access denied");
         }
@@ -15628,7 +15628,7 @@ export function registerRoutes(app: Express): Server {
           return res.status(403).send("Access denied");
         }
       }
-      if (req.user.role === 'repair_center') {
+      if ((req.user.role === 'repair_center' || req.user.role === 'repair_center_staff') && req.user.repairCenterId) {
         if (!req.user.repairCenterId || order.repairCenterId !== req.user.repairCenterId) {
           return res.status(403).send("Access denied");
         }
@@ -15671,7 +15671,7 @@ export function registerRoutes(app: Express): Server {
           return res.status(403).send("Access denied");
         }
       }
-      if (req.user.role === 'repair_center') {
+      if ((req.user.role === 'repair_center' || req.user.role === 'repair_center_staff') && req.user.repairCenterId) {
         if (!req.user.repairCenterId || order.repairCenterId !== req.user.repairCenterId) {
           return res.status(403).send("Access denied");
         }
@@ -15703,7 +15703,7 @@ export function registerRoutes(app: Express): Server {
       // Role-based access control for creating diagnostics
       if (req.user.role === 'admin') {
         // Admin can create diagnostics for any order
-      } else if (req.user.role === 'repair_center') {
+      } else if ((req.user.role === 'repair_center' || req.user.role === 'repair_center_staff') && req.user.repairCenterId) {
         // Repair center can only diagnose their own orders
         if (!req.user.repairCenterId || order.repairCenterId !== req.user.repairCenterId) {
           return res.status(403).send("Access denied");
@@ -15788,7 +15788,7 @@ export function registerRoutes(app: Express): Server {
       // Role-based access control for updating diagnostics
       if (req.user.role === 'admin') {
         // Admin can update diagnostics for any order
-      } else if (req.user.role === 'repair_center') {
+      } else if ((req.user.role === 'repair_center' || req.user.role === 'repair_center_staff') && req.user.repairCenterId) {
         // Repair center can only update their own orders
         if (!req.user.repairCenterId || order.repairCenterId !== req.user.repairCenterId) {
           return res.status(403).send("Access denied");
@@ -15896,7 +15896,7 @@ export function registerRoutes(app: Express): Server {
         if (!hasAccess) {
           return res.status(403).send("Access denied");
         }
-      } else if (req.user.role === 'repair_center') {
+      } else if ((req.user.role === 'repair_center' || req.user.role === 'repair_center_staff') && req.user.repairCenterId) {
         if (repairOrder.repairCenterId !== req.user.repairCenterId) {
           return res.status(403).send("Access denied");
         }
@@ -15927,7 +15927,7 @@ export function registerRoutes(app: Express): Server {
       // Role-based access control for creating quotes
       if (req.user.role === 'admin') {
         // Admin can create quotes for any order
-      } else if (req.user.role === 'repair_center') {
+      } else if ((req.user.role === 'repair_center' || req.user.role === 'repair_center_staff') && req.user.repairCenterId) {
         // Repair center can only create quotes for their assigned orders
         if (repairOrder.repairCenterId !== req.user.repairCenterId) {
           return res.status(403).send("Access denied");
@@ -16051,7 +16051,7 @@ export function registerRoutes(app: Express): Server {
       // Role-based access control for updating quotes
       if (req.user.role === 'admin') {
         // Admin can update quotes for any order
-      } else if (req.user.role === 'repair_center') {
+      } else if ((req.user.role === 'repair_center' || req.user.role === 'repair_center_staff') && req.user.repairCenterId) {
         // Repair center can only update quotes for their assigned orders
         if (repairOrder.repairCenterId !== req.user.repairCenterId) {
           return res.status(403).send("Access denied");
@@ -16202,7 +16202,7 @@ export function registerRoutes(app: Express): Server {
       // Role-based access control for skipping quote
       if (req.user.role === 'admin') {
         // Admin can skip quote for any order
-      } else if (req.user.role === 'repair_center') {
+      } else if ((req.user.role === 'repair_center' || req.user.role === 'repair_center_staff') && req.user.repairCenterId) {
         if (repairOrder.repairCenterId !== req.user.repairCenterId) {
           return res.status(403).send("Accesso negato");
         }
@@ -16299,7 +16299,7 @@ export function registerRoutes(app: Express): Server {
       // Role-based access control for creating parts order
       if (req.user.role === 'admin') {
         // Admin can create parts order for any order
-      } else if (req.user.role === 'repair_center') {
+      } else if ((req.user.role === 'repair_center' || req.user.role === 'repair_center_staff') && req.user.repairCenterId) {
         if (repairOrder.repairCenterId !== req.user.repairCenterId) {
           return res.status(403).send("Access denied");
         }
@@ -16395,7 +16395,7 @@ export function registerRoutes(app: Express): Server {
         if (req.query.repairCenterId) {
           filters.repairCenterId = req.query.repairCenterId as string;
         }
-      } else if (req.user.role === 'repair_center') {
+      } else if ((req.user.role === 'repair_center' || req.user.role === 'repair_center_staff') && req.user.repairCenterId) {
         if (!req.user.repairCenterId) {
           return res.json([]);
         }
@@ -16435,7 +16435,7 @@ export function registerRoutes(app: Express): Server {
       // Role-based access control for updating parts status
       if (req.user.role === 'admin') {
         // Admin can update parts status for any order
-      } else if (req.user.role === 'repair_center') {
+      } else if ((req.user.role === 'repair_center' || req.user.role === 'repair_center_staff') && req.user.repairCenterId) {
         if (repairOrder.repairCenterId !== req.user.repairCenterId) {
           return res.status(403).send("Access denied");
         }
@@ -16522,7 +16522,7 @@ export function registerRoutes(app: Express): Server {
       // Role-based access control
       if (req.user.role === 'admin') {
         // Admin can create for any order
-      } else if (req.user.role === 'repair_center') {
+      } else if ((req.user.role === 'repair_center' || req.user.role === 'repair_center_staff') && req.user.repairCenterId) {
         if (repairOrder.repairCenterId !== req.user.repairCenterId) {
           return res.status(403).send("Access denied");
         }
@@ -16638,7 +16638,7 @@ export function registerRoutes(app: Express): Server {
       // RBAC check
       if (req.user.role === 'admin') {
         // Admin can update any
-      } else if (req.user.role === 'repair_center') {
+      } else if ((req.user.role === 'repair_center' || req.user.role === 'repair_center_staff') && req.user.repairCenterId) {
         if (repairOrder.repairCenterId !== req.user.repairCenterId) {
           return res.status(403).send("Access denied");
         }
@@ -16699,7 +16699,7 @@ export function registerRoutes(app: Express): Server {
         if (repairOrder.customerId !== req.user.id) {
           return res.status(403).send("Access denied");
         }
-      } else if (req.user.role === 'repair_center') {
+      } else if ((req.user.role === 'repair_center' || req.user.role === 'repair_center_staff') && req.user.repairCenterId) {
         if (repairOrder.repairCenterId !== req.user.repairCenterId) {
           return res.status(403).send("Access denied");
         }
@@ -16733,7 +16733,7 @@ export function registerRoutes(app: Express): Server {
       // Role-based access control for creating logs
       if (req.user.role === 'admin') {
         // Admin can add logs for any order
-      } else if (req.user.role === 'repair_center') {
+      } else if ((req.user.role === 'repair_center' || req.user.role === 'repair_center_staff') && req.user.repairCenterId) {
         if (repairOrder.repairCenterId !== req.user.repairCenterId) {
           return res.status(403).send("Access denied");
         }
@@ -16777,7 +16777,7 @@ export function registerRoutes(app: Express): Server {
       // Role-based access control for starting repair
       if (req.user.role === 'admin') {
         // Admin can start repair for any order
-      } else if (req.user.role === 'repair_center') {
+      } else if ((req.user.role === 'repair_center' || req.user.role === 'repair_center_staff') && req.user.repairCenterId) {
         if (repairOrder.repairCenterId !== req.user.repairCenterId) {
           return res.status(403).send("Access denied");
         }
@@ -16834,7 +16834,7 @@ export function registerRoutes(app: Express): Server {
         if (repairOrder.customerId !== req.user.id) {
           return res.status(403).send("Access denied");
         }
-      } else if (req.user.role === 'repair_center') {
+      } else if ((req.user.role === 'repair_center' || req.user.role === 'repair_center_staff') && req.user.repairCenterId) {
         if (repairOrder.repairCenterId !== req.user.repairCenterId) {
           return res.status(403).send("Access denied");
         }
@@ -16868,7 +16868,7 @@ export function registerRoutes(app: Express): Server {
       // Role-based access control for updating test checklist
       if (req.user.role === 'admin') {
         // Admin can update test checklist for any order
-      } else if (req.user.role === 'repair_center') {
+      } else if ((req.user.role === 'repair_center' || req.user.role === 'repair_center_staff') && req.user.repairCenterId) {
         if (repairOrder.repairCenterId !== req.user.repairCenterId) {
           return res.status(403).send("Access denied");
         }
@@ -16946,7 +16946,7 @@ export function registerRoutes(app: Express): Server {
       // Role-based access control for marking as ready for pickup
       if (req.user.role === 'admin') {
         // Admin can mark any order as ready
-      } else if (req.user.role === 'repair_center') {
+      } else if ((req.user.role === 'repair_center' || req.user.role === 'repair_center_staff') && req.user.repairCenterId) {
         if (repairOrder.repairCenterId !== req.user.repairCenterId) {
           return res.status(403).send("Access denied");
         }
@@ -16997,7 +16997,7 @@ export function registerRoutes(app: Express): Server {
       // Role-based access control for completing delivery
       if (req.user.role === 'admin') {
         // Admin can complete delivery for any order
-      } else if (req.user.role === 'repair_center') {
+      } else if ((req.user.role === 'repair_center' || req.user.role === 'repair_center_staff') && req.user.repairCenterId) {
         if (repairOrder.repairCenterId !== req.user.repairCenterId) {
           return res.status(403).send("Access denied");
         }
@@ -17121,7 +17121,7 @@ export function registerRoutes(app: Express): Server {
       // RBAC: Admin can view all, repair center can view own, reseller can view their centers
       if (req.user.role === 'admin') {
         // Admin can view all
-      } else if (req.user.role === 'repair_center') {
+      } else if ((req.user.role === 'repair_center' || req.user.role === 'repair_center_staff') && req.user.repairCenterId) {
         if (req.user.repairCenterId !== req.params.id) {
           return res.status(403).send("Access denied");
         }
@@ -17152,7 +17152,7 @@ export function registerRoutes(app: Express): Server {
       // Admin, repair center itself, or owning reseller can modify availability
       if (req.user.role === 'admin') {
         // Admin can modify any center
-      } else if (req.user.role === 'repair_center') {
+      } else if ((req.user.role === 'repair_center' || req.user.role === 'repair_center_staff') && req.user.repairCenterId) {
         if (req.user.repairCenterId !== req.params.id) {
           return res.status(403).send("Access denied");
         }
@@ -17206,7 +17206,7 @@ export function registerRoutes(app: Express): Server {
       // RBAC: Admin can view all, repair center can view own, reseller can view their centers
       if (req.user.role === 'admin') {
         // Admin can view all
-      } else if (req.user.role === 'repair_center') {
+      } else if ((req.user.role === 'repair_center' || req.user.role === 'repair_center_staff') && req.user.repairCenterId) {
         if (req.user.repairCenterId !== req.params.id) {
           return res.status(403).send("Access denied");
         }
@@ -17241,7 +17241,7 @@ export function registerRoutes(app: Express): Server {
       
       if (req.user.role === 'admin') {
         // Admin can create for any center
-      } else if (req.user.role === 'repair_center') {
+      } else if ((req.user.role === 'repair_center' || req.user.role === 'repair_center_staff') && req.user.repairCenterId) {
         if (req.user.repairCenterId !== req.params.id) {
           return res.status(403).send("Access denied");
         }
@@ -17283,7 +17283,7 @@ export function registerRoutes(app: Express): Server {
       
       if (req.user.role === 'admin') {
         // Admin can delete for any center
-      } else if (req.user.role === 'repair_center') {
+      } else if ((req.user.role === 'repair_center' || req.user.role === 'repair_center_staff') && req.user.repairCenterId) {
         if (req.user.repairCenterId !== req.params.id) {
           return res.status(403).send("Access denied");
         }
@@ -17401,7 +17401,7 @@ export function registerRoutes(app: Express): Server {
       // Admin, repair center itself, or reseller that owns the center can view appointments
       if (req.user.role === 'admin') {
         // Admin can view all
-      } else if (req.user.role === 'repair_center') {
+      } else if ((req.user.role === 'repair_center' || req.user.role === 'repair_center_staff') && req.user.repairCenterId) {
         if (req.user.repairCenterId !== req.params.id) {
           return res.status(403).send("Access denied");
         }
@@ -17528,7 +17528,7 @@ export function registerRoutes(app: Express): Server {
         if (!canManage) {
           return res.status(403).send("Access denied");
         }
-      } else if (req.user.role === 'repair_center') {
+      } else if ((req.user.role === 'repair_center' || req.user.role === 'repair_center_staff') && req.user.repairCenterId) {
         if (repairOrder.repairCenterId !== req.user.repairCenterId) {
           return res.status(403).send("Access denied");
         }
@@ -17621,7 +17621,7 @@ export function registerRoutes(app: Express): Server {
         if (repairOrder.customerId !== req.user.id) {
           return res.status(403).send("Access denied");
         }
-      } else if (req.user.role === 'repair_center') {
+      } else if ((req.user.role === 'repair_center' || req.user.role === 'repair_center_staff') && req.user.repairCenterId) {
         if (repairOrder.repairCenterId !== req.user.repairCenterId) {
           return res.status(403).send("Access denied");
         }
@@ -19038,7 +19038,7 @@ export function registerRoutes(app: Express): Server {
       // For repair_center, look up from repair_centers table
       let targetResellerId = null;
       
-      if (req.user.role === 'repair_center') {
+      if ((req.user.role === 'repair_center' || req.user.role === 'repair_center_staff') && req.user.repairCenterId) {
         // Repair center user: find the repair center and get its resellerId
         if (req.user.repairCenterId) {
           const repairCenter = await storage.getRepairCenter(req.user.repairCenterId);
@@ -19569,7 +19569,7 @@ export function registerRoutes(app: Express): Server {
           }
           assignedSubResellerId = validatedData.subResellerId;
         }
-      } else if (req.user.role === 'repair_center') {
+      } else if ((req.user.role === 'repair_center' || req.user.role === 'repair_center_staff') && req.user.repairCenterId) {
         // repair_center uses its parent reseller and itself as repair center
         assignedResellerId = req.user.resellerId;
       }
@@ -19598,8 +19598,8 @@ export function registerRoutes(app: Express): Server {
         codiceUnivoco: validatedData.codiceUnivoco || null,
       });
       // If acting as a repair center context or user is a repair center, assign customer to that center
-      if (req.user.role === 'repair_center') {
-        await storage.setCustomerRepairCenters(customer.id, [req.user.id]);
+      if ((req.user.role === 'repair_center' || req.user.role === 'repair_center_staff') && req.user.repairCenterId) {
+        await storage.setCustomerRepairCenters(customer.id, [req.user.repairCenterId]);
       } else {
         const context = getEffectiveContext(req);
         if (context.repairCenterId) {
@@ -19667,7 +19667,7 @@ export function registerRoutes(app: Express): Server {
           }
           assignedSubResellerId = subResellerIdFromBody;
         }
-      } else if (req.user.role === 'repair_center') {
+      } else if ((req.user.role === 'repair_center' || req.user.role === 'repair_center_staff') && req.user.repairCenterId) {
         assignedResellerId = req.user.resellerId || req.user.id;
         // Repair centers cannot assign sub-resellers
         if (subResellerIdFromBody) {
@@ -20092,7 +20092,7 @@ export function registerRoutes(app: Express): Server {
         };
         stats.transferRequestStats = transferRequestStats;
         
-      } else if (req.user.role === 'repair_center') {
+      } else if ((req.user.role === 'repair_center' || req.user.role === 'repair_center_staff') && req.user.repairCenterId) {
         // Repair center sees comprehensive dashboard stats (similar to reseller)
         if (!req.user.repairCenterId) {
           return res.json({
@@ -20534,7 +20534,7 @@ export function registerRoutes(app: Express): Server {
           });
         } catch (e) {}
         
-      } else if (req.user.role === 'repair_center') {
+      } else if ((req.user.role === 'repair_center' || req.user.role === 'repair_center_staff') && req.user.repairCenterId) {
         const repairCenterId = (req.user as any).repairCenterId;
         
         // Get repairs needing action
@@ -23265,7 +23265,7 @@ export function registerRoutes(app: Express): Server {
       const filters: { supplierId?: string; repairCenterId?: string; status?: string; ownerType?: string; ownerId?: string } = {};
       
       // Role-based filtering
-      if (req.user.role === 'repair_center') {
+      if ((req.user.role === 'repair_center' || req.user.role === 'repair_center_staff') && req.user.repairCenterId) {
         if (!req.user.repairCenterId) {
           return res.json([]);
         }
@@ -23363,7 +23363,7 @@ export function registerRoutes(app: Express): Server {
       }
       
       // Access check based on role and ownership
-      if (req.user.role === 'repair_center') {
+      if ((req.user.role === 'repair_center' || req.user.role === 'repair_center_staff') && req.user.repairCenterId) {
         if (order.ownerType !== 'repair_center' || order.ownerId !== req.user.repairCenterId) {
           return res.status(403).send("Accesso negato");
         }
@@ -23422,7 +23422,7 @@ export function registerRoutes(app: Express): Server {
       }
       
       // Access check based on role and ownership
-      if (req.user.role === 'repair_center') {
+      if ((req.user.role === 'repair_center' || req.user.role === 'repair_center_staff') && req.user.repairCenterId) {
         if (order.ownerType !== 'repair_center' || order.ownerId !== req.user.repairCenterId) {
           return res.status(403).send("Accesso negato");
         }
@@ -23457,7 +23457,7 @@ export function registerRoutes(app: Express): Server {
       let ownerId = req.body.ownerId;
       let repairCenterId = req.body.repairCenterId;
       
-      if (req.user.role === 'repair_center') {
+      if ((req.user.role === 'repair_center' || req.user.role === 'repair_center_staff') && req.user.repairCenterId) {
         if (!req.user.repairCenterId) {
           return res.status(400).send("Centro riparazione non assegnato");
         }
@@ -23509,7 +23509,7 @@ export function registerRoutes(app: Express): Server {
       }
       
       // Access check based on role and ownership
-      if (req.user.role === 'repair_center') {
+      if ((req.user.role === 'repair_center' || req.user.role === 'repair_center_staff') && req.user.repairCenterId) {
         if (order.ownerType !== 'repair_center' || order.ownerId !== req.user.repairCenterId) {
           return res.status(403).send("Accesso negato");
         }
@@ -23543,7 +23543,7 @@ export function registerRoutes(app: Express): Server {
       }
       
       // Access check based on role and ownership
-      if (req.user.role === 'repair_center') {
+      if ((req.user.role === 'repair_center' || req.user.role === 'repair_center_staff') && req.user.repairCenterId) {
         if (order.ownerType !== 'repair_center' || order.ownerId !== req.user.repairCenterId) {
           return res.status(403).send("Accesso negato");
         }
@@ -23609,7 +23609,7 @@ export function registerRoutes(app: Express): Server {
       }
       
       // Access check based on role and ownership
-      if (req.user.role === 'repair_center') {
+      if ((req.user.role === 'repair_center' || req.user.role === 'repair_center_staff') && req.user.repairCenterId) {
         if (order.ownerType !== 'repair_center' || order.ownerId !== req.user.repairCenterId) {
           return res.status(403).send("Accesso negato");
         }
@@ -23809,7 +23809,7 @@ export function registerRoutes(app: Express): Server {
       
       const filters: { supplierId?: string; repairCenterId?: string; status?: string } = {};
       
-      if (req.user.role === 'repair_center') {
+      if ((req.user.role === 'repair_center' || req.user.role === 'repair_center_staff') && req.user.repairCenterId) {
         if (!req.user.repairCenterId) {
           return res.json([]);
         }
@@ -23903,7 +23903,7 @@ export function registerRoutes(app: Express): Server {
       if (!req.user) return res.status(401).send("Unauthorized");
       
       let repairCenterId = req.body.repairCenterId;
-      if (req.user.role === 'repair_center') {
+      if ((req.user.role === 'repair_center' || req.user.role === 'repair_center_staff') && req.user.repairCenterId) {
         if (!req.user.repairCenterId) {
           return res.status(400).send("Centro riparazione non assegnato");
         }
@@ -24322,7 +24322,7 @@ export function registerRoutes(app: Express): Server {
       
       let filters: { repairCenterId?: string; status?: string } = { status: 'ordered' };
       
-      if (req.user.role === 'repair_center') {
+      if ((req.user.role === 'repair_center' || req.user.role === 'repair_center_staff') && req.user.repairCenterId) {
         filters.repairCenterId = req.user.repairCenterId || undefined;
       }
       
@@ -24417,7 +24417,7 @@ export function registerRoutes(app: Express): Server {
       let filters: { resellerId?: string } = {};
       if (req.user.role === 'reseller') {
         filters.resellerId = req.user.id;
-      } else if (req.user.role === 'repair_center') {
+      } else if ((req.user.role === 'repair_center' || req.user.role === 'repair_center_staff') && req.user.repairCenterId) {
         // Repair center vede i fornitori del proprio reseller proprietario
         const repairCenter = await storage.getRepairCenter(req.user.repairCenterId!);
         if (repairCenter?.resellerId) {
@@ -24449,7 +24449,7 @@ export function registerRoutes(app: Express): Server {
       }
       
       // Repair center può vedere solo i fornitori del proprio reseller o globali
-      if (req.user.role === 'repair_center') {
+      if ((req.user.role === 'repair_center' || req.user.role === 'repair_center_staff') && req.user.repairCenterId) {
         const repairCenter = await storage.getRepairCenter(req.user.repairCenterId!);
         if (supplier.resellerId && repairCenter?.resellerId !== supplier.resellerId) {
           return res.status(403).send("Accesso non autorizzato a questo fornitore");
@@ -24473,7 +24473,7 @@ export function registerRoutes(app: Express): Server {
       // Se reseller, assegna automaticamente il resellerId
       if (req.user.role === 'reseller') {
         (validated as any).resellerId = req.user.id;
-      } else if (req.user.role === 'repair_center') {
+      } else if ((req.user.role === 'repair_center' || req.user.role === 'repair_center_staff') && req.user.repairCenterId) {
         // Per repair center, assegna il resellerId del proprietario
         const repairCenter = await storage.getRepairCenter(req.user.repairCenterId!);
         if (repairCenter?.resellerId) {
@@ -24617,7 +24617,7 @@ export function registerRoutes(app: Express): Server {
       // RBAC: filter based on role
       if (req.user.role === 'customer') {
         filters.customerId = req.user.id;
-      } else if (req.user.role === 'repair_center') {
+      } else if ((req.user.role === 'repair_center' || req.user.role === 'repair_center_staff') && req.user.repairCenterId) {
         // Repair center sees only their own practices
         const repairCenterId = req.user.repairCenterId;
         if (!repairCenterId) {
@@ -24724,7 +24724,7 @@ export function registerRoutes(app: Express): Server {
       if (req.user.role === 'customer' && practice.customerId !== req.user.id) {
         return res.status(403).send("Accesso negato");
       }
-      if (req.user.role === 'repair_center') {
+      if ((req.user.role === 'repair_center' || req.user.role === 'repair_center_staff') && req.user.repairCenterId) {
         // Repair center can only see their own practices
         if (practice.repairCenterId !== req.user.repairCenterId) {
           return res.status(403).send("Accesso negato");
@@ -25035,7 +25035,7 @@ export function registerRoutes(app: Express): Server {
       }
       
       // For repair centers, filter commissions by their practices
-      if (req.user.role === 'repair_center') {
+      if ((req.user.role === 'repair_center' || req.user.role === 'repair_center_staff') && req.user.repairCenterId) {
         const repairCenterId = req.user.repairCenterId;
         if (!repairCenterId) {
           return res.json([]);
@@ -25085,7 +25085,7 @@ export function registerRoutes(app: Express): Server {
       }
       
       // RBAC for repair_center
-      if (req.user.role === 'repair_center') {
+      if ((req.user.role === 'repair_center' || req.user.role === 'repair_center_staff') && req.user.repairCenterId) {
         const practice = await storage.getUtilityPractice(commission.practiceId);
         if (!practice || practice.repairCenterId !== req.user.repairCenterId) {
           return res.status(403).send("Accesso negato");
@@ -25287,7 +25287,7 @@ export function registerRoutes(app: Express): Server {
       if (req.user.role === 'customer' && practice.customerId !== req.user.id) {
         return res.status(403).send("Accesso negato");
       }
-      if (req.user.role === 'repair_center') {
+      if ((req.user.role === 'repair_center' || req.user.role === 'repair_center_staff') && req.user.repairCenterId) {
         if (practice.repairCenterId !== req.user.repairCenterId) {
           return res.status(403).send("Accesso negato");
         }
@@ -25322,7 +25322,7 @@ export function registerRoutes(app: Express): Server {
       if (!practice) return res.status(404).send("Pratica non trovata");
       
       // RBAC check for repair_center and resellers
-      if (req.user.role === 'repair_center') {
+      if ((req.user.role === 'repair_center' || req.user.role === 'repair_center_staff') && req.user.repairCenterId) {
         if (practice.repairCenterId !== req.user.repairCenterId) {
           return res.status(403).send("Accesso negato");
         }
@@ -25447,7 +25447,7 @@ export function registerRoutes(app: Express): Server {
       if (!practice) return res.status(404).send("Pratica non trovata");
       
       // RBAC check for repair_center and resellers
-      if (req.user.role === 'repair_center') {
+      if ((req.user.role === 'repair_center' || req.user.role === 'repair_center_staff') && req.user.repairCenterId) {
         if (practice.repairCenterId !== req.user.repairCenterId) {
           return res.status(403).send("Accesso negato");
         }
@@ -25495,7 +25495,7 @@ export function registerRoutes(app: Express): Server {
       if (req.user.role === 'customer' && practice.customerId !== req.user.id) {
         return res.status(403).send("Accesso negato");
       }
-      if (req.user.role === 'repair_center') {
+      if ((req.user.role === 'repair_center' || req.user.role === 'repair_center_staff') && req.user.repairCenterId) {
         if (practice.repairCenterId !== req.user.repairCenterId) {
           return res.status(403).send("Accesso negato");
         }
@@ -25529,7 +25529,7 @@ export function registerRoutes(app: Express): Server {
       if (!practice) return res.status(404).send("Pratica non trovata");
       
       // RBAC check for repair_center and resellers
-      if (req.user.role === 'repair_center') {
+      if ((req.user.role === 'repair_center' || req.user.role === 'repair_center_staff') && req.user.repairCenterId) {
         if (practice.repairCenterId !== req.user.repairCenterId) {
           return res.status(403).send("Accesso negato");
         }
@@ -25580,7 +25580,7 @@ export function registerRoutes(app: Express): Server {
       if (!practice) return res.status(404).send("Pratica non trovata");
       
       // RBAC check for repair_center and resellers
-      if (req.user.role === 'repair_center') {
+      if ((req.user.role === 'repair_center' || req.user.role === 'repair_center_staff') && req.user.repairCenterId) {
         if (practice.repairCenterId !== req.user.repairCenterId) {
           return res.status(403).send("Accesso negato");
         }
@@ -25633,7 +25633,7 @@ export function registerRoutes(app: Express): Server {
       if (!practice) return res.status(404).send("Pratica non trovata");
       
       // RBAC check for repair_center and resellers
-      if (req.user.role === 'repair_center') {
+      if ((req.user.role === 'repair_center' || req.user.role === 'repair_center_staff') && req.user.repairCenterId) {
         if (practice.repairCenterId !== req.user.repairCenterId) {
           return res.status(403).send("Accesso negato");
         }
@@ -25672,7 +25672,7 @@ export function registerRoutes(app: Express): Server {
       if (req.user.role === 'customer' && practice.customerId !== req.user.id) {
         return res.status(403).send("Accesso negato");
       }
-      if (req.user.role === 'repair_center') {
+      if ((req.user.role === 'repair_center' || req.user.role === 'repair_center_staff') && req.user.repairCenterId) {
         if (practice.repairCenterId !== req.user.repairCenterId) {
           return res.status(403).send("Accesso negato");
         }
@@ -25712,7 +25712,7 @@ export function registerRoutes(app: Express): Server {
       if (!practice) return res.status(404).send("Pratica non trovata");
       
       // RBAC check for repair_center and resellers
-      if (req.user.role === 'repair_center') {
+      if ((req.user.role === 'repair_center' || req.user.role === 'repair_center_staff') && req.user.repairCenterId) {
         if (practice.repairCenterId !== req.user.repairCenterId) {
           return res.status(403).send("Accesso negato");
         }
@@ -25765,7 +25765,7 @@ export function registerRoutes(app: Express): Server {
       if (!practice) return res.status(404).send("Pratica non trovata");
       
       // RBAC check for repair_center and resellers
-      if (req.user.role === 'repair_center') {
+      if ((req.user.role === 'repair_center' || req.user.role === 'repair_center_staff') && req.user.repairCenterId) {
         if (practice.repairCenterId !== req.user.repairCenterId) {
           return res.status(403).send("Accesso negato");
         }
@@ -25804,7 +25804,7 @@ export function registerRoutes(app: Express): Server {
       if (req.user.role === 'customer' && practice.customerId !== req.user.id) {
         return res.status(403).send("Accesso negato");
       }
-      if (req.user.role === 'repair_center') {
+      if ((req.user.role === 'repair_center' || req.user.role === 'repair_center_staff') && req.user.repairCenterId) {
         if (practice.repairCenterId !== req.user.repairCenterId) {
           return res.status(403).send("Accesso negato");
         }
@@ -25838,7 +25838,7 @@ export function registerRoutes(app: Express): Server {
       if (!practice) return res.status(404).send("Pratica non trovata");
       
       // RBAC check for repair_center and resellers
-      if (req.user.role === 'repair_center') {
+      if ((req.user.role === 'repair_center' || req.user.role === 'repair_center_staff') && req.user.repairCenterId) {
         if (practice.repairCenterId !== req.user.repairCenterId) {
           return res.status(403).send("Accesso negato");
         }
@@ -25885,7 +25885,7 @@ export function registerRoutes(app: Express): Server {
       if (req.user.role === 'customer' && practice.customerId !== req.user.id) {
         return res.status(403).send("Accesso negato");
       }
-      if (req.user.role === 'repair_center') {
+      if ((req.user.role === 'repair_center' || req.user.role === 'repair_center_staff') && req.user.repairCenterId) {
         if (practice.repairCenterId !== req.user.repairCenterId) {
           return res.status(403).send("Accesso negato");
         }
@@ -25921,7 +25921,7 @@ export function registerRoutes(app: Express): Server {
       if (!practice) return res.status(404).send("Pratica non trovata");
       
       // RBAC check for repair_center and resellers
-      if (req.user.role === 'repair_center') {
+      if ((req.user.role === 'repair_center' || req.user.role === 'repair_center_staff') && req.user.repairCenterId) {
         if (practice.repairCenterId !== req.user.repairCenterId) {
           return res.status(403).send("Accesso negato");
         }
@@ -26082,7 +26082,7 @@ export function registerRoutes(app: Express): Server {
       let practicesFilters: { resellerId?: string; repairCenterId?: string } = {};
       if (req.user.role === 'reseller') {
         practicesFilters.resellerId = req.user.id;
-      } else if (req.user.role === 'repair_center') {
+      } else if ((req.user.role === 'repair_center' || req.user.role === 'repair_center_staff') && req.user.repairCenterId) {
         practicesFilters.repairCenterId = req.user.repairCenterId || undefined;
       }
       
@@ -29874,7 +29874,7 @@ export function registerRoutes(app: Express): Server {
         if (req.user.role === 'reseller' || req.user.role === 'reseller_staff') {
           filters.ownerType = 'reseller';
           filters.ownerId = req.user.resellerId || req.user.id;
-        } else if (req.user.role === 'repair_center') {
+        } else if ((req.user.role === 'repair_center' || req.user.role === 'repair_center_staff') && req.user.repairCenterId) {
           filters.ownerType = 'repair_center';
           filters.ownerId = req.user.repairCenterId || req.user.id;
         }
@@ -29992,7 +29992,7 @@ export function registerRoutes(app: Express): Server {
         ownerType = 'reseller';
         ownerId = req.user.resellerId || req.user.id;
         ownerName = req.user.fullName || req.user.username;
-      } else if (req.user.role === 'repair_center') {
+      } else if ((req.user.role === 'repair_center' || req.user.role === 'repair_center_staff') && req.user.repairCenterId) {
         ownerType = 'repair_center';
         ownerId = req.user.repairCenterId || req.user.id;
         ownerName = req.user.fullName || req.user.username;
@@ -30080,7 +30080,7 @@ export function registerRoutes(app: Express): Server {
         if (destWarehouse.ownerType === 'sub_reseller' && destWarehouse.ownerId === req.user.id) {
           canAccessDest = true;
         }
-      } else if (req.user.role === 'repair_center') {
+      } else if ((req.user.role === 'repair_center' || req.user.role === 'repair_center_staff') && req.user.repairCenterId) {
         // Repair center can only transfer from/to their own warehouse
         const rcId = req.user.repairCenterId || req.user.id;
         if (sourceWarehouse.ownerType === 'repair_center' && sourceWarehouse.ownerId === rcId) {
