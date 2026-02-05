@@ -848,28 +848,7 @@ export function DiagnosisFormDialog({
                   )}
                 />
 
-                <FormField
-                  control={form.control}
-                  name="requiresExternalParts"
-                  render={({ field }) => (
-                    <FormItem 
-                      className="flex flex-row items-start space-x-3 space-y-0 cursor-pointer"
-                      onClick={() => field.onChange(!field.value)}
-                    >
-                      <div className={`w-4 h-4 mt-0.5 rounded border-2 flex items-center justify-center flex-shrink-0 ${
-                        field.value ? 'bg-primary border-primary' : 'border-muted-foreground'
-                      }`}>
-                        {field.value && <span className="text-primary-foreground text-xs">✓</span>}
-                      </div>
-                      <div className="space-y-1 leading-none">
-                        <FormLabel className="cursor-pointer">Richiede Ricambi Esterni</FormLabel>
-                        <FormDescription>
-                          Spunta se è necessario ordinare ricambi esternamente
-                        </FormDescription>
-                      </div>
-                    </FormItem>
-                  )}
-                />
+{/* Campo "Richiede Ricambi Esterni" nascosto su richiesta utente */}
 
                 <div className="space-y-3">
                   <div className="flex flex-wrap items-center gap-2">
