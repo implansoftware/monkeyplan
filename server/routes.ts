@@ -8770,7 +8770,7 @@ export function registerRoutes(app: Express): Server {
     try {
       const { transactionId } = req.params;
       
-      const transaction = await storage.getPosTransactionById(transactionId);
+      const transaction = await storage.getPosTransaction(transactionId);
       if (!transaction) {
         return res.status(404).json({ error: "Transazione non trovata" });
       }
