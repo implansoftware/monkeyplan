@@ -1,0 +1,84 @@
+Error updating invoice: ZodError: [
+  {
+    "code": "invalid_type",
+    "expected": "string",
+    "received": "number",
+    "path": [
+      "subtotal"
+    ],
+    "message": "Expected string, received number"
+  },
+  {
+    "code": "invalid_type",
+    "expected": "string",
+    "received": "number",
+    "path": [
+      "total"
+    ],
+    "message": "Expected string, received number"
+  }
+]
+    at get error [as error] (file:///home/runner/workspace/node_modules/zod/lib/index.mjs:587:31)
+    at ZodObject.parse (file:///home/runner/workspace/node_modules/zod/lib/index.mjs:663:22)
+    at <anonymous> (/home/runner/workspace/server/routes.ts:9739:57)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5) {
+  issues: [
+    {
+      code: 'invalid_type',
+      expected: 'string',
+      received: 'number',
+      path: [Array],
+      message: 'Expected string, received number'
+    },
+    {
+      code: 'invalid_type',
+      expected: 'string',
+      received: 'number',
+      path: [Array],
+      message: 'Expected string, received number'
+    }
+  ],
+  addIssue: [Function (anonymous)],
+  addIssues: [Function (anonymous)],
+  errors: [
+    {
+      code: 'invalid_type',
+      expected: 'string',
+      received: 'number',
+      path: [Array],
+      message: 'Expected string, received number'
+    },
+    {
+      code: 'invalid_type',
+      expected: 'string',
+      received: 'number',
+      path: [Array],
+      message: 'Expected string, received number'
+    }
+  ]
+}
+9:20:16 AM [express] PUT /api/invoices/3e4d9b60-faa6-4544-961b-1f2347fea8b7 400 in 350ms :: {"messag…
+🔐 [AUTH] requireAuth middleware called
+🔐 [AUTH] Session: exists
+🔐 [AUTH] UserId from session: 4a09ab65-57b1-4703-aa6e-6fb0025dbdd9
+🔐 [AUTH] Calling storage.getUser with userId: 4a09ab65-57b1-4703-aa6e-6fb0025dbdd9
+⚡ [AUTH-CACHE] Hit for user_4a09ab65-57b1-4703-aa6e-6fb0025dbdd9
+🔐 [AUTH] User retrieved: admin (admin)
+✅ [AUTH] Authentication successful, calling next()
+9:20:26 AM [express] GET /api/admin/retailers/pending-count 304 in 60ms :: {"count":0}
+🔐 [AUTH] requireAuth middleware called
+🔐 [AUTH] Session: exists
+🔐 [AUTH] UserId from session: 4a09ab65-57b1-4703-aa6e-6fb0025dbdd9
+🔐 [AUTH] Calling storage.getUser with userId: 4a09ab65-57b1-4703-aa6e-6fb0025dbdd9
+⚡ [AUTH-CACHE] Hit for user_4a09ab65-57b1-4703-aa6e-6fb0025dbdd9
+🔐 [AUTH] User retrieved: admin (admin)
+✅ [AUTH] Authentication successful, calling next()
+⏳ [MARKETPLACE] Getting products pending approval (vendor + inventory)
+⏳ [MARKETPLACE] Found 0 vendor products + 0 inventory items = 0 total pending
+🔔 [MARKETPLACE-BADGE] Pending products count: 0
+9:20:26 AM [express] GET /api/admin/retailer-products/pending-count 304 in 121ms :: {"count":0}
+🔐 [UNIVERSAL-AUTH] Authenticating as admin
+⚡ [AUTH-CACHE] Hit for user_4a09ab65-57b1-4703-aa6e-6fb0025dbdd9
+🔐 [UNIVERSAL-AUTH] Admin user retrieved: admin (admin)
+✅ [UNIVERSAL-AUTH] Admin authentication successful
+9:20:26 AM [express] GET /api/messages/unread-count 304 in 121ms :: {"count":0}
