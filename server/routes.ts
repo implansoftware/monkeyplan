@@ -8765,6 +8765,110 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // Public endpoint to check POS payment status (for success page without auth)
+  app.get("/api/pos/public/check-payment-status/:transactionId", async (req, res) => {
+    try {
+      const { transactionId } = req.params;
+      
+      const transaction = await storage.getPosTransactionById(transactionId);
+      if (!transaction) {
+        return res.status(404).json({ error: "Transazione non trovata" });
+      }
+      
+      // If transaction has stripe session, check with Stripe
+      if (transaction.stripeSessionId && transaction.status === "pending") {
+        try {
+          // Get the entity's payment config
+          let stripeSecretKey: string | null = null;
+          
+          // Get session to find entity
+          const session = await storage.getPosSession(transaction.sessionId);
+          if (session) {
+            const register = await storage.getPosRegister(session.registerId);
+            if (register) {
+              let paymentConfig;
+              if (register.repairCenterId) {
+                paymentConfig = await storage.getPaymentConfiguration("repair_center", register.repairCenterId);
+                if (!paymentConfig || paymentConfig.useParentConfig) {
+                  const rc = await storage.getRepairCenter(register.repairCenterId);
+                  if (rc?.resellerId) {
+                    paymentConfig = await storage.getPaymentConfiguration("reseller", rc.resellerId);
+                  }
+                }
+              } else if (register.resellerId) {
+                paymentConfig = await storage.getPaymentConfiguration("reseller", register.resellerId);
+              }
+              stripeSecretKey = paymentConfig?.stripeSecretKey || null;
+            }
+          }
+          
+          if (stripeSecretKey) {
+            const stripe = new Stripe(stripeSecretKey, { apiVersion: "2023-10-16" });
+            const checkoutSession = await stripe.checkout.sessions.retrieve(transaction.stripeSessionId);
+            
+            if (checkoutSession.payment_status === "paid") {
+              await storage.updatePosTransaction(transactionId, {
+                status: "completed",
+                paymentMethod: "stripe_link",
+              });
+              return res.json({ status: "completed", message: "Pagamento completato" });
+            }
+          }
+        } catch (stripeError) {
+          console.error("Stripe check error:", stripeError);
+        }
+      }
+      
+      // If transaction has PayPal order, check with PayPal
+      if (transaction.paypalOrderId && transaction.status === "pending") {
+        try {
+          const session = await storage.getPosSession(transaction.sessionId);
+          if (session) {
+            const register = await storage.getPosRegister(session.registerId);
+            if (register) {
+              let paymentConfig;
+              if (register.repairCenterId) {
+                paymentConfig = await storage.getPaymentConfiguration("repair_center", register.repairCenterId);
+                if (!paymentConfig || paymentConfig.useParentConfig) {
+                  const rc = await storage.getRepairCenter(register.repairCenterId);
+                  if (rc?.resellerId) {
+                    paymentConfig = await storage.getPaymentConfiguration("reseller", rc.resellerId);
+                  }
+                }
+              } else if (register.resellerId) {
+                paymentConfig = await storage.getPaymentConfiguration("reseller", register.resellerId);
+              }
+              
+              if (paymentConfig?.paypalClientId && paymentConfig?.paypalClientSecret) {
+                const paypalStatus = await checkPayPalOrderStatus(
+                  paymentConfig.paypalClientId,
+                  paymentConfig.paypalClientSecret,
+                  transaction.paypalOrderId,
+                  paymentConfig.paypalSandboxMode !== false
+                );
+                
+                if (paypalStatus === "COMPLETED" || paypalStatus === "APPROVED") {
+                  await storage.updatePosTransaction(transactionId, {
+                    status: "completed",
+                    paymentMethod: "paypal",
+                  });
+                  return res.json({ status: "completed", message: "Pagamento PayPal completato" });
+                }
+              }
+            }
+          }
+        } catch (paypalError) {
+          console.error("PayPal check error:", paypalError);
+        }
+      }
+      
+      res.json({ status: transaction.status });
+    } catch (error: any) {
+      console.error("Public check payment status error:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   // GET /api/admin/payment-config/public - Get admin's payment config for B2B orders
   app.get("/api/admin/payment-config/public", requireAuth, async (req, res) => {
     try {

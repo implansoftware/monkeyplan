@@ -23,38 +23,26 @@ export default function PosPaymentSuccess() {
 
     const checkPayment = async () => {
       try {
-        const endpoints = [
-          `/api/repair-center/pos/check-payment-status/${transactionId}`,
-          `/api/reseller/pos/check-payment-status/${transactionId}`
-        ];
-
-        for (const endpoint of endpoints) {
-          try {
-            const res = await fetch(endpoint, { credentials: "include" });
-            if (res.ok) {
-              const data = await res.json();
-              if (data.status === "completed" || data.status === "paid") {
-                setStatus("success");
-                setMessage("Pagamento completato con successo!");
-                return;
-              } else if (data.status === "pending") {
-                setStatus("loading");
-                setMessage("Pagamento in elaborazione...");
-                setTimeout(checkPayment, 3000);
-                return;
-              } else {
-                setStatus("error");
-                setMessage(`Stato pagamento: ${data.status}`);
-                return;
-              }
-            }
-          } catch {
-            continue;
+        const res = await fetch(`/api/pos/public/check-payment-status/${transactionId}`);
+        if (res.ok) {
+          const data = await res.json();
+          if (data.status === "completed" || data.status === "paid") {
+            setStatus("success");
+            setMessage(data.message || "Pagamento completato con successo!");
+            return;
+          } else if (data.status === "pending") {
+            setMessage("Pagamento in elaborazione...");
+            setTimeout(checkPayment, 3000);
+            return;
+          } else {
+            setStatus("error");
+            setMessage(`Stato pagamento: ${data.status}`);
+            return;
           }
+        } else {
+          setStatus("error");
+          setMessage("Impossibile verificare lo stato del pagamento");
         }
-
-        setStatus("error");
-        setMessage("Impossibile verificare lo stato del pagamento");
       } catch (err) {
         setStatus("error");
         setMessage("Errore durante la verifica del pagamento");
