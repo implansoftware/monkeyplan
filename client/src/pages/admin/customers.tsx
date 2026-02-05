@@ -528,7 +528,7 @@ export default function AdminCustomers() {
             </div>
           ) : (
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-              <TabsList className="grid w-full grid-cols-3 h-12 bg-slate-100 dark:bg-slate-800 rounded-xl p-1">
+              <TabsList className="grid w-full grid-cols-4 h-12 bg-slate-100 dark:bg-slate-800 rounded-xl p-1">
                 <TabsTrigger value="personal" className="rounded-lg" data-testid="tab-personal">Dati Personali</TabsTrigger>
                 <TabsTrigger value="assignment" className="rounded-lg" data-testid="tab-assignment">Assegnazione</TabsTrigger>
                 <TabsTrigger value="billing" className="rounded-lg" data-testid="tab-billing">Fatturazione</TabsTrigger>
