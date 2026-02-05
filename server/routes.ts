@@ -29888,6 +29888,117 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // GET /api/network/products/search - Search products in network warehouses and supplier catalogs
+  app.get("/api/network/products/search", requireAuth, requireRole("admin", "admin_staff", "reseller", "reseller_staff", "reseller_collaborator", "repair_center", "repair_center_staff"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Non autenticato" });
+      
+      const search = String(req.query.search || "").trim();
+      const limit = Math.min(parseInt(String(req.query.limit || "20")), 50);
+      
+      if (search.length < 2) {
+        return res.json({ network: [], suppliers: [] });
+      }
+      
+      const actingAs = (req.session as any).actingAs;
+      
+      // === NETWORK PRODUCTS (from accessible warehouses) ===
+      // Uses same logic as /api/warehouses/accessible for consistency
+      let accessibleWarehouses: any[] = [];
+      
+      if (['admin', 'admin_staff'].includes(req.user.role) && !actingAs) {
+        accessibleWarehouses = await storage.listWarehouses({});
+      } else if (
+        (actingAs && actingAs.type === 'reseller') ||
+        req.user.role === 'reseller' || 
+        req.user.role === 'reseller_staff' || 
+        req.user.role === 'reseller_collaborator'
+      ) {
+        const resellerId = actingAs?.id || req.user.resellerId || req.user.id;
+        
+        const ownWarehouse = await storage.getWarehouseByOwner('reseller', resellerId);
+        if (ownWarehouse) accessibleWarehouses.push(ownWarehouse);
+        
+        const allUsers = await storage.listUsers();
+        const subResellers = allUsers.filter(u => u.parentResellerId === resellerId);
+        for (const sub of subResellers) {
+          const subWarehouse = await storage.getWarehouseByOwner('sub_reseller', sub.id);
+          if (subWarehouse) accessibleWarehouses.push(subWarehouse);
+        }
+        
+        const allRepairCenters = await storage.listRepairCenters();
+        const myRepairCenters = allRepairCenters.filter(rc => rc.resellerId === resellerId);
+        for (const rc of myRepairCenters) {
+          const rcWarehouse = await storage.getWarehouseByOwner('repair_center', rc.id);
+          if (rcWarehouse) accessibleWarehouses.push(rcWarehouse);
+        }
+      } else if (
+        (actingAs && actingAs.type === 'repair_center') ||
+        req.user.role === 'repair_center' ||
+        req.user.role === 'repair_center_staff'
+      ) {
+        const rcId = actingAs?.id || req.user.repairCenterId || req.user.id;
+        const ownWarehouse = await storage.getWarehouseByOwner('repair_center', rcId);
+        if (ownWarehouse) accessibleWarehouses.push(ownWarehouse);
+      }
+      
+      // Search products in accessible warehouses
+      const networkProducts: any[] = [];
+      for (const warehouse of accessibleWarehouses) {
+        const products = await storage.listWarehouseProductsWithStock(warehouse.id, search);
+        for (const product of products) {
+          if (product.availableQuantity > 0) {
+            networkProducts.push({
+              id: product.id,
+              name: product.name,
+              sku: product.sku || "",
+              unitPrice: product.sellingPriceCents || product.costCents || 0,
+              availableQuantity: product.availableQuantity,
+              warehouseName: warehouse.name,
+              warehouseId: warehouse.id,
+              ownerName: warehouse.name,
+              ownerId: warehouse.ownerId,
+              ownerType: warehouse.ownerType,
+              imageUrl: product.imageUrl,
+              source: "network" as const,
+            });
+          }
+        }
+      }
+      
+      // === SUPPLIER PRODUCTS (from supplier catalogs) ===
+      const supplierProducts: any[] = [];
+      
+      const allSuppliers = await storage.listSuppliers();
+      const activeSuppliers = allSuppliers.filter(s => s.isActive);
+      
+      for (const supplier of activeSuppliers) {
+        const catalogProducts = await storage.searchSupplierCatalogProducts(supplier.id, search, Math.ceil(limit / activeSuppliers.length) || 10);
+        for (const catalogProduct of catalogProducts) {
+          supplierProducts.push({
+            id: catalogProduct.id,
+            name: catalogProduct.title,
+            sku: catalogProduct.externalSku,
+            unitPrice: catalogProduct.priceCents,
+            availableQuantity: catalogProduct.inStock ? 999 : 0,
+            supplierName: supplier.name,
+            supplierId: supplier.id,
+            supplierType: supplier.type,
+            imageUrl: catalogProduct.imageUrl,
+            source: "supplier" as const,
+          });
+        }
+      }
+      
+      res.json({
+        network: networkProducts.slice(0, limit),
+        suppliers: supplierProducts.slice(0, limit),
+      });
+    } catch (error: any) {
+      console.error("Network products search error:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
   // Get accessible warehouses for current user (for transfer destination selection)
   // NOTE: Must be defined BEFORE /api/warehouses/:id to avoid route collision
   app.get("/api/warehouses/accessible", requireAuth, async (req, res) => {
