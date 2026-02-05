@@ -19476,12 +19476,22 @@ export function registerRoutes(app: Express): Server {
         return res.status(403).send("Forbidden");
       }
       
-      // Validate minimal fields
+      // Validate minimal fields + optional advanced fields
       const quickCreateSchema = z.object({
         fullName: z.string().min(2, "Nome richiesto (minimo 2 caratteri)"),
         email: z.string().email("Email non valida").optional().nullable(),
         phone: z.string().optional().nullable(),
         subResellerId: z.string().optional().nullable(),
+        // Campi avanzati opzionali
+        codiceFiscale: z.string().optional().nullable(),
+        partitaIva: z.string().optional().nullable(),
+        ragioneSociale: z.string().optional().nullable(),
+        indirizzo: z.string().optional().nullable(),
+        cap: z.string().optional().nullable(),
+        citta: z.string().optional().nullable(),
+        provincia: z.string().optional().nullable(),
+        pec: z.string().optional().nullable(),
+        codiceUnivoco: z.string().optional().nullable(),
       });
       
       const validatedData = quickCreateSchema.parse(req.body);
@@ -19574,8 +19584,17 @@ export function registerRoutes(app: Express): Server {
         isActive: true,
         resellerId: assignedResellerId,
         subResellerId: assignedSubResellerId,
+        // Campi avanzati
+        codiceFiscale: validatedData.codiceFiscale || null,
+        partitaIva: validatedData.partitaIva || null,
+        ragioneSociale: validatedData.ragioneSociale || null,
+        indirizzo: validatedData.indirizzo || null,
+        cap: validatedData.cap || null,
+        citta: validatedData.citta || null,
+        provincia: validatedData.provincia || null,
+        pec: validatedData.pec || null,
+        codiceUnivoco: validatedData.codiceUnivoco || null,
       });
-      
       // If acting as a repair center context or user is a repair center, assign customer to that center
       if (req.user.role === 'repair_center') {
         await storage.setCustomerRepairCenters(customer.id, [req.user.id]);

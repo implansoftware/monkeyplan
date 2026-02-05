@@ -41,7 +41,7 @@ import {
   ChevronRight, ChevronLeft, Loader2, Plus, Search,
   Monitor, Tablet, Laptop, Tv, Gamepad2, Watch, Headphones, Printer,
   AlertCircle, UserPlus, X, Mail, Phone, Building, Store, Download, Tag, PartyPopper, FileText, Calculator,
-  Warehouse, Package, Cpu, Code, Wifi, MoreHorizontal, HelpCircle
+  Warehouse, Package, Cpu, Code, Wifi, MoreHorizontal, HelpCircle, MapPin, Building2, FileCheck, ChevronDown, ChevronUp
 } from "lucide-react";
 import { 
   SiApple, SiSamsung, SiHuawei, SiXiaomi, SiSony, SiLg, SiLenovo, SiDell, SiHp, SiAsus,
@@ -168,7 +168,22 @@ export function RepairIntakeWizard({
   const [selectedTypeId, setSelectedTypeId] = useState("");
   const [selectedBrandId, setSelectedBrandId] = useState("");
   const [showNewCustomerForm, setShowNewCustomerForm] = useState(false);
-  const [newCustomerForm, setNewCustomerForm] = useState({ fullName: "", email: "", phone: "" });
+  const [showAdvancedCustomerFields, setShowAdvancedCustomerFields] = useState(false);
+  const [newCustomerForm, setNewCustomerForm] = useState({ 
+    fullName: "", 
+    email: "", 
+    phone: "",
+    // Campi avanzati
+    codiceFiscale: "",
+    partitaIva: "",
+    ragioneSociale: "",
+    indirizzo: "",
+    cap: "",
+    citta: "",
+    provincia: "",
+    pec: "",
+    codiceUnivoco: "",
+  });
   const [showNewBrandForm, setShowNewBrandForm] = useState(false);
   const [newBrandName, setNewBrandName] = useState("");
   const [showNewModelForm, setShowNewModelForm] = useState(false);
@@ -246,7 +261,7 @@ export function RepairIntakeWizard({
       setSelectedResellerId("");
       setSelectedSubResellerId("");
       setShowNewCustomerForm(false);
-      setNewCustomerForm({ fullName: "", email: "", phone: "" });
+      setNewCustomerForm({ fullName: "", email: "", phone: "", codiceFiscale: "", partitaIva: "", ragioneSociale: "", indirizzo: "", cap: "", citta: "", provincia: "", pec: "", codiceUnivoco: "" });
       setShowNewBrandForm(false);
       setNewBrandName("");
       setShowNewModelForm(false);
@@ -294,7 +309,20 @@ export function RepairIntakeWizard({
 
   // Mutation per creare nuovo cliente rapido
   const createCustomerMutation = useMutation({
-    mutationFn: async (data: { fullName: string; email?: string; phone?: string }) => {
+    mutationFn: async (data: { 
+      fullName: string; 
+      email?: string; 
+      phone?: string;
+      codiceFiscale?: string;
+      partitaIva?: string;
+      ragioneSociale?: string;
+      indirizzo?: string;
+      cap?: string;
+      citta?: string;
+      provincia?: string;
+      pec?: string;
+      codiceUnivoco?: string;
+    }) => {
       return apiRequest("POST", "/api/customers/quick", data);
     },
     onSuccess: async (response) => {
@@ -305,7 +333,7 @@ export function RepairIntakeWizard({
       form.setValue("customerId", newCustomer.id);
       // Chiudi il form e resetta
       setShowNewCustomerForm(false);
-      setNewCustomerForm({ fullName: "", email: "", phone: "" });
+      setNewCustomerForm({ fullName: "", email: "", phone: "", codiceFiscale: "", partitaIva: "", ragioneSociale: "", indirizzo: "", cap: "", citta: "", provincia: "", pec: "", codiceUnivoco: "" });
       toast({ 
         title: "Cliente creato", 
         description: `${newCustomer.fullName} è stato aggiunto` 
@@ -983,7 +1011,7 @@ export function RepairIntakeWizard({
                           size="icon"
                           onClick={() => {
                             setShowNewCustomerForm(false);
-                            setNewCustomerForm({ fullName: "", email: "", phone: "" });
+                            setNewCustomerForm({ fullName: "", email: "", phone: "", codiceFiscale: "", partitaIva: "", ragioneSociale: "", indirizzo: "", cap: "", citta: "", provincia: "", pec: "", codiceUnivoco: "" });
                           }}
                           data-testid="button-cancel-new-customer"
                         >
@@ -1038,6 +1066,148 @@ export function RepairIntakeWizard({
                             />
                           </div>
                         </div>
+
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="w-full justify-between text-muted-foreground hover:text-foreground"
+                          onClick={() => setShowAdvancedCustomerFields(!showAdvancedCustomerFields)}
+                          data-testid="button-toggle-advanced-fields"
+                        >
+                          <span className="flex items-center gap-2">
+                            <Building2 className="h-4 w-4" />
+                            Dati completi (fiscali/indirizzo)
+                          </span>
+                          {showAdvancedCustomerFields ? (
+                            <ChevronUp className="h-4 w-4" />
+                          ) : (
+                            <ChevronDown className="h-4 w-4" />
+                          )}
+                        </Button>
+
+                        {showAdvancedCustomerFields && (
+                          <div className="space-y-3 pt-2 border-t">
+                            <div className="grid grid-cols-2 gap-3">
+                              <div>
+                                <Label htmlFor="new-customer-codice-fiscale">Codice Fiscale</Label>
+                                <Input
+                                  id="new-customer-codice-fiscale"
+                                  placeholder="RSSMRA80A01H501T"
+                                  value={newCustomerForm.codiceFiscale}
+                                  onChange={(e) => setNewCustomerForm(prev => ({ ...prev, codiceFiscale: e.target.value.toUpperCase() }))}
+                                  className="mt-1"
+                                  data-testid="input-new-customer-codice-fiscale"
+                                />
+                              </div>
+                              <div>
+                                <Label htmlFor="new-customer-partita-iva">Partita IVA</Label>
+                                <Input
+                                  id="new-customer-partita-iva"
+                                  placeholder="IT12345678901"
+                                  value={newCustomerForm.partitaIva}
+                                  onChange={(e) => setNewCustomerForm(prev => ({ ...prev, partitaIva: e.target.value.toUpperCase() }))}
+                                  className="mt-1"
+                                  data-testid="input-new-customer-partita-iva"
+                                />
+                              </div>
+                            </div>
+
+                            <div>
+                              <Label htmlFor="new-customer-ragione-sociale">Ragione Sociale</Label>
+                              <div className="relative mt-1">
+                                <Building className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                                <Input
+                                  id="new-customer-ragione-sociale"
+                                  placeholder="Azienda S.r.l."
+                                  value={newCustomerForm.ragioneSociale}
+                                  onChange={(e) => setNewCustomerForm(prev => ({ ...prev, ragioneSociale: e.target.value }))}
+                                  className="pl-10"
+                                  data-testid="input-new-customer-ragione-sociale"
+                                />
+                              </div>
+                            </div>
+
+                            <div>
+                              <Label htmlFor="new-customer-indirizzo">Indirizzo</Label>
+                              <div className="relative mt-1">
+                                <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                                <Input
+                                  id="new-customer-indirizzo"
+                                  placeholder="Via Roma 1"
+                                  value={newCustomerForm.indirizzo}
+                                  onChange={(e) => setNewCustomerForm(prev => ({ ...prev, indirizzo: e.target.value }))}
+                                  className="pl-10"
+                                  data-testid="input-new-customer-indirizzo"
+                                />
+                              </div>
+                            </div>
+
+                            <div className="grid grid-cols-3 gap-3">
+                              <div>
+                                <Label htmlFor="new-customer-cap">CAP</Label>
+                                <Input
+                                  id="new-customer-cap"
+                                  placeholder="00100"
+                                  value={newCustomerForm.cap}
+                                  onChange={(e) => setNewCustomerForm(prev => ({ ...prev, cap: e.target.value }))}
+                                  className="mt-1"
+                                  data-testid="input-new-customer-cap"
+                                />
+                              </div>
+                              <div>
+                                <Label htmlFor="new-customer-citta">Città</Label>
+                                <Input
+                                  id="new-customer-citta"
+                                  placeholder="Roma"
+                                  value={newCustomerForm.citta}
+                                  onChange={(e) => setNewCustomerForm(prev => ({ ...prev, citta: e.target.value }))}
+                                  className="mt-1"
+                                  data-testid="input-new-customer-citta"
+                                />
+                              </div>
+                              <div>
+                                <Label htmlFor="new-customer-provincia">Prov.</Label>
+                                <Input
+                                  id="new-customer-provincia"
+                                  placeholder="RM"
+                                  maxLength={2}
+                                  value={newCustomerForm.provincia}
+                                  onChange={(e) => setNewCustomerForm(prev => ({ ...prev, provincia: e.target.value.toUpperCase() }))}
+                                  className="mt-1"
+                                  data-testid="input-new-customer-provincia"
+                                />
+                              </div>
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-3">
+                              <div>
+                                <Label htmlFor="new-customer-pec">PEC</Label>
+                                <Input
+                                  id="new-customer-pec"
+                                  type="email"
+                                  placeholder="azienda@pec.it"
+                                  value={newCustomerForm.pec}
+                                  onChange={(e) => setNewCustomerForm(prev => ({ ...prev, pec: e.target.value }))}
+                                  className="mt-1"
+                                  data-testid="input-new-customer-pec"
+                                />
+                              </div>
+                              <div>
+                                <Label htmlFor="new-customer-codice-univoco">Codice SDI</Label>
+                                <Input
+                                  id="new-customer-codice-univoco"
+                                  placeholder="XXXXXXX"
+                                  maxLength={7}
+                                  value={newCustomerForm.codiceUnivoco}
+                                  onChange={(e) => setNewCustomerForm(prev => ({ ...prev, codiceUnivoco: e.target.value.toUpperCase() }))}
+                                  className="mt-1"
+                                  data-testid="input-new-customer-codice-univoco"
+                                />
+                              </div>
+                            </div>
+                          </div>
+                        )}
                       </div>
 
                       <div className="flex gap-2 pt-2">
@@ -1047,7 +1217,7 @@ export function RepairIntakeWizard({
                           className="flex-1"
                           onClick={() => {
                             setShowNewCustomerForm(false);
-                            setNewCustomerForm({ fullName: "", email: "", phone: "" });
+                            setNewCustomerForm({ fullName: "", email: "", phone: "", codiceFiscale: "", partitaIva: "", ragioneSociale: "", indirizzo: "", cap: "", citta: "", provincia: "", pec: "", codiceUnivoco: "" });
                           }}
                         >
                           Annulla
@@ -1061,6 +1231,15 @@ export function RepairIntakeWizard({
                               fullName: newCustomerForm.fullName.trim(),
                               email: newCustomerForm.email.trim() || undefined,
                               phone: newCustomerForm.phone.trim() || undefined,
+                              codiceFiscale: newCustomerForm.codiceFiscale.trim() || undefined,
+                              partitaIva: newCustomerForm.partitaIva.trim() || undefined,
+                              ragioneSociale: newCustomerForm.ragioneSociale.trim() || undefined,
+                              indirizzo: newCustomerForm.indirizzo.trim() || undefined,
+                              cap: newCustomerForm.cap.trim() || undefined,
+                              citta: newCustomerForm.citta.trim() || undefined,
+                              provincia: newCustomerForm.provincia.trim() || undefined,
+                              pec: newCustomerForm.pec.trim() || undefined,
+                              codiceUnivoco: newCustomerForm.codiceUnivoco.trim() || undefined,
                             });
                           }}
                           data-testid="button-create-customer"
