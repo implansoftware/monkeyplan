@@ -286,6 +286,7 @@ export default function PosPage() {
   const [paymentLinkTransactionId, setPaymentLinkTransactionId] = useState<string | null>(null);
   const [paymentLinkStatus, setPaymentLinkStatus] = useState<"generating" | "ready" | "checking" | "completed" | "expired">("generating");
   const [paymentLinkType, setPaymentLinkType] = useState<"stripe" | "paypal">("stripe");
+  const [paymentLinkHasInvoice, setPaymentLinkHasInvoice] = useState(false);
   const [openingCash, setOpeningCash] = useState<string>("");
   const [closingCash, setClosingCash] = useState<string>("");
   const [sessionNotes, setSessionNotes] = useState("");
@@ -554,6 +555,7 @@ export default function PosPage() {
       
       // Gestione link pagamento (stripe_link o paypal) - funziona anche con fattura
       if (data.transaction.paymentMethod === "stripe_link") {
+        setPaymentLinkHasInvoice(!!data.invoice);
         setPaymentLinkTransactionId(data.transaction.id);
         setPaymentLinkType("stripe");
         setPaymentLinkStatus("generating");
@@ -561,6 +563,7 @@ export default function PosPage() {
         setPaymentDialog(false);
         createPaymentLinkMutation.mutate(data.transaction.id);
       } else if (data.transaction.paymentMethod === "paypal") {
+        setPaymentLinkHasInvoice(!!data.invoice);
         setPaymentLinkTransactionId(data.transaction.id);
         setPaymentLinkType("paypal");
         setPaymentLinkStatus("generating");
@@ -2211,7 +2214,7 @@ export default function PosPage() {
                     data-testid="button-print-receipt"
                   >
                     <Printer className="w-4 h-4 mr-2" />
-                    {invoiceRequested ? "Stampa Fattura" : "Stampa Scontrino"}
+                    {paymentLinkHasInvoice ? "Stampa Fattura" : "Stampa Scontrino"}
                   </Button>
                   <Button onClick={() => setPaymentLinkDialog(false)} data-testid="button-close-payment-success">
                     Chiudi
