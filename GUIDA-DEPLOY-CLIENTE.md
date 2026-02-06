@@ -213,9 +213,9 @@ railway run npx drizzle-kit push
 
 ---
 
-## FASE 4: App Mobile Nativa con Capacitor
+## FASE 4: App Mobile Nativa con Expo (React Native)
 
-Capacitor (di Ionic) ti permette di trasformare l'app web MonkeyPlan in un'app nativa iOS e Android senza riscrivere niente.
+Expo ti permette di creare un'app nativa iOS e Android che comunica con il backend MonkeyPlan tramite API REST. L'app mobile è un progetto separato dal backend web.
 
 ### 4.1 Prerequisiti
 
@@ -224,201 +224,383 @@ Sul tuo computer di sviluppo (Mac consigliato per iOS):
 - **Node.js 18+** installato
 - **Android Studio** (per Android)
 - **Xcode** (per iOS, solo su Mac)
-- Il codice del progetto clonato da GitHub
+- **Expo Go** installata sul telefono per test rapidi (scaricala dagli store)
+
+### 4.2 Crea il progetto Expo
 
 ```bash
-# Clona il progetto sul tuo PC
-git clone https://github.com/TUA-ORGANIZZAZIONE/monkeyplan-nome-cliente.git
-cd monkeyplan-nome-cliente
-npm install
+# Crea un nuovo progetto Expo in una cartella separata
+npx create-expo-app@latest monkeyplan-app --template blank-typescript
+cd monkeyplan-app
 ```
 
-### 4.2 Installa Capacitor
+Questo crea un progetto React Native con TypeScript, completamente separato dal backend MonkeyPlan.
+
+### 4.3 Struttura del progetto app
+
+```
+monkeyplan-app/
+├── app/                    # Schermate (Expo Router - file-based routing)
+│   ├── (auth)/             # Schermate autenticazione
+│   │   ├── login.tsx
+│   │   └── register.tsx
+│   ├── (tabs)/             # Schermate principali con tab bar
+│   │   ├── dashboard.tsx
+│   │   ├── repairs.tsx
+│   │   ├── tickets.tsx
+│   │   ├── inventory.tsx
+│   │   └── profile.tsx
+│   ├── _layout.tsx         # Layout principale
+│   └── index.tsx           # Entry point
+├── components/             # Componenti riutilizzabili
+├── hooks/                  # Hook personalizzati
+├── services/               # Chiamate API al backend
+│   └── api.ts              # Client API configurato
+├── types/                  # Tipi TypeScript (condivisi col backend)
+├── app.json                # Configurazione Expo
+└── package.json
+```
+
+### 4.4 Installa le dipendenze essenziali
 
 ```bash
-# Installa le dipendenze Capacitor
-npm install @capacitor/core @capacitor/cli
-npm install @capacitor/ios @capacitor/android
+# Navigazione (file-based routing come Next.js)
+npx expo install expo-router expo-linking expo-constants expo-status-bar
 
-# Inizializza Capacitor
-npx cap init "MonkeyPlan" "com.nomecliente.monkeyplan" --web-dir dist/public
+# Storage sicuro per il token di sessione
+npx expo install expo-secure-store
+
+# Notifiche push
+npx expo install expo-notifications expo-device
+
+# Fotocamera (foto prodotti, documenti)
+npx expo install expo-camera expo-image-picker
+
+# Scanner barcode/QR (utile per magazzino)
+npx expo install expo-barcode-scanner
+
+# Icone
+npx expo install @expo/vector-icons
+
+# Gestione stato e fetch
+npm install @tanstack/react-query axios
 ```
 
-Questo crea il file `capacitor.config.ts`. Modificalo così:
+### 4.5 Configura il client API
+
+Crea il file `services/api.ts` per comunicare con il backend MonkeyPlan:
 
 ```typescript
-import type { CapacitorConfig } from '@capacitor/cli';
+import axios from 'axios';
+import * as SecureStore from 'expo-secure-store';
 
-const config: CapacitorConfig = {
-  appId: 'com.nomecliente.monkeyplan',
-  appName: 'MonkeyPlan',
-  webDir: 'dist/public',
-  server: {
-    // OPZIONE A: App ibrida (carica dal server remoto)
-    // Vantaggi: aggiornamenti istantanei senza passare dagli store
-    url: 'https://app.nomecliente.it',
-    cleartext: false,
+// URL del backend MonkeyPlan su Railway
+const API_BASE_URL = 'https://app.nomecliente.it';
 
-    // OPZIONE B: App locale (bundle dentro l'app)
-    // Vantaggi: funziona offline, più veloce al primo caricamento
-    // Commenta "url" sopra e usa webDir per servire i file locali
+const api = axios.create({
+  baseURL: API_BASE_URL,
+  timeout: 15000,
+  headers: {
+    'Content-Type': 'application/json',
   },
-  plugins: {
-    SplashScreen: {
-      launchShowDuration: 2000,
-      backgroundColor: '#10b981',
-    },
-    StatusBar: {
-      style: 'dark',
-    },
-    PushNotifications: {
-      presentationOptions: ['badge', 'sound', 'alert'],
-    },
+  withCredentials: true,
+});
+
+// Interceptor per aggiungere il token di sessione
+api.interceptors.request.use(async (config) => {
+  const token = await SecureStore.getItemAsync('session_token');
+  if (token) {
+    config.headers.Cookie = token;
+  }
+  return config;
+});
+
+// Interceptor per salvare il cookie di sessione dalla risposta
+api.interceptors.response.use(
+  async (response) => {
+    const setCookie = response.headers['set-cookie'];
+    if (setCookie) {
+      await SecureStore.setItemAsync('session_token', setCookie[0]);
+    }
+    return response;
   },
+  (error) => {
+    if (error.response?.status === 401) {
+      // Sessione scaduta, torna al login
+      SecureStore.deleteItemAsync('session_token');
+    }
+    return Promise.reject(error);
+  }
+);
+
+// Funzioni API che corrispondono alle route del backend MonkeyPlan
+export const authAPI = {
+  login: (data: { username: string; password: string }) =>
+    api.post('/api/login', data),
+  logout: () => api.post('/api/logout'),
+  getUser: () => api.get('/api/user'),
+  register: (data: any) => api.post('/api/register', data),
 };
 
-export default config;
+export const repairsAPI = {
+  getAll: () => api.get('/api/repairs'),
+  getById: (id: string) => api.get(`/api/repairs/${id}`),
+  create: (data: any) => api.post('/api/repairs', data),
+  update: (id: string, data: any) => api.patch(`/api/repairs/${id}`, data),
+};
+
+export const ticketsAPI = {
+  getAll: () => api.get('/api/tickets'),
+  getById: (id: string) => api.get(`/api/tickets/${id}`),
+  create: (data: any) => api.post('/api/tickets', data),
+};
+
+export const inventoryAPI = {
+  getProducts: () => api.get('/api/products'),
+  getWarehouses: () => api.get('/api/warehouses'),
+};
+
+export const notificationsAPI = {
+  getAll: () => api.get('/api/notifications'),
+  markRead: (id: string) => api.patch(`/api/notifications/${id}/read`),
+};
+
+export default api;
 ```
 
-**NOTA IMPORTANTE - Quale opzione scegliere:**
-- **Opzione A (url remoto)**: L'app è una "shell" che carica il sito web. Ogni modifica al sito si vede subito nell'app senza aggiornare sugli store. Consigliata per MonkeyPlan.
-- **Opzione B (bundle locale)**: L'app contiene tutto il codice. Serve un aggiornamento sugli store per ogni modifica. Utile se serve funzionamento offline.
+### 4.6 Configura app.json
 
-### 4.3 Aggiungi le piattaforme
+Modifica `app.json` per il cliente:
+
+```json
+{
+  "expo": {
+    "name": "MonkeyPlan",
+    "slug": "monkeyplan",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#10b981"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.nomecliente.monkeyplan",
+      "infoPlist": {
+        "NSCameraUsageDescription": "Serve per fotografare prodotti e documenti",
+        "NSPhotoLibraryUsageDescription": "Serve per caricare immagini di prodotti"
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#10b981"
+      },
+      "package": "com.nomecliente.monkeyplan",
+      "permissions": ["CAMERA", "READ_EXTERNAL_STORAGE", "VIBRATE"]
+    },
+    "plugins": [
+      "expo-router",
+      "expo-secure-store",
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Consenti a MonkeyPlan di accedere alla fotocamera"
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/notification-icon.png",
+          "color": "#10b981"
+        }
+      ]
+    ],
+    "scheme": "monkeyplan"
+  }
+}
+```
+
+### 4.7 Prepara le icone e splash screen
+
+1. Crea le immagini nella cartella `assets/`:
+   - `icon.png` - 1024x1024px (icona dell'app)
+   - `adaptive-icon.png` - 1024x1024px (icona Android con sfondo adattivo)
+   - `splash.png` - 1284x2778px (schermata di caricamento)
+   - `notification-icon.png` - 96x96px (icona notifiche, solo bianco e trasparente)
+
+### 4.8 Test durante lo sviluppo
 
 ```bash
-# Aggiungi Android
-npx cap add android
+# Avvia il server di sviluppo Expo
+npx expo start
 
-# Aggiungi iOS (solo su Mac)
-npx cap add ios
+# Opzioni di test:
+# - Scansiona il QR code con Expo Go sul telefono (stesso WiFi)
+# - Premi 'a' per aprire nell'emulatore Android
+# - Premi 'i' per aprire nel simulatore iOS (solo Mac)
 ```
 
-### 4.4 Plugin nativi utili
+### 4.9 Backend: abilita CORS per l'app mobile
 
-Installa i plugin per funzionalità native:
+Sul backend MonkeyPlan, assicurati che le richieste dall'app mobile siano accettate.
+Aggiungi o verifica la configurazione CORS nel server Express:
+
+```typescript
+// In server/app.ts o dove configuri Express
+import cors from 'cors';
+
+app.use(cors({
+  origin: true,  // Accetta tutte le origini (per l'app mobile)
+  credentials: true,  // Necessario per i cookie di sessione
+}));
+```
+
+In alternativa, se l'app mobile usa un token invece dei cookie di sessione, puoi aggiungere un endpoint di login che restituisce un token JWT. Questo è più pulito per le app mobile.
+
+### 4.10 Build di produzione con EAS (Expo Application Services)
+
+EAS Build compila l'app nel cloud, non serve avere Android Studio o Xcode sul tuo PC.
 
 ```bash
-# Notifiche push
-npm install @capacitor/push-notifications
+# Installa EAS CLI
+npm install -g eas-cli
 
-# Fotocamera (per foto prodotti, documenti, ecc.)
-npm install @capacitor/camera
+# Accedi con il tuo account Expo
+eas login
 
-# Condivisione file
-npm install @capacitor/share
-
-# Informazioni dispositivo
-npm install @capacitor/device
-
-# Barra di stato
-npm install @capacitor/status-bar
-
-# Splash screen
-npm install @capacitor/splash-screen
-
-# Tastiera (per gestire la tastiera su mobile)
-npm install @capacitor/keyboard
-
-# Scanner di barcode/QR (utile per magazzino)
-npm install @capawesome/capacitor-barcode-scanner
-
-# Sincronizza i plugin con i progetti nativi
-npx cap sync
+# Configura EAS per il progetto
+eas build:configure
 ```
 
-### 4.5 Configura l'icona e lo splash screen
+Questo crea il file `eas.json`:
 
-1. Crea le immagini:
-   - `resources/icon.png` - 1024x1024px (icona dell'app)
-   - `resources/splash.png` - 2732x2732px (schermata di caricamento)
-
-2. Genera tutte le dimensioni automaticamente:
-```bash
-npm install -g @capacitor/assets
-npx capacitor-assets generate
+```json
+{
+  "cli": {
+    "version": ">= 5.0.0"
+  },
+  "build": {
+    "development": {
+      "developmentClient": true,
+      "distribution": "internal"
+    },
+    "preview": {
+      "distribution": "internal",
+      "android": {
+        "buildType": "apk"
+      }
+    },
+    "production": {
+      "autoIncrement": true
+    }
+  },
+  "submit": {
+    "production": {
+      "android": {
+        "serviceAccountKeyPath": "./google-service-account.json",
+        "track": "production"
+      },
+      "ios": {
+        "appleId": "tua@email.com",
+        "ascAppId": "1234567890",
+        "appleTeamId": "ABC123DEF"
+      }
+    }
+  }
+}
 ```
 
-### 4.6 Build e Test Android
+### 4.11 Build e Pubblicazione
 
-```bash
-# Builda il frontend
-npm run build
-
-# Copia i file nel progetto Android
-npx cap sync android
-
-# Apri in Android Studio
-npx cap open android
-```
-
-In Android Studio:
-1. Attendi che Gradle finisca il sync
-2. Collega un telefono Android via USB (o usa l'emulatore)
-3. Clicca il bottone "Run" (triangolo verde)
-
-### 4.7 Build e Test iOS (solo Mac)
+#### Build Android:
 
 ```bash
-# Builda il frontend
-npm run build
+# Build APK per test interno (condividi direttamente il file)
+eas build --platform android --profile preview
 
-# Copia i file nel progetto iOS
-npx cap sync ios
+# Build AAB per Google Play Store
+eas build --platform android --profile production
 
-# Apri in Xcode
-npx cap open ios
+# Pubblica direttamente su Google Play (dopo la prima volta manuale)
+eas submit --platform android --profile production
 ```
 
-In Xcode:
-1. Seleziona il team di sviluppo (richiede Apple Developer Account - 99$/anno)
-2. Seleziona il dispositivo o simulatore
-3. Clicca "Run"
+Costo account Google Play Developer: **25$ una tantum**
 
-### 4.8 Pubblicazione sugli Store
+#### Build iOS:
 
-#### Google Play Store:
-
-1. In Android Studio: Build > Generate Signed Bundle/APK > Android App Bundle
-2. Crea un keystore (conservalo in un posto sicuro, non perderlo MAI)
-3. Genera il file .aab
-4. Vai su https://play.google.com/console
-5. Crea una nuova app, compila le informazioni
-6. Carica il file .aab
-7. Compila la scheda dello store (screenshot, descrizione, icona)
-8. Invia per revisione (1-3 giorni)
-9. Costo: 25$ una tantum per l'account Google Play Developer
-
-#### Apple App Store:
-
-1. In Xcode: Product > Archive
-2. Clicca "Distribute App" > App Store Connect
-3. Vai su https://appstoreconnect.apple.com
-4. Crea una nuova app, compila le informazioni
-5. La build arriva automaticamente da Xcode
-6. Compila la scheda dello store (screenshot, descrizione)
-7. Invia per revisione (1-7 giorni, Apple è più severa)
-8. Costo: 99$/anno per l'Apple Developer Program
-
-### 4.9 Aggiornare l'App Mobile
-
-**Se usi Opzione A (url remoto) - CONSIGLIATA:**
-- Ogni modifica al sito web si riflette automaticamente nell'app
-- Devi aggiornare sugli store solo se cambi plugin nativi o configurazione Capacitor
-
-**Se usi Opzione B (bundle locale):**
 ```bash
-# Dopo aver modificato il codice
-npm run build
-npx cap sync
-# Poi rebuild e pubblica da Android Studio / Xcode
+# Build per TestFlight (test interno)
+eas build --platform ios --profile production
+
+# Pubblica su App Store tramite TestFlight
+eas submit --platform ios --profile production
 ```
 
-**Per aggiornamenti senza passare dallo store (Opzione B):**
+Costo Apple Developer Program: **99$/anno**
+
+#### Prima pubblicazione (da fare manualmente una volta):
+
+**Google Play:**
+1. Vai su https://play.google.com/console
+2. Crea una nuova app, compila le informazioni
+3. Carica il file .aab generato da EAS Build
+4. Compila la scheda dello store (screenshot, descrizione, icona)
+5. Invia per revisione (1-3 giorni)
+
+**Apple App Store:**
+1. Vai su https://appstoreconnect.apple.com
+2. Crea una nuova app con il Bundle ID corretto
+3. La build arriva automaticamente da EAS Submit
+4. Compila la scheda dello store (screenshot, descrizione)
+5. Invia per revisione (1-7 giorni)
+
+### 4.12 Aggiornamenti dell'App
+
+**Aggiornamenti OTA (Over-The-Air) - senza passare dagli store:**
+
+Expo supporta aggiornamenti istantanei per modifiche al codice JavaScript (UI, logica, ecc.). Non serve che l'utente aggiorni dallo store.
+
 ```bash
-# Installa il plugin Live Update di Capgo (alternativa a Ionic Appflow)
-npm install @capgo/capacitor-updater
+# Pubblica un aggiornamento OTA
+eas update --branch production --message "Fix bug lista riparazioni"
 ```
+
+L'app si aggiorna automaticamente al prossimo avvio. Funziona per:
+- Modifiche alla UI
+- Nuove schermate
+- Fix di bug nel codice JS/TS
+- Aggiornamento testi e traduzioni
+
+NON funziona per (serve rebuild + aggiornamento store):
+- Aggiunta di nuovi plugin nativi (camera, notifiche, ecc.)
+- Modifica delle configurazioni in app.json
+- Aggiornamento versione SDK di Expo
+
+### 4.13 Repository dell'app mobile
+
+L'app mobile va in un repository GitHub **separato** dal backend:
+
+```
+TUA-ORGANIZZAZIONE/
+├── monkeyplan-nome-cliente        # Backend (web + API)
+└── monkeyplan-nome-cliente-app    # App mobile (Expo)
+```
+
+Così puoi aggiornare backend e app mobile indipendentemente.
+
+### 4.14 Costi Expo/EAS
+
+| Servizio | Piano Free | Piano Production |
+|---|---|---|
+| EAS Build | 30 build/mese | 1000+ build/mese (99$/mese) |
+| EAS Update (OTA) | 1000 utenti | Illimitati (99$/mese) |
+| EAS Submit | Incluso | Incluso |
+
+Per la maggior parte dei clienti, il **piano Free** di EAS è più che sufficiente.
 
 ---
 
