@@ -127,10 +127,17 @@ class FiskalyRTProvider implements IFiscalRTProvider {
       }),
     });
 
-    const data = await res.json().catch(() => ({}));
+    const rawText = await res.text();
+    let data: any = {};
+    try {
+      data = JSON.parse(rawText);
+    } catch {
+      console.error(`[Fiskaly] Risposta non-JSON dal token endpoint (HTTP ${res.status}):`, rawText.substring(0, 500));
+    }
 
     if (!res.ok) {
-      const errMsg = data?.message || data?.error || `Errore autenticazione Fiskaly: HTTP ${res.status}`;
+      console.error(`[Fiskaly] Autenticazione fallita (HTTP ${res.status}):`, JSON.stringify(data));
+      const errMsg = data?.message || data?.error || data?.error_description || `Errore autenticazione Fiskaly: HTTP ${res.status}`;
       throw new Error(errMsg);
     }
 
