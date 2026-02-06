@@ -579,15 +579,40 @@ export default function RepairCenterRemoteRequests() {
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-3">
                         <div>
                           <p className="text-sm text-muted-foreground">Cliente</p>
-                          <p className="font-medium">{request.customerName || '-'}</p>
-                          {request.customerEmail && (
-                            <p className="text-xs text-muted-foreground">{request.customerEmail}</p>
+                          <p className="font-medium">{(request as any).customerName || '-'}</p>
+                          {(request as any).customerEmail && (
+                            <p className="text-xs text-muted-foreground">{(request as any).customerEmail}</p>
                           )}
-                          {request.customerPhone && (
-                            <p className="text-xs text-muted-foreground">{request.customerPhone}</p>
+                          {(request as any).customerPhone && (
+                            <p className="text-xs text-muted-foreground">{(request as any).customerPhone}</p>
                           )}
                         </div>
                       </div>
+                      {request.quoteAmount != null && request.quoteAmount > 0 && (
+                        <div className="p-3 rounded-md border bg-muted/50 mb-3">
+                          <div className="flex items-center justify-between gap-2 mb-2">
+                            <div className="flex items-center gap-2">
+                              <Euro className="h-4 w-4 text-muted-foreground" />
+                              <span className="text-sm font-medium">Preventivo inviato</span>
+                              <Badge variant={request.status === 'quote_accepted' ? 'default' : request.status === 'quote_declined' ? 'destructive' : 'outline'} className="text-xs">
+                                {request.status === 'quoted' ? 'In attesa risposta' : request.status === 'quote_accepted' ? 'Accettato' : request.status === 'quote_declined' ? 'Rifiutato' : 'Inviato'}
+                              </Badge>
+                            </div>
+                            <p className="text-lg font-bold">{(request.quoteAmount / 100).toFixed(2)} EUR</p>
+                          </div>
+                          {request.quoteDescription && (
+                            <div className="mt-2">
+                              <p className="text-xs text-muted-foreground mb-1">Descrizione lavori</p>
+                              <p className="text-sm">{request.quoteDescription}</p>
+                            </div>
+                          )}
+                          <div className="flex flex-wrap gap-4 mt-2 text-xs text-muted-foreground">
+                            {request.quotedAt && <span>Inviato il: {format(new Date(request.quotedAt), "d MMM yyyy, HH:mm", { locale: it })}</span>}
+                            {request.quoteValidUntil && <span>Valido fino al: {format(new Date(request.quoteValidUntil), "d MMM yyyy", { locale: it })}</span>}
+                          </div>
+                          {request.paymentMethod && <p className="text-xs text-muted-foreground mt-1">Pagamento: {request.paymentMethod === 'in_store' ? 'In negozio' : request.paymentMethod === 'online_stripe' ? 'Stripe' : 'PayPal'} ({request.paymentStatus === 'paid' ? 'Pagato' : 'In attesa'})</p>}
+                        </div>
+                      )}
                       <div className="space-y-3">
                         {request.devices?.map((device) => (
                           <div key={device.id} className="p-3 border rounded-md space-y-2" data-testid={`device-${device.id}`}>
