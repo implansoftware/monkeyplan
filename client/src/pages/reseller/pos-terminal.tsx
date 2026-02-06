@@ -984,7 +984,7 @@ export default function ResellerPosTerminal() {
               ))}
             </SelectContent>
           </Select>
-          <Link href="/reseller/pos/registers">
+          <Link href={`/reseller/pos/registers/${selectedRegisterId}/settings`}>
             <Button variant="ghost" size="icon" className="h-10 w-10" data-testid="button-manage-registers-closed">
               <Settings className="w-4 h-4" />
             </Button>
@@ -1104,7 +1104,7 @@ export default function ResellerPosTerminal() {
                   ))}
                 </SelectContent>
               </Select>
-              <Link href="/reseller/pos/registers">
+              <Link href={`/reseller/pos/registers/${selectedRegisterId}/settings`}>
                 <Button variant="outline" size="icon" className="h-8 w-8 bg-white/20 backdrop-blur-sm text-white border-white/30 hover:bg-white/30" data-testid="button-manage-registers">
                   <Settings className="w-4 h-4" />
                 </Button>

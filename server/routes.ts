@@ -42464,6 +42464,27 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // Dettaglio singola cassa
+  app.get("/api/reseller/pos/registers/:registerId", requireRole("reseller", "reseller_staff", "sub_reseller"), async (req, res) => {
+    try {
+      const { resellerId } = getEffectiveContext(req);
+      const { registerId } = req.params;
+      
+      const register = await storage.getPosRegister(registerId);
+      if (!register) return res.status(404).json({ error: "Cassa non trovata" });
+      
+      const center = await storage.getRepairCenter(register.repairCenterId);
+      if (!center || center.resellerId !== resellerId) {
+        return res.status(403).json({ error: "Non autorizzato" });
+      }
+      
+      res.json(register);
+    } catch (error: any) {
+      console.error("Error fetching register:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   // Modifica cassa
   app.patch("/api/reseller/pos/registers/:registerId", requireRole("reseller", "reseller_staff", "sub_reseller"), async (req, res) => {
     try {

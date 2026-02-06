@@ -47,6 +47,7 @@ import {
   AlertTriangle,
   Building2,
   PlayCircle,
+  Settings,
   StopCircle,
   Loader2
 } from "lucide-react";
@@ -594,6 +595,15 @@ export default function ResellerPosRegistersPage() {
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center justify-end gap-2">
+                        <Link href={`/reseller/pos/registers/${register.id}/settings`}>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            data-testid={`button-settings-${register.id}`}
+                          >
+                            <Settings className="h-4 w-4" />
+                          </Button>
+                        </Link>
                         <Button
                           variant="ghost"
                           size="icon"
