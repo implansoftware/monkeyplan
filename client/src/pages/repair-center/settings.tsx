@@ -21,6 +21,7 @@ import { Badge } from "@/components/ui/badge";
 import { z } from "zod";
 import type { RepairCenter, PaymentConfiguration } from "@shared/schema";
 import { SiStripe, SiPaypal } from "react-icons/si";
+import { EntityFiscalConfig } from "@/components/entity-fiscal-config";
 
 const settingsFormSchema = z.object({
   name: z.string().min(1, "Il nome è obbligatorio"),
@@ -1269,6 +1270,7 @@ export default function RepairCenterSettings() {
                   </div>
                 </CardContent>
               </Card>
+              <EntityFiscalConfig entityType="repair_center" basePath="/api/repair-center/fiscal" />
             </TabsContent>
 
             <TabsContent value="payments" className="space-y-6">

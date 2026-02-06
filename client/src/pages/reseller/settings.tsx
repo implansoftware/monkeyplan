@@ -12,12 +12,13 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import { CreditCard, Loader2, CheckCircle, AlertCircle, ExternalLink, Landmark, Wallet, Truck, Clock, Euro, Timer, Save, Download, Search, FileText, Package, Wrench, Settings } from "lucide-react";
+import { CreditCard, Loader2, CheckCircle, AlertCircle, ExternalLink, Landmark, Wallet, Truck, Clock, Euro, Timer, Save, Download, Search, FileText, Package, Wrench, Settings, Shield } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { z } from "zod";
 import type { PaymentConfiguration } from "@shared/schema";
 import { SiStripe, SiPaypal } from "react-icons/si";
+import { EntityFiscalConfig } from "@/components/entity-fiscal-config";
 import { ShippingMethodsTab } from "@/components/shipping-methods-tab";
 
 interface HourlyRateResponse {
@@ -380,6 +381,10 @@ export default function ResellerSettings() {
           <TabsTrigger value="shipping" className="gap-2" data-testid="tab-shipping">
             <Truck className="h-4 w-4" />
             Consegna
+          </TabsTrigger>
+          <TabsTrigger value="fiscal" className="gap-2" data-testid="tab-fiscal">
+            <Shield className="h-4 w-4" />
+            RT Fiscale
           </TabsTrigger>
         </TabsList>
 
@@ -1166,6 +1171,10 @@ export default function ResellerSettings() {
               />
             </CardContent>
           </Card>
+        </TabsContent>
+
+        <TabsContent value="fiscal" className="space-y-4">
+          <EntityFiscalConfig entityType="reseller" basePath="/api/reseller/fiscal" />
         </TabsContent>
       </Tabs>
     </div>

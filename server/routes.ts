@@ -41983,6 +41983,135 @@ export function registerRoutes(app: Express): Server {
   });
 
 
+
+  // ==== ENTITY FISCAL RT CONFIG (Reseller + Repair Center) ====
+
+  // Repair Center: Get admin provider info
+  app.get("/api/repair-center/fiscal/admin-config", requireRole("repair_center"), async (req, res) => {
+    try {
+      const adminConfig = await storage.getPlatformFiscalConfig();
+      if (!adminConfig) return res.json({ provider: null, allowOverride: false });
+      res.json({
+        provider: adminConfig.defaultRtProvider,
+        sandboxMode: adminConfig.sandboxMode,
+        allowOverride: adminConfig.allowOverride ?? false,
+      });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Repair Center: Get own fiscal config
+  app.get("/api/repair-center/fiscal/config", requireRole("repair_center"), async (req, res) => {
+    try {
+      const repairCenterId = req.user!.repairCenterId;
+      if (!repairCenterId) return res.status(400).json({ error: "Nessun centro riparazione associato" });
+      const config = await storage.getEntityFiscalConfig("repair_center", String(repairCenterId));
+      const masked = config ? { ...config, rtApiKey: config.rtApiKey ? "****" : null, rtApiSecret: config.rtApiSecret ? "****" : null } : { rtEnabled: false, useOwnCredentials: false };
+      res.json(masked);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Repair Center: Update own fiscal config
+  app.put("/api/repair-center/fiscal/config", requireRole("repair_center"), async (req, res) => {
+    try {
+      const repairCenterId = req.user!.repairCenterId;
+      if (!repairCenterId) return res.status(400).json({ error: "Nessun centro riparazione associato" });
+      const { rtEnabled, useOwnCredentials, rtApiKey, rtApiSecret, rtEndpoint } = req.body;
+      const adminConfig = await storage.getPlatformFiscalConfig();
+      if (useOwnCredentials && adminConfig && !adminConfig.allowOverride) {
+        return res.status(403).json({ error: "L'amministratore non consente credenziali personalizzate" });
+      }
+      const config = await storage.upsertEntityFiscalConfig("repair_center", String(repairCenterId), {
+        rtEnabled: rtEnabled ?? false,
+        useOwnCredentials: useOwnCredentials ?? false,
+        rtApiKey: useOwnCredentials && rtApiKey ? rtApiKey : undefined,
+        rtApiSecret: useOwnCredentials && rtApiSecret ? rtApiSecret : undefined,
+        rtEndpoint: useOwnCredentials && rtEndpoint ? rtEndpoint : undefined,
+      });
+      res.json(config);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Reseller: Get admin provider info
+  app.get("/api/reseller/fiscal/admin-config", requireRole("reseller"), async (req, res) => {
+    try {
+      const adminConfig = await storage.getPlatformFiscalConfig();
+      if (!adminConfig) return res.json({ provider: null, allowOverride: false });
+      res.json({
+        provider: adminConfig.defaultRtProvider,
+        sandboxMode: adminConfig.sandboxMode,
+        allowOverride: adminConfig.allowOverride ?? false,
+      });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Reseller: Get own fiscal config
+  app.get("/api/reseller/fiscal/config", requireRole("reseller"), async (req, res) => {
+    try {
+      const resellerId = req.user!.resellerId;
+      if (!resellerId) return res.status(400).json({ error: "Nessun rivenditore associato" });
+      const config = await storage.getEntityFiscalConfig("reseller", String(resellerId));
+      const masked = config ? { ...config, rtApiKey: config.rtApiKey ? "****" : null, rtApiSecret: config.rtApiSecret ? "****" : null } : { rtEnabled: false, useOwnCredentials: false };
+      res.json(masked);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Reseller: Update own fiscal config
+  app.put("/api/reseller/fiscal/config", requireRole("reseller"), async (req, res) => {
+    try {
+      const resellerId = req.user!.resellerId;
+      if (!resellerId) return res.status(400).json({ error: "Nessun rivenditore associato" });
+      const { rtEnabled, useOwnCredentials, rtApiKey, rtApiSecret, rtEndpoint } = req.body;
+      const adminConfig = await storage.getPlatformFiscalConfig();
+      if (useOwnCredentials && adminConfig && !adminConfig.allowOverride) {
+        return res.status(403).json({ error: "L'amministratore non consente credenziali personalizzate" });
+      }
+      const config = await storage.upsertEntityFiscalConfig("reseller", String(resellerId), {
+        rtEnabled: rtEnabled ?? false,
+        useOwnCredentials: useOwnCredentials ?? false,
+        rtApiKey: useOwnCredentials && rtApiKey ? rtApiKey : undefined,
+        rtApiSecret: useOwnCredentials && rtApiSecret ? rtApiSecret : undefined,
+        rtEndpoint: useOwnCredentials && rtEndpoint ? rtEndpoint : undefined,
+      });
+      res.json(config);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Reseller: RT stats
+  app.get("/api/reseller/fiscal/rt-stats", requireRole("reseller"), async (req, res) => {
+    try {
+      const resellerId = req.user!.resellerId;
+      if (!resellerId) return res.status(400).json({ error: "Nessun rivenditore associato" });
+      const stats = await storage.getPosTransactionsRtStats({ resellerId });
+      res.json(stats);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Reseller: Failed RT transactions
+  app.get("/api/reseller/fiscal/failed-transactions", requireRole("reseller"), async (req, res) => {
+    try {
+      const resellerId = req.user!.resellerId;
+      if (!resellerId) return res.status(400).json({ error: "Nessun rivenditore associato" });
+      const transactions = await storage.getFailedRtTransactions(String(resellerId));
+      res.json(transactions);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   app.get("/api/reseller/pos/transactions", requireRole("reseller", "reseller_staff", "sub_reseller"), async (req, res) => {
     try {
       const { resellerId } = getEffectiveContext(req);

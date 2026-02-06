@@ -6760,6 +6760,33 @@ export const insertPlatformFiscalConfigSchema = createInsertSchema(platformFisca
 export type PlatformFiscalConfig = typeof platformFiscalConfig.$inferSelect;
 export type InsertPlatformFiscalConfig = z.infer<typeof insertPlatformFiscalConfigSchema>;
 
+// Entity-level fiscal RT configuration (for resellers and repair centers)
+export const entityFiscalConfig = pgTable("entity_fiscal_config", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  
+  entityType: varchar("entity_type", { length: 30 }).notNull(), // 'reseller' | 'repair_center'
+  entityId: varchar("entity_id").notNull(), // resellerId or repairCenterId
+  
+  rtEnabled: boolean("rt_enabled").notNull().default(false),
+  rtApiKey: text("rt_api_key"),
+  rtApiSecret: text("rt_api_secret"),
+  rtEndpoint: text("rt_endpoint"),
+  useOwnCredentials: boolean("use_own_credentials").notNull().default(false),
+  
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+export const insertEntityFiscalConfigSchema = createInsertSchema(entityFiscalConfig).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type EntityFiscalConfig = typeof entityFiscalConfig.$inferSelect;
+export type InsertEntityFiscalConfig = z.infer<typeof insertEntityFiscalConfigSchema>;
+
+
 // ==========================================
 // PAYMENT CONFIGURATIONS (Stripe Connect, Bank Transfer, PayPal)
 // ==========================================

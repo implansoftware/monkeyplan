@@ -102,5 +102,17 @@ The backend is an `Express.js` application with TypeScript, featuring a RESTful 
 - Repair Center API endpoints:
   - GET `/api/repair-center/fiscal/rt-stats` - RC-specific RT stats
   - GET `/api/repair-center/fiscal/failed-transactions` - RC-specific failed submissions
+  - GET `/api/repair-center/fiscal/admin-config` - View admin RT provider info
+  - GET/PUT `/api/repair-center/fiscal/config` - Manage own RT configuration
+- Reseller API endpoints:
+  - GET `/api/reseller/fiscal/admin-config` - View admin RT provider info
+  - GET/PUT `/api/reseller/fiscal/config` - Manage own RT configuration
+  - GET `/api/reseller/fiscal/rt-stats` - Reseller RT stats
+  - GET `/api/reseller/fiscal/failed-transactions` - Reseller failed RT submissions
 - Frontend: AdminFiscalConfig component with provider selector, credentials management, sandbox toggle, override permissions, RT stats dashboard, failed transactions list with retry
+- Frontend: EntityFiscalConfig reusable component for reseller/RC RT config management with admin provider info display, enable/disable RT, own credentials (when allowed), stats and failed transactions
 - Admin Settings page includes new "RT Fiscale" tab
+- Repair Center Settings "Dati Fiscali" tab includes EntityFiscalConfig component
+- Reseller Settings has new "RT Fiscale" tab with EntityFiscalConfig component
+- Entity-level fiscal config stored in `entityFiscalConfig` table with multi-tenant isolation
+- Credential masking: GET endpoints return masked API keys/secrets for security

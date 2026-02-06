@@ -140,7 +140,8 @@ import {
   priceListItems, PriceListItem, InsertPriceListItem, PriceListOwnerType,
   paymentConfigurations, PaymentConfiguration, InsertPaymentConfiguration, PaymentConfigEntityType,
   shippingMethods, ShippingMethod, InsertShippingMethod,
-  platformFiscalConfig, PlatformFiscalConfig, InsertPlatformFiscalConfig
+  platformFiscalConfig, PlatformFiscalConfig, InsertPlatformFiscalConfig,
+  entityFiscalConfig, EntityFiscalConfig, InsertEntityFiscalConfig
 } from "@shared/schema";
 import { db, pool } from "./db";
 import { eq, and, or, desc, lt, gt, gte, lte, sql, not, inArray, isNull, ilike, SQL } from "drizzle-orm";
@@ -13303,6 +13304,33 @@ export class DatabaseStorage implements IStorage {
       .where(and(...conditions))
       .orderBy(desc(posTransactions.createdAt))
       .limit(limit);
+  }
+
+
+  async getEntityFiscalConfig(entityType: string, entityId: string): Promise<EntityFiscalConfig | undefined> {
+    const [config] = await db.select()
+      .from(entityFiscalConfig)
+      .where(and(
+        eq(entityFiscalConfig.entityType, entityType),
+        eq(entityFiscalConfig.entityId, entityId)
+      ))
+      .limit(1);
+    return config;
+  }
+
+  async upsertEntityFiscalConfig(entityType: string, entityId: string, data: Partial<InsertEntityFiscalConfig>): Promise<EntityFiscalConfig> {
+    const existing = await this.getEntityFiscalConfig(entityType, entityId);
+    if (existing) {
+      const [updated] = await db.update(entityFiscalConfig)
+        .set({ ...data, updatedAt: new Date() })
+        .where(eq(entityFiscalConfig.id, existing.id))
+        .returning();
+      return updated;
+    }
+    const [created] = await db.insert(entityFiscalConfig)
+      .values({ ...data, entityType, entityId } as InsertEntityFiscalConfig)
+      .returning();
+    return created;
   }
 
 }
