@@ -22,7 +22,6 @@ export function EntityFiscalConfig({ entityType, basePath }: EntityFiscalConfigP
   const { data: adminConfig, isLoading: adminLoading } = useQuery<{
     provider: string | null;
     sandboxMode: boolean;
-    allowOverride: boolean;
   }>({
     queryKey: [basePath, "admin-config"],
     queryFn: () => fetch(`${basePath}/admin-config`).then(r => r.json()),

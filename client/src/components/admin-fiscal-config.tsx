@@ -2,7 +2,6 @@ import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
@@ -10,17 +9,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Save, Loader2, Radio, AlertTriangle, CheckCircle, RefreshCw, XCircle, Filter } from "lucide-react";
+import { Save, Loader2, Radio, AlertTriangle, RefreshCw, XCircle, Filter, Info } from "lucide-react";
 
 interface FiscalConfig {
   id: string;
   defaultRtProvider: string;
-  rtApiKey: string | null;
-  rtApiSecret: string | null;
-  rtEndpoint: string | null;
-  rtEntityId: string | null;
-  rtSystemId: string | null;
-  allowOverride: boolean;
   sandboxMode: boolean;
 }
 
@@ -42,12 +35,6 @@ interface RTStats {
 export function AdminFiscalConfig() {
   const { toast } = useToast();
   const [provider, setProvider] = useState("sandbox");
-  const [apiKey, setApiKey] = useState("");
-  const [apiSecret, setApiSecret] = useState("");
-  const [endpoint, setEndpoint] = useState("");
-  const [entityId, setEntityId] = useState("");
-  const [systemId, setSystemId] = useState("");
-  const [allowOverride, setAllowOverride] = useState(true);
   const [sandboxMode, setSandboxMode] = useState(true);
   const [configLoaded, setConfigLoaded] = useState(false);
 
@@ -87,7 +74,7 @@ export function AdminFiscalConfig() {
     enabled: filterReady,
   });
 
-  const { data: failedTx, isLoading: failedLoading } = useQuery<any[]>({
+  const { data: failedTx } = useQuery<any[]>({
     queryKey: ["/api/admin/fiscal/failed-transactions", filterType, selectedResellerId, selectedRepairCenterId],
     queryFn: () => fetch(`/api/admin/fiscal/failed-transactions${statsQueryParams}`).then(r => r.json()),
     enabled: filterReady,
@@ -96,12 +83,6 @@ export function AdminFiscalConfig() {
   useEffect(() => {
     if (data?.config && !configLoaded) {
       setProvider(data.config.defaultRtProvider);
-      setApiKey(data.config.rtApiKey || "");
-      setApiSecret(data.config.rtApiSecret || "");
-      setEndpoint(data.config.rtEndpoint || "");
-      setEntityId(data.config.rtEntityId || "");
-      setSystemId(data.config.rtSystemId || "");
-      setAllowOverride(data.config.allowOverride);
       setSandboxMode(data.config.sandboxMode);
       setConfigLoaded(true);
     }
@@ -111,12 +92,6 @@ export function AdminFiscalConfig() {
     mutationFn: async () => {
       return apiRequest("PUT", "/api/admin/fiscal/config", {
         defaultRtProvider: provider,
-        rtApiKey: apiKey || null,
-        rtApiSecret: apiSecret || null,
-        rtEndpoint: endpoint || null,
-        rtEntityId: entityId || null,
-        rtSystemId: systemId || null,
-        allowOverride,
         sandboxMode,
       });
     },
@@ -126,31 +101,6 @@ export function AdminFiscalConfig() {
     },
     onError: (error: any) => {
       toast({ title: "Errore", description: error.message, variant: "destructive" });
-    },
-  });
-
-  const testMutation = useMutation({
-    mutationFn: async () => {
-      const res = await apiRequest("POST", "/api/admin/fiscal/test-connection", {
-        provider,
-        apiKey,
-        apiSecret,
-        endpoint,
-        entityId,
-        systemId,
-        sandboxMode,
-      });
-      return res.json();
-    },
-    onSuccess: (result: { success: boolean; message: string }) => {
-      toast({
-        title: result.success ? "Connessione riuscita" : "Connessione fallita",
-        description: result.message,
-        variant: result.success ? "default" : "destructive",
-      });
-    },
-    onError: (error: any) => {
-      toast({ title: "Errore test", description: error.message, variant: "destructive" });
     },
   });
 
@@ -179,7 +129,6 @@ export function AdminFiscalConfig() {
   }
 
   const providers = data?.providers || [];
-  const needsCredentials = provider !== "none" && provider !== "sandbox";
 
   const repairCentersList = repairCentersData || [];
 
@@ -193,17 +142,17 @@ export function AdminFiscalConfig() {
     <div className="space-y-6">
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
+          <CardTitle className="flex items-center gap-2" data-testid="text-rt-config-title">
             <Radio className="h-5 w-5" />
             Registratore Telematico (RT)
           </CardTitle>
           <CardDescription>
-            Configura il provider cloud per la trasmissione dei corrispettivi telematici all'Agenzia delle Entrate
+            Seleziona i provider RT disponibili per rivenditori e centri riparazione
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
           <div className="space-y-2">
-            <Label data-testid="label-rt-provider">Provider RT</Label>
+            <Label data-testid="label-rt-provider">Provider RT abilitato</Label>
             <Select value={provider} onValueChange={setProvider}>
               <SelectTrigger data-testid="select-rt-provider">
                 <SelectValue />
@@ -221,68 +170,6 @@ export function AdminFiscalConfig() {
             </Select>
           </div>
 
-          {needsCredentials && (
-            <div className="space-y-4 rounded-md border p-4">
-              <div className="space-y-2">
-                <Label data-testid="label-api-key">API Key</Label>
-                <Input
-                  type="password"
-                  value={apiKey}
-                  onChange={(e) => setApiKey(e.target.value)}
-                  placeholder="Inserisci la API Key del provider"
-                  data-testid="input-rt-api-key"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label data-testid="label-api-secret">API Secret</Label>
-                <Input
-                  type="password"
-                  value={apiSecret}
-                  onChange={(e) => setApiSecret(e.target.value)}
-                  placeholder="Inserisci la API Secret del provider"
-                  data-testid="input-rt-api-secret"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label data-testid="label-rt-endpoint">Endpoint personalizzato (opzionale)</Label>
-                <Input
-                  value={endpoint}
-                  onChange={(e) => setEndpoint(e.target.value)}
-                  placeholder="https://..."
-                  data-testid="input-rt-endpoint"
-                />
-              </div>
-              {provider === "fiskaly" && (
-                <>
-                  <div className="space-y-2">
-                    <Label data-testid="label-rt-entity-id">Entity ID Fiskaly</Label>
-                    <Input
-                      value={entityId}
-                      onChange={(e) => setEntityId(e.target.value)}
-                      placeholder="ID entità dal dashboard Fiskaly"
-                      data-testid="input-rt-entity-id"
-                    />
-                    <p className="text-xs text-muted-foreground">
-                      Creato nel dashboard Fiskaly — rappresenta la tua attività commerciale
-                    </p>
-                  </div>
-                  <div className="space-y-2">
-                    <Label data-testid="label-rt-system-id">System ID Fiskaly</Label>
-                    <Input
-                      value={systemId}
-                      onChange={(e) => setSystemId(e.target.value)}
-                      placeholder="ID sistema dal dashboard Fiskaly"
-                      data-testid="input-rt-system-id"
-                    />
-                    <p className="text-xs text-muted-foreground">
-                      Corrisponde al dispositivo fiscale (PEM) registrato
-                    </p>
-                  </div>
-                </>
-              )}
-            </div>
-          )}
-
           <div className="flex items-center justify-between gap-4">
             <div className="space-y-0.5">
               <Label data-testid="label-sandbox-mode">Modalita Sandbox</Label>
@@ -297,41 +184,24 @@ export function AdminFiscalConfig() {
             />
           </div>
 
-          <div className="flex items-center justify-between gap-4">
-            <div className="space-y-0.5">
-              <Label data-testid="label-allow-override">Consenti override per reseller/centri</Label>
-              <p className="text-sm text-muted-foreground">
-                Permetti ai reseller e centri riparazione di usare un provider RT diverso
-              </p>
+          <div className="rounded-md border p-4 space-y-2" data-testid="banner-credentials-info">
+            <div className="flex items-center gap-2">
+              <Info className="h-4 w-4 text-muted-foreground" />
+              <span className="text-sm font-medium">Credenziali RT</span>
             </div>
-            <Switch
-              checked={allowOverride}
-              onCheckedChange={setAllowOverride}
-              data-testid="switch-allow-override"
-            />
+            <p className="text-sm text-muted-foreground">
+              Ogni rivenditore e centro riparazione deve inserire le proprie credenziali Fiskaly nelle proprie impostazioni. L'admin non gestisce credenziali RT — definisce solo quale provider e quale modalità sono disponibili.
+            </p>
           </div>
 
-          <div className="flex flex-wrap gap-2">
-            <Button
-              onClick={() => saveMutation.mutate()}
-              disabled={saveMutation.isPending}
-              data-testid="button-save-fiscal-config"
-            >
-              {saveMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-              Salva configurazione
-            </Button>
-            {provider !== "none" && (
-              <Button
-                variant="outline"
-                onClick={() => testMutation.mutate()}
-                disabled={testMutation.isPending}
-                data-testid="button-test-connection"
-              >
-                {testMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Radio className="h-4 w-4" />}
-                Testa connessione
-              </Button>
-            )}
-          </div>
+          <Button
+            onClick={() => saveMutation.mutate()}
+            disabled={saveMutation.isPending}
+            data-testid="button-save-fiscal-config"
+          >
+            {saveMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+            Salva configurazione
+          </Button>
         </CardContent>
       </Card>
 
@@ -339,7 +209,7 @@ export function AdminFiscalConfig() {
         <CardHeader>
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <CardTitle>Statistiche RT</CardTitle>
+              <CardTitle data-testid="text-rt-stats-title">Statistiche RT</CardTitle>
               <CardDescription>Stato delle trasmissioni dei corrispettivi telematici</CardDescription>
             </div>
             <div className="flex flex-wrap items-center gap-2">
@@ -435,7 +305,7 @@ export function AdminFiscalConfig() {
       {(failedTx && failedTx.length > 0) && (
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
+            <CardTitle className="flex items-center gap-2" data-testid="text-failed-title">
               <AlertTriangle className="h-5 w-5 text-red-500" />
               Trasmissioni fallite
               {filterType !== "all" && (

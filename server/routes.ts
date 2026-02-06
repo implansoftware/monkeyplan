@@ -41983,24 +41983,18 @@ export function registerRoutes(app: Express): Server {
     try {
       const fiscalConfigSchema = z.object({
         defaultRtProvider: z.string().default("sandbox"),
-        rtApiKey: z.string().nullable().optional(),
-        rtApiSecret: z.string().nullable().optional(),
-        rtEndpoint: z.string().nullable().optional(),
-        rtEntityId: z.string().nullable().optional(),
-        rtSystemId: z.string().nullable().optional(),
-        allowOverride: z.boolean().default(true),
         sandboxMode: z.boolean().default(true),
       });
       const parsed = fiscalConfigSchema.parse(req.body);
       const config = await storage.upsertPlatformFiscalConfig({
         defaultRtProvider: parsed.defaultRtProvider || "sandbox",
-        rtApiKey: parsed.rtApiKey || null,
-        rtApiSecret: parsed.rtApiSecret || null,
-        rtEndpoint: parsed.rtEndpoint || null,
-        rtEntityId: parsed.rtEntityId || null,
-        rtSystemId: parsed.rtSystemId || null,
-        allowOverride: parsed.allowOverride ?? true,
         sandboxMode: parsed.sandboxMode ?? true,
+        rtApiKey: null,
+        rtApiSecret: null,
+        rtEndpoint: null,
+        rtEntityId: null,
+        rtSystemId: null,
+        allowOverride: true,
       });
       res.json(config);
     } catch (error: any) {
@@ -42008,26 +42002,7 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
-  app.post("/api/admin/fiscal/test-connection", requireRole("admin"), async (req, res) => {
-    try {
-      const { provider, apiKey, apiSecret, endpoint, sandboxMode, entityId, systemId } = req.body;
-      if (!provider || provider === "none") {
-        return res.json({ success: false, message: "Nessun provider selezionato" });
-      }
-      const rtConfig: RTProviderConfig = {
-        apiKey: apiKey || "",
-        apiSecret: apiSecret || "",
-        endpoint: endpoint || undefined,
-        sandboxMode: sandboxMode ?? true,
-        entityId: entityId || undefined,
-        systemId: systemId || undefined,
-      };
-      const result = await testRTConnection(provider, rtConfig);
-      res.json(result);
-    } catch (error: any) {
-      res.status(500).json({ error: error.message });
-    }
-  });
+
 
   app.get("/api/admin/fiscal/rt-stats", requireRole("admin", "admin_staff"), async (req, res) => {
     try {
@@ -42138,11 +42113,10 @@ export function registerRoutes(app: Express): Server {
   app.get("/api/repair-center/fiscal/admin-config", requireRole("repair_center"), async (req, res) => {
     try {
       const adminConfig = await storage.getPlatformFiscalConfig();
-      if (!adminConfig) return res.json({ provider: null, allowOverride: false });
+      if (!adminConfig) return res.json({ provider: null, sandboxMode: true });
       res.json({
         provider: adminConfig.defaultRtProvider,
         sandboxMode: adminConfig.sandboxMode,
-        allowOverride: adminConfig.allowOverride ?? false,
       });
     } catch (error: any) {
       res.status(500).json({ error: error.message });
@@ -42202,11 +42176,10 @@ export function registerRoutes(app: Express): Server {
   app.get("/api/reseller/fiscal/admin-config", requireRole("reseller"), async (req, res) => {
     try {
       const adminConfig = await storage.getPlatformFiscalConfig();
-      if (!adminConfig) return res.json({ provider: null, allowOverride: false });
+      if (!adminConfig) return res.json({ provider: null, sandboxMode: true });
       res.json({
         provider: adminConfig.defaultRtProvider,
         sandboxMode: adminConfig.sandboxMode,
-        allowOverride: adminConfig.allowOverride ?? false,
       });
     } catch (error: any) {
       res.status(500).json({ error: error.message });
