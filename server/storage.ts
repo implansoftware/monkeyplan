@@ -13294,10 +13294,21 @@ export class DatabaseStorage implements IStorage {
     };
   }
 
-  async getFailedRtTransactions(repairCenterId?: string, limit = 20): Promise<PosTransaction[]> {
+  async getFailedRtTransactions(filters?: { repairCenterId?: string; resellerId?: string }, limit = 20): Promise<PosTransaction[]> {
     let conditions: SQL[] = [eq(posTransactions.rtStatus, "failed")];
-    if (repairCenterId) {
-      conditions.push(eq(posTransactions.repairCenterId, repairCenterId));
+    if (filters?.repairCenterId) {
+      conditions.push(eq(posTransactions.repairCenterId, filters.repairCenterId));
+    }
+    if (filters?.resellerId) {
+      const rcs = await db.select({ id: repairCenters.id })
+        .from(repairCenters)
+        .where(eq(repairCenters.resellerId, filters.resellerId));
+      const rcIds = rcs.map(rc => rc.id);
+      if (rcIds.length > 0) {
+        conditions.push(inArray(posTransactions.repairCenterId, rcIds));
+      } else {
+        return [];
+      }
     }
     return db.select()
       .from(posTransactions)

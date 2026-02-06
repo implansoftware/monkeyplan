@@ -42017,7 +42017,10 @@ export function registerRoutes(app: Express): Server {
 
   app.get("/api/admin/fiscal/rt-stats", requireRole("admin", "admin_staff"), async (req, res) => {
     try {
-      const stats = await storage.getPosTransactionsRtStats();
+      const filters = {};
+      if (req.query.repairCenterId) filters.repairCenterId = String(req.query.repairCenterId);
+      if (req.query.resellerId) filters.resellerId = String(req.query.resellerId);
+      const stats = await storage.getPosTransactionsRtStats(Object.keys(filters).length > 0 ? filters : undefined);
       res.json(stats);
     } catch (error: any) {
       res.status(500).json({ error: error.message });
@@ -42026,7 +42029,10 @@ export function registerRoutes(app: Express): Server {
 
   app.get("/api/admin/fiscal/failed-transactions", requireRole("admin", "admin_staff"), async (req, res) => {
     try {
-      const transactions = await storage.getFailedRtTransactions();
+      const filters = {};
+      if (req.query.repairCenterId) filters.repairCenterId = String(req.query.repairCenterId);
+      if (req.query.resellerId) filters.resellerId = String(req.query.resellerId);
+      const transactions = await storage.getFailedRtTransactions(filters);
       res.json(transactions);
     } catch (error: any) {
       res.status(500).json({ error: error.message });
@@ -42101,7 +42107,7 @@ export function registerRoutes(app: Express): Server {
     try {
       const repairCenterId = req.user!.repairCenterId;
       if (!repairCenterId) return res.status(400).json({ error: "Nessun centro riparazione associato" });
-      const transactions = await storage.getFailedRtTransactions(repairCenterId);
+      const transactions = await storage.getFailedRtTransactions({ repairCenterId });
       res.json(transactions);
     } catch (error: any) {
       res.status(500).json({ error: error.message });
@@ -42242,7 +42248,7 @@ export function registerRoutes(app: Express): Server {
   app.get("/api/reseller/fiscal/failed-transactions", requireRole("reseller"), async (req, res) => {
     try {
       const { resellerId } = getEffectiveContext(req);
-      const transactions = await storage.getFailedRtTransactions(String(resellerId));
+      const transactions = await storage.getFailedRtTransactions({ resellerId: String(resellerId) });
       res.json(transactions);
     } catch (error: any) {
       res.status(500).json({ error: error.message });
