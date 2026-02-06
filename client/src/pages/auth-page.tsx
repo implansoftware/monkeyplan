@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
-import { Redirect } from "wouter";
+import { Redirect, Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -15,6 +15,7 @@ import {
   Building,
   FileText,
   ArrowRight,
+  ArrowLeft,
   Zap,
   Shield,
   BarChart3,
@@ -231,17 +232,19 @@ export default function AuthPage() {
         />
         
         <div className="relative z-10 flex flex-col justify-between p-12 text-white w-full">
-          <div className="flex flex-wrap items-center gap-4">
-            <div className="w-14 h-14 rounded-2xl bg-white/20 backdrop-blur-sm border border-white/30 flex items-center justify-center">
-              <Wrench className="w-7 h-7 text-white" />
+          <Link href="/">
+            <div className="flex flex-wrap items-center gap-4 cursor-pointer" data-testid="link-auth-home-brand">
+              <div className="w-14 h-14 rounded-2xl bg-white/20 backdrop-blur-sm border border-white/30 flex items-center justify-center">
+                <Wrench className="w-7 h-7 text-white" />
+              </div>
+              <div>
+                <span className="font-bold text-3xl tracking-tight">MonkeyPlan</span>
+                <span className="ml-3 px-3 py-1 text-xs rounded-full bg-yellow-400/30 backdrop-blur-sm text-yellow-100 border border-yellow-300/30">
+                  Beta v.24
+                </span>
+              </div>
             </div>
-            <div>
-              <span className="font-bold text-3xl tracking-tight">MonkeyPlan</span>
-              <span className="ml-3 px-3 py-1 text-xs rounded-full bg-yellow-400/30 backdrop-blur-sm text-yellow-100 border border-yellow-300/30">
-                Beta v.24
-              </span>
-            </div>
-          </div>
+          </Link>
           
           <div className="flex flex-col items-center space-y-8">
             <AnimatedMonkeyMascot />
@@ -311,14 +314,26 @@ export default function AuthPage() {
       
       <div className="w-full lg:w-1/2 flex items-center justify-center p-6 lg:p-12">
         <div className="w-full max-w-md">
+          <div className="flex items-center justify-between mb-6">
+            <Link href="/">
+              <Button variant="ghost" size="sm" className="text-slate-500 dark:text-slate-400" data-testid="button-back-home">
+                <ArrowLeft className="w-4 h-4 mr-1" />
+                Home
+              </Button>
+            </Link>
+          </div>
           <div className="lg:hidden flex items-center justify-center gap-3 mb-8">
-            <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center">
-              <Wrench className="w-7 h-7 text-white" />
-            </div>
-            <div>
-              <span className="font-bold text-2xl text-slate-900 dark:text-white">MonkeyPlan</span>
-              <span className="text-xs ml-2 px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-900 text-emerald-700 dark:text-emerald-300">Beta</span>
-            </div>
+            <Link href="/">
+              <div className="flex flex-wrap items-center gap-3 cursor-pointer" data-testid="link-auth-home-mobile">
+                <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center">
+                  <Wrench className="w-7 h-7 text-white" />
+                </div>
+                <div>
+                  <span className="font-bold text-2xl text-slate-900 dark:text-white">MonkeyPlan</span>
+                  <span className="text-xs ml-2 px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-900 text-emerald-700 dark:text-emerald-300">Beta</span>
+                </div>
+              </div>
+            </Link>
           </div>
           
           <Tabs defaultValue="login" className="w-full">
