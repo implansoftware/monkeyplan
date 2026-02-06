@@ -367,10 +367,10 @@ export default function PosTransactionDetailPage() {
               <PaymentIcon className="w-5 h-5" />
               {paymentMethodLabels[transaction.paymentMethod]?.label}
             </div>
-            {transaction.cashReceived && (
+            {transaction.cashReceived !== null && transaction.cashReceived > 0 && (
               <div className="text-sm text-muted-foreground mt-1">
                 Ricevuto: {formatCurrency(transaction.cashReceived)}
-                {transaction.changeGiven && ` • Resto: ${formatCurrency(transaction.changeGiven)}`}
+                {transaction.changeGiven !== null && transaction.changeGiven > 0 && ` • Resto: ${formatCurrency(transaction.changeGiven)}`}
               </div>
             )}
           </CardContent>
