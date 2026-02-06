@@ -10709,7 +10709,6 @@ export function registerRoutes(app: Express): Server {
       if (!repairCenter && req.user.repairCenterId) {
         repairCenter = await storage.getRepairCenter(req.user.repairCenterId) || undefined;
       }
-      console.log("[DEBUG RC Remote] userId:", req.user.id, "repairCenter:", repairCenter?.id, "resellerId:", repairCenter?.resellerId, "repairCenterId:", req.user.repairCenterId);
       
       // Get requests assigned to this user (assignedCenterId now stores user ID)
       const requests = await storage.listRemoteRepairRequests({
@@ -11221,6 +11220,52 @@ export function registerRoutes(app: Express): Server {
         
         setActivityEntity(res, { type: 'remote_repair_requests', id: updated.id });
 
+        // Generate invoice for in-store payment
+        try {
+          const customerIs = await storage.getUser(request.customerId);
+          const centerUserIs = request.assignedCenterId ? await storage.getUser(request.assignedCenterId) : null;
+          const rcEntityIs = centerUserIs?.repairCenterId ? await storage.getRepairCenter(centerUserIs.repairCenterId) : null;
+          
+          const quoteAmountIs = request.quoteAmount || 0;
+          if (quoteAmountIs <= 0) throw new Error('No quote amount');
+          
+          // Check for existing invoice (idempotency)
+          const existingInvoicesIs = await storage.listInvoices({ customerId: request.customerId });
+          const alreadyInvoicedIs = existingInvoicesIs.find((inv: any) => inv.remoteRepairRequestId === request.id);
+          if (alreadyInvoicedIs) throw new Error('Invoice already exists');
+          
+          const vatRateIs = 22;
+          const taxAmountIs = Math.round(quoteAmountIs * vatRateIs / (100 + vatRateIs));
+          const netAmountIs = quoteAmountIs - taxAmountIs;
+          
+          let invoiceNumberIs: string;
+          if (rcEntityIs?.id) {
+            invoiceNumberIs = await storage.generateInvoiceNumber(rcEntityIs.id);
+          } else if (request.resellerId) {
+            invoiceNumberIs = await storage.generateResellerInvoiceNumber(request.resellerId);
+          } else {
+            invoiceNumberIs = await storage.generateAdminInvoiceNumber();
+          }
+          
+          await storage.createInvoice({
+            invoiceNumber: invoiceNumberIs,
+            remoteRepairRequestId: request.id,
+            customerId: request.customerId,
+            repairCenterId: rcEntityIs?.id || null,
+            resellerId: request.resellerId || null,
+            source: 'remote_repair' as any,
+            amount: netAmountIs,
+            tax: taxAmountIs,
+            vatRate: vatRateIs,
+            total: quoteAmountIs,
+            paymentStatus: 'pending',
+            paymentMethod: 'in_store',
+            notes: `Fattura per richiesta remota #${request.requestNumber}`,
+          } as any);
+        } catch (invoiceErr) {
+          console.error("Error creating invoice for remote request:", invoiceErr);
+        }
+
         if (request.assignedCenterId) {
           await storage.createNotification({
             userId: request.assignedCenterId,
@@ -11431,6 +11476,54 @@ export function registerRoutes(app: Express): Server {
       }
       
       setActivityEntity(res, { type: 'remote_repair_requests', id: updated.id });
+
+      // Generate invoice for remote repair payment
+      try {
+        const customerSc = await storage.getUser(request.customerId);
+        const centerUserSc = request.assignedCenterId ? await storage.getUser(request.assignedCenterId) : null;
+        const rcEntitySc = centerUserSc?.repairCenterId ? await storage.getRepairCenter(centerUserSc.repairCenterId) : null;
+        
+        const quoteAmountSc = request.quoteAmount || 0;
+        if (quoteAmountSc <= 0) throw new Error('No quote amount');
+        
+        // Check for existing invoice (idempotency)
+        const existingInvoicesSc = await storage.listInvoices({ customerId: request.customerId });
+        const alreadyInvoicedSc = existingInvoicesSc.find((inv: any) => inv.remoteRepairRequestId === request.id);
+        if (alreadyInvoicedSc) throw new Error('Invoice already exists');
+        
+        const vatRateSc = 22;
+        const taxAmountSc = Math.round(quoteAmountSc * vatRateSc / (100 + vatRateSc));
+        const netAmountSc = quoteAmountSc - taxAmountSc;
+        
+        let invoiceNumberSc: string;
+        if (rcEntitySc?.id) {
+          invoiceNumberSc = await storage.generateInvoiceNumber(rcEntitySc.id);
+        } else if (request.resellerId) {
+          invoiceNumberSc = await storage.generateResellerInvoiceNumber(request.resellerId);
+        } else {
+          invoiceNumberSc = await storage.generateAdminInvoiceNumber();
+        }
+        
+        await storage.createInvoice({
+          invoiceNumber: invoiceNumberSc,
+          remoteRepairRequestId: request.id,
+          customerId: request.customerId,
+          repairCenterId: rcEntitySc?.id || null,
+          resellerId: request.resellerId || null,
+          source: 'remote_repair' as any,
+          amount: netAmountSc,
+          tax: taxAmountSc,
+          vatRate: vatRateSc,
+          total: quoteAmountSc,
+          paymentStatus: 'paid',
+          paymentMethod: 'online_stripe',
+          paidDate: new Date(),
+          notes: `Fattura per richiesta remota #${request.requestNumber}`,
+        } as any);
+      } catch (invoiceErr) {
+        console.error("Error creating invoice for remote request:", invoiceErr);
+      }
+
       res.json(updated);
     } catch (error: any) {
       console.error("Remote request Stripe confirm error:", error);
@@ -11618,6 +11711,53 @@ export function registerRoutes(app: Express): Server {
       }
       
       setActivityEntity(res, { type: 'remote_repair_requests', id: updated.id });
+
+      // Generate invoice for remote repair payment
+      try {
+        const customerPp = await storage.getUser(request.customerId);
+        const centerUserPp = request.assignedCenterId ? await storage.getUser(request.assignedCenterId) : null;
+        const rcEntityPp = centerUserPp?.repairCenterId ? await storage.getRepairCenter(centerUserPp.repairCenterId) : null;
+        
+        const quoteAmountPp = request.quoteAmount || 0;
+        if (quoteAmountPp <= 0) throw new Error('No quote amount');
+        
+        // Check for existing invoice (idempotency)
+        const existingInvoicesPp = await storage.listInvoices({ customerId: request.customerId });
+        const alreadyInvoicedPp = existingInvoicesPp.find((inv: any) => inv.remoteRepairRequestId === request.id);
+        if (alreadyInvoicedPp) throw new Error('Invoice already exists');
+        
+        const vatRatePp = 22;
+        const taxAmountPp = Math.round(quoteAmountPp * vatRatePp / (100 + vatRatePp));
+        const netAmountPp = quoteAmountPp - taxAmountPp;
+        
+        let invoiceNumberPp: string;
+        if (rcEntityPp?.id) {
+          invoiceNumberPp = await storage.generateInvoiceNumber(rcEntityPp.id);
+        } else if (request.resellerId) {
+          invoiceNumberPp = await storage.generateResellerInvoiceNumber(request.resellerId);
+        } else {
+          invoiceNumberPp = await storage.generateAdminInvoiceNumber();
+        }
+        
+        await storage.createInvoice({
+          invoiceNumber: invoiceNumberPp,
+          remoteRepairRequestId: request.id,
+          customerId: request.customerId,
+          repairCenterId: rcEntityPp?.id || null,
+          resellerId: request.resellerId || null,
+          source: 'remote_repair' as any,
+          amount: netAmountPp,
+          tax: taxAmountPp,
+          vatRate: vatRatePp,
+          total: quoteAmountPp,
+          paymentStatus: 'paid',
+          paymentMethod: 'online_paypal',
+          paidDate: new Date(),
+          notes: `Fattura per richiesta remota #${request.requestNumber}`,
+        } as any);
+      } catch (invoiceErr) {
+        console.error("Error creating invoice for remote request:", invoiceErr);
+      }
       res.json(updated);
     } catch (error: any) {
       console.error("Remote request PayPal capture error:", error);

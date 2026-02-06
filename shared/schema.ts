@@ -3377,7 +3377,7 @@ export const ticketMessages = pgTable("ticket_messages", {
 });
 
 // Invoice source enum
-export const invoiceSourceEnum = pgEnum("invoice_source", ["repair", "pos", "marketplace", "b2b", "other"]);
+export const invoiceSourceEnum = pgEnum("invoice_source", ["repair", "pos", "marketplace", "b2b", "remote_repair", "other"]);
 
 // Invoices (Fatture)
 export const invoices = pgTable("invoices", {
@@ -3386,6 +3386,7 @@ export const invoices = pgTable("invoices", {
   repairOrderId: varchar("repair_order_id"),
   posTransactionId: varchar("pos_transaction_id"),
   marketplaceOrderId: varchar("marketplace_order_id"),
+  remoteRepairRequestId: varchar("remote_repair_request_id"),
   customerId: varchar("customer_id"), // Optional for B2B invoices
   repairCenterId: varchar("repair_center_id"),
   resellerId: varchar("reseller_id"),
