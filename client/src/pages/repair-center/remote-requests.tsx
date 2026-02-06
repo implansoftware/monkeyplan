@@ -283,8 +283,8 @@ export default function RepairCenterRemoteRequests() {
   }
 
   const pendingRequests = requests?.filter(r => r.status === 'pending' || r.status === 'assigned') || [];
-  const activeRequests = requests?.filter(r => ['accepted', 'quoted', 'quote_accepted', 'awaiting_shipment', 'in_transit'].includes(r.status)) || [];
-  const completedRequests = requests?.filter(r => ['received', 'repair_created', 'rejected', 'cancelled', 'quote_declined'].includes(r.status)) || [];
+  const activeRequests = requests?.filter(r => ['accepted', 'quoted', 'quote_accepted', 'quote_declined', 'awaiting_shipment', 'in_transit'].includes(r.status)) || [];
+  const completedRequests = requests?.filter(r => ['received', 'repair_created', 'rejected', 'cancelled'].includes(r.status)) || [];
 
   return (
     <div className="container max-w-6xl mx-auto py-6 space-y-6">
@@ -493,7 +493,36 @@ export default function RepairCenterRemoteRequests() {
                             </>
                           )}
                           {request.status === 'quoted' && (
-                            <Badge variant="outline">In attesa risposta cliente</Badge>
+                            <>
+                              <Badge variant="outline">In attesa risposta cliente</Badge>
+                              <Button
+                                variant="outline"
+                                onClick={() => {
+                                  setSelectedRequest(request);
+                                  setQuoteAmount(((request.quoteAmount || 0) / 100).toFixed(2));
+                                  setQuoteDescription(request.quoteDescription || "");
+                                  setIsQuoteOpen(true);
+                                }}
+                                data-testid={`button-edit-quote-${request.id}`}
+                              >
+                                <FileText className="h-4 w-4 mr-2" />
+                                Modifica Preventivo
+                              </Button>
+                            </>
+                          )}
+                          {request.status === 'quote_declined' && (
+                            <Button
+                              onClick={() => {
+                                setSelectedRequest(request);
+                                setQuoteAmount(((request.quoteAmount || 0) / 100).toFixed(2));
+                                setQuoteDescription(request.quoteDescription || "");
+                                setIsQuoteOpen(true);
+                              }}
+                              data-testid={`button-resend-quote-${request.id}`}
+                            >
+                              <FileText className="h-4 w-4 mr-2" />
+                              Reinvia Preventivo
+                            </Button>
                           )}
                           {request.status === 'quote_accepted' && (
                             <Badge variant="default">Pagamento in corso</Badge>

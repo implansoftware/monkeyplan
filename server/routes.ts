@@ -11128,8 +11128,8 @@ export function registerRoutes(app: Express): Server {
         return res.status(403).send("Accesso non autorizzato");
       }
       
-      if (request.status !== 'accepted') {
-        return res.status(400).send("La richiesta deve essere accettata prima di inviare un preventivo");
+      if (!['accepted', 'quoted', 'quote_declined'].includes(request.status)) {
+        return res.status(400).send("La richiesta deve essere accettata, in stato preventivo inviato o rifiutato per poter inviare un preventivo");
       }
       
       const { quoteAmount, quoteDescription, quoteValidDays } = req.body;
