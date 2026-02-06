@@ -34,6 +34,8 @@ export function EntityFiscalConfig({ entityType, basePath }: EntityFiscalConfigP
     rtApiKey?: string;
     rtApiSecret?: string;
     rtEndpoint?: string;
+    rtEntityId?: string;
+    rtSystemId?: string;
     inherited?: boolean;
     inheritedFrom?: string;
   }>({
@@ -62,6 +64,8 @@ export function EntityFiscalConfig({ entityType, basePath }: EntityFiscalConfigP
   const [rtApiKey, setRtApiKey] = useState("");
   const [rtApiSecret, setRtApiSecret] = useState("");
   const [rtEndpoint, setRtEndpoint] = useState("");
+  const [rtEntityId, setRtEntityId] = useState("");
+  const [rtSystemId, setRtSystemId] = useState("");
   useEffect(() => {
     if (entityConfig) {
       setRtEnabled(entityConfig.rtEnabled ?? false);
@@ -69,6 +73,8 @@ export function EntityFiscalConfig({ entityType, basePath }: EntityFiscalConfigP
       setRtApiKey(entityConfig.rtApiKey || "");
       setRtApiSecret(entityConfig.rtApiSecret || "");
       setRtEndpoint(entityConfig.rtEndpoint || "");
+      setRtEntityId(entityConfig.rtEntityId || "");
+      setRtSystemId(entityConfig.rtSystemId || "");
     }
   }, [entityConfig]);
 
@@ -80,6 +86,8 @@ export function EntityFiscalConfig({ entityType, basePath }: EntityFiscalConfigP
         rtApiKey: useOwnCredentials && rtApiKey !== "****" ? rtApiKey : undefined,
         rtApiSecret: useOwnCredentials && rtApiSecret !== "****" ? rtApiSecret : undefined,
         rtEndpoint: useOwnCredentials ? rtEndpoint : undefined,
+        rtEntityId: useOwnCredentials ? rtEntityId : undefined,
+        rtSystemId: useOwnCredentials ? rtSystemId : undefined,
       });
       return res.json();
     },
@@ -224,6 +232,30 @@ export function EntityFiscalConfig({ entityType, basePath }: EntityFiscalConfigP
                       data-testid="input-rt-endpoint"
                     />
                   </div>
+                  {adminConfig?.provider === "fiskaly" && (
+                    <>
+                      <div className="space-y-2">
+                        <Label htmlFor="entity-id">Entity ID Fiskaly</Label>
+                        <Input
+                          id="entity-id"
+                          value={rtEntityId}
+                          onChange={(e) => setRtEntityId(e.target.value)}
+                          placeholder="ID entità dal dashboard Fiskaly"
+                          data-testid="input-rt-entity-id"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="system-id">System ID Fiskaly</Label>
+                        <Input
+                          id="system-id"
+                          value={rtSystemId}
+                          onChange={(e) => setRtSystemId(e.target.value)}
+                          placeholder="ID sistema dal dashboard Fiskaly"
+                          data-testid="input-rt-system-id"
+                        />
+                      </div>
+                    </>
+                  )}
                 </div>
               )}
             </div>

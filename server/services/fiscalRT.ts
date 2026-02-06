@@ -1,4 +1,5 @@
 import type { PosTransaction, PosTransactionItem } from "@shared/schema";
+import { randomUUID } from "crypto";
 
 export interface RTReceiptData {
   transaction: PosTransaction;
@@ -23,6 +24,8 @@ export interface RTProviderConfig {
   endpoint?: string;
   deviceId?: string;
   sandboxMode?: boolean;
+  entityId?: string;
+  systemId?: string;
 }
 
 export interface IFiscalRTProvider {
@@ -77,112 +80,333 @@ class SandboxRTProvider implements IFiscalRTProvider {
   }
 }
 
+const FISKALY_API_VERSION = "2025-08-12";
+
+interface FiskalyTokenCache {
+  accessToken: string;
+  expiresAt: number;
+  configHash: string;
+}
+
 class FiskalyRTProvider implements IFiscalRTProvider {
   name = "fiskaly";
+  private tokenCache: FiskalyTokenCache | null = null;
 
-  private async apiRequest(method: string, path: string, config: RTProviderConfig, body?: any): Promise<any> {
-    const baseUrl = config.endpoint || (config.sandboxMode
-      ? "https://sign-it.fiskaly.com/api/v1"
-      : "https://sign-it.fiskaly.com/api/v1");
+  private getBaseUrl(config: RTProviderConfig): string {
+    if (config.endpoint) return config.endpoint;
+    return config.sandboxMode
+      ? "https://test.api.fiskaly.com"
+      : "https://live.api.fiskaly.com";
+  }
 
-    const authHeader = Buffer.from(`${config.apiKey}:${config.apiSecret}`).toString("base64");
+  private getConfigHash(config: RTProviderConfig): string {
+    return `${config.apiKey}:${config.sandboxMode ? 'test' : 'live'}`;
+  }
+
+  private async getAccessToken(config: RTProviderConfig): Promise<string> {
+    const configHash = this.getConfigHash(config);
+
+    if (
+      this.tokenCache &&
+      this.tokenCache.configHash === configHash &&
+      this.tokenCache.expiresAt > Date.now() + 30000
+    ) {
+      return this.tokenCache.accessToken;
+    }
+
+    const baseUrl = this.getBaseUrl(config);
+    const res = await fetch(`${baseUrl}/tokens`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-Api-Version": FISKALY_API_VERSION,
+      },
+      body: JSON.stringify({
+        api_key: config.apiKey,
+        api_secret: config.apiSecret,
+      }),
+    });
+
+    const data = await res.json().catch(() => ({}));
+
+    if (!res.ok) {
+      const errMsg = data?.message || data?.error || `Errore autenticazione Fiskaly: HTTP ${res.status}`;
+      throw new Error(errMsg);
+    }
+
+    const accessToken = data.access_token;
+    if (!accessToken) {
+      throw new Error("Risposta Fiskaly non contiene access_token");
+    }
+
+    const expiresIn = data.access_token_expires_in || 900;
+    this.tokenCache = {
+      accessToken,
+      expiresAt: Date.now() + expiresIn * 1000,
+      configHash,
+    };
+
+    return accessToken;
+  }
+
+  private async apiRequest(
+    method: string,
+    path: string,
+    config: RTProviderConfig,
+    body?: any,
+    idempotencyKey?: string
+  ): Promise<any> {
+    const baseUrl = this.getBaseUrl(config);
+    const token = await this.getAccessToken(config);
+
+    const headers: Record<string, string> = {
+      "Authorization": `Bearer ${token}`,
+      "Content-Type": "application/json",
+      "X-Api-Version": FISKALY_API_VERSION,
+    };
+
+    if (idempotencyKey && (method === "POST" || method === "PATCH")) {
+      headers["X-Idempotency-Key"] = idempotencyKey;
+    }
 
     const res = await fetch(`${baseUrl}${path}`, {
       method,
-      headers: {
-        "Authorization": `Basic ${authHeader}`,
-        "Content-Type": "application/json",
-      },
+      headers,
       body: body ? JSON.stringify(body) : undefined,
     });
 
     const responseData = await res.json().catch(() => ({}));
 
     if (!res.ok) {
-      throw new Error(responseData.message || responseData.error || `fiskaly API error: ${res.status}`);
+      const errDetail = responseData?.message || responseData?.error || JSON.stringify(responseData);
+      throw new Error(`Fiskaly API ${method} ${path} fallito (HTTP ${res.status}): ${errDetail}`);
     }
 
     return responseData;
   }
 
+  private buildReceiptEntries(data: RTReceiptData): any[] {
+    const entries: any[] = [];
+    let entryNumber = 1;
+
+    for (const item of data.items) {
+      const vatRate = item.vatRate ?? 22;
+      const totalPriceCents = item.totalPrice;
+      const totalPriceEur = totalPriceCents / 100;
+
+      entries.push({
+        number: entryNumber++,
+        description: item.productName || "Articolo",
+        quantity: item.quantity,
+        amount: {
+          value: Math.round(totalPriceEur * 100),
+          currency: "EUR",
+        },
+        vat: {
+          rate: vatRate * 100,
+        },
+        type: "ITEM",
+      });
+    }
+
+    const discountAmount = data.transaction.discountAmount || 0;
+    if (discountAmount > 0) {
+      entries.push({
+        number: entryNumber++,
+        description: "Sconto",
+        quantity: 1,
+        amount: {
+          value: -Math.round(discountAmount),
+          currency: "EUR",
+        },
+        vat: {
+          rate: 2200,
+        },
+        type: "DISCOUNT",
+      });
+    }
+
+    const totalCents = data.transaction.total;
+    const paymentType = this.mapPaymentMethod(data.transaction.paymentMethod);
+
+    entries.push({
+      number: entryNumber++,
+      type: "PAYMENT",
+      description: "Pagamento",
+      amount: {
+        value: Math.round(totalCents),
+        currency: "EUR",
+      },
+      payment_type: paymentType,
+    });
+
+    return entries;
+  }
+
+  private mapPaymentMethod(method: string | null): string {
+    switch (method) {
+      case "cash":
+        return "CASH";
+      case "card":
+      case "credit_card":
+        return "NON_CASH";
+      case "bank_transfer":
+        return "NON_CASH";
+      case "mixed":
+        return "CASH";
+      default:
+        return "CASH";
+    }
+  }
+
   async submitReceipt(data: RTReceiptData, config: RTProviderConfig): Promise<RTSubmissionResult> {
     try {
-      const items = data.items.map(item => ({
-        description: item.productName,
-        quantity: item.quantity,
-        unit_price: item.unitPrice,
-        total_price: item.totalPrice,
-        vat_rate: item.vatRate ?? 22,
-      }));
+      if (!config.entityId) {
+        return { success: false, errorMessage: "Entity ID Fiskaly non configurato. Configuralo nelle impostazioni RT." };
+      }
+      if (!config.systemId) {
+        return { success: false, errorMessage: "System ID Fiskaly non configurato. Configuralo nelle impostazioni RT." };
+      }
 
-      const payload = {
-        type: data.transaction.documentType === "invoice" ? "invoice" : "receipt",
-        items,
-        total: data.transaction.total,
-        tax_amount: data.transaction.taxAmount,
-        payment_method: data.transaction.paymentMethod,
-        lottery_code: data.transaction.lotteryCode || undefined,
-        daily_number: data.transaction.dailyNumber,
-        operator: data.operatorName,
-        business_name: data.repairCenterName,
-        vat_number: data.repairCenterVatNumber,
-        address: data.repairCenterAddress,
-        timestamp: new Date().toISOString(),
+      const idempotencyKey = randomUUID();
+
+      const entries = this.buildReceiptEntries(data);
+
+      const payload: any = {
+        system: config.systemId,
+        type: "TRANSACTION",
+        content: {
+          type: "RECEIPT",
+          operation: {
+            details: {
+              entries,
+            },
+          },
+        },
       };
 
-      const result = await this.apiRequest("POST", "/receipts", config, payload);
+      if (data.transaction.lotteryCode) {
+        payload.content.operation.details.lottery_code = data.transaction.lotteryCode;
+      }
+
+      const result = await this.apiRequest("POST", "/records", config, payload, idempotencyKey);
+
+      const recordId = result.id || result._id;
+      const complianceStatus = result.compliance?.status;
+      const documentUrl = result.compliance?.artifact?.url;
+
+      console.log(`[Fiskaly] Documento trasmesso: ${data.transaction.transactionNumber} → ${recordId} (compliance: ${complianceStatus})`);
 
       return {
         success: true,
-        submissionId: result.id || result.receipt_id,
-        documentUrl: result.document_url,
+        submissionId: recordId,
+        documentUrl: documentUrl || undefined,
         rawResponse: result,
       };
     } catch (error: any) {
+      console.error(`[Fiskaly] Errore invio documento: ${error.message}`);
       return {
         success: false,
-        errorMessage: error.message || "Errore sconosciuto durante l'invio a fiskaly",
+        errorMessage: error.message || "Errore sconosciuto durante l'invio a Fiskaly",
       };
     }
   }
 
   async cancelReceipt(submissionId: string, config: RTProviderConfig): Promise<RTSubmissionResult> {
     try {
-      const result = await this.apiRequest("POST", `/receipts/${submissionId}/cancel`, config);
+      if (!config.systemId) {
+        return { success: false, errorMessage: "System ID Fiskaly non configurato." };
+      }
+
+      const idempotencyKey = randomUUID();
+
+      const payload = {
+        system: config.systemId,
+        type: "TRANSACTION",
+        content: {
+          type: "ABORT",
+          operation: {
+            details: {
+              reference: submissionId,
+            },
+          },
+        },
+      };
+
+      const result = await this.apiRequest("POST", "/records", config, payload, idempotencyKey);
+
+      console.log(`[Fiskaly] Annullamento documento: ${submissionId} → ${result.id}`);
+
       return {
         success: true,
-        submissionId,
+        submissionId: result.id,
         rawResponse: result,
       };
     } catch (error: any) {
       return {
         success: false,
-        errorMessage: error.message || "Errore durante l'annullamento",
+        errorMessage: error.message || "Errore durante l'annullamento Fiskaly",
       };
     }
   }
 
   async testConnection(config: RTProviderConfig): Promise<{ success: boolean; message: string }> {
     try {
-      await this.apiRequest("GET", "/health", config);
-      return {
-        success: true,
-        message: `Connessione a fiskaly ${config.sandboxMode ? "(sandbox)" : "(produzione)"} riuscita.`,
-      };
+      await this.getAccessToken(config);
+
+      const env = config.sandboxMode ? "TEST" : "LIVE";
+      let message = `Connessione a Fiskaly (${env}) riuscita. Token ottenuto con successo.`;
+
+      if (config.entityId) {
+        try {
+          await this.apiRequest("GET", `/entities/${config.entityId}`, config);
+          message += " Entity verificata.";
+        } catch (e: any) {
+          message += ` Attenzione: Entity ID non valido o non accessibile (${e.message}).`;
+        }
+      }
+
+      if (config.systemId) {
+        try {
+          await this.apiRequest("GET", `/systems/${config.systemId}`, config);
+          message += " System verificato.";
+        } catch (e: any) {
+          message += ` Attenzione: System ID non valido o non accessibile (${e.message}).`;
+        }
+      }
+
+      return { success: true, message };
     } catch (error: any) {
       return {
         success: false,
-        message: `Connessione a fiskaly fallita: ${error.message}`,
+        message: `Connessione a Fiskaly fallita: ${error.message}`,
       };
     }
   }
 
   async getStatus(submissionId: string, config: RTProviderConfig): Promise<{ status: string; details?: any }> {
     try {
-      const result = await this.apiRequest("GET", `/receipts/${submissionId}`, config);
+      const result = await this.apiRequest("GET", `/records/${submissionId}`, config);
+
+      let status = "unknown";
+      if (result.compliance?.status === "COMPLIANT") {
+        status = "confirmed";
+      } else if (result.compliance?.status === "PENDING") {
+        status = "pending";
+      } else if (result.compliance?.status === "ERROR" || result.compliance?.status === "FAILED") {
+        status = "failed";
+      } else {
+        status = result.compliance?.status?.toLowerCase() || "unknown";
+      }
+
       return {
-        status: result.status || "unknown",
-        details: result,
+        status,
+        details: {
+          recordId: result.id,
+          complianceStatus: result.compliance?.status,
+          logs: result.logs,
+          createdAt: result.created_at,
+        },
       };
     } catch (error: any) {
       return {
@@ -206,7 +430,7 @@ export function getAvailableProviders(): Array<{ id: string; name: string; descr
   return [
     { id: "none", name: "Nessuno", description: "RT non attivo" },
     { id: "sandbox", name: "Sandbox (Test)", description: "Modalità test — documenti simulati, nessuna trasmissione reale" },
-    { id: "fiskaly", name: "fiskaly SIGN IT", description: "Provider cloud certificato per corrispettivi telematici" },
+    { id: "fiskaly", name: "Fiskaly SIGN IT", description: "Provider cloud certificato per corrispettivi telematici — API v" + FISKALY_API_VERSION },
   ];
 }
 

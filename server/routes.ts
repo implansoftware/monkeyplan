@@ -62,7 +62,7 @@ async function attemptAutoRtSubmission(transactionId: string, repairCenterId: st
     // 1. RC own config (rtEnabled=true) → use it
     // 2. RC has no config or rtEnabled=false and no own config → inherit from parent reseller
     // 3. Neither entity has config → use platform config
-    let activeConfig: { rtEnabled: boolean; useOwnCredentials: boolean; rtApiKey?: string | null; rtApiSecret?: string | null; rtEndpoint?: string | null } | null = null;
+    let activeConfig: { rtEnabled: boolean; useOwnCredentials: boolean; rtApiKey?: string | null; rtApiSecret?: string | null; rtEndpoint?: string | null; rtEntityId?: string | null; rtSystemId?: string | null } | null = null;
 
     // 1. Check RC entity-level config
     const rcConfig = await storage.getEntityFiscalConfig('repair_center', repairCenterId);
@@ -113,11 +113,15 @@ async function attemptAutoRtSubmission(transactionId: string, repairCenterId: st
     let apiKey = platformConfig.rtApiKey || '';
     let apiSecret = platformConfig.rtApiSecret || '';
     let endpoint = platformConfig.rtEndpoint || undefined;
+    let entityIdFiskaly = platformConfig.rtEntityId || undefined;
+    let systemIdFiskaly = platformConfig.rtSystemId || undefined;
 
     if (activeConfig?.useOwnCredentials && activeConfig.rtApiKey && activeConfig.rtApiKey !== '****') {
       apiKey = activeConfig.rtApiKey;
       apiSecret = activeConfig.rtApiSecret || '';
       endpoint = activeConfig.rtEndpoint || undefined;
+      entityIdFiskaly = activeConfig.rtEntityId || entityIdFiskaly;
+      systemIdFiskaly = activeConfig.rtSystemId || systemIdFiskaly;
     }
 
     // Mark as pending before submission
@@ -137,6 +141,8 @@ async function attemptAutoRtSubmission(transactionId: string, repairCenterId: st
       apiSecret,
       endpoint,
       sandboxMode,
+      entityId: entityIdFiskaly,
+      systemId: systemIdFiskaly,
     });
 
     if (result.success) {
@@ -41978,6 +41984,8 @@ export function registerRoutes(app: Express): Server {
         rtApiKey: z.string().nullable().optional(),
         rtApiSecret: z.string().nullable().optional(),
         rtEndpoint: z.string().nullable().optional(),
+        rtEntityId: z.string().nullable().optional(),
+        rtSystemId: z.string().nullable().optional(),
         allowOverride: z.boolean().default(true),
         sandboxMode: z.boolean().default(true),
       });
@@ -41987,6 +41995,8 @@ export function registerRoutes(app: Express): Server {
         rtApiKey: parsed.rtApiKey || null,
         rtApiSecret: parsed.rtApiSecret || null,
         rtEndpoint: parsed.rtEndpoint || null,
+        rtEntityId: parsed.rtEntityId || null,
+        rtSystemId: parsed.rtSystemId || null,
         allowOverride: parsed.allowOverride ?? true,
         sandboxMode: parsed.sandboxMode ?? true,
       });
@@ -41998,7 +42008,7 @@ export function registerRoutes(app: Express): Server {
 
   app.post("/api/admin/fiscal/test-connection", requireRole("admin"), async (req, res) => {
     try {
-      const { provider, apiKey, apiSecret, endpoint, sandboxMode } = req.body;
+      const { provider, apiKey, apiSecret, endpoint, sandboxMode, entityId, systemId } = req.body;
       if (!provider || provider === "none") {
         return res.json({ success: false, message: "Nessun provider selezionato" });
       }
@@ -42007,6 +42017,8 @@ export function registerRoutes(app: Express): Server {
         apiSecret: apiSecret || "",
         endpoint: endpoint || undefined,
         sandboxMode: sandboxMode ?? true,
+        entityId: entityId || undefined,
+        systemId: systemId || undefined,
       };
       const result = await testRTConnection(provider, rtConfig);
       res.json(result);
@@ -42057,6 +42069,8 @@ export function registerRoutes(app: Express): Server {
         apiSecret: config.rtApiSecret || "",
         endpoint: config.rtEndpoint || undefined,
         sandboxMode: config.sandboxMode,
+        entityId: config.rtEntityId || undefined,
+        systemId: config.rtSystemId || undefined,
       };
       
       const result = await submitTransactionToRT({
@@ -42166,7 +42180,7 @@ export function registerRoutes(app: Express): Server {
     try {
       const repairCenterId = req.user!.repairCenterId;
       if (!repairCenterId) return res.status(400).json({ error: "Nessun centro riparazione associato" });
-      const { rtEnabled, useOwnCredentials, rtApiKey, rtApiSecret, rtEndpoint } = req.body;
+      const { rtEnabled, useOwnCredentials, rtApiKey, rtApiSecret, rtEndpoint, rtEntityId, rtSystemId } = req.body;
       const adminConfig = await storage.getPlatformFiscalConfig();
       if (useOwnCredentials && adminConfig && !adminConfig.allowOverride) {
         return res.status(403).json({ error: "L'amministratore non consente credenziali personalizzate" });
@@ -42177,6 +42191,8 @@ export function registerRoutes(app: Express): Server {
         rtApiKey: useOwnCredentials && rtApiKey ? rtApiKey : undefined,
         rtApiSecret: useOwnCredentials && rtApiSecret ? rtApiSecret : undefined,
         rtEndpoint: useOwnCredentials && rtEndpoint ? rtEndpoint : undefined,
+        rtEntityId: useOwnCredentials && rtEntityId ? rtEntityId : undefined,
+        rtSystemId: useOwnCredentials && rtSystemId ? rtSystemId : undefined,
       });
       res.json(config);
     } catch (error: any) {
@@ -42215,7 +42231,7 @@ export function registerRoutes(app: Express): Server {
   app.put("/api/reseller/fiscal/config", requireRole("reseller"), async (req, res) => {
     try {
       const { resellerId } = getEffectiveContext(req);
-      const { rtEnabled, useOwnCredentials, rtApiKey, rtApiSecret, rtEndpoint } = req.body;
+      const { rtEnabled, useOwnCredentials, rtApiKey, rtApiSecret, rtEndpoint, rtEntityId, rtSystemId } = req.body;
       const adminConfig = await storage.getPlatformFiscalConfig();
       if (useOwnCredentials && adminConfig && !adminConfig.allowOverride) {
         return res.status(403).json({ error: "L'amministratore non consente credenziali personalizzate" });
@@ -42226,6 +42242,8 @@ export function registerRoutes(app: Express): Server {
         rtApiKey: useOwnCredentials && rtApiKey ? rtApiKey : undefined,
         rtApiSecret: useOwnCredentials && rtApiSecret ? rtApiSecret : undefined,
         rtEndpoint: useOwnCredentials && rtEndpoint ? rtEndpoint : undefined,
+        rtEntityId: useOwnCredentials && rtEntityId ? rtEntityId : undefined,
+        rtSystemId: useOwnCredentials && rtSystemId ? rtSystemId : undefined,
       });
       res.json(config);
     } catch (error: any) {

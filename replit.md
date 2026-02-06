@@ -116,3 +116,21 @@ The backend is an `Express.js` application with TypeScript, featuring a RESTful 
 - Reseller Settings has new "RT Fiscale" tab with EntityFiscalConfig component
 - Entity-level fiscal config stored in `entityFiscalConfig` table with multi-tenant isolation
 - Credential masking: GET endpoints return masked API keys/secrets for security
+
+### Fiskaly SIGN IT Integration (February 2026)
+- Completed real Fiskaly SIGN IT API integration (API version `2025-08-12`) replacing the previous stub
+- Provider: `FiskalyRTProvider` in `server/services/fiscalRT.ts`
+- Authentication: Bearer token via `POST /tokens` with token caching and auto-renewal
+- Record submission: `POST /records` with `TRANSACTION::RECEIPT` type, supporting:
+  - Multi-VAT rate items with per-item VAT breakdown
+  - Lottery code (codice lotteria) integration
+  - Discount handling
+  - Payment type mapping (CASH/NON_CASH)
+- Record cancellation: `POST /records` with `TRANSACTION::ABORT` type
+- Status check: `GET /records/{id}` with compliance status mapping
+- Test connection: Token verification + optional Entity/System ID validation
+- Environment support: `test.api.fiskaly.com` (sandbox) and `live.api.fiskaly.com` (production)
+- Required headers: `X-Api-Version: 2025-08-12`, `X-Idempotency-Key` (UUID) for POST/PATCH
+- DB schema: Added `rtEntityId` and `rtSystemId` to both `platformFiscalConfig` and `entityFiscalConfig` tables
+- Frontend: Entity ID and System ID fields visible when Fiskaly provider selected
+- Config inheritance: Platform → Reseller → RC, with entity-level override support

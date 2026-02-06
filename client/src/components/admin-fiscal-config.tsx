@@ -18,6 +18,8 @@ interface FiscalConfig {
   rtApiKey: string | null;
   rtApiSecret: string | null;
   rtEndpoint: string | null;
+  rtEntityId: string | null;
+  rtSystemId: string | null;
   allowOverride: boolean;
   sandboxMode: boolean;
 }
@@ -43,6 +45,8 @@ export function AdminFiscalConfig() {
   const [apiKey, setApiKey] = useState("");
   const [apiSecret, setApiSecret] = useState("");
   const [endpoint, setEndpoint] = useState("");
+  const [entityId, setEntityId] = useState("");
+  const [systemId, setSystemId] = useState("");
   const [allowOverride, setAllowOverride] = useState(true);
   const [sandboxMode, setSandboxMode] = useState(true);
   const [configLoaded, setConfigLoaded] = useState(false);
@@ -95,6 +99,8 @@ export function AdminFiscalConfig() {
       setApiKey(data.config.rtApiKey || "");
       setApiSecret(data.config.rtApiSecret || "");
       setEndpoint(data.config.rtEndpoint || "");
+      setEntityId(data.config.rtEntityId || "");
+      setSystemId(data.config.rtSystemId || "");
       setAllowOverride(data.config.allowOverride);
       setSandboxMode(data.config.sandboxMode);
       setConfigLoaded(true);
@@ -108,6 +114,8 @@ export function AdminFiscalConfig() {
         rtApiKey: apiKey || null,
         rtApiSecret: apiSecret || null,
         rtEndpoint: endpoint || null,
+        rtEntityId: entityId || null,
+        rtSystemId: systemId || null,
         allowOverride,
         sandboxMode,
       });
@@ -128,6 +136,8 @@ export function AdminFiscalConfig() {
         apiKey,
         apiSecret,
         endpoint,
+        entityId,
+        systemId,
         sandboxMode,
       });
       return res.json();
@@ -242,6 +252,34 @@ export function AdminFiscalConfig() {
                   data-testid="input-rt-endpoint"
                 />
               </div>
+              {provider === "fiskaly" && (
+                <>
+                  <div className="space-y-2">
+                    <Label data-testid="label-rt-entity-id">Entity ID Fiskaly</Label>
+                    <Input
+                      value={entityId}
+                      onChange={(e) => setEntityId(e.target.value)}
+                      placeholder="ID entità dal dashboard Fiskaly"
+                      data-testid="input-rt-entity-id"
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Creato nel dashboard Fiskaly — rappresenta la tua attività commerciale
+                    </p>
+                  </div>
+                  <div className="space-y-2">
+                    <Label data-testid="label-rt-system-id">System ID Fiskaly</Label>
+                    <Input
+                      value={systemId}
+                      onChange={(e) => setSystemId(e.target.value)}
+                      placeholder="ID sistema dal dashboard Fiskaly"
+                      data-testid="input-rt-system-id"
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Corrisponde al dispositivo fiscale (PEM) registrato
+                    </p>
+                  </div>
+                </>
+              )}
             </div>
           )}
 

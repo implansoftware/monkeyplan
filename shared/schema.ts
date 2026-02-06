@@ -6743,6 +6743,8 @@ export const platformFiscalConfig = pgTable("platform_fiscal_config", {
   rtApiKey: text("rt_api_key"),
   rtApiSecret: text("rt_api_secret"),
   rtEndpoint: text("rt_endpoint"),
+  rtEntityId: varchar("rt_entity_id", { length: 200 }),
+  rtSystemId: varchar("rt_system_id", { length: 200 }),
   
   allowOverride: boolean("allow_override").notNull().default(true),
   sandboxMode: boolean("sandbox_mode").notNull().default(true),
@@ -6771,6 +6773,8 @@ export const entityFiscalConfig = pgTable("entity_fiscal_config", {
   rtApiKey: text("rt_api_key"),
   rtApiSecret: text("rt_api_secret"),
   rtEndpoint: text("rt_endpoint"),
+  rtEntityId: varchar("rt_entity_id", { length: 200 }),
+  rtSystemId: varchar("rt_system_id", { length: 200 }),
   useOwnCredentials: boolean("use_own_credentials").notNull().default(false),
   
   createdAt: timestamp("created_at").notNull().defaultNow(),
