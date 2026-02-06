@@ -49,6 +49,8 @@ import { ObjectStorageService, objectStorageClient, parseObjectPath, signObjectU
 import { canAccessObject, ObjectPermission } from "./objectAcl";
 import { generateAndStoreReturnDocuments, getSignedDownloadUrl, generateTransferDDT, TransferDdtData } from "./services/shippingDocuments";
 import { generatePosReceiptPdf } from "./services/posReceipt";
+import { getAvailableProviders, testRTConnection, submitTransactionToRT, getProvider } from "./services/fiscalRT";
+import type { RTProviderConfig } from "./services/fiscalRT";
 import { calculateRepairPriority } from "./helpers/priorityCalculation";
 import { db } from "./db";
 import { sql, eq, and, desc } from "drizzle-orm";
@@ -41826,6 +41828,156 @@ export function registerRoutes(app: Express): Server {
       res.json(stats.recentSessions);
     } catch (error: any) {
       console.error("Service order creation error:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+
+  // ==== ADMIN FISCAL RT CONFIGURATION API ====
+
+  app.get("/api/admin/fiscal/config", requireRole("admin", "admin_staff"), async (req, res) => {
+    try {
+      const config = await storage.getPlatformFiscalConfig();
+      const providers = getAvailableProviders();
+      res.json({ config: config || null, providers });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.put("/api/admin/fiscal/config", requireRole("admin"), async (req, res) => {
+    try {
+      const fiscalConfigSchema = z.object({
+        defaultRtProvider: z.string().default("sandbox"),
+        rtApiKey: z.string().nullable().optional(),
+        rtApiSecret: z.string().nullable().optional(),
+        rtEndpoint: z.string().nullable().optional(),
+        allowOverride: z.boolean().default(true),
+        sandboxMode: z.boolean().default(true),
+      });
+      const parsed = fiscalConfigSchema.parse(req.body);
+      const config = await storage.upsertPlatformFiscalConfig({
+        defaultRtProvider: parsed.defaultRtProvider || "sandbox",
+        rtApiKey: parsed.rtApiKey || null,
+        rtApiSecret: parsed.rtApiSecret || null,
+        rtEndpoint: parsed.rtEndpoint || null,
+        allowOverride: parsed.allowOverride ?? true,
+        sandboxMode: parsed.sandboxMode ?? true,
+      });
+      res.json(config);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.post("/api/admin/fiscal/test-connection", requireRole("admin"), async (req, res) => {
+    try {
+      const { provider, apiKey, apiSecret, endpoint, sandboxMode } = req.body;
+      if (!provider || provider === "none") {
+        return res.json({ success: false, message: "Nessun provider selezionato" });
+      }
+      const rtConfig: RTProviderConfig = {
+        apiKey: apiKey || "",
+        apiSecret: apiSecret || "",
+        endpoint: endpoint || undefined,
+        sandboxMode: sandboxMode ?? true,
+      };
+      const result = await testRTConnection(provider, rtConfig);
+      res.json(result);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.get("/api/admin/fiscal/rt-stats", requireRole("admin", "admin_staff"), async (req, res) => {
+    try {
+      const stats = await storage.getPosTransactionsRtStats();
+      res.json(stats);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.get("/api/admin/fiscal/failed-transactions", requireRole("admin", "admin_staff"), async (req, res) => {
+    try {
+      const transactions = await storage.getFailedRtTransactions();
+      res.json(transactions);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.post("/api/admin/fiscal/retry-transaction/:id", requireRole("admin"), async (req, res) => {
+    try {
+      const transaction = await storage.getPosTransaction(req.params.id);
+      if (!transaction) return res.status(404).json({ error: "Transazione non trovata" });
+      
+      const config = await storage.getPlatformFiscalConfig();
+      if (!config || config.defaultRtProvider === "none") {
+        return res.status(400).json({ error: "RT non configurato" });
+      }
+      
+      const items = await storage.getPosTransactionItems(transaction.id);
+      const center = await storage.getRepairCenter(transaction.repairCenterId);
+      
+      const rtConfig: RTProviderConfig = {
+        apiKey: config.rtApiKey || "",
+        apiSecret: config.rtApiSecret || "",
+        endpoint: config.rtEndpoint || undefined,
+        sandboxMode: config.sandboxMode,
+      };
+      
+      const result = await submitTransactionToRT({
+        transaction,
+        items,
+        operatorName: transaction.operatorId || "Sistema",
+        repairCenterName: center?.businessName || "N/A",
+        repairCenterVatNumber: center?.vatNumber || undefined,
+      }, config.defaultRtProvider, rtConfig);
+      
+      if (result.success) {
+        await storage.updatePosTransactionRtStatus(transaction.id, {
+          rtStatus: "submitted",
+          rtSubmissionId: result.submissionId,
+          rtSubmittedAt: new Date(),
+          rtProvider: config.defaultRtProvider,
+          rtErrorMessage: undefined,
+        });
+      } else {
+        const currentRetry = (transaction.rtRetryCount || 0) + 1;
+        await storage.updatePosTransactionRtStatus(transaction.id, {
+          rtStatus: "failed",
+          rtErrorMessage: result.errorMessage,
+          rtRetryCount: currentRetry,
+        });
+      }
+      
+      res.json(result);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // ==== REPAIR CENTER FISCAL RT API ====
+
+  app.get("/api/repair-center/fiscal/rt-stats", requireRole("repair_center"), async (req, res) => {
+    try {
+      const repairCenterId = req.user!.repairCenterId;
+      if (!repairCenterId) return res.status(400).json({ error: "Nessun centro riparazione associato" });
+      const stats = await storage.getPosTransactionsRtStats({ repairCenterId });
+      res.json(stats);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.get("/api/repair-center/fiscal/failed-transactions", requireRole("repair_center"), async (req, res) => {
+    try {
+      const repairCenterId = req.user!.repairCenterId;
+      if (!repairCenterId) return res.status(400).json({ error: "Nessun centro riparazione associato" });
+      const transactions = await storage.getFailedRtTransactions(repairCenterId);
+      res.json(transactions);
+    } catch (error: any) {
       res.status(500).json({ error: error.message });
     }
   });

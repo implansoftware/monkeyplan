@@ -18,6 +18,7 @@ import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, For
 import { SiPaypal, SiStripe } from "react-icons/si";
 import type { PaymentConfiguration } from "@shared/schema";
 import { ShippingMethodsTab } from "@/components/shipping-methods-tab";
+import { AdminFiscalConfig } from "@/components/admin-fiscal-config";
 
 interface HourlyRateResponse {
   hourlyRateCents: number;
@@ -331,6 +332,10 @@ export default function AdminSettings() {
           <TabsTrigger value="spedizione" className="gap-2" data-testid="tab-spedizione">
             <Truck className="h-4 w-4" />
             Spedizione
+          </TabsTrigger>
+          <TabsTrigger value="fiscale" className="gap-2" data-testid="tab-fiscale">
+            <FileText className="h-4 w-4" />
+            RT Fiscale
           </TabsTrigger>
         </TabsList>
 
@@ -919,6 +924,9 @@ export default function AdminSettings() {
 
         <TabsContent value="spedizione" className="space-y-6">
           <ShippingMethodsTab role="admin" apiBase="/api/admin/shipping-methods" />
+        </TabsContent>
+        <TabsContent value="fiscale" className="space-y-6">
+          <AdminFiscalConfig />
         </TabsContent>
       </Tabs>
     </div>

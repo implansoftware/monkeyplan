@@ -87,3 +87,20 @@ The backend is an `Express.js` application with TypeScript, featuring a RESTful 
 - PDF receipt/invoice updated: multi-VAT breakdown table ("RIEPILOGO IVA"), lottery code display, document type labels, daily number
 - Frontend: lottery code input field (8 chars, alphanumeric, auto-uppercase), documentType auto-set with invoice toggle, vatRate per item sent in payment mutation
 - Session detail pages show totalsByVatRate breakdown (Aliquota / Imponibile / IVA / Totale grid)
+
+### Registratore Telematico (RT) Cloud Integration
+- Added `platformFiscalConfig` table for admin-level RT provider configuration (defaultRtProvider, API credentials, sandbox mode, override permissions)
+- Added RT tracking fields to `posTransactions`: rtStatus, rtSubmissionId, rtSubmittedAt, rtErrorMessage, rtDocumentUrl, rtProvider, rtRetryCount
+- Modular provider architecture in `server/services/fiscalRT.ts`: IFiscalRTProvider interface with SandboxRTProvider (test mode) and FiskalyRTProvider (cloud certified) implementations
+- Storage methods: getPlatformFiscalConfig, upsertPlatformFiscalConfig, updatePosTransactionRtStatus, getPosTransactionsRtStats, getFailedRtTransactions
+- Admin API endpoints:
+  - GET/PUT `/api/admin/fiscal/config` - manage RT provider configuration
+  - POST `/api/admin/fiscal/test-connection` - test provider connectivity
+  - GET `/api/admin/fiscal/rt-stats` - RT submission statistics
+  - GET `/api/admin/fiscal/failed-transactions` - failed RT submissions
+  - POST `/api/admin/fiscal/retry-transaction/:id` - retry failed RT submission
+- Repair Center API endpoints:
+  - GET `/api/repair-center/fiscal/rt-stats` - RC-specific RT stats
+  - GET `/api/repair-center/fiscal/failed-transactions` - RC-specific failed submissions
+- Frontend: AdminFiscalConfig component with provider selector, credentials management, sandbox toggle, override permissions, RT stats dashboard, failed transactions list with retry
+- Admin Settings page includes new "RT Fiscale" tab

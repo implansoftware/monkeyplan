@@ -6514,6 +6514,15 @@ export const posRegisters = pgTable("pos_registers", {
   enabledPaymentMethods: text("enabled_payment_methods").array(),
   autoPrintReceipt: boolean("auto_print_receipt").notNull().default(false),
   
+  // Configurazione Registratore Telematico (RT)
+  rtProvider: varchar("rt_provider", { length: 30 }).default("none"),
+  rtEnabled: boolean("rt_enabled").notNull().default(false),
+  rtApiKey: text("rt_api_key"),
+  rtApiSecret: text("rt_api_secret"),
+  rtEndpoint: text("rt_endpoint"),
+  rtDeviceId: varchar("rt_device_id", { length: 100 }),
+  rtUsesPlatformConfig: boolean("rt_uses_platform_config").notNull().default(true),
+  
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
@@ -6604,6 +6613,15 @@ export const posTransactions = pgTable("pos_transactions", {
   lotteryCode: varchar("lottery_code", { length: 8 }),
   documentType: varchar("document_type", { length: 20 }).notNull().default("receipt"),
   dailyNumber: integer("daily_number"),
+  
+  // Registratore Telematico (RT) - stato trasmissione
+  rtStatus: varchar("rt_status", { length: 20 }).default("not_required"),
+  rtSubmissionId: varchar("rt_submission_id", { length: 200 }),
+  rtSubmittedAt: timestamp("rt_submitted_at"),
+  rtErrorMessage: text("rt_error_message"),
+  rtDocumentUrl: text("rt_document_url"),
+  rtProvider: varchar("rt_provider_used", { length: 30 }),
+  rtRetryCount: integer("rt_retry_count").default(0),
   
   // Fatturazione
   invoiceRequested: boolean("invoice_requested").notNull().default(false),
@@ -6712,6 +6730,35 @@ export type InsertPosTransactionItem = z.infer<typeof insertPosTransactionItemSc
 export type PosSessionStatus = "open" | "closed";
 export type PosTransactionStatus = "pending" | "completed" | "refunded" | "partial_refund" | "voided" | "expired";
 export type PosPaymentMethod = "cash" | "card" | "pos_terminal" | "stripe_link" | "mixed";
+export type RtSubmissionStatus = "not_required" | "pending" | "submitted" | "confirmed" | "failed";
+
+// ==========================================
+// CONFIGURAZIONE FISCALE PIATTAFORMA (RT Cloud)
+// ==========================================
+
+export const platformFiscalConfig = pgTable("platform_fiscal_config", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  
+  defaultRtProvider: varchar("default_rt_provider", { length: 30 }).notNull().default("sandbox"),
+  rtApiKey: text("rt_api_key"),
+  rtApiSecret: text("rt_api_secret"),
+  rtEndpoint: text("rt_endpoint"),
+  
+  allowOverride: boolean("allow_override").notNull().default(true),
+  sandboxMode: boolean("sandbox_mode").notNull().default(true),
+  
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+export const insertPlatformFiscalConfigSchema = createInsertSchema(platformFiscalConfig).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type PlatformFiscalConfig = typeof platformFiscalConfig.$inferSelect;
+export type InsertPlatformFiscalConfig = z.infer<typeof insertPlatformFiscalConfigSchema>;
 
 // ==========================================
 // PAYMENT CONFIGURATIONS (Stripe Connect, Bank Transfer, PayPal)

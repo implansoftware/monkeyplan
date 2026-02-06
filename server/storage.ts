@@ -139,7 +139,8 @@ import {
   priceLists, PriceList, InsertPriceList,
   priceListItems, PriceListItem, InsertPriceListItem, PriceListOwnerType,
   paymentConfigurations, PaymentConfiguration, InsertPaymentConfiguration, PaymentConfigEntityType,
-  shippingMethods, ShippingMethod, InsertShippingMethod
+  shippingMethods, ShippingMethod, InsertShippingMethod,
+  platformFiscalConfig, PlatformFiscalConfig, InsertPlatformFiscalConfig
 } from "@shared/schema";
 import { db, pool } from "./db";
 import { eq, and, or, desc, lt, gt, gte, lte, sql, not, inArray, isNull, ilike, SQL } from "drizzle-orm";
@@ -13209,6 +13210,99 @@ export class DatabaseStorage implements IStorage {
     return db.select()
       .from(shippingMethods)
       .orderBy(shippingMethods.createdBy, shippingMethods.sortOrder, shippingMethods.name);
+  }
+
+  async getPlatformFiscalConfig(): Promise<PlatformFiscalConfig | undefined> {
+    const [config] = await db.select().from(platformFiscalConfig).limit(1);
+    return config;
+  }
+
+  async upsertPlatformFiscalConfig(data: Partial<InsertPlatformFiscalConfig>): Promise<PlatformFiscalConfig> {
+    const existing = await this.getPlatformFiscalConfig();
+    if (existing) {
+      const [updated] = await db.update(platformFiscalConfig)
+        .set({ ...data, updatedAt: new Date() })
+        .where(eq(platformFiscalConfig.id, existing.id))
+        .returning();
+      return updated;
+    }
+    const [created] = await db.insert(platformFiscalConfig)
+      .values(data as InsertPlatformFiscalConfig)
+      .returning();
+    return created;
+  }
+
+  async updatePosTransactionRtStatus(transactionId: string, rtData: {
+    rtStatus: string;
+    rtSubmissionId?: string;
+    rtSubmittedAt?: Date;
+    rtErrorMessage?: string;
+    rtDocumentUrl?: string;
+    rtProvider?: string;
+    rtRetryCount?: number;
+  }): Promise<void> {
+    await db.update(posTransactions)
+      .set(rtData)
+      .where(eq(posTransactions.id, transactionId));
+  }
+
+  async getPosTransactionsRtStats(filters?: { repairCenterId?: string; resellerId?: string }): Promise<{
+    total: number;
+    submitted: number;
+    confirmed: number;
+    failed: number;
+    pending: number;
+    notRequired: number;
+  }> {
+    let conditions: SQL[] = [];
+    if (filters?.repairCenterId) {
+      conditions.push(eq(posTransactions.repairCenterId, filters.repairCenterId));
+    }
+    if (filters?.resellerId) {
+      const rcs = await db.select({ id: repairCenters.id })
+        .from(repairCenters)
+        .where(eq(repairCenters.resellerId, filters.resellerId));
+      const rcIds = rcs.map(rc => rc.id);
+      if (rcIds.length > 0) {
+        conditions.push(inArray(posTransactions.repairCenterId, rcIds));
+      } else {
+        return { total: 0, submitted: 0, confirmed: 0, failed: 0, pending: 0, notRequired: 0 };
+      }
+    }
+
+    const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
+
+    const [result] = await db.select({
+      total: sql<number>`count(*)`,
+      submitted: sql<number>`count(*) filter (where ${posTransactions.rtStatus} = 'submitted')`,
+      confirmed: sql<number>`count(*) filter (where ${posTransactions.rtStatus} = 'confirmed')`,
+      failed: sql<number>`count(*) filter (where ${posTransactions.rtStatus} = 'failed')`,
+      pending: sql<number>`count(*) filter (where ${posTransactions.rtStatus} = 'pending')`,
+      notRequired: sql<number>`count(*) filter (where ${posTransactions.rtStatus} = 'not_required' or ${posTransactions.rtStatus} is null)`,
+    })
+      .from(posTransactions)
+      .where(whereClause);
+
+    return {
+      total: Number(result?.total) || 0,
+      submitted: Number(result?.submitted) || 0,
+      confirmed: Number(result?.confirmed) || 0,
+      failed: Number(result?.failed) || 0,
+      pending: Number(result?.pending) || 0,
+      notRequired: Number(result?.notRequired) || 0,
+    };
+  }
+
+  async getFailedRtTransactions(repairCenterId?: string, limit = 20): Promise<PosTransaction[]> {
+    let conditions: SQL[] = [eq(posTransactions.rtStatus, "failed")];
+    if (repairCenterId) {
+      conditions.push(eq(posTransactions.repairCenterId, repairCenterId));
+    }
+    return db.select()
+      .from(posTransactions)
+      .where(and(...conditions))
+      .orderBy(desc(posTransactions.createdAt))
+      .limit(limit);
   }
 
 }
