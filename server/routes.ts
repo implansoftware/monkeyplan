@@ -21969,9 +21969,11 @@ export function registerRoutes(app: Express): Server {
     try {
       const typeId = req.query.typeId as string | undefined;
       const brandId = req.query.brandId as string | undefined;
+      const search = req.query.search as string | undefined;
+      const limit = req.query.limit ? parseInt(req.query.limit as string) : undefined;
       const activeOnly = req.query.activeOnly !== 'false'; // Default true
       
-      const deviceModels = await storage.listDeviceModels({ typeId, brandId, activeOnly });
+      const deviceModels = await storage.listDeviceModels({ typeId, brandId, activeOnly, search, limit });
       res.json(deviceModels);
     } catch (error: any) {
       console.error("Service order creation error:", error);

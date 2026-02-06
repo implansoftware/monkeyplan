@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/use-auth";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -11,7 +11,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Loader2, Plus, Package, Truck, Check, X, Clock, Send, MapPin, Upload, Image, Globe, Trash2, Smartphone, FileText, Euro, CreditCard, Store, Download } from "lucide-react";
+import { Loader2, Plus, Package, Truck, Check, X, Clock, Send, MapPin, Upload, Image, Globe, Trash2, Smartphone, FileText, Euro, CreditCard, Store, Download, Search } from "lucide-react";
 import { loadStripe } from "@stripe/stripe-js";
 import { Elements, PaymentElement, useStripe, useElements } from "@stripe/react-stripe-js";
 import type { RemoteRepairRequest, RemoteRepairRequestDevice, DeviceType, DeviceBrand, DeviceModel } from "@shared/schema";
@@ -43,11 +43,149 @@ const statusLabels: Record<string, { label: string; variant: "default" | "second
   quote_declined: { label: "Preventivo rifiutato", variant: "destructive" },
 };
 
+interface DeviceModelResult {
+  id: string;
+  modelName: string;
+  brand?: string | null;
+  brandId?: string | null;
+  typeId?: string | null;
+  deviceClass?: string | null;
+}
+
+function useDebounce<T>(value: T, delay: number): T {
+  const [debouncedValue, setDebouncedValue] = useState<T>(value);
+  useEffect(() => {
+    const handler = setTimeout(() => setDebouncedValue(value), delay);
+    return () => clearTimeout(handler);
+  }, [value, delay]);
+  return debouncedValue;
+}
+
+function DeviceModelAutocomplete({
+  value,
+  onChange,
+  deviceTypes,
+  deviceBrands,
+}: {
+  value: string;
+  onChange: (updates: Partial<DeviceEntry>) => void;
+  deviceTypes?: DeviceType[];
+  deviceBrands?: DeviceBrand[];
+}) {
+  const [search, setSearch] = useState(value);
+  const [isOpen, setIsOpen] = useState(false);
+  const [isFocused, setIsFocused] = useState(false);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const debouncedSearch = useDebounce(search, 300);
+
+  useEffect(() => {
+    setSearch(value);
+  }, [value]);
+
+  const { data: suggestions = [], isLoading } = useQuery<DeviceModelResult[]>({
+    queryKey: ["/api/device-models", { search: debouncedSearch }],
+    queryFn: async () => {
+      if (!debouncedSearch || debouncedSearch.length < 2) return [];
+      const params = new URLSearchParams({ search: debouncedSearch, limit: "15" });
+      const res = await fetch(`/api/device-models?${params}`, { credentials: "include" });
+      if (!res.ok) return [];
+      return res.json();
+    },
+    enabled: debouncedSearch.length >= 2 && isFocused && !selectedId,
+  });
+
+  useEffect(() => {
+    setIsOpen(suggestions.length > 0 && isFocused && debouncedSearch.length >= 2 && !selectedId);
+  }, [suggestions, isFocused, debouncedSearch, selectedId]);
+
+  const handleSelect = (model: DeviceModelResult) => {
+    const brandName = model.brand || deviceBrands?.find(b => b.id === model.brandId)?.name || "";
+    const typeName = deviceTypes?.find(t => t.id === model.typeId)?.name || "";
+    const displayText = brandName ? `${brandName} ${model.modelName}` : model.modelName;
+    setSearch(displayText);
+    setSelectedId(model.id);
+    onChange({
+      deviceType: typeName,
+      brandId: model.brandId || "",
+      brand: brandName,
+      model: model.modelName,
+      productSearch: displayText,
+    });
+    setIsOpen(false);
+  };
+
+  const handleInputChange = (val: string) => {
+    setSearch(val);
+    setSelectedId(null);
+    if (!val) {
+      onChange({ deviceType: "", brandId: "", brand: "", model: "", productSearch: "" });
+    } else {
+      onChange({ deviceType: "", brandId: "", brand: "", model: "", productSearch: val });
+    }
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Escape") {
+      setIsOpen(false);
+    }
+  };
+
+  return (
+    <div className="relative">
+      <div className="relative">
+        <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+        <Input
+          value={search}
+          onChange={(e) => handleInputChange(e.target.value)}
+          onFocus={() => { setIsFocused(true); if (!selectedId) setIsOpen(suggestions.length > 0); }}
+          onBlur={() => setTimeout(() => { setIsFocused(false); setIsOpen(false); }, 200)}
+          onKeyDown={handleKeyDown}
+          placeholder="Cerca dispositivo (es. iPhone 15, Galaxy S24...)"
+          className="pl-9"
+          role="combobox"
+          aria-expanded={isOpen}
+          aria-autocomplete="list"
+          data-testid="input-device-search"
+        />
+        {isLoading && isFocused && (
+          <Loader2 className="absolute right-2.5 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-muted-foreground" />
+        )}
+      </div>
+      {isOpen && (
+        <div className="absolute z-50 top-full left-0 right-0 mt-1 bg-popover border rounded-md shadow-md max-h-[240px] overflow-y-auto" role="listbox">
+          {suggestions.map((model) => {
+            const brandName = model.brand || deviceBrands?.find(b => b.id === model.brandId)?.name || "";
+            const typeName = deviceTypes?.find(t => t.id === model.typeId)?.name || "";
+            return (
+              <button
+                key={model.id}
+                type="button"
+                role="option"
+                className="w-full text-left px-3 py-2 text-sm hover-elevate cursor-pointer flex items-center justify-between gap-2"
+                onMouseDown={(e) => { e.preventDefault(); handleSelect(model); }}
+                data-testid={`suggestion-${model.id}`}
+              >
+                <span className="font-medium truncate">
+                  {brandName ? `${brandName} ` : ""}{model.modelName}
+                </span>
+                {typeName && (
+                  <Badge variant="outline" className="text-xs flex-shrink-0">{typeName}</Badge>
+                )}
+              </button>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
 interface DeviceEntry {
   deviceType: string;
   brandId: string;
   brand: string;
   model: string;
+  productSearch: string;
   imei: string;
   serial: string;
   quantity: number;
@@ -61,6 +199,7 @@ const emptyDevice = (): DeviceEntry => ({
   brandId: "",
   brand: "",
   model: "",
+  productSearch: "",
   imei: "",
   serial: "",
   quantity: 1,
@@ -138,13 +277,6 @@ export default function CustomerRemoteRequests() {
   const { data: deviceBrands } = useQuery<DeviceBrand[]>({
     queryKey: ["/api/device-brands"],
   });
-
-  const { data: deviceModels } = useQuery<DeviceModel[]>({
-    queryKey: ["/api/device-models"],
-  });
-
-  const getFilteredModels = (brandId: string) =>
-    (deviceModels || []).filter((m) => m.brandId === brandId);
 
   const updateDevice = (index: number, updates: Partial<DeviceEntry>) => {
     setDevices((prev) => prev.map((d, i) => (i === index ? { ...d, ...updates } : d)));
@@ -343,8 +475,9 @@ export default function CustomerRemoteRequests() {
       return;
     }
     for (const d of devices) {
-      if (!d.deviceType || !d.brand || !d.model || !d.issueDescription) {
-        toast({ title: "Errore", description: "Compila tutti i campi obbligatori per ogni dispositivo", variant: "destructive" });
+      const hasDevice = (d.brand && d.model) || d.productSearch;
+      if (!hasDevice || !d.issueDescription) {
+        toast({ title: "Errore", description: "Seleziona un dispositivo e descrivi il problema per ogni dispositivo", variant: "destructive" });
         return;
       }
       if (d.quantity < 1) {
@@ -362,9 +495,9 @@ export default function CustomerRemoteRequests() {
             photoUrls = await uploadPhotos(d.photos);
           }
           return {
-            deviceType: d.deviceType,
-            brand: d.brand,
-            model: d.model,
+            deviceType: d.deviceType || "Altro",
+            brand: d.brand || (d.productSearch || "").split(" ")[0] || "N/D",
+            model: d.model || d.productSearch || "N/D",
             imei: d.imei || undefined,
             serial: d.serial || undefined,
             quantity: d.quantity,
@@ -461,58 +594,20 @@ export default function CustomerRemoteRequests() {
                       </div>
                     </CardHeader>
                     <CardContent className="space-y-3">
-                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                        <div className="space-y-1">
-                          <Label>Tipo Dispositivo</Label>
-                          <Select value={device.deviceType} onValueChange={(v) => updateDevice(idx, { deviceType: v })}>
-                            <SelectTrigger data-testid={`select-device-type-${idx}`}>
-                              <SelectValue placeholder="Seleziona tipo" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {deviceTypes?.map((t) => (
-                                <SelectItem key={t.id} value={t.name}>{t.name}</SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
-                        <div className="space-y-1">
-                          <Label>Marca</Label>
-                          <Select
-                            value={device.brandId || "none"}
-                            onValueChange={(v) => {
-                              const b = deviceBrands?.find((br) => br.id === v);
-                              updateDevice(idx, { brandId: v === "none" ? "" : v, brand: b?.name || "", model: "" });
-                            }}
-                          >
-                            <SelectTrigger data-testid={`select-brand-${idx}`}>
-                              <SelectValue placeholder="Seleziona marca" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="none">Seleziona marca</SelectItem>
-                              {deviceBrands?.map((b) => (
-                                <SelectItem key={b.id} value={b.id}>{b.name}</SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
-                        <div className="space-y-1">
-                          <Label>Modello</Label>
-                          <Select
-                            value={device.model || "none"}
-                            onValueChange={(v) => updateDevice(idx, { model: v === "none" ? "" : v })}
-                            disabled={!device.brandId}
-                          >
-                            <SelectTrigger data-testid={`select-model-${idx}`}>
-                              <SelectValue placeholder={device.brandId ? "Seleziona modello" : "Prima la marca"} />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="none">Seleziona modello</SelectItem>
-                              {getFilteredModels(device.brandId).map((m) => (
-                                <SelectItem key={m.id} value={m.modelName}>{m.modelName}</SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
+                      <div className="space-y-1">
+                        <Label>Dispositivo</Label>
+                        <DeviceModelAutocomplete
+                          value={device.productSearch}
+                          onChange={(updates) => updateDevice(idx, updates)}
+                          deviceTypes={deviceTypes}
+                          deviceBrands={deviceBrands}
+                        />
+                        {device.brand && device.model && (
+                          <p className="text-xs text-muted-foreground mt-1">
+                            {device.deviceType && <span>{device.deviceType} &middot; </span>}
+                            {device.brand} &middot; {device.model}
+                          </p>
+                        )}
                       </div>
                       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                         <div className="space-y-1">

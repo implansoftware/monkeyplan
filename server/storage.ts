@@ -433,7 +433,7 @@ export interface IStorage {
   listEstimatedRepairTimes(deviceTypeId?: string, activeOnly?: boolean): Promise<EstimatedRepairTime[]>;
   
   // Device Models (Cascading dropdown catalog)
-  listDeviceModels(filters?: { typeId?: string; brandId?: string; activeOnly?: boolean }): Promise<DeviceModel[]>;
+  listDeviceModels(filters?: { typeId?: string; brandId?: string; activeOnly?: boolean; search?: string; limit?: number }): Promise<DeviceModel[]>;
   listDeviceModelsForReseller(resellerId: string, filters?: { typeId?: string; brandId?: string; activeOnly?: boolean }): Promise<DeviceModel[]>;
   getDeviceModel(id: string): Promise<DeviceModel | undefined>;
   createDeviceModel(insertDeviceModel: InsertDeviceModel): Promise<DeviceModel>;
@@ -4809,7 +4809,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Device Models (Cascading dropdown) - Returns all models (global + any with resellerId)
-  async listDeviceModels(filters?: { typeId?: string; brandId?: string; activeOnly?: boolean }): Promise<DeviceModel[]> {
+  async listDeviceModels(filters?: { typeId?: string; brandId?: string; activeOnly?: boolean; search?: string; limit?: number }): Promise<DeviceModel[]> {
     let query = db.select().from(deviceModels);
     
     const conditions = [];
@@ -4826,11 +4826,26 @@ export class DatabaseStorage implements IStorage {
       conditions.push(eq(deviceModels.isActive, true));
     }
     
+    if (filters?.search) {
+      const searchTerm = `%${filters.search}%`;
+      conditions.push(
+        or(
+          ilike(deviceModels.modelName, searchTerm),
+          ilike(deviceModels.brand, searchTerm),
+        )!
+      );
+    }
+    
     if (conditions.length > 0) {
       query = query.where(and(...conditions)) as any;
     }
     
-    return await query.orderBy(deviceModels.modelName);
+    let finalQuery = query.orderBy(deviceModels.modelName);
+    if (filters?.limit) {
+      finalQuery = finalQuery.limit(filters.limit) as any;
+    }
+    
+    return await finalQuery;
   }
   
   // List device models for a specific reseller (global + reseller's custom models)
