@@ -638,8 +638,11 @@ function AppContent() {
     return <AuthPage />;
   }
   
-  // Landing page renders fullscreen without sidebar for unauthenticated users
+  // Landing page renders fullscreen without sidebar
   if (location === "/" && !user && !isLoading) {
+    return <LandingPage />;
+  }
+  if (location === "/landing") {
     return <LandingPage />;
   }
   
