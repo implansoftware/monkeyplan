@@ -100,28 +100,30 @@ async function attemptAutoRtSubmission(transactionId: string, repairCenterId: st
       return;
     }
 
-    // If no entity config is active, check platform alone
+    // No entity-level config → RT not available (no credential inheritance from admin)
     if (!activeConfig) {
-      // No entity-level config anywhere, rely on platform defaults
-      // RT will use platform credentials
+      await storage.updatePosTransactionRtStatus(transactionId, { rtStatus: 'not_required' });
+      return;
     }
 
     const provider = platformConfig.defaultRtProvider || 'sandbox';
     const sandboxMode = platformConfig.sandboxMode ?? true;
 
-    // Determine credentials: active entity config with own credentials > platform
-    let apiKey = platformConfig.rtApiKey || '';
-    let apiSecret = platformConfig.rtApiSecret || '';
-    let endpoint = platformConfig.rtEndpoint || undefined;
-    let entityIdFiskaly = platformConfig.rtEntityId || undefined;
-    let systemIdFiskaly = platformConfig.rtSystemId || undefined;
+    // Credentials MUST come from the entity's own config — never from admin platform config
+    const apiKey = activeConfig.rtApiKey || '';
+    const apiSecret = activeConfig.rtApiSecret || '';
+    const endpoint = activeConfig.rtEndpoint || undefined;
+    const entityIdFiskaly = activeConfig.rtEntityId || undefined;
+    const systemIdFiskaly = activeConfig.rtSystemId || undefined;
 
-    if (activeConfig?.useOwnCredentials && activeConfig.rtApiKey && activeConfig.rtApiKey !== '****') {
-      apiKey = activeConfig.rtApiKey;
-      apiSecret = activeConfig.rtApiSecret || '';
-      endpoint = activeConfig.rtEndpoint || undefined;
-      entityIdFiskaly = activeConfig.rtEntityId || entityIdFiskaly;
-      systemIdFiskaly = activeConfig.rtSystemId || systemIdFiskaly;
+    if (!apiKey || !apiSecret) {
+      await storage.updatePosTransactionRtStatus(transactionId, {
+        rtStatus: 'failed',
+        rtErrorMessage: 'Credenziali RT proprie non configurate. Inserisci le tue credenziali Fiskaly nelle impostazioni.',
+        rtRetryCount: (transaction.rtRetryCount || 0) + 1,
+      });
+      console.log('[RT Auto] Transazione ' + transaction.transactionNumber + ' fallita: credenziali RT proprie mancanti');
+      return;
     }
 
     // Mark as pending before submission
@@ -42180,19 +42182,15 @@ export function registerRoutes(app: Express): Server {
     try {
       const repairCenterId = req.user!.repairCenterId;
       if (!repairCenterId) return res.status(400).json({ error: "Nessun centro riparazione associato" });
-      const { rtEnabled, useOwnCredentials, rtApiKey, rtApiSecret, rtEndpoint, rtEntityId, rtSystemId } = req.body;
-      const adminConfig = await storage.getPlatformFiscalConfig();
-      if (useOwnCredentials && adminConfig && !adminConfig.allowOverride) {
-        return res.status(403).json({ error: "L'amministratore non consente credenziali personalizzate" });
-      }
+      const { rtEnabled, rtApiKey, rtApiSecret, rtEndpoint, rtEntityId, rtSystemId } = req.body;
       const config = await storage.upsertEntityFiscalConfig("repair_center", String(repairCenterId), {
         rtEnabled: rtEnabled ?? false,
-        useOwnCredentials: useOwnCredentials ?? false,
-        rtApiKey: useOwnCredentials && rtApiKey ? rtApiKey : undefined,
-        rtApiSecret: useOwnCredentials && rtApiSecret ? rtApiSecret : undefined,
-        rtEndpoint: useOwnCredentials && rtEndpoint ? rtEndpoint : undefined,
-        rtEntityId: useOwnCredentials && rtEntityId ? rtEntityId : undefined,
-        rtSystemId: useOwnCredentials && rtSystemId ? rtSystemId : undefined,
+        useOwnCredentials: true,
+        rtApiKey: rtApiKey && rtApiKey !== '****' ? rtApiKey : undefined,
+        rtApiSecret: rtApiSecret && rtApiSecret !== '****' ? rtApiSecret : undefined,
+        rtEndpoint: rtEndpoint || undefined,
+        rtEntityId: rtEntityId || undefined,
+        rtSystemId: rtSystemId || undefined,
       });
       res.json(config);
     } catch (error: any) {
@@ -42231,19 +42229,15 @@ export function registerRoutes(app: Express): Server {
   app.put("/api/reseller/fiscal/config", requireRole("reseller"), async (req, res) => {
     try {
       const { resellerId } = getEffectiveContext(req);
-      const { rtEnabled, useOwnCredentials, rtApiKey, rtApiSecret, rtEndpoint, rtEntityId, rtSystemId } = req.body;
-      const adminConfig = await storage.getPlatformFiscalConfig();
-      if (useOwnCredentials && adminConfig && !adminConfig.allowOverride) {
-        return res.status(403).json({ error: "L'amministratore non consente credenziali personalizzate" });
-      }
+      const { rtEnabled, rtApiKey, rtApiSecret, rtEndpoint, rtEntityId, rtSystemId } = req.body;
       const config = await storage.upsertEntityFiscalConfig("reseller", String(resellerId), {
         rtEnabled: rtEnabled ?? false,
-        useOwnCredentials: useOwnCredentials ?? false,
-        rtApiKey: useOwnCredentials && rtApiKey ? rtApiKey : undefined,
-        rtApiSecret: useOwnCredentials && rtApiSecret ? rtApiSecret : undefined,
-        rtEndpoint: useOwnCredentials && rtEndpoint ? rtEndpoint : undefined,
-        rtEntityId: useOwnCredentials && rtEntityId ? rtEntityId : undefined,
-        rtSystemId: useOwnCredentials && rtSystemId ? rtSystemId : undefined,
+        useOwnCredentials: true,
+        rtApiKey: rtApiKey && rtApiKey !== '****' ? rtApiKey : undefined,
+        rtApiSecret: rtApiSecret && rtApiSecret !== '****' ? rtApiSecret : undefined,
+        rtEndpoint: rtEndpoint || undefined,
+        rtEntityId: rtEntityId || undefined,
+        rtSystemId: rtSystemId || undefined,
       });
       res.json(config);
     } catch (error: any) {

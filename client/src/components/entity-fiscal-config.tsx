@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Shield, Key, Server, Info, CheckCircle, XCircle, AlertTriangle, RefreshCw } from "lucide-react";
+import { Loader2, Shield, Key, Server, Info, CheckCircle, XCircle, AlertTriangle } from "lucide-react";
 
 interface EntityFiscalConfigProps {
   entityType: "repair_center" | "reseller";
@@ -60,7 +60,6 @@ export function EntityFiscalConfig({ entityType, basePath }: EntityFiscalConfigP
   });
 
   const [rtEnabled, setRtEnabled] = useState(false);
-  const [useOwnCredentials, setUseOwnCredentials] = useState(false);
   const [rtApiKey, setRtApiKey] = useState("");
   const [rtApiSecret, setRtApiSecret] = useState("");
   const [rtEndpoint, setRtEndpoint] = useState("");
@@ -69,7 +68,6 @@ export function EntityFiscalConfig({ entityType, basePath }: EntityFiscalConfigP
   useEffect(() => {
     if (entityConfig) {
       setRtEnabled(entityConfig.rtEnabled ?? false);
-      setUseOwnCredentials(entityConfig.useOwnCredentials ?? false);
       setRtApiKey(entityConfig.rtApiKey || "");
       setRtApiSecret(entityConfig.rtApiSecret || "");
       setRtEndpoint(entityConfig.rtEndpoint || "");
@@ -82,12 +80,11 @@ export function EntityFiscalConfig({ entityType, basePath }: EntityFiscalConfigP
     mutationFn: async () => {
       const res = await apiRequest("PUT", `${basePath}/config`, {
         rtEnabled,
-        useOwnCredentials,
-        rtApiKey: useOwnCredentials && rtApiKey !== "****" ? rtApiKey : undefined,
-        rtApiSecret: useOwnCredentials && rtApiSecret !== "****" ? rtApiSecret : undefined,
-        rtEndpoint: useOwnCredentials ? rtEndpoint : undefined,
-        rtEntityId: useOwnCredentials ? rtEntityId : undefined,
-        rtSystemId: useOwnCredentials ? rtSystemId : undefined,
+        rtApiKey: rtApiKey !== "****" ? rtApiKey : undefined,
+        rtApiSecret: rtApiSecret !== "****" ? rtApiSecret : undefined,
+        rtEndpoint: rtEndpoint || undefined,
+        rtEntityId: rtEntityId || undefined,
+        rtSystemId: rtSystemId || undefined,
       });
       return res.json();
     },
@@ -139,12 +136,6 @@ export function EntityFiscalConfig({ entityType, basePath }: EntityFiscalConfigP
                   {adminConfig?.sandboxMode ? "Sandbox" : "Produzione"}
                 </Badge>
               </div>
-              <div>
-                <span className="text-muted-foreground">Credenziali personalizzate:</span>{" "}
-                <Badge variant={adminConfig?.allowOverride ? "default" : "secondary"} data-testid="badge-admin-override">
-                  {adminConfig?.allowOverride ? "Consentite" : "Non consentite"}
-                </Badge>
-              </div>
             </div>
           </div>
 
@@ -177,87 +168,80 @@ export function EntityFiscalConfig({ entityType, basePath }: EntityFiscalConfigP
             />
           </div>
 
-          {rtEnabled && adminConfig?.allowOverride && (
+          {rtEnabled && (
             <div className="space-y-4 border-t pt-4">
-              <div className="flex items-center justify-between gap-2">
-                <div>
-                  <Label htmlFor="use-own">Usa credenziali proprie</Label>
-                  <p className="text-sm text-muted-foreground">
-                    Utilizza le tue credenziali RT anziché quelle della piattaforma
-                  </p>
+              <div className="rounded-md border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-950 p-3" data-testid="banner-own-credentials-required">
+                <div className="flex items-center gap-2">
+                  <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+                  <span className="text-sm font-medium text-amber-800 dark:text-amber-200">Credenziali proprie obbligatorie</span>
                 </div>
-                <Switch
-                  id="use-own"
-                  checked={useOwnCredentials}
-                  onCheckedChange={setUseOwnCredentials}
-                  data-testid="switch-use-own-credentials"
-                />
+                <p className="text-sm text-amber-700 dark:text-amber-300 mt-1">
+                  Inserisci le tue credenziali Fiskaly per utilizzare l'RT. Le credenziali dell'amministratore non vengono condivise.
+                </p>
               </div>
 
-              {useOwnCredentials && (
-                <div className="space-y-3 rounded-md border p-4">
-                  <div className="flex items-center gap-2 mb-2">
-                    <Key className="h-4 w-4" />
-                    <span className="text-sm font-medium">Credenziali RT</span>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="api-key">API Key</Label>
-                    <Input
-                      id="api-key"
-                      type="password"
-                      value={rtApiKey}
-                      onChange={(e) => setRtApiKey(e.target.value)}
-                      placeholder="Inserisci API Key"
-                      data-testid="input-rt-api-key"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="api-secret">API Secret</Label>
-                    <Input
-                      id="api-secret"
-                      type="password"
-                      value={rtApiSecret}
-                      onChange={(e) => setRtApiSecret(e.target.value)}
-                      placeholder="Inserisci API Secret"
-                      data-testid="input-rt-api-secret"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="endpoint">Endpoint</Label>
-                    <Input
-                      id="endpoint"
-                      value={rtEndpoint}
-                      onChange={(e) => setRtEndpoint(e.target.value)}
-                      placeholder="https://api.provider.com/v1"
-                      data-testid="input-rt-endpoint"
-                    />
-                  </div>
-                  {adminConfig?.provider === "fiskaly" && (
-                    <>
-                      <div className="space-y-2">
-                        <Label htmlFor="entity-id">Entity ID Fiskaly</Label>
-                        <Input
-                          id="entity-id"
-                          value={rtEntityId}
-                          onChange={(e) => setRtEntityId(e.target.value)}
-                          placeholder="ID entità dal dashboard Fiskaly"
-                          data-testid="input-rt-entity-id"
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="system-id">System ID Fiskaly</Label>
-                        <Input
-                          id="system-id"
-                          value={rtSystemId}
-                          onChange={(e) => setRtSystemId(e.target.value)}
-                          placeholder="ID sistema dal dashboard Fiskaly"
-                          data-testid="input-rt-system-id"
-                        />
-                      </div>
-                    </>
-                  )}
+              <div className="space-y-3 rounded-md border p-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <Key className="h-4 w-4" />
+                  <span className="text-sm font-medium">Credenziali RT</span>
                 </div>
-              )}
+                <div className="space-y-2">
+                  <Label htmlFor="api-key">API Key</Label>
+                  <Input
+                    id="api-key"
+                    type="password"
+                    value={rtApiKey}
+                    onChange={(e) => setRtApiKey(e.target.value)}
+                    placeholder="Inserisci API Key"
+                    data-testid="input-rt-api-key"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="api-secret">API Secret</Label>
+                  <Input
+                    id="api-secret"
+                    type="password"
+                    value={rtApiSecret}
+                    onChange={(e) => setRtApiSecret(e.target.value)}
+                    placeholder="Inserisci API Secret"
+                    data-testid="input-rt-api-secret"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="endpoint">Endpoint</Label>
+                  <Input
+                    id="endpoint"
+                    value={rtEndpoint}
+                    onChange={(e) => setRtEndpoint(e.target.value)}
+                    placeholder="https://api.provider.com/v1"
+                    data-testid="input-rt-endpoint"
+                  />
+                </div>
+                {adminConfig?.provider === "fiskaly" && (
+                  <>
+                    <div className="space-y-2">
+                      <Label htmlFor="entity-id">Entity ID Fiskaly</Label>
+                      <Input
+                        id="entity-id"
+                        value={rtEntityId}
+                        onChange={(e) => setRtEntityId(e.target.value)}
+                        placeholder="UUIDv7 dal dashboard Fiskaly"
+                        data-testid="input-rt-entity-id"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="system-id">System ID Fiskaly</Label>
+                      <Input
+                        id="system-id"
+                        value={rtSystemId}
+                        onChange={(e) => setRtSystemId(e.target.value)}
+                        placeholder="UUIDv7 dal dashboard Fiskaly"
+                        data-testid="input-rt-system-id"
+                      />
+                    </div>
+                  </>
+                )}
+              </div>
             </div>
           )}
 
