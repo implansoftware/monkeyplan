@@ -592,25 +592,27 @@ function AppLayout() {
   };
 
   return (
-    <SidebarProvider style={style as React.CSSProperties}>
-      <div className="flex h-screen w-full">
-        <AppSidebar />
-        <div className="flex flex-col flex-1 overflow-hidden">
-          <header className="flex items-center justify-between p-4 border-b border-border">
-            <SidebarTrigger data-testid="button-sidebar-toggle" />
-            <div className="flex items-center gap-2">
-              <NotificationBell />
-              <ThemeToggle />
-            </div>
-          </header>
-          <main className="flex-1 overflow-y-auto p-6">
-            <div className="max-w-7xl mx-auto">
-              <Router />
-            </div>
-          </main>
+    <TicketNotificationsProvider>
+      <SidebarProvider style={style as React.CSSProperties}>
+        <div className="flex h-screen w-full">
+          <AppSidebar />
+          <div className="flex flex-col flex-1 overflow-hidden">
+            <header className="flex items-center justify-between p-4 border-b border-border">
+              <SidebarTrigger data-testid="button-sidebar-toggle" />
+              <div className="flex items-center gap-2">
+                <NotificationBell />
+                <ThemeToggle />
+              </div>
+            </header>
+            <main className="flex-1 overflow-y-auto p-6">
+              <div className="max-w-7xl mx-auto">
+                <Router />
+              </div>
+            </main>
+          </div>
         </div>
-      </div>
-    </SidebarProvider>
+      </SidebarProvider>
+    </TicketNotificationsProvider>
   );
 }
 
@@ -619,10 +621,8 @@ export default function App() {
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         <AuthProvider>
-          <TicketNotificationsProvider>
-            <AppContent />
-            <Toaster />
-          </TicketNotificationsProvider>
+          <AppContent />
+          <Toaster />
         </AuthProvider>
       </TooltipProvider>
     </QueryClientProvider>
