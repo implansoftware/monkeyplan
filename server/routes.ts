@@ -11646,7 +11646,18 @@ export function registerRoutes(app: Express): Server {
               currency_code: "EUR",
               value: amountInEur
             }
-          }]
+          }],
+          payment_source: {
+            paypal: {
+              experience_context: {
+                payment_method_preference: "IMMEDIATE_PAYMENT_REQUIRED",
+                user_action: "PAY_NOW",
+                return_url: `${req.headers.origin || req.protocol + '://' + req.headers.host}/customer/remote-requests`,
+                cancel_url: `${req.headers.origin || req.protocol + '://' + req.headers.host}/customer/remote-requests`,
+                brand_name: "MonkeyPlan"
+              }
+            }
+          }
         })
       });
       
@@ -12652,7 +12663,18 @@ export function registerRoutes(app: Express): Server {
               currency_code: currency || "EUR",
               value: amountInEur
             }
-          }]
+          }],
+          payment_source: {
+            paypal: {
+              experience_context: {
+                payment_method_preference: "IMMEDIATE_PAYMENT_REQUIRED",
+                user_action: "PAY_NOW",
+                return_url: `${req.headers.origin || req.protocol + '://' + req.headers.host}/customer/service-orders`,
+                cancel_url: `${req.headers.origin || req.protocol + '://' + req.headers.host}/customer/service-orders`,
+                brand_name: "MonkeyPlan"
+              }
+            }
+          }
         })
       });
       
