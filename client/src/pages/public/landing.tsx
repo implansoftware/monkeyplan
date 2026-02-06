@@ -31,11 +31,13 @@ import {
   Star,
   ArrowUpRight,
   Sparkles,
+  LayoutDashboard,
 } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import { ThemeToggle } from "@/components/theme-toggle";
 
 import { usePageTitle } from "@/hooks/use-page-title";
+import { useAuth } from "@/hooks/use-auth";
 
 function useInView(threshold = 0.15) {
   const ref = useRef<HTMLDivElement>(null);
@@ -72,15 +74,35 @@ function AnimatedCounter({ target, suffix = "" }: { target: number; suffix?: str
   return <span ref={ref}>{count}{suffix}</span>;
 }
 
+function getDashboardPath(role?: string) {
+  switch (role) {
+    case "admin": case "admin_staff": return "/";
+    case "reseller": case "reseller_staff": return "/reseller";
+    case "sub_reseller": return "/sub-reseller/service-catalog";
+    case "repair_center": case "repair_center_staff": return "/repair-center";
+    case "customer": return "/customer";
+    default: return "/";
+  }
+}
+
 function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const { user } = useAuth();
+  const dashboardPath = getDashboardPath(user?.role);
 
   useEffect(() => {
     const handler = () => setScrolled(window.scrollY > 20);
     window.addEventListener("scroll", handler, { passive: true });
     return () => window.removeEventListener("scroll", handler);
   }, []);
+
+  const navLinks = [
+    { href: "#features", label: "Funzionalità" },
+    { href: "#multistore", label: "Multi-Negozio" },
+    { href: "#integrations", label: "Integrazioni" },
+    { href: "#offer", label: "100 Licenze" },
+  ];
 
   return (
     <nav
@@ -104,12 +126,7 @@ function Navbar() {
           </div>
 
           <div className="hidden md:flex items-center gap-1">
-            {[
-              { href: "#features", label: "Funzionalità" },
-              { href: "#multistore", label: "Multi-Negozio" },
-              { href: "#integrations", label: "Integrazioni" },
-              { href: "#offer", label: "100 Licenze" },
-            ].map((item) => (
+            {navLinks.map((item) => (
               <a
                 key={item.href}
                 href={item.href}
@@ -127,22 +144,33 @@ function Navbar() {
 
           <div className="flex items-center gap-2">
             <ThemeToggle />
-            <Link href="/auth" className="hidden md:inline-flex">
-              <Button
-                variant="outline"
-                size="sm"
-                className={scrolled ? "" : "text-white border-white/30 bg-white/10 backdrop-blur-sm"}
-                data-testid="button-login"
-              >
-                Accedi
-              </Button>
-            </Link>
-            <Link href="/auth" className="hidden md:inline-flex">
-              <Button size="sm" data-testid="button-register">
-                Prova Gratis
-                <ArrowRight className="w-3.5 h-3.5 ml-1" />
-              </Button>
-            </Link>
+            {user ? (
+              <Link href={dashboardPath} className="hidden md:inline-flex" data-testid="link-dashboard">
+                <Button size="sm" data-testid="button-dashboard">
+                  <LayoutDashboard className="w-3.5 h-3.5 mr-1.5" />
+                  Vai alla Dashboard
+                </Button>
+              </Link>
+            ) : (
+              <>
+                <Link href="/auth" className="hidden md:inline-flex" data-testid="link-login">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className={scrolled ? "" : "text-white border-white/30 bg-white/10 backdrop-blur-sm"}
+                    data-testid="button-login"
+                  >
+                    Accedi
+                  </Button>
+                </Link>
+                <Link href="/auth" className="hidden md:inline-flex" data-testid="link-register">
+                  <Button size="sm" data-testid="button-register">
+                    Prova Gratis
+                    <ArrowRight className="w-3.5 h-3.5 ml-1" />
+                  </Button>
+                </Link>
+              </>
+            )}
             <Button
               size="icon"
               variant="ghost"
@@ -158,12 +186,7 @@ function Navbar() {
 
       {mobileOpen && (
         <div className="md:hidden bg-white dark:bg-slate-950 border-t border-slate-200 dark:border-slate-800 px-4 py-3 space-y-1 shadow-lg">
-          {[
-            { href: "#features", label: "Funzionalità" },
-            { href: "#multistore", label: "Multi-Negozio" },
-            { href: "#integrations", label: "Integrazioni" },
-            { href: "#offer", label: "100 Licenze" },
-          ].map((item) => (
+          {navLinks.map((item) => (
             <a
               key={item.href}
               href={item.href}
@@ -175,14 +198,25 @@ function Navbar() {
             </a>
           ))}
           <div className="pt-3 border-t border-slate-200 dark:border-slate-800 flex flex-col gap-2">
-            <Link href="/auth" onClick={() => setMobileOpen(false)}>
-              <Button variant="outline" className="w-full" data-testid="button-mobile-login">Accedi</Button>
-            </Link>
-            <Link href="/auth" onClick={() => setMobileOpen(false)}>
-              <Button className="w-full" data-testid="button-mobile-register">
-                Prova Gratis <ArrowRight className="w-3.5 h-3.5 ml-1" />
-              </Button>
-            </Link>
+            {user ? (
+              <Link href={dashboardPath} onClick={() => setMobileOpen(false)} data-testid="link-mobile-dashboard">
+                <Button className="w-full" data-testid="button-mobile-dashboard">
+                  <LayoutDashboard className="w-3.5 h-3.5 mr-1.5" />
+                  Vai alla Dashboard
+                </Button>
+              </Link>
+            ) : (
+              <>
+                <Link href="/auth" onClick={() => setMobileOpen(false)} data-testid="link-mobile-login">
+                  <Button variant="outline" className="w-full" data-testid="button-mobile-login">Accedi</Button>
+                </Link>
+                <Link href="/auth" onClick={() => setMobileOpen(false)} data-testid="link-mobile-register">
+                  <Button className="w-full" data-testid="button-mobile-register">
+                    Prova Gratis <ArrowRight className="w-3.5 h-3.5 ml-1" />
+                  </Button>
+                </Link>
+              </>
+            )}
           </div>
         </div>
       )}
