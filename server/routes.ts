@@ -50,6 +50,122 @@ import { canAccessObject, ObjectPermission } from "./objectAcl";
 import { generateAndStoreReturnDocuments, getSignedDownloadUrl, generateTransferDDT, TransferDdtData } from "./services/shippingDocuments";
 import { generatePosReceiptPdf } from "./services/posReceipt";
 import { getAvailableProviders, testRTConnection, submitTransactionToRT, getProvider } from "./services/fiscalRT";
+
+// Helper: Attempt automatic RT submission for a completed POS transaction
+async function attemptAutoRtSubmission(transactionId: string, repairCenterId: string) {
+  try {
+    const transaction = await storage.getPosTransaction(transactionId);
+    if (!transaction || transaction.status !== 'completed') return;
+    if (transaction.rtStatus && transaction.rtStatus !== 'not_required' && transaction.rtStatus !== 'pending') return;
+
+    // Resolve RT config with inheritance chain:
+    // 1. RC own config (rtEnabled=true) → use it
+    // 2. RC has no config or rtEnabled=false and no own config → inherit from parent reseller
+    // 3. Neither entity has config → use platform config
+    let activeConfig: { rtEnabled: boolean; useOwnCredentials: boolean; rtApiKey?: string | null; rtApiSecret?: string | null; rtEndpoint?: string | null } | null = null;
+
+    // 1. Check RC entity-level config
+    const rcConfig = await storage.getEntityFiscalConfig('repair_center', repairCenterId);
+    if (rcConfig) {
+      if (rcConfig.rtEnabled) {
+        activeConfig = rcConfig;
+      } else {
+        // RC explicitly disabled RT - do not submit
+        await storage.updatePosTransactionRtStatus(transactionId, { rtStatus: 'not_required' });
+        return;
+      }
+    }
+
+    // 2. No RC config exists → try inheriting from parent reseller
+    if (!activeConfig) {
+      const rc = await storage.getRepairCenter(repairCenterId);
+      if (rc?.resellerId) {
+        const resellerConfig = await storage.getEntityFiscalConfig('reseller', rc.resellerId);
+        if (resellerConfig) {
+          if (resellerConfig.rtEnabled) {
+            activeConfig = resellerConfig;
+          } else {
+            // Reseller explicitly disabled RT
+            await storage.updatePosTransactionRtStatus(transactionId, { rtStatus: 'not_required' });
+            return;
+          }
+        }
+      }
+    }
+
+    // 3. Platform-level config
+    const platformConfig = await storage.getPlatformFiscalConfig();
+    if (!platformConfig || platformConfig.defaultRtProvider === 'none') {
+      await storage.updatePosTransactionRtStatus(transactionId, { rtStatus: 'not_required' });
+      return;
+    }
+
+    // If no entity config is active, check platform alone
+    if (!activeConfig) {
+      // No entity-level config anywhere, rely on platform defaults
+      // RT will use platform credentials
+    }
+
+    const provider = platformConfig.defaultRtProvider || 'sandbox';
+    const sandboxMode = platformConfig.sandboxMode ?? true;
+
+    // Determine credentials: active entity config with own credentials > platform
+    let apiKey = platformConfig.rtApiKey || '';
+    let apiSecret = platformConfig.rtApiSecret || '';
+    let endpoint = platformConfig.rtEndpoint || undefined;
+
+    if (activeConfig?.useOwnCredentials && activeConfig.rtApiKey && activeConfig.rtApiKey !== '****') {
+      apiKey = activeConfig.rtApiKey;
+      apiSecret = activeConfig.rtApiSecret || '';
+      endpoint = activeConfig.rtEndpoint || undefined;
+    }
+
+    // Mark as pending before submission
+    await storage.updatePosTransactionRtStatus(transactionId, { rtStatus: 'pending' });
+
+    const items = await storage.getPosTransactionItems(transactionId);
+    const center = await storage.getRepairCenter(repairCenterId);
+
+    const result = await submitTransactionToRT({
+      transaction,
+      items,
+      operatorName: transaction.operatorId || 'Sistema',
+      repairCenterName: center?.businessName || 'N/A',
+      repairCenterVatNumber: center?.vatNumber || undefined,
+    }, provider, {
+      apiKey,
+      apiSecret,
+      endpoint,
+      sandboxMode,
+    });
+
+    if (result.success) {
+      await storage.updatePosTransactionRtStatus(transactionId, {
+        rtStatus: 'submitted',
+        rtSubmissionId: result.submissionId,
+        rtSubmittedAt: new Date(),
+        rtProvider: provider,
+      });
+      console.log('[RT Auto] Transazione ' + transaction.transactionNumber + ' trasmessa con successo → ' + result.submissionId);
+    } else {
+      await storage.updatePosTransactionRtStatus(transactionId, {
+        rtStatus: 'failed',
+        rtErrorMessage: result.errorMessage,
+        rtRetryCount: (transaction.rtRetryCount || 0) + 1,
+      });
+      console.log('[RT Auto] Transazione ' + transaction.transactionNumber + ' fallita: ' + result.errorMessage);
+    }
+  } catch (error: any) {
+    console.error('[RT Auto] Errore invio RT per transazione ' + transactionId + ':', error.message);
+    try {
+      await storage.updatePosTransactionRtStatus(transactionId, {
+        rtStatus: 'failed',
+        rtErrorMessage: error.message,
+      });
+    } catch (_) {}
+  }
+}
+
 import type { RTProviderConfig } from "./services/fiscalRT";
 import { calculateRepairPriority } from "./helpers/priorityCalculation";
 import { db } from "./db";
@@ -40408,6 +40524,11 @@ export function registerRoutes(app: Express): Server {
         await storage.updatePosTransactionInvoice(transaction.id, invoice.id);
       }
 
+      // Auto RT submission for completed transactions (fire-and-forget)
+      if (transaction.status === "completed") {
+        attemptAutoRtSubmission(transaction.id, repairCenterId).catch(() => {});
+      }
+
       res.json({ transaction, items: transactionItems, invoice });
     } catch (error: any) {
       console.error("Service order creation error:", error);
@@ -41206,6 +41327,8 @@ export function registerRoutes(app: Express): Server {
               }
             }
           }
+          // Auto RT submission
+          attemptAutoRtSubmission(transactionId, repairCenterId).catch(() => {});
           return res.json({ status: "completed", paid: true });
         }
         
@@ -41233,6 +41356,8 @@ export function registerRoutes(app: Express): Server {
                 });
               }
             }
+            // Auto RT submission
+            attemptAutoRtSubmission(transactionId, repairCenterId).catch(() => {});
             return res.json({ status: "completed", paid: true });
           }
         }
@@ -41318,6 +41443,9 @@ export function registerRoutes(app: Express): Server {
           }
         }
         
+        // Auto RT submission
+        attemptAutoRtSubmission(transactionId, repairCenterId).catch(() => {});
+
         return res.json({ status: "completed", paymentUrl: null });
       } else if (session.status === "expired") {
         await storage.updatePosTransaction(transactionId, { status: "expired" });
@@ -42505,7 +42633,9 @@ export function registerRoutes(app: Express): Server {
       
       // If already completed, return status
       if (transaction.status === "completed") {
-        return res.json({ status: "completed", paid: true });
+        // Auto RT submission
+            attemptAutoRtSubmission(transactionId, transaction.repairCenterId).catch(() => {});
+            return res.json({ status: "completed", paid: true });
       }
       
       // If no PayPal order, return pending
@@ -42548,7 +42678,9 @@ export function registerRoutes(app: Express): Server {
               }
             }
           }
-          return res.json({ status: "completed", paid: true });
+          // Auto RT submission
+            attemptAutoRtSubmission(transactionId, transaction.repairCenterId).catch(() => {});
+            return res.json({ status: "completed", paid: true });
         }
         
         // If approved, capture the payment
@@ -42575,6 +42707,8 @@ export function registerRoutes(app: Express): Server {
                 });
               }
             }
+            // Auto RT submission
+            attemptAutoRtSubmission(transactionId, transaction.repairCenterId).catch(() => {});
             return res.json({ status: "completed", paid: true });
           }
         }
@@ -42610,7 +42744,10 @@ export function registerRoutes(app: Express): Server {
       
       // Check if already completed
       if (transaction.status === "completed") {
-        return res.json({ status: "completed", paid: true });
+        // Auto RT submission
+            attemptAutoRtSubmission(transactionId, transaction.repairCenterId).catch(() => {});
+
+            return res.json({ status: "completed", paid: true });
       }
       
       // Check if expired locally
@@ -43514,6 +43651,11 @@ export function registerRoutes(app: Express): Server {
           notes: `Fattura automatica da vendita POS ${transactionNumber}`,
         });
         await storage.updatePosTransactionInvoice(transaction.id, invoice.id);
+      }
+
+      // Auto RT submission for completed transactions (fire-and-forget)
+      if (transaction.status === "completed") {
+        attemptAutoRtSubmission(transaction.id, repairCenterId).catch(() => {});
       }
 
       res.json({ transaction, items: transactionItems, invoice });
