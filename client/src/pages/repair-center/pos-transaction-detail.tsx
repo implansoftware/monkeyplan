@@ -495,12 +495,27 @@ export default function PosTransactionDetailPage() {
           </ScrollArea>
         </CardContent>
         <Separator />
-        <CardFooter className="flex justify-between pt-4">
-          <div className="text-muted-foreground">
-            Subtotale: {formatCurrency(transaction.subtotal)}
-          </div>
-          <div className="text-xl font-bold">
-            Totale: {formatCurrency(transaction.total)}
+        <CardFooter className="pt-4">
+          <div className="w-full space-y-2">
+            <div className="flex justify-between text-muted-foreground">
+              <span>Subtotale:</span>
+              <span>{formatCurrency(transaction.subtotal)}</span>
+            </div>
+            {transaction.discountAmount > 0 && (
+              <div className="flex justify-between text-destructive">
+                <span>Sconto:</span>
+                <span>-{formatCurrency(transaction.discountAmount)}</span>
+              </div>
+            )}
+            <div className="flex justify-between text-muted-foreground">
+              <span>IVA ({transaction.taxRate}%):</span>
+              <span>{formatCurrency(transaction.taxAmount)}</span>
+            </div>
+            <Separator />
+            <div className="flex justify-between text-xl font-bold">
+              <span>Totale:</span>
+              <span>{formatCurrency(transaction.total)}</span>
+            </div>
           </div>
         </CardFooter>
       </Card>

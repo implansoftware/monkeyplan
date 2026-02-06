@@ -40437,7 +40437,7 @@ export function registerRoutes(app: Express): Server {
 
       const discount = discountAmount || (discountPercent ? Math.round(subtotal * discountPercent / 100) : 0);
       const taxableAmount = subtotal - discount;
-      // Calcolo IVA multi-aliquota: somma IVA per ogni riga proporzionalmente allo sconto
+      // Calcolo IVA multi-aliquota: prezzi netti + IVA in avanti
       let taxAmount = 0;
       let weightedTaxRate = 0;
       if (processedItems.length > 0 && taxableAmount > 0) {
@@ -40445,14 +40445,12 @@ export function registerRoutes(app: Express): Server {
         for (const pi of processedItems) {
           const adjustedItemTotal = Math.round(pi.totalPrice * discountRatio);
           const itemVat = pi.vatRate ?? 22;
-          taxAmount += Math.round(adjustedItemTotal * itemVat / (100 + itemVat));
+          taxAmount += Math.round(adjustedItemTotal * itemVat / 100);
         }
-        // Aliquota media ponderata per compatibilita'
-        const netAmount = taxableAmount - taxAmount;
-        weightedTaxRate = netAmount > 0 ? Math.round(taxAmount / netAmount * 100 * 100) / 100 : 22;
+        weightedTaxRate = taxableAmount > 0 ? Math.round(taxAmount / taxableAmount * 100 * 100) / 100 : 22;
       }
       const taxRate = weightedTaxRate || 22;
-      const total = taxableAmount;
+      const total = taxableAmount + taxAmount;
 
       const transactionNumber = await storage.generatePosTransactionNumber(repairCenterId);
       const dailyNumber = await storage.generatePosDailyNumber(repairCenterId, session.registerId || null);
@@ -43568,6 +43566,7 @@ export function registerRoutes(app: Express): Server {
 
       const discount = discountAmount || (discountPercent ? Math.round(subtotal * discountPercent / 100) : 0);
       const taxableAmount = subtotal - discount;
+      // Calcolo IVA multi-aliquota: prezzi netti + IVA in avanti
       let taxAmount = 0;
       let weightedTaxRate = 0;
       if (processedItems.length > 0 && taxableAmount > 0) {
@@ -43575,13 +43574,12 @@ export function registerRoutes(app: Express): Server {
         for (const pi of processedItems) {
           const adjustedItemTotal = Math.round(pi.totalPrice * discountRatio);
           const itemVat = pi.vatRate ?? 22;
-          taxAmount += Math.round(adjustedItemTotal * itemVat / (100 + itemVat));
+          taxAmount += Math.round(adjustedItemTotal * itemVat / 100);
         }
-        const netAmount = taxableAmount - taxAmount;
-        weightedTaxRate = netAmount > 0 ? Math.round(taxAmount / netAmount * 100 * 100) / 100 : 22;
+        weightedTaxRate = taxableAmount > 0 ? Math.round(taxAmount / taxableAmount * 100 * 100) / 100 : 22;
       }
       const taxRate = weightedTaxRate || 22;
-      const total = taxableAmount;
+      const total = taxableAmount + taxAmount;
 
       const transactionNumber = await storage.generatePosTransactionNumber(repairCenterId);
       const dailyNumber = await storage.generatePosDailyNumber(repairCenterId, session.registerId || null);
