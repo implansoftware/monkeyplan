@@ -120,6 +120,7 @@ class FiskalyRTProvider implements IFiscalRTProvider {
       headers: {
         "Content-Type": "application/json",
         "X-Api-Version": FISKALY_API_VERSION,
+        "X-Idempotency-Key": randomUUID(),
       },
       body: JSON.stringify({
         api_key: config.apiKey,
