@@ -11613,7 +11613,7 @@ export function registerRoutes(app: Express): Server {
         return res.status(400).json({ error: "PayPal non configurato" });
       }
       
-      const clientId = decryptSecret(paymentConfig.paypalClientId!);
+      const clientId = paymentConfig.paypalClientId!;
       const clientSecret = decryptSecret(paymentConfig.paypalClientSecret!);
       const amountInEur = (request.quoteAmount / 100).toFixed(2);
       
@@ -11701,7 +11701,7 @@ export function registerRoutes(app: Express): Server {
         return res.status(400).json({ error: "PayPal non configurato" });
       }
       
-      const clientId = decryptSecret(paymentConfig.paypalClientId!);
+      const clientId = paymentConfig.paypalClientId!;
       const clientSecret = decryptSecret(paymentConfig.paypalClientSecret!);
       
       const tokenResponse = await fetch("https://api-m.sandbox.paypal.com/v1/oauth2/token", {
@@ -12620,7 +12620,7 @@ export function registerRoutes(app: Express): Server {
         return res.status(400).json({ error: "PayPal non configurato" });
       }
       
-      const clientId = decryptSecret(paymentConfig.paypalClientId!);
+      const clientId = paymentConfig.paypalClientId!;
       const clientSecret = decryptSecret(paymentConfig.paypalClientSecret!);
       
       // Get PayPal access token
@@ -12696,7 +12696,7 @@ export function registerRoutes(app: Express): Server {
         return res.status(400).json({ error: "PayPal non configurato" });
       }
       
-      const clientId = decryptSecret(paymentConfig.paypalClientId!);
+      const clientId = paymentConfig.paypalClientId!;
       const clientSecret = decryptSecret(paymentConfig.paypalClientSecret!);
       
       // Get PayPal access token
