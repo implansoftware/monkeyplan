@@ -1,0 +1,12 @@
+User-agent: *
+Allow: /
+Allow: /auth
+Allow: /track
+Disallow: /admin/
+Disallow: /reseller/
+Disallow: /repair-center/
+Disallow: /customer/
+Disallow: /profile
+Disallow: /api/
+
+Sitemap: https://monkeyplan.replit.app/sitemap.xml

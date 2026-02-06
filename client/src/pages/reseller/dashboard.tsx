@@ -22,6 +22,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { DashboardCustomizer } from "@/components/dashboard/DashboardCustomizer";
 import { useDashboardPreferences } from "@/components/dashboard/useDashboardPreferences";
+import { usePageTitle } from "@/hooks/use-page-title";
 
 type ResellerStats = {
   overview: {
@@ -72,6 +73,7 @@ type ResellerStats = {
 const CHART_COLORS = ['hsl(var(--primary))', 'hsl(var(--muted-foreground))', 'hsl(var(--chart-3))', 'hsl(var(--chart-4))'];
 
 export default function ResellerDashboard() {
+  usePageTitle("Dashboard Reseller");
   const [customerDialogOpen, setCustomerDialogOpen] = useState(false);
   const [acceptanceDialogOpen, setAcceptanceDialogOpen] = useState(false);
   const { user } = useAuth();

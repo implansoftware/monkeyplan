@@ -19,6 +19,7 @@ import { SiPaypal, SiStripe } from "react-icons/si";
 import type { PaymentConfiguration } from "@shared/schema";
 import { ShippingMethodsTab } from "@/components/shipping-methods-tab";
 import { AdminFiscalConfig } from "@/components/admin-fiscal-config";
+import { usePageTitle } from "@/hooks/use-page-title";
 
 interface HourlyRateResponse {
   hourlyRateCents: number;
@@ -131,6 +132,7 @@ const paymentFormSchema = z.object({
 type PaymentFormValues = z.infer<typeof paymentFormSchema>;
 
 export default function AdminSettings() {
+  usePageTitle("Impostazioni");
   const { toast } = useToast();
   const [hourlyRateEuros, setHourlyRateEuros] = useState<string>("");
   const [slaThresholds, setSlaThresholds] = useState<SLAThresholdsResponse>(defaultSLAThresholds);

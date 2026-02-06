@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Loader2, Package, Smartphone, Calendar, MapPin, CheckCircle, Clock, Wrench, AlertCircle } from "lucide-react";
+import { usePageTitle } from "@/hooks/use-page-title";
 
 const statusConfig: Record<string, { label: string; color: string; icon: typeof Clock }> = {
   pending: { label: "In Attesa", color: "bg-yellow-500", icon: Clock },
@@ -18,6 +19,7 @@ const statusConfig: Record<string, { label: string; color: string; icon: typeof 
 };
 
 export default function PublicTrack() {
+  usePageTitle("Traccia Riparazione");
   const [, params] = useRoute("/track/:orderNumber");
   const orderNumber = params?.orderNumber;
 

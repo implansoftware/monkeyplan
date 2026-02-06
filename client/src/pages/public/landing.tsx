@@ -29,12 +29,13 @@ import {
 import { useState } from "react";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { DotLottieReact } from "@lottiefiles/dotlottie-react";
+import { usePageTitle } from "@/hooks/use-page-title";
 
 function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
 
   return (
-    <nav className="sticky top-0 z-[999] bg-white/80 dark:bg-slate-950/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-800" data-testid="navbar-landing">
+    <nav className="sticky top-0 z-[999] bg-white/80 dark:bg-slate-950/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-800" aria-label="Navigazione principale" data-testid="navbar-landing">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex flex-wrap items-center justify-between gap-4 h-16">
           <div className="flex flex-wrap items-center gap-3">
@@ -516,7 +517,7 @@ function VisionSection() {
 
 function Footer() {
   return (
-    <footer className="border-t border-slate-200 dark:border-slate-800 py-8 bg-white dark:bg-slate-950" data-testid="footer-landing">
+    <footer className="border-t border-slate-200 dark:border-slate-800 py-8 bg-white dark:bg-slate-950" role="contentinfo" data-testid="footer-landing">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div className="flex flex-wrap items-center gap-3">
@@ -536,9 +537,92 @@ function Footer() {
   );
 }
 
+const jsonLdOrganization = {
+  "@context": "https://schema.org",
+  "@type": "Organization",
+  "name": "MonkeyPlan",
+  "url": "https://monkeyplan.replit.app",
+  "logo": "https://monkeyplan.replit.app/favicon.svg",
+  "description": "Software gestionale operativo per centri di assistenza tecnica, negozi di telefonia, rivendita usato e reti multi-negozio.",
+  "sameAs": [],
+  "contactPoint": {
+    "@type": "ContactPoint",
+    "contactType": "customer support",
+    "availableLanguage": ["Italian"]
+  }
+};
+
+const jsonLdSoftware = {
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  "name": "MonkeyPlan",
+  "applicationCategory": "BusinessApplication",
+  "operatingSystem": "Web",
+  "description": "Gestionale operativo per assistenza tecnica, retail telefonia e rivendita usato. Ticketing, magazzino, POS fiscale, CRM, B2B e integrazioni complete.",
+  "offers": {
+    "@type": "Offer",
+    "price": "0",
+    "priceCurrency": "EUR",
+    "description": "Prime 100 licenze gratuite - Beta v.24",
+    "availability": "https://schema.org/LimitedAvailability"
+  },
+  "featureList": [
+    "Gestione assistenza tecnica e riparazioni",
+    "Magazzino e ricambi con tracciabilità",
+    "POS fiscale con Registratore Telematico",
+    "CRM clienti e dispositivi",
+    "Ordini B2B multi-livello",
+    "Garanzie e assicurazioni",
+    "Multi-negozio e multi-ruolo",
+    "Integrazioni fornitori (SIFAR, Foneday, MobileSentrix)",
+    "Fatturazione automatica",
+    "Marketplace P2P"
+  ],
+  "inLanguage": "it"
+};
+
+const jsonLdWebPage = {
+  "@context": "https://schema.org",
+  "@type": "WebPage",
+  "name": "MonkeyPlan - Gestionale per Assistenza Tecnica, Retail Telefonia e Rivendita Usato",
+  "description": "Il software gestionale completo pensato per centri di assistenza, negozi di telefonia, rivendita usato e reti multi-negozio.",
+  "url": "https://monkeyplan.replit.app",
+  "inLanguage": "it",
+  "isPartOf": {
+    "@type": "WebSite",
+    "name": "MonkeyPlan",
+    "url": "https://monkeyplan.replit.app"
+  },
+  "breadcrumb": {
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      {
+        "@type": "ListItem",
+        "position": 1,
+        "name": "Home",
+        "item": "https://monkeyplan.replit.app"
+      }
+    ]
+  }
+};
+
 export default function LandingPage() {
+  usePageTitle();
+
   return (
-    <div className="min-h-screen bg-white dark:bg-slate-950 text-slate-900 dark:text-white">
+    <div className="min-h-screen bg-white dark:bg-slate-950 text-slate-900 dark:text-white" itemScope itemType="https://schema.org/WebPage">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLdOrganization) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLdSoftware) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLdWebPage) }}
+      />
       <Navbar />
       <HeroSection />
       <FeaturesSection />

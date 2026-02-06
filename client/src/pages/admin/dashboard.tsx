@@ -12,6 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
+import { usePageTitle } from "@/hooks/use-page-title";
 
 type AdminStats = {
   overview: {
@@ -122,6 +123,7 @@ type AdminStats = {
 const CHART_COLORS = ['#3b82f6', '#8b5cf6', '#06b6d4', '#10b981', '#f59e0b', '#ef4444', '#ec4899'];
 
 export default function AdminDashboard() {
+  usePageTitle("Dashboard Admin");
   const { data: stats, isLoading } = useQuery<AdminStats>({
     queryKey: ["/api/stats"],
   });

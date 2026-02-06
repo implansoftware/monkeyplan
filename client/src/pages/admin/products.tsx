@@ -24,6 +24,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ProductDetailDialog } from "@/components/product-detail-dialog";
 import { Info } from "lucide-react";
+import { usePageTitle } from "@/hooks/use-page-title";
 
 interface InitialStockEntry {
   warehouseId: string;
@@ -98,6 +99,7 @@ const COLORS = [
 ];
 
 export default function AdminProducts() {
+  usePageTitle("Prodotti");
   const [searchQuery, setSearchQuery] = useState("");
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
   const [dialogOpen, setDialogOpen] = useState(false);

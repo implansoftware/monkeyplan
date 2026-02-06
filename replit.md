@@ -134,3 +134,14 @@ The backend is an `Express.js` application with TypeScript, featuring a RESTful 
 - DB schema: Added `rtEntityId` and `rtSystemId` to both `platformFiscalConfig` and `entityFiscalConfig` tables
 - Frontend: Entity ID and System ID fields visible when Fiskaly provider selected
 - Config inheritance: Platform → Reseller → RC, with entity-level override support
+
+### Comprehensive SEO Overhaul (February 2026)
+- `client/index.html`: lang="it", full title, meta description, keywords, robots, canonical URL, Open Graph (type, title, description, url, site_name, locale, image with dimensions), Twitter Cards (summary_large_image), theme-color (#10b981), apple-mobile-web-app-title, favicon SVG, apple-touch-icon
+- `client/public/robots.txt`: Allows /, /auth, /track; blocks /admin/, /reseller/, /repair-center/, /customer/, /profile, /api/; references sitemap.xml
+- `client/public/sitemap.xml`: Lists 3 public URLs (/, /auth, /track) with priorities and changefreq
+- `client/public/favicon.svg`: Custom emerald gradient SVG favicon with wrench icon
+- `client/public/og-image.png`: Generated OG image (1200x630) for social sharing
+- JSON-LD structured data on landing page: Organization, SoftwareApplication (with featureList + free offer), WebPage with breadcrumbs
+- `client/src/hooks/use-page-title.ts`: Dynamic document.title hook used across 16+ pages
+- Semantic HTML: aria-label on nav, role="contentinfo" on footer, itemScope/itemType on page wrapper
+- `server/index-prod.ts`: Server-side meta tag injection (title, description, canonical, OG, Twitter) per public route + JSON-LD injection for homepage

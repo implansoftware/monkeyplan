@@ -21,6 +21,7 @@ import type { DateRange } from "react-day-picker";
 import { RepairIntakeWizard } from "@/components/RepairIntakeWizard";
 import { useLocation } from "wouter";
 import { RepairsKanbanBoard } from "@/components/RepairsKanbanBoard";
+import { usePageTitle } from "@/hooks/use-page-title";
 
 interface RepairOrderWithSLA extends RepairOrder {
   slaSeverity: "in_time" | "late" | "urgent" | null;
@@ -42,6 +43,7 @@ interface PaginatedRepairsResponse {
 }
 
 export default function AdminRepairs() {
+  usePageTitle("Riparazioni");
   const [searchQuery, setSearchQuery] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");

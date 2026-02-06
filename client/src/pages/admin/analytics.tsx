@@ -5,6 +5,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { usePageTitle } from "@/hooks/use-page-title";
 
 type OverviewKPIs = {
   totalRevenue: number;
@@ -46,6 +47,7 @@ type TopProduct = {
 const CHART_COLORS = ['hsl(var(--chart-1))', 'hsl(var(--chart-2))', 'hsl(var(--chart-3))', 'hsl(var(--chart-4))', 'hsl(var(--chart-5))'];
 
 export default function AdminAnalytics() {
+  usePageTitle("Analisi");
   const [period, setPeriod] = useState<'week' | 'month' | 'year'>('month');
   
   const now = new Date();

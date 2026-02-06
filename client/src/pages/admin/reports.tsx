@@ -11,8 +11,10 @@ import { it } from "date-fns/locale";
 import type { DateRange } from "react-day-picker";
 import { useQuery } from "@tanstack/react-query";
 import type { RepairCenter } from "@shared/schema";
+import { usePageTitle } from "@/hooks/use-page-title";
 
 export default function AdminReports() {
+  usePageTitle("Report");
   const [repairDateRange, setRepairDateRange] = useState<DateRange | undefined>();
   const [repairStatus, setRepairStatus] = useState<string>("all");
   const [repairCenterId, setRepairCenterId] = useState<string>("all");

@@ -15,8 +15,10 @@ import { format } from "date-fns";
 import { it } from "date-fns/locale";
 import { useToast } from "@/hooks/use-toast";
 import type { DateRange } from "react-day-picker";
+import { usePageTitle } from "@/hooks/use-page-title";
 
 export default function AdminInvoices() {
+  usePageTitle("Fatture");
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [dateRange, setDateRange] = useState<DateRange | undefined>();

@@ -18,8 +18,10 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
 import type { DateRange } from "react-day-picker";
+import { usePageTitle } from "@/hooks/use-page-title";
 
 export default function AdminUsers() {
+  usePageTitle("Utenti");
   const [searchQuery, setSearchQuery] = useState("");
   const [roleFilter, setRoleFilter] = useState<string>("all");
   const [resellerCategoryFilter, setResellerCategoryFilter] = useState<string>("all");

@@ -9,6 +9,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
+import { usePageTitle } from "@/hooks/use-page-title";
 
 type TicketType = {
   id: string;
@@ -24,6 +25,7 @@ type TicketType = {
 };
 
 export default function AdminTickets() {
+  usePageTitle("Ticket");
   const [, setLocation] = useLocation();
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");

@@ -11,8 +11,10 @@ import { useToast } from "@/hooks/use-toast";
 import { User, Mail, Shield, Upload, Trash2, Building2, FileText, Phone, MapPin, CreditCard, UserCircle } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import type { User as UserType } from "@shared/schema";
+import { usePageTitle } from "@/hooks/use-page-title";
 
 export default function ProfilePage() {
+  usePageTitle("Profilo");
   const { user } = useAuth();
   const { toast } = useToast();
   const [isEditing, setIsEditing] = useState(false);

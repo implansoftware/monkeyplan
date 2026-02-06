@@ -28,6 +28,7 @@ import { useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { DotLottieReact } from "@lottiefiles/dotlottie-react";
+import { usePageTitle } from "@/hooks/use-page-title";
 
 function LoginLoadingOverlay() {
   return (
@@ -135,6 +136,7 @@ function AnimatedMonkeyMascot() {
 }
 
 export default function AuthPage() {
+  usePageTitle("Accedi o Registrati");
   const { user, loginMutation, registerMutation } = useAuth();
   const { toast } = useToast();
   const [loginData, setLoginData] = useState({ username: "", password: "" });

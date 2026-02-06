@@ -10,6 +10,7 @@ import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, BarChart, Bar, XAxis
 import { useAuth } from "@/hooks/use-auth";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
+import { usePageTitle } from "@/hooks/use-page-title";
 
 type CustomerStats = {
   overview: {
@@ -70,6 +71,7 @@ type CustomerStats = {
 const COLORS = ['hsl(var(--chart-1))', 'hsl(var(--chart-2))', 'hsl(var(--chart-3))', 'hsl(var(--chart-4))'];
 
 export default function CustomerDashboard() {
+  usePageTitle("Dashboard Cliente");
   const { user } = useAuth();
   const { data: stats, isLoading } = useQuery<CustomerStats>({
     queryKey: ["/api/stats"],
