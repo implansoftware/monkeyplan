@@ -10703,8 +10703,13 @@ export function registerRoutes(app: Express): Server {
       if (!req.user) return res.status(401).send("Unauthorized");
       
       // Get repair center for this user (needed for requestedCenterId lookup)
+      // Try staff_repair_centers join table first, fallback to users.repairCenterId
       const repairCenters = await storage.listRepairCentersForStaff(req.user.id);
-      const repairCenter = repairCenters[0];
+      let repairCenter = repairCenters[0];
+      if (!repairCenter && req.user.repairCenterId) {
+        repairCenter = await storage.getRepairCenter(req.user.repairCenterId) || undefined;
+      }
+      console.log("[DEBUG RC Remote] userId:", req.user.id, "repairCenter:", repairCenter?.id, "resellerId:", repairCenter?.resellerId, "repairCenterId:", req.user.repairCenterId);
       
       // Get requests assigned to this user (assignedCenterId now stores user ID)
       const requests = await storage.listRemoteRepairRequests({
