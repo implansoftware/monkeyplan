@@ -1,12 +1,15 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { useQuery } from "@tanstack/react-query";
-import { Wrench, Ticket, CheckCircle, Clock, Building2, Store, Phone, MapPin, LayoutDashboard, Plus, ShoppingBag } from "lucide-react";
+import { Wrench, Ticket, CheckCircle, Clock, Building2, Store, Phone, MapPin, LayoutDashboard, Plus, ShoppingBag, Smartphone, Send, ArrowRight, Package, Truck, Euro } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { Link } from "wouter";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid } from "recharts";
 import { useAuth } from "@/hooks/use-auth";
+import { format } from "date-fns";
+import { it } from "date-fns/locale";
 
 type CustomerStats = {
   overview: {
@@ -42,6 +45,26 @@ type CustomerStats = {
     logoUrl?: string;
     address?: string;
   } | null;
+  remoteRequests?: {
+    total: number;
+    active: number;
+    pending: number;
+    quoted: number;
+    awaitingShipment: number;
+    inTransit: number;
+    inRepair: number;
+    completed: number;
+  };
+  activeRemoteRequests?: Array<{
+    id: string;
+    requestNumber: string;
+    status: string;
+    createdAt: string;
+    centerName: string | null;
+    deviceCount: number;
+    quoteAmount: number | null;
+    quoteDescription: string | null;
+  }>;
 };
 
 const COLORS = ['hsl(var(--chart-1))', 'hsl(var(--chart-2))', 'hsl(var(--chart-3))', 'hsl(var(--chart-4))'];
@@ -76,6 +99,12 @@ export default function CustomerDashboard() {
       value: stats?.overview.openTickets ?? 0,
       icon: Ticket,
       subtitle: `${stats?.overview.totalTickets ?? 0} totali`,
+    },
+    {
+      title: "Richieste Remote",
+      value: stats?.remoteRequests?.active ?? 0,
+      icon: Send,
+      subtitle: `${stats?.remoteRequests?.total ?? 0} totali`,
     },
   ];
 
@@ -210,7 +239,7 @@ export default function CustomerDashboard() {
       )}
 
       {/* KPI Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
         {kpiCards.map((card, index) => (
           <Card key={index} data-testid={`card-kpi-${index}`}>
             <CardHeader className="flex flex-row items-center justify-between gap-1 space-y-0 pb-2">
@@ -232,6 +261,75 @@ export default function CustomerDashboard() {
           </Card>
         ))}
       </div>
+
+      {/* Active Remote Requests */}
+      {stats?.activeRemoteRequests && stats.activeRemoteRequests.length > 0 && (
+        <Card data-testid="card-active-remote-requests">
+          <CardHeader className="flex flex-row items-center justify-between gap-1">
+            <CardTitle className="text-lg flex items-center gap-2">
+              <Send className="h-5 w-5 text-muted-foreground" />
+              Richieste Remote Attive
+            </CardTitle>
+            <Link href="/customer/remote-requests">
+              <Button variant="outline" size="sm" data-testid="button-view-all-remote">
+                Vedi tutte
+                <ArrowRight className="h-4 w-4 ml-2" />
+              </Button>
+            </Link>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              {stats.activeRemoteRequests.map((req) => {
+                const statusConfig: Record<string, { label: string; variant: "default" | "secondary" | "outline" | "destructive" }> = {
+                  pending: { label: "In attesa", variant: "secondary" },
+                  accepted: { label: "Accettata", variant: "default" },
+                  quoted: { label: "Preventivo inviato", variant: "outline" },
+                  quote_accepted: { label: "Preventivo accettato", variant: "default" },
+                  quote_declined: { label: "Preventivo rifiutato", variant: "destructive" },
+                  awaiting_shipment: { label: "In attesa spedizione", variant: "secondary" },
+                  in_transit: { label: "In transito", variant: "outline" },
+                  received: { label: "Ricevuto", variant: "default" },
+                  in_repair: { label: "In riparazione", variant: "default" },
+                };
+                const sc = statusConfig[req.status] || { label: req.status, variant: "secondary" as const };
+                return (
+                  <Link key={req.id} href="/customer/remote-requests" data-testid={`link-remote-request-${req.id}`}>
+                    <div className="flex items-center justify-between gap-4 p-3 rounded-md border hover-elevate cursor-pointer" data-testid={`card-remote-request-${req.id}`}>
+                      <div className="flex items-center gap-3 min-w-0">
+                        <div className="h-9 w-9 rounded-md bg-muted flex items-center justify-center shrink-0">
+                          <Smartphone className="h-4 w-4 text-muted-foreground" />
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-sm font-medium truncate" data-testid={`text-remote-number-${req.id}`}>{req.requestNumber}</p>
+                          <p className="text-xs text-muted-foreground" data-testid={`text-remote-date-${req.id}`}>
+                            {format(new Date(req.createdAt), "d MMM yyyy", { locale: it })}
+                            {req.centerName && ` — ${req.centerName}`}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2 shrink-0">
+                        {req.quoteAmount != null && req.quoteAmount > 0 && (
+                          <span className="text-sm font-medium flex items-center gap-1" data-testid={`text-remote-quote-${req.id}`}>
+                            <Euro className="h-3 w-3" />
+                            {(req.quoteAmount / 100).toFixed(2)}
+                          </span>
+                        )}
+                        <Badge variant="secondary" className="text-xs" data-testid={`badge-remote-devices-${req.id}`}>
+                          <Package className="h-3 w-3 mr-1" />
+                          {req.deviceCount}
+                        </Badge>
+                        <Badge variant={sc.variant} className="text-xs" data-testid={`badge-remote-status-${req.id}`}>
+                          {sc.label}
+                        </Badge>
+                      </div>
+                    </div>
+                  </Link>
+                );
+              })}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

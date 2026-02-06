@@ -21498,6 +21498,46 @@ export function registerRoutes(app: Express): Server {
         stats.ticketsByStatus = ticketsByStatus;
         stats.repairsByStatus = repairsByStatus;
         
+        // Remote repair requests stats
+        const remoteRequests = await storage.listRemoteRepairRequests({ customerId: req.user.id });
+        const activeRemoteStatuses = ['pending', 'accepted', 'quoted', 'quote_accepted', 'quote_declined', 'awaiting_shipment', 'in_transit', 'received', 'in_repair'];
+        const activeRemoteRequests = remoteRequests.filter(r => activeRemoteStatuses.includes(r.status));
+        
+        stats.remoteRequests = {
+          total: remoteRequests.length,
+          active: activeRemoteRequests.length,
+          pending: remoteRequests.filter(r => r.status === 'pending').length,
+          quoted: remoteRequests.filter(r => r.status === 'quoted').length,
+          awaitingShipment: remoteRequests.filter(r => r.status === 'awaiting_shipment').length,
+          inTransit: remoteRequests.filter(r => r.status === 'in_transit').length,
+          inRepair: remoteRequests.filter(r => ['received', 'in_repair'].includes(r.status)).length,
+          completed: remoteRequests.filter(r => r.status === 'completed').length,
+        };
+        
+        // Include active remote requests details for dashboard display
+        const enrichedActiveRemote = await Promise.all(activeRemoteRequests.slice(0, 5).map(async (r) => {
+          const devices = await storage.listRemoteRepairRequestDevices(r.id);
+          let centerName = null;
+          if (r.assignedCenterId) {
+            const centerUser = await storage.getUser(r.assignedCenterId);
+            if (centerUser?.repairCenterId) {
+              const repairCenter = await storage.getRepairCenter(centerUser.repairCenterId);
+              centerName = repairCenter?.name || null;
+            }
+          }
+          return {
+            id: r.id,
+            requestNumber: r.requestNumber,
+            status: r.status,
+            createdAt: r.createdAt,
+            centerName,
+            deviceCount: devices.length,
+            quoteAmount: r.quoteAmount,
+            quoteDescription: r.quoteDescription,
+          };
+        }));
+        stats.activeRemoteRequests = enrichedActiveRemote;
+        
         // Add assigned center and reseller info
         if (req.user.repairCenterId) {
           const repairCenter = await storage.getRepairCenter(req.user.repairCenterId);
