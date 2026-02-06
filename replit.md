@@ -75,3 +75,15 @@ The backend is an `Express.js` application with TypeScript, featuring a RESTful 
 - Alternative: accepted → [skip-quote] → awaiting_shipment directly
 - Payment methods: in_store, online_stripe, online_paypal
 - Frontend: RC quote dialog, Customer quote card with accept/decline + checkout, all dashboards updated with new status labels and filters
+
+### Italian Fiscal Compliance POS System
+- Added per-item `vatRate` to `posTransactionItems` (default 22%) for multi-VAT rate support
+- Added `lotteryCode` (8-char alphanumeric), `documentType` (receipt/invoice), `dailyNumber` (progressive per-register per-day) to `posTransactions`
+- Added `totalsByVatRate` (JSON with imponibile/iva/totale per rate) and `dailyReportGenerated` to `posSessions`
+- Storage: `generatePosDailyNumber()` for daily progressive numbering, `getDailyCorrispettivi()` for daily fiscal reports
+- Both RC and Reseller POS transaction routes compute weighted average tax rate from per-item VAT, apply discount ratio proportionally
+- Session close routes aggregate totalsByVatRate across completed transactions (with discount ratio applied)
+- New endpoints: `GET /api/repair-center/pos/corrispettivi?date=YYYY-MM-DD` and `GET /api/reseller/pos/corrispettivi?date=YYYY-MM-DD`
+- PDF receipt/invoice updated: multi-VAT breakdown table ("RIEPILOGO IVA"), lottery code display, document type labels, daily number
+- Frontend: lottery code input field (8 chars, alphanumeric, auto-uppercase), documentType auto-set with invoice toggle, vatRate per item sent in payment mutation
+- Session detail pages show totalsByVatRate breakdown (Aliquota / Imponibile / IVA / Totale grid)

@@ -11568,6 +11568,8 @@ export class DatabaseStorage implements IStorage {
     totalCashSales: number;
     totalCardSales: number;
     totalRefunds: number;
+    totalsByVatRate?: any;
+    dailyReportGenerated?: boolean;
   }): Promise<PosSession | undefined> {
     const [session] = await db.update(posSessions)
       .set({
@@ -11734,6 +11736,87 @@ export class DatabaseStorage implements IStorage {
     
     const nextNumber = (result?.count || 0) + 1;
     return `POS-${yymm}-${nextNumber.toString().padStart(4, '0')}`;
+  }
+
+  async generatePosDailyNumber(repairCenterId: string, registerId: string | null): Promise<number> {
+    const now = new Date();
+    const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const endOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
+    
+    const conditions = [
+      eq(posTransactions.repairCenterId, repairCenterId),
+      gte(posTransactions.createdAt, startOfDay),
+      lte(posTransactions.createdAt, endOfDay),
+    ];
+    if (registerId) {
+      conditions.push(eq(posTransactions.registerId, registerId));
+    }
+    
+    const [result] = await db.select({ count: sql<number>`count(*)` })
+      .from(posTransactions)
+      .where(and(...conditions));
+    
+    return (Number(result?.count) || 0) + 1;
+  }
+
+  async getDailyCorrispettivi(repairCenterId: string, date: Date): Promise<{
+    date: string;
+    totalTransactions: number;
+    totalAmount: number;
+    totalsByVatRate: Record<string, { imponibile: number; iva: number; totale: number; count: number }>;
+    totalsByPaymentMethod: Record<string, { amount: number; count: number }>;
+    totalsByDocumentType: Record<string, { amount: number; count: number }>;
+  }> {
+    const startOfDay = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+    const endOfDay = new Date(date.getFullYear(), date.getMonth(), date.getDate(), 23, 59, 59, 999);
+    
+    const transactions = await db.select().from(posTransactions)
+      .where(and(
+        eq(posTransactions.repairCenterId, repairCenterId),
+        gte(posTransactions.createdAt, startOfDay),
+        lte(posTransactions.createdAt, endOfDay),
+        eq(posTransactions.status, 'completed'),
+      ));
+    
+    const totalsByVatRate: Record<string, { imponibile: number; iva: number; totale: number; count: number }> = {};
+    const totalsByPaymentMethod: Record<string, { amount: number; count: number }> = {};
+    const totalsByDocumentType: Record<string, { amount: number; count: number }> = {};
+    
+    for (const tx of transactions) {
+      const pm = tx.paymentMethod;
+      if (!totalsByPaymentMethod[pm]) totalsByPaymentMethod[pm] = { amount: 0, count: 0 };
+      totalsByPaymentMethod[pm].amount += tx.total;
+      totalsByPaymentMethod[pm].count += 1;
+      
+      const dt = tx.documentType || 'receipt';
+      if (!totalsByDocumentType[dt]) totalsByDocumentType[dt] = { amount: 0, count: 0 };
+      totalsByDocumentType[dt].amount += tx.total;
+      totalsByDocumentType[dt].count += 1;
+      
+      const items = await db.select().from(posTransactionItems)
+        .where(eq(posTransactionItems.transactionId, tx.id));
+      
+      for (const item of items) {
+        const rate = String(item.vatRate ?? 22);
+        if (!totalsByVatRate[rate]) totalsByVatRate[rate] = { imponibile: 0, iva: 0, totale: 0, count: 0 };
+        const itemTotal = item.totalPrice;
+        const itemIva = Math.round(itemTotal * (item.vatRate ?? 22) / (100 + (item.vatRate ?? 22)));
+        const itemImponibile = itemTotal - itemIva;
+        totalsByVatRate[rate].imponibile += itemImponibile;
+        totalsByVatRate[rate].iva += itemIva;
+        totalsByVatRate[rate].totale += itemTotal;
+        totalsByVatRate[rate].count += 1;
+      }
+    }
+    
+    return {
+      date: startOfDay.toISOString().split('T')[0],
+      totalTransactions: transactions.length,
+      totalAmount: transactions.reduce((sum, t) => sum + t.total, 0),
+      totalsByVatRate,
+      totalsByPaymentMethod,
+      totalsByDocumentType,
+    };
   }
 
   // POS Transaction Items

@@ -5,6 +5,7 @@ import { it } from "date-fns/locale";
 export interface PosReceiptData {
   transaction: {
     transactionNumber: string;
+    dailyNumber?: number | null;
     createdAt: Date;
     subtotal: number;
     discountAmount: number;
@@ -14,6 +15,8 @@ export interface PosReceiptData {
     paymentMethod: string;
     cashReceived: number | null;
     changeGiven: number | null;
+    lotteryCode?: string | null;
+    documentType?: string | null;
   };
   items: Array<{
     productName: string;
@@ -22,6 +25,7 @@ export interface PosReceiptData {
     unitPrice: number;
     discount: number;
     totalPrice: number;
+    vatRate?: number | null;
   }>;
   repairCenter: {
     name: string;
@@ -66,6 +70,26 @@ const paymentMethodLabels: Record<string, string> = {
   mixed: "Misto",
 };
 
+interface VatBreakdown {
+  rate: number;
+  imponibile: number;
+  iva: number;
+  totale: number;
+}
+
+function computeVatBreakdown(items: PosReceiptData["items"]): VatBreakdown[] {
+  const map: Record<number, VatBreakdown> = {};
+  for (const item of items) {
+    const rate = item.vatRate ?? 22;
+    if (!map[rate]) map[rate] = { rate, imponibile: 0, iva: 0, totale: 0 };
+    const itemIva = Math.round(item.totalPrice * rate / (100 + rate));
+    map[rate].imponibile += item.totalPrice - itemIva;
+    map[rate].iva += itemIva;
+    map[rate].totale += item.totalPrice;
+  }
+  return Object.values(map).sort((a, b) => a.rate - b.rate);
+}
+
 export async function generatePosReceiptPdf(data: PosReceiptData): Promise<Buffer> {
   return new Promise((resolve, reject) => {
     const { transaction, items, repairCenter, operator, customer, billingData, isInvoice } = data;
@@ -89,11 +113,11 @@ export async function generatePosReceiptPdf(data: PosReceiptData): Promise<Buffe
       margin = 10;
       contentWidth = receiptWidth - margin * 2;
       pageWidth = receiptWidth;
-      const estimatedHeight = 300 + (items.length * 45) + 
+      const estimatedHeight = 350 + (items.length * 45) + 
         (isInvoice && billingData ? 80 : 0);
       
       doc = new PDFDocument({ 
-        size: [receiptWidth, Math.max(estimatedHeight, 400)],
+        size: [receiptWidth, Math.max(estimatedHeight, 450)],
         margin: margin,
         bufferPages: true
       });
@@ -164,12 +188,16 @@ function generateA4Invoice(
   doc.moveTo(margin, y).lineTo(pageWidth - margin, y).stroke();
   y += 20;
 
+  const docTypeLabel = transaction.documentType === "invoice" ? "FATTURA" : "DOCUMENTO COMMERCIALE";
   doc.fontSize(16).font("Helvetica-Bold");
-  doc.text("FATTURA", margin, y, { width: contentWidth, align: "center" });
+  doc.text(docTypeLabel, margin, y, { width: contentWidth, align: "center" });
   y += 25;
 
   doc.fontSize(11).font("Helvetica");
-  doc.text(`N. ${transaction.transactionNumber}`, margin, y, { width: contentWidth, align: "center" });
+  const numLabel = transaction.dailyNumber 
+    ? `N. ${transaction.transactionNumber} (prog. ${transaction.dailyNumber})`
+    : `N. ${transaction.transactionNumber}`;
+  doc.text(numLabel, margin, y, { width: contentWidth, align: "center" });
   y += 16;
   doc.text(
     format(new Date(transaction.createdAt), "dd MMMM yyyy - HH:mm", { locale: it }),
@@ -226,13 +254,15 @@ function generateA4Invoice(
 
   doc.fontSize(10).font("Helvetica-Bold");
   const colProduct = margin;
-  const colQty = margin + contentWidth * 0.5;
-  const colPrice = margin + contentWidth * 0.65;
+  const colQty = margin + contentWidth * 0.45;
+  const colPrice = margin + contentWidth * 0.55;
+  const colVat = margin + contentWidth * 0.7;
   const colTotal = margin + contentWidth * 0.85;
 
   doc.text("Prodotto", colProduct, y);
   doc.text("Qtà", colQty, y);
   doc.text("Prezzo", colPrice, y);
+  doc.text("IVA%", colVat, y);
   doc.text("Totale", colTotal, y);
   y += 16;
 
@@ -241,13 +271,14 @@ function generateA4Invoice(
 
   doc.font("Helvetica").fontSize(10);
   for (const item of items) {
-    const productName = item.productName.length > 40 
-      ? item.productName.substring(0, 40) + "..."
+    const productName = item.productName.length > 35 
+      ? item.productName.substring(0, 35) + "..."
       : item.productName;
     
-    doc.text(productName, colProduct, y, { width: contentWidth * 0.45 });
+    doc.text(productName, colProduct, y, { width: contentWidth * 0.4 });
     doc.text(item.quantity.toString(), colQty, y);
     doc.text(formatCurrency(item.unitPrice), colPrice, y);
+    doc.text(`${item.vatRate ?? 22}%`, colVat, y);
     doc.text(formatCurrency(item.totalPrice), colTotal, y);
     y += 18;
     
@@ -260,6 +291,36 @@ function generateA4Invoice(
   y += 10;
   doc.moveTo(margin, y).lineTo(pageWidth - margin, y).stroke();
   y += 20;
+
+  const vatBreakdown = computeVatBreakdown(items);
+  if (vatBreakdown.length > 1) {
+    doc.fontSize(10).font("Helvetica-Bold");
+    doc.text("RIEPILOGO IVA", margin, y);
+    y += 16;
+
+    doc.fontSize(9).font("Helvetica-Bold");
+    const rColRate = margin;
+    const rColImpon = margin + contentWidth * 0.25;
+    const rColIva = margin + contentWidth * 0.5;
+    const rColTot = margin + contentWidth * 0.75;
+    doc.text("Aliquota", rColRate, y);
+    doc.text("Imponibile", rColImpon, y);
+    doc.text("IVA", rColIva, y);
+    doc.text("Totale", rColTot, y);
+    y += 14;
+
+    doc.font("Helvetica").fontSize(9);
+    for (const vb of vatBreakdown) {
+      doc.text(`${vb.rate}%`, rColRate, y);
+      doc.text(formatCurrency(vb.imponibile), rColImpon, y);
+      doc.text(formatCurrency(vb.iva), rColIva, y);
+      doc.text(formatCurrency(vb.totale), rColTot, y);
+      y += 14;
+    }
+    y += 10;
+    doc.moveTo(margin, y).lineTo(pageWidth - margin, y).stroke();
+    y += 15;
+  }
 
   const totalsX = margin + contentWidth * 0.6;
   const valuesX = margin + contentWidth * 0.85;
@@ -275,9 +336,15 @@ function generateA4Invoice(
     y += 16;
   }
 
-  doc.text(`IVA (${transaction.taxRate}%):`, totalsX, y);
-  doc.text(formatCurrency(transaction.taxAmount), valuesX, y);
-  y += 20;
+  if (vatBreakdown.length === 1) {
+    doc.text(`IVA (${vatBreakdown[0].rate}%):`, totalsX, y);
+    doc.text(formatCurrency(transaction.taxAmount), valuesX, y);
+    y += 20;
+  } else {
+    doc.text("Totale IVA:", totalsX, y);
+    doc.text(formatCurrency(transaction.taxAmount), valuesX, y);
+    y += 20;
+  }
 
   doc.fontSize(12).font("Helvetica-Bold");
   doc.text("TOTALE:", totalsX, y);
@@ -298,6 +365,13 @@ function generateA4Invoice(
       doc.text(`Resto: ${formatCurrency(transaction.changeGiven)}`, margin, y);
       y += 14;
     }
+  }
+
+  if (transaction.lotteryCode) {
+    y += 5;
+    doc.fontSize(10).font("Helvetica");
+    doc.text(`Codice Lotteria: ${transaction.lotteryCode}`, margin, y);
+    y += 14;
   }
 
   if (operator) {
@@ -359,15 +433,19 @@ function generateThermalReceipt(
   y += 5;
   drawDashedLine();
 
+  const docLabel = transaction.documentType === "invoice" ? "DOCUMENTO COMMERCIALE" : "SCONTRINO";
   doc.fontSize(9).font("Helvetica-Bold");
-  doc.text("SCONTRINO", margin, y, { 
+  doc.text(docLabel, margin, y, { 
     width: contentWidth, 
     align: "center" 
   });
   y += 12;
 
   doc.fontSize(8).font("Helvetica");
-  doc.text(`N. ${transaction.transactionNumber}`, margin, y, { 
+  const numStr = transaction.dailyNumber 
+    ? `N. ${transaction.transactionNumber} (${transaction.dailyNumber})`
+    : `N. ${transaction.transactionNumber}`;
+  doc.text(numStr, margin, y, { 
     width: contentWidth, 
     align: "center" 
   });
@@ -392,7 +470,8 @@ function generateThermalReceipt(
     doc.text(productName, margin, y);
     y += 9;
 
-    const qtyPrice = `${item.quantity} x ${formatCurrency(item.unitPrice)}`;
+    const vatLabel = (item.vatRate != null && item.vatRate !== 22) ? ` [${item.vatRate}%]` : "";
+    const qtyPrice = `${item.quantity} x ${formatCurrency(item.unitPrice)}${vatLabel}`;
     const totalStr = formatCurrency(item.totalPrice);
     
     doc.text(qtyPrice, margin, y);
@@ -424,12 +503,33 @@ function generateThermalReceipt(
     y += 10;
   }
 
-  doc.text(`IVA (${transaction.taxRate}%):`, margin, y);
-  doc.text(formatCurrency(transaction.taxAmount), margin, y, { 
-    width: contentWidth, 
-    align: "right" 
-  });
-  y += 12;
+  const vatBreakdown = computeVatBreakdown(items);
+  if (vatBreakdown.length > 1) {
+    drawDashedLine();
+    doc.fontSize(7).font("Helvetica-Bold");
+    doc.text("RIEPILOGO IVA", margin, y, { width: contentWidth, align: "center" });
+    y += 10;
+    doc.font("Helvetica").fontSize(6);
+    for (const vb of vatBreakdown) {
+      doc.text(`${vb.rate}%: Imp. ${formatCurrency(vb.imponibile)} IVA ${formatCurrency(vb.iva)}`, margin, y);
+      y += 8;
+    }
+    drawDashedLine();
+    doc.fontSize(7).font("Helvetica");
+    doc.text("Totale IVA:", margin, y);
+    doc.text(formatCurrency(transaction.taxAmount), margin, y, { 
+      width: contentWidth, 
+      align: "right" 
+    });
+    y += 12;
+  } else {
+    doc.text(`IVA (${vatBreakdown[0]?.rate ?? transaction.taxRate}%):`, margin, y);
+    doc.text(formatCurrency(transaction.taxAmount), margin, y, { 
+      width: contentWidth, 
+      align: "right" 
+    });
+    y += 12;
+  }
 
   doc.fontSize(9).font("Helvetica-Bold");
   doc.text("TOTALE:", margin, y);
@@ -452,6 +552,13 @@ function generateThermalReceipt(
       doc.text(`Resto: ${formatCurrency(transaction.changeGiven)}`, margin, y);
       y += 9;
     }
+  }
+
+  if (transaction.lotteryCode) {
+    y += 3;
+    doc.fontSize(7).font("Helvetica");
+    doc.text(`Cod. Lotteria: ${transaction.lotteryCode}`, margin, y, { width: contentWidth, align: "center" });
+    y += 10;
   }
 
   if (operator) {

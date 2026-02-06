@@ -39906,6 +39906,26 @@ export function registerRoutes(app: Express): Server {
       const totalCardSales = completed.filter(t => t.paymentMethod !== "cash").reduce((sum, t) => sum + t.total, 0);
       const totalRefunds = refunded.reduce((sum, t) => sum + (t.refundedAmount || 0), 0);
       
+      // Calcola riepilogo IVA per aliquota (compliance fiscale) - tiene conto dello sconto transazione
+      const totalsByVatRate: Record<string, { imponibile: number; iva: number; totale: number; count: number }> = {};
+      for (const tx of completed) {
+        const txItems = await storage.getPosTransactionItems(tx.id);
+        const itemsSubtotal = txItems.reduce((s, i) => s + i.totalPrice, 0);
+        const discountRatio = itemsSubtotal > 0 && tx.discountAmount > 0
+          ? (itemsSubtotal - tx.discountAmount) / itemsSubtotal
+          : 1;
+        for (const item of txItems) {
+          const rate = String(item.vatRate ?? 22);
+          if (!totalsByVatRate[rate]) totalsByVatRate[rate] = { imponibile: 0, iva: 0, totale: 0, count: 0 };
+          const adjustedTotal = Math.round(item.totalPrice * discountRatio);
+          const itemIva = Math.round(adjustedTotal * (item.vatRate ?? 22) / (100 + (item.vatRate ?? 22)));
+          totalsByVatRate[rate].imponibile += adjustedTotal - itemIva;
+          totalsByVatRate[rate].iva += itemIva;
+          totalsByVatRate[rate].totale += adjustedTotal;
+          totalsByVatRate[rate].count += 1;
+        }
+      }
+      
       const { closingCash, closingNotes } = req.body;
       const expectedCash = session.openingCash + totalCashSales - totalRefunds;
       const cashDifference = (closingCash || 0) - expectedCash;
@@ -39920,11 +39940,26 @@ export function registerRoutes(app: Express): Server {
         totalCashSales,
         totalCardSales,
         totalRefunds,
+        totalsByVatRate,
+        dailyReportGenerated: true,
       });
       
       res.json(closedSession);
     } catch (error: any) {
       console.error("Service order creation error:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Report corrispettivi giornaliero (compliance fiscale italiana)
+  app.get("/api/repair-center/pos/corrispettivi", requireRole("repair_center", "repair_center_staff"), async (req, res) => {
+    try {
+      const repairCenterId = req.user!.repairCenterId || req.user!.id;
+      const dateStr = req.query.date as string;
+      const date = dateStr ? new Date(dateStr) : new Date();
+      const report = await storage.getDailyCorrispettivi(repairCenterId, date);
+      res.json(report);
+    } catch (error: any) {
       res.status(500).json({ error: error.message });
     }
   });
@@ -40175,10 +40210,15 @@ export function registerRoutes(app: Express): Server {
       const session = await storage.getOpenPosSession(repairCenterId, registerId);
       if (!session) return res.status(400).json({ error: "Nessuna sessione cassa aperta per questa cassa." });
 
-      const { items, paymentMethod, customerId, discountAmount, discountPercent, cashReceived, notes, customerNotes, invoiceRequested } = req.body;
+      const { items, paymentMethod, customerId, discountAmount, discountPercent, cashReceived, notes, customerNotes, invoiceRequested, lotteryCode, documentType } = req.body;
       
       if (!items || items.length === 0) return res.status(400).json({ error: "Nessun articolo" });
       if (!paymentMethod) return res.status(400).json({ error: "Metodo pagamento richiesto" });
+      
+      // Validazione codice lotteria (8 caratteri alfanumerici)
+      if (lotteryCode && (typeof lotteryCode !== "string" || !/^[A-Za-z0-9]{8}$/.test(lotteryCode))) {
+        return res.status(400).json({ error: "Codice lotteria non valido (8 caratteri alfanumerici)" });
+      }
 
       // Trova automaticamente il magazzino del repair center
       const warehouseList = await storage.listWarehouses({ 
@@ -40198,6 +40238,7 @@ export function registerRoutes(app: Express): Server {
           }
           const itemDiscount = item.discount || 0;
           const totalPrice = (item.unitPrice * item.quantity) - itemDiscount;
+          const itemVatRate = typeof item.vatRate === 'number' ? item.vatRate : 22;
           
           processedItems.push({
             productId: null,
@@ -40209,6 +40250,7 @@ export function registerRoutes(app: Express): Server {
             unitPrice: item.unitPrice,
             discount: itemDiscount,
             totalPrice,
+            vatRate: itemVatRate,
             warehouseId: null,
           });
           
@@ -40228,6 +40270,7 @@ export function registerRoutes(app: Express): Server {
           const unitPrice = item.unitPrice ?? serviceItem.defaultPriceCents;
           const itemDiscount = item.discount || 0;
           const totalPrice = (unitPrice * item.quantity) - itemDiscount;
+          const itemVatRate = typeof item.vatRate === 'number' ? item.vatRate : ((serviceItem as any).vatRate ?? 22);
           
           processedItems.push({
             productId: null,
@@ -40241,6 +40284,7 @@ export function registerRoutes(app: Express): Server {
             unitPrice: unitPrice,
             discount: itemDiscount,
             totalPrice,
+            vatRate: itemVatRate,
             warehouseId: null,
           });
           
@@ -40254,6 +40298,7 @@ export function registerRoutes(app: Express): Server {
         const unitPrice = item.unitPrice || (product.unitPrice || 0);
         const itemDiscount = item.discount || 0;
         const totalPrice = (unitPrice * item.quantity) - itemDiscount;
+        const itemVatRate = typeof item.vatRate === 'number' ? item.vatRate : ((product as any).vatRate ?? 22);
         
         processedItems.push({
           productId: item.productId,
@@ -40265,6 +40310,7 @@ export function registerRoutes(app: Express): Server {
           unitPrice: unitPrice,
           discount: itemDiscount,
           totalPrice,
+          vatRate: itemVatRate,
           warehouseId: repairCenterWarehouseId,
         });
         
@@ -40272,12 +40318,26 @@ export function registerRoutes(app: Express): Server {
       }
 
       const discount = discountAmount || (discountPercent ? Math.round(subtotal * discountPercent / 100) : 0);
-      const taxRate = 22;
       const taxableAmount = subtotal - discount;
-      const taxAmount = Math.round(taxableAmount * taxRate / (100 + taxRate));
+      // Calcolo IVA multi-aliquota: somma IVA per ogni riga proporzionalmente allo sconto
+      let taxAmount = 0;
+      let weightedTaxRate = 0;
+      if (processedItems.length > 0 && taxableAmount > 0) {
+        const discountRatio = subtotal > 0 ? taxableAmount / subtotal : 1;
+        for (const pi of processedItems) {
+          const adjustedItemTotal = Math.round(pi.totalPrice * discountRatio);
+          const itemVat = pi.vatRate ?? 22;
+          taxAmount += Math.round(adjustedItemTotal * itemVat / (100 + itemVat));
+        }
+        // Aliquota media ponderata per compatibilita'
+        const netAmount = taxableAmount - taxAmount;
+        weightedTaxRate = netAmount > 0 ? Math.round(taxAmount / netAmount * 100 * 100) / 100 : 22;
+      }
+      const taxRate = weightedTaxRate || 22;
       const total = taxableAmount;
 
       const transactionNumber = await storage.generatePosTransactionNumber(repairCenterId);
+      const dailyNumber = await storage.generatePosDailyNumber(repairCenterId, session.registerId || null);
       let changeGiven = null;
       if (paymentMethod === "cash" && cashReceived) changeGiven = cashReceived - total;
 
@@ -40297,6 +40357,9 @@ export function registerRoutes(app: Express): Server {
         paymentMethod,
         cashReceived: cashReceived || null,
         changeGiven,
+        lotteryCode: lotteryCode || null,
+        documentType: documentType || (invoiceRequested ? 'invoice' : 'receipt'),
+        dailyNumber,
         notes: notes || null,
         customerNotes: customerNotes || null,
         invoiceRequested: invoiceRequested || false,
@@ -40430,6 +40493,7 @@ export function registerRoutes(app: Express): Server {
       const pdfBuffer = await generatePosReceiptPdf({
         transaction: {
           transactionNumber: transaction.transactionNumber,
+          dailyNumber: transaction.dailyNumber,
           createdAt: transaction.createdAt,
           subtotal: transaction.subtotal,
           discountAmount: transaction.discountAmount,
@@ -40439,6 +40503,8 @@ export function registerRoutes(app: Express): Server {
           paymentMethod: transaction.paymentMethod,
           cashReceived: transaction.cashReceived,
           changeGiven: transaction.changeGiven,
+          lotteryCode: transaction.lotteryCode,
+          documentType: transaction.documentType,
         },
         items: items.map(item => ({
           productName: item.productName,
@@ -40447,6 +40513,7 @@ export function registerRoutes(app: Express): Server {
           unitPrice: item.unitPrice,
           discount: item.discount,
           totalPrice: item.totalPrice,
+          vatRate: item.vatRate,
         })),
         repairCenter: {
           name: repairCenterData?.ragioneSociale || repairCenterData?.name || "Centro Riparazioni",
@@ -41925,6 +41992,7 @@ export function registerRoutes(app: Express): Server {
       const pdfBuffer = await generatePosReceiptPdf({
         transaction: {
           transactionNumber: transaction.transactionNumber,
+          dailyNumber: transaction.dailyNumber,
           createdAt: transaction.createdAt,
           subtotal: transaction.subtotal,
           discountAmount: transaction.discountAmount,
@@ -41934,8 +42002,8 @@ export function registerRoutes(app: Express): Server {
           paymentMethod: transaction.paymentMethod,
           cashReceived: transaction.cashReceived,
           changeGiven: transaction.changeGiven,
-          status: transaction.status,
-          refundedAmount: transaction.refundedAmount,
+          lotteryCode: transaction.lotteryCode,
+          documentType: transaction.documentType,
         },
         items: items.map(item => ({
           productName: item.productName,
@@ -41944,6 +42012,7 @@ export function registerRoutes(app: Express): Server {
           unitPrice: item.unitPrice,
           discount: item.discount,
           totalPrice: item.totalPrice,
+          vatRate: item.vatRate,
         })),
         repairCenter: {
           name: center.name,
@@ -42632,6 +42701,26 @@ export function registerRoutes(app: Express): Server {
       const totalCardSales = completed.filter(t => t.paymentMethod !== "cash").reduce((sum, t) => sum + t.total, 0);
       const totalRefunds = refunded.reduce((sum, t) => sum + (t.refundedAmount || 0), 0);
       
+      // Calcola riepilogo IVA per aliquota (compliance fiscale) - tiene conto dello sconto transazione
+      const totalsByVatRate: Record<string, { imponibile: number; iva: number; totale: number; count: number }> = {};
+      for (const tx of completed) {
+        const txItems = await storage.getPosTransactionItems(tx.id);
+        const itemsSubtotal = txItems.reduce((s, i) => s + i.totalPrice, 0);
+        const discountRatio = itemsSubtotal > 0 && tx.discountAmount > 0
+          ? (itemsSubtotal - tx.discountAmount) / itemsSubtotal
+          : 1;
+        for (const item of txItems) {
+          const rate = String(item.vatRate ?? 22);
+          if (!totalsByVatRate[rate]) totalsByVatRate[rate] = { imponibile: 0, iva: 0, totale: 0, count: 0 };
+          const adjustedTotal = Math.round(item.totalPrice * discountRatio);
+          const itemIva = Math.round(adjustedTotal * (item.vatRate ?? 22) / (100 + (item.vatRate ?? 22)));
+          totalsByVatRate[rate].imponibile += adjustedTotal - itemIva;
+          totalsByVatRate[rate].iva += itemIva;
+          totalsByVatRate[rate].totale += adjustedTotal;
+          totalsByVatRate[rate].count += 1;
+        }
+      }
+      
       const { closingCash, closingNotes } = req.body;
       const expectedCash = session.openingCash + totalCashSales - totalRefunds;
       const cashDifference = (closingCash || 0) - expectedCash;
@@ -42646,11 +42735,32 @@ export function registerRoutes(app: Express): Server {
         totalCashSales,
         totalCardSales,
         totalRefunds,
+        totalsByVatRate,
+        dailyReportGenerated: true,
       });
       
       res.json(closedSession);
     } catch (error: any) {
       console.error("Service order creation error:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Report corrispettivi giornaliero reseller (compliance fiscale)
+  app.get("/api/reseller/pos/corrispettivi", requireRole("reseller", "reseller_staff", "sub_reseller"), async (req, res) => {
+    try {
+      const { resellerId } = getEffectiveContext(req);
+      const dateStr = req.query.date as string;
+      const date = dateStr ? new Date(dateStr) : new Date();
+      // Per reseller, usiamo il repairCenterId associato (centro riparazione del reseller)
+      const centers = await storage.getRepairCentersByReseller(resellerId);
+      const reports = [];
+      for (const center of centers) {
+        const report = await storage.getDailyCorrispettivi(center.id, date);
+        reports.push({ centerId: center.id, centerName: center.companyName, ...report });
+      }
+      res.json({ date: date.toISOString().split('T')[0], reports });
+    } catch (error: any) {
       res.status(500).json({ error: error.message });
     }
   });
@@ -42908,7 +43018,7 @@ export function registerRoutes(app: Express): Server {
     try {
       const { resellerId } = getEffectiveContext(req);
       const operatorId = req.user!.id;
-      const { repairCenterId, registerId, items, paymentMethod, customerId, discountAmount, discountPercent, cashReceived, notes, customerNotes, invoiceRequested } = req.body;
+      const { repairCenterId, registerId, items, paymentMethod, customerId, discountAmount, discountPercent, cashReceived, notes, customerNotes, invoiceRequested, lotteryCode, documentType } = req.body;
       
       if (!repairCenterId) return res.status(400).json({ error: "repairCenterId è obbligatorio" });
       
@@ -42931,6 +43041,10 @@ export function registerRoutes(app: Express): Server {
 
       if (!items || items.length === 0) return res.status(400).json({ error: "Nessun articolo" });
       if (!paymentMethod) return res.status(400).json({ error: "Metodo pagamento richiesto" });
+
+      if (lotteryCode && (typeof lotteryCode !== "string" || !/^[A-Za-z0-9]{8}$/.test(lotteryCode))) {
+        return res.status(400).json({ error: "Codice lotteria non valido (8 caratteri alfanumerici)" });
+      }
 
       // Trova il magazzino del repair center
       const warehouseList = await storage.listWarehouses({ 
@@ -42960,6 +43074,7 @@ export function registerRoutes(app: Express): Server {
             unitPrice: item.unitPrice,
             discount: itemDiscount,
             totalPrice,
+            vatRate: typeof item.vatRate === 'number' ? item.vatRate : 22,
             warehouseId: null,
           });
           
@@ -42990,6 +43105,7 @@ export function registerRoutes(app: Express): Server {
             unitPrice: unitPrice,
             discount: itemDiscount,
             totalPrice,
+            vatRate: typeof item.vatRate === 'number' ? item.vatRate : ((serviceItem as any).vatRate ?? 22),
             warehouseId: null,
           });
           
@@ -43014,6 +43130,7 @@ export function registerRoutes(app: Express): Server {
           unitPrice: unitPrice,
           discount: itemDiscount,
           totalPrice,
+          vatRate: typeof item.vatRate === 'number' ? item.vatRate : ((product as any).vatRate ?? 22),
           warehouseId: repairCenterWarehouseId,
         });
         
@@ -43021,12 +43138,24 @@ export function registerRoutes(app: Express): Server {
       }
 
       const discount = discountAmount || (discountPercent ? Math.round(subtotal * discountPercent / 100) : 0);
-      const taxRate = 22;
       const taxableAmount = subtotal - discount;
-      const taxAmount = Math.round(taxableAmount * taxRate / (100 + taxRate));
+      let taxAmount = 0;
+      let weightedTaxRate = 0;
+      if (processedItems.length > 0 && taxableAmount > 0) {
+        const discountRatio = subtotal > 0 ? taxableAmount / subtotal : 1;
+        for (const pi of processedItems) {
+          const adjustedItemTotal = Math.round(pi.totalPrice * discountRatio);
+          const itemVat = pi.vatRate ?? 22;
+          taxAmount += Math.round(adjustedItemTotal * itemVat / (100 + itemVat));
+        }
+        const netAmount = taxableAmount - taxAmount;
+        weightedTaxRate = netAmount > 0 ? Math.round(taxAmount / netAmount * 100 * 100) / 100 : 22;
+      }
+      const taxRate = weightedTaxRate || 22;
       const total = taxableAmount;
 
       const transactionNumber = await storage.generatePosTransactionNumber(repairCenterId);
+      const dailyNumber = await storage.generatePosDailyNumber(repairCenterId, session.registerId || null);
       let changeGiven = null;
       if (paymentMethod === "cash" && cashReceived) changeGiven = cashReceived - total;
 
@@ -43046,6 +43175,9 @@ export function registerRoutes(app: Express): Server {
         paymentMethod,
         cashReceived: cashReceived || null,
         changeGiven,
+        lotteryCode: lotteryCode || null,
+        documentType: documentType || (invoiceRequested ? 'invoice' : 'receipt'),
+        dailyNumber,
         notes: notes || null,
         customerNotes: customerNotes || null,
         invoiceRequested: invoiceRequested || false,

@@ -291,6 +291,8 @@ export default function PosPage() {
   const [closingCash, setClosingCash] = useState<string>("");
   const [sessionNotes, setSessionNotes] = useState("");
   const [invoiceRequested, setInvoiceRequested] = useState(false);
+  const [lotteryCode, setLotteryCode] = useState("");
+  const [documentType, setDocumentType] = useState<"receipt" | "invoice">("receipt");
   const [selectedCustomerId, setSelectedCustomerId] = useState<string>("");
   const [customerType, setCustomerType] = useState<"guest" | "existing" | "new">("guest");
   const [newCustomerName, setNewCustomerName] = useState("");
@@ -855,6 +857,7 @@ export default function PosPage() {
         unitPrice: item.unitPrice,
         discount: item.discount,
         isTemporary: item.isTemporary || false,
+        vatRate: item.vatRate,
       })),
       paymentMethod: selectedPayment,
       discountAmount: discount,
@@ -862,6 +865,8 @@ export default function PosPage() {
       notes: transactionNotes || undefined,
       customerId: selectedCustomerId || undefined,
       invoiceRequested,
+      lotteryCode: lotteryCode.trim() || undefined,
+      documentType,
     });
   };
 
@@ -1736,8 +1741,20 @@ export default function PosPage() {
             <Switch
               id="invoice-switch-inline"
               checked={invoiceRequested}
-              onCheckedChange={setInvoiceRequested}
+              onCheckedChange={(val) => { setInvoiceRequested(val); if (val) setDocumentType("invoice"); else setDocumentType("receipt"); }}
               data-testid="switch-invoice-inline"
+            />
+          </div>
+
+          {/* Codice Lotteria degli Scontrini */}
+          <div className="w-full">
+            <Input
+              placeholder="Codice Lotteria (8 caratteri)"
+              value={lotteryCode}
+              onChange={(e) => setLotteryCode(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 8))}
+              maxLength={8}
+              className="h-9 text-center font-mono tracking-wider"
+              data-testid="input-lottery-code"
             />
           </div>
 
@@ -1839,10 +1856,20 @@ export default function PosPage() {
               <Switch
                 id="invoice-switch"
                 checked={invoiceRequested}
-                onCheckedChange={setInvoiceRequested}
+                onCheckedChange={(val) => { setInvoiceRequested(val); if (val) setDocumentType("invoice"); else setDocumentType("receipt"); }}
                 data-testid="switch-invoice-requested"
               />
             </div>
+
+            {/* Codice Lotteria degli Scontrini */}
+            <Input
+              placeholder="Codice Lotteria (8 caratteri)"
+              value={lotteryCode}
+              onChange={(e) => setLotteryCode(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 8))}
+              maxLength={8}
+              className="h-9 text-center font-mono tracking-wider"
+              data-testid="input-lottery-code-dialog"
+            />
 
             {selectedPayment === "cash" && (
               <div className="space-y-2">

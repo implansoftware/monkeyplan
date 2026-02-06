@@ -6549,6 +6549,10 @@ export const posSessions = pgTable("pos_sessions", {
   openingNotes: text("opening_notes"),
   closingNotes: text("closing_notes"),
   
+  // Compliance fiscale
+  dailyReportGenerated: boolean("daily_report_generated").notNull().default(false),
+  totalsByVatRate: jsonb("totals_by_vat_rate"),
+  
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
@@ -6596,6 +6600,11 @@ export const posTransactions = pgTable("pos_transactions", {
   notes: text("notes"),
   customerNotes: text("customer_notes"),
   
+  // Compliance fiscale
+  lotteryCode: varchar("lottery_code", { length: 8 }),
+  documentType: varchar("document_type", { length: 20 }).notNull().default("receipt"),
+  dailyNumber: integer("daily_number"),
+  
   // Fatturazione
   invoiceRequested: boolean("invoice_requested").notNull().default(false),
   invoiceId: varchar("invoice_id"),
@@ -6637,6 +6646,9 @@ export const posTransactionItems = pgTable("pos_transaction_items", {
   unitPrice: integer("unit_price").notNull(),
   discount: integer("discount").notNull().default(0),
   totalPrice: integer("total_price").notNull(),
+  
+  // Aliquota IVA per riga
+  vatRate: real("vat_rate").notNull().default(22),
   
   // Tracking inventario
   inventoryDeducted: boolean("inventory_deducted").notNull().default(false),

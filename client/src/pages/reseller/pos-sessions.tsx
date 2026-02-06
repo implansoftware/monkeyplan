@@ -43,6 +43,7 @@ interface PosSession {
   totalTransactions: number;
   openingCash: number | null;
   closingCash: number | null;
+  totalsByVatRate?: Record<string, { imponibile: number; iva: number; totale: number; count: number }> | null;
 }
 
 interface RepairCenter {
@@ -407,6 +408,26 @@ export default function ResellerPosSessions() {
                   <p className="font-medium text-lg">{formatCurrency(sessionDetail.session.totalSales)}</p>
                 </div>
               </div>
+
+              {sessionDetail.session.totalsByVatRate && Object.keys(sessionDetail.session.totalsByVatRate).length > 0 && (
+                <div className="mt-3 pt-3 border-t">
+                  <div className="text-sm font-medium mb-2">Riepilogo IVA (Corrispettivi)</div>
+                  <div className="grid grid-cols-4 gap-2 text-xs text-muted-foreground">
+                    <span className="font-medium">Aliquota</span>
+                    <span className="font-medium text-right">Imponibile</span>
+                    <span className="font-medium text-right">IVA</span>
+                    <span className="font-medium text-right">Totale</span>
+                  </div>
+                  {Object.entries(sessionDetail.session.totalsByVatRate).map(([rate, data]) => (
+                    <div key={rate} className="grid grid-cols-4 gap-2 text-xs">
+                      <span>{rate}%</span>
+                      <span className="text-right">{formatCurrency(data.imponibile)}</span>
+                      <span className="text-right">{formatCurrency(data.iva)}</span>
+                      <span className="text-right font-medium">{formatCurrency(data.totale)}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
 
               {sessionDetail.transactions.length > 0 && (
                 <div>
