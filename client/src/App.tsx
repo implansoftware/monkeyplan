@@ -630,10 +630,16 @@ export default function App() {
 
 function AppContent() {
   const [location] = useLocation();
+  const { user, isLoading } = useAuth();
   
   // Auth page renders without sidebar/header
   if (location === "/auth") {
     return <AuthPage />;
+  }
+  
+  // Landing page renders fullscreen without sidebar for unauthenticated users
+  if (location === "/" && !user && !isLoading) {
+    return <LandingPage />;
   }
   
   // Public pages render without sidebar/header
