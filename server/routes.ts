@@ -10512,6 +10512,46 @@ export function registerRoutes(app: Express): Server {
         requestId: request.id
       });
 
+      // Notify repair center users associated with the customer or requested center
+      const rcNotifyUserIds = new Set<string>();
+
+      if (request.requestedCenterId) {
+        const repairCenter = await storage.getRepairCenter(request.requestedCenterId);
+        if (repairCenter) {
+          const allUsersForRc = await storage.listUsers();
+          allUsersForRc.forEach(u => {
+            if ((u.role === 'repair_center' || u.role === 'repair_center_staff') && u.repairCenterId === repairCenter.id) {
+              rcNotifyUserIds.add(u.id);
+            }
+          });
+        }
+      }
+
+      if (req.user.repairCenterId && !request.requestedCenterId) {
+        const allUsersForRc2 = await storage.listUsers();
+        allUsersForRc2.forEach(u => {
+          if ((u.role === 'repair_center' || u.role === 'repair_center_staff') && u.repairCenterId === req.user.repairCenterId) {
+            rcNotifyUserIds.add(u.id);
+          }
+        });
+      }
+
+      for (const rcUserId of rcNotifyUserIds) {
+        await storage.createNotification({
+          userId: rcUserId,
+          type: "system",
+          title: "Nuova richiesta riparazione remota",
+          message: `${req.user.fullName} ha inviato una richiesta di riparazione remota con ${devices.length} dispositivo/i`,
+          data: JSON.stringify({ remoteRequestId: request.id, customerId: req.user.id })
+        });
+        broadcastNotification(rcUserId, {
+          type: "new_remote_request",
+          title: "Nuova richiesta riparazione remota",
+          message: `${req.user.fullName} ha inviato una richiesta di riparazione remota`,
+          requestId: request.id
+        });
+      }
+
       res.status(201).json({ ...request, devices: createdDevices });
     } catch (error: any) {
       console.error("Service order creation error:", error);
