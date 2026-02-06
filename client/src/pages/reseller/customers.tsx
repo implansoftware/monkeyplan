@@ -388,6 +388,7 @@ export default function ResellerCustomers() {
                     <TableHead>Contatti</TableHead>
                     {hasSubResellers && <TableHead>Sub-Reseller</TableHead>}
                     <TableHead className="text-center">Stato</TableHead>
+                    <TableHead className="text-center">Centro Riparazione</TableHead>
                     <TableHead className="text-center">Riparazioni</TableHead>
                     <TableHead className="pr-6 text-right">Azioni</TableHead>
                   </TableRow>
@@ -445,6 +446,22 @@ export default function ResellerCustomers() {
                             </Badge>
                           ) : (
                             <Badge variant="secondary" className="font-normal">Inattivo</Badge>
+                          )}
+                        </TableCell>
+                        <TableCell className="text-center">
+                          {customer.assignedRepairCenters && customer.assignedRepairCenters.length > 0 ? (
+                            <div className="flex flex-wrap items-center justify-center gap-1">
+                              {customer.assignedRepairCenters.map(rc => (
+                                <Badge key={rc.id} variant="outline" className="font-normal text-xs" data-testid={`badge-rc-${customer.id}-${rc.id}`}>
+                                  <Wrench className="h-3 w-3 mr-1" />
+                                  {rc.name}
+                                </Badge>
+                              ))}
+                            </div>
+                          ) : (
+                            <Badge variant="secondary" className="font-normal text-xs" data-testid={`badge-rc-none-${customer.id}`}>
+                              Non assegnato
+                            </Badge>
                           )}
                         </TableCell>
                         <TableCell className="text-center">
