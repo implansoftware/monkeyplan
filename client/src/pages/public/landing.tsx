@@ -23,13 +23,12 @@ import {
   Menu,
   X,
   Building2,
-  Zap,
   Tablet,
   Headphones,
 } from "lucide-react";
 import { useState } from "react";
 import { ThemeToggle } from "@/components/theme-toggle";
-import { DotLottieReact } from "@lottiefiles/dotlottie-react";
+import monkeyAstronautHero from "@/assets/images/monkey-astronaut-hero.png";
 
 function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -167,38 +166,15 @@ function HeroSection() {
           </div>
 
           <div className="flex-shrink-0 hidden lg:flex flex-col items-center">
-            <div className="relative group">
-              <div className="absolute inset-0 bg-gradient-to-r from-yellow-400 via-orange-400 to-amber-400 rounded-full blur-3xl opacity-25 animate-pulse" />
-              <div
-                className="relative w-64 h-64"
+            <div className="relative">
+              <div className="absolute inset-0 bg-gradient-to-r from-yellow-400 via-orange-400 to-amber-400 rounded-full blur-3xl opacity-20 animate-pulse" />
+              <img
+                src={monkeyAstronautHero}
+                alt="MonkeyPlan mascot"
+                className="relative w-80 h-80 object-contain drop-shadow-2xl"
                 style={{ animation: "float 4s ease-in-out infinite" }}
-              >
-                <DotLottieReact
-                  src="https://assets-v2.lottiefiles.com/a/261cdf56-118b-11ee-8495-5b07400f76dd/VtFOjwyK8w.lottie"
-                  loop
-                  autoplay
-                  className="w-full h-full drop-shadow-2xl"
-                />
-              </div>
-
-              <div
-                className="absolute -top-1 -right-1 w-10 h-10 rounded-full bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center shadow-lg border-2 border-white/50"
-                style={{ animation: "bounce 2s ease-in-out infinite" }}
-              >
-                <Smartphone className="w-5 h-5 text-white" />
-              </div>
-              <div
-                className="absolute -bottom-1 -left-1 w-10 h-10 rounded-full bg-gradient-to-br from-cyan-400 to-blue-500 flex items-center justify-center shadow-lg border-2 border-white/50"
-                style={{ animation: "bounce 2.5s ease-in-out infinite", animationDelay: "0.5s" }}
-              >
-                <Wrench className="w-5 h-5 text-white" />
-              </div>
-              <div
-                className="absolute top-1/2 -right-4 w-8 h-8 rounded-full bg-gradient-to-br from-yellow-400 to-orange-500 flex items-center justify-center shadow-lg border-2 border-white/50"
-                style={{ animation: "bounce 3s ease-in-out infinite", animationDelay: "1s" }}
-              >
-                <Zap className="w-4 h-4 text-white" />
-              </div>
+                data-testid="img-hero-mascot"
+              />
             </div>
           </div>
         </div>
