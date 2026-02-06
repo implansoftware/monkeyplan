@@ -197,78 +197,127 @@ class FiskalyRTProvider implements IFiscalRTProvider {
     return responseData;
   }
 
-  private buildReceiptEntries(data: RTReceiptData): any[] {
+  private mapVatRateCode(vatRate: number): string {
+    if (vatRate >= 22) return "STANDARD";
+    if (vatRate >= 10) return "REDUCED_1";
+    if (vatRate >= 5) return "REDUCED_2";
+    return "REDUCED_3";
+  }
+
+  private formatDecimal(value: number): string {
+    return value.toFixed(2);
+  }
+
+  private buildFiskalyEntries(data: RTReceiptData): any[] {
     const entries: any[] = [];
     let entryNumber = 1;
+    const discountRatio = data.transaction.discountAmount
+      ? 1 - (data.transaction.discountAmount / 100) / (data.transaction.subtotal / 100)
+      : 1;
 
     for (const item of data.items) {
       const vatRate = item.vatRate ?? 22;
-      const totalPriceCents = item.totalPrice;
-      const totalPriceEur = totalPriceCents / 100;
+      const unitPriceInclVat = item.totalPrice / item.quantity / 100;
+      const totalInclVat = (item.totalPrice / 100) * discountRatio;
+      const totalExclVat = totalInclVat / (1 + vatRate / 100);
+      const vatAmount = totalInclVat - totalExclVat;
+      const baseValue = totalExclVat;
 
-      entries.push({
-        number: entryNumber++,
-        description: item.productName || "Articolo",
-        quantity: item.quantity,
-        amount: {
-          value: Math.round(totalPriceEur * 100),
-          currency: "EUR",
+      const entry: any = {
+        type: "SALE",
+        data: {
+          type: "ITEM",
+          text: item.productName || "Articolo",
+          unit: {
+            quantity: this.formatDecimal(item.quantity),
+            price: this.formatDecimal(unitPriceInclVat),
+          },
+          value: {
+            base: this.formatDecimal(baseValue),
+          },
+          vat: {
+            type: "VAT_RATE",
+            code: this.mapVatRateCode(vatRate),
+            percentage: this.formatDecimal(vatRate),
+            amount: this.formatDecimal(vatAmount),
+            exclusive: this.formatDecimal(totalExclVat),
+            inclusive: this.formatDecimal(totalInclVat),
+          },
         },
-        vat: {
-          rate: vatRate * 100,
+        details: {
+          concept: "GOOD",
+          number: entryNumber,
         },
-        type: "ITEM",
-      });
+      };
+
+      if (discountRatio < 1) {
+        const discountAmt = (item.totalPrice / 100) * (1 - discountRatio);
+        entry.data.value.discount = this.formatDecimal(discountAmt);
+      }
+
+      entries.push(entry);
+      entryNumber++;
     }
-
-    const discountAmount = data.transaction.discountAmount || 0;
-    if (discountAmount > 0) {
-      entries.push({
-        number: entryNumber++,
-        description: "Sconto",
-        quantity: 1,
-        amount: {
-          value: -Math.round(discountAmount),
-          currency: "EUR",
-        },
-        vat: {
-          rate: 2200,
-        },
-        type: "DISCOUNT",
-      });
-    }
-
-    const totalCents = data.transaction.total;
-    const paymentType = this.mapPaymentMethod(data.transaction.paymentMethod);
-
-    entries.push({
-      number: entryNumber++,
-      type: "PAYMENT",
-      description: "Pagamento",
-      amount: {
-        value: Math.round(totalCents),
-        currency: "EUR",
-      },
-      payment_type: paymentType,
-    });
 
     return entries;
   }
 
-  private mapPaymentMethod(method: string | null): string {
+  private buildFiskalyPayments(data: RTReceiptData): any[] {
+    const totalEur = data.transaction.total / 100;
+    const method = data.transaction.paymentMethod;
+
     switch (method) {
-      case "cash":
-        return "CASH";
       case "card":
-      case "credit_card":
-        return "NON_CASH";
-      case "bank_transfer":
-        return "NON_CASH";
+      case "pos_terminal":
+        return [{
+          type: "CARD",
+          details: { amount: this.formatDecimal(totalEur) },
+          number: "****",
+          kind: "DEBIT",
+        }];
+      case "stripe_link":
+      case "paypal":
+        return [{
+          type: "ONLINE",
+          details: { amount: this.formatDecimal(totalEur) },
+          name: "Pagamento online",
+        }];
       case "mixed":
-        return "CASH";
+        return [{
+          type: "CASH",
+          details: { amount: this.formatDecimal(totalEur) },
+        }];
+      case "cash":
       default:
-        return "CASH";
+        return [{
+          type: "CASH",
+          details: { amount: this.formatDecimal(totalEur) },
+        }];
     }
+  }
+
+  private computeDocumentTotalVat(data: RTReceiptData): { amount: string; exclusive: string; inclusive: string } {
+    let totalInclVat = 0;
+    let totalExclVat = 0;
+    const discountRatio = data.transaction.discountAmount
+      ? 1 - (data.transaction.discountAmount / 100) / (data.transaction.subtotal / 100)
+      : 1;
+
+    for (const item of data.items) {
+      const vatRate = item.vatRate ?? 22;
+      const itemInclVat = (item.totalPrice / 100) * discountRatio;
+      const itemExclVat = itemInclVat / (1 + vatRate / 100);
+      totalInclVat += itemInclVat;
+      totalExclVat += itemExclVat;
+    }
+
+    const vatAmount = totalInclVat - totalExclVat;
+
+    return {
+      amount: this.formatDecimal(vatAmount),
+      exclusive: this.formatDecimal(totalExclVat),
+      inclusive: this.formatDecimal(totalInclVat),
+    };
   }
 
   async submitReceipt(data: RTReceiptData, config: RTProviderConfig): Promise<RTSubmissionResult> {
@@ -280,39 +329,61 @@ class FiskalyRTProvider implements IFiscalRTProvider {
         return { success: false, errorMessage: "System ID Fiskaly non configurato. Configuralo nelle impostazioni RT." };
       }
 
-      const idempotencyKey = randomUUID();
-
-      const entries = this.buildReceiptEntries(data);
-
-      const payload: any = {
-        system: config.systemId,
-        type: "TRANSACTION",
+      const intentionPayload = {
         content: {
-          type: "RECEIPT",
+          type: "INTENTION",
+          system: { id: config.systemId },
           operation: {
-            details: {
-              entries,
+            type: "TRANSACTION",
+          },
+        },
+      };
+
+      const intentionResult = await this.apiRequest("POST", "/records", config, intentionPayload, randomUUID());
+      const intentionId = intentionResult?.content?.id;
+      if (!intentionId) {
+        throw new Error("Fiskaly non ha restituito un ID per l'INTENTION record");
+      }
+
+      console.log(`[Fiskaly] INTENTION creata: ${intentionId}`);
+
+      const entries = this.buildFiskalyEntries(data);
+      const payments = this.buildFiskalyPayments(data);
+      const totalVat = this.computeDocumentTotalVat(data);
+
+      const transactionPayload: any = {
+        content: {
+          type: "TRANSACTION",
+          record: { id: intentionId },
+          operation: {
+            type: "RECEIPT",
+            document: {
+              number: data.transaction.transactionNumber || data.transaction.dailyNumber?.toString() || "1",
+              total_vat: totalVat,
             },
+            entries,
+            payments,
           },
         },
       };
 
       if (data.transaction.lotteryCode) {
-        payload.content.operation.details.lottery_code = data.transaction.lotteryCode;
+        transactionPayload.content.operation.customer = {
+          type: "EXTERNAL",
+          code: data.transaction.lotteryCode,
+        };
       }
 
-      const result = await this.apiRequest("POST", "/records", config, payload, idempotencyKey);
+      const result = await this.apiRequest("POST", "/records", config, transactionPayload, randomUUID());
 
-      const recordId = result.id || result._id;
-      const complianceStatus = result.compliance?.status;
-      const documentUrl = result.compliance?.artifact?.url;
+      const recordId = result?.content?.id;
+      const recordState = result?.content?.state;
 
-      console.log(`[Fiskaly] Documento trasmesso: ${data.transaction.transactionNumber} → ${recordId} (compliance: ${complianceStatus})`);
+      console.log(`[Fiskaly] Documento trasmesso: ${data.transaction.transactionNumber} → ${recordId} (state: ${recordState})`);
 
       return {
         success: true,
         submissionId: recordId,
-        documentUrl: documentUrl || undefined,
         rawResponse: result,
       };
     } catch (error: any) {
@@ -330,28 +401,40 @@ class FiskalyRTProvider implements IFiscalRTProvider {
         return { success: false, errorMessage: "System ID Fiskaly non configurato." };
       }
 
-      const idempotencyKey = randomUUID();
-
-      const payload = {
-        system: config.systemId,
-        type: "TRANSACTION",
+      const intentionPayload = {
         content: {
-          type: "ABORT",
+          type: "INTENTION",
+          system: { id: config.systemId },
           operation: {
-            details: {
-              reference: submissionId,
-            },
+            type: "TRANSACTION",
           },
         },
       };
 
-      const result = await this.apiRequest("POST", "/records", config, payload, idempotencyKey);
+      const intentionResult = await this.apiRequest("POST", "/records", config, intentionPayload, randomUUID());
+      const intentionId = intentionResult?.content?.id;
+      if (!intentionId) {
+        throw new Error("Fiskaly non ha restituito un ID per l'INTENTION record");
+      }
 
-      console.log(`[Fiskaly] Annullamento documento: ${submissionId} → ${result.id}`);
+      const abortPayload = {
+        content: {
+          type: "TRANSACTION",
+          record: { id: intentionId },
+          operation: {
+            type: "ABORT",
+          },
+        },
+      };
+
+      const result = await this.apiRequest("POST", "/records", config, abortPayload, randomUUID());
+
+      const recordId = result?.content?.id;
+      console.log(`[Fiskaly] Annullamento documento: ${submissionId} → ${recordId}`);
 
       return {
         success: true,
-        submissionId: result.id,
+        submissionId: recordId,
         rawResponse: result,
       };
     } catch (error: any) {
