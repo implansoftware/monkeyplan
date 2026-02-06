@@ -15965,8 +15965,8 @@ export function registerRoutes(app: Express): Server {
     try {
       if (!req.user) return res.status(401).json({ error: "Non autenticato" });
       
-      const requestId = parseInt(req.params.requestId);
-      if (isNaN(requestId)) return res.status(400).json({ error: "ID richiesta non valido" });
+      const requestId = req.params.requestId;
+      if (!requestId) return res.status(400).json({ error: "ID richiesta non valido" });
 
       const allInvoices = await storage.listInvoices({ customerId: req.user.id });
       const invoice = allInvoices.find((inv: any) => inv.remoteRepairRequestId === requestId);

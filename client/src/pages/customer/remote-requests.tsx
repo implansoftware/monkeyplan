@@ -428,9 +428,7 @@ export default function CustomerRemoteRequests() {
       const res = await apiRequest("POST", "/api/customer/remote-requests/paypal-create", { requestId: request.id });
       const data = await res.json();
       const approveUrl = `https://www.sandbox.paypal.com/checkoutnow?token=${data.orderID}`;
-      window.open(approveUrl, "_blank");
-      toast({ title: "PayPal", description: "Completa il pagamento nella finestra PayPal. Poi torna qui e conferma." });
-      setPaymentRequest(request);
+      window.location.href = approveUrl;
     } catch (error: any) {
       toast({ title: "Errore", description: error.message || "Errore avvio PayPal", variant: "destructive" });
     } finally {
@@ -452,6 +450,46 @@ export default function CustomerRemoteRequests() {
       setIsProcessingPayment(false);
     }
   };
+
+  const [pendingPaypalCapture, setPendingPaypalCapture] = useState<{token: string, requestId?: string} | null>(null);
+
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const paypalToken = urlParams.get('token');
+    if (!paypalToken) return;
+    if (pendingPaypalCapture?.token === paypalToken) return;
+    setPendingPaypalCapture({ token: paypalToken });
+  }, []);
+
+  useEffect(() => {
+    if (!pendingPaypalCapture || !requests || pendingPaypalCapture.requestId) return;
+    
+    const matchingRequest = (requests as EnrichedRequest[]).find(
+      (r: EnrichedRequest) => r.paypalOrderId === pendingPaypalCapture.token && r.paymentStatus !== 'paid'
+    );
+    
+    if (matchingRequest) {
+      setPendingPaypalCapture(prev => prev ? { ...prev, requestId: matchingRequest.id } : null);
+      (async () => {
+        try {
+          setIsProcessingPayment(true);
+          const res = await apiRequest("POST", "/api/customer/remote-requests/paypal-capture", { 
+            requestId: matchingRequest.id, 
+            orderID: pendingPaypalCapture.token 
+          });
+          await res.json();
+          queryClient.invalidateQueries({ queryKey: ["/api/customer/remote-requests"] });
+          window.history.replaceState({}, '', window.location.pathname);
+          setPendingPaypalCapture(null);
+          toast({ title: "Pagamento PayPal completato", description: "Puoi ora procedere con la spedizione del dispositivo" });
+        } catch (error: any) {
+          toast({ title: "Errore conferma PayPal", description: "Riprova cliccando il bottone qui sotto.", variant: "destructive" });
+        } finally {
+          setIsProcessingPayment(false);
+        }
+      })();
+    }
+  }, [requests, pendingPaypalCapture]);
 
   const confirmStripePayment = async (requestId: string) => {
     try {
@@ -904,14 +942,14 @@ export default function CustomerRemoteRequests() {
                                 {isProcessingPayment ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <CreditCard className="h-4 w-4 mr-2" />}
                                 {request.paypalOrderId ? 'Riprova PayPal' : 'Apri PayPal'}
                               </Button>
-                              {request.paypalOrderId && (
+                              {pendingPaypalCapture && pendingPaypalCapture.token === request.paypalOrderId && (
                                 <Button
                                   onClick={() => capturePayPalPayment(request.id, request.paypalOrderId!)}
                                   disabled={isProcessingPayment}
-                                  data-testid={`button-confirm-paypal-${request.id}`}
+                                  data-testid={`button-retry-paypal-${request.id}`}
                                 >
                                   {isProcessingPayment ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Check className="h-4 w-4 mr-2" />}
-                                  Ho pagato, Conferma
+                                  Conferma Pagamento
                                 </Button>
                               )}
                             </div>
