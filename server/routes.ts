@@ -10765,22 +10765,14 @@ export function registerRoutes(app: Express): Server {
         return res.status(400).send("Impossibile accettare la richiesta in questo stato");
       }
       
-      // Get repair center address to auto-fill shipping destination
-      const repairCenter = await storage.getRepairCenter((req.user as any).repairCenterId);
-      
-      // Automatically transition to awaiting_shipment with center's address
       const updated = await storage.updateRemoteRepairRequest(req.params.id, {
-        status: 'awaiting_shipment',
+        status: 'accepted',
         assignedCenterId: req.user.id,
-        customerAddress: repairCenter?.address || null,
-        customerCity: repairCenter?.city || null,
-        customerCap: repairCenter?.cap || null,
-        customerProvince: repairCenter?.provincia || null
       });
       
       const devices = await storage.listRemoteRepairRequestDevices(req.params.id);
       for (const d of devices) {
-        await storage.updateRemoteRepairRequestDevice(d.id, { status: 'awaiting_shipment' });
+        await storage.updateRemoteRepairRequestDevice(d.id, { status: 'accepted' });
       }
       
       setActivityEntity(res, { type: 'remote_repair_requests', id: updated.id });
@@ -10838,7 +10830,7 @@ export function registerRoutes(app: Express): Server {
         return res.status(403).send("Accesso non autorizzato");
       }
       
-      if (request.status !== 'accepted') {
+      if (request.status !== 'accepted' && request.status !== 'quote_accepted') {
         return res.status(400).send("La richiesta deve essere accettata prima di richiedere la spedizione");
       }
       
@@ -10962,9 +10954,8 @@ export function registerRoutes(app: Express): Server {
         return res.status(403).send("Accesso non autorizzato");
       }
       
-      // Allow cancel only from awaiting_shipment status
-      if (request.status !== 'awaiting_shipment') {
-        return res.status(400).send("Questa azione è disponibile solo quando la richiesta è in attesa di spedizione");
+      if (!['awaiting_shipment', 'accepted', 'quoted'].includes(request.status)) {
+        return res.status(400).send("Impossibile annullare la richiesta in questo stato");
       }
       
       const { cancellationReason } = req.body;
@@ -10987,7 +10978,489 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
-  // Repair Center Remote Requests - pending count for badge
+  // Repair Center: Send quote for remote request
+  app.patch("/api/repair-center/remote-requests/:id/quote", requireRole("repair_center", "repair_center_staff"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const request = await storage.getRemoteRepairRequest(req.params.id);
+      if (!request) return res.status(404).send("Richiesta non trovata");
+      
+      if (request.assignedCenterId !== req.user.id) {
+        return res.status(403).send("Accesso non autorizzato");
+      }
+      
+      if (request.status !== 'accepted') {
+        return res.status(400).send("La richiesta deve essere accettata prima di inviare un preventivo");
+      }
+      
+      const { quoteAmount, quoteDescription, quoteValidDays } = req.body;
+      
+      if (!quoteAmount || quoteAmount <= 0) {
+        return res.status(400).send("L'importo del preventivo deve essere maggiore di zero");
+      }
+      
+      const validUntil = quoteValidDays 
+        ? new Date(Date.now() + quoteValidDays * 24 * 60 * 60 * 1000) 
+        : new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+      
+      const updated = await storage.updateRemoteRepairRequest(req.params.id, {
+        status: 'quoted',
+        quoteAmount: Math.round(quoteAmount),
+        quoteDescription: quoteDescription || null,
+        quoteValidUntil: validUntil,
+        quotedAt: new Date(),
+      });
+      
+      const devices = await storage.listRemoteRepairRequestDevices(req.params.id);
+      for (const d of devices) {
+        await storage.updateRemoteRepairRequestDevice(d.id, { status: 'quoted' });
+      }
+      
+      setActivityEntity(res, { type: 'remote_repair_requests', id: updated.id });
+      res.json(updated);
+    } catch (error: any) {
+      console.error("Quote remote request error:", error);
+      res.status(500).send(error.message);
+    }
+  });
+
+  // Repair Center: Skip quote and go directly to awaiting_shipment
+  app.patch("/api/repair-center/remote-requests/:id/skip-quote", requireRole("repair_center", "repair_center_staff"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const request = await storage.getRemoteRepairRequest(req.params.id);
+      if (!request) return res.status(404).send("Richiesta non trovata");
+      
+      if (request.assignedCenterId !== req.user.id) {
+        return res.status(403).send("Accesso non autorizzato");
+      }
+      
+      if (request.status !== 'accepted') {
+        return res.status(400).send("La richiesta deve essere accettata");
+      }
+      
+      const repairCenter = await storage.getRepairCenter((req.user as any).repairCenterId);
+      
+      const updated = await storage.updateRemoteRepairRequest(req.params.id, {
+        status: 'awaiting_shipment',
+        customerAddress: repairCenter?.address || null,
+        customerCity: repairCenter?.city || null,
+        customerCap: repairCenter?.cap || null,
+        customerProvince: repairCenter?.provincia || null,
+      });
+      
+      const devices = await storage.listRemoteRepairRequestDevices(req.params.id);
+      for (const d of devices) {
+        await storage.updateRemoteRepairRequestDevice(d.id, { status: 'awaiting_shipment' });
+      }
+      
+      setActivityEntity(res, { type: 'remote_repair_requests', id: updated.id });
+      res.json(updated);
+    } catch (error: any) {
+      console.error("Skip quote error:", error);
+      res.status(500).send(error.message);
+    }
+  });
+
+  // Customer: Accept quote for remote request
+  app.patch("/api/customer/remote-requests/:id/accept-quote", requireRole("customer"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const request = await storage.getRemoteRepairRequest(req.params.id);
+      if (!request) return res.status(404).send("Richiesta non trovata");
+      
+      if (request.customerId !== req.user.id) {
+        return res.status(403).send("Accesso non autorizzato");
+      }
+      
+      if (request.status !== 'quoted') {
+        return res.status(400).send("Non c'è un preventivo da accettare");
+      }
+      
+      const { paymentMethod } = req.body;
+      
+      if (!paymentMethod || !['online_stripe', 'online_paypal', 'in_store'].includes(paymentMethod)) {
+        return res.status(400).send("Metodo di pagamento non valido");
+      }
+      
+      const repairCenter = await storage.getRepairCenter((req.user as any).repairCenterId);
+      
+      if (paymentMethod === 'in_store') {
+        const updated = await storage.updateRemoteRepairRequest(req.params.id, {
+          status: 'awaiting_shipment',
+          paymentMethod: 'in_store',
+          paymentStatus: 'pending',
+          quoteResponseAt: new Date(),
+          customerAddress: repairCenter?.address || request.customerAddress || null,
+          customerCity: repairCenter?.city || request.customerCity || null,
+          customerCap: repairCenter?.cap || request.customerCap || null,
+          customerProvince: repairCenter?.provincia || request.customerProvince || null,
+        });
+        
+        const devices = await storage.listRemoteRepairRequestDevices(req.params.id);
+        for (const d of devices) {
+          await storage.updateRemoteRepairRequestDevice(d.id, { status: 'awaiting_shipment' });
+        }
+        
+        setActivityEntity(res, { type: 'remote_repair_requests', id: updated.id });
+        return res.json(updated);
+      }
+      
+      const updated = await storage.updateRemoteRepairRequest(req.params.id, {
+        status: 'quote_accepted',
+        paymentMethod,
+        paymentStatus: 'pending',
+        quoteResponseAt: new Date(),
+      });
+      
+      const devices = await storage.listRemoteRepairRequestDevices(req.params.id);
+      for (const d of devices) {
+        await storage.updateRemoteRepairRequestDevice(d.id, { status: 'quote_accepted' });
+      }
+      
+      setActivityEntity(res, { type: 'remote_repair_requests', id: updated.id });
+      res.json(updated);
+    } catch (error: any) {
+      console.error("Accept quote error:", error);
+      res.status(500).send(error.message);
+    }
+  });
+
+  // Customer: Decline quote for remote request
+  app.patch("/api/customer/remote-requests/:id/decline-quote", requireRole("customer"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const request = await storage.getRemoteRepairRequest(req.params.id);
+      if (!request) return res.status(404).send("Richiesta non trovata");
+      
+      if (request.customerId !== req.user.id) {
+        return res.status(403).send("Accesso non autorizzato");
+      }
+      
+      if (request.status !== 'quoted') {
+        return res.status(400).send("Non c'è un preventivo da rifiutare");
+      }
+      
+      const updated = await storage.updateRemoteRepairRequest(req.params.id, {
+        status: 'quote_declined',
+        quoteResponseAt: new Date(),
+      });
+      
+      const devices = await storage.listRemoteRepairRequestDevices(req.params.id);
+      for (const d of devices) {
+        await storage.updateRemoteRepairRequestDevice(d.id, { status: 'quote_declined' });
+      }
+      
+      setActivityEntity(res, { type: 'remote_repair_requests', id: updated.id });
+      res.json(updated);
+    } catch (error: any) {
+      console.error("Decline quote error:", error);
+      res.status(500).send(error.message);
+    }
+  });
+
+  // Customer: Stripe payment for remote repair quote
+  app.post("/api/customer/remote-requests/stripe-payment", requireRole("customer"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const { requestId } = req.body;
+      if (!requestId) return res.status(400).send("ID richiesta mancante");
+      
+      const request = await storage.getRemoteRepairRequest(requestId);
+      if (!request) return res.status(404).send("Richiesta non trovata");
+      
+      if (request.customerId !== req.user.id) {
+        return res.status(403).send("Accesso non autorizzato");
+      }
+      
+      if (request.status !== 'quote_accepted' || !request.quoteAmount) {
+        return res.status(400).send("Nessun preventivo accettato da pagare");
+      }
+      
+      const resellerId = req.user.resellerId;
+      const repairCenterId = req.user.repairCenterId;
+      
+      let paymentConfig = null;
+      
+      if (repairCenterId) {
+        const rcConfig = await storage.getPaymentConfiguration("repair_center", repairCenterId);
+        if (rcConfig && !rcConfig.useParentConfig && rcConfig.stripeEnabled && rcConfig.stripeSecretKey) {
+          paymentConfig = rcConfig;
+        }
+      }
+      
+      if (!paymentConfig && resellerId) {
+        const resellerConfig = await storage.getPaymentConfiguration("reseller", resellerId);
+        if (resellerConfig?.stripeEnabled && resellerConfig?.stripeSecretKey) {
+          paymentConfig = resellerConfig;
+        }
+      }
+      
+      if (!paymentConfig) {
+        return res.status(400).json({ error: "Stripe non configurato" });
+      }
+      
+      const stripeSecretKey = decryptSecret(paymentConfig.stripeSecretKey!);
+      const stripe = new Stripe(stripeSecretKey);
+      
+      const paymentIntent = await stripe.paymentIntents.create({
+        amount: request.quoteAmount,
+        currency: 'eur',
+        metadata: {
+          remoteRequestId: requestId,
+          requestNumber: request.requestNumber,
+          customerId: req.user.id,
+        }
+      });
+      
+      await storage.updateRemoteRepairRequest(requestId, {
+        stripePaymentIntentId: paymentIntent.id,
+      });
+      
+      res.json({
+        clientSecret: paymentIntent.client_secret,
+        publishableKey: paymentConfig.stripePublishableKey,
+      });
+    } catch (error: any) {
+      console.error("Remote request Stripe payment error:", error);
+      res.status(500).json({ error: error.message || "Errore creazione pagamento Stripe" });
+    }
+  });
+
+  // Customer: Confirm Stripe payment for remote repair
+  app.post("/api/customer/remote-requests/stripe-confirm", requireRole("customer"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const { requestId } = req.body;
+      if (!requestId) return res.status(400).send("ID richiesta mancante");
+      
+      const request = await storage.getRemoteRepairRequest(requestId);
+      if (!request) return res.status(404).send("Richiesta non trovata");
+      
+      if (request.customerId !== req.user.id) {
+        return res.status(403).send("Accesso non autorizzato");
+      }
+      
+      const repairCenter = request.assignedCenterId 
+        ? await storage.getRepairCenter((await storage.getUser(request.assignedCenterId))?.repairCenterId || '')
+        : null;
+      
+      const updated = await storage.updateRemoteRepairRequest(requestId, {
+        status: 'awaiting_shipment',
+        paymentStatus: 'paid',
+        customerAddress: repairCenter?.address || request.customerAddress || null,
+        customerCity: repairCenter?.city || request.customerCity || null,
+        customerCap: repairCenter?.cap || request.customerCap || null,
+        customerProvince: repairCenter?.provincia || request.customerProvince || null,
+      });
+      
+      const devices = await storage.listRemoteRepairRequestDevices(requestId);
+      for (const d of devices) {
+        await storage.updateRemoteRepairRequestDevice(d.id, { status: 'awaiting_shipment' });
+      }
+      
+      setActivityEntity(res, { type: 'remote_repair_requests', id: updated.id });
+      res.json(updated);
+    } catch (error: any) {
+      console.error("Remote request Stripe confirm error:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Customer: Create PayPal order for remote repair quote
+  app.post("/api/customer/remote-requests/paypal-create", requireRole("customer"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const { requestId } = req.body;
+      if (!requestId) return res.status(400).send("ID richiesta mancante");
+      
+      const request = await storage.getRemoteRepairRequest(requestId);
+      if (!request) return res.status(404).send("Richiesta non trovata");
+      
+      if (request.customerId !== req.user.id) {
+        return res.status(403).send("Accesso non autorizzato");
+      }
+      
+      if (request.status !== 'quote_accepted' || !request.quoteAmount) {
+        return res.status(400).send("Nessun preventivo accettato da pagare");
+      }
+      
+      const resellerId = req.user.resellerId;
+      const repairCenterId = req.user.repairCenterId;
+      
+      let paymentConfig = null;
+      
+      if (repairCenterId) {
+        const rcConfig = await storage.getPaymentConfiguration("repair_center", repairCenterId);
+        if (rcConfig && !rcConfig.useParentConfig && rcConfig.paypalEnabled && rcConfig.paypalClientId && rcConfig.paypalClientSecret) {
+          paymentConfig = rcConfig;
+        }
+      }
+      
+      if (!paymentConfig && resellerId) {
+        const resellerConfig = await storage.getPaymentConfiguration("reseller", resellerId);
+        if (resellerConfig?.paypalEnabled && resellerConfig?.paypalClientId && resellerConfig?.paypalClientSecret) {
+          paymentConfig = resellerConfig;
+        }
+      }
+      
+      if (!paymentConfig) {
+        return res.status(400).json({ error: "PayPal non configurato" });
+      }
+      
+      const clientId = decryptSecret(paymentConfig.paypalClientId!);
+      const clientSecret = decryptSecret(paymentConfig.paypalClientSecret!);
+      const amountInEur = (request.quoteAmount / 100).toFixed(2);
+      
+      const tokenResponse = await fetch("https://api-m.sandbox.paypal.com/v1/oauth2/token", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+          "Authorization": `Basic ${Buffer.from(`${clientId}:${clientSecret}`).toString("base64")}`
+        },
+        body: "grant_type=client_credentials"
+      });
+      
+      const tokenData = await tokenResponse.json() as any;
+      if (!tokenData.access_token) {
+        return res.status(500).json({ error: "Errore autenticazione PayPal" });
+      }
+      
+      const orderResponse = await fetch("https://api-m.sandbox.paypal.com/v2/checkout/orders", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${tokenData.access_token}`
+        },
+        body: JSON.stringify({
+          intent: "CAPTURE",
+          purchase_units: [{
+            reference_id: requestId,
+            description: `Preventivo riparazione ${request.requestNumber}`,
+            amount: {
+              currency_code: "EUR",
+              value: amountInEur
+            }
+          }]
+        })
+      });
+      
+      const orderData = await orderResponse.json() as any;
+      
+      await storage.updateRemoteRepairRequest(requestId, {
+        paypalOrderId: orderData.id,
+      });
+      
+      res.json({ orderID: orderData.id });
+    } catch (error: any) {
+      console.error("Remote request PayPal create error:", error);
+      res.status(500).json({ error: error.message || "Errore creazione ordine PayPal" });
+    }
+  });
+
+  // Customer: Capture PayPal payment for remote repair quote
+  app.post("/api/customer/remote-requests/paypal-capture", requireRole("customer"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      const { requestId, orderID } = req.body;
+      if (!requestId || !orderID) return res.status(400).send("Dati mancanti");
+      
+      const request = await storage.getRemoteRepairRequest(requestId);
+      if (!request) return res.status(404).send("Richiesta non trovata");
+      
+      if (request.customerId !== req.user.id) {
+        return res.status(403).send("Accesso non autorizzato");
+      }
+      
+      const resellerId = req.user.resellerId;
+      const repairCenterId = req.user.repairCenterId;
+      
+      let paymentConfig = null;
+      
+      if (repairCenterId) {
+        const rcConfig = await storage.getPaymentConfiguration("repair_center", repairCenterId);
+        if (rcConfig && !rcConfig.useParentConfig && rcConfig.paypalEnabled && rcConfig.paypalClientId && rcConfig.paypalClientSecret) {
+          paymentConfig = rcConfig;
+        }
+      }
+      
+      if (!paymentConfig && resellerId) {
+        const resellerConfig = await storage.getPaymentConfiguration("reseller", resellerId);
+        if (resellerConfig?.paypalEnabled && resellerConfig?.paypalClientId && resellerConfig?.paypalClientSecret) {
+          paymentConfig = resellerConfig;
+        }
+      }
+      
+      if (!paymentConfig) {
+        return res.status(400).json({ error: "PayPal non configurato" });
+      }
+      
+      const clientId = decryptSecret(paymentConfig.paypalClientId!);
+      const clientSecret = decryptSecret(paymentConfig.paypalClientSecret!);
+      
+      const tokenResponse = await fetch("https://api-m.sandbox.paypal.com/v1/oauth2/token", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+          "Authorization": `Basic ${Buffer.from(`${clientId}:${clientSecret}`).toString("base64")}`
+        },
+        body: "grant_type=client_credentials"
+      });
+      
+      const tokenData = await tokenResponse.json() as any;
+      if (!tokenData.access_token) {
+        return res.status(500).json({ error: "Errore autenticazione PayPal" });
+      }
+      
+      const captureResponse = await fetch(`https://api-m.sandbox.paypal.com/v2/checkout/orders/${orderID}/capture`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${tokenData.access_token}`
+        }
+      });
+      
+      const captureData = await captureResponse.json() as any;
+      
+      if (captureData.status !== "COMPLETED") {
+        return res.status(400).json({ error: "Pagamento PayPal non completato" });
+      }
+      
+      const repairCenter = request.assignedCenterId 
+        ? await storage.getRepairCenter((await storage.getUser(request.assignedCenterId))?.repairCenterId || '')
+        : null;
+      
+      const updated = await storage.updateRemoteRepairRequest(requestId, {
+        status: 'awaiting_shipment',
+        paymentStatus: 'paid',
+        customerAddress: repairCenter?.address || request.customerAddress || null,
+        customerCity: repairCenter?.city || request.customerCity || null,
+        customerCap: repairCenter?.cap || request.customerCap || null,
+        customerProvince: repairCenter?.provincia || request.customerProvince || null,
+      });
+      
+      const devices = await storage.listRemoteRepairRequestDevices(requestId);
+      for (const d of devices) {
+        await storage.updateRemoteRepairRequestDevice(d.id, { status: 'awaiting_shipment' });
+      }
+      
+      setActivityEntity(res, { type: 'remote_repair_requests', id: updated.id });
+      res.json(updated);
+    } catch (error: any) {
+      console.error("Remote request PayPal capture error:", error);
+      res.status(500).json({ error: error.message || "Errore pagamento PayPal" });
+    }
+  });
+
+    // Repair Center Remote Requests - pending count for badge
   app.get("/api/repair-center/remote-requests/pending-count", requireRole("repair_center", "repair_center_staff"), async (req, res) => {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");

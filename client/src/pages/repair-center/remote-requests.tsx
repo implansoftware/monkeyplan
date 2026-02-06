@@ -11,7 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Loader2, Package, Truck, Check, X, Clock, CheckCircle2, XCircle, PackageCheck, MapPin, Image, Smartphone } from "lucide-react";
+import { Loader2, Package, Truck, Check, X, Clock, CheckCircle2, XCircle, PackageCheck, MapPin, Image, Smartphone, FileText, Euro, SkipForward } from "lucide-react";
 import type { RemoteRepairRequest, RemoteRepairRequestDevice } from "@shared/schema";
 
 type EnrichedRemoteRequest = RemoteRepairRequest & { devices: RemoteRepairRequestDevice[] };
@@ -28,6 +28,9 @@ const statusLabels: Record<string, { label: string; variant: "default" | "second
   received: { label: "Ricevuto", variant: "default" },
   repair_created: { label: "Riparazione creata", variant: "default" },
   cancelled: { label: "Annullata", variant: "destructive" },
+  quoted: { label: "Preventivo inviato", variant: "outline" },
+  quote_accepted: { label: "Preventivo accettato", variant: "default" },
+  quote_declined: { label: "Preventivo rifiutato", variant: "destructive" },
 };
 
 export default function RepairCenterRemoteRequests() {
@@ -41,6 +44,10 @@ export default function RepairCenterRemoteRequests() {
   const [rejectionReason, setRejectionReason] = useState("");
   const [cancellationReason, setCancellationReason] = useState("");
   const [forceReceivedNotes, setForceReceivedNotes] = useState("");
+  const [isQuoteOpen, setIsQuoteOpen] = useState(false);
+  const [quoteAmount, setQuoteAmount] = useState("");
+  const [quoteDescription, setQuoteDescription] = useState("");
+  const [quoteValidDays, setQuoteValidDays] = useState("7");
   const [shippingAddress, setShippingAddress] = useState({
     centerNotes: "",
     customerAddress: "",
@@ -72,6 +79,45 @@ export default function RepairCenterRemoteRequests() {
         description: error.message,
         variant: "destructive",
       });
+    },
+  });
+
+  const quoteMutation = useMutation({
+    mutationFn: async ({ id, quoteAmount, quoteDescription, quoteValidDays }: { id: string; quoteAmount: number; quoteDescription: string; quoteValidDays: number }) => {
+      const res = await apiRequest("PATCH", `/api/repair-center/remote-requests/${id}/quote`, { quoteAmount, quoteDescription, quoteValidDays });
+      return await res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/repair-center/remote-requests"] });
+      setIsQuoteOpen(false);
+      setSelectedRequest(null);
+      setQuoteAmount("");
+      setQuoteDescription("");
+      setQuoteValidDays("7");
+      toast({
+        title: "Preventivo inviato",
+        description: "Il preventivo è stato inviato al cliente",
+      });
+    },
+    onError: (error: Error) => {
+      toast({ title: "Errore", description: error.message, variant: "destructive" });
+    },
+  });
+
+  const skipQuoteMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const res = await apiRequest("PATCH", `/api/repair-center/remote-requests/${id}/skip-quote`, {});
+      return await res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/repair-center/remote-requests"] });
+      toast({
+        title: "Preventivo saltato",
+        description: "Il cliente può procedere direttamente con la spedizione",
+      });
+    },
+    onError: (error: Error) => {
+      toast({ title: "Errore", description: error.message, variant: "destructive" });
     },
   });
 
@@ -237,8 +283,8 @@ export default function RepairCenterRemoteRequests() {
   }
 
   const pendingRequests = requests?.filter(r => r.status === 'pending' || r.status === 'assigned') || [];
-  const activeRequests = requests?.filter(r => ['accepted', 'awaiting_shipment', 'in_transit'].includes(r.status)) || [];
-  const completedRequests = requests?.filter(r => ['received', 'repair_created', 'rejected', 'cancelled'].includes(r.status)) || [];
+  const activeRequests = requests?.filter(r => ['accepted', 'quoted', 'quote_accepted', 'awaiting_shipment', 'in_transit'].includes(r.status)) || [];
+  const completedRequests = requests?.filter(r => ['received', 'repair_created', 'rejected', 'cancelled', 'quote_declined'].includes(r.status)) || [];
 
   return (
     <div className="container max-w-6xl mx-auto py-6 space-y-6">
@@ -322,6 +368,21 @@ export default function RepairCenterRemoteRequests() {
                       </div>
                     </CardHeader>
                     <CardContent>
+                      {request.quoteAmount && (
+                        <div className="p-3 rounded-md border bg-muted/50 mb-3">
+                          <div className="flex items-center gap-2 mb-2">
+                            <Euro className="h-4 w-4 text-muted-foreground" />
+                            <span className="text-sm font-medium">Preventivo</span>
+                            <Badge variant={request.status === 'quote_accepted' ? 'default' : request.status === 'quote_declined' ? 'destructive' : 'outline'} className="text-xs">
+                              {request.status === 'quoted' ? 'In attesa' : request.status === 'quote_accepted' ? 'Accettato' : request.status === 'quote_declined' ? 'Rifiutato' : 'Inviato'}
+                            </Badge>
+                          </div>
+                          <p className="text-lg font-bold">{(request.quoteAmount / 100).toFixed(2)} EUR</p>
+                          {request.quoteDescription && <p className="text-sm text-muted-foreground mt-1">{request.quoteDescription}</p>}
+                          {request.quoteValidUntil && <p className="text-xs text-muted-foreground mt-1">Valido fino al: {format(new Date(request.quoteValidUntil), "d MMMM yyyy", { locale: it })}</p>}
+                          {request.paymentMethod && <p className="text-xs text-muted-foreground">Pagamento: {request.paymentMethod === 'in_store' ? 'In negozio' : request.paymentMethod === 'online_stripe' ? 'Stripe' : 'PayPal'} ({request.paymentStatus === 'paid' ? 'Pagato' : 'In attesa'})</p>}
+                        </div>
+                      )}
                       <div className="space-y-3">
                         {request.devices?.map((device) => (
                           <div key={device.id} className="p-3 border rounded-md space-y-2" data-testid={`device-${device.id}`}>
@@ -408,6 +469,35 @@ export default function RepairCenterRemoteRequests() {
                           </CardDescription>
                         </div>
                         <div className="flex gap-2">
+                          {request.status === 'accepted' && (
+                            <>
+                              <Button
+                                variant="outline"
+                                onClick={() => skipQuoteMutation.mutate(request.id)}
+                                disabled={skipQuoteMutation.isPending}
+                                data-testid={`button-skip-quote-${request.id}`}
+                              >
+                                <SkipForward className="h-4 w-4 mr-2" />
+                                Salta Preventivo
+                              </Button>
+                              <Button
+                                onClick={() => {
+                                  setSelectedRequest(request);
+                                  setIsQuoteOpen(true);
+                                }}
+                                data-testid={`button-send-quote-${request.id}`}
+                              >
+                                <FileText className="h-4 w-4 mr-2" />
+                                Invia Preventivo
+                              </Button>
+                            </>
+                          )}
+                          {request.status === 'quoted' && (
+                            <Badge variant="outline">In attesa risposta cliente</Badge>
+                          )}
+                          {request.status === 'quote_accepted' && (
+                            <Badge variant="default">Pagamento in corso</Badge>
+                          )}
                           {request.status === 'awaiting_shipment' && (
                             <>
                               <Button
@@ -721,6 +811,78 @@ export default function RepairCenterRemoteRequests() {
               </Button>
             </DialogFooter>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isQuoteOpen} onOpenChange={setIsQuoteOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Invia Preventivo</DialogTitle>
+            <DialogDescription>
+              Inserisci l'importo e la descrizione del preventivo per il cliente
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={(e) => {
+            e.preventDefault();
+            if (selectedRequest && quoteAmount) {
+              quoteMutation.mutate({
+                id: selectedRequest.id,
+                quoteAmount: Math.round(parseFloat(quoteAmount) * 100),
+                quoteDescription,
+                quoteValidDays: parseInt(quoteValidDays) || 7,
+              });
+            }
+          }} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="quoteAmount">Importo (EUR)</Label>
+              <Input
+                id="quoteAmount"
+                type="number"
+                step="0.01"
+                min="0.01"
+                value={quoteAmount}
+                onChange={(e) => setQuoteAmount(e.target.value)}
+                placeholder="Es: 150.00"
+                required
+                data-testid="input-quote-amount"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="quoteDescription">Descrizione lavori</Label>
+              <Textarea
+                id="quoteDescription"
+                value={quoteDescription}
+                onChange={(e) => setQuoteDescription(e.target.value)}
+                placeholder="Descrivi i lavori previsti..."
+                rows={3}
+                data-testid="input-quote-description"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="quoteValidDays">Validità (giorni)</Label>
+              <Input
+                id="quoteValidDays"
+                type="number"
+                min="1"
+                max="90"
+                value={quoteValidDays}
+                onChange={(e) => setQuoteValidDays(e.target.value)}
+                data-testid="input-quote-valid-days"
+              />
+            </div>
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => setIsQuoteOpen(false)}>
+                Annulla
+              </Button>
+              <Button type="submit" disabled={quoteMutation.isPending || !quoteAmount} data-testid="button-confirm-quote">
+                {quoteMutation.isPending ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  "Invia Preventivo"
+                )}
+              </Button>
+            </DialogFooter>
+          </form>
         </DialogContent>
       </Dialog>
 

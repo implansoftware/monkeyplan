@@ -58,3 +58,20 @@ The backend is an `Express.js` application with TypeScript, featuring a RESTful 
 - Conditional validation: IBAN and account holder required when bank transfer enabled
 - Resellers see admin's payment methods when placing B2B orders
 - Replaced emoji phase icons in SLA section with lucide-react icons
+
+### Remote Repair Quote/Approval Workflow
+- Added 3 new remote repair request statuses: `quoted`, `quote_accepted`, `quote_declined`
+- Added 9 new columns: quoteAmount, quoteDescription, quoteValidUntil, quotedAt, quoteResponseAt, paymentMethod, paymentStatus, stripePaymentIntentId, paypalOrderId
+- 8 new API endpoints for quote and payment management:
+  - PATCH `/api/repair-center/remote-requests/:id/quote` - RC sends quote
+  - PATCH `/api/repair-center/remote-requests/:id/skip-quote` - RC skips quote, goes directly to awaiting_shipment
+  - PATCH `/api/customer/remote-requests/:id/accept-quote` - Customer accepts with payment method choice
+  - PATCH `/api/customer/remote-requests/:id/decline-quote` - Customer declines quote
+  - POST `/api/customer/remote-requests/stripe-payment` - Create Stripe PaymentIntent
+  - POST `/api/customer/remote-requests/stripe-confirm` - Confirm after Stripe payment
+  - POST `/api/customer/remote-requests/paypal-create` - Create PayPal order
+  - POST `/api/customer/remote-requests/paypal-capture` - Capture PayPal payment
+- Flow: accepted → [quote] → quoted → [accept] → quote_accepted → [payment] → awaiting_shipment
+- Alternative: accepted → [skip-quote] → awaiting_shipment directly
+- Payment methods: in_store, online_stripe, online_paypal
+- Frontend: RC quote dialog, Customer quote card with accept/decline + checkout, all dashboards updated with new status labels and filters

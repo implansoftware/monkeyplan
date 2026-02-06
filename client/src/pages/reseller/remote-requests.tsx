@@ -27,6 +27,9 @@ const statusLabels: Record<string, { label: string; variant: "default" | "second
   received: { label: "Ricevuto", variant: "default" },
   repair_created: { label: "Riparazione creata", variant: "default" },
   cancelled: { label: "Annullata", variant: "destructive" },
+  quoted: { label: "Preventivo inviato", variant: "outline" },
+  quote_accepted: { label: "Preventivo accettato", variant: "default" },
+  quote_declined: { label: "Preventivo rifiutato", variant: "destructive" },
 };
 
 export default function ResellerRemoteRequests() {
@@ -91,8 +94,8 @@ export default function ResellerRemoteRequests() {
 
   const pendingRequests = requests?.filter(r => r.status === 'pending') || [];
   const assignedRequests = requests?.filter(r => r.status === 'assigned') || [];
-  const activeRequests = requests?.filter(r => ['accepted', 'awaiting_shipment', 'in_transit', 'received'].includes(r.status)) || [];
-  const completedRequests = requests?.filter(r => ['repair_created', 'rejected', 'cancelled'].includes(r.status)) || [];
+  const activeRequests = requests?.filter(r => ['accepted', 'quoted', 'quote_accepted', 'awaiting_shipment', 'in_transit', 'received'].includes(r.status)) || [];
+  const completedRequests = requests?.filter(r => ['repair_created', 'rejected', 'cancelled', 'quote_declined'].includes(r.status)) || [];
 
   return (
     <div className="space-y-6">

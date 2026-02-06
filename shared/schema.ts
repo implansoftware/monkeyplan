@@ -148,6 +148,9 @@ export const remoteRepairRequestStatusEnum = pgEnum("remote_repair_request_statu
   "assigned",          // Assegnato a un centro (in attesa accettazione)
   "accepted",          // Accettato dal centro
   "rejected",          // Rifiutato dal centro
+  "quoted",            // Preventivo inviato al cliente
+  "quote_accepted",    // Cliente ha accettato il preventivo
+  "quote_declined",    // Cliente ha rifiutato il preventivo
   "awaiting_shipment", // In attesa spedizione da parte del cliente
   "in_transit",        // Dispositivo in transito
   "received",          // Dispositivo ricevuto dal centro
@@ -1633,6 +1636,17 @@ export const remoteRepairRequests = pgTable("remote_repair_requests", {
 
   customerNotes: text("customer_notes"),
   centerNotes: text("center_notes"),
+
+  quoteAmount: integer("quote_amount"),
+  quoteDescription: text("quote_description"),
+  quoteValidUntil: timestamp("quote_valid_until"),
+  quotedAt: timestamp("quoted_at"),
+  quoteResponseAt: timestamp("quote_response_at"),
+  paymentMethod: text("payment_method"),
+  paymentStatus: text("payment_status"),
+  stripePaymentIntentId: text("stripe_payment_intent_id"),
+  paypalOrderId: text("paypal_order_id"),
+
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
@@ -4486,7 +4500,7 @@ export const insertRemoteRepairRequestSchema = createInsertSchema(remoteRepairRe
 });
 
 export const updateRemoteRepairRequestSchema = z.object({
-  status: z.enum(["pending", "assigned", "accepted", "rejected", "awaiting_shipment", "in_transit", "received", "repair_created", "cancelled"]).optional(),
+  status: z.enum(["pending", "assigned", "accepted", "rejected", "quoted", "quote_accepted", "quote_declined", "awaiting_shipment", "in_transit", "received", "repair_created", "cancelled"]).optional(),
   assignedCenterId: z.string().optional().nullable(),
   rejectionReason: z.string().optional().nullable(),
   forwardedFrom: z.string().optional().nullable(),
@@ -4500,6 +4514,15 @@ export const updateRemoteRepairRequestSchema = z.object({
   customerCity: z.string().optional().nullable(),
   customerCap: z.string().optional().nullable(),
   customerProvince: z.string().optional().nullable(),
+  quoteAmount: z.number().optional().nullable(),
+  quoteDescription: z.string().optional().nullable(),
+  quoteValidUntil: z.date().optional().nullable(),
+  quotedAt: z.date().optional().nullable(),
+  quoteResponseAt: z.date().optional().nullable(),
+  paymentMethod: z.string().optional().nullable(),
+  paymentStatus: z.string().optional().nullable(),
+  stripePaymentIntentId: z.string().optional().nullable(),
+  paypalOrderId: z.string().optional().nullable(),
 });
 
 export const insertRemoteRepairRequestDeviceSchema = createInsertSchema(remoteRepairRequestDevices).omit({
@@ -4511,7 +4534,7 @@ export const insertRemoteRepairRequestDeviceSchema = createInsertSchema(remoteRe
 });
 
 export const updateRemoteRepairRequestDeviceSchema = z.object({
-  status: z.enum(["pending", "assigned", "accepted", "rejected", "awaiting_shipment", "in_transit", "received", "repair_created", "cancelled"]).optional(),
+  status: z.enum(["pending", "assigned", "accepted", "rejected", "quoted", "quote_accepted", "quote_declined", "awaiting_shipment", "in_transit", "received", "repair_created", "cancelled"]).optional(),
   repairOrderId: z.string().optional().nullable(),
 });
 

@@ -18,6 +18,9 @@ const statusLabels: Record<string, { label: string; variant: "default" | "second
   received: { label: "Ricevuto", variant: "default" },
   repair_created: { label: "Riparazione creata", variant: "default" },
   cancelled: { label: "Annullata", variant: "destructive" },
+  quoted: { label: "Preventivo inviato", variant: "outline" },
+  quote_accepted: { label: "Preventivo accettato", variant: "default" },
+  quote_declined: { label: "Preventivo rifiutato", variant: "destructive" },
 };
 
 export default function AdminRemoteRequests() {
@@ -59,8 +62,8 @@ export default function AdminRemoteRequests() {
 
   const pendingCount = requests?.filter(r => r.status === 'pending').length || 0;
   const assignedCount = requests?.filter(r => r.status === 'assigned').length || 0;
-  const inProgressCount = requests?.filter(r => ['accepted', 'awaiting_shipment', 'in_transit', 'received'].includes(r.status)).length || 0;
-  const completedCount = requests?.filter(r => ['repair_created', 'rejected', 'cancelled'].includes(r.status)).length || 0;
+  const inProgressCount = requests?.filter(r => ['accepted', 'quoted', 'quote_accepted', 'awaiting_shipment', 'in_transit', 'received'].includes(r.status)).length || 0;
+  const completedCount = requests?.filter(r => ['repair_created', 'rejected', 'cancelled', 'quote_declined'].includes(r.status)).length || 0;
 
   return (
     <div className="container max-w-7xl mx-auto py-6 space-y-6">
