@@ -368,19 +368,29 @@ export default function RepairCenterRemoteRequests() {
                       </div>
                     </CardHeader>
                     <CardContent>
-                      {request.quoteAmount && (
+                      {request.quoteAmount != null && request.quoteAmount > 0 && (
                         <div className="p-3 rounded-md border bg-muted/50 mb-3">
-                          <div className="flex items-center gap-2 mb-2">
-                            <Euro className="h-4 w-4 text-muted-foreground" />
-                            <span className="text-sm font-medium">Preventivo</span>
-                            <Badge variant={request.status === 'quote_accepted' ? 'default' : request.status === 'quote_declined' ? 'destructive' : 'outline'} className="text-xs">
-                              {request.status === 'quoted' ? 'In attesa' : request.status === 'quote_accepted' ? 'Accettato' : request.status === 'quote_declined' ? 'Rifiutato' : 'Inviato'}
-                            </Badge>
+                          <div className="flex items-center justify-between gap-2 mb-2">
+                            <div className="flex items-center gap-2">
+                              <Euro className="h-4 w-4 text-muted-foreground" />
+                              <span className="text-sm font-medium">Preventivo inviato</span>
+                              <Badge variant={request.status === 'quote_accepted' ? 'default' : request.status === 'quote_declined' ? 'destructive' : 'outline'} className="text-xs">
+                                {request.status === 'quoted' ? 'In attesa risposta' : request.status === 'quote_accepted' ? 'Accettato' : request.status === 'quote_declined' ? 'Rifiutato' : 'Inviato'}
+                              </Badge>
+                            </div>
+                            <p className="text-lg font-bold">{(request.quoteAmount / 100).toFixed(2)} EUR</p>
                           </div>
-                          <p className="text-lg font-bold">{(request.quoteAmount / 100).toFixed(2)} EUR</p>
-                          {request.quoteDescription && <p className="text-sm text-muted-foreground mt-1">{request.quoteDescription}</p>}
-                          {request.quoteValidUntil && <p className="text-xs text-muted-foreground mt-1">Valido fino al: {format(new Date(request.quoteValidUntil), "d MMMM yyyy", { locale: it })}</p>}
-                          {request.paymentMethod && <p className="text-xs text-muted-foreground">Pagamento: {request.paymentMethod === 'in_store' ? 'In negozio' : request.paymentMethod === 'online_stripe' ? 'Stripe' : 'PayPal'} ({request.paymentStatus === 'paid' ? 'Pagato' : 'In attesa'})</p>}
+                          {request.quoteDescription && (
+                            <div className="mt-2">
+                              <p className="text-xs text-muted-foreground mb-1">Descrizione lavori</p>
+                              <p className="text-sm">{request.quoteDescription}</p>
+                            </div>
+                          )}
+                          <div className="flex flex-wrap gap-4 mt-2 text-xs text-muted-foreground">
+                            {request.quotedAt && <span>Inviato il: {format(new Date(request.quotedAt), "d MMM yyyy, HH:mm", { locale: it })}</span>}
+                            {request.quoteValidUntil && <span>Valido fino al: {format(new Date(request.quoteValidUntil), "d MMM yyyy", { locale: it })}</span>}
+                          </div>
+                          {request.paymentMethod && <p className="text-xs text-muted-foreground mt-1">Pagamento: {request.paymentMethod === 'in_store' ? 'In negozio' : request.paymentMethod === 'online_stripe' ? 'Stripe' : 'PayPal'} ({request.paymentStatus === 'paid' ? 'Pagato' : 'In attesa'})</p>}
                         </div>
                       )}
                       <div className="space-y-3">
