@@ -10497,6 +10497,21 @@ export function registerRoutes(app: Express): Server {
       }
       
       setActivityEntity(res, { type: 'remote_repair_requests', id: request.id });
+
+      await storage.createNotification({
+        userId: request.resellerId,
+        type: "system",
+        title: "Nuova richiesta riparazione remota",
+        message: `${req.user.fullName} ha inviato una richiesta di riparazione remota con ${devices.length} dispositivo/i`,
+        data: JSON.stringify({ remoteRequestId: request.id, customerId: req.user.id })
+      });
+      broadcastNotification(request.resellerId, {
+        type: "new_remote_request",
+        title: "Nuova richiesta riparazione remota",
+        message: `${req.user.fullName} ha inviato una richiesta di riparazione remota`,
+        requestId: request.id
+      });
+
       res.status(201).json({ ...request, devices: createdDevices });
     } catch (error: any) {
       console.error("Service order creation error:", error);
@@ -10776,6 +10791,35 @@ export function registerRoutes(app: Express): Server {
       }
       
       setActivityEntity(res, { type: 'remote_repair_requests', id: updated.id });
+
+      await storage.createNotification({
+        userId: request.customerId,
+        type: "system",
+        title: "Richiesta remota accettata",
+        message: `Il centro di riparazione ha accettato la tua richiesta #${request.requestNumber}`,
+        data: JSON.stringify({ remoteRequestId: request.id })
+      });
+      broadcastNotification(request.customerId, {
+        type: "remote_request_accepted",
+        title: "Richiesta remota accettata",
+        message: `La tua richiesta #${request.requestNumber} è stata accettata`,
+        requestId: request.id
+      });
+
+      await storage.createNotification({
+        userId: request.resellerId,
+        type: "system",
+        title: "Richiesta remota accettata",
+        message: `Il centro di riparazione ha accettato la richiesta #${request.requestNumber}`,
+        data: JSON.stringify({ remoteRequestId: request.id })
+      });
+      broadcastNotification(request.resellerId, {
+        type: "remote_request_accepted",
+        title: "Richiesta remota accettata",
+        message: `La richiesta #${request.requestNumber} è stata accettata dal centro`,
+        requestId: request.id
+      });
+
       res.json(updated);
     } catch (error: any) {
       console.error("Service order creation error:", error);
@@ -10812,6 +10856,35 @@ export function registerRoutes(app: Express): Server {
       }
       
       setActivityEntity(res, { type: 'remote_repair_requests', id: updated.id });
+
+      await storage.createNotification({
+        userId: request.customerId,
+        type: "system",
+        title: "Richiesta remota rifiutata",
+        message: `Il centro di riparazione ha rifiutato la tua richiesta #${request.requestNumber}${rejectionReason ? ': ' + rejectionReason : ''}`,
+        data: JSON.stringify({ remoteRequestId: request.id })
+      });
+      broadcastNotification(request.customerId, {
+        type: "remote_request_rejected",
+        title: "Richiesta remota rifiutata",
+        message: `La tua richiesta #${request.requestNumber} è stata rifiutata`,
+        requestId: request.id
+      });
+
+      await storage.createNotification({
+        userId: request.resellerId,
+        type: "system",
+        title: "Richiesta remota rifiutata",
+        message: `Il centro di riparazione ha rifiutato la richiesta #${request.requestNumber}`,
+        data: JSON.stringify({ remoteRequestId: request.id })
+      });
+      broadcastNotification(request.resellerId, {
+        type: "remote_request_rejected",
+        title: "Richiesta remota rifiutata",
+        message: `La richiesta #${request.requestNumber} è stata rifiutata dal centro`,
+        requestId: request.id
+      });
+
       res.json(updated);
     } catch (error: any) {
       console.error("Service order creation error:", error);
@@ -11018,6 +11091,21 @@ export function registerRoutes(app: Express): Server {
       }
       
       setActivityEntity(res, { type: 'remote_repair_requests', id: updated.id });
+
+      await storage.createNotification({
+        userId: request.customerId,
+        type: "system",
+        title: "Preventivo ricevuto",
+        message: `Hai ricevuto un preventivo di ${(quoteAmount / 100).toFixed(2)} € per la richiesta #${request.requestNumber}`,
+        data: JSON.stringify({ remoteRequestId: request.id })
+      });
+      broadcastNotification(request.customerId, {
+        type: "remote_request_quoted",
+        title: "Preventivo ricevuto",
+        message: `Hai ricevuto un preventivo per la richiesta #${request.requestNumber}`,
+        requestId: request.id
+      });
+
       res.json(updated);
     } catch (error: any) {
       console.error("Quote remote request error:", error);
@@ -11106,6 +11194,23 @@ export function registerRoutes(app: Express): Server {
         }
         
         setActivityEntity(res, { type: 'remote_repair_requests', id: updated.id });
+
+        if (request.assignedCenterId) {
+          await storage.createNotification({
+            userId: request.assignedCenterId,
+            type: "system",
+            title: "Preventivo accettato",
+            message: `Il cliente ha accettato il preventivo per la richiesta #${request.requestNumber} (pagamento in negozio)`,
+            data: JSON.stringify({ remoteRequestId: request.id })
+          });
+          broadcastNotification(request.assignedCenterId, {
+            type: "remote_quote_accepted",
+            title: "Preventivo accettato",
+            message: `Il cliente ha accettato il preventivo per la richiesta #${request.requestNumber}`,
+            requestId: request.id
+          });
+        }
+
         return res.json(updated);
       }
       
@@ -11122,6 +11227,23 @@ export function registerRoutes(app: Express): Server {
       }
       
       setActivityEntity(res, { type: 'remote_repair_requests', id: updated.id });
+
+      if (request.assignedCenterId) {
+        await storage.createNotification({
+          userId: request.assignedCenterId,
+          type: "system",
+          title: "Preventivo accettato",
+          message: `Il cliente ha accettato il preventivo per la richiesta #${request.requestNumber} (pagamento online)`,
+          data: JSON.stringify({ remoteRequestId: request.id })
+        });
+        broadcastNotification(request.assignedCenterId, {
+          type: "remote_quote_accepted",
+          title: "Preventivo accettato",
+          message: `Il cliente ha accettato il preventivo per la richiesta #${request.requestNumber}`,
+          requestId: request.id
+        });
+      }
+
       res.json(updated);
     } catch (error: any) {
       console.error("Accept quote error:", error);
@@ -11156,6 +11278,23 @@ export function registerRoutes(app: Express): Server {
       }
       
       setActivityEntity(res, { type: 'remote_repair_requests', id: updated.id });
+
+      if (request.assignedCenterId) {
+        await storage.createNotification({
+          userId: request.assignedCenterId,
+          type: "system",
+          title: "Preventivo rifiutato",
+          message: `Il cliente ha rifiutato il preventivo per la richiesta #${request.requestNumber}`,
+          data: JSON.stringify({ remoteRequestId: request.id })
+        });
+        broadcastNotification(request.assignedCenterId, {
+          type: "remote_quote_declined",
+          title: "Preventivo rifiutato",
+          message: `Il cliente ha rifiutato il preventivo per la richiesta #${request.requestNumber}`,
+          requestId: request.id
+        });
+      }
+
       res.json(updated);
     } catch (error: any) {
       console.error("Decline quote error:", error);
@@ -11569,6 +11708,22 @@ export function registerRoutes(app: Express): Server {
       }
       
       setActivityEntity(res, { type: 'remote_repair_requests', id: updated.id });
+
+      const customer = await storage.getUser(request.customerId);
+      await storage.createNotification({
+        userId: centerUser.id,
+        type: "system",
+        title: "Nuova richiesta remota assegnata",
+        message: `Ti è stata assegnata una richiesta di riparazione remota da ${customer?.fullName || 'un cliente'}`,
+        data: JSON.stringify({ remoteRequestId: request.id })
+      });
+      broadcastNotification(centerUser.id, {
+        type: "remote_request_assigned",
+        title: "Nuova richiesta remota assegnata",
+        message: `Ti è stata assegnata una richiesta di riparazione remota`,
+        requestId: request.id
+      });
+
       res.json(updated);
     } catch (error: any) {
       console.error("Service order creation error:", error);
