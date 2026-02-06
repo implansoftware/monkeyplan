@@ -42055,8 +42055,7 @@ export function registerRoutes(app: Express): Server {
   // Reseller: Get own fiscal config
   app.get("/api/reseller/fiscal/config", requireRole("reseller"), async (req, res) => {
     try {
-      const resellerId = req.user!.resellerId;
-      if (!resellerId) return res.status(400).json({ error: "Nessun rivenditore associato" });
+      const { resellerId } = getEffectiveContext(req);
       const config = await storage.getEntityFiscalConfig("reseller", String(resellerId));
       const masked = config ? { ...config, rtApiKey: config.rtApiKey ? "****" : null, rtApiSecret: config.rtApiSecret ? "****" : null } : { rtEnabled: false, useOwnCredentials: false };
       res.json(masked);
@@ -42068,8 +42067,7 @@ export function registerRoutes(app: Express): Server {
   // Reseller: Update own fiscal config
   app.put("/api/reseller/fiscal/config", requireRole("reseller"), async (req, res) => {
     try {
-      const resellerId = req.user!.resellerId;
-      if (!resellerId) return res.status(400).json({ error: "Nessun rivenditore associato" });
+      const { resellerId } = getEffectiveContext(req);
       const { rtEnabled, useOwnCredentials, rtApiKey, rtApiSecret, rtEndpoint } = req.body;
       const adminConfig = await storage.getPlatformFiscalConfig();
       if (useOwnCredentials && adminConfig && !adminConfig.allowOverride) {
@@ -42091,8 +42089,7 @@ export function registerRoutes(app: Express): Server {
   // Reseller: RT stats
   app.get("/api/reseller/fiscal/rt-stats", requireRole("reseller"), async (req, res) => {
     try {
-      const resellerId = req.user!.resellerId;
-      if (!resellerId) return res.status(400).json({ error: "Nessun rivenditore associato" });
+      const { resellerId } = getEffectiveContext(req);
       const stats = await storage.getPosTransactionsRtStats({ resellerId });
       res.json(stats);
     } catch (error: any) {
@@ -42103,8 +42100,7 @@ export function registerRoutes(app: Express): Server {
   // Reseller: Failed RT transactions
   app.get("/api/reseller/fiscal/failed-transactions", requireRole("reseller"), async (req, res) => {
     try {
-      const resellerId = req.user!.resellerId;
-      if (!resellerId) return res.status(400).json({ error: "Nessun rivenditore associato" });
+      const { resellerId } = getEffectiveContext(req);
       const transactions = await storage.getFailedRtTransactions(String(resellerId));
       res.json(transactions);
     } catch (error: any) {
