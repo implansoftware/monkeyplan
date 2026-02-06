@@ -10719,10 +10719,31 @@ export function registerRoutes(app: Express): Server {
           requestedCenterId: repairCenter.id
         });
       }
+
+      // Also get requests from customers assigned to this repair center
+      // Only include requests within the same reseller scope
+      let customerRequests: any[] = [];
+      if (repairCenter && repairCenter.resellerId) {
+        const allUsers = await storage.listUsers();
+        const centerCustomerIds = allUsers
+          .filter(u => u.role === 'customer' && u.repairCenterId === repairCenter.id)
+          .map(u => u.id);
+        if (centerCustomerIds.length > 0) {
+          const scopedRequests = await storage.listRemoteRepairRequests({
+            resellerId: repairCenter.resellerId
+          });
+          customerRequests = scopedRequests.filter(r => centerCustomerIds.includes(r.customerId));
+        }
+      }
       
       // Merge and deduplicate
       const allRequests = [...requests];
       for (const r of requestedRequests) {
+        if (!allRequests.find(ar => ar.id === r.id)) {
+          allRequests.push(r);
+        }
+      }
+      for (const r of customerRequests) {
         if (!allRequests.find(ar => ar.id === r.id)) {
           allRequests.push(r);
         }
