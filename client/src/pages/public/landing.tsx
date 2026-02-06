@@ -51,14 +51,14 @@ function Navbar() {
             <a href="#offer" className="text-sm text-slate-500 dark:text-slate-400 transition-colors" data-testid="link-nav-offer">100 Licenze</a>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="flex items-center gap-2">
             <ThemeToggle />
-            <Link href="/auth">
+            <Link href="/auth" className="hidden md:inline-flex">
               <Button variant="outline" size="sm" data-testid="button-login">
                 Accedi
               </Button>
             </Link>
-            <Link href="/auth">
+            <Link href="/auth" className="hidden md:inline-flex">
               <Button size="sm" className="bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 text-white border-emerald-600" data-testid="button-register">
                 Registrati
                 <ArrowRight className="w-4 h-4 ml-1" />
@@ -78,11 +78,24 @@ function Navbar() {
       </div>
 
       {mobileOpen && (
-        <div className="md:hidden border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 px-4 py-3 space-y-2">
-          <a href="#features" onClick={() => setMobileOpen(false)} className="block py-2 text-sm text-slate-500 dark:text-slate-400" data-testid="link-mobile-features">Funzionalit&agrave;</a>
-          <a href="#multistore" onClick={() => setMobileOpen(false)} className="block py-2 text-sm text-slate-500 dark:text-slate-400" data-testid="link-mobile-multistore">Multi-Negozio</a>
-          <a href="#integrations" onClick={() => setMobileOpen(false)} className="block py-2 text-sm text-slate-500 dark:text-slate-400" data-testid="link-mobile-integrations">Integrazioni</a>
-          <a href="#offer" onClick={() => setMobileOpen(false)} className="block py-2 text-sm text-slate-500 dark:text-slate-400" data-testid="link-mobile-offer">100 Licenze</a>
+        <div className="md:hidden border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 px-4 py-3 space-y-1">
+          <a href="#features" onClick={() => setMobileOpen(false)} className="block py-2.5 text-sm text-slate-600 dark:text-slate-400" data-testid="link-mobile-features">Funzionalit&agrave;</a>
+          <a href="#multistore" onClick={() => setMobileOpen(false)} className="block py-2.5 text-sm text-slate-600 dark:text-slate-400" data-testid="link-mobile-multistore">Multi-Negozio</a>
+          <a href="#integrations" onClick={() => setMobileOpen(false)} className="block py-2.5 text-sm text-slate-600 dark:text-slate-400" data-testid="link-mobile-integrations">Integrazioni</a>
+          <a href="#offer" onClick={() => setMobileOpen(false)} className="block py-2.5 text-sm text-slate-600 dark:text-slate-400" data-testid="link-mobile-offer">100 Licenze</a>
+          <div className="pt-3 border-t border-slate-200 dark:border-slate-800 flex flex-col gap-2">
+            <Link href="/auth" onClick={() => setMobileOpen(false)}>
+              <Button variant="outline" className="w-full" data-testid="button-mobile-login">
+                Accedi
+              </Button>
+            </Link>
+            <Link href="/auth" onClick={() => setMobileOpen(false)}>
+              <Button className="w-full bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 text-white border-emerald-600" data-testid="button-mobile-register">
+                Registrati
+                <ArrowRight className="w-4 h-4 ml-1" />
+              </Button>
+            </Link>
+          </div>
         </div>
       )}
     </nav>
@@ -115,50 +128,51 @@ function HeroSection() {
         <Smartphone className="h-6 w-6 text-cyan-200" />
       </div>
 
-      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 sm:py-28 lg:py-36">
+      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-24 lg:py-36">
         <div className="flex flex-col lg:flex-row items-center gap-12">
-          <div className="flex-1 text-center lg:text-left space-y-6">
+          <div className="flex-1 text-center lg:text-left space-y-4 sm:space-y-6">
             <span className="inline-block px-4 py-1.5 text-xs font-medium rounded-full bg-yellow-400/30 backdrop-blur-sm text-yellow-100 border border-yellow-300/30">
               Beta v.24
             </span>
 
-            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight leading-tight text-white" data-testid="text-hero-title">
+            <h1 className="text-3xl sm:text-5xl lg:text-6xl font-bold tracking-tight leading-tight text-white" data-testid="text-hero-title">
               Il gestionale operativo per{" "}
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 via-orange-300 to-yellow-200">assistenza tecnica</span>,{" "}
-              retail telefonia e rivendita usato
+              retail telefonia e rivendita{" "}
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 via-orange-300 to-yellow-200">usato</span>
             </h1>
 
-            <p className="text-lg sm:text-xl text-white/80 max-w-xl leading-relaxed" data-testid="text-hero-subtitle">
+            <p className="text-base sm:text-xl text-white/80 max-w-xl mx-auto lg:mx-0 leading-relaxed" data-testid="text-hero-subtitle">
               Un software gestionale completo pensato per chi lavora ogni giorno sul campo:
               centri di assistenza, negozi di telefonia, rivendita di dispositivi usati
               e reti multi-negozio.
             </p>
 
-            <p className="text-sm text-white/60">
+            <p className="text-sm text-white/60 max-w-lg mx-auto lg:mx-0">
               Nasce dall'esperienza reale di chi conosce i problemi quotidiani del settore
               e ha deciso di trasformarli in processi chiari, standardizzati e scalabili.
             </p>
 
-            <div className="flex flex-wrap items-center justify-center lg:justify-start gap-3 pt-4">
-              <Link href="/auth">
-                <Button size="lg" className="bg-white text-emerald-700 border-white/80 font-semibold shadow-lg shadow-emerald-900/20" data-testid="button-hero-cta">
+            <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-3 pt-4">
+              <Link href="/auth" className="w-full sm:w-auto">
+                <Button size="lg" className="w-full sm:w-auto bg-white text-emerald-700 border-white/80 font-semibold shadow-lg shadow-emerald-900/20" data-testid="button-hero-cta">
                   Inizia Ora
                   <ArrowRight className="w-4 h-4 ml-2" />
                 </Button>
               </Link>
-              <a href="#features" data-testid="link-hero-features">
-                <Button variant="outline" size="lg" className="text-white border-white/30 bg-white/10 backdrop-blur-sm" data-testid="button-hero-features">
+              <a href="#features" className="w-full sm:w-auto" data-testid="link-hero-features">
+                <Button variant="outline" size="lg" className="w-full sm:w-auto text-white border-white/30 bg-white/10 backdrop-blur-sm" data-testid="button-hero-features">
                   Scopri le funzionalit&agrave;
                 </Button>
               </a>
             </div>
 
-            <div className="flex flex-wrap items-center justify-center lg:justify-start gap-4 pt-2">
-              <div className="flex flex-wrap items-center gap-2 px-4 py-2 rounded-full bg-white/15 backdrop-blur-sm border border-white/25">
+            <div className="flex flex-wrap items-center justify-center lg:justify-start gap-3 pt-2">
+              <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/15 backdrop-blur-sm border border-white/25">
                 <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
                 <span className="text-sm text-white font-medium">Online</span>
               </div>
-              <div className="flex flex-wrap items-center gap-2 px-4 py-2 rounded-full bg-white/15 backdrop-blur-sm border border-white/25">
+              <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/15 backdrop-blur-sm border border-white/25">
                 <Shield className="w-4 h-4 text-yellow-300" />
                 <span className="text-sm text-white font-medium">Enterprise Ready</span>
               </div>
