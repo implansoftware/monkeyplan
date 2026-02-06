@@ -23,52 +23,130 @@ import {
   Menu,
   X,
   Building2,
-  Tablet,
-  Headphones,
+  Zap,
+  Clock,
+  TrendingUp,
+  FileText,
+  Settings,
+  Star,
+  ArrowUpRight,
+  Sparkles,
 } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { ThemeToggle } from "@/components/theme-toggle";
-import { DotLottieReact } from "@lottiefiles/dotlottie-react";
+
 import { usePageTitle } from "@/hooks/use-page-title";
+
+function useInView(threshold = 0.15) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [isVisible, setIsVisible] = useState(false);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const obs = new IntersectionObserver(
+      ([entry]) => { if (entry.isIntersecting) { setIsVisible(true); obs.disconnect(); } },
+      { threshold }
+    );
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, [threshold]);
+  return { ref, isVisible };
+}
+
+function AnimatedCounter({ target, suffix = "" }: { target: number; suffix?: string }) {
+  const [count, setCount] = useState(0);
+  const { ref, isVisible } = useInView(0.3);
+  useEffect(() => {
+    if (!isVisible) return;
+    const duration = 1800;
+    const steps = 60;
+    const increment = target / steps;
+    let current = 0;
+    const timer = setInterval(() => {
+      current += increment;
+      if (current >= target) { setCount(target); clearInterval(timer); }
+      else setCount(Math.floor(current));
+    }, duration / steps);
+    return () => clearInterval(timer);
+  }, [isVisible, target]);
+  return <span ref={ref}>{count}{suffix}</span>;
+}
 
 function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
+
+  useEffect(() => {
+    const handler = () => setScrolled(window.scrollY > 20);
+    window.addEventListener("scroll", handler, { passive: true });
+    return () => window.removeEventListener("scroll", handler);
+  }, []);
 
   return (
-    <nav className="sticky top-0 z-[999] bg-white/80 dark:bg-slate-950/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-800" aria-label="Navigazione principale" data-testid="navbar-landing">
+    <nav
+      className={`fixed top-0 left-0 right-0 z-[999] transition-all duration-300 ${
+        scrolled
+          ? "bg-white/90 dark:bg-slate-950/90 backdrop-blur-xl shadow-sm"
+          : "bg-transparent"
+      }`}
+      aria-label="Navigazione principale"
+      data-testid="navbar-landing"
+    >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex flex-wrap items-center justify-between gap-4 h-16">
           <div className="flex flex-wrap items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center">
-              <Wrench className="w-5 h-5 text-white" />
+            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-lg shadow-emerald-500/25">
+              <Wrench className="w-4 h-4 text-white" />
             </div>
-            <span className="text-lg font-bold tracking-tight text-slate-900 dark:text-white" data-testid="text-brand">MonkeyPlan</span>
+            <span className={`text-lg font-bold tracking-tight transition-colors ${scrolled ? "text-slate-900 dark:text-white" : "text-white"}`} data-testid="text-brand">
+              MonkeyPlan
+            </span>
           </div>
 
-          <div className="hidden md:flex items-center gap-6">
-            <a href="#features" className="text-sm text-slate-500 dark:text-slate-400 transition-colors" data-testid="link-nav-features">Funzionalit&agrave;</a>
-            <a href="#multistore" className="text-sm text-slate-500 dark:text-slate-400 transition-colors" data-testid="link-nav-multistore">Multi-Negozio</a>
-            <a href="#integrations" className="text-sm text-slate-500 dark:text-slate-400 transition-colors" data-testid="link-nav-integrations">Integrazioni</a>
-            <a href="#offer" className="text-sm text-slate-500 dark:text-slate-400 transition-colors" data-testid="link-nav-offer">100 Licenze</a>
+          <div className="hidden md:flex items-center gap-1">
+            {[
+              { href: "#features", label: "Funzionalità" },
+              { href: "#multistore", label: "Multi-Negozio" },
+              { href: "#integrations", label: "Integrazioni" },
+              { href: "#offer", label: "100 Licenze" },
+            ].map((item) => (
+              <a
+                key={item.href}
+                href={item.href}
+                className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                  scrolled
+                    ? "text-slate-600 dark:text-slate-400"
+                    : "text-white/70"
+                }`}
+                data-testid={`link-nav-${item.href.slice(1)}`}
+              >
+                {item.label}
+              </a>
+            ))}
           </div>
 
           <div className="flex items-center gap-2">
             <ThemeToggle />
             <Link href="/auth" className="hidden md:inline-flex">
-              <Button variant="outline" size="sm" data-testid="button-login">
+              <Button
+                variant="outline"
+                size="sm"
+                className={scrolled ? "" : "text-white border-white/30 bg-white/10 backdrop-blur-sm"}
+                data-testid="button-login"
+              >
                 Accedi
               </Button>
             </Link>
             <Link href="/auth" className="hidden md:inline-flex">
-              <Button size="sm" className="bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 text-white border-emerald-600" data-testid="button-register">
-                Registrati
-                <ArrowRight className="w-4 h-4 ml-1" />
+              <Button size="sm" data-testid="button-register">
+                Prova Gratis
+                <ArrowRight className="w-3.5 h-3.5 ml-1" />
               </Button>
             </Link>
             <Button
               size="icon"
               variant="ghost"
-              className="md:hidden"
+              className={`md:hidden ${scrolled ? "" : "text-white"}`}
               onClick={() => setMobileOpen(!mobileOpen)}
               data-testid="button-mobile-menu"
             >
@@ -79,21 +157,30 @@ function Navbar() {
       </div>
 
       {mobileOpen && (
-        <div className="md:hidden border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 px-4 py-3 space-y-1">
-          <a href="#features" onClick={() => setMobileOpen(false)} className="block py-2.5 text-sm text-slate-600 dark:text-slate-400" data-testid="link-mobile-features">Funzionalit&agrave;</a>
-          <a href="#multistore" onClick={() => setMobileOpen(false)} className="block py-2.5 text-sm text-slate-600 dark:text-slate-400" data-testid="link-mobile-multistore">Multi-Negozio</a>
-          <a href="#integrations" onClick={() => setMobileOpen(false)} className="block py-2.5 text-sm text-slate-600 dark:text-slate-400" data-testid="link-mobile-integrations">Integrazioni</a>
-          <a href="#offer" onClick={() => setMobileOpen(false)} className="block py-2.5 text-sm text-slate-600 dark:text-slate-400" data-testid="link-mobile-offer">100 Licenze</a>
+        <div className="md:hidden bg-white dark:bg-slate-950 border-t border-slate-200 dark:border-slate-800 px-4 py-3 space-y-1 shadow-lg">
+          {[
+            { href: "#features", label: "Funzionalità" },
+            { href: "#multistore", label: "Multi-Negozio" },
+            { href: "#integrations", label: "Integrazioni" },
+            { href: "#offer", label: "100 Licenze" },
+          ].map((item) => (
+            <a
+              key={item.href}
+              href={item.href}
+              onClick={() => setMobileOpen(false)}
+              className="block py-2.5 text-sm text-slate-600 dark:text-slate-400"
+              data-testid={`link-mobile-${item.href.slice(1)}`}
+            >
+              {item.label}
+            </a>
+          ))}
           <div className="pt-3 border-t border-slate-200 dark:border-slate-800 flex flex-col gap-2">
             <Link href="/auth" onClick={() => setMobileOpen(false)}>
-              <Button variant="outline" className="w-full" data-testid="button-mobile-login">
-                Accedi
-              </Button>
+              <Button variant="outline" className="w-full" data-testid="button-mobile-login">Accedi</Button>
             </Link>
             <Link href="/auth" onClick={() => setMobileOpen(false)}>
-              <Button className="w-full bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 text-white border-emerald-600" data-testid="button-mobile-register">
-                Registrati
-                <ArrowRight className="w-4 h-4 ml-1" />
+              <Button className="w-full" data-testid="button-mobile-register">
+                Prova Gratis <ArrowRight className="w-3.5 h-3.5 ml-1" />
               </Button>
             </Link>
           </div>
@@ -105,106 +192,163 @@ function Navbar() {
 
 function HeroSection() {
   return (
-    <section className="relative overflow-hidden" data-testid="section-hero">
-      <div className="absolute inset-0 bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-500" />
-      <div className="absolute -top-20 -left-20 w-80 h-80 rounded-full bg-orange-400/30 blur-3xl animate-pulse" />
-      <div className="absolute bottom-10 right-10 w-96 h-96 rounded-full bg-yellow-400/25 blur-3xl animate-pulse" style={{ animationDelay: "1s" }} />
-      <div className="absolute top-1/3 left-1/4 w-64 h-64 rounded-full bg-emerald-300/30 blur-3xl animate-pulse" style={{ animationDelay: "2s" }} />
+    <section className="relative min-h-[100dvh] flex items-center overflow-hidden" data-testid="section-hero">
+      <div className="absolute inset-0 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900" />
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-emerald-600/20 via-transparent to-transparent" />
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom_left,_var(--tw-gradient-stops))] from-teal-600/15 via-transparent to-transparent" />
 
-      <div
-        className="absolute inset-0 opacity-5"
-        style={{
-          backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M30 5 L35 15 L45 15 L37 22 L40 32 L30 26 L20 32 L23 22 L15 15 L25 15 Z' fill='white'/%3E%3C/svg%3E")`,
-          backgroundSize: "60px 60px",
-        }}
-      />
+      <div className="absolute inset-0 opacity-[0.03]" style={{
+        backgroundImage: `radial-gradient(circle at 1px 1px, white 1px, transparent 0)`,
+        backgroundSize: "40px 40px",
+      }} />
 
-      <div className="absolute top-24 right-12 hidden lg:block p-3 rounded-2xl bg-orange-400/20 backdrop-blur-sm border border-orange-300/30 animate-bounce" style={{ animationDuration: "3s" }}>
-        <Tablet className="h-6 w-6 text-orange-200" />
-      </div>
-      <div className="absolute bottom-32 left-8 hidden lg:block p-3 rounded-2xl bg-yellow-400/20 backdrop-blur-sm border border-yellow-300/30 animate-bounce" style={{ animationDuration: "4s", animationDelay: "1s" }}>
-        <Headphones className="h-6 w-6 text-yellow-200" />
-      </div>
-      <div className="absolute top-1/2 right-24 hidden lg:block p-3 rounded-2xl bg-cyan-400/20 backdrop-blur-sm border border-cyan-300/30 animate-bounce" style={{ animationDuration: "3.5s", animationDelay: "0.5s" }}>
-        <Smartphone className="h-6 w-6 text-cyan-200" />
-      </div>
+      <div className="absolute top-20 right-[15%] w-72 h-72 rounded-full bg-emerald-500/10 blur-[100px]" />
+      <div className="absolute bottom-20 left-[10%] w-96 h-96 rounded-full bg-teal-500/8 blur-[120px]" />
 
-      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-24 lg:py-36">
-        <div className="flex flex-col lg:flex-row items-center gap-12">
-          <div className="flex-1 text-center lg:text-left space-y-4 sm:space-y-6">
-            <span className="inline-block px-4 py-1.5 text-xs font-medium rounded-full bg-yellow-400/30 backdrop-blur-sm text-yellow-100 border border-yellow-300/30">
-              Beta v.24
-            </span>
+      <div className="relative z-10 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-24 pb-16 sm:pt-32 sm:pb-24">
+        <div className="grid lg:grid-cols-12 gap-8 lg:gap-12 items-center">
+          <div className="lg:col-span-7 space-y-6 sm:space-y-8">
+            <div className="flex flex-wrap items-center gap-3">
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-medium rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/20 backdrop-blur-sm">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                Beta v.24 — Attivo
+              </span>
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-medium rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/20 backdrop-blur-sm">
+                <Star className="w-3 h-3" />
+                100 Licenze Gratuite
+              </span>
+            </div>
 
-            <h1 className="text-3xl sm:text-5xl lg:text-6xl font-bold tracking-tight leading-tight text-white" data-testid="text-hero-title">
-              Il gestionale operativo per{" "}
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 via-orange-300 to-yellow-200">assistenza tecnica</span>,{" "}
-              retail telefonia e rivendita{" "}
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 via-orange-300 to-yellow-200">usato</span>
+            <h1 className="text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-extrabold tracking-tight leading-[1.08] text-white" data-testid="text-hero-title">
+              <span className="block">Il gestionale</span>
+              <span className="block text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 via-teal-400 to-cyan-400">
+                che ti serve
+              </span>
+              <span className="block text-slate-300 font-semibold text-[0.72em]">sul campo. Ogni giorno.</span>
             </h1>
 
-            <p className="text-base sm:text-xl text-white/80 max-w-xl mx-auto lg:mx-0 leading-relaxed" data-testid="text-hero-subtitle">
-              Un software gestionale completo pensato per chi lavora ogni giorno sul campo:
-              centri di assistenza, negozi di telefonia, rivendita di dispositivi usati
-              e reti multi-negozio.
+            <p className="text-lg sm:text-xl text-slate-400 max-w-xl leading-relaxed" data-testid="text-hero-subtitle">
+              Assistenza tecnica, retail telefonia, rivendita usato e reti multi-negozio.
+              Un unico sistema per chi lavora davvero.
             </p>
 
-            <p className="text-sm text-white/60 max-w-lg mx-auto lg:mx-0">
-              Nasce dall'esperienza reale di chi conosce i problemi quotidiani del settore
-              e ha deciso di trasformarli in processi chiari, standardizzati e scalabili.
-            </p>
-
-            <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-3 pt-4">
-              <Link href="/auth" className="w-full sm:w-auto">
-                <Button size="lg" className="w-full sm:w-auto bg-white text-emerald-700 border-white/80 font-semibold shadow-lg shadow-emerald-900/20" data-testid="button-hero-cta">
-                  Inizia Ora
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 pt-2">
+              <Link href="/auth" className="w-full sm:w-auto" data-testid="link-hero-cta">
+                <Button size="lg" className="w-full sm:w-auto font-semibold shadow-lg shadow-primary/25 text-base" data-testid="button-hero-cta">
+                  Inizia Gratis
                   <ArrowRight className="w-4 h-4 ml-2" />
                 </Button>
               </Link>
               <a href="#features" className="w-full sm:w-auto" data-testid="link-hero-features">
-                <Button variant="outline" size="lg" className="w-full sm:w-auto text-white border-white/30 bg-white/10 backdrop-blur-sm" data-testid="button-hero-features">
-                  Scopri le funzionalit&agrave;
+                <Button variant="outline" size="lg" className="w-full sm:w-auto text-white border-white/15 bg-white/5 backdrop-blur-sm" data-testid="button-hero-features">
+                  Scopri di pi&ugrave;
                 </Button>
               </a>
             </div>
 
-            <div className="flex flex-wrap items-center justify-center lg:justify-start gap-3 pt-2">
-              <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/15 backdrop-blur-sm border border-white/25">
-                <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                <span className="text-sm text-white font-medium">Online</span>
-              </div>
-              <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/15 backdrop-blur-sm border border-white/25">
-                <Shield className="w-4 h-4 text-yellow-300" />
-                <span className="text-sm text-white font-medium">Enterprise Ready</span>
-              </div>
+            <div className="grid grid-cols-3 gap-4 pt-4 max-w-md">
+              {[
+                { value: "10+", label: "Moduli integrati" },
+                { value: "4", label: "Ruoli distinti" },
+                { value: "99.9%", label: "Uptime garantito" },
+              ].map((stat) => (
+                <div key={stat.label} className="text-center sm:text-left" data-testid={`stat-hero-${stat.label.toLowerCase().replace(/\s+/g, "-")}`}>
+                  <p className="text-2xl sm:text-3xl font-bold text-white">{stat.value}</p>
+                  <p className="text-xs text-slate-500 mt-0.5">{stat.label}</p>
+                </div>
+              ))}
             </div>
           </div>
 
-          <div className="flex-shrink-0 hidden lg:flex flex-col items-center" data-testid="hero-mascot-area">
+          <div className="lg:col-span-5 hidden lg:block" data-testid="hero-mascot-area">
             <div className="relative">
-              <div className="absolute inset-0 bg-gradient-to-r from-yellow-400 via-orange-400 to-amber-400 rounded-full blur-3xl opacity-25 animate-pulse" />
-              <div
-                className="relative w-80 h-80"
-                style={{ animation: "float 4s ease-in-out infinite" }}
-              >
-                <DotLottieReact
-                  src="https://assets-v2.lottiefiles.com/a/b3d4a854-1151-11ee-93f1-3b2773cb4e21/1FGYylyYib.lottie"
-                  loop
-                  autoplay
-                  className="w-full h-full drop-shadow-2xl"
-                />
+              <div className="absolute -inset-8 bg-gradient-to-r from-emerald-500/10 via-teal-500/10 to-cyan-500/10 rounded-3xl blur-2xl" />
+              <div className="relative space-y-4">
+                <div className="rounded-2xl bg-white/[0.04] backdrop-blur-sm border border-white/[0.06] p-6 space-y-4">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <div className="flex items-center gap-2">
+                      <div className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
+                      <span className="text-sm font-medium text-white" data-testid="text-dashboard-title">Dashboard Live</span>
+                    </div>
+                    <span className="text-xs text-slate-500" data-testid="text-dashboard-date">Oggi</span>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    {[
+                      { icon: Wrench, label: "Riparazioni", value: "24", color: "text-emerald-400", bg: "bg-emerald-500/10" },
+                      { icon: Package, label: "Magazzino", value: "1.2K", color: "text-cyan-400", bg: "bg-cyan-500/10" },
+                      { icon: ShoppingCart, label: "Vendite", value: "18", color: "text-amber-400", bg: "bg-amber-500/10" },
+                      { icon: TrendingUp, label: "Fatturato", value: "+12%", color: "text-teal-400", bg: "bg-teal-500/10" },
+                    ].map((item) => (
+                      <div key={item.label} className="p-3 rounded-xl bg-white/[0.03] border border-white/[0.05]">
+                        <div className={`w-8 h-8 rounded-lg ${item.bg} flex items-center justify-center mb-2`}>
+                          <item.icon className={`w-4 h-4 ${item.color}`} />
+                        </div>
+                        <p className="text-xl font-bold text-white">{item.value}</p>
+                        <p className="text-[11px] text-slate-500">{item.label}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="rounded-xl bg-white/[0.04] backdrop-blur-sm border border-white/[0.06] p-4 space-y-2">
+                    <div className="flex items-center gap-2">
+                      <Clock className="w-4 h-4 text-emerald-400" />
+                      <span className="text-xs font-medium text-slate-400">Tempo medio</span>
+                    </div>
+                    <p className="text-lg font-bold text-white">2.4h</p>
+                    <div className="w-full h-1 rounded-full bg-white/10">
+                      <div className="h-full w-3/4 rounded-full bg-gradient-to-r from-emerald-500 to-teal-500" />
+                    </div>
+                  </div>
+                  <div className="rounded-xl bg-white/[0.04] backdrop-blur-sm border border-white/[0.06] p-4 space-y-2">
+                    <div className="flex items-center gap-2">
+                      <CheckCircle className="w-4 h-4 text-cyan-400" />
+                      <span className="text-xs font-medium text-slate-400">Completate</span>
+                    </div>
+                    <p className="text-lg font-bold text-white">96%</p>
+                    <div className="w-full h-1 rounded-full bg-white/10">
+                      <div className="h-full w-[96%] rounded-full bg-gradient-to-r from-cyan-500 to-blue-500" />
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
         </div>
       </div>
 
-      <style>{`
-        @keyframes float {
-          0%, 100% { transform: translateY(0px); }
-          50% { transform: translateY(-12px); }
-        }
-      `}</style>
+      <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-emerald-500/30 to-transparent" />
+    </section>
+  );
+}
+
+function TrustBar() {
+  const { ref, isVisible } = useInView();
+  return (
+    <section ref={ref} className="relative py-12 sm:py-16 bg-slate-50 dark:bg-slate-900/50 border-b border-slate-200/50 dark:border-slate-800/50" data-testid="section-trust">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className={`grid grid-cols-2 lg:grid-cols-4 gap-6 lg:gap-8 transition-all duration-700 ${isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"}`}>
+          {[
+            { icon: Shield, value: 10, suffix: "+", label: "Moduli operativi", color: "text-emerald-600 dark:text-emerald-400" },
+            { icon: Building2, value: 4, suffix: "", label: "Ruoli aziendali", color: "text-teal-600 dark:text-teal-400" },
+            { icon: Globe, value: 9, suffix: "+", label: "Integrazioni attive", color: "text-cyan-600 dark:text-cyan-400" },
+            { icon: Zap, value: 100, suffix: "", label: "Licenze gratuite", color: "text-amber-600 dark:text-amber-400" },
+          ].map((item) => (
+            <div key={item.label} className="flex items-center gap-4" data-testid={`stat-trust-${item.label.toLowerCase().replace(/\s+/g, "-")}`}>
+              <div className="w-11 h-11 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center shrink-0">
+                <item.icon className={`w-5 h-5 ${item.color}`} />
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-slate-900 dark:text-white">
+                  <AnimatedCounter target={item.value} suffix={item.suffix} />
+                </p>
+                <p className="text-xs text-slate-500 dark:text-slate-400">{item.label}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
     </section>
   );
 }
@@ -213,143 +357,151 @@ const features = [
   {
     icon: Wrench,
     title: "Assistenza Tecnica",
-    description:
-      "Accettazione, diagnosi, preventivo, approvazione cliente, lavorazione, test, consegna e storico completo di clienti e dispositivi.",
-    gradient: "from-emerald-400 to-teal-500",
+    description: "Workflow completo: accettazione, diagnosi, preventivo, approvazione, lavorazione, test, consegna. Ogni riparazione tracciata e documentata.",
+    accent: "emerald",
   },
   {
     icon: Package,
     title: "Magazzino e Ricambi",
-    description:
-      "Carichi e scarichi, compatibilit\u00e0, resi, fornitori, DDT, costi e marginalit\u00e0 sempre sotto controllo.",
-    gradient: "from-cyan-400 to-blue-500",
+    description: "Carichi, scarichi, compatibilità, resi, fornitori, DDT. Costi e marginalità sempre sotto controllo con tracciabilità completa.",
+    accent: "cyan",
   },
   {
     icon: ShoppingCart,
-    title: "Vendita e Cassa",
-    description:
-      "Documenti, incassi, pagamenti digitali, rate e cross-selling di accessori e servizi. POS fiscale integrato.",
-    gradient: "from-orange-400 to-amber-500",
+    title: "Vendita e POS Fiscale",
+    description: "POS integrato con RT fiscale, multi-aliquota IVA, corrispettivi, codice lotteria. Incassi, pagamenti digitali e rate.",
+    accent: "amber",
   },
   {
     icon: Smartphone,
     title: "Usato e Permute",
-    description:
-      "Valutazione dispositivi, ritiro, classificazione, ricondizionamento e rivendita con marginalit\u00e0 reale per singolo device.",
-    gradient: "from-yellow-400 to-orange-500",
+    description: "Valutazione dispositivi, ritiro, classificazione, ricondizionamento e rivendita con marginalità reale per singolo device.",
+    accent: "orange",
   },
   {
     icon: Users,
-    title: "CRM",
-    description:
-      "Clienti, consensi, dispositivi, comunicazioni e storico interazioni centralizzati in un unico punto.",
-    gradient: "from-teal-400 to-emerald-500",
+    title: "CRM Clienti",
+    description: "Clienti, consensi, dispositivi, comunicazioni e storico interazioni. Tutto centralizzato in un unico punto.",
+    accent: "teal",
   },
   {
     icon: Shield,
     title: "Garanzie e Assicurazioni",
-    description:
-      "Catalogo garanzie multi-tenant, offerta durante l'accettazione, storico cliente e analytics dedicate.",
-    gradient: "from-blue-400 to-cyan-500",
+    description: "Catalogo multi-tenant, offerta durante l'accettazione, storico cliente, analytics dedicate e fatturazione automatica.",
+    accent: "blue",
   },
 ];
 
+const accentMap: Record<string, { iconBg: string; iconText: string }> = {
+  emerald: { iconBg: "bg-emerald-500/10 dark:bg-emerald-500/15", iconText: "text-emerald-600 dark:text-emerald-400" },
+  cyan: { iconBg: "bg-cyan-500/10 dark:bg-cyan-500/15", iconText: "text-cyan-600 dark:text-cyan-400" },
+  amber: { iconBg: "bg-amber-500/10 dark:bg-amber-500/15", iconText: "text-amber-600 dark:text-amber-400" },
+  orange: { iconBg: "bg-orange-500/10 dark:bg-orange-500/15", iconText: "text-orange-600 dark:text-orange-400" },
+  teal: { iconBg: "bg-teal-500/10 dark:bg-teal-500/15", iconText: "text-teal-600 dark:text-teal-400" },
+  blue: { iconBg: "bg-blue-500/10 dark:bg-blue-500/15", iconText: "text-blue-600 dark:text-blue-400" },
+};
+
 function FeaturesSection() {
+  const { ref, isVisible } = useInView();
   return (
     <section id="features" className="py-20 sm:py-28 bg-white dark:bg-slate-950" data-testid="section-features">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center space-y-3 mb-14">
-          <h2 className="text-3xl sm:text-4xl font-bold tracking-tight text-slate-900 dark:text-white" data-testid="text-features-title">
-            Un unico sistema, tutti i servizi
+        <div ref={ref} className={`max-w-2xl mx-auto text-center space-y-4 mb-16 transition-all duration-700 ${isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-6"}`}>
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-semibold rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
+            <Sparkles className="w-3 h-3" />
+            Piattaforma All-in-One
+          </span>
+          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight text-slate-900 dark:text-white" data-testid="text-features-title">
+            Tutto quello che serve.
+            <span className="block text-slate-400 dark:text-slate-500">Niente di superfluo.</span>
           </h2>
-          <p className="text-slate-500 dark:text-slate-400 max-w-2xl mx-auto text-lg">
-            MonkeyPlan non &egrave; un semplice programma di ticketing. &Egrave; una piattaforma operativa
-            integrata che unisce in un solo ambiente tutto ci&ograve; che serve per lavorare bene.
+          <p className="text-slate-500 dark:text-slate-400 text-lg leading-relaxed">
+            Non un semplice ticketing. Una piattaforma operativa integrata che unisce
+            in un solo ambiente tutto il necessario per lavorare bene.
           </p>
         </div>
 
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
-          {features.map((feature) => (
-            <Card
-              key={feature.title}
-              className="p-6 space-y-4 rounded-2xl hover-elevate"
-              data-testid={`card-feature-${feature.title.toLowerCase().replace(/\s+/g, "-")}`}
-            >
-              <div className={`w-11 h-11 rounded-xl bg-gradient-to-br ${feature.gradient} flex items-center justify-center`}>
-                <feature.icon className="w-5 h-5 text-white" />
-              </div>
-              <h3 className="font-semibold text-lg text-slate-900 dark:text-white">{feature.title}</h3>
-              <p className="text-sm text-slate-500 dark:text-slate-400 leading-relaxed">{feature.description}</p>
-            </Card>
-          ))}
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-5">
+          {features.map((feature, idx) => {
+            const colors = accentMap[feature.accent];
+            return (
+              <Card
+                key={feature.title}
+                className="p-6 rounded-2xl hover-elevate"
+                style={{ transitionDelay: `${idx * 50}ms` }}
+                data-testid={`card-feature-${feature.title.toLowerCase().replace(/\s+/g, "-")}`}
+              >
+                <div className="space-y-4">
+                  <div className={`w-12 h-12 rounded-xl ${colors.iconBg} flex items-center justify-center`}>
+                    <feature.icon className={`w-5 h-5 ${colors.iconText}`} />
+                  </div>
+                  <div className="space-y-2">
+                    <h3 className="font-semibold text-lg text-slate-900 dark:text-white">{feature.title}</h3>
+                    <p className="text-sm text-slate-500 dark:text-slate-400 leading-relaxed">{feature.description}</p>
+                  </div>
+                </div>
+              </Card>
+            );
+          })}
         </div>
       </div>
     </section>
   );
 }
 
-const multiStorePoints = [
-  {
-    icon: Building2,
-    text: "Gestisci pi\u00f9 punti vendita da un unico sistema, con ruoli e permessi differenziati.",
-  },
-  {
-    icon: Network,
-    text: "Controllo centrale e autonomia operativa locale per ogni sede.",
-  },
-  {
-    icon: RefreshCw,
-    text: "Scambi interni di ricambi, dispositivi e accessori tracciati, verificabili e ordinati.",
-  },
-  {
-    icon: BarChart3,
-    text: "Ogni movimento \u00e8 registrato, ogni responsabilit\u00e0 \u00e8 chiara, ogni decisione \u00e8 supportata dai dati.",
-  },
-];
+function WorkflowSection() {
+  const { ref, isVisible } = useInView();
+  const steps = [
+    { icon: FileText, label: "Accettazione", desc: "Presa in carico con dati dispositivo e cliente" },
+    { icon: Settings, label: "Diagnosi", desc: "Analisi tecnica del problema" },
+    { icon: CreditCard, label: "Preventivo", desc: "Costo stimato con approvazione cliente" },
+    { icon: Wrench, label: "Riparazione", desc: "Lavorazione con log dettagliato" },
+    { icon: CheckCircle, label: "Test & QC", desc: "Verifica qualità e funzionamento" },
+    { icon: Truck, label: "Consegna", desc: "Restituzione e chiusura pratica" },
+  ];
 
-function MultiStoreSection() {
   return (
-    <section id="multistore" className="relative py-20 sm:py-28 overflow-hidden" data-testid="section-multistore">
-      <div className="absolute inset-0 bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-500" />
-      <div className="absolute -top-32 -right-32 w-96 h-96 rounded-full bg-yellow-400/20 blur-3xl" />
-      <div className="absolute -bottom-32 -left-32 w-96 h-96 rounded-full bg-orange-400/20 blur-3xl" />
-
-      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid lg:grid-cols-2 gap-12 items-center">
+    <section className="py-20 sm:py-28 bg-slate-50 dark:bg-slate-900/30" data-testid="section-workflow">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div ref={ref} className={`grid lg:grid-cols-2 gap-12 lg:gap-16 items-center transition-all duration-700 ${isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-6"}`}>
           <div className="space-y-6">
-            <h2 className="text-3xl sm:text-4xl font-bold tracking-tight text-white" data-testid="text-multistore-title">
-              Multi-negozio reale, pensato per crescere
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-semibold rounded-full bg-teal-500/10 text-teal-600 dark:text-teal-400">
+              <RefreshCw className="w-3 h-3" />
+              Workflow Avanzato
+            </span>
+            <h2 className="text-3xl sm:text-4xl font-bold tracking-tight text-slate-900 dark:text-white">
+              Dalla presa in carico
+              <span className="block text-emerald-600 dark:text-emerald-400">alla consegna.</span>
             </h2>
-            <p className="text-white/80 text-lg leading-relaxed">
-              MonkeyPlan &egrave; progettato per funzionare davvero in contesti multi-store.
-              Riducendo sprechi, fermi operativi e confusione.
+            <p className="text-slate-500 dark:text-slate-400 text-lg leading-relaxed">
+              Un flusso di lavoro in 10 stati che standardizza ogni riparazione.
+              Nessun passaggio viene perso, ogni responsabilità è chiara.
             </p>
 
-            <div className="space-y-4">
-              {multiStorePoints.map((point, idx) => (
-                <div key={idx} className="flex items-start gap-3" data-testid={`item-multistore-${idx}`}>
-                  <div className="w-9 h-9 rounded-xl bg-white/15 backdrop-blur-sm border border-white/20 flex items-center justify-center shrink-0 mt-0.5">
-                    <point.icon className="w-4 h-4 text-white" />
-                  </div>
-                  <p className="text-sm text-white/90 leading-relaxed">{point.text}</p>
-                </div>
-              ))}
+            <div className="pt-2">
+              <Link href="/auth" data-testid="link-workflow-cta">
+                <Button variant="outline" data-testid="button-workflow-cta">
+                  Vedi come funziona
+                  <ArrowUpRight className="w-3.5 h-3.5 ml-1" />
+                </Button>
+              </Link>
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            {[
-              { icon: Store, value: "4", label: "Ruoli Distinti", gradient: "from-yellow-400/30", iconColor: "text-yellow-200", testId: "card-stat-roles" },
-              { icon: Layers, value: "B2B", label: "Ordini Multi-Livello", gradient: "from-emerald-400/30", iconColor: "text-emerald-200", testId: "card-stat-b2b" },
-              { icon: Truck, value: "Real-time", label: "Trasferimenti Interni", gradient: "from-orange-400/30", iconColor: "text-orange-200", testId: "card-stat-realtime" },
-              { icon: CreditCard, value: "POS", label: "Fiscale Integrato", gradient: "from-cyan-400/30", iconColor: "text-cyan-200", testId: "card-stat-pos" },
-            ].map((stat) => (
-              <div key={stat.testId} className="p-5 rounded-2xl bg-white/10 backdrop-blur-sm border border-white/20 space-y-2" data-testid={stat.testId}>
-                <div className={`p-2 rounded-xl ${stat.gradient} w-fit`}>
-                  <stat.icon className={`w-5 h-5 ${stat.iconColor}`} />
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+            {steps.map((step, idx) => (
+              <div
+                key={step.label}
+                className="relative p-4 rounded-xl bg-white dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700/50 space-y-2"
+                style={{ transitionDelay: `${idx * 80}ms` }}
+                data-testid={`step-workflow-${idx}`}
+              >
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 w-5 h-5 rounded-md flex items-center justify-center">{idx + 1}</span>
+                  <step.icon className="w-4 h-4 text-slate-400" />
                 </div>
-                <p className="font-semibold text-2xl text-white">{stat.value}</p>
-                <p className="text-xs text-white/70">{stat.label}</p>
+                <p className="text-sm font-semibold text-slate-900 dark:text-white">{step.label}</p>
+                <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-snug">{step.desc}</p>
               </div>
             ))}
           </div>
@@ -359,53 +511,126 @@ function MultiStoreSection() {
   );
 }
 
-const integrations = [
-  { name: "SIFAR", desc: "Ricambi e parti" },
-  { name: "MobileSentrix", desc: "Componenti" },
-  { name: "Foneday", desc: "Parti di ricambio" },
-  { name: "Valutatore Usati", desc: "Valutazione device" },
-  { name: "Sibill", desc: "Fatturazione" },
-  { name: "PayPal", desc: "Pagamenti" },
-  { name: "Stripe", desc: "Pagamenti" },
-  { name: "Scalapay", desc: "Rate" },
-  { name: "Fiskaly", desc: "RT Fiscale" },
+const multiStorePoints = [
+  { icon: Building2, title: "Punti vendita centralizzati", text: "Gestisci più sedi da un unico sistema con ruoli e permessi differenziati per ogni operatore." },
+  { icon: Network, title: "Autonomia locale", text: "Controllo centrale e autonomia operativa locale. Ogni sede lavora in modo indipendente." },
+  { icon: RefreshCw, title: "Trasferimenti tracciati", text: "Scambi interni di ricambi, dispositivi e accessori tracciati, verificabili e ordinati." },
+  { icon: BarChart3, title: "Dati per decidere", text: "Ogni movimento è registrato, ogni decisione è supportata dai dati. Report e analytics in tempo reale." },
 ];
 
-function IntegrationsSection() {
+function MultiStoreSection() {
+  const { ref, isVisible } = useInView();
   return (
-    <section id="integrations" className="py-20 sm:py-28 bg-white dark:bg-slate-950" data-testid="section-integrations">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center space-y-3 mb-14">
-          <h2 className="text-3xl sm:text-4xl font-bold tracking-tight text-slate-900 dark:text-white" data-testid="text-integrations-title">
-            Integrazioni attive e sistema aperto
+    <section id="multistore" className="relative py-20 sm:py-28 overflow-hidden" data-testid="section-multistore">
+      <div className="absolute inset-0 bg-slate-900 dark:bg-slate-950" />
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-emerald-600/8 via-transparent to-transparent" />
+      <div className="absolute inset-0 opacity-[0.02]" style={{
+        backgroundImage: `radial-gradient(circle at 1px 1px, white 1px, transparent 0)`,
+        backgroundSize: "32px 32px",
+      }} />
+
+      <div ref={ref} className={`relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 transition-all duration-700 ${isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-6"}`}>
+        <div className="max-w-2xl mx-auto text-center space-y-4 mb-16">
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-semibold rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/20">
+            <Network className="w-3 h-3" />
+            Multi-Negozio
+          </span>
+          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight text-white" data-testid="text-multistore-title">
+            Pensato per crescere.
+            <span className="block text-slate-400">Senza compromessi.</span>
           </h2>
-          <p className="text-slate-500 dark:text-slate-400 max-w-2xl mx-auto text-lg">
-            MonkeyPlan &egrave; integrabile con qualsiasi fornitore di prodotti e servizi.
-            Nessun lock-in, nessun vincolo forzato. Si adatta al tuo ecosistema, non il contrario.
+          <p className="text-slate-400 text-lg leading-relaxed">
+            MonkeyPlan è progettato per funzionare in contesti multi-store reali,
+            riducendo sprechi, fermi operativi e confusione.
           </p>
         </div>
 
-        <div className="flex flex-wrap items-center justify-center gap-3">
+        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {multiStorePoints.map((point, idx) => (
+            <div
+              key={idx}
+              className="p-5 rounded-2xl bg-white/[0.04] backdrop-blur-sm border border-white/[0.06] space-y-3 transition-all duration-300"
+              data-testid={`item-multistore-${idx}`}
+            >
+              <div className="w-10 h-10 rounded-xl bg-emerald-500/10 flex items-center justify-center">
+                <point.icon className="w-5 h-5 text-emerald-400" />
+              </div>
+              <h3 className="font-semibold text-white text-sm">{point.title}</h3>
+              <p className="text-xs text-slate-400 leading-relaxed">{point.text}</p>
+            </div>
+          ))}
+        </div>
+
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-8">
+          {[
+            { icon: Store, value: "4", label: "Ruoli Distinti" },
+            { icon: Layers, value: "B2B", label: "Ordini Multi-Livello" },
+            { icon: Truck, value: "Real-time", label: "Trasferimenti Interni" },
+            { icon: CreditCard, value: "POS", label: "Fiscale Integrato" },
+          ].map((stat) => (
+            <div key={stat.label} className="text-center p-4 rounded-xl bg-emerald-500/5 border border-emerald-500/10" data-testid={`card-stat-${stat.label.toLowerCase().replace(/\s+/g, "-")}`}>
+              <stat.icon className="w-5 h-5 text-emerald-400 mx-auto mb-2" />
+              <p className="font-bold text-xl text-white">{stat.value}</p>
+              <p className="text-[11px] text-slate-500 mt-0.5">{stat.label}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+const integrations = [
+  { name: "SIFAR", desc: "Ricambi e parti", category: "supply" },
+  { name: "MobileSentrix", desc: "Componenti", category: "supply" },
+  { name: "Foneday", desc: "Parti di ricambio", category: "supply" },
+  { name: "Valutatore Usati", desc: "Valutazione device", category: "tools" },
+  { name: "Sibill", desc: "Fatturazione", category: "finance" },
+  { name: "PayPal", desc: "Pagamenti online", category: "payments" },
+  { name: "Stripe", desc: "Pagamenti online", category: "payments" },
+  { name: "Scalapay", desc: "Pagamenti a rate", category: "payments" },
+  { name: "Fiskaly", desc: "RT Fiscale Cloud", category: "fiscal" },
+];
+
+function IntegrationsSection() {
+  const { ref, isVisible } = useInView();
+  return (
+    <section id="integrations" className="py-20 sm:py-28 bg-white dark:bg-slate-950" data-testid="section-integrations">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div ref={ref} className={`max-w-2xl mx-auto text-center space-y-4 mb-16 transition-all duration-700 ${isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-6"}`}>
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-semibold rounded-full bg-cyan-500/10 text-cyan-600 dark:text-cyan-400">
+            <Globe className="w-3 h-3" />
+            Ecosistema Aperto
+          </span>
+          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight text-slate-900 dark:text-white" data-testid="text-integrations-title">
+            Si integra col tuo mondo.
+            <span className="block text-slate-400 dark:text-slate-500">Non il contrario.</span>
+          </h2>
+          <p className="text-slate-500 dark:text-slate-400 text-lg leading-relaxed">
+            Nessun lock-in, nessun vincolo forzato. MonkeyPlan si adatta al tuo
+            ecosistema esistente di fornitori e servizi.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
           {integrations.map((integration) => (
             <Card
               key={integration.name}
-              className="px-5 py-4 rounded-2xl flex items-center gap-3 hover-elevate"
-              data-testid={`card-integration-${integration.name.toLowerCase()}`}
+              className="p-4 rounded-xl text-center space-y-2 hover-elevate"
+              data-testid={`card-integration-${integration.name.toLowerCase().replace(/\s+/g, "-")}`}
             >
-              <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center shrink-0">
-                <Globe className="w-4 h-4 text-white" />
+              <div className="w-10 h-10 rounded-lg bg-slate-100 dark:bg-slate-800 flex items-center justify-center mx-auto">
+                <Globe className="w-4 h-4 text-slate-500 dark:text-slate-400" />
               </div>
-              <div>
-                <p className="font-semibold text-sm text-slate-900 dark:text-white">{integration.name}</p>
-                <p className="text-xs text-slate-500 dark:text-slate-400">{integration.desc}</p>
-              </div>
+              <p className="font-semibold text-sm text-slate-900 dark:text-white">{integration.name}</p>
+              <p className="text-[11px] text-slate-500 dark:text-slate-400">{integration.desc}</p>
             </Card>
           ))}
         </div>
 
-        <p className="text-center text-sm text-slate-500 dark:text-slate-400 mt-8 max-w-xl mx-auto">
-          Nuovi fornitori possono essere integrati tramite import/export, flussi operativi o API,
-          in base alle disponibilit&agrave; del partner.
+        <p className="text-center text-sm text-slate-400 dark:text-slate-500 mt-10 max-w-lg mx-auto">
+          Nuovi fornitori possono essere integrati tramite import/export,
+          flussi operativi o API.
         </p>
       </div>
     </section>
@@ -413,72 +638,60 @@ function IntegrationsSection() {
 }
 
 function OfferSection() {
+  const { ref, isVisible } = useInView();
   return (
     <section id="offer" className="relative py-20 sm:py-28 overflow-hidden" data-testid="section-offer">
-      <div className="absolute inset-0 bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-500" />
-      <div className="absolute -top-20 right-0 w-80 h-80 rounded-full bg-orange-400/25 blur-3xl animate-pulse" />
-      <div className="absolute bottom-0 -left-20 w-96 h-96 rounded-full bg-yellow-400/20 blur-3xl animate-pulse" style={{ animationDelay: "1.5s" }} />
+      <div className="absolute inset-0 bg-gradient-to-br from-emerald-600 via-teal-600 to-cyan-600" />
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-white/5 via-transparent to-transparent" />
+      <div className="absolute inset-0 opacity-[0.04]" style={{
+        backgroundImage: `radial-gradient(circle at 1px 1px, white 1px, transparent 0)`,
+        backgroundSize: "24px 24px",
+      }} />
 
-      <div className="relative z-10 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="p-8 sm:p-12 rounded-3xl bg-white/10 backdrop-blur-md border border-white/20 space-y-8">
-          <div className="text-center space-y-4">
-            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-yellow-400 to-orange-500 flex items-center justify-center mx-auto shadow-lg">
-              <Gift className="w-8 h-8 text-white" />
+      <div ref={ref} className={`relative z-10 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 transition-all duration-700 ${isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-6"}`}>
+        <div className="text-center space-y-6 mb-12">
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/10 text-white text-sm font-medium backdrop-blur-sm border border-white/20">
+            <Gift className="w-4 h-4" />
+            Offerta Lancio
+          </div>
+
+          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight text-white leading-tight" data-testid="text-offer-title">
+            Le prime 100 licenze
+            <span className="block">sono gratuite. Davvero.</span>
+          </h2>
+
+          <p className="text-lg text-white/80 max-w-2xl mx-auto leading-relaxed">
+            Non è una promozione aggressiva. È una scelta consapevole. Crediamo che
+            strumenti concreti e formazione reale possano cambiare il settore.
+          </p>
+        </div>
+
+        <div className="grid sm:grid-cols-2 gap-4 max-w-2xl mx-auto mb-10">
+          {[
+            "Tutte le funzionalità, senza limitazioni",
+            "Assistenza, magazzino, vendita, usato",
+            "CRM, multi-negozio, scambi interni",
+            "Integrazioni e POS fiscale completo",
+            "Fatturazione automatica B2B",
+            "Garanzie e assicurazioni integrate",
+          ].map((item, idx) => (
+            <div key={item} className="flex items-center gap-3 p-3 rounded-xl bg-white/10 backdrop-blur-sm border border-white/10" data-testid={`item-offer-feature-${idx}`}>
+              <CheckCircle className="w-5 h-5 text-emerald-200 shrink-0" />
+              <span className="text-sm text-white font-medium">{item}</span>
             </div>
-            <h2 className="text-3xl sm:text-4xl font-bold tracking-tight text-white" data-testid="text-offer-title">
-              Regaliamo le prime 100 licenze MonkeyPlan
-            </h2>
-            <p className="text-lg text-white/80">
-              S&igrave;, le regaliamo davvero. Non &egrave; una promozione aggressiva. &Egrave; una scelta consapevole.
-            </p>
-          </div>
+          ))}
+        </div>
 
-          <div className="space-y-4 max-w-2xl mx-auto">
-            <p className="leading-relaxed text-white/75">
-              Crediamo in un mondo fatto di formazione reale, strumenti concreti e servizi incredibili.
-              Un mondo in cui il tecnico &egrave; sempre pi&ugrave; preparato, efficiente e consapevole del proprio valore.
-              Un mondo in cui il negoziante &egrave; pi&ugrave; organizzato, pi&ugrave; lucido nelle decisioni, pi&ugrave; libero
-              di far crescere il proprio business.
-            </p>
-
-            <p className="leading-relaxed text-white/75">
-              Un mondo in cui la tecnologia non complica, ma semplifica.
-            </p>
-          </div>
-
-          <div className="border-t border-white/20 pt-8 space-y-4">
-            <h3 className="text-xl font-semibold text-center text-white">Non vogliamo utenti. Vogliamo professionisti.</h3>
-
-            <div className="grid sm:grid-cols-2 gap-3 max-w-2xl mx-auto">
-              {[
-                "Tutte le funzionalit\u00e0, senza limitazioni",
-                "Assistenza, magazzino, vendita, usato",
-                "CRM, multi-negozio, scambi interni",
-                "Integrazioni complete",
-              ].map((item, idx) => (
-                <div key={item} className="flex items-center gap-2" data-testid={`item-offer-feature-${idx}`}>
-                  <CheckCircle className="w-4 h-4 text-yellow-300 shrink-0" />
-                  <span className="text-sm text-white/90">{item}</span>
-                </div>
-              ))}
-            </div>
-
-            <p className="text-center text-sm text-white/60 pt-2">
-              Non &egrave; una demo. &Egrave; MonkeyPlan, utilizzato nel lavoro quotidiano.
-            </p>
-          </div>
-
-          <div className="text-center space-y-3 pt-4">
-            <p className="text-white/60 text-sm">
-              Le licenze sono 100. La direzione &egrave; una sola. Il futuro lo costruiamo insieme.
-            </p>
-            <Link href="/auth">
-              <Button size="lg" className="bg-white text-emerald-700 border-white/80 font-semibold shadow-lg shadow-emerald-900/20" data-testid="button-offer-cta">
-                Richiedi la tua licenza gratuita
-                <ChevronRight className="w-4 h-4 ml-1" />
-              </Button>
-            </Link>
-          </div>
+        <div className="text-center space-y-4">
+          <Link href="/auth" data-testid="link-offer-cta">
+            <Button size="lg" className="bg-white text-emerald-700 border-white font-semibold shadow-xl shadow-emerald-900/20 text-base" data-testid="button-offer-cta">
+              Richiedi la tua licenza gratuita
+              <ChevronRight className="w-4 h-4 ml-1" />
+            </Button>
+          </Link>
+          <p className="text-sm text-white/50">
+            Nessuna carta di credito richiesta. Accesso immediato a tutte le funzionalità.
+          </p>
         </div>
       </div>
     </section>
@@ -486,25 +699,26 @@ function OfferSection() {
 }
 
 function VisionSection() {
+  const { ref, isVisible } = useInView();
   return (
     <section className="py-20 sm:py-28 bg-white dark:bg-slate-950" data-testid="section-vision">
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center space-y-6">
+      <div ref={ref} className={`max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 text-center space-y-6 transition-all duration-700 ${isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-6"}`}>
         <h2 className="text-3xl sm:text-4xl font-bold tracking-tight text-slate-900 dark:text-white" data-testid="text-vision-title">
-          Costruiamo insieme uno standard pi&ugrave; alto
+          Non vogliamo utenti.
+          <span className="block text-emerald-600 dark:text-emerald-400">Vogliamo professionisti.</span>
         </h2>
         <p className="text-lg text-slate-500 dark:text-slate-400 max-w-2xl mx-auto leading-relaxed">
-          Chi entra in questa prima fase non &egrave; un semplice utilizzatore,
-          ma parte attiva di un progetto pi&ugrave; grande: alzare lo standard operativo
+          Chi entra in questa prima fase non è un semplice utilizzatore,
+          ma parte attiva di un progetto più grande: alzare lo standard operativo
           dell'intero settore.
         </p>
         <p className="text-slate-500 dark:text-slate-400 max-w-xl mx-auto">
-          Se condividi questa visione, se credi che metodo, formazione e strumenti
-          giusti possano fare la differenza, allora sei nel posto giusto.
+          Se credi che metodo, formazione e strumenti giusti possano fare la differenza,
+          allora sei nel posto giusto.
         </p>
-
-        <div className="flex flex-wrap items-center justify-center gap-3 pt-4">
-          <Link href="/auth">
-            <Button size="lg" className="bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 text-white border-emerald-600 font-semibold shadow-lg shadow-emerald-500/25" data-testid="button-vision-cta">
+        <div className="pt-4">
+          <Link href="/auth" data-testid="link-vision-cta">
+            <Button size="lg" data-testid="button-vision-cta">
               Unisciti al progetto
               <ArrowRight className="w-4 h-4 ml-2" />
             </Button>
@@ -517,19 +731,28 @@ function VisionSection() {
 
 function Footer() {
   return (
-    <footer className="border-t border-slate-200 dark:border-slate-800 py-8 bg-white dark:bg-slate-950" role="contentinfo" data-testid="footer-landing">
+    <footer className="border-t border-slate-200 dark:border-slate-800 py-10 bg-slate-50 dark:bg-slate-900/50" role="contentinfo" data-testid="footer-landing">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex flex-wrap items-center justify-between gap-4">
+        <div className="flex flex-col sm:flex-row flex-wrap items-center justify-between gap-6">
           <div className="flex flex-wrap items-center gap-3">
-            <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center">
-              <Wrench className="w-4 h-4 text-white" />
+            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center">
+              <Wrench className="w-3.5 h-3.5 text-white" />
             </div>
             <span className="text-sm font-semibold text-slate-900 dark:text-white">MonkeyPlan</span>
-            <span className="text-xs px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-900/50 text-emerald-700 dark:text-emerald-300">Beta v.24</span>
+            <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-400">
+              Beta v.24
+            </span>
           </div>
 
-          <p className="text-xs text-slate-500 dark:text-slate-400" data-testid="text-footer-tagline">
-            Il gestionale operativo per assistenza tecnica, retail telefonia e rivendita usato.
+          <div className="flex flex-wrap items-center gap-6">
+            <a href="#features" className="text-xs text-slate-500 dark:text-slate-400 transition-colors" data-testid="link-footer-features">Funzionalità</a>
+            <a href="#multistore" className="text-xs text-slate-500 dark:text-slate-400 transition-colors" data-testid="link-footer-multistore">Multi-Negozio</a>
+            <a href="#integrations" className="text-xs text-slate-500 dark:text-slate-400 transition-colors" data-testid="link-footer-integrations">Integrazioni</a>
+            <Link href="/track" className="text-xs text-slate-500 dark:text-slate-400 transition-colors" data-testid="link-footer-track">Traccia Riparazione</Link>
+          </div>
+
+          <p className="text-[11px] text-slate-400 dark:text-slate-500" data-testid="text-footer-tagline">
+            Il gestionale operativo per assistenza tecnica, retail e rivendita usato.
           </p>
         </div>
       </div>
@@ -611,21 +834,14 @@ export default function LandingPage() {
 
   return (
     <div className="min-h-screen bg-white dark:bg-slate-950 text-slate-900 dark:text-white" itemScope itemType="https://schema.org/WebPage">
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLdOrganization) }}
-      />
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLdSoftware) }}
-      />
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLdWebPage) }}
-      />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLdOrganization) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLdSoftware) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLdWebPage) }} />
       <Navbar />
       <HeroSection />
+      <TrustBar />
       <FeaturesSection />
+      <WorkflowSection />
       <MultiStoreSection />
       <IntegrationsSection />
       <OfferSection />
