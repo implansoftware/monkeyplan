@@ -16131,6 +16131,44 @@ export function registerRoutes(app: Express): Server {
           });
         }
       }
+      // Load devices from remote repair request
+      if (invoice.remoteRepairRequestId && items.length === 0) {
+        try {
+          const remoteDevices = await storage.listRemoteRepairRequestDevices(invoice.remoteRepairRequestId);
+          const remoteRequest = await storage.getRemoteRepairRequest(invoice.remoteRepairRequestId);
+          const totalQty = remoteDevices.reduce((sum: number, d: any) => sum + (d.quantity || 1), 0);
+          const quoteAmount = remoteRequest?.quoteAmount || 0;
+          
+          for (const device of remoteDevices) {
+            const qty = device.quantity || 1;
+            const deviceUnitPrice = totalQty > 0 ? Math.round(quoteAmount / totalQty) : 0;
+            const deviceTotal = deviceUnitPrice * qty;
+            const descParts = [device.deviceType, device.brand, device.model].filter(Boolean);
+            let description = descParts.join(' - ');
+            if (device.issueDescription) {
+              description += ' (' + device.issueDescription + ')';
+            }
+            items.push({
+              description,
+              quantity: qty,
+              unitPrice: deviceUnitPrice,
+              total: deviceTotal,
+            });
+          }
+          
+          // Adjust last item to absorb rounding difference
+          if (items.length > 0 && quoteAmount > 0) {
+            const currentTotal = items.reduce((sum, item) => sum + item.total, 0);
+            const diff = quoteAmount - currentTotal;
+            if (diff !== 0) {
+              items[items.length - 1].total += diff;
+            }
+          }
+        } catch (remoteErr) {
+          console.error('Error loading remote repair devices for invoice:', remoteErr);
+        }
+      }
+
       // Generate PDF
       const { generateInvoicePdf } = await import("./services/invoicePdf");
       const pdfBuffer = await generateInvoicePdf({
