@@ -10612,14 +10612,12 @@ export function registerRoutes(app: Express): Server {
       const devices = await storage.listRemoteRepairRequestDevices(request.id);
       if (devices.length > 0) {
         ddtData.items = devices.map(d => ({
-          description: `${d.brand} ${d.model}` + (d.deviceType ? ` (${d.deviceType})` : ''),
+          productName: `${d.brand} ${d.model}` + (d.deviceType ? ` (${d.deviceType})` : ''),
+          productSku: [d.imei ? `IMEI: ${d.imei}` : null, d.serial ? `S/N: ${d.serial}` : null].filter(Boolean).join(' / ') || undefined,
           quantity: d.quantity || 1,
-          imei: d.imei || undefined,
-          serial: d.serial || undefined,
-          notes: d.issueDescription || undefined,
         }));
       } else {
-        ddtData.items = [{ description: 'Dispositivo', quantity: 1 }];
+        ddtData.items = [{ productName: 'Dispositivo', quantity: 1 }];
       }
       
       const pdfBuffer = await generateTransferDDT(ddtData);
