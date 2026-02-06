@@ -42007,7 +42007,22 @@ export function registerRoutes(app: Express): Server {
       const repairCenterId = req.user!.repairCenterId;
       if (!repairCenterId) return res.status(400).json({ error: "Nessun centro riparazione associato" });
       const config = await storage.getEntityFiscalConfig("repair_center", String(repairCenterId));
-      const masked = config ? { ...config, rtApiKey: config.rtApiKey ? "****" : null, rtApiSecret: config.rtApiSecret ? "****" : null } : { rtEnabled: false, useOwnCredentials: false };
+      // If the RC has its own config with rtEnabled, use it directly
+      if (config && config.rtEnabled) {
+        const masked = { ...config, rtApiKey: config.rtApiKey ? "****" : null, rtApiSecret: config.rtApiSecret ? "****" : null, inherited: false };
+        return res.json(masked);
+      }
+      // Fallback: inherit from parent reseller if available
+      const rc = await storage.getRepairCenter(String(repairCenterId));
+      if (rc && rc.resellerId) {
+        const resellerConfig = await storage.getEntityFiscalConfig("reseller", rc.resellerId);
+        if (resellerConfig && resellerConfig.rtEnabled) {
+          const masked = { ...resellerConfig, rtApiKey: resellerConfig.rtApiKey ? "****" : null, rtApiSecret: resellerConfig.rtApiSecret ? "****" : null, inherited: true, inheritedFrom: "reseller" };
+          return res.json(masked);
+        }
+      }
+      // No config or not enabled anywhere
+      const masked = config ? { ...config, rtApiKey: config.rtApiKey ? "****" : null, rtApiSecret: config.rtApiSecret ? "****" : null, inherited: false } : { rtEnabled: false, useOwnCredentials: false, inherited: false };
       res.json(masked);
     } catch (error: any) {
       res.status(500).json({ error: error.message });

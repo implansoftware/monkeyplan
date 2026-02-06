@@ -34,6 +34,8 @@ export function EntityFiscalConfig({ entityType, basePath }: EntityFiscalConfigP
     rtApiKey?: string;
     rtApiSecret?: string;
     rtEndpoint?: string;
+    inherited?: boolean;
+    inheritedFrom?: string;
   }>({
     queryKey: [basePath, "config"],
     queryFn: () => fetch(`${basePath}/config`).then(r => r.json()),
@@ -138,11 +140,25 @@ export function EntityFiscalConfig({ entityType, basePath }: EntityFiscalConfigP
             </div>
           </div>
 
+          {entityConfig?.inherited && (
+            <div className="rounded-md border border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-950 p-4 space-y-1" data-testid="banner-inherited-config">
+              <div className="flex items-center gap-2">
+                <Info className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                <span className="text-sm font-medium text-blue-800 dark:text-blue-200">Configurazione ereditata dal Rivenditore</span>
+              </div>
+              <p className="text-sm text-blue-700 dark:text-blue-300">
+                L'RT è attivo tramite la configurazione del rivenditore proprietario. Per usare una configurazione indipendente, abilita l'RT qui sotto.
+              </p>
+            </div>
+          )}
+
           <div className="flex items-center justify-between gap-2">
             <div>
               <Label htmlFor="rt-enabled">Abilita trasmissione RT</Label>
               <p className="text-sm text-muted-foreground">
-                Attiva l'invio automatico dei corrispettivi al Registratore Telematico
+                {entityConfig?.inherited
+                  ? "Abilita per sovrascrivere la configurazione ereditata dal rivenditore"
+                  : "Attiva l'invio automatico dei corrispettivi al Registratore Telematico"}
               </p>
             </div>
             <Switch
