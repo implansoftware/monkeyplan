@@ -10599,21 +10599,28 @@ export function registerRoutes(app: Express): Server {
         },
         recipient: {
           name: repairCenter?.name || centerUser?.username || 'Centro Riparazione',
-          address: request.customerAddress || repairCenter?.address || undefined,
-          city: request.customerCity || repairCenter?.city || undefined,
-          postalCode: request.customerCap || repairCenter?.cap || undefined,
-          province: request.customerProvince || repairCenter?.provincia || undefined,
-          phone: repairCenterData?.phone || undefined,
-          email: repairCenterData?.email || undefined,
+          address: repairCenter?.address || undefined,
+          city: repairCenter?.city || undefined,
+          postalCode: repairCenter?.cap || undefined,
+          province: repairCenter?.provincia || undefined,
+          phone: repairCenter?.phone || undefined,
+          email: centerUser?.email || undefined,
         },
-        items: [{
-          description: `${request.brand} ${request.model}`,
-          quantity: 1,
-          imei: request.imei || undefined,
-          serial: request.serial || undefined,
-          notes: request.issueDescription || undefined,
-        }],
+        items: [],
       };
+      
+      const devices = await storage.listRemoteRepairRequestDevices(request.id);
+      if (devices.length > 0) {
+        ddtData.items = devices.map(d => ({
+          description: `${d.brand} ${d.model}` + (d.deviceType ? ` (${d.deviceType})` : ''),
+          quantity: d.quantity || 1,
+          imei: d.imei || undefined,
+          serial: d.serial || undefined,
+          notes: d.issueDescription || undefined,
+        }));
+      } else {
+        ddtData.items = [{ description: 'Dispositivo', quantity: 1 }];
+      }
       
       const pdfBuffer = await generateTransferDDT(ddtData);
       
