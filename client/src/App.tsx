@@ -14,6 +14,7 @@ import { ThemeToggle } from "@/components/theme-toggle";
 import { NotificationBell } from "@/components/NotificationBell";
 import { TicketNotificationsProvider } from "@/contexts/TicketNotificationsContext";
 import { Loader2 } from "lucide-react";
+import LandingPage from "@/pages/public/landing";
 
 function HomePage() {
   const { user, isLoading } = useAuth();
@@ -27,7 +28,7 @@ function HomePage() {
   }
   
   if (!user) {
-    return <Redirect to="/auth" />;
+    return <LandingPage />;
   }
   
   switch (user.role) {
