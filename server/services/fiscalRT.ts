@@ -123,8 +123,11 @@ class FiskalyRTProvider implements IFiscalRTProvider {
         "X-Idempotency-Key": randomUUID(),
       },
       body: JSON.stringify({
-        api_key: config.apiKey,
-        api_secret: config.apiSecret,
+        content: {
+          type: "API_KEY",
+          key: config.apiKey,
+          secret: config.apiSecret,
+        },
       }),
     });
 
@@ -138,16 +141,17 @@ class FiskalyRTProvider implements IFiscalRTProvider {
 
     if (!res.ok) {
       console.error(`[Fiskaly] Autenticazione fallita (HTTP ${res.status}):`, JSON.stringify(data));
-      const errMsg = data?.message || data?.error || data?.error_description || `Errore autenticazione Fiskaly: HTTP ${res.status}`;
-      throw new Error(errMsg);
+      const errDetail = data?.content?.message || data?.message || data?.error || `Errore autenticazione Fiskaly: HTTP ${res.status}`;
+      throw new Error(errDetail);
     }
 
-    const accessToken = data.access_token;
+    const accessToken = data?.content?.authentication?.bearer;
     if (!accessToken) {
-      throw new Error("Risposta Fiskaly non contiene access_token");
+      throw new Error("Risposta Fiskaly non contiene il token bearer");
     }
 
-    const expiresIn = data.access_token_expires_in || 900;
+    const expiresAt = data?.content?.authentication?.expires_at;
+    const expiresIn = expiresAt ? Math.max(60, Math.floor((new Date(expiresAt).getTime() - Date.now()) / 1000)) : 900;
     this.tokenCache = {
       accessToken,
       expiresAt: Date.now() + expiresIn * 1000,
@@ -186,7 +190,7 @@ class FiskalyRTProvider implements IFiscalRTProvider {
     const responseData = await res.json().catch(() => ({}));
 
     if (!res.ok) {
-      const errDetail = responseData?.message || responseData?.error || JSON.stringify(responseData);
+      const errDetail = responseData?.content?.message || responseData?.message || responseData?.error || JSON.stringify(responseData);
       throw new Error(`Fiskaly API ${method} ${path} fallito (HTTP ${res.status}): ${errDetail}`);
     }
 
