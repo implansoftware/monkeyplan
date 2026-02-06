@@ -321,6 +321,7 @@ function Router() {
     <Switch>
       <Route path="/auth" component={AuthPage} />
       <Route path="/pos-payment-success" component={PosPaymentSuccess} />
+      <Route path="/landing" component={LandingPage} />
       
       {/* Shared routes (all roles) */}
       <ProtectedRoute path="/profile" component={ProfilePage} />
