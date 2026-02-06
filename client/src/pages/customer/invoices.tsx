@@ -6,7 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
-import { FileText, CalendarIcon, Filter } from "lucide-react";
+import { FileText, CalendarIcon, Filter, Download } from "lucide-react";
 import { useState } from "react";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
@@ -56,7 +56,6 @@ export default function CustomerInvoices() {
 
   return (
     <div className="container mx-auto py-6 space-y-6">
-      {/* Hero Header */}
       <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-500 p-6">
         <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl animate-pulse" />
         <div className="absolute bottom-0 left-0 w-48 h-48 bg-cyan-300/20 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
@@ -152,6 +151,7 @@ export default function CustomerInvoices() {
                   <TableHead className="text-right">Totale</TableHead>
                   <TableHead>Stato</TableHead>
                   <TableHead>Data Pagamento</TableHead>
+                  <TableHead className="text-center">Azioni</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -175,6 +175,16 @@ export default function CustomerInvoices() {
                         ? format(new Date(invoice.paidDate), "dd MMM yyyy", { locale: it })
                         : "-"
                       }
+                    </TableCell>
+                    <TableCell className="text-center">
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        onClick={() => window.open(`/api/invoices/${invoice.id}/pdf`, "_blank")}
+                        data-testid={`button-download-invoice-${invoice.id}`}
+                      >
+                        <Download className="h-4 w-4" />
+                      </Button>
                     </TableCell>
                   </TableRow>
                 ))}

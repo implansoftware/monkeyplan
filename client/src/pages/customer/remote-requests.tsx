@@ -11,7 +11,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Loader2, Plus, Package, Truck, Check, X, Clock, Send, MapPin, Upload, Image, Globe, Trash2, Smartphone, FileText, Euro, CreditCard, Store } from "lucide-react";
+import { Loader2, Plus, Package, Truck, Check, X, Clock, Send, MapPin, Upload, Image, Globe, Trash2, Smartphone, FileText, Euro, CreditCard, Store, Download } from "lucide-react";
 import { loadStripe } from "@stripe/stripe-js";
 import { Elements, PaymentElement, useStripe, useElements } from "@stripe/react-stripe-js";
 import type { RemoteRepairRequest, RemoteRepairRequestDevice, DeviceType, DeviceBrand, DeviceModel } from "@shared/schema";
@@ -825,11 +825,32 @@ export default function CustomerRemoteRequests() {
                       </div>
                     )}
                     {request.paymentStatus === 'paid' && (
-                      <div className="p-2 bg-green-100 dark:bg-green-900/30 rounded-md">
+                      <div className="p-2 bg-green-100 dark:bg-green-900/30 rounded-md flex items-center justify-between gap-2 flex-wrap">
                         <p className="text-sm font-medium text-green-700 dark:text-green-300 flex items-center gap-2">
                           <Check className="h-4 w-4" />
                           Pagamento completato
                         </p>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={async () => {
+                            try {
+                              const res = await fetch(`/api/invoices/by-remote-request/${request.id}`, { credentials: 'include' });
+                              if (!res.ok) {
+                                toast({ title: "Fattura non ancora disponibile", description: "La fattura potrebbe non essere stata ancora generata.", variant: "destructive" });
+                                return;
+                              }
+                              const invoice = await res.json();
+                              window.open(`/api/invoices/${invoice.id}/pdf`, "_blank");
+                            } catch {
+                              toast({ title: "Errore", description: "Impossibile scaricare la fattura.", variant: "destructive" });
+                            }
+                          }}
+                          data-testid={`button-download-invoice-${request.id}`}
+                        >
+                          <Download className="h-4 w-4 mr-1" />
+                          Scarica Fattura
+                        </Button>
                       </div>
                     )}
                     {request.paymentMethod === 'in_store' && request.paymentStatus !== 'paid' && request.status !== 'quoted' && (

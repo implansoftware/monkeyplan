@@ -15898,6 +15898,28 @@ export function registerRoutes(app: Express): Server {
   });
 
 
+  // GET /api/invoices/by-remote-request/:requestId - Find invoice for a remote repair request
+  app.get("/api/invoices/by-remote-request/:requestId", requireAuth, async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Non autenticato" });
+      
+      const requestId = parseInt(req.params.requestId);
+      if (isNaN(requestId)) return res.status(400).json({ error: "ID richiesta non valido" });
+
+      const allInvoices = await storage.listInvoices({ customerId: req.user.id });
+      const invoice = allInvoices.find((inv: any) => inv.remoteRepairRequestId === requestId);
+      
+      if (!invoice) {
+        return res.status(404).json({ error: "Fattura non trovata per questa richiesta" });
+      }
+      
+      res.json(invoice);
+    } catch (err) {
+      console.error("Error finding invoice by remote request:", err);
+      res.status(500).json({ error: "Errore nel recupero della fattura" });
+    }
+  });
+
   // GET /api/invoices/by-order/:orderNumber/pdf - Download invoice PDF by order number
   app.get("/api/invoices/by-order/:orderNumber/pdf", requireAuth, async (req, res) => {
     try {
