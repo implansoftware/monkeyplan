@@ -28,7 +28,6 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import { ThemeToggle } from "@/components/theme-toggle";
-import monkeyAstronautHero from "@/assets/images/monkey-astronaut-hero.png";
 
 function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -165,16 +164,123 @@ function HeroSection() {
             </div>
           </div>
 
-          <div className="flex-shrink-0 hidden lg:flex flex-col items-center">
-            <div className="relative">
+          <div className="flex-shrink-0 hidden lg:flex flex-col items-center" data-testid="hero-mascot-area">
+            <div className="relative w-80 h-80">
               <div className="absolute inset-0 bg-gradient-to-r from-yellow-400 via-orange-400 to-amber-400 rounded-full blur-3xl opacity-20 animate-pulse" />
-              <img
-                src={monkeyAstronautHero}
-                alt="MonkeyPlan mascot"
-                className="relative w-80 h-80 object-contain drop-shadow-2xl"
-                style={{ animation: "float 4s ease-in-out infinite" }}
-                data-testid="img-hero-mascot"
-              />
+
+              <svg viewBox="0 0 320 320" className="relative w-full h-full" style={{ animation: "float 4s ease-in-out infinite" }}>
+                <defs>
+                  <radialGradient id="helmetGrad" cx="50%" cy="40%" r="50%">
+                    <stop offset="0%" stopColor="#e0f2fe" stopOpacity="0.9" />
+                    <stop offset="100%" stopColor="#7dd3fc" stopOpacity="0.4" />
+                  </radialGradient>
+                  <radialGradient id="visorGrad" cx="40%" cy="35%" r="55%">
+                    <stop offset="0%" stopColor="#67e8f9" stopOpacity="0.6" />
+                    <stop offset="60%" stopColor="#0891b2" stopOpacity="0.8" />
+                    <stop offset="100%" stopColor="#164e63" stopOpacity="0.9" />
+                  </radialGradient>
+                  <linearGradient id="suitGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#34d399" />
+                    <stop offset="100%" stopColor="#0d9488" />
+                  </linearGradient>
+                  <linearGradient id="jetpackGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#94a3b8" />
+                    <stop offset="100%" stopColor="#64748b" />
+                  </linearGradient>
+                  <filter id="glow">
+                    <feGaussianBlur stdDeviation="3" result="blur" />
+                    <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
+                  </filter>
+                </defs>
+
+                <g transform="translate(160,170)">
+                  <g style={{ animation: "sway 5s ease-in-out infinite" }}>
+                    <rect x="-8" y="40" width="16" height="50" rx="8" fill="url(#suitGrad)" opacity="0.3" style={{ animation: "tether 3s ease-in-out infinite" }} />
+
+                    <g>
+                      <rect x="22" y="10" width="22" height="35" rx="6" fill="url(#jetpackGrad)" />
+                      <rect x="-44" y="10" width="22" height="35" rx="6" fill="url(#jetpackGrad)" />
+                      <ellipse cx="33" cy="48" rx="5" ry="8" fill="#fb923c" opacity="0.9" style={{ animation: "flame 0.3s ease-in-out infinite alternate" }} />
+                      <ellipse cx="33" cy="50" rx="3" ry="5" fill="#fbbf24" style={{ animation: "flame 0.3s ease-in-out infinite alternate" }} />
+                      <ellipse cx="-33" cy="48" rx="5" ry="8" fill="#fb923c" opacity="0.9" style={{ animation: "flame 0.3s ease-in-out infinite alternate", animationDelay: "0.15s" }} />
+                      <ellipse cx="-33" cy="50" rx="3" ry="5" fill="#fbbf24" style={{ animation: "flame 0.3s ease-in-out infinite alternate", animationDelay: "0.15s" }} />
+                    </g>
+
+                    <ellipse cx="0" cy="25" rx="32" ry="35" fill="url(#suitGrad)" />
+                    <rect x="-12" y="10" width="24" height="8" rx="4" fill="#fbbf24" />
+                    <circle cx="-6" cy="0" r="3" fill="#fbbf24" />
+                    <circle cx="6" cy="0" r="3" fill="#fbbf24" />
+
+                    <g style={{ animation: "armWaveLeft 3s ease-in-out infinite" }} transform="translate(-30, 5)">
+                      <rect x="-25" y="-5" width="28" height="14" rx="7" fill="url(#suitGrad)" />
+                      <circle cx="-28" cy="2" r="8" fill="#d2a679" />
+                    </g>
+                    <g style={{ animation: "armWaveRight 4s ease-in-out infinite" }} transform="translate(30, 5)">
+                      <rect x="-3" y="-5" width="28" height="14" rx="7" fill="url(#suitGrad)" />
+                      <circle cx="28" cy="2" r="8" fill="#d2a679" />
+                      <g transform="translate(28, 2)">
+                        <rect x="-2" y="-12" width="4" height="14" rx="2" fill="#94a3b8" />
+                        <circle cx="0" cy="-14" r="4" fill="#fbbf24" />
+                      </g>
+                    </g>
+
+                    <g transform="translate(-12, 50)">
+                      <rect x="0" y="0" width="10" height="22" rx="5" fill="url(#suitGrad)" />
+                      <ellipse cx="5" cy="24" rx="7" ry="5" fill="#e2e8f0" />
+                    </g>
+                    <g transform="translate(2, 50)">
+                      <rect x="0" y="0" width="10" height="22" rx="5" fill="url(#suitGrad)" />
+                      <ellipse cx="5" cy="24" rx="7" ry="5" fill="#e2e8f0" />
+                    </g>
+
+                    <g transform="translate(0, -45)">
+                      <circle cx="0" cy="0" r="38" fill="url(#helmetGrad)" stroke="#94a3b8" strokeWidth="2" />
+                      <ellipse cx="5" cy="5" rx="30" ry="28" fill="url(#visorGrad)" />
+                      <ellipse cx="-12" cy="-5" rx="5" ry="3" fill="white" opacity="0.4" transform="rotate(-20)" />
+
+                      <g>
+                        <circle cx="0" cy="2" r="24" fill="#c68c53" />
+                        <ellipse cx="0" cy="10" rx="18" ry="12" fill="#d2a679" />
+                        <circle cx="-14" cy="-5" rx="10" ry="9" fill="#c68c53" />
+                        <circle cx="14" cy="-5" rx="10" ry="9" fill="#c68c53" />
+                        <circle cx="-14" cy="-5" rx="7" ry="6" fill="#d2a679" />
+                        <circle cx="14" cy="-5" rx="7" ry="6" fill="#d2a679" />
+
+                        <g style={{ animation: "blink 4s ease-in-out infinite" }}>
+                          <ellipse cx="-8" cy="-2" rx="5" ry="5.5" fill="white" />
+                          <ellipse cx="8" cy="-2" rx="5" ry="5.5" fill="white" />
+                          <circle cx="-7" cy="-1" r="2.5" fill="#1e293b" />
+                          <circle cx="9" cy="-1" r="2.5" fill="#1e293b" />
+                          <circle cx="-6" cy="-2" r="1" fill="white" />
+                          <circle cx="10" cy="-2" r="1" fill="white" />
+                        </g>
+
+                        <ellipse cx="0" cy="7" rx="4" ry="2.5" fill="#b07840" />
+                        <path d="M-8 11 Q0 17 8 11" fill="none" stroke="#8b5e3c" strokeWidth="1.5" strokeLinecap="round" />
+                      </g>
+                    </g>
+                  </g>
+                </g>
+
+                <g filter="url(#glow)">
+                  <circle cx="60" cy="60" r="3" fill="#fbbf24" style={{ animation: "twinkle 2s ease-in-out infinite" }} />
+                  <circle cx="270" cy="80" r="2" fill="#fbbf24" style={{ animation: "twinkle 2.5s ease-in-out infinite", animationDelay: "0.5s" }} />
+                  <circle cx="40" cy="200" r="2.5" fill="#67e8f9" style={{ animation: "twinkle 3s ease-in-out infinite", animationDelay: "1s" }} />
+                  <circle cx="280" cy="240" r="2" fill="#fbbf24" style={{ animation: "twinkle 2s ease-in-out infinite", animationDelay: "1.5s" }} />
+                  <circle cx="90" cy="280" r="1.5" fill="#67e8f9" style={{ animation: "twinkle 2.5s ease-in-out infinite", animationDelay: "0.7s" }} />
+                  <circle cx="250" cy="50" r="1.5" fill="white" style={{ animation: "twinkle 3s ease-in-out infinite", animationDelay: "0.3s" }} />
+                  <circle cx="180" cy="290" r="2" fill="#fbbf24" style={{ animation: "twinkle 2s ease-in-out infinite", animationDelay: "1.2s" }} />
+                </g>
+
+                <g transform="translate(50, 260)" style={{ animation: "orbitSmall 8s linear infinite" }}>
+                  <circle r="8" fill="#fb923c" opacity="0.8" />
+                  <circle r="12" fill="none" stroke="#fb923c" strokeWidth="1" opacity="0.3" />
+                </g>
+
+                <g transform="translate(260, 100)" style={{ animation: "orbitSmall 10s linear infinite reverse" }}>
+                  <circle r="6" fill="#67e8f9" opacity="0.7" />
+                </g>
+              </svg>
             </div>
           </div>
         </div>
@@ -183,7 +289,42 @@ function HeroSection() {
       <style>{`
         @keyframes float {
           0%, 100% { transform: translateY(0px); }
-          50% { transform: translateY(-8px); }
+          50% { transform: translateY(-12px); }
+        }
+        @keyframes sway {
+          0%, 100% { transform: rotate(-3deg); }
+          50% { transform: rotate(3deg); }
+        }
+        @keyframes flame {
+          0% { transform: scaleY(1); opacity: 0.8; }
+          100% { transform: scaleY(1.4); opacity: 1; }
+        }
+        @keyframes tether {
+          0%, 100% { transform: scaleY(1) rotate(-2deg); }
+          50% { transform: scaleY(1.1) rotate(2deg); }
+        }
+        @keyframes blink {
+          0%, 42%, 44%, 100% { transform: scaleY(1); }
+          43% { transform: scaleY(0.1); }
+        }
+        @keyframes armWaveLeft {
+          0%, 100% { transform: translate(-30px, 5px) rotate(0deg); }
+          50% { transform: translate(-30px, 5px) rotate(-15deg); }
+        }
+        @keyframes armWaveRight {
+          0%, 100% { transform: translate(30px, 5px) rotate(0deg); }
+          50% { transform: translate(30px, 5px) rotate(10deg); }
+        }
+        @keyframes twinkle {
+          0%, 100% { opacity: 1; transform: scale(1); }
+          50% { opacity: 0.3; transform: scale(0.6); }
+        }
+        @keyframes orbitSmall {
+          0% { transform: translate(0, 0); }
+          25% { transform: translate(10px, -8px); }
+          50% { transform: translate(0, -12px); }
+          75% { transform: translate(-10px, -4px); }
+          100% { transform: translate(0, 0); }
         }
       `}</style>
     </section>
