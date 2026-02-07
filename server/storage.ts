@@ -141,7 +141,9 @@ import {
   paymentConfigurations, PaymentConfiguration, InsertPaymentConfiguration, PaymentConfigEntityType,
   shippingMethods, ShippingMethod, InsertShippingMethod,
   platformFiscalConfig, PlatformFiscalConfig, InsertPlatformFiscalConfig,
-  entityFiscalConfig, EntityFiscalConfig, InsertEntityFiscalConfig
+  entityFiscalConfig, EntityFiscalConfig, InsertEntityFiscalConfig,
+  expoPushTokens, ExpoPushToken, InsertExpoPushToken,
+  pushNotificationLog, PushNotificationLog, InsertPushNotificationLog
 } from "@shared/schema";
 import { db, pool } from "./db";
 import { eq, and, or, desc, lt, gt, gte, lte, sql, not, inArray, isNull, ilike, SQL } from "drizzle-orm";
@@ -357,6 +359,18 @@ export interface IStorage {
   getNotificationPreferences(userId: string): Promise<NotificationPreferences | undefined>;
   createNotificationPreferences(preferences: InsertNotificationPreferences): Promise<NotificationPreferences>;
   updateNotificationPreferences(userId: string, updates: { emailEnabled?: boolean; pushEnabled?: boolean; types?: string[] }): Promise<NotificationPreferences>;
+  
+  // Expo Push Tokens
+  registerPushToken(data: InsertExpoPushToken): Promise<ExpoPushToken>;
+  removePushToken(token: string, userId: string): Promise<void>;
+  getPushTokensByUserId(userId: string): Promise<ExpoPushToken[]>;
+  removeExpiredPushToken(token: string): Promise<void>;
+  
+  // Push Notification Log
+  createPushNotificationLog(data: InsertPushNotificationLog): Promise<PushNotificationLog>;
+  updatePushNotificationLog(id: string, updates: Partial<PushNotificationLog>): Promise<PushNotificationLog>;
+  getPendingReceipts(): Promise<PushNotificationLog[]>;
+  getRetryablePushNotifications(): Promise<PushNotificationLog[]>;
   
   // Repair Attachments
   addRepairAttachment(attachment: InsertRepairAttachment): Promise<RepairAttachment>;
@@ -4221,6 +4235,80 @@ export class DatabaseStorage implements IStorage {
     }
     
     return preferences;
+  }
+
+  // Expo Push Tokens
+  async registerPushToken(data: InsertExpoPushToken): Promise<ExpoPushToken> {
+    const [token] = await db
+      .insert(expoPushTokens)
+      .values(data)
+      .onConflictDoUpdate({
+        target: expoPushTokens.token,
+        set: {
+          userId: data.userId,
+          deviceName: data.deviceName,
+          platform: data.platform,
+          updatedAt: new Date(),
+        },
+      })
+      .returning();
+    return token;
+  }
+
+  async removePushToken(token: string, userId: string): Promise<void> {
+    await db
+      .delete(expoPushTokens)
+      .where(and(eq(expoPushTokens.token, token), eq(expoPushTokens.userId, userId)));
+  }
+
+  async getPushTokensByUserId(userId: string): Promise<ExpoPushToken[]> {
+    return await db.select().from(expoPushTokens).where(eq(expoPushTokens.userId, userId));
+  }
+
+  async removeExpiredPushToken(token: string): Promise<void> {
+    await db.delete(expoPushTokens).where(eq(expoPushTokens.token, token));
+  }
+
+  // Push Notification Log
+  async createPushNotificationLog(data: InsertPushNotificationLog): Promise<PushNotificationLog> {
+    const [log] = await db.insert(pushNotificationLog).values(data).returning();
+    return log;
+  }
+
+  async updatePushNotificationLog(id: string, updates: Partial<PushNotificationLog>): Promise<PushNotificationLog> {
+    const [log] = await db
+      .update(pushNotificationLog)
+      .set(updates)
+      .where(eq(pushNotificationLog.id, id))
+      .returning();
+    return log;
+  }
+
+  async getPendingReceipts(): Promise<PushNotificationLog[]> {
+    return await db
+      .select()
+      .from(pushNotificationLog)
+      .where(
+        and(
+          eq(pushNotificationLog.status, "sent"),
+          isNull(pushNotificationLog.receiptCheckedAt)
+        )
+      )
+      .orderBy(pushNotificationLog.createdAt);
+  }
+
+  async getRetryablePushNotifications(): Promise<PushNotificationLog[]> {
+    return await db
+      .select()
+      .from(pushNotificationLog)
+      .where(
+        and(
+          eq(pushNotificationLog.status, "failed"),
+          lt(pushNotificationLog.retryCount, 3),
+          lt(pushNotificationLog.nextRetryAt, new Date())
+        )
+      )
+      .orderBy(pushNotificationLog.createdAt);
   }
 
   // Repair Attachments

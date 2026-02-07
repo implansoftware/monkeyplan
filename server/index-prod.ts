@@ -5,6 +5,7 @@ import { type Server } from "node:http";
 import express, { type Express } from "express";
 import runApp from "./app";
 import { startSLANotificationJob } from "./sla-notification-job";
+import { startPushNotificationJobs } from "./services/expoPush";
 
 const BASE_URL = "https://monkeyplan.replit.app";
 
@@ -84,4 +85,5 @@ export async function serveStatic(app: Express, _server: Server) {
   await runApp(serveStatic);
   
   startSLANotificationJob(30);
+  startPushNotificationJobs();
 })();

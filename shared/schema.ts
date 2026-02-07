@@ -58,6 +58,7 @@ export const b2bPaymentMethodEnum = pgEnum("b2b_payment_method", [
   "paypal",            // Pagamento PayPal
 ]);
 export const notificationTypeEnum = pgEnum("notification_type", ["repair_update", "sla_warning", "review_request", "message", "system", "b2b_order_received"]);
+export const pushNotificationStatusEnum = pgEnum("push_notification_status", ["pending", "sent", "delivered", "failed", "device_not_registered"]);
 // RIMOSSO: diagnosisSeverityEnum - non più necessario
 export const quoteStatusEnum = pgEnum("quote_status", ["draft", "sent", "accepted", "rejected"]);
 export const repairPriorityEnum = pgEnum("repair_priority", ["low", "medium", "high", "urgent"]);
@@ -3498,6 +3499,34 @@ export const notificationPreferences = pgTable("notification_preferences", {
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
 
+// Expo Push Tokens (Mobile push notification device tokens)
+export const expoPushTokens = pgTable("expo_push_tokens", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull(),
+  token: varchar("token", { length: 255 }).notNull().unique(),
+  deviceName: varchar("device_name", { length: 255 }),
+  platform: varchar("platform", { length: 20 }), // ios, android
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+// Push Notification Log (Track sent push notifications and receipts)
+export const pushNotificationLog = pgTable("push_notification_log", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull(),
+  tokenId: varchar("token_id").notNull(),
+  expoTicketId: varchar("expo_ticket_id"),
+  status: pushNotificationStatusEnum("status").notNull().default("pending"),
+  title: text("title").notNull(),
+  body: text("body").notNull(),
+  data: text("data"),
+  errorMessage: text("error_message"),
+  retryCount: integer("retry_count").notNull().default(0),
+  nextRetryAt: timestamp("next_retry_at"),
+  receiptCheckedAt: timestamp("receipt_checked_at"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
 // ==========================================
 // WARRANTY / INSURANCE TABLES
 // ==========================================
@@ -4464,6 +4493,24 @@ export const notificationPreferencesRelations = relations(notificationPreference
   }),
 }));
 
+export const expoPushTokensRelations = relations(expoPushTokens, ({ one }) => ({
+  user: one(users, {
+    fields: [expoPushTokens.userId],
+    references: [users.id],
+  }),
+}));
+
+export const pushNotificationLogRelations = relations(pushNotificationLog, ({ one }) => ({
+  user: one(users, {
+    fields: [pushNotificationLog.userId],
+    references: [users.id],
+  }),
+  token: one(expoPushTokens, {
+    fields: [pushNotificationLog.tokenId],
+    references: [expoPushTokens.id],
+  }),
+}));
+
 // Insert Schemas
 export const insertUserSchema = createInsertSchema(users).omit({
   id: true,
@@ -4825,6 +4872,17 @@ export const insertNotificationPreferencesSchema = createInsertSchema(notificati
   id: true,
   createdAt: true,
   updatedAt: true,
+});
+
+export const insertExpoPushTokenSchema = createInsertSchema(expoPushTokens).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertPushNotificationLogSchema = createInsertSchema(pushNotificationLog).omit({
+  id: true,
+  createdAt: true,
 });
 
 // Warranty Products Schema
@@ -5567,6 +5625,12 @@ export type InsertNotification = z.infer<typeof insertNotificationSchema>;
 
 export type NotificationPreferences = typeof notificationPreferences.$inferSelect;
 export type InsertNotificationPreferences = z.infer<typeof insertNotificationPreferencesSchema>;
+
+export type ExpoPushToken = typeof expoPushTokens.$inferSelect;
+export type InsertExpoPushToken = z.infer<typeof insertExpoPushTokenSchema>;
+
+export type PushNotificationLog = typeof pushNotificationLog.$inferSelect;
+export type InsertPushNotificationLog = z.infer<typeof insertPushNotificationLogSchema>;
 
 export type RepairAttachment = typeof repairAttachments.$inferSelect;
 export type InsertRepairAttachment = z.infer<typeof insertRepairAttachmentSchema>;

@@ -8,6 +8,7 @@ import { scrypt, randomBytes, randomUUID } from "crypto";
 import { promisify } from "util";
 import ExcelJS from "exceljs";
 import multer from "multer";
+import { enqueuePushNotification } from "./services/expoPush";
 import {
   insertUserSchema, insertRepairCenterSchema, insertProductSchema,
   insertRepairOrderSchema, insertRepairAcceptanceSchema, insertTicketSchema, insertInvoiceSchema,
@@ -13334,6 +13335,63 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // ============ EXPO PUSH TOKENS ============
+
+  app.post("/api/push-tokens", requireAuth, async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+
+      const { token, deviceName, platform } = req.body;
+      if (!token || typeof token !== "string") {
+        return res.status(400).send("Token is required");
+      }
+      if (!token.startsWith("ExponentPushToken[") && !token.startsWith("ExpoPushToken[")) {
+        return res.status(400).send("Invalid Expo push token format");
+      }
+
+      const result = await storage.registerPushToken({
+        userId: req.user.id,
+        token,
+        deviceName: deviceName || null,
+        platform: platform || null,
+      });
+
+      res.status(201).json(result);
+    } catch (error: any) {
+      console.error("Push token registration error:", error);
+      res.status(500).send(error.message);
+    }
+  });
+
+  app.delete("/api/push-tokens", requireAuth, async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+
+      const { token } = req.body;
+      if (!token || typeof token !== "string") {
+        return res.status(400).send("Token is required");
+      }
+
+      await storage.removePushToken(token, req.user.id);
+      res.status(204).send();
+    } catch (error: any) {
+      console.error("Push token removal error:", error);
+      res.status(500).send(error.message);
+    }
+  });
+
+  app.get("/api/push-tokens", requireAuth, async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+
+      const tokens = await storage.getPushTokensByUserId(req.user.id);
+      res.json(tokens);
+    } catch (error: any) {
+      console.error("Push tokens list error:", error);
+      res.status(500).send(error.message);
+    }
+  });
+
   // ============ REPAIR ORDERS - ROLE-NEUTRAL DETAIL ============
 
   // ============ DASHBOARD PREFERENCES ============
@@ -22149,6 +22207,15 @@ export function registerRoutes(app: Express): Server {
         data: notification,
       }));
     }
+
+    enqueuePushNotification(
+      userId,
+      notification.title || 'MonkeyPlan',
+      notification.message || '',
+      { type: notification.type, ...notification }
+    ).catch((err) => {
+      console.error('[ExpoPush] Failed to enqueue push for user', userId, err.message);
+    });
   }
 
   wss.on('connection', (ws: WebSocket) => {
