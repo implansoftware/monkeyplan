@@ -82,6 +82,19 @@ export async function serveStatic(app: Express, _server: Server) {
 }
 
 (async () => {
+  // Run database migrations before starting the server
+  try {
+    const { execSync } = await import("child_process");
+    console.log("[Migration] Running drizzle-kit push...");
+    execSync("npx drizzle-kit push", { 
+      stdio: "inherit",
+      env: { ...process.env }
+    });
+    console.log("[Migration] Database schema synced successfully");
+  } catch (err) {
+    console.error("[Migration] Warning: drizzle-kit push failed, continuing anyway:", err);
+  }
+
   await runApp(serveStatic);
   
   startSLANotificationJob(30);
