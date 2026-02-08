@@ -1,4 +1,5 @@
 import { Link } from "wouter";
+import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import {
@@ -106,6 +107,7 @@ function FaqAccordion({ item, index }: { item: FaqItem; index: number }) {
 
 export default function FaqPage() {
   usePageTitle("FAQ - Domande Frequenti");
+  useEffect(() => { window.scrollTo(0, 0); }, []);
   const categories = Array.from(new Set(faqItems.map((f) => f.category)));
 
   return (

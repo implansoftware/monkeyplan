@@ -1,4 +1,5 @@
 import { Link } from "wouter";
+import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import {
@@ -39,6 +40,7 @@ const contactMethods = [
 
 export default function ContactPage() {
   usePageTitle("Contatti");
+  useEffect(() => { window.scrollTo(0, 0); }, []);
 
   return (
     <div className="min-h-screen bg-white dark:bg-slate-950 text-slate-900 dark:text-white">

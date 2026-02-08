@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { Navbar } from "./landing";
 import { PageFooter } from "./about";
 import { usePageTitle } from "@/hooks/use-page-title";
@@ -56,6 +57,7 @@ const sections = [
 
 export default function TermsPage() {
   usePageTitle("Termini e Condizioni");
+  useEffect(() => { window.scrollTo(0, 0); }, []);
 
   return (
     <div className="min-h-screen bg-white dark:bg-slate-950 text-slate-900 dark:text-white">
