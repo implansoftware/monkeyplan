@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { Switch, Route, useLocation, Redirect } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
@@ -633,10 +634,17 @@ export default function App() {
   );
 }
 
+function ScrollToTop() {
+  const [location] = useLocation();
+  useEffect(() => { window.scrollTo(0, 0); }, [location]);
+  return null;
+}
+
 function ShopRouter() {
   return (
     <>
       <PublicNavbar solid showLandingLinks={false} />
+      <ScrollToTop />
       <div className="pt-16">
         <Switch>
           <Route path="/marketplace/:productId" component={MarketplaceProductDetail} />
