@@ -78,7 +78,6 @@ function getDashboardPath(role?: string) {
   switch (role) {
     case "admin": case "admin_staff": return "/";
     case "reseller": case "reseller_staff": return "/reseller";
-    case "sub_reseller": return "/sub-reseller/service-catalog";
     case "repair_center": case "repair_center_staff": return "/repair-center";
     case "customer": return "/customer";
     default: return "/";
@@ -225,6 +224,9 @@ function Navbar() {
 }
 
 function HeroSection() {
+  const { user } = useAuth();
+  const dashboardPath = getDashboardPath(user?.role);
+
   return (
     <section className="relative min-h-[100dvh] flex items-center overflow-hidden" data-testid="section-hero">
       <div className="absolute inset-0 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900" />
@@ -267,12 +269,21 @@ function HeroSection() {
             </p>
 
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 pt-2">
-              <Link href="/auth" className="w-full sm:w-auto" data-testid="link-hero-cta">
-                <Button size="lg" className="w-full sm:w-auto font-semibold shadow-lg shadow-primary/25 text-base" data-testid="button-hero-cta">
-                  Inizia Gratis
-                  <ArrowRight className="w-4 h-4 ml-2" />
-                </Button>
-              </Link>
+              {user ? (
+                <Link href={dashboardPath} className="w-full sm:w-auto" data-testid="link-hero-cta">
+                  <Button size="lg" className="w-full sm:w-auto font-semibold shadow-lg shadow-primary/25 text-base" data-testid="button-hero-cta">
+                    <LayoutDashboard className="w-4 h-4 mr-2" />
+                    Vai alla Dashboard
+                  </Button>
+                </Link>
+              ) : (
+                <Link href="/auth" className="w-full sm:w-auto" data-testid="link-hero-cta">
+                  <Button size="lg" className="w-full sm:w-auto font-semibold shadow-lg shadow-primary/25 text-base" data-testid="button-hero-cta">
+                    Inizia Gratis
+                    <ArrowRight className="w-4 h-4 ml-2" />
+                  </Button>
+                </Link>
+              )}
               <a href="#features" className="w-full sm:w-auto" data-testid="link-hero-features">
                 <Button variant="outline" size="lg" className="w-full sm:w-auto text-white border-white/15 bg-white/5 backdrop-blur-sm" data-testid="button-hero-features">
                   Scopri di pi&ugrave;
@@ -673,6 +684,8 @@ function IntegrationsSection() {
 
 function OfferSection() {
   const { ref, isVisible } = useInView();
+  const { user } = useAuth();
+  const dashboardPath = getDashboardPath(user?.role);
   return (
     <section id="offer" className="relative py-20 sm:py-28 overflow-hidden" data-testid="section-offer">
       <div className="absolute inset-0 bg-gradient-to-br from-emerald-600 via-teal-600 to-cyan-600" />
@@ -717,15 +730,26 @@ function OfferSection() {
         </div>
 
         <div className="text-center space-y-4">
-          <Link href="/auth" data-testid="link-offer-cta">
-            <Button size="lg" className="bg-white text-emerald-700 border-white font-semibold shadow-xl shadow-emerald-900/20 text-base" data-testid="button-offer-cta">
-              Richiedi la tua licenza gratuita
-              <ChevronRight className="w-4 h-4 ml-1" />
-            </Button>
-          </Link>
-          <p className="text-sm text-white/50">
-            Nessuna carta di credito richiesta. Accesso immediato a tutte le funzionalità.
-          </p>
+          {user ? (
+            <Link href={dashboardPath} data-testid="link-offer-cta">
+              <Button size="lg" className="bg-white text-emerald-700 border-white font-semibold shadow-xl shadow-emerald-900/20 text-base" data-testid="button-offer-cta">
+                <LayoutDashboard className="w-4 h-4 mr-1.5" />
+                Vai alla Dashboard
+              </Button>
+            </Link>
+          ) : (
+            <>
+              <Link href="/auth" data-testid="link-offer-cta">
+                <Button size="lg" className="bg-white text-emerald-700 border-white font-semibold shadow-xl shadow-emerald-900/20 text-base" data-testid="button-offer-cta">
+                  Richiedi la tua licenza gratuita
+                  <ChevronRight className="w-4 h-4 ml-1" />
+                </Button>
+              </Link>
+              <p className="text-sm text-white/50">
+                Nessuna carta di credito richiesta. Accesso immediato a tutte le funzionalità.
+              </p>
+            </>
+          )}
         </div>
       </div>
     </section>
@@ -734,6 +758,8 @@ function OfferSection() {
 
 function VisionSection() {
   const { ref, isVisible } = useInView();
+  const { user } = useAuth();
+  const dashboardPath = getDashboardPath(user?.role);
   return (
     <section className="py-20 sm:py-28 bg-white dark:bg-slate-950" data-testid="section-vision">
       <div ref={ref} className={`max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 text-center space-y-6 transition-all duration-700 ${isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-6"}`}>
@@ -751,12 +777,21 @@ function VisionSection() {
           allora sei nel posto giusto.
         </p>
         <div className="pt-4">
-          <Link href="/auth" data-testid="link-vision-cta">
-            <Button size="lg" data-testid="button-vision-cta">
-              Unisciti al progetto
-              <ArrowRight className="w-4 h-4 ml-2" />
-            </Button>
-          </Link>
+          {user ? (
+            <Link href={dashboardPath} data-testid="link-vision-cta">
+              <Button size="lg" data-testid="button-vision-cta">
+                <LayoutDashboard className="w-4 h-4 mr-2" />
+                Vai alla Dashboard
+              </Button>
+            </Link>
+          ) : (
+            <Link href="/auth" data-testid="link-vision-cta">
+              <Button size="lg" data-testid="button-vision-cta">
+                Unisciti al progetto
+                <ArrowRight className="w-4 h-4 ml-2" />
+              </Button>
+            </Link>
+          )}
         </div>
       </div>
     </section>

@@ -34,10 +34,9 @@ export function ProtectedRoute({
   }
 
   if (allowedRoles && !allowedRoles.includes(user.role)) {
-    const redirectPath = user.role === "admin" ? "/" :
-      user.role === "reseller" ? "/reseller" :
-      user.role === "reseller_staff" ? "/reseller" :
-      user.role === "repair_center" ? "/repair-center" :
+    const redirectPath = user.role === "admin" || user.role === "admin_staff" ? "/" :
+      user.role === "reseller" || user.role === "reseller_staff" ? "/reseller" :
+      user.role === "repair_center" || user.role === "repair_center_staff" ? "/repair-center" :
       "/customer";
     return (
       <Route path={path}>

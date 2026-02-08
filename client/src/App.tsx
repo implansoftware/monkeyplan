@@ -33,13 +33,13 @@ function HomePage() {
   
   switch (user.role) {
     case "admin":
+    case "admin_staff":
       return <AdminDashboard />;
     case "reseller":
     case "reseller_staff":
       return <Redirect to="/reseller" />;
-    case "sub_reseller":
-      return <Redirect to="/sub-reseller/service-catalog" />;
     case "repair_center":
+    case "repair_center_staff":
       return <Redirect to="/repair-center" />;
     case "customer":
       return <Redirect to="/customer" />;
@@ -321,7 +321,6 @@ function Router() {
     <Switch>
       <Route path="/auth" component={AuthPage} />
       <Route path="/pos-payment-success" component={PosPaymentSuccess} />
-      <Route path="/landing" component={LandingPage} />
       
       {/* Shared routes (all roles) */}
       <ProtectedRoute path="/profile" component={ProfilePage} />
