@@ -101,6 +101,7 @@ function Navbar() {
     { href: "#multistore", label: "Multi-Negozio" },
     { href: "#integrations", label: "Integrazioni" },
     { href: "#offer", label: "100 Licenze" },
+    { href: "/marketplace", label: "Marketplace", isPage: true },
   ];
 
   return (
@@ -126,18 +127,33 @@ function Navbar() {
 
           <div className="hidden md:flex items-center gap-1">
             {navLinks.map((item) => (
-              <a
-                key={item.href}
-                href={item.href}
-                className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
-                  scrolled
-                    ? "text-slate-600 dark:text-slate-400"
-                    : "text-white/70"
-                }`}
-                data-testid={`link-nav-${item.href.slice(1)}`}
-              >
-                {item.label}
-              </a>
+              item.isPage ? (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                    scrolled
+                      ? "text-slate-600 dark:text-slate-400"
+                      : "text-white/70"
+                  }`}
+                  data-testid={`link-nav-${item.href.slice(1)}`}
+                >
+                  {item.label}
+                </Link>
+              ) : (
+                <a
+                  key={item.href}
+                  href={item.href}
+                  className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                    scrolled
+                      ? "text-slate-600 dark:text-slate-400"
+                      : "text-white/70"
+                  }`}
+                  data-testid={`link-nav-${item.href.slice(1)}`}
+                >
+                  {item.label}
+                </a>
+              )
             ))}
           </div>
 
@@ -186,15 +202,27 @@ function Navbar() {
       {mobileOpen && (
         <div className="md:hidden bg-white dark:bg-slate-950 border-t border-slate-200 dark:border-slate-800 px-4 py-3 space-y-1 shadow-lg">
           {navLinks.map((item) => (
-            <a
-              key={item.href}
-              href={item.href}
-              onClick={() => setMobileOpen(false)}
-              className="block py-2.5 text-sm text-slate-600 dark:text-slate-400"
-              data-testid={`link-mobile-${item.href.slice(1)}`}
-            >
-              {item.label}
-            </a>
+            item.isPage ? (
+              <Link
+                key={item.href}
+                href={item.href}
+                onClick={() => setMobileOpen(false)}
+                className="block py-2.5 text-sm text-slate-600 dark:text-slate-400"
+                data-testid={`link-mobile-${item.href.slice(1)}`}
+              >
+                {item.label}
+              </Link>
+            ) : (
+              <a
+                key={item.href}
+                href={item.href}
+                onClick={() => setMobileOpen(false)}
+                className="block py-2.5 text-sm text-slate-600 dark:text-slate-400"
+                data-testid={`link-mobile-${item.href.slice(1)}`}
+              >
+                {item.label}
+              </a>
+            )
           ))}
           <div className="pt-3 border-t border-slate-200 dark:border-slate-800 flex flex-col gap-2">
             {user ? (

@@ -628,6 +628,20 @@ export default function App() {
   );
 }
 
+function ShopRouter() {
+  return (
+    <Switch>
+      <Route path="/marketplace/:productId" component={MarketplaceProductDetail} />
+      <Route path="/marketplace" component={ShopMarketplace} />
+      <Route path="/shop/:resellerId/products/:productId" component={MarketplaceProductDetail} />
+      <Route path="/shop/:resellerId/cart" component={ShopCart} />
+      <ProtectedRoute path="/shop/:resellerId/checkout" component={ShopCheckout} />
+      <Route path="/shop/:resellerId" component={ShopCatalog} />
+      <Route component={NotFound} />
+    </Switch>
+  );
+}
+
 function AppContent() {
   const [location] = useLocation();
   const { user, isLoading } = useAuth();
@@ -653,6 +667,12 @@ function AppContent() {
   // Repair link bridge page (handles auth redirect)
   if (location.startsWith("/repair-link/")) {
     return <RepairLink />;
+  }
+  
+  // Shop/marketplace pages render without sidebar (public storefront)
+  // Exclude /shop/admin/* which requires authenticated layout
+  if (location === "/marketplace" || location.startsWith("/marketplace/") || (location.startsWith("/shop/") && !location.startsWith("/shop/admin"))) {
+    return <ShopRouter />;
   }
   
   // All other pages use the main layout with sidebar
