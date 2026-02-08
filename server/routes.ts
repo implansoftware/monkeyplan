@@ -3936,6 +3936,40 @@ export function registerRoutes(app: Express): Server {
       await storage.invalidateCache('overview_%');
       await storage.invalidateCache('centers_%');
       
+      // Notify customer and reseller about repair status change
+      if (repair.customerId) {
+        await storage.createNotification({
+          userId: repair.customerId,
+          type: "repair_update",
+          title: "Aggiornamento riparazione",
+          message: `La riparazione #${repair.orderNumber} è stata aggiornata: ${validatedData.status}`,
+          data: JSON.stringify({ repairId: repair.id, status: validatedData.status }),
+        });
+        broadcastNotification(repair.customerId, {
+          type: "repair_status_changed",
+          title: "Aggiornamento riparazione",
+          message: `La riparazione #${repair.orderNumber} è stata aggiornata: ${validatedData.status}`,
+          repairId: repair.id,
+          status: validatedData.status,
+        });
+      }
+      if (repair.resellerId) {
+        await storage.createNotification({
+          userId: repair.resellerId,
+          type: "repair_update",
+          title: "Aggiornamento riparazione",
+          message: `La riparazione #${repair.orderNumber} è stata aggiornata: ${validatedData.status}`,
+          data: JSON.stringify({ repairId: repair.id, status: validatedData.status }),
+        });
+        broadcastNotification(repair.resellerId, {
+          type: "repair_status_changed",
+          title: "Aggiornamento riparazione",
+          message: `La riparazione #${repair.orderNumber} è stata aggiornata: ${validatedData.status}`,
+          repairId: repair.id,
+          status: validatedData.status,
+        });
+      }
+
       res.json(repair);
     } catch (error: any) {
       console.error("Service order creation error:", error);
@@ -4078,6 +4112,23 @@ export function registerRoutes(app: Express): Server {
       
       await storage.invalidateCache('overview_%');
       await storage.invalidateCache('revenue_%');
+
+      // Notify customer about new invoice
+      if (invoice.customerId) {
+        await storage.createNotification({
+          userId: invoice.customerId,
+          type: "system",
+          title: "Nuova fattura emessa",
+          message: `È stata emessa la fattura #${invoice.invoiceNumber || invoice.id} di ${((invoice.total || 0) / 100).toFixed(2)} €`,
+          data: JSON.stringify({ invoiceId: invoice.id }),
+        });
+        broadcastNotification(invoice.customerId, {
+          type: "invoice_created",
+          title: "Nuova fattura emessa",
+          message: `È stata emessa la fattura #${invoice.invoiceNumber || invoice.id} di ${((invoice.total || 0) / 100).toFixed(2)} €`,
+          invoiceId: invoice.id,
+        });
+      }
       
       res.status(201).json(invoice);
     } catch (error: any) {
@@ -10282,6 +10333,40 @@ export function registerRoutes(app: Express): Server {
       
       await storage.invalidateCache('overview_%');
       await storage.invalidateCache('centers_%');
+
+      // Notify customer and reseller about repair status change
+      if (repair.customerId) {
+        await storage.createNotification({
+          userId: repair.customerId,
+          type: "repair_update",
+          title: "Aggiornamento riparazione",
+          message: `La riparazione #${repair.orderNumber} è stata aggiornata: ${validatedData.status}`,
+          data: JSON.stringify({ repairId: repair.id, status: validatedData.status }),
+        });
+        broadcastNotification(repair.customerId, {
+          type: "repair_status_changed",
+          title: "Aggiornamento riparazione",
+          message: `La riparazione #${repair.orderNumber} è stata aggiornata: ${validatedData.status}`,
+          repairId: repair.id,
+          status: validatedData.status,
+        });
+      }
+      if (repair.resellerId) {
+        await storage.createNotification({
+          userId: repair.resellerId,
+          type: "repair_update",
+          title: "Aggiornamento riparazione",
+          message: `La riparazione #${repair.orderNumber} è stata aggiornata: ${validatedData.status}`,
+          data: JSON.stringify({ repairId: repair.id, status: validatedData.status }),
+        });
+        broadcastNotification(repair.resellerId, {
+          type: "repair_status_changed",
+          title: "Aggiornamento riparazione",
+          message: `La riparazione #${repair.orderNumber} è stata aggiornata: ${validatedData.status}`,
+          repairId: repair.id,
+          status: validatedData.status,
+        });
+      }
       
       res.json(updated);
     } catch (error: any) {
@@ -10464,6 +10549,41 @@ export function registerRoutes(app: Express): Server {
         priority: validatedData.priority,
       });
       setActivityEntity(res, { type: 'tickets', id: ticket.id });
+
+      // Notify admin about new ticket
+      const adminsForTicket = (await storage.listUsers()).filter((u: any) => u.role === "admin");
+      for (const admin of adminsForTicket) {
+        await storage.createNotification({
+          userId: admin.id,
+          type: "system",
+          title: "Nuovo ticket di assistenza",
+          message: `${req.user.fullName || req.user.username} ha aperto un ticket: ${validatedData.subject}`,
+          data: JSON.stringify({ ticketId: ticket.id }),
+        });
+        broadcastNotification(admin.id, {
+          type: "new_ticket",
+          title: "Nuovo ticket di assistenza",
+          message: `${req.user.fullName || req.user.username} ha aperto un ticket: ${validatedData.subject}`,
+          ticketId: ticket.id,
+        });
+      }
+      // Notify reseller if customer has one
+      if (req.user.resellerId) {
+        await storage.createNotification({
+          userId: req.user.resellerId,
+          type: "system",
+          title: "Nuovo ticket di assistenza",
+          message: `${req.user.fullName || req.user.username} ha aperto un ticket: ${validatedData.subject}`,
+          data: JSON.stringify({ ticketId: ticket.id }),
+        });
+        broadcastNotification(req.user.resellerId, {
+          type: "new_ticket",
+          title: "Nuovo ticket di assistenza",
+          message: `${req.user.fullName || req.user.username} ha aperto un ticket: ${validatedData.subject}`,
+          ticketId: ticket.id,
+        });
+      }
+
       res.status(201).json(ticket);
     } catch (error: any) {
       console.error("Service order creation error:", error);
@@ -14181,16 +14301,37 @@ export function registerRoutes(app: Express): Server {
       const updatedTicket = await storage.updateTicketStatus(req.params.id, status);
       setActivityEntity(res, { type: 'ticket', id: updatedTicket.id });
       
-      // Broadcast real-time update to customer and assigned user
+      const statusLabels: Record<string, string> = { open: "Aperto", in_progress: "In lavorazione", closed: "Chiuso" };
+      const statusLabel = statusLabels[updatedTicket.status] || updatedTicket.status;
+
+      // Notify customer about ticket status change (with in-app + push)
+      await storage.createNotification({
+        userId: updatedTicket.customerId,
+        type: "system",
+        title: `Ticket ${statusLabel}`,
+        message: `Il tuo ticket #${updatedTicket.id.substring(0, 8)} è stato aggiornato a: ${statusLabel}`,
+        data: JSON.stringify({ ticketId: updatedTicket.id, status: updatedTicket.status }),
+      });
       broadcastNotification(updatedTicket.customerId, { 
         type: 'ticket_status_changed', 
+        title: `Ticket ${statusLabel}`,
+        message: `Il tuo ticket è stato aggiornato a: ${statusLabel}`,
         ticketId: updatedTicket.id,
         status: updatedTicket.status 
       });
       
       if (updatedTicket.assignedTo) {
+        await storage.createNotification({
+          userId: updatedTicket.assignedTo,
+          type: "system",
+          title: `Ticket ${statusLabel}`,
+          message: `Il ticket #${updatedTicket.id.substring(0, 8)} è stato aggiornato a: ${statusLabel}`,
+          data: JSON.stringify({ ticketId: updatedTicket.id, status: updatedTicket.status }),
+        });
         broadcastNotification(updatedTicket.assignedTo, { 
           type: 'ticket_status_changed', 
+          title: `Ticket ${statusLabel}`,
+          message: `Il ticket è stato aggiornato a: ${statusLabel}`,
           ticketId: updatedTicket.id,
           status: updatedTicket.status 
         });
@@ -17312,6 +17453,27 @@ export function registerRoutes(app: Express): Server {
       });
       
       setActivityEntity(res, { type: 'repair_quote', id: quote.id });
+
+      // Notify customer about new quote
+      const repairForQuote = await storage.getRepairOrder(req.params.id);
+      if (repairForQuote?.customerId) {
+        const totalAmount = ((quote.totalAmount || 0) / 100).toFixed(2);
+        await storage.createNotification({
+          userId: repairForQuote.customerId,
+          type: "system",
+          title: "Nuovo preventivo",
+          message: `È stato emesso un preventivo di ${totalAmount} € per la riparazione #${repairForQuote.orderNumber}`,
+          data: JSON.stringify({ repairOrderId: req.params.id, quoteId: quote.id }),
+        });
+        broadcastNotification(repairForQuote.customerId, {
+          type: "repair_quote_created",
+          title: "Nuovo preventivo",
+          message: `È stato emesso un preventivo di ${totalAmount} € per la riparazione #${repairForQuote.orderNumber}`,
+          repairId: req.params.id,
+          quoteId: quote.id,
+        });
+      }
+
       res.status(201).json(quote);
     } catch (error: any) {
       console.error("Service order creation error:", error);
@@ -18348,6 +18510,23 @@ export function registerRoutes(app: Express): Server {
             paidDate: new Date(),
             notes: `Fattura automatica per riparazione #${repairOrder.ticketNumber || req.params.id}`,
           });
+
+          // Notify customer about invoice
+          if (invoice && repairOrder.customerId) {
+            await storage.createNotification({
+              userId: repairOrder.customerId,
+              type: "system",
+              title: "Fattura emessa",
+              message: `È stata emessa la fattura per la riparazione #${repairOrder.ticketNumber || repairOrder.orderNumber}`,
+              data: JSON.stringify({ invoiceId: invoice.id, repairOrderId: repairOrder.id }),
+            });
+            broadcastNotification(repairOrder.customerId, {
+              type: "invoice_created",
+              title: "Fattura emessa",
+              message: `È stata emessa la fattura per la riparazione #${repairOrder.ticketNumber || repairOrder.orderNumber}`,
+              invoiceId: invoice.id,
+            });
+          }
         }
       }
       
@@ -21031,6 +21210,23 @@ export function registerRoutes(app: Express): Server {
         req
       );
       
+      // Notify reseller about new customer
+      if (result.user.resellerId) {
+        await storage.createNotification({
+          userId: result.user.resellerId,
+          type: "system",
+          title: "Nuovo cliente registrato",
+          message: `${result.user.fullName || result.user.username} è stato registrato come nuovo cliente`,
+          data: JSON.stringify({ customerId: result.user.id }),
+        });
+        broadcastNotification(result.user.resellerId, {
+          type: "new_customer",
+          title: "Nuovo cliente registrato",
+          message: `${result.user.fullName || result.user.username} è stato registrato come nuovo cliente`,
+          customerId: result.user.id,
+        });
+      }
+
       // Return created customer with temporary password
       res.status(201).json({
         customer: {
@@ -33515,6 +33711,12 @@ export function registerRoutes(app: Express): Server {
           link: `/admin/b2b-orders?orderId=${order.id}`,
           isRead: false,
         });
+        broadcastNotification(admins[0].id, {
+          type: "b2b_order_received",
+          title: "Nuovo ordine B2B ricevuto",
+          message: `${reseller?.businessName || reseller?.username || "Un reseller"} ha effettuato un ordine B2B per ${(totalCents / 100).toFixed(2)} EUR`,
+          orderId: order.id,
+        });
       }
 
       const createdItems = await storage.listResellerPurchaseOrderItems(order.id);
@@ -33805,6 +34007,21 @@ export function registerRoutes(app: Express): Server {
         status: 'cancelled',
         notes: order.notes ? `${order.notes}\n\nRIFIUTATO: ${reason || 'Nessun motivo specificato'}` : `RIFIUTATO: ${reason || 'Nessun motivo specificato'}`,
       });
+
+      // Notify reseller about B2B order rejection
+      await storage.createNotification({
+        userId: order.resellerId,
+        type: "system",
+        title: "Ordine B2B rifiutato",
+        message: `Il tuo ordine B2B #${order.orderNumber} è stato rifiutato${reason ? ': ' + reason : ''}`,
+        data: JSON.stringify({ orderId: order.id }),
+      });
+      broadcastNotification(order.resellerId, {
+        type: "b2b_order_rejected",
+        title: "Ordine B2B rifiutato",
+        message: `Il tuo ordine B2B #${order.orderNumber} è stato rifiutato${reason ? ': ' + reason : ''}`,
+        orderId: order.id,
+      });
       
       res.json(updated);
     } catch (error: any) {
@@ -33829,6 +34046,21 @@ export function registerRoutes(app: Express): Server {
         shippedAt: new Date(),
         trackingNumber,
         carrier,
+      });
+
+      // Notify reseller about B2B order shipment
+      await storage.createNotification({
+        userId: order.resellerId,
+        type: "system",
+        title: "Ordine B2B spedito",
+        message: `Il tuo ordine B2B #${order.orderNumber} è stato spedito${trackingNumber ? ' (tracking: ' + trackingNumber + ')' : ''}`,
+        data: JSON.stringify({ orderId: order.id, trackingNumber, carrier }),
+      });
+      broadcastNotification(order.resellerId, {
+        type: "b2b_order_shipped",
+        title: "Ordine B2B spedito",
+        message: `Il tuo ordine B2B #${order.orderNumber} è stato spedito${trackingNumber ? ' (tracking: ' + trackingNumber + ')' : ''}`,
+        orderId: order.id,
       });
       
       // Auto-create invoice for admin when shipping B2B order to reseller
@@ -33863,6 +34095,24 @@ export function registerRoutes(app: Express): Server {
         status: 'completed',
         receivedAt: new Date(),
       });
+
+      // Notify admin about order received
+      const adminsForReceive = (await storage.listUsers()).filter((u: any) => u.role === "admin");
+      if (adminsForReceive.length > 0) {
+        await storage.createNotification({
+          userId: adminsForReceive[0].id,
+          type: "system",
+          title: "Ordine B2B ricevuto",
+          message: `Il reseller ha confermato la ricezione dell'ordine #${order.orderNumber}`,
+          data: JSON.stringify({ orderId: order.id }),
+        });
+        broadcastNotification(adminsForReceive[0].id, {
+          type: "b2b_order_received_confirmation",
+          title: "Ordine B2B ricevuto",
+          message: `Il reseller ha confermato la ricezione dell'ordine #${order.orderNumber}`,
+          orderId: order.id,
+        });
+      }
       
       res.json(updated);
     } catch (error: any) {
@@ -34771,6 +35021,14 @@ export function registerRoutes(app: Express): Server {
           : `${buyerName} ha effettuato un ordine di ${itemCount} prodotti per ${(subtotal / 100).toFixed(2)} €. Ordine #${order.orderNumber}`,
         data: JSON.stringify({ orderId: order.id, orderNumber: order.orderNumber, buyerId: req.user.id }),
       });
+      broadcastNotification(sellerResellerId, {
+        type: "new_marketplace_order",
+        title: isAutomaticPayment ? "Nuovo ordine Marketplace (Approvato)" : "Nuovo ordine Marketplace",
+        message: isAutomaticPayment
+          ? `${buyerName} ha acquistato ${itemCount} prodotti per ${(subtotal / 100).toFixed(2)} €`
+          : `${buyerName} ha effettuato un ordine di ${itemCount} prodotti per ${(subtotal / 100).toFixed(2)} €`,
+        orderId: order.id,
+      });
       const createdItems = await storage.listMarketplaceOrderItems(order.id);
       res.json({ ...order, items: createdItems });
     } catch (error: any) {
@@ -34946,6 +35204,21 @@ export function registerRoutes(app: Express): Server {
         });
       }
       
+      // Notify buyer about shipment
+      await storage.createNotification({
+        userId: order.buyerResellerId,
+        type: "system",
+        title: "Ordine Marketplace spedito",
+        message: `L'ordine #${order.orderNumber} è stato spedito${trackingNumber ? ' (tracking: ' + trackingNumber + ')' : ''}`,
+        data: JSON.stringify({ orderId: order.id, trackingNumber, trackingCarrier }),
+      });
+      broadcastNotification(order.buyerResellerId, {
+        type: "marketplace_order_shipped",
+        title: "Ordine Marketplace spedito",
+        message: `L'ordine #${order.orderNumber} è stato spedito${trackingNumber ? ' (tracking: ' + trackingNumber + ')' : ''}`,
+        orderId: order.id,
+      });
+
       res.json({ ...updated, generatedInvoice: invoice });
     } catch (error: any) {
       console.error("Service order creation error:", error);
@@ -34970,6 +35243,21 @@ export function registerRoutes(app: Express): Server {
       const updated = await storage.updateMarketplaceOrder(order.id, {
         status: 'completed',
         receivedAt: new Date(),
+      });
+
+      // Notify seller about order completion
+      await storage.createNotification({
+        userId: order.sellerResellerId,
+        type: "system",
+        title: "Ordine Marketplace completato",
+        message: `L'acquirente ha confermato la ricezione dell'ordine #${order.orderNumber}`,
+        data: JSON.stringify({ orderId: order.id }),
+      });
+      broadcastNotification(order.sellerResellerId, {
+        type: "marketplace_order_completed",
+        title: "Ordine Marketplace completato",
+        message: `L'acquirente ha confermato la ricezione dell'ordine #${order.orderNumber}`,
+        orderId: order.id,
       });
       
       res.json(updated);
@@ -35835,6 +36123,21 @@ export function registerRoutes(app: Express): Server {
         status: 'delivered',
         deliveredAt: new Date(),
       });
+
+      // Notify reseller about delivery confirmation
+      await storage.createNotification({
+        userId: order.resellerId,
+        type: "system",
+        title: "Ordine B2B ricevuto",
+        message: `Il centro riparazione ha confermato la ricezione dell'ordine #${order.orderNumber}`,
+        data: JSON.stringify({ orderId: order.id }),
+      });
+      broadcastNotification(order.resellerId, {
+        type: "b2b_order_delivered",
+        title: "Ordine B2B ricevuto",
+        message: `Il centro riparazione ha confermato la ricezione dell'ordine #${order.orderNumber}`,
+        orderId: order.id,
+      });
       
       res.json(updated);
     } catch (error: any) {
@@ -35955,6 +36258,25 @@ export function registerRoutes(app: Express): Server {
         approvedBy: req.user.id,
       });
       
+      // Notify repair center about order approval
+      const rcUsersApprove = await storage.listUsers();
+      const rcNotifyUsers = rcUsersApprove.filter((u: any) => u.repairCenterId === order.repairCenterId);
+      for (const rcUser of rcNotifyUsers) {
+        await storage.createNotification({
+          userId: rcUser.id,
+          type: "system",
+          title: "Ordine B2B approvato",
+          message: `Il tuo ordine B2B #${order.orderNumber} è stato approvato dal reseller`,
+          data: JSON.stringify({ orderId: order.id }),
+        });
+        broadcastNotification(rcUser.id, {
+          type: "b2b_order_approved",
+          title: "Ordine B2B approvato",
+          message: `Il tuo ordine B2B #${order.orderNumber} è stato approvato dal reseller`,
+          orderId: order.id,
+        });
+      }
+
       res.json(updated);
     } catch (error: any) {
       console.error("Service order creation error:", error);
@@ -35982,6 +36304,25 @@ export function registerRoutes(app: Express): Server {
         status: 'rejected',
         rejectionReason: reason,
       });
+
+      // Notify repair center about order rejection
+      const rcUsersReject = await storage.listUsers();
+      const rcRejectNotify = rcUsersReject.filter((u: any) => u.repairCenterId === order.repairCenterId);
+      for (const rcUser of rcRejectNotify) {
+        await storage.createNotification({
+          userId: rcUser.id,
+          type: "system",
+          title: "Ordine B2B rifiutato",
+          message: `Il tuo ordine B2B #${order.orderNumber} è stato rifiutato${reason ? ': ' + reason : ''}`,
+          data: JSON.stringify({ orderId: order.id }),
+        });
+        broadcastNotification(rcUser.id, {
+          type: "b2b_order_rejected",
+          title: "Ordine B2B rifiutato",
+          message: `Il tuo ordine B2B #${order.orderNumber} è stato rifiutato${reason ? ': ' + reason : ''}`,
+          orderId: order.id,
+        });
+      }
       
       res.json(updated);
     } catch (error: any) {
@@ -36012,6 +36353,25 @@ export function registerRoutes(app: Express): Server {
         trackingNumber,
         carrier,
       });
+
+      // Notify repair center about shipment
+      const rcUsersShip = await storage.listUsers();
+      const rcShipNotify = rcUsersShip.filter((u: any) => u.repairCenterId === order.repairCenterId);
+      for (const rcUser of rcShipNotify) {
+        await storage.createNotification({
+          userId: rcUser.id,
+          type: "system",
+          title: "Ordine B2B spedito",
+          message: `Il tuo ordine B2B #${order.orderNumber} è stato spedito${trackingNumber ? ' (tracking: ' + trackingNumber + ')' : ''}`,
+          data: JSON.stringify({ orderId: order.id, trackingNumber, carrier }),
+        });
+        broadcastNotification(rcUser.id, {
+          type: "b2b_order_shipped",
+          title: "Ordine B2B spedito",
+          message: `Il tuo ordine B2B #${order.orderNumber} è stato spedito${trackingNumber ? ' (tracking: ' + trackingNumber + ')' : ''}`,
+          orderId: order.id,
+        });
+      }
       
       // Auto-create invoice for reseller when shipping RC B2B order
       let invoice = null;

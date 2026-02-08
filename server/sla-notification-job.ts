@@ -3,6 +3,7 @@ import { db } from "./db";
 import { repairOrders, users, notifications } from "@shared/schema";
 import { eq, and, not, inArray, isNull } from "drizzle-orm";
 import { differenceInMinutes } from "date-fns";
+import { enqueuePushNotification } from "./services/expoPush";
 
 interface SLAThresholds {
   lateMinutes: number;
@@ -158,6 +159,12 @@ export async function runSLANotificationCheck(): Promise<{ notified: number; che
           userId: admin.id,
           ...notificationData,
         });
+        enqueuePushNotification(
+          admin.id,
+          notificationData.title,
+          notificationData.message,
+          { type: notificationData.type, repairId: repair.id, link: notificationData.link }
+        ).catch((err) => console.error(`[ExpoPush] SLA push failed for admin ${admin.id}:`, (err as Error).message));
       } catch (error) {
         console.error(`Failed to create SLA notification for admin ${admin.id}:`, error);
       }
@@ -175,6 +182,12 @@ export async function runSLANotificationCheck(): Promise<{ notified: number; che
             userId: user.id,
             ...notificationData,
           });
+          enqueuePushNotification(
+            user.id,
+            notificationData.title,
+            notificationData.message,
+            { type: notificationData.type, repairId: repair.id, link: notificationData.link }
+          ).catch((err) => console.error(`[ExpoPush] SLA push failed for user ${user.id}:`, (err as Error).message));
         } catch (error) {
           console.error(`Failed to create SLA notification for user ${user.id}:`, error);
         }
