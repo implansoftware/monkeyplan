@@ -14,7 +14,7 @@ import { ThemeToggle } from "@/components/theme-toggle";
 import { NotificationBell } from "@/components/NotificationBell";
 import { TicketNotificationsProvider } from "@/contexts/TicketNotificationsContext";
 import { Loader2 } from "lucide-react";
-import LandingPage from "@/pages/public/landing";
+import LandingPage, { Navbar as PublicNavbar } from "@/pages/public/landing";
 
 function HomePage() {
   const { user, isLoading } = useAuth();
@@ -630,15 +630,20 @@ export default function App() {
 
 function ShopRouter() {
   return (
-    <Switch>
-      <Route path="/marketplace/:productId" component={MarketplaceProductDetail} />
-      <Route path="/marketplace" component={ShopMarketplace} />
-      <Route path="/shop/:resellerId/products/:productId" component={MarketplaceProductDetail} />
-      <Route path="/shop/:resellerId/cart" component={ShopCart} />
-      <ProtectedRoute path="/shop/:resellerId/checkout" component={ShopCheckout} />
-      <Route path="/shop/:resellerId" component={ShopCatalog} />
-      <Route component={NotFound} />
-    </Switch>
+    <>
+      <PublicNavbar solid />
+      <div className="pt-16">
+        <Switch>
+          <Route path="/marketplace/:productId" component={MarketplaceProductDetail} />
+          <Route path="/marketplace" component={ShopMarketplace} />
+          <Route path="/shop/:resellerId/products/:productId" component={MarketplaceProductDetail} />
+          <Route path="/shop/:resellerId/cart" component={ShopCart} />
+          <ProtectedRoute path="/shop/:resellerId/checkout" component={ShopCheckout} />
+          <Route path="/shop/:resellerId" component={ShopCatalog} />
+          <Route component={NotFound} />
+        </Switch>
+      </div>
+    </>
   );
 }
 

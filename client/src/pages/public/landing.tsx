@@ -84,11 +84,12 @@ function getDashboardPath(role?: string) {
   }
 }
 
-function Navbar() {
+export function Navbar({ solid = false }: { solid?: boolean }) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const { user } = useAuth();
   const dashboardPath = getDashboardPath(user?.role);
+  const isSolid = solid || scrolled;
 
   useEffect(() => {
     const handler = () => setScrolled(window.scrollY > 20);
@@ -107,7 +108,7 @@ function Navbar() {
   return (
     <nav
       className={`fixed top-0 left-0 right-0 z-[999] transition-all duration-300 ${
-        scrolled
+        isSolid
           ? "bg-white/90 dark:bg-slate-950/90 backdrop-blur-xl shadow-sm"
           : "bg-transparent"
       }`}
@@ -117,12 +118,16 @@ function Navbar() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex flex-wrap items-center justify-between gap-4 h-16">
           <div className="flex flex-wrap items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-lg shadow-emerald-500/25">
-              <Wrench className="w-4 h-4 text-white" />
-            </div>
-            <span className={`text-lg font-bold tracking-tight transition-colors ${scrolled ? "text-slate-900 dark:text-white" : "text-white"}`} data-testid="text-brand">
-              MonkeyPlan
-            </span>
+            <Link href="/landing">
+              <div className="flex flex-wrap items-center gap-3 cursor-pointer">
+                <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-lg shadow-emerald-500/25">
+                  <Wrench className="w-4 h-4 text-white" />
+                </div>
+                <span className={`text-lg font-bold tracking-tight transition-colors ${isSolid ? "text-slate-900 dark:text-white" : "text-white"}`} data-testid="text-brand">
+                  MonkeyPlan
+                </span>
+              </div>
+            </Link>
           </div>
 
           <div className="hidden md:flex items-center gap-1">
@@ -132,7 +137,7 @@ function Navbar() {
                   key={item.href}
                   href={item.href}
                   className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
-                    scrolled
+                    isSolid
                       ? "text-slate-600 dark:text-slate-400"
                       : "text-white/70"
                   }`}
@@ -145,7 +150,7 @@ function Navbar() {
                   key={item.href}
                   href={item.href}
                   className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
-                    scrolled
+                    isSolid
                       ? "text-slate-600 dark:text-slate-400"
                       : "text-white/70"
                   }`}
@@ -172,7 +177,7 @@ function Navbar() {
                   <Button
                     variant="outline"
                     size="sm"
-                    className={scrolled ? "" : "text-white border-white/30 bg-white/10 backdrop-blur-sm"}
+                    className={isSolid ? "" : "text-white border-white/30 bg-white/10 backdrop-blur-sm"}
                     data-testid="button-login"
                   >
                     Accedi
@@ -189,7 +194,7 @@ function Navbar() {
             <Button
               size="icon"
               variant="ghost"
-              className={`md:hidden ${scrolled ? "" : "text-white"}`}
+              className={`md:hidden ${isSolid ? "" : "text-white"}`}
               onClick={() => setMobileOpen(!mobileOpen)}
               data-testid="button-mobile-menu"
             >
