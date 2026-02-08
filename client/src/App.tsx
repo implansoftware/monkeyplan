@@ -15,6 +15,11 @@ import { NotificationBell } from "@/components/NotificationBell";
 import { TicketNotificationsProvider } from "@/contexts/TicketNotificationsContext";
 import { Loader2 } from "lucide-react";
 import LandingPage, { Navbar as PublicNavbar } from "@/pages/public/landing";
+import AboutPage from "@/pages/public/about";
+import ContactPage from "@/pages/public/contact";
+import FaqPage from "@/pages/public/faq";
+import TermsPage from "@/pages/public/terms";
+import PrivacyPage from "@/pages/public/privacy";
 
 function HomePage() {
   const { user, isLoading } = useAuth();
@@ -662,6 +667,18 @@ function AppContent() {
   }
   if (location === "/landing") {
     return <LandingPage />;
+  }
+
+  const publicPages: Record<string, React.ComponentType> = {
+    "/about": AboutPage,
+    "/contact": ContactPage,
+    "/faq": FaqPage,
+    "/terms": TermsPage,
+    "/privacy": PrivacyPage,
+  };
+  const PublicPageComponent = publicPages[location];
+  if (PublicPageComponent) {
+    return <PublicPageComponent />;
   }
   
   // Public pages render without sidebar/header

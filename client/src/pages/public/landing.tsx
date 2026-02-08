@@ -102,6 +102,9 @@ export function Navbar({ solid = false, showLandingLinks = true }: { solid?: boo
     { href: "#multistore", label: "Multi-Negozio", landingOnly: true },
     { href: "#integrations", label: "Integrazioni", landingOnly: true },
     { href: "#offer", label: "100 Licenze", landingOnly: true },
+    { href: "/about", label: "Chi Siamo", isPage: true },
+    { href: "/faq", label: "FAQ", isPage: true },
+    { href: "/contact", label: "Contatti", isPage: true },
     { href: "/marketplace", label: "Marketplace", isPage: true },
   ];
   const navLinks = showLandingLinks ? allNavLinks : allNavLinks.filter(l => !l.landingOnly);
@@ -851,7 +854,12 @@ function Footer() {
             <a href="#features" className="text-xs text-slate-500 dark:text-slate-400 transition-colors" data-testid="link-footer-features">Funzionalità</a>
             <a href="#multistore" className="text-xs text-slate-500 dark:text-slate-400 transition-colors" data-testid="link-footer-multistore">Multi-Negozio</a>
             <a href="#integrations" className="text-xs text-slate-500 dark:text-slate-400 transition-colors" data-testid="link-footer-integrations">Integrazioni</a>
-            <Link href="/track" className="text-xs text-slate-500 dark:text-slate-400 transition-colors" data-testid="link-footer-track">Traccia Riparazione</Link>
+            <Link href="/marketplace" className="text-xs text-slate-500 dark:text-slate-400 transition-colors" data-testid="link-footer-marketplace">Marketplace</Link>
+            <Link href="/about" className="text-xs text-slate-500 dark:text-slate-400 transition-colors" data-testid="link-footer-about">Chi Siamo</Link>
+            <Link href="/contact" className="text-xs text-slate-500 dark:text-slate-400 transition-colors" data-testid="link-footer-contact">Contatti</Link>
+            <Link href="/faq" className="text-xs text-slate-500 dark:text-slate-400 transition-colors" data-testid="link-footer-faq">FAQ</Link>
+            <Link href="/terms" className="text-xs text-slate-500 dark:text-slate-400 transition-colors" data-testid="link-footer-terms">Termini</Link>
+            <Link href="/privacy" className="text-xs text-slate-500 dark:text-slate-400 transition-colors" data-testid="link-footer-privacy">Privacy</Link>
           </div>
 
           <p className="text-[11px] text-slate-400 dark:text-slate-500" data-testid="text-footer-tagline">
