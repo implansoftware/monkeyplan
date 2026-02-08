@@ -98,16 +98,12 @@ export function Navbar({ solid = false, showLandingLinks = true }: { solid?: boo
   }, []);
 
   const allNavLinks = [
-    { href: "#features", label: "Funzionalità", landingOnly: true },
-    { href: "#multistore", label: "Multi-Negozio", landingOnly: true },
-    { href: "#integrations", label: "Integrazioni", landingOnly: true },
-    { href: "#offer", label: "100 Licenze", landingOnly: true },
     { href: "/about", label: "Chi Siamo", isPage: true },
     { href: "/faq", label: "FAQ", isPage: true },
     { href: "/contact", label: "Contatti", isPage: true },
     { href: "/marketplace", label: "Marketplace", isPage: true },
   ];
-  const navLinks = showLandingLinks ? allNavLinks : allNavLinks.filter(l => !l.landingOnly);
+  const navLinks = allNavLinks;
 
   return (
     <nav
