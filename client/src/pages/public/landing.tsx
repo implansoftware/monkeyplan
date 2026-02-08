@@ -84,7 +84,7 @@ function getDashboardPath(role?: string) {
   }
 }
 
-export function Navbar({ solid = false }: { solid?: boolean }) {
+export function Navbar({ solid = false, showLandingLinks = true }: { solid?: boolean; showLandingLinks?: boolean }) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const { user } = useAuth();
@@ -97,13 +97,14 @@ export function Navbar({ solid = false }: { solid?: boolean }) {
     return () => window.removeEventListener("scroll", handler);
   }, []);
 
-  const navLinks = [
-    { href: "#features", label: "Funzionalità" },
-    { href: "#multistore", label: "Multi-Negozio" },
-    { href: "#integrations", label: "Integrazioni" },
-    { href: "#offer", label: "100 Licenze" },
+  const allNavLinks = [
+    { href: "#features", label: "Funzionalità", landingOnly: true },
+    { href: "#multistore", label: "Multi-Negozio", landingOnly: true },
+    { href: "#integrations", label: "Integrazioni", landingOnly: true },
+    { href: "#offer", label: "100 Licenze", landingOnly: true },
     { href: "/marketplace", label: "Marketplace", isPage: true },
   ];
+  const navLinks = showLandingLinks ? allNavLinks : allNavLinks.filter(l => !l.landingOnly);
 
   return (
     <nav

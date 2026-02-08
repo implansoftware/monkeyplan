@@ -631,7 +631,7 @@ export default function App() {
 function ShopRouter() {
   return (
     <>
-      <PublicNavbar solid />
+      <PublicNavbar solid showLandingLinks={false} />
       <div className="pt-16">
         <Switch>
           <Route path="/marketplace/:productId" component={MarketplaceProductDetail} />
