@@ -1,8 +1,18 @@
 import { QueryClient, QueryFunction } from "@tanstack/react-query";
 
+export class LicenseRequiredError extends Error {
+  constructor() {
+    super("license_required");
+    this.name = "LicenseRequiredError";
+  }
+}
+
 async function throwIfResNotOk(res: Response) {
   if (!res.ok) {
     const text = (await res.text()) || res.statusText;
+    if (res.status === 403 && text.includes("license_required")) {
+      throw new LicenseRequiredError();
+    }
     throw new Error(`${res.status}: ${text}`);
   }
 }
@@ -48,7 +58,10 @@ export const queryClient = new QueryClient({
       refetchInterval: false,
       refetchOnWindowFocus: false,
       staleTime: Infinity,
-      retry: false,
+      retry: (failureCount, error) => {
+        if (error instanceof LicenseRequiredError) return false;
+        return false;
+      },
     },
     mutations: {
       retry: false,
