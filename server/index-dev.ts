@@ -10,6 +10,7 @@ import viteConfig from "../vite.config";
 import runApp from "./app";
 import { startSLANotificationJob } from "./sla-notification-job";
 import { startPushNotificationJobs } from "./services/expoPush";
+import { startLicenseExpiryJob } from "./license-expiry-job";
 
 export async function setupVite(app: Express, server: Server) {
   const viteLogger = createLogger();
@@ -65,4 +66,5 @@ export async function setupVite(app: Express, server: Server) {
   
   startSLANotificationJob(30);
   startPushNotificationJobs();
+  startLicenseExpiryJob(60);
 })();

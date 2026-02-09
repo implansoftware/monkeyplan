@@ -8,6 +8,8 @@ import NotFound from "@/pages/not-found";
 import AuthPage from "@/pages/auth-page";
 import ProfilePage from "@/pages/profile";
 import { AuthProvider, useAuth } from "@/hooks/use-auth";
+import { useLicenseStatus } from "@/hooks/use-license-status";
+import { LicenseBlockPage, LicenseExpiringBanner } from "@/components/license-block";
 import { ProtectedRoute } from "@/lib/protected-route";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/app-sidebar";
@@ -601,6 +603,12 @@ function AppLayout() {
     "--sidebar-width": "16rem",
     "--sidebar-width-icon": "3rem",
   };
+  const [location] = useLocation();
+  const { hasActiveLicense, isExpiringSoon, daysRemaining, isReseller, isLoading: licenseLoading } = useLicenseStatus();
+
+  const isLicensePage = location === "/reseller/my-license";
+  const showBlock = isReseller && !licenseLoading && !hasActiveLicense && !isLicensePage;
+  const showBanner = isReseller && !licenseLoading && hasActiveLicense && isExpiringSoon && daysRemaining !== null;
 
   return (
     <TicketNotificationsProvider>
@@ -615,9 +623,14 @@ function AppLayout() {
                 <ThemeToggle />
               </div>
             </header>
+            {showBanner && (
+              <div className="px-4 pt-3">
+                <LicenseExpiringBanner daysRemaining={daysRemaining!} />
+              </div>
+            )}
             <main className="flex-1 overflow-y-auto p-6">
               <div className="max-w-7xl mx-auto">
-                <Router />
+                {showBlock ? <LicenseBlockPage /> : <Router />}
               </div>
             </main>
           </div>

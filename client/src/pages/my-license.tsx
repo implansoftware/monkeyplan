@@ -16,7 +16,8 @@ import { it } from "date-fns/locale";
 interface MyLicenseResponse {
   license: License | null;
   plan: LicensePlan | null;
-  daysLeft?: number;
+  daysRemaining?: number;
+  isExpiringSoon?: boolean;
   isExpired: boolean;
 }
 
@@ -233,10 +234,10 @@ export default function MyLicense() {
                 <Badge variant="default">Attiva</Badge>
               </div>
             </div>
-            {currentLicense.daysLeft !== undefined && (
+            {currentLicense.daysRemaining !== undefined && (
               <div className="text-right">
-                <p className={`text-2xl font-bold ${currentLicense.daysLeft <= 7 ? 'text-amber-600' : 'text-emerald-600 dark:text-emerald-400'}`} data-testid="text-days-left">
-                  {currentLicense.daysLeft}
+                <p className={`text-2xl font-bold ${currentLicense.daysRemaining <= 7 ? 'text-amber-600' : 'text-emerald-600 dark:text-emerald-400'}`} data-testid="text-days-left">
+                  {currentLicense.daysRemaining}
                 </p>
                 <p className="text-xs text-muted-foreground">giorni rimasti</p>
               </div>

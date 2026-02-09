@@ -281,6 +281,32 @@ function requireRole(...roles: string[]) {
   };
 }
 
+function requireActiveLicense() {
+  return async (req: Request, res: Response, next: Function) => {
+    if (!req.isAuthenticated() || !req.user) {
+      return next();
+    }
+    const role = req.user.role;
+    if (role !== 'reseller' && role !== 'reseller_staff') {
+      return next();
+    }
+    const resellerId = role === 'reseller_staff' ? (req.user as any).resellerId : req.user.id;
+    if (!resellerId) {
+      return res.status(403).json({ error: 'license_required', message: 'Nessun rivenditore associato' });
+    }
+    try {
+      const license = await storage.getActiveLicenseForReseller(resellerId);
+      if (!license) {
+        return res.status(403).json({ error: 'license_required', message: 'Licenza non attiva o scaduta. Rinnova la tua licenza per continuare.' });
+      }
+      next();
+    } catch (err) {
+      console.error('License check error:', err);
+      next();
+    }
+  };
+}
+
 // Middleware to check module-level permissions for reseller_staff users
 
 // Helper function for resolving entity scope for HR endpoints with security validation
@@ -764,6 +790,25 @@ export function registerRoutes(app: Express): Server {
 
   // Apply automatic logging middleware to all routes
   app.use(autoLogMiddleware);
+
+  // License enforcement: block resellers without active license from all routes
+  // except license management, auth, user profile, and object storage
+  const licenseExemptPaths = [
+    '/api/licenses',
+    '/api/user',
+    '/api/auth',
+    '/api/login',
+    '/api/logout',
+    '/api/register',
+    '/objects/',
+  ];
+  app.use((req: Request, res: Response, next: Function) => {
+    const path = req.path;
+    if (licenseExemptPaths.some(p => path.startsWith(p))) {
+      return next();
+    }
+    requireActiveLicense()(req, res, next);
+  });
 
   // Serve product images and other objects from private storage
   app.get("/objects/*", async (req, res) => {
@@ -45715,8 +45760,9 @@ export function registerRoutes(app: Express): Server {
       }
       const plan = await storage.getLicensePlan(license.licensePlanId);
       const now = new Date();
-      const daysLeft = Math.ceil((license.endDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
-      res.json({ license, plan, daysLeft, isExpired: false });
+      const daysRemaining = Math.ceil((license.endDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+      const isExpiringSoon = daysRemaining <= 7 && daysRemaining > 0;
+      res.json({ license, plan, daysRemaining, isExpiringSoon, isExpired: false });
     } catch (error: any) {
       res.status(500).send(error.message);
     }
