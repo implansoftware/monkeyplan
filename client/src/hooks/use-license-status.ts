@@ -22,7 +22,7 @@ export function useLicenseStatus() {
   const { user } = useAuth();
   const isReseller = user?.role === "reseller" || user?.role === "reseller_staff";
 
-  const { data, isLoading } = useQuery<LicenseMyResponse>({
+  const { data, isLoading, isError } = useQuery<LicenseMyResponse>({
     queryKey: ["/api/licenses/my"],
     enabled: isReseller,
     refetchInterval: 5 * 60 * 1000,
@@ -38,7 +38,7 @@ export function useLicenseStatus() {
     plan: data?.plan ?? null,
     daysRemaining,
     isExpiringSoon,
-    isLoading,
+    isLoading: isLoading && !isError,
     isReseller,
   };
 }

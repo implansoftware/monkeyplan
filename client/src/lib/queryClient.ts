@@ -1,4 +1,4 @@
-import { QueryClient, QueryFunction } from "@tanstack/react-query";
+import { QueryClient, QueryFunction, MutationCache } from "@tanstack/react-query";
 
 export class LicenseRequiredError extends Error {
   constructor() {
@@ -47,6 +47,14 @@ export const getQueryFn: <T>(options: {
       return null;
     }
 
+    if (res.status === 403) {
+      const text = await res.text();
+      if (text.includes("license_required")) {
+        throw new LicenseRequiredError();
+      }
+      throw new Error(`403: ${text}`);
+    }
+
     await throwIfResNotOk(res);
     return await res.json();
   };
@@ -67,4 +75,11 @@ export const queryClient = new QueryClient({
       retry: false,
     },
   },
+  mutationCache: new MutationCache({
+    onError: (error) => {
+      if (error instanceof LicenseRequiredError) {
+        return;
+      }
+    },
+  }),
 });
