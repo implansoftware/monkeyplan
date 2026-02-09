@@ -45875,7 +45875,7 @@ export function registerRoutes(app: Express): Server {
                 experience_context: {
                   payment_method_preference: "IMMEDIATE_PAYMENT_REQUIRED",
                   user_action: "PAY_NOW",
-                  return_url: `${req.headers.origin || req.protocol + '://' + req.headers.host}/my-license?license_id=${license.id}&paypal_order_id=${orderData.id}&payment_success=true`,
+                  return_url: `${req.headers.origin || req.protocol + '://' + req.headers.host}/my-license?license_id=${license.id}&payment_success=true&payment_method=paypal`,
                   cancel_url: `${req.headers.origin || req.protocol + '://' + req.headers.host}/my-license?payment_cancelled=true`,
                   brand_name: "MonkeyPlan"
                 }

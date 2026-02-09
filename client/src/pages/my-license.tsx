@@ -135,6 +135,18 @@ export default function MyLicense() {
       window.history.replaceState({}, "", window.location.pathname);
       return;
     }
+
+    const paymentMethod = params.get("payment_method");
+    if (paymentSuccess && licenseId && paymentMethod === "paypal") {
+      const storedOrderId = localStorage.getItem("monkeyplan_paypal_order_id");
+      if (storedOrderId) {
+        localStorage.removeItem("monkeyplan_paypal_order_id");
+        localStorage.removeItem("monkeyplan_paypal_license_id");
+        confirmPaypalMutation.mutate({ licenseId, orderID: storedOrderId });
+      }
+      window.history.replaceState({}, "", window.location.pathname);
+      return;
+    }
   }, []);
 
   const handleActivatePlan = (plan: LicensePlan) => {
@@ -170,6 +182,8 @@ export default function MyLicense() {
       }
 
       if (data.approveUrl) {
+        localStorage.setItem("monkeyplan_paypal_order_id", data.orderID);
+        localStorage.setItem("monkeyplan_paypal_license_id", data.license?.id || "");
         window.location.href = data.approveUrl;
         return;
       }
