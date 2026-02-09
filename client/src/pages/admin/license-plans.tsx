@@ -4,15 +4,17 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import { Plus, Pencil, Trash2, CreditCard, Clock, Users, Tag } from "lucide-react";
+import { Plus, Pencil, Trash2, CreditCard, Clock, Users, Tag, Wrench, Package, FileText, ShoppingCart, Store, BarChart3, Headphones, Shield, Smartphone, Receipt } from "lucide-react";
 import type { LicensePlan } from "@shared/schema";
 
 const TARGET_LABELS: Record<string, string> = {
@@ -29,103 +31,239 @@ const DURATION_LABELS: Record<number, string> = {
   12: "12 Mesi",
 };
 
+const AVAILABLE_FEATURES = [
+  { id: "repairs", label: "Gestione riparazioni", icon: Wrench },
+  { id: "warehouse", label: "Magazzino e inventario", icon: Package },
+  { id: "invoicing", label: "Fatturazione", icon: FileText },
+  { id: "pos", label: "POS e corrispettivi", icon: Receipt },
+  { id: "fiscal_rt", label: "Registratore Telematico (RT)", icon: Receipt },
+  { id: "b2b_orders", label: "Ordini B2B", icon: ShoppingCart },
+  { id: "marketplace", label: "Marketplace P2P", icon: Store },
+  { id: "analytics", label: "Statistiche e report", icon: BarChart3 },
+  { id: "ticketing", label: "Ticketing e supporto", icon: Headphones },
+  { id: "warranty", label: "Garanzie e assicurazioni", icon: Shield },
+  { id: "push_notifications", label: "Notifiche push", icon: Smartphone },
+  { id: "crm", label: "Gestione clienti", icon: Users },
+  { id: "payments", label: "Pagamenti online", icon: CreditCard },
+];
+
+const MAX_STAFF_OPTIONS = [
+  { value: "1", label: "1 utente" },
+  { value: "3", label: "3 utenti" },
+  { value: "5", label: "5 utenti" },
+  { value: "10", label: "10 utenti" },
+  { value: "25", label: "25 utenti" },
+  { value: "50", label: "50 utenti" },
+  { value: "unlimited", label: "Illimitati" },
+];
+
+function parseExistingFeatures(features: string | null | undefined): { selected: Set<string>; custom: string[] } {
+  if (!features) return { selected: new Set(), custom: [] };
+  const lines = features.split("\n").map(l => l.trim()).filter(Boolean);
+  const selected = new Set<string>();
+  const custom: string[] = [];
+  for (const line of lines) {
+    const match = AVAILABLE_FEATURES.find(
+      f => f.label.toLowerCase() === line.toLowerCase() || f.id === line.toLowerCase()
+    );
+    if (match) {
+      selected.add(match.id);
+    } else {
+      custom.push(line);
+    }
+  }
+  return { selected, custom };
+}
+
 function PlanForm({ plan, onSave, onCancel }: { plan?: LicensePlan; onSave: (data: any) => void; onCancel: () => void }) {
   const [name, setName] = useState(plan?.name || "");
   const [description, setDescription] = useState(plan?.description || "");
   const [targetCategory, setTargetCategory] = useState<string>(plan?.targetCategory || "all");
   const [durationMonths, setDurationMonths] = useState(String(plan?.durationMonths || "1"));
   const [priceCents, setPriceCents] = useState(String(plan ? (plan.priceCents / 100).toFixed(2) : ""));
-  const [features, setFeatures] = useState(plan?.features || "");
-  const [maxStaffUsers, setMaxStaffUsers] = useState(plan?.maxStaffUsers ? String(plan.maxStaffUsers) : "");
+  const [parsedData] = useState(() => parseExistingFeatures(plan?.features));
+  const [selectedFeatures, setSelectedFeatures] = useState<Set<string>>(() => parsedData.selected);
+  const [customFeatures] = useState<string[]>(() => parsedData.custom);
+  const [maxStaffUsers, setMaxStaffUsers] = useState<string>(() => {
+    if (plan?.maxStaffUsers === null || plan?.maxStaffUsers === undefined) return "unlimited";
+    return String(plan.maxStaffUsers);
+  });
   const [isActive, setIsActive] = useState(plan?.isActive !== false);
   const [sortOrder, setSortOrder] = useState(String(plan?.sortOrder || 0));
 
+  const toggleFeature = (featureId: string) => {
+    setSelectedFeatures(prev => {
+      const next = new Set(prev);
+      if (next.has(featureId)) {
+        next.delete(featureId);
+      } else {
+        next.add(featureId);
+      }
+      return next;
+    });
+  };
+
+  const selectAllFeatures = () => {
+    setSelectedFeatures(new Set(AVAILABLE_FEATURES.map(f => f.id)));
+  };
+
+  const clearAllFeatures = () => {
+    setSelectedFeatures(new Set());
+  };
+
   const handleSubmit = () => {
     if (!name.trim() || !priceCents) return;
+    const selectedLabels = AVAILABLE_FEATURES
+      .filter(f => selectedFeatures.has(f.id))
+      .map(f => f.label);
+    const allFeatures = [...selectedLabels, ...customFeatures];
+    const featuresString = allFeatures.length > 0 ? allFeatures.join("\n") : null;
+
     onSave({
       name: name.trim(),
       description: description.trim() || null,
       targetCategory,
       durationMonths: parseInt(durationMonths),
       priceCents: Math.round(parseFloat(priceCents) * 100),
-      features: features.trim() || null,
-      maxStaffUsers: maxStaffUsers ? parseInt(maxStaffUsers) : null,
+      features: featuresString,
+      maxStaffUsers: maxStaffUsers === "unlimited" ? null : parseInt(maxStaffUsers),
       isActive,
       sortOrder: parseInt(sortOrder) || 0,
     });
   };
 
   return (
-    <div className="space-y-4">
-      <div className="space-y-2">
-        <Label>Nome piano *</Label>
-        <Input value={name} onChange={e => setName(e.target.value)} placeholder="es. Standard Mensile" data-testid="input-plan-name" />
-      </div>
-      <div className="space-y-2">
-        <Label>Descrizione</Label>
-        <Textarea value={description} onChange={e => setDescription(e.target.value)} placeholder="Descrizione del piano" data-testid="input-plan-description" />
-      </div>
-      <div className="grid grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label>Categoria target</Label>
-          <Select value={targetCategory} onValueChange={setTargetCategory}>
-            <SelectTrigger data-testid="select-target-category">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Tutti</SelectItem>
-              <SelectItem value="standard">Standard</SelectItem>
-              <SelectItem value="franchising">Franchising</SelectItem>
-              <SelectItem value="gdo">GDO</SelectItem>
-            </SelectContent>
-          </Select>
+    <ScrollArea className="max-h-[70vh]">
+      <div className="space-y-5 pr-4">
+        <div className="space-y-4">
+          <p className="text-sm font-medium text-muted-foreground uppercase tracking-wide">Informazioni base</p>
+          <div className="space-y-2">
+            <Label>Nome piano *</Label>
+            <Input value={name} onChange={e => setName(e.target.value)} placeholder="es. Standard Mensile" data-testid="input-plan-name" />
+          </div>
+          <div className="space-y-2">
+            <Label>Descrizione</Label>
+            <Input value={description} onChange={e => setDescription(e.target.value)} placeholder="Breve descrizione del piano" data-testid="input-plan-description" />
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label>Categoria target</Label>
+              <Select value={targetCategory} onValueChange={setTargetCategory}>
+                <SelectTrigger data-testid="select-target-category">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Tutti</SelectItem>
+                  <SelectItem value="standard">Standard</SelectItem>
+                  <SelectItem value="franchising">Franchising</SelectItem>
+                  <SelectItem value="gdo">GDO</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>Durata</Label>
+              <Select value={durationMonths} onValueChange={setDurationMonths}>
+                <SelectTrigger data-testid="select-duration">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="1">1 Mese</SelectItem>
+                  <SelectItem value="3">3 Mesi</SelectItem>
+                  <SelectItem value="6">6 Mesi</SelectItem>
+                  <SelectItem value="12">12 Mesi</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
         </div>
-        <div className="space-y-2">
-          <Label>Durata</Label>
-          <Select value={durationMonths} onValueChange={setDurationMonths}>
-            <SelectTrigger data-testid="select-duration">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="1">1 Mese</SelectItem>
-              <SelectItem value="3">3 Mesi</SelectItem>
-              <SelectItem value="6">6 Mesi</SelectItem>
-              <SelectItem value="12">12 Mesi</SelectItem>
-            </SelectContent>
-          </Select>
+
+        <Separator />
+
+        <div className="space-y-4">
+          <p className="text-sm font-medium text-muted-foreground uppercase tracking-wide">Prezzo e limiti</p>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label>Prezzo (EUR) *</Label>
+              <Input type="number" step="0.01" min="0" value={priceCents} onChange={e => setPriceCents(e.target.value)} placeholder="29.99" data-testid="input-plan-price" />
+            </div>
+            <div className="space-y-2">
+              <Label>Max utenti staff</Label>
+              <Select value={maxStaffUsers} onValueChange={setMaxStaffUsers}>
+                <SelectTrigger data-testid="select-max-staff">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {MAX_STAFF_OPTIONS.map(opt => (
+                    <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+        </div>
+
+        <Separator />
+
+        <div className="space-y-3">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <p className="text-sm font-medium text-muted-foreground uppercase tracking-wide">Funzionalità incluse</p>
+            <div className="flex items-center gap-2">
+              <Button variant="ghost" size="sm" onClick={selectAllFeatures} data-testid="button-select-all-features">
+                Seleziona tutto
+              </Button>
+              <Button variant="ghost" size="sm" onClick={clearAllFeatures} data-testid="button-clear-all-features">
+                Deseleziona
+              </Button>
+            </div>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            {AVAILABLE_FEATURES.map(feature => {
+              const Icon = feature.icon;
+              return (
+                <label
+                  key={feature.id}
+                  className="flex items-center gap-3 p-2 rounded-md cursor-pointer hover-elevate"
+                  data-testid={`checkbox-feature-${feature.id}`}
+                >
+                  <Checkbox
+                    checked={selectedFeatures.has(feature.id)}
+                    onCheckedChange={() => toggleFeature(feature.id)}
+                  />
+                  <Icon className="w-4 h-4 text-muted-foreground shrink-0" />
+                  <span className="text-sm">{feature.label}</span>
+                </label>
+              );
+            })}
+          </div>
+          <p className="text-xs text-muted-foreground">
+            {selectedFeatures.size} di {AVAILABLE_FEATURES.length} funzionalità selezionate
+          </p>
+        </div>
+
+        <Separator />
+
+        <div className="space-y-4">
+          <p className="text-sm font-medium text-muted-foreground uppercase tracking-wide">Opzioni</p>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label>Ordine visualizzazione</Label>
+              <Input type="number" value={sortOrder} onChange={e => setSortOrder(e.target.value)} data-testid="input-sort-order" />
+            </div>
+            <div className="flex items-center gap-3 pt-6">
+              <Switch checked={isActive} onCheckedChange={setIsActive} data-testid="switch-is-active" />
+              <Label>Piano attivo</Label>
+            </div>
+          </div>
+        </div>
+
+        <div className="flex justify-end gap-2 pt-4">
+          <Button variant="outline" onClick={onCancel} data-testid="button-cancel-plan">Annulla</Button>
+          <Button onClick={handleSubmit} disabled={!name.trim() || !priceCents} data-testid="button-save-plan">
+            {plan ? "Aggiorna" : "Crea Piano"}
+          </Button>
         </div>
       </div>
-      <div className="grid grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label>Prezzo (EUR) *</Label>
-          <Input type="number" step="0.01" value={priceCents} onChange={e => setPriceCents(e.target.value)} placeholder="29.99" data-testid="input-plan-price" />
-        </div>
-        <div className="space-y-2">
-          <Label>Max utenti staff</Label>
-          <Input type="number" value={maxStaffUsers} onChange={e => setMaxStaffUsers(e.target.value)} placeholder="Illimitati" data-testid="input-max-staff" />
-        </div>
-      </div>
-      <div className="space-y-2">
-        <Label>Funzionalità incluse (una per riga)</Label>
-        <Textarea value={features} onChange={e => setFeatures(e.target.value)} placeholder="Gestione riparazioni&#10;Magazzino&#10;Fatturazione" rows={4} data-testid="input-plan-features" />
-      </div>
-      <div className="grid grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label>Ordine visualizzazione</Label>
-          <Input type="number" value={sortOrder} onChange={e => setSortOrder(e.target.value)} data-testid="input-sort-order" />
-        </div>
-        <div className="flex items-center gap-3 pt-6">
-          <Switch checked={isActive} onCheckedChange={setIsActive} data-testid="switch-is-active" />
-          <Label>Piano attivo</Label>
-        </div>
-      </div>
-      <div className="flex justify-end gap-2 pt-4">
-        <Button variant="outline" onClick={onCancel} data-testid="button-cancel-plan">Annulla</Button>
-        <Button onClick={handleSubmit} disabled={!name.trim() || !priceCents} data-testid="button-save-plan">
-          {plan ? "Aggiorna" : "Crea Piano"}
-        </Button>
-      </div>
-    </div>
+    </ScrollArea>
   );
 }
 
