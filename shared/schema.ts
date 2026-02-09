@@ -7375,3 +7375,74 @@ export const insertShippingMethodSchema = createInsertSchema(shippingMethods).om
 // Types
 export type ShippingMethod = typeof shippingMethods.$inferSelect;
 export type InsertShippingMethod = z.infer<typeof insertShippingMethodSchema>;
+
+// ==========================================
+// LICENSE PLANS & LICENSES
+// ==========================================
+
+export const licensePlanTargetEnum = pgEnum("license_plan_target", [
+  "all",
+  "standard",
+  "franchising",
+  "gdo"
+]);
+
+export const licenseStatusEnum = pgEnum("license_status", [
+  "active",
+  "expired",
+  "cancelled",
+  "pending"
+]);
+
+export const licensePaymentMethodEnum = pgEnum("license_payment_method", [
+  "stripe",
+  "paypal",
+  "manual",
+  "free"
+]);
+
+export const licensePlans = pgTable("license_plans", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  name: text("name").notNull(),
+  description: text("description"),
+  targetCategory: licensePlanTargetEnum("target_category").notNull().default("all"),
+  durationMonths: integer("duration_months").notNull(),
+  priceCents: integer("price_cents").notNull(),
+  features: text("features"),
+  maxStaffUsers: integer("max_staff_users"),
+  isActive: boolean("is_active").notNull().default(true),
+  sortOrder: integer("sort_order").notNull().default(0),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+export const insertLicensePlanSchema = createInsertSchema(licensePlans).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type LicensePlan = typeof licensePlans.$inferSelect;
+export type InsertLicensePlan = z.infer<typeof insertLicensePlanSchema>;
+
+export const licenses = pgTable("licenses", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  resellerId: varchar("reseller_id").notNull(),
+  licensePlanId: varchar("license_plan_id").notNull(),
+  status: licenseStatusEnum("status").notNull().default("pending"),
+  startDate: timestamp("start_date").notNull(),
+  endDate: timestamp("end_date").notNull(),
+  paymentMethod: licensePaymentMethodEnum("payment_method").notNull().default("manual"),
+  paymentId: varchar("payment_id"),
+  autoRenew: boolean("auto_renew").notNull().default(false),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const insertLicenseSchema = createInsertSchema(licenses).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type License = typeof licenses.$inferSelect;
+export type InsertLicense = z.infer<typeof insertLicenseSchema>;

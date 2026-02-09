@@ -143,7 +143,9 @@ import {
   platformFiscalConfig, PlatformFiscalConfig, InsertPlatformFiscalConfig,
   entityFiscalConfig, EntityFiscalConfig, InsertEntityFiscalConfig,
   expoPushTokens, ExpoPushToken, InsertExpoPushToken,
-  pushNotificationLog, PushNotificationLog, InsertPushNotificationLog
+  pushNotificationLog, PushNotificationLog, InsertPushNotificationLog,
+  licensePlans, LicensePlan, InsertLicensePlan,
+  licenses, License, InsertLicense
 } from "@shared/schema";
 import { db, pool } from "./db";
 import { eq, and, or, desc, lt, gt, gte, lte, sql, not, inArray, isNull, ilike, SQL } from "drizzle-orm";
@@ -1238,6 +1240,20 @@ export interface IStorage {
   getShippingMethodsForSeller(sellerId: string): Promise<ShippingMethod[]>;
   getShippingMethodsForRepairCenter(repairCenterId: string, parentResellerId: string): Promise<ShippingMethod[]>;
   listAllShippingMethods(): Promise<ShippingMethod[]>;
+
+  // License Plans
+  listLicensePlans(filters?: { isActive?: boolean; targetCategory?: string }): Promise<LicensePlan[]>;
+  getLicensePlan(id: string): Promise<LicensePlan | undefined>;
+  createLicensePlan(data: InsertLicensePlan): Promise<LicensePlan>;
+  updateLicensePlan(id: string, updates: Partial<InsertLicensePlan>): Promise<LicensePlan>;
+  deleteLicensePlan(id: string): Promise<void>;
+
+  // Licenses
+  listLicenses(filters?: { resellerId?: string; status?: string }): Promise<License[]>;
+  getLicense(id: string): Promise<License | undefined>;
+  getActiveLicenseForReseller(resellerId: string): Promise<License | undefined>;
+  createLicense(data: InsertLicense): Promise<License>;
+  updateLicense(id: string, updates: Partial<InsertLicense>): Promise<License>;
 
 }
 
@@ -13430,6 +13446,80 @@ export class DatabaseStorage implements IStorage {
       .values({ ...data, entityType, entityId } as InsertEntityFiscalConfig)
       .returning();
     return created;
+  }
+
+  // License Plans
+  async listLicensePlans(filters?: { isActive?: boolean; targetCategory?: string }): Promise<LicensePlan[]> {
+    const conditions: SQL[] = [];
+    if (filters?.isActive !== undefined) conditions.push(eq(licensePlans.isActive, filters.isActive));
+    if (filters?.targetCategory) conditions.push(eq(licensePlans.targetCategory, filters.targetCategory as any));
+    return db.select().from(licensePlans)
+      .where(conditions.length > 0 ? and(...conditions) : undefined)
+      .orderBy(licensePlans.sortOrder, licensePlans.durationMonths);
+  }
+
+  async getLicensePlan(id: string): Promise<LicensePlan | undefined> {
+    const [plan] = await db.select().from(licensePlans).where(eq(licensePlans.id, id));
+    return plan;
+  }
+
+  async createLicensePlan(data: InsertLicensePlan): Promise<LicensePlan> {
+    const [plan] = await db.insert(licensePlans).values(data).returning();
+    return plan;
+  }
+
+  async updateLicensePlan(id: string, updates: Partial<InsertLicensePlan>): Promise<LicensePlan> {
+    const [plan] = await db.update(licensePlans)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(licensePlans.id, id))
+      .returning();
+    return plan;
+  }
+
+  async deleteLicensePlan(id: string): Promise<void> {
+    await db.delete(licensePlans).where(eq(licensePlans.id, id));
+  }
+
+  // Licenses
+  async listLicenses(filters?: { resellerId?: string; status?: string }): Promise<License[]> {
+    const conditions: SQL[] = [];
+    if (filters?.resellerId) conditions.push(eq(licenses.resellerId, filters.resellerId));
+    if (filters?.status) conditions.push(eq(licenses.status, filters.status as any));
+    return db.select().from(licenses)
+      .where(conditions.length > 0 ? and(...conditions) : undefined)
+      .orderBy(desc(licenses.createdAt));
+  }
+
+  async getLicense(id: string): Promise<License | undefined> {
+    const [license] = await db.select().from(licenses).where(eq(licenses.id, id));
+    return license;
+  }
+
+  async getActiveLicenseForReseller(resellerId: string): Promise<License | undefined> {
+    const now = new Date();
+    const [license] = await db.select().from(licenses)
+      .where(and(
+        eq(licenses.resellerId, resellerId),
+        eq(licenses.status, "active"),
+        lte(licenses.startDate, now),
+        gte(licenses.endDate, now)
+      ))
+      .orderBy(desc(licenses.endDate))
+      .limit(1);
+    return license;
+  }
+
+  async createLicense(data: InsertLicense): Promise<License> {
+    const [license] = await db.insert(licenses).values(data).returning();
+    return license;
+  }
+
+  async updateLicense(id: string, updates: Partial<InsertLicense>): Promise<License> {
+    const [license] = await db.update(licenses)
+      .set(updates)
+      .where(eq(licenses.id, id))
+      .returning();
+    return license;
   }
 
 }

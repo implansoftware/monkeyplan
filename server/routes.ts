@@ -45531,5 +45531,248 @@ export function registerRoutes(app: Express): Server {
       res.status(500).send(error.message);
     }
   });
+
+  // ==========================================
+  // LICENSE PLANS - Admin CRUD
+  // ==========================================
+
+  app.get("/api/admin/license-plans", requireRole("admin", "admin_staff"), async (req, res) => {
+    try {
+      const plans = await storage.listLicensePlans();
+      res.json(plans);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
+  app.post("/api/admin/license-plans", requireRole("admin"), async (req, res) => {
+    try {
+      const { name, description, targetCategory, durationMonths, priceCents, features, maxStaffUsers, isActive, sortOrder } = req.body;
+      if (!name || !durationMonths || priceCents === undefined) {
+        return res.status(400).send("Nome, durata e prezzo sono obbligatori");
+      }
+      const plan = await storage.createLicensePlan({
+        name,
+        description: description || null,
+        targetCategory: targetCategory || "all",
+        durationMonths,
+        priceCents,
+        features: features || null,
+        maxStaffUsers: maxStaffUsers || null,
+        isActive: isActive !== undefined ? isActive : true,
+        sortOrder: sortOrder || 0,
+      });
+      res.status(201).json(plan);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
+  app.put("/api/admin/license-plans/:id", requireRole("admin"), async (req, res) => {
+    try {
+      const existing = await storage.getLicensePlan(req.params.id);
+      if (!existing) return res.status(404).send("Piano non trovato");
+      const updates: any = {};
+      const fields = ["name", "description", "targetCategory", "durationMonths", "priceCents", "features", "maxStaffUsers", "isActive", "sortOrder"];
+      for (const f of fields) {
+        if (req.body[f] !== undefined) updates[f] = req.body[f];
+      }
+      const plan = await storage.updateLicensePlan(req.params.id, updates);
+      res.json(plan);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
+  app.delete("/api/admin/license-plans/:id", requireRole("admin"), async (req, res) => {
+    try {
+      const existing = await storage.getLicensePlan(req.params.id);
+      if (!existing) return res.status(404).send("Piano non trovato");
+      const allLicenses = await storage.listLicenses({});
+      const linkedLicenses = allLicenses.filter(l => l.licensePlanId === req.params.id);
+      if (linkedLicenses.length > 0) {
+        const activeCount = linkedLicenses.filter(l => l.status === "active").length;
+        if (activeCount > 0) {
+          return res.status(400).send("Impossibile eliminare: ci sono licenze attive associate a questo piano");
+        }
+        return res.status(400).send("Impossibile eliminare: ci sono licenze storiche associate a questo piano. Rimuovile prima.");
+      }
+      await storage.deleteLicensePlan(req.params.id);
+      res.json({ success: true });
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
+  // ==========================================
+  // LICENSES - Admin Management
+  // ==========================================
+
+  app.get("/api/admin/licenses", requireRole("admin", "admin_staff"), async (req, res) => {
+    try {
+      const { status, resellerId } = req.query;
+      const filters: any = {};
+      if (status) filters.status = status as string;
+      if (resellerId) filters.resellerId = resellerId as string;
+      const allLicenses = await storage.listLicenses(filters);
+      const plans = await storage.listLicensePlans();
+      const users = await storage.listUsers();
+      const enriched = allLicenses.map(lic => {
+        const plan = plans.find(p => p.id === lic.licensePlanId);
+        const reseller = users.find(u => u.id === lic.resellerId);
+        return {
+          ...lic,
+          planName: plan?.name || "N/A",
+          planDuration: plan?.durationMonths || 0,
+          resellerName: reseller?.fullName || reseller?.ragioneSociale || reseller?.username || "N/A",
+          resellerCategory: reseller?.resellerCategory || "standard",
+        };
+      });
+      res.json(enriched);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
+  app.put("/api/admin/licenses/:id", requireRole("admin"), async (req, res) => {
+    try {
+      const existing = await storage.getLicense(req.params.id);
+      if (!existing) return res.status(404).send("Licenza non trovata");
+      const updates: any = {};
+      if (req.body.status !== undefined) updates.status = req.body.status;
+      if (req.body.endDate !== undefined) updates.endDate = new Date(req.body.endDate);
+      if (req.body.notes !== undefined) updates.notes = req.body.notes;
+      if (req.body.autoRenew !== undefined) updates.autoRenew = req.body.autoRenew;
+      const license = await storage.updateLicense(req.params.id, updates);
+      res.json(license);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
+  app.post("/api/admin/licenses/grant", requireRole("admin"), async (req, res) => {
+    try {
+      const { resellerId, licensePlanId, paymentMethod, notes } = req.body;
+      if (!resellerId || !licensePlanId) {
+        return res.status(400).send("Reseller e piano sono obbligatori");
+      }
+      const plan = await storage.getLicensePlan(licensePlanId);
+      if (!plan) return res.status(404).send("Piano non trovato");
+      const existingActive = await storage.getActiveLicenseForReseller(resellerId);
+      if (existingActive) {
+        await storage.updateLicense(existingActive.id, { status: "cancelled" });
+      }
+      const startDate = new Date();
+      const endDate = new Date();
+      endDate.setMonth(endDate.getMonth() + plan.durationMonths);
+      const license = await storage.createLicense({
+        resellerId,
+        licensePlanId,
+        status: "active",
+        startDate,
+        endDate,
+        paymentMethod: paymentMethod || "manual",
+        autoRenew: false,
+        notes: notes || null,
+        paymentId: null,
+      });
+      res.status(201).json(license);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
+  // ==========================================
+  // LICENSES - Reseller Endpoints
+  // ==========================================
+
+  app.get("/api/licenses/plans", requireRole("reseller", "reseller_staff"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      const category = req.user.resellerCategory || "standard";
+      const allPlans = await storage.listLicensePlans({ isActive: true });
+      const filtered = allPlans.filter(p => p.targetCategory === "all" || p.targetCategory === category);
+      res.json(filtered);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
+  app.get("/api/licenses/my", requireRole("reseller", "reseller_staff"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      const resellerId = req.user.role === "reseller" ? req.user.id : req.user.resellerId;
+      if (!resellerId) return res.json({ license: null, plan: null });
+      const license = await storage.getActiveLicenseForReseller(resellerId);
+      if (!license) {
+        const allLicenses = await storage.listLicenses({ resellerId });
+        const lastLicense = allLicenses[0];
+        if (lastLicense) {
+          const plan = await storage.getLicensePlan(lastLicense.licensePlanId);
+          return res.json({ license: lastLicense, plan, isExpired: true });
+        }
+        return res.json({ license: null, plan: null });
+      }
+      const plan = await storage.getLicensePlan(license.licensePlanId);
+      const now = new Date();
+      const daysLeft = Math.ceil((license.endDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+      res.json({ license, plan, daysLeft, isExpired: false });
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
+  app.get("/api/licenses/history", requireRole("reseller", "reseller_staff"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      const resellerId = req.user.role === "reseller" ? req.user.id : req.user.resellerId;
+      if (!resellerId) return res.json([]);
+      const allLicenses = await storage.listLicenses({ resellerId });
+      const plans = await storage.listLicensePlans();
+      const enriched = allLicenses.map(lic => {
+        const plan = plans.find(p => p.id === lic.licensePlanId);
+        return { ...lic, planName: plan?.name || "N/A", planDuration: plan?.durationMonths || 0 };
+      });
+      res.json(enriched);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
+  app.post("/api/licenses/activate", requireRole("reseller"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      if (req.user.role !== "reseller") return res.status(403).send("Solo i rivenditori possono acquistare licenze");
+      const { licensePlanId, paymentMethod, paymentId } = req.body;
+      if (!licensePlanId) return res.status(400).send("Piano obbligatorio");
+      const plan = await storage.getLicensePlan(licensePlanId);
+      if (!plan || !plan.isActive) return res.status(404).send("Piano non disponibile");
+      const category = req.user.resellerCategory || "standard";
+      if (plan.targetCategory !== "all" && plan.targetCategory !== category) {
+        return res.status(403).send("Piano non disponibile per la tua categoria");
+      }
+      const existingActive = await storage.getActiveLicenseForReseller(req.user.id);
+      if (existingActive) {
+        await storage.updateLicense(existingActive.id, { status: "cancelled" });
+      }
+      const startDate = new Date();
+      const endDate = new Date();
+      endDate.setMonth(endDate.getMonth() + plan.durationMonths);
+      const license = await storage.createLicense({
+        resellerId: req.user.id,
+        licensePlanId,
+        status: "active",
+        startDate,
+        endDate,
+        paymentMethod: paymentMethod || "manual",
+        paymentId: paymentId || null,
+        autoRenew: false,
+        notes: null,
+      });
+      res.status(201).json(license);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
   return httpServer;
 }

@@ -105,6 +105,9 @@ import AdminWarrantyProducts from "@/pages/admin/warranty-products";
 import AdminWarrantyAnalytics from "@/pages/admin/warranty-analytics";
 import AdminServiceOrders from "@/pages/admin/service-orders";
 import AdminUnrepairableReasons from "@/pages/admin/unrepairable-reasons";
+import AdminLicensePlans from "@/pages/admin/license-plans";
+import AdminLicenses from "@/pages/admin/licenses";
+import MyLicense from "@/pages/my-license";
 
 // Admin Utility pages
 import AdminUtility from "@/pages/admin/utility/index";
@@ -402,6 +405,8 @@ function Router() {
       <ProtectedRoute path="/admin/warranty-products" component={AdminWarrantyProducts} />
       <ProtectedRoute path="/admin/warranty-analytics" component={AdminWarrantyAnalytics} />
       <ProtectedRoute path="/admin/service-orders" component={AdminServiceOrders} />
+      <ProtectedRoute path="/admin/license-plans" component={AdminLicensePlans} />
+      <ProtectedRoute path="/admin/licenses" component={AdminLicenses} />
       
       {/* Reseller routes - accessible by reseller and reseller_staff */}
       <ProtectedRoute path="/reseller" component={ResellerDashboard} allowedRoles={["reseller", "reseller_staff", "sub_reseller"]} />
@@ -498,6 +503,7 @@ function Router() {
       <ProtectedRoute path="/reseller/hr/calendar" component={ResellerHrCalendar} allowedRoles={["reseller", "reseller_staff", "sub_reseller"]} />
       <ProtectedRoute path="/reseller/hr" component={ResellerHrDashboard} allowedRoles={["reseller", "reseller_staff", "sub_reseller"]} />
       <ProtectedRoute path="/reseller/settings" component={ResellerSettings} allowedRoles={["reseller", "sub_reseller"]} />
+      <ProtectedRoute path="/reseller/my-license" component={MyLicense} allowedRoles={["reseller"]} />
       
       {/* Repair Center routes */}
       <ProtectedRoute path="/repair-center" component={RepairCenterDashboard} />
