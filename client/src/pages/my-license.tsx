@@ -1,11 +1,14 @@
+import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import { Shield, Clock, Calendar, CheckCircle2, AlertTriangle, CreditCard, History } from "lucide-react";
+import { Shield, Clock, Calendar, CheckCircle2, AlertTriangle, CreditCard, History, Loader2 } from "lucide-react";
+import { SiStripe, SiPaypal } from "react-icons/si";
 import type { LicensePlan, License } from "@shared/schema";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
@@ -28,6 +31,11 @@ interface EnrichedHistory {
   planDuration: number;
 }
 
+interface PaymentMethods {
+  stripe: boolean;
+  paypal: boolean;
+}
+
 const DURATION_LABELS: Record<number, string> = {
   1: "1 Mese",
   3: "3 Mesi",
@@ -39,11 +47,14 @@ const STATUS_MAP: Record<string, { label: string; variant: "default" | "secondar
   active: { label: "Attiva", variant: "default" },
   expired: { label: "Scaduta", variant: "destructive" },
   cancelled: { label: "Cancellata", variant: "secondary" },
-  pending: { label: "In attesa", variant: "outline" },
+  pending: { label: "In attesa di pagamento", variant: "outline" },
 };
 
 export default function MyLicense() {
   const { toast } = useToast();
+  const [selectedPlan, setSelectedPlan] = useState<LicensePlan | null>(null);
+  const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
 
   const { data: currentLicense, isLoading: loadingCurrent } = useQuery<MyLicenseResponse>({
     queryKey: ["/api/licenses/my"],
@@ -57,20 +68,119 @@ export default function MyLicense() {
     queryKey: ["/api/licenses/history"],
   });
 
-  const activateMutation = useMutation({
-    mutationFn: async (data: { licensePlanId: string; paymentMethod: string }) => {
-      const res = await apiRequest("POST", "/api/licenses/activate", data);
+  const { data: paymentMethods } = useQuery<PaymentMethods>({
+    queryKey: ["/api/licenses/payment-methods"],
+  });
+
+  const confirmStripeMutation = useMutation({
+    mutationFn: async (data: { licenseId: string; sessionId: string }) => {
+      const res = await apiRequest("POST", "/api/licenses/confirm-stripe", data);
       return res.json();
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/licenses/my"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/licenses/history"] });
-      toast({ title: "Licenza attivata con successo" });
+    onSuccess: (data) => {
+      if (data.confirmed || data.alreadyActive) {
+        queryClient.invalidateQueries({ queryKey: ["/api/licenses/my"] });
+        queryClient.invalidateQueries({ queryKey: ["/api/licenses/history"] });
+        toast({ title: "Pagamento confermato", description: "La tua licenza è ora attiva." });
+      } else {
+        toast({ title: "Pagamento in elaborazione", description: "Il pagamento non è ancora stato confermato. Riprova tra qualche secondo.", variant: "destructive" });
+      }
     },
     onError: (err: any) => {
       toast({ title: "Errore", description: err.message, variant: "destructive" });
     },
   });
+
+  const confirmPaypalMutation = useMutation({
+    mutationFn: async (data: { licenseId: string; orderID: string }) => {
+      const res = await apiRequest("POST", "/api/licenses/confirm-paypal", data);
+      return res.json();
+    },
+    onSuccess: (data) => {
+      if (data.confirmed || data.alreadyActive) {
+        queryClient.invalidateQueries({ queryKey: ["/api/licenses/my"] });
+        queryClient.invalidateQueries({ queryKey: ["/api/licenses/history"] });
+        toast({ title: "Pagamento PayPal confermato", description: "La tua licenza è ora attiva." });
+      } else {
+        toast({ title: "Pagamento in elaborazione", description: "Il pagamento PayPal non è ancora stato confermato.", variant: "destructive" });
+      }
+    },
+    onError: (err: any) => {
+      toast({ title: "Errore", description: err.message, variant: "destructive" });
+    },
+  });
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const paymentSuccess = params.get("payment_success");
+    const licenseId = params.get("license_id");
+    const stripeSessionId = params.get("stripe_session_id");
+    const paypalOrderId = params.get("paypal_order_id");
+    const paymentCancelled = params.get("payment_cancelled");
+
+    if (paymentCancelled) {
+      toast({ title: "Pagamento annullato", description: "Puoi riprovare quando vuoi.", variant: "destructive" });
+      window.history.replaceState({}, "", window.location.pathname);
+      return;
+    }
+
+    if (paymentSuccess && licenseId && stripeSessionId) {
+      confirmStripeMutation.mutate({ licenseId, sessionId: stripeSessionId });
+      window.history.replaceState({}, "", window.location.pathname);
+      return;
+    }
+
+    if (paymentSuccess && licenseId && paypalOrderId) {
+      confirmPaypalMutation.mutate({ licenseId, orderID: paypalOrderId });
+      window.history.replaceState({}, "", window.location.pathname);
+      return;
+    }
+  }, []);
+
+  const handleActivatePlan = (plan: LicensePlan) => {
+    if (plan.priceCents === 0) {
+      handlePayment(plan, "free");
+      return;
+    }
+    setSelectedPlan(plan);
+    setIsPaymentDialogOpen(true);
+  };
+
+  const handlePayment = async (plan: LicensePlan, method: string) => {
+    setIsProcessing(true);
+    try {
+      const res = await apiRequest("POST", "/api/licenses/activate", {
+        licensePlanId: plan.id,
+        paymentMethod: method,
+      });
+      const data = await res.json();
+
+      if (data.free) {
+        queryClient.invalidateQueries({ queryKey: ["/api/licenses/my"] });
+        queryClient.invalidateQueries({ queryKey: ["/api/licenses/history"] });
+        toast({ title: "Licenza attivata", description: "Piano gratuito attivato con successo." });
+        setIsPaymentDialogOpen(false);
+        setSelectedPlan(null);
+        return;
+      }
+
+      if (data.checkoutUrl) {
+        window.location.href = data.checkoutUrl;
+        return;
+      }
+
+      if (data.approveUrl) {
+        window.location.href = data.approveUrl;
+        return;
+      }
+
+      toast({ title: "Errore", description: "Nessun URL di pagamento ricevuto", variant: "destructive" });
+    } catch (err: any) {
+      toast({ title: "Errore", description: err.message || "Errore durante l'attivazione", variant: "destructive" });
+    } finally {
+      setIsProcessing(false);
+    }
+  };
 
   if (loadingCurrent || loadingPlans) {
     return (
@@ -86,6 +196,9 @@ export default function MyLicense() {
   }
 
   const hasActiveLicense = currentLicense?.license && !currentLicense.isExpired;
+  const hasStripe = paymentMethods?.stripe ?? false;
+  const hasPaypal = paymentMethods?.paypal ?? false;
+  const hasAnyPaymentMethod = hasStripe || hasPaypal;
 
   return (
     <div className="p-6 space-y-8">
@@ -180,6 +293,7 @@ export default function MyLicense() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             {plans.map(plan => {
               const isCurrentPlan = currentLicense?.license?.licensePlanId === plan.id && !currentLicense.isExpired;
+              const isFree = plan.priceCents === 0;
               return (
                 <Card key={plan.id} className={isCurrentPlan ? "ring-2 ring-emerald-500" : ""} data-testid={`card-available-plan-${plan.id}`}>
                   <CardHeader className="pb-3 text-center">
@@ -190,8 +304,14 @@ export default function MyLicense() {
                   </CardHeader>
                   <CardContent className="text-center space-y-4">
                     <div>
-                      <span className="text-3xl font-bold">{(plan.priceCents / 100).toFixed(2)}</span>
-                      <span className="text-sm text-muted-foreground ml-1">EUR</span>
+                      {isFree ? (
+                        <span className="text-3xl font-bold">Gratuito</span>
+                      ) : (
+                        <>
+                          <span className="text-3xl font-bold">{(plan.priceCents / 100).toFixed(2)}</span>
+                          <span className="text-sm text-muted-foreground ml-1">EUR</span>
+                        </>
+                      )}
                     </div>
                     <div className="flex items-center justify-center gap-1 text-sm text-muted-foreground">
                       <Clock className="w-3.5 h-3.5" />
@@ -209,18 +329,18 @@ export default function MyLicense() {
                     )}
                     {isCurrentPlan ? (
                       <Badge variant="default" className="w-full justify-center">Piano attuale</Badge>
+                    ) : !isFree && !hasAnyPaymentMethod ? (
+                      <p className="text-xs text-muted-foreground">Pagamenti non configurati</p>
                     ) : (
                       <Button
                         className="w-full"
-                        onClick={() => {
-                          if (confirm(`Vuoi attivare il piano "${plan.name}" a ${(plan.priceCents / 100).toFixed(2)} EUR?`)) {
-                            activateMutation.mutate({ licensePlanId: plan.id, paymentMethod: "manual" });
-                          }
-                        }}
-                        disabled={activateMutation.isPending}
+                        onClick={() => handleActivatePlan(plan)}
+                        disabled={isProcessing}
                         data-testid={`button-activate-plan-${plan.id}`}
                       >
-                        {activateMutation.isPending ? "Attivazione..." : "Attiva Piano"}
+                        {isProcessing ? (
+                          <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Elaborazione...</>
+                        ) : isFree ? "Attiva Gratis" : "Acquista Piano"}
                       </Button>
                     )}
                   </CardContent>
@@ -230,6 +350,79 @@ export default function MyLicense() {
           </div>
         )}
       </div>
+
+      <Dialog open={isPaymentDialogOpen} onOpenChange={(open) => { if (!isProcessing) { setIsPaymentDialogOpen(open); if (!open) setSelectedPlan(null); } }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Scegli il metodo di pagamento</DialogTitle>
+          </DialogHeader>
+          {selectedPlan && (
+            <div className="space-y-5">
+              <Card>
+                <CardContent className="py-4">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <div>
+                      <p className="font-semibold">{selectedPlan.name}</p>
+                      <p className="text-sm text-muted-foreground">
+                        {DURATION_LABELS[selectedPlan.durationMonths] || `${selectedPlan.durationMonths} Mesi`}
+                      </p>
+                    </div>
+                    <p className="text-2xl font-bold">{(selectedPlan.priceCents / 100).toFixed(2)} EUR</p>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <div className="space-y-3">
+                {hasStripe && (
+                  <Button
+                    variant="outline"
+                    className="w-full justify-start gap-3 h-auto py-4"
+                    onClick={() => handlePayment(selectedPlan, "stripe")}
+                    disabled={isProcessing}
+                    data-testid="button-pay-stripe"
+                  >
+                    {isProcessing ? (
+                      <Loader2 className="w-5 h-5 animate-spin" />
+                    ) : (
+                      <SiStripe className="w-5 h-5 text-[#635BFF]" />
+                    )}
+                    <div className="text-left">
+                      <p className="font-medium">Paga con Stripe</p>
+                      <p className="text-xs text-muted-foreground">Carta di credito/debito</p>
+                    </div>
+                  </Button>
+                )}
+
+                {hasPaypal && (
+                  <Button
+                    variant="outline"
+                    className="w-full justify-start gap-3 h-auto py-4"
+                    onClick={() => handlePayment(selectedPlan, "paypal")}
+                    disabled={isProcessing}
+                    data-testid="button-pay-paypal"
+                  >
+                    {isProcessing ? (
+                      <Loader2 className="w-5 h-5 animate-spin" />
+                    ) : (
+                      <SiPaypal className="w-5 h-5 text-[#003087]" />
+                    )}
+                    <div className="text-left">
+                      <p className="font-medium">Paga con PayPal</p>
+                      <p className="text-xs text-muted-foreground">Account PayPal o carta</p>
+                    </div>
+                  </Button>
+                )}
+
+                {!hasStripe && !hasPaypal && (
+                  <p className="text-sm text-muted-foreground text-center py-4">
+                    Nessun metodo di pagamento configurato dall'amministratore.
+                  </p>
+                )}
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
 
       {history && history.length > 0 && (
         <div>
