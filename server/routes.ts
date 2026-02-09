@@ -791,8 +791,9 @@ export function registerRoutes(app: Express): Server {
   // Apply automatic logging middleware to all routes
   app.use(autoLogMiddleware);
 
-  // License enforcement: block resellers without active license from all routes
-  // except license management, auth, user profile, and object storage
+  // License enforcement: block resellers without active license from API routes only.
+  // Frontend routes (/, /reseller/*, etc.) must always be served so the React app
+  // can load and handle license blocking on the client side.
   const licenseExemptPaths = [
     '/api/licenses',
     '/api/user',
@@ -800,10 +801,13 @@ export function registerRoutes(app: Express): Server {
     '/api/login',
     '/api/logout',
     '/api/register',
-    '/objects/',
   ];
   app.use((req: Request, res: Response, next: Function) => {
     const path = req.path;
+    // Only enforce license checks on API routes, never on frontend/static routes
+    if (!path.startsWith('/api/')) {
+      return next();
+    }
     if (licenseExemptPaths.some(p => path.startsWith(p))) {
       return next();
     }
