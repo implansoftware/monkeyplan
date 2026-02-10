@@ -11,12 +11,14 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { 
-  Plus, Search, FileCheck, Pencil, ArrowLeft, User as UserIcon, Eye, Package, Calendar, Euro, Trash2, ClipboardPaste, X, Building2, User2, FileText
+  Plus, Search, FileCheck, Pencil, ArrowLeft, User as UserIcon, Eye, Package, Calendar, Euro, Trash2, ClipboardPaste, X, Building2, User2, FileText, LayoutGrid, TableIcon
 } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Link, useSearch } from "wouter";
+import { Link, useSearch, useLocation } from "wouter";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { PracticesKanbanBoard } from "@/components/PracticesKanbanBoard";
 import { UtilityPracticeWizard } from "@/components/UtilityPracticeWizard";
 
 type PracticeStatus = "bozza" | "inviata" | "in_lavorazione" | "attesa_documenti" | "completata" | "rifiutata" | "annullata";
@@ -69,8 +71,10 @@ interface PracticeProductItem {
 
 export default function RepairCenterUtilityPractices() {
   const searchString = useSearch();
+  const [, navigate] = useLocation();
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [viewMode, setViewMode] = useState<"table" | "pipeline">("pipeline");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [wizardOpen, setWizardOpen] = useState(false);
   
@@ -660,10 +664,32 @@ export default function RepairCenterUtilityPractices() {
                 ))}
               </SelectContent>
             </Select>
+            <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as "table" | "pipeline")}>
+              <TabsList>
+                <TabsTrigger value="pipeline" className="gap-1" data-testid="tab-pipeline">
+                  <LayoutGrid className="h-4 w-4" />
+                  Pipeline
+                </TabsTrigger>
+                <TabsTrigger value="table" className="gap-1" data-testid="tab-table">
+                  <TableIcon className="h-4 w-4" />
+                  Tabella
+                </TabsTrigger>
+              </TabsList>
+            </Tabs>
           </div>
         </CardHeader>
         <CardContent>
-          {isLoading ? (
+          {viewMode === "pipeline" ? (
+            <PracticesKanbanBoard
+              practices={filteredPractices}
+              services={allServices}
+              suppliers={suppliers}
+              customers={customers}
+              products={products}
+              isLoading={isLoading}
+              onCardClick={(id) => navigate(`/repair-center/utility/practices/${id}`)}
+            />
+          ) : isLoading ? (
             <div className="space-y-2">
               {[...Array(5)].map((_, i) => (
                 <Skeleton key={i} className="h-12 w-full" />
