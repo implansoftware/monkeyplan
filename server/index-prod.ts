@@ -66,7 +66,7 @@ export async function serveStatic(app: Express, _server: Server) {
             "@type": "Offer",
             "price": "0",
             "priceCurrency": "EUR",
-            "description": "Prime 100 licenze gratuite - Beta v.24",
+            "description": "Prime 100 licenze gratuite",
             "availability": "https://schema.org/LimitedAvailability"
           },
           "inLanguage": "it"

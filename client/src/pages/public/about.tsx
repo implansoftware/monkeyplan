@@ -27,9 +27,6 @@ function PageFooter() {
               <Wrench className="w-3.5 h-3.5 text-white" />
             </div>
             <span className="text-sm font-semibold text-slate-900 dark:text-white">MonkeyPlan</span>
-            <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-400">
-              Beta v.24
-            </span>
           </div>
           <div className="flex flex-wrap items-center gap-6">
             <Link href="/about" className="text-xs text-slate-500 dark:text-slate-400" data-testid="link-footer-about">Chi Siamo</Link>
@@ -76,7 +73,7 @@ const values = [
 const milestones = [
   { year: "2024", title: "Nasce l'idea", description: "MonkeyPlan prende forma dalla necessità di un gestionale completo e moderno per il settore assistenza." },
   { year: "2024", title: "Sviluppo Core", description: "Ticketing, magazzino, workflow riparazioni e gestione clienti vengono progettati e sviluppati." },
-  { year: "2025", title: "Beta v.24", description: "Lancio della versione Beta con POS fiscale, B2B, marketplace, garanzie e integrazioni fornitori." },
+  { year: "2025", title: "Lancio Piattaforma", description: "Lancio della piattaforma con POS fiscale, B2B, marketplace, garanzie e integrazioni fornitori." },
   { year: "2025", title: "Le prime 100 licenze", description: "Apertura delle prime 100 licenze gratuite per i primi adottatori della piattaforma." },
 ];
 
@@ -158,7 +155,7 @@ export default function AboutPage() {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
             {[
               { icon: Globe, value: "100%", label: "Made in Italy" },
-              { icon: Rocket, value: "Beta v.24", label: "Versione attuale" },
+              { icon: Rocket, value: "v1.0", label: "Versione attuale" },
               { icon: Award, value: "100", label: "Prime licenze gratuite" },
               { icon: Users, value: "4+", label: "Ruoli gestiti" },
             ].map((s) => (

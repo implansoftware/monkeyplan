@@ -190,7 +190,7 @@ export default function AdminDashboard() {
             </div>
             <div>
               <h1 className="text-2xl sm:text-3xl font-bold text-white tracking-tight">Dashboard Amministratore</h1>
-              <p className="text-blue-100/80 mt-1">Panoramica completa della piattaforma MonkeyPlan Beta v.24</p>
+              <p className="text-blue-100/80 mt-1">Panoramica completa della piattaforma MonkeyPlan</p>
             </div>
           </div>
           <div className="flex flex-wrap items-center gap-3">

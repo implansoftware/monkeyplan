@@ -280,7 +280,7 @@ function HeroSection() {
             <div className="flex flex-wrap items-center gap-3">
               <span className="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-medium rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/20 backdrop-blur-sm">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                Beta v.24 — Attivo
+                Attivo
               </span>
               <span className="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-medium rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/20 backdrop-blur-sm">
                 <Star className="w-3 h-3" />
@@ -841,9 +841,6 @@ function Footer() {
               <Wrench className="w-3.5 h-3.5 text-white" />
             </div>
             <span className="text-sm font-semibold text-slate-900 dark:text-white">MonkeyPlan</span>
-            <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-400">
-              Beta v.24
-            </span>
           </div>
 
           <div className="flex flex-wrap items-center gap-6">
@@ -893,7 +890,7 @@ const jsonLdSoftware = {
     "@type": "Offer",
     "price": "0",
     "priceCurrency": "EUR",
-    "description": "Prime 100 licenze gratuite - Beta v.24",
+    "description": "Prime 100 licenze gratuite",
     "availability": "https://schema.org/LimitedAvailability"
   },
   "featureList": [

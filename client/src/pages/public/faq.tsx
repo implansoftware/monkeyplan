@@ -27,7 +27,7 @@ const faqItems: FaqItem[] = [
   {
     category: "Generale",
     question: "MonkeyPlan è gratuito?",
-    answer: "Sì, attualmente siamo in fase Beta e le prime 100 licenze sono completamente gratuite. Potrai utilizzare tutte le funzionalità della piattaforma senza alcun costo.",
+    answer: "Sì, le prime 100 licenze sono completamente gratuite. Potrai utilizzare tutte le funzionalità della piattaforma senza alcun costo.",
   },
   {
     category: "Generale",
@@ -77,7 +77,7 @@ const faqItems: FaqItem[] = [
   {
     category: "Supporto",
     question: "Posso suggerire nuove funzionalità?",
-    answer: "Certamente! Siamo in fase Beta e il feedback degli utenti è fondamentale. Puoi inviarci suggerimenti tramite il sistema di ticketing o via email.",
+    answer: "Certamente! Il feedback degli utenti è fondamentale. Puoi inviarci suggerimenti tramite il sistema di ticketing o via email.",
   },
 ];
 

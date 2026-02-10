@@ -240,9 +240,6 @@ export default function AuthPage() {
               </div>
               <div>
                 <span className="font-bold text-3xl tracking-tight">MonkeyPlan</span>
-                <span className="ml-3 px-3 py-1 text-xs rounded-full bg-yellow-400/30 backdrop-blur-sm text-yellow-100 border border-yellow-300/30">
-                  Beta v.24
-                </span>
               </div>
             </div>
           </Link>
@@ -331,7 +328,6 @@ export default function AuthPage() {
                 </div>
                 <div>
                   <span className="font-bold text-2xl text-slate-900 dark:text-white">MonkeyPlan</span>
-                  <span className="text-xs ml-2 px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-900 text-emerald-700 dark:text-emerald-300">Beta</span>
                 </div>
               </div>
             </Link>

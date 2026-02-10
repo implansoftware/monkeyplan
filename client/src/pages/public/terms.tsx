@@ -19,7 +19,7 @@ const sections = [
   },
   {
     title: "4. Licenza d'Uso",
-    content: "MonkeyPlan concede all'Utente una licenza limitata, non esclusiva, non trasferibile e revocabile per l'utilizzo della Piattaforma conformemente ai presenti Termini. La licenza Beta è attualmente gratuita per le prime 100 registrazioni. MonkeyPlan si riserva di modificare i piani tariffari con adeguato preavviso.",
+    content: "MonkeyPlan concede all'Utente una licenza limitata, non esclusiva, non trasferibile e revocabile per l'utilizzo della Piattaforma conformemente ai presenti Termini. MonkeyPlan si riserva di modificare i piani tariffari con adeguato preavviso.",
   },
   {
     title: "5. Obblighi dell'Utente",
@@ -35,7 +35,7 @@ const sections = [
   },
   {
     title: "8. Limitazione di Responsabilità",
-    content: "MonkeyPlan è fornito \"così com'è\" durante la fase Beta. Non garantiamo che il Servizio sia privo di errori o interruzioni. MonkeyPlan non è responsabile per danni diretti, indiretti, incidentali o consequenziali derivanti dall'uso della Piattaforma, incluse perdite di dati, mancati guadagni o interruzioni di attività.",
+    content: "MonkeyPlan è fornito \"così com'è\". Non garantiamo che il Servizio sia privo di errori o interruzioni. MonkeyPlan non è responsabile per danni diretti, indiretti, incidentali o consequenziali derivanti dall'uso della Piattaforma, incluse perdite di dati, mancati guadagni o interruzioni di attività.",
   },
   {
     title: "9. Conformità Fiscale",
