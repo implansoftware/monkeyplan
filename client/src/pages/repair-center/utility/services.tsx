@@ -16,6 +16,7 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { Link } from "wouter";
 import { UtilityPracticeWizard } from "@/components/UtilityPracticeWizard";
+import { UtilityServiceDetailSheet } from "@/components/UtilityServiceDetailSheet";
 
 type ServiceCategory = "fisso" | "mobile" | "centralino" | "luce" | "gas" | "altro";
 
@@ -82,10 +83,17 @@ export default function RepairCenterUtilityServices() {
   const [viewMode, setViewMode] = useState<"cards" | "table">("cards");
   const [wizardOpen, setWizardOpen] = useState(false);
   const [wizardServiceId, setWizardServiceId] = useState<string | undefined>();
+  const [detailOpen, setDetailOpen] = useState(false);
+  const [detailServiceId, setDetailServiceId] = useState<string | null>(null);
 
   const handleCreatePractice = (serviceId: string) => {
     setWizardServiceId(serviceId);
     setWizardOpen(true);
+  };
+
+  const handleOpenDetail = (serviceId: string) => {
+    setDetailServiceId(serviceId);
+    setDetailOpen(true);
   };
 
   const { data: services = [], isLoading } = useQuery<UtilityService[]>({
@@ -137,14 +145,18 @@ export default function RepairCenterUtilityServices() {
     return matchesSearch && matchesSupplier && matchesCategory && notInTopSection;
   });
 
-  const ServiceCard = ({ service, featured = false, onCreatePractice }: { service: UtilityService; featured?: boolean; onCreatePractice?: (serviceId: string) => void }) => {
+  const ServiceCard = ({ service, featured = false, onCreatePractice, onViewDetail }: { service: UtilityService; featured?: boolean; onCreatePractice?: (serviceId: string) => void; onViewDetail?: (serviceId: string) => void }) => {
     const supplier = suppliers.find(s => s.id === service.supplierId);
     const commission = calculateCommission(service);
     const CategoryIcon = categoryIcons[service.category] || Package;
     const potential10Sales = commission * 10;
 
     return (
-      <Card className={`hover-elevate transition-all ${featured ? 'border-primary/50 bg-primary/5' : ''}`} data-testid={`card-service-${service.id}`}>
+      <Card 
+        className={`hover-elevate transition-all cursor-pointer ${featured ? 'border-primary/50 bg-primary/5' : ''}`} 
+        onClick={() => onViewDetail?.(service.id)}
+        data-testid={`card-service-${service.id}`}
+      >
         <CardHeader className="pb-3">
           <div className="flex items-start justify-between gap-2">
             <div className="flex flex-wrap items-center gap-2">
@@ -220,7 +232,7 @@ export default function RepairCenterUtilityServices() {
             {onCreatePractice && (
               <Button 
                 className="w-full gap-2" 
-                onClick={() => onCreatePractice(service.id)}
+                onClick={(e) => { e.stopPropagation(); onCreatePractice(service.id); }}
                 data-testid={`button-create-practice-${service.id}`}
               >
                 <FileCheck className="h-4 w-4" />
@@ -331,7 +343,7 @@ export default function RepairCenterUtilityServices() {
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {topCommissionServices.map((service) => (
-              <ServiceCard key={service.id} service={service} featured onCreatePractice={handleCreatePractice} />
+              <ServiceCard key={service.id} service={service} featured onCreatePractice={handleCreatePractice} onViewDetail={handleOpenDetail} />
             ))}
           </div>
         </div>
@@ -403,7 +415,7 @@ export default function RepairCenterUtilityServices() {
           ) : viewMode === "cards" ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {filteredServices.map((service) => (
-                <ServiceCard key={service.id} service={service} onCreatePractice={handleCreatePractice} />
+                <ServiceCard key={service.id} service={service} onCreatePractice={handleCreatePractice} onViewDetail={handleOpenDetail} />
               ))}
             </div>
           ) : (
@@ -425,7 +437,7 @@ export default function RepairCenterUtilityServices() {
                   const supplier = suppliers.find(s => s.id === service.supplierId);
                   const commission = calculateCommission(service);
                   return (
-                    <TableRow key={service.id} data-testid={`row-service-${service.id}`}>
+                    <TableRow key={service.id} className="cursor-pointer" onClick={() => handleOpenDetail(service.id)} data-testid={`row-service-${service.id}`}>
                       <TableCell className="font-mono text-sm">
                         {service.code}
                       </TableCell>
@@ -460,11 +472,11 @@ export default function RepairCenterUtilityServices() {
                       </TableCell>
                       <TableCell>
                         <div className="flex flex-wrap gap-2">
-                          <Button size="sm" variant="outline" className="gap-1" data-testid={`button-propose-table-${service.id}`}>
+                          <Button size="sm" variant="outline" className="gap-1" onClick={(e) => e.stopPropagation()} data-testid={`button-propose-table-${service.id}`}>
                             <Sparkles className="h-3 w-3" />
                             Proponi
                           </Button>
-                          <Button size="sm" className="gap-1" onClick={() => handleCreatePractice(service.id)} data-testid={`button-create-practice-table-${service.id}`}>
+                          <Button size="sm" className="gap-1" onClick={(e) => { e.stopPropagation(); handleCreatePractice(service.id); }} data-testid={`button-create-practice-table-${service.id}`}>
                             <FileCheck className="h-3 w-3" />
                             Pratica
                           </Button>
@@ -483,6 +495,14 @@ export default function RepairCenterUtilityServices() {
         open={wizardOpen} 
         onOpenChange={setWizardOpen}
         preselectedServiceId={wizardServiceId}
+      />
+
+      <UtilityServiceDetailSheet
+        open={detailOpen}
+        onOpenChange={setDetailOpen}
+        service={services.find(s => s.id === detailServiceId) || null}
+        supplier={suppliers.find(s => s.id === services.find(sv => sv.id === detailServiceId)?.supplierId) || null}
+        onCreatePractice={handleCreatePractice}
       />
     </div>
   );
