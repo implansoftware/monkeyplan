@@ -11,10 +11,11 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { 
   Search, Package, ArrowLeft, Building2, Euro, Percent, TrendingUp, 
   Zap, Star, LayoutGrid, TableIcon, Trophy, Sparkles, Calculator,
-  ArrowRight, Phone, Lightbulb, Flame, Radio, MoreHorizontal
+  ArrowRight, Phone, Lightbulb, Flame, Radio, MoreHorizontal, FileCheck
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Link } from "wouter";
+import { UtilityPracticeWizard } from "@/components/UtilityPracticeWizard";
 
 type ServiceCategory = "fisso" | "mobile" | "centralino" | "luce" | "gas" | "altro";
 
@@ -82,6 +83,13 @@ export default function ResellerUtilityServices() {
   const [supplierFilter, setSupplierFilter] = useState<string>("all");
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
   const [viewMode, setViewMode] = useState<"cards" | "table">("cards");
+  const [wizardOpen, setWizardOpen] = useState(false);
+  const [wizardServiceId, setWizardServiceId] = useState<string | undefined>();
+
+  const handleCreatePractice = (serviceId: string) => {
+    setWizardServiceId(serviceId);
+    setWizardOpen(true);
+  };
 
   const { data: services = [], isLoading } = useQuery<UtilityService[]>({
     queryKey: ["/api/utility/services"],
@@ -132,7 +140,7 @@ export default function ResellerUtilityServices() {
     return matchesSearch && matchesSupplier && matchesCategory && notInTopSection;
   });
 
-  const ServiceCard = ({ service, featured = false }: { service: UtilityService; featured?: boolean }) => {
+  const ServiceCard = ({ service, featured = false, onCreatePractice }: { service: UtilityService; featured?: boolean; onCreatePractice?: (serviceId: string) => void }) => {
     const supplier = suppliers.find(s => s.id === service.supplierId);
     const commission = calculateCommission(service);
     const CategoryIcon = categoryIcons[service.category] || Package;
@@ -211,6 +219,17 @@ export default function ResellerUtilityServices() {
                 10 attivazioni = <span className="font-semibold text-foreground">{formatCurrency(potential10Sales * 100)}</span>
               </p>
             </div>
+
+            {onCreatePractice && (
+              <Button 
+                className="w-full gap-2" 
+                onClick={() => onCreatePractice(service.id)}
+                data-testid={`button-create-practice-${service.id}`}
+              >
+                <FileCheck className="h-4 w-4" />
+                Crea Pratica
+              </Button>
+            )}
           </div>
         </CardContent>
       </Card>
@@ -314,7 +333,7 @@ export default function ResellerUtilityServices() {
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {topCommissionServices.map((service) => (
-              <ServiceCard key={service.id} service={service} featured />
+              <ServiceCard key={service.id} service={service} featured onCreatePractice={handleCreatePractice} />
             ))}
           </div>
         </div>
@@ -388,7 +407,7 @@ export default function ResellerUtilityServices() {
           ) : viewMode === "cards" ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {filteredServices.map((service) => (
-                <ServiceCard key={service.id} service={service} />
+                <ServiceCard key={service.id} service={service} onCreatePractice={handleCreatePractice} />
               ))}
             </div>
           ) : (
@@ -444,9 +463,9 @@ export default function ResellerUtilityServices() {
                         </span>
                       </TableCell>
                       <TableCell>
-                        <Button size="sm" variant="outline" className="gap-1" data-testid={`button-propose-table-${service.id}`}>
-                          <Sparkles className="h-3 w-3" />
-                          Proponi
+                        <Button size="sm" variant="outline" className="gap-1" onClick={() => handleCreatePractice(service.id)} data-testid={`button-create-practice-table-${service.id}`}>
+                          <FileCheck className="h-3 w-3" />
+                          Crea Pratica
                         </Button>
                       </TableCell>
                     </TableRow>
@@ -457,6 +476,15 @@ export default function ResellerUtilityServices() {
           )}
         </CardContent>
       </Card>
+
+      <UtilityPracticeWizard
+        open={wizardOpen}
+        onOpenChange={(open) => {
+          setWizardOpen(open);
+          if (!open) setWizardServiceId(undefined);
+        }}
+        preselectedServiceId={wizardServiceId}
+      />
     </div>
   );
 }

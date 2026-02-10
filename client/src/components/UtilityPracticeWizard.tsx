@@ -50,6 +50,7 @@ interface UtilityPracticeWizardProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSuccess?: () => void;
+  preselectedServiceId?: string;
 }
 
 type WizardStep = "type" | "service" | "customer" | "pricing" | "review";
@@ -87,7 +88,7 @@ const formatCurrency = (cents: number) => {
   }).format(cents / 100);
 };
 
-export function UtilityPracticeWizard({ open, onOpenChange, onSuccess }: UtilityPracticeWizardProps) {
+export function UtilityPracticeWizard({ open, onOpenChange, onSuccess, preselectedServiceId }: UtilityPracticeWizardProps) {
   const { toast } = useToast();
   const { user } = useUser();
   const [currentStep, setCurrentStep] = useState<WizardStep>("type");
@@ -244,6 +245,20 @@ export function UtilityPracticeWizard({ open, onOpenChange, onSuccess }: Utility
       resetForm();
     }
   }, [open]);
+
+  useEffect(() => {
+    if (open && preselectedServiceId && allServices.length > 0) {
+      const service = allServices.find(s => s.id === preselectedServiceId);
+      if (service) {
+        setSelectedItemType("service");
+        setSelectedServiceId(preselectedServiceId);
+        if (service.supplierId) {
+          setSelectedSupplierId(service.supplierId);
+        }
+        setCurrentStep("customer");
+      }
+    }
+  }, [open, preselectedServiceId, allServices]);
 
   const createMutation = useMutation({
     mutationFn: async (data: any) => {

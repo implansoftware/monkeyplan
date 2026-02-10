@@ -11,10 +11,11 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { 
   Search, Package, ArrowLeft, Building2, Euro, Percent, TrendingUp, 
   Zap, Star, LayoutGrid, TableIcon, Trophy, Sparkles, Calculator,
-  Phone, Lightbulb, Flame, Radio, MoreHorizontal, Wrench
+  Phone, Lightbulb, Flame, Radio, MoreHorizontal, Wrench, FileCheck
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Link } from "wouter";
+import { UtilityPracticeWizard } from "@/components/UtilityPracticeWizard";
 
 type ServiceCategory = "fisso" | "mobile" | "centralino" | "luce" | "gas" | "altro";
 
@@ -79,6 +80,13 @@ export default function RepairCenterUtilityServices() {
   const [supplierFilter, setSupplierFilter] = useState<string>("all");
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
   const [viewMode, setViewMode] = useState<"cards" | "table">("cards");
+  const [wizardOpen, setWizardOpen] = useState(false);
+  const [wizardServiceId, setWizardServiceId] = useState<string | undefined>();
+
+  const handleCreatePractice = (serviceId: string) => {
+    setWizardServiceId(serviceId);
+    setWizardOpen(true);
+  };
 
   const { data: services = [], isLoading } = useQuery<UtilityService[]>({
     queryKey: ["/api/utility/services"],
@@ -129,7 +137,7 @@ export default function RepairCenterUtilityServices() {
     return matchesSearch && matchesSupplier && matchesCategory && notInTopSection;
   });
 
-  const ServiceCard = ({ service, featured = false }: { service: UtilityService; featured?: boolean }) => {
+  const ServiceCard = ({ service, featured = false, onCreatePractice }: { service: UtilityService; featured?: boolean; onCreatePractice?: (serviceId: string) => void }) => {
     const supplier = suppliers.find(s => s.id === service.supplierId);
     const commission = calculateCommission(service);
     const CategoryIcon = categoryIcons[service.category] || Package;
@@ -208,6 +216,17 @@ export default function RepairCenterUtilityServices() {
                 10 attivazioni = <span className="font-semibold text-foreground">{formatCurrency(potential10Sales * 100)}</span>
               </p>
             </div>
+
+            {onCreatePractice && (
+              <Button 
+                className="w-full gap-2" 
+                onClick={() => onCreatePractice(service.id)}
+                data-testid={`button-create-practice-${service.id}`}
+              >
+                <FileCheck className="h-4 w-4" />
+                Crea Pratica
+              </Button>
+            )}
           </div>
         </CardContent>
       </Card>
@@ -312,7 +331,7 @@ export default function RepairCenterUtilityServices() {
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {topCommissionServices.map((service) => (
-              <ServiceCard key={service.id} service={service} featured />
+              <ServiceCard key={service.id} service={service} featured onCreatePractice={handleCreatePractice} />
             ))}
           </div>
         </div>
@@ -384,7 +403,7 @@ export default function RepairCenterUtilityServices() {
           ) : viewMode === "cards" ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {filteredServices.map((service) => (
-                <ServiceCard key={service.id} service={service} />
+                <ServiceCard key={service.id} service={service} onCreatePractice={handleCreatePractice} />
               ))}
             </div>
           ) : (
@@ -440,10 +459,16 @@ export default function RepairCenterUtilityServices() {
                         </span>
                       </TableCell>
                       <TableCell>
-                        <Button size="sm" variant="outline" className="gap-1" data-testid={`button-propose-table-${service.id}`}>
-                          <Sparkles className="h-3 w-3" />
-                          Proponi
-                        </Button>
+                        <div className="flex flex-wrap gap-2">
+                          <Button size="sm" variant="outline" className="gap-1" data-testid={`button-propose-table-${service.id}`}>
+                            <Sparkles className="h-3 w-3" />
+                            Proponi
+                          </Button>
+                          <Button size="sm" className="gap-1" onClick={() => handleCreatePractice(service.id)} data-testid={`button-create-practice-table-${service.id}`}>
+                            <FileCheck className="h-3 w-3" />
+                            Pratica
+                          </Button>
+                        </div>
                       </TableCell>
                     </TableRow>
                   );
@@ -453,6 +478,12 @@ export default function RepairCenterUtilityServices() {
           )}
         </CardContent>
       </Card>
+
+      <UtilityPracticeWizard 
+        open={wizardOpen} 
+        onOpenChange={setWizardOpen}
+        preselectedServiceId={wizardServiceId}
+      />
     </div>
   );
 }
