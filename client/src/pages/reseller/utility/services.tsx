@@ -322,53 +322,55 @@ export default function ResellerUtilityServices() {
 
       <Card className="rounded-2xl">
         <CardHeader>
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-            <div className="flex flex-wrap items-center gap-2 flex-wrap flex-1">
-              <div className="flex flex-wrap items-center gap-2">
-                <Search className="h-4 w-4 text-muted-foreground" />
+          <div className="flex flex-col gap-4">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+              <div className="relative flex-1 w-full sm:max-w-sm">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
                   placeholder="Cerca per nome o codice..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="max-w-xs"
+                  className="pl-9"
                   data-testid="input-search-services"
                 />
               </div>
-              <Select value={supplierFilter} onValueChange={setSupplierFilter}>
-                <SelectTrigger className="w-40" data-testid="select-supplier-filter">
-                  <SelectValue placeholder="Fornitore" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Tutti i fornitori</SelectItem>
-                  {suppliers.map((supplier) => (
-                    <SelectItem key={supplier.id} value={supplier.id}>{supplier.name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-                <SelectTrigger className="w-32" data-testid="select-category-filter">
-                  <SelectValue placeholder="Categoria" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Tutte</SelectItem>
-                  {Object.entries(categoryLabels).map(([value, label]) => (
-                    <SelectItem key={value} value={value}>{label}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <div className="flex flex-wrap items-center gap-2">
+                <Select value={supplierFilter} onValueChange={setSupplierFilter}>
+                  <SelectTrigger className="w-[180px]" data-testid="select-supplier-filter">
+                    <SelectValue placeholder="Fornitore" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Tutti i fornitori</SelectItem>
+                    {suppliers.map((supplier) => (
+                      <SelectItem key={supplier.id} value={supplier.id}>{supplier.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+                  <SelectTrigger className="w-[160px]" data-testid="select-category-filter">
+                    <SelectValue placeholder="Categoria" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Tutte le categorie</SelectItem>
+                    {Object.entries(categoryLabels).map(([value, label]) => (
+                      <SelectItem key={value} value={value}>{label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as "cards" | "table")}>
+                  <TabsList>
+                    <TabsTrigger value="cards" className="gap-2" data-testid="toggle-cards-view">
+                      <LayoutGrid className="h-4 w-4" />
+                      Card
+                    </TabsTrigger>
+                    <TabsTrigger value="table" className="gap-2" data-testid="toggle-table-view">
+                      <TableIcon className="h-4 w-4" />
+                      Tabella
+                    </TabsTrigger>
+                  </TabsList>
+                </Tabs>
+              </div>
             </div>
-            <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as "cards" | "table")}>
-              <TabsList>
-                <TabsTrigger value="cards" className="gap-2" data-testid="toggle-cards-view">
-                  <LayoutGrid className="h-4 w-4" />
-                  Card
-                </TabsTrigger>
-                <TabsTrigger value="table" className="gap-2" data-testid="toggle-table-view">
-                  <TableIcon className="h-4 w-4" />
-                  Tabella
-                </TabsTrigger>
-              </TabsList>
-            </Tabs>
           </div>
         </CardHeader>
         <CardContent>
