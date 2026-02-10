@@ -16,6 +16,7 @@ interface LicenseMyResponse {
   daysRemaining?: number;
   isExpiringSoon?: boolean;
   isExpired?: boolean;
+  enabledFeatures?: string[];
 }
 
 export function useLicenseStatus() {
@@ -31,6 +32,14 @@ export function useLicenseStatus() {
   const hasActiveLicense = !!data?.license && !data.isExpired && data.license.status === "active";
   const daysRemaining = data?.daysRemaining ?? null;
   const isExpiringSoon = data?.isExpiringSoon ?? false;
+  const enabledFeatures = data?.enabledFeatures ?? [];
+  const hasAllFeatures = hasActiveLicense && enabledFeatures.length === 0;
+
+  function hasFeature(featureId: string): boolean {
+    if (!hasActiveLicense) return false;
+    if (hasAllFeatures) return true;
+    return enabledFeatures.includes(featureId);
+  }
 
   return {
     hasActiveLicense,
@@ -40,5 +49,8 @@ export function useLicenseStatus() {
     isExpiringSoon,
     isLoading: isLoading && !isError,
     isReseller,
+    enabledFeatures,
+    hasAllFeatures,
+    hasFeature,
   };
 }

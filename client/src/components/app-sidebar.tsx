@@ -69,6 +69,7 @@ import {
 } from "@/components/ui/sidebar";
 import { useAuth } from "@/hooks/use-auth";
 import { useStaffPermissions, getRequiredModuleForUrl } from "@/hooks/use-staff-permissions";
+import { useLicenseStatus } from "@/hooks/use-license-status";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Link, useLocation } from "wouter";
@@ -425,6 +426,33 @@ const groupIcons: Record<string, typeof LayoutDashboard> = {
   "Team": UsersRound,
 };
 
+const SIDEBAR_GROUP_TO_FEATURES: Record<string, string[]> = {
+  "Centri & Riparazioni": ["repairs"],
+  "Magazzino": ["warehouse"],
+  "Interscambio": ["warehouse"],
+  "Fornitori": ["warehouse"],
+  "Fatturazione": ["invoicing"],
+  "POS": ["pos"],
+  "E-commerce": ["b2b_orders", "marketplace"],
+  "Acquisti B2B": ["b2b_orders"],
+  "Marketplace P2P": ["marketplace"],
+  "Assistenza": ["ticketing"],
+  "Garanzie": ["warranty"],
+  "Sub-Reseller": ["push_notifications"],
+};
+
+const SIDEBAR_URL_TO_FEATURES: Record<string, string[]> = {
+  "/reseller/customers": ["crm"],
+  "/reseller/payments": ["payments"],
+  "/reseller/reports": ["analytics"],
+  "/reseller/warranty-analytics": ["analytics", "warranty"],
+  "/reseller/notifications": ["push_notifications"],
+  "/reseller/pos": ["pos"],
+  "/reseller/pos/sales-history": ["pos"],
+  "/reseller/pos/sessions": ["pos"],
+  "/reseller/pos/registers": ["pos"],
+};
+
 export function AppSidebar() {
   const { user, logoutMutation } = useAuth();
   const [location] = useLocation();
@@ -432,6 +460,7 @@ export function AppSidebar() {
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({});
   const [openSuppliers, setOpenSuppliers] = useState<Record<string, boolean>>({});
   const { canAccessModule, hasFullAccess } = useStaffPermissions();
+  const { hasFeature, hasAllFeatures, isReseller: isLicenseReseller } = useLicenseStatus();
 
   const isReseller = user?.role === "reseller";
   const isResellerStaff = user?.role === "reseller_staff";
@@ -601,6 +630,22 @@ export function AppSidebar() {
       );
     }
     
+    if ((isReseller || isResellerStaff) && isLicenseReseller && !hasAllFeatures && !actingAs) {
+      baseItems = baseItems.filter(item => {
+        if (item.group === "Dashboard" || item.group === "Account") return true;
+        if (item.url === "/reseller/guide") return true;
+        const urlFeatures = SIDEBAR_URL_TO_FEATURES[item.url];
+        if (urlFeatures) {
+          return urlFeatures.some(f => hasFeature(f));
+        }
+        const groupFeatures = SIDEBAR_GROUP_TO_FEATURES[item.group];
+        if (groupFeatures) {
+          return groupFeatures.some(f => hasFeature(f));
+        }
+        return true;
+      });
+    }
+
     // Add Sub-Reseller management item for franchising/gdo resellers (only when NOT acting as another entity)
     if (isReseller && isFranchisingOrGdo && !actingAs) {
       const dashboardIndex = baseItems.findIndex(item => item.url === "/reseller");
@@ -639,7 +684,7 @@ export function AppSidebar() {
     }
     
     return baseItems;
-  }, [user, isReseller, isResellerStaff, isFranchisingOrGdo, hasFullAccess, canAccessModule, actingAs]);
+  }, [user, isReseller, isResellerStaff, isFranchisingOrGdo, hasFullAccess, canAccessModule, actingAs, hasFeature, hasAllFeatures, isLicenseReseller]);
   
   const groupedItems = items.reduce((acc, item) => {
     if (!acc[item.group]) {

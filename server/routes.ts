@@ -307,6 +307,65 @@ function requireActiveLicense() {
   };
 }
 
+
+// Feature label-to-ID mapping (mirrors AVAILABLE_FEATURES in license-plans.tsx)
+const FEATURE_LABEL_TO_ID: Record<string, string> = {
+  'gestione riparazioni': 'repairs',
+  'magazzino e inventario': 'warehouse',
+  'fatturazione': 'invoicing',
+  'pos e corrispettivi': 'pos',
+  'registratore telematico (rt)': 'fiscal_rt',
+  'ordini b2b': 'b2b_orders',
+  'marketplace p2p': 'marketplace',
+  'statistiche e report': 'analytics',
+  'ticketing e supporto': 'ticketing',
+  'garanzie e assicurazioni': 'warranty',
+  'notifiche push': 'push_notifications',
+  'gestione clienti': 'crm',
+  'pagamenti online': 'payments',
+};
+
+function parsePlanFeatureIds(featuresText: string | null | undefined): string[] {
+  if (!featuresText) return [];
+  return featuresText.split("\n").map(l => l.trim()).filter(Boolean).map(label => {
+    return FEATURE_LABEL_TO_ID[label.toLowerCase()] || label.toLowerCase();
+  });
+}
+
+function requireLicenseFeature(...requiredFeatures: string[]) {
+  return async (req: Request, res: Response, next: Function) => {
+    if (!req.isAuthenticated() || !req.user) {
+      return next();
+    }
+    const role = req.user.role;
+    if (role !== 'reseller' && role !== 'reseller_staff') {
+      return next();
+    }
+    const resellerId = role === 'reseller_staff' ? (req.user as any).resellerId : req.user.id;
+    if (!resellerId) {
+      return res.status(403).json({ error: 'feature_not_available', message: 'Funzionalità non disponibile nel tuo piano.' });
+    }
+    try {
+      const license = await storage.getActiveLicenseForReseller(resellerId);
+      if (!license) return next(); // License check handled by requireActiveLicense
+      const plan = await storage.getLicensePlan(license.licensePlanId);
+      if (!plan) return next();
+      // If no features defined on plan, allow all (retrocompatibility)
+      if (!plan.features) return next();
+      const enabledIds = parsePlanFeatureIds(plan.features);
+      // If plan has features but none match required, block
+      const hasFeature = requiredFeatures.some(f => enabledIds.includes(f));
+      if (!hasFeature) {
+        return res.status(403).json({ error: 'feature_not_available', message: 'Funzionalità non disponibile nel tuo piano.' });
+      }
+      next();
+    } catch (err) {
+      console.error('License feature check error:', err);
+      next();
+    }
+  };
+}
+
 // Middleware to check module-level permissions for reseller_staff users
 
 // Helper function for resolving entity scope for HR endpoints with security validation
@@ -812,6 +871,81 @@ export function registerRoutes(app: Express): Server {
       return next();
     }
     requireActiveLicense()(req, res, next);
+  });
+
+  // Global feature-level enforcement for reseller API routes
+  const API_PATH_TO_FEATURES: Record<string, string[]> = {
+    '/api/reseller/repairs': ['repairs'],
+    '/api/reseller/diagnostics': ['repairs'],
+    '/api/reseller/quotes': ['repairs'],
+    '/api/reseller/remote-requests': ['repairs'],
+    '/api/reseller/service-catalog': ['repairs'],
+    '/api/reseller/service-orders': ['repairs'],
+    '/api/reseller/appointments': ['repairs'],
+    '/api/reseller/warehouses': ['warehouse'],
+    '/api/reseller/products': ['warehouse'],
+    '/api/reseller/dispositivi': ['warehouse'],
+    '/api/reseller/accessory': ['warehouse'],
+    '/api/reseller/transfer-requests': ['warehouse'],
+    '/api/reseller/incoming-transfer-requests': ['warehouse'],
+    '/api/reseller/sub-transfer-requests': ['warehouse'],
+    '/api/reseller/suppliers': ['warehouse'],
+    '/api/reseller/supplier-orders': ['warehouse'],
+    '/api/reseller/supplier-returns': ['warehouse'],
+    '/api/reseller/network-warehouses': ['warehouse'],
+    '/api/reseller/price-lists': ['warehouse'],
+    '/api/reseller/invoices': ['invoicing'],
+    '/api/reseller/sales': ['invoicing'],
+    '/api/reseller/pos': ['pos'],
+    '/api/reseller/fiscal': ['fiscal_rt'],
+    '/api/reseller/b2b-catalog': ['b2b_orders'],
+    '/api/reseller/b2b-orders': ['b2b_orders'],
+    '/api/reseller/b2b-returns': ['b2b_orders'],
+    '/api/reseller/marketplace': ['marketplace'],
+    '/api/reseller/rc-b2b-orders': ['marketplace'],
+    '/api/reseller/tickets': ['ticketing'],
+    '/api/reseller/warranty': ['warranty'],
+    '/api/reseller/warranty-products': ['warranty'],
+    '/api/reseller/warranty-analytics': ['warranty', 'analytics'],
+    '/api/reseller/notifications': ['push_notifications'],
+    '/api/reseller/customers': ['crm'],
+    '/api/reseller/payments': ['payments'],
+    '/api/reseller/reports': ['analytics'],
+    '/api/reseller/sales-orders': ['b2b_orders', 'marketplace'],
+    '/api/reseller/sales-returns': ['b2b_orders', 'marketplace'],
+    '/api/reseller/shipments': ['b2b_orders', 'marketplace'],
+    '/api/reseller/shop-catalog': ['b2b_orders', 'marketplace'],
+  };
+
+  app.use(async (req: Request, res: Response, next: Function) => {
+    const path = req.path;
+    if (!path.startsWith('/api/reseller/')) return next();
+    if (!req.isAuthenticated() || !req.user) return next();
+    const role = req.user.role;
+    if (role !== 'reseller' && role !== 'reseller_staff') return next();
+
+    const matchedKey = Object.keys(API_PATH_TO_FEATURES).find(prefix => path.startsWith(prefix));
+    if (!matchedKey) return next();
+
+    const requiredFeatures = API_PATH_TO_FEATURES[matchedKey];
+    const resellerId = role === 'reseller_staff' ? (req.user as any).resellerId : req.user.id;
+    if (!resellerId) return next();
+
+    try {
+      const license = await storage.getActiveLicenseForReseller(resellerId);
+      if (!license) return next();
+      const plan = await storage.getLicensePlan(license.licensePlanId);
+      if (!plan || !plan.features) return next();
+      const enabledIds = parsePlanFeatureIds(plan.features);
+      const hasFeature = requiredFeatures.some(f => enabledIds.includes(f));
+      if (!hasFeature) {
+        return res.status(403).json({ error: 'feature_not_available', message: 'Funzionalità non disponibile nel tuo piano.' });
+      }
+      next();
+    } catch (err) {
+      console.error('Feature enforcement error:', err);
+      next();
+    }
   });
 
   // Serve product images and other objects from private storage
@@ -45766,7 +45900,8 @@ export function registerRoutes(app: Express): Server {
       const now = new Date();
       const daysRemaining = Math.ceil((license.endDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
       const isExpiringSoon = daysRemaining <= 7 && daysRemaining > 0;
-      res.json({ license, plan, daysRemaining, isExpiringSoon, isExpired: false });
+      const enabledFeatures = plan ? parsePlanFeatureIds(plan.features) : [];
+      res.json({ license, plan, daysRemaining, isExpiringSoon, isExpired: false, enabledFeatures });
     } catch (error: any) {
       res.status(500).send(error.message);
     }

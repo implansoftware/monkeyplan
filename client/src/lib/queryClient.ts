@@ -10,7 +10,7 @@ export class LicenseRequiredError extends Error {
 async function throwIfResNotOk(res: Response) {
   if (!res.ok) {
     const text = (await res.text()) || res.statusText;
-    if (res.status === 403 && text.includes("license_required")) {
+    if (res.status === 403 && (text.includes("license_required") || text.includes("feature_not_available"))) {
       throw new LicenseRequiredError();
     }
     throw new Error(`${res.status}: ${text}`);
@@ -49,7 +49,7 @@ export const getQueryFn: <T>(options: {
 
     if (res.status === 403) {
       const text = await res.text();
-      if (text.includes("license_required")) {
+      if (text.includes("license_required") || text.includes("feature_not_available")) {
         throw new LicenseRequiredError();
       }
       throw new Error(`403: ${text}`);
