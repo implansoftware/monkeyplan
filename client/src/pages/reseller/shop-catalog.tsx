@@ -194,7 +194,7 @@ export default function ResellerShopCatalog() {
               <Store className="h-6 w-6 text-white" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold text-white" data-testid="text-page-title">Catalogo Negozio</h1>
+              <h1 className="text-2xl font-bold text-white" data-testid="text-page-title">Vetrina Prodotti</h1>
               <p className="text-white/80 text-sm">Prodotti disponibili per la vendita</p>
             </div>
           </div>
@@ -234,7 +234,7 @@ export default function ResellerShopCatalog() {
               <Warehouse className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
               <h3 className="text-lg font-semibold mb-2">Nessun prodotto in stock</h3>
               <p className="text-muted-foreground">
-                Carica prodotti nel tuo magazzino per vederli qui nel catalogo shop
+                Carica prodotti nel tuo magazzino per vederli qui nella vetrina prodotti
               </p>
             </div>
           ) : (

@@ -222,7 +222,7 @@ const menuItems = {
     { title: "Anagrafica Fornitori", url: "/reseller/suppliers", icon: Truck, group: "Magazzino e Fornitori" },
     { title: "Ordini a Fornitori", url: "/reseller/supplier-orders", icon: ShoppingCart, group: "Magazzino e Fornitori" },
     { title: "Resi a Fornitori", url: "/reseller/supplier-returns", icon: RotateCcw, group: "Magazzino e Fornitori" },
-    { title: "Catalogo Shop", url: "/reseller/shop-catalog", icon: Store, group: "Vendite Online", section: "E-commerce" },
+    { title: "Vetrina Prodotti", url: "/reseller/shop-catalog", icon: Store, group: "Vendite Online", section: "E-commerce" },
     { title: "Ordini Clienti", url: "/reseller/sales-orders", icon: ShoppingCart, group: "Vendite Online", section: "E-commerce" },
     { title: "Resi Clienti", url: "/reseller/sales-returns", icon: RotateCcw, group: "Vendite Online", section: "E-commerce" },
     { title: "Spedizioni", url: "/reseller/shipments", icon: Truck, group: "Vendite Online", section: "E-commerce" },
