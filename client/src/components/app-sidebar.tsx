@@ -222,18 +222,18 @@ const menuItems = {
     { title: "Anagrafica Fornitori", url: "/reseller/suppliers", icon: Truck, group: "Magazzino e Fornitori" },
     { title: "Ordini a Fornitori", url: "/reseller/supplier-orders", icon: ShoppingCart, group: "Magazzino e Fornitori" },
     { title: "Resi a Fornitori", url: "/reseller/supplier-returns", icon: RotateCcw, group: "Magazzino e Fornitori" },
-    { title: "Catalogo Shop", url: "/reseller/shop-catalog", icon: Store, group: "Vendite Online" },
-    { title: "Ordini Clienti", url: "/reseller/sales-orders", icon: ShoppingCart, group: "Vendite Online" },
-    { title: "Resi Clienti", url: "/reseller/sales-returns", icon: RotateCcw, group: "Vendite Online" },
-    { title: "Spedizioni", url: "/reseller/shipments", icon: Truck, group: "Vendite Online" },
-    { title: "Pagamenti", url: "/reseller/payments", icon: CreditCard, group: "Vendite Online" },
-    { title: "Catalogo B2B", url: "/reseller/b2b-catalog", icon: Package, group: "Vendite Online" },
-    { title: "I Miei Ordini B2B", url: "/reseller/b2b-orders", icon: ShoppingCart, group: "Vendite Online" },
-    { title: "I Miei Resi B2B", url: "/reseller/b2b-returns", icon: RotateCcw, group: "Vendite Online" },
-    { title: "Catalogo Marketplace", url: "/reseller/marketplace", icon: Store, group: "Vendite Online" },
-    { title: "I Miei Acquisti", url: "/reseller/marketplace-orders", icon: ShoppingCart, group: "Vendite Online" },
-    { title: "Vendite Rivenditori", url: "/reseller/marketplace-sales", icon: TrendingUp, group: "Vendite Online" },
-    { title: "Vendite Centri Rip.", url: "/reseller/rc-b2b-orders", icon: Building2, group: "Vendite Online" },
+    { title: "Catalogo Shop", url: "/reseller/shop-catalog", icon: Store, group: "Vendite Online", section: "E-commerce" },
+    { title: "Ordini Clienti", url: "/reseller/sales-orders", icon: ShoppingCart, group: "Vendite Online", section: "E-commerce" },
+    { title: "Resi Clienti", url: "/reseller/sales-returns", icon: RotateCcw, group: "Vendite Online", section: "E-commerce" },
+    { title: "Spedizioni", url: "/reseller/shipments", icon: Truck, group: "Vendite Online", section: "E-commerce" },
+    { title: "Pagamenti", url: "/reseller/payments", icon: CreditCard, group: "Vendite Online", section: "E-commerce" },
+    { title: "Catalogo B2B", url: "/reseller/b2b-catalog", icon: Package, group: "Vendite Online", section: "Acquisti B2B" },
+    { title: "I Miei Ordini B2B", url: "/reseller/b2b-orders", icon: ShoppingCart, group: "Vendite Online", section: "Acquisti B2B" },
+    { title: "I Miei Resi B2B", url: "/reseller/b2b-returns", icon: RotateCcw, group: "Vendite Online", section: "Acquisti B2B" },
+    { title: "Catalogo Marketplace", url: "/reseller/marketplace", icon: Store, group: "Vendite Online", section: "Marketplace" },
+    { title: "I Miei Acquisti", url: "/reseller/marketplace-orders", icon: ShoppingCart, group: "Vendite Online", section: "Marketplace" },
+    { title: "Vendite Rivenditori", url: "/reseller/marketplace-sales", icon: TrendingUp, group: "Vendite Online", section: "Vendite" },
+    { title: "Vendite Centri Rip.", url: "/reseller/rc-b2b-orders", icon: Building2, group: "Vendite Online", section: "Vendite" },
     { title: "Utility", url: "/reseller/utility", icon: Zap, group: "Utility" },
     { title: "Fornitori Utility", url: "/reseller/utility/suppliers", icon: Phone, group: "Utility" },
     { title: "Listino Servizi", url: "/reseller/utility/services", icon: Package, group: "Utility" },
@@ -897,7 +897,7 @@ export function AppSidebar() {
                 <CollapsibleContent className="overflow-visible">
                   <SidebarGroupContent className="overflow-visible">
                     <SidebarMenu className="ml-7 mt-1.5 border-l border-sidebar-border/40 pl-0.5 overflow-visible">
-                      {groupItems.map((item) => {
+                      {groupItems.map((item, idx) => {
                         const isActive = location === item.url || location.startsWith(item.url + "/");
                         const showTransferBadge = item.url === "/reseller/transfer-requests" && pendingTransferRequestsCount > 0;
                         const showRemoteBadge = item.url === "/reseller/remote-requests" && pendingRemoteRequestsCount > 0;
@@ -905,63 +905,73 @@ export function AppSidebar() {
                         const showServiceOrdersBadge = item.url === "/reseller/service-orders" && pendingServiceOrdersCount > 0;
                         const showTicketsBadge = item.url === "/reseller/tickets" && pendingTicketsCount > 0;
                         const showNotificationsBadge = item.title === "Notifiche" && unreadNotificationsCount > 0;
+                        const currentSection = (item as any).section;
+                        const prevSection = idx > 0 ? (groupItems[idx - 1] as any).section : undefined;
+                        const showSectionLabel = currentSection && currentSection !== prevSection;
                         return (
-                          <SidebarMenuItem key={item.title} className="overflow-visible">
-                            <SidebarMenuButton 
-                              asChild 
-                              isActive={isActive} 
-                              className={`pl-3 py-2 rounded-lg !overflow-visible ${isActive ? "bg-gradient-to-r from-emerald-500/10 to-teal-500/10 text-emerald-600 dark:text-emerald-400 font-medium" : "text-muted-foreground hover-elevate"}`}
-                            >
-                              <Link 
-                                href={item.url} 
-                                onClick={handleLinkClick}
-                                data-testid={`link-${item.title.toLowerCase().replace(/\s+/g, "-")}`}
+                          <div key={item.title}>
+                            {showSectionLabel && (
+                              <div className={`px-3 py-1 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/70 ${idx > 0 ? "mt-2 pt-2 mx-1 border-t border-sidebar-border/30" : ""}`}>
+                                {currentSection}
+                              </div>
+                            )}
+                            <SidebarMenuItem className="overflow-visible">
+                              <SidebarMenuButton 
+                                asChild 
+                                isActive={isActive} 
+                                className={`pl-3 py-2 rounded-lg !overflow-visible ${isActive ? "bg-gradient-to-r from-emerald-500/10 to-teal-500/10 text-emerald-600 dark:text-emerald-400 font-medium" : "text-muted-foreground hover-elevate"}`}
                               >
-                                <item.icon className={`h-3.5 w-3.5 ${isActive ? "text-primary" : ""}`} />
-                                <span className="flex-1 text-[13px]">{item.title}</span>
-                                {showTransferBadge && (
-                                  <span 
-                                    className="flex h-5 min-w-5 items-center justify-center rounded-full bg-destructive text-destructive-foreground text-xs font-medium px-1.5"
-                                    data-testid="badge-pending-transfer-requests"
-                                  >
-                                    {pendingTransferRequestsCount}
-                                  </span>
-                                )}
-                                {showRemoteBadge && (
-                                  <span 
-                                    className="flex h-5 min-w-5 items-center justify-center rounded-full bg-destructive text-destructive-foreground text-xs font-medium px-1.5"
-                                    data-testid="badge-pending-remote-requests"
-                                  >
-                                    {pendingRemoteRequestsCount}
-                                  </span>
-                                )}
-                                {showRcRemoteBadge && (
-                                  <span 
-                                    className="flex h-5 min-w-5 items-center justify-center rounded-full bg-destructive text-destructive-foreground text-xs font-medium px-1.5"
-                                    data-testid="badge-pending-rc-remote-requests"
-                                  >
-                                    {rcPendingRemoteRequestsCount}
-                                  </span>
-                                )}
-                                {showServiceOrdersBadge && (
-                                  <span 
-                                    className="flex h-5 min-w-5 items-center justify-center rounded-full bg-destructive text-destructive-foreground text-xs font-medium px-1.5"
-                                    data-testid="badge-pending-service-orders"
-                                  >
-                                    {pendingServiceOrdersCount}
-                                  </span>
-                                )}
-                                {showNotificationsBadge && (
-                                  <span 
-                                    className="flex h-5 min-w-5 items-center justify-center rounded-full bg-destructive text-destructive-foreground text-xs font-medium px-1.5"
-                                    data-testid="badge-unread-notifications"
-                                  >
-                                    {unreadNotificationsCount > 9 ? '9+' : unreadNotificationsCount}
-                                  </span>
-                                )}
-                              </Link>
-                            </SidebarMenuButton>
-                          </SidebarMenuItem>
+                                <Link 
+                                  href={item.url} 
+                                  onClick={handleLinkClick}
+                                  data-testid={`link-${item.title.toLowerCase().replace(/\s+/g, "-")}`}
+                                >
+                                  <item.icon className={`h-3.5 w-3.5 ${isActive ? "text-primary" : ""}`} />
+                                  <span className="flex-1 text-[13px]">{item.title}</span>
+                                  {showTransferBadge && (
+                                    <span 
+                                      className="flex h-5 min-w-5 items-center justify-center rounded-full bg-destructive text-destructive-foreground text-xs font-medium px-1.5"
+                                      data-testid="badge-pending-transfer-requests"
+                                    >
+                                      {pendingTransferRequestsCount}
+                                    </span>
+                                  )}
+                                  {showRemoteBadge && (
+                                    <span 
+                                      className="flex h-5 min-w-5 items-center justify-center rounded-full bg-destructive text-destructive-foreground text-xs font-medium px-1.5"
+                                      data-testid="badge-pending-remote-requests"
+                                    >
+                                      {pendingRemoteRequestsCount}
+                                    </span>
+                                  )}
+                                  {showRcRemoteBadge && (
+                                    <span 
+                                      className="flex h-5 min-w-5 items-center justify-center rounded-full bg-destructive text-destructive-foreground text-xs font-medium px-1.5"
+                                      data-testid="badge-pending-rc-remote-requests"
+                                    >
+                                      {rcPendingRemoteRequestsCount}
+                                    </span>
+                                  )}
+                                  {showServiceOrdersBadge && (
+                                    <span 
+                                      className="flex h-5 min-w-5 items-center justify-center rounded-full bg-destructive text-destructive-foreground text-xs font-medium px-1.5"
+                                      data-testid="badge-pending-service-orders"
+                                    >
+                                      {pendingServiceOrdersCount}
+                                    </span>
+                                  )}
+                                  {showNotificationsBadge && (
+                                    <span 
+                                      className="flex h-5 min-w-5 items-center justify-center rounded-full bg-destructive text-destructive-foreground text-xs font-medium px-1.5"
+                                      data-testid="badge-unread-notifications"
+                                    >
+                                      {unreadNotificationsCount > 9 ? '9+' : unreadNotificationsCount}
+                                    </span>
+                                  )}
+                                </Link>
+                              </SidebarMenuButton>
+                            </SidebarMenuItem>
+                          </div>
                         );
                       })}
                       
