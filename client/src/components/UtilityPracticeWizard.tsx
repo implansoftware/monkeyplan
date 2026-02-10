@@ -185,9 +185,15 @@ export function UtilityPracticeWizard({ open, onOpenChange, onSuccess, preselect
 
   useEffect(() => {
     if (selectedServiceId && selectedService && !useCustomService) {
-      if (selectedService.priceType) {
-        setSelectedPriceType(selectedService.priceType as PriceType);
-      }
+      const inferredPriceType = (() => {
+        if (selectedService.monthlyPriceCents && selectedService.monthlyPriceCents > 0) return "mensile";
+        if (selectedService.flatPriceCents && selectedService.flatPriceCents > 0) return "forfait";
+        if (selectedService.activationFeeCents && selectedService.activationFeeCents > 0) return "attivazione";
+        if (selectedService.priceType === "forfait") return "forfait";
+        return "mensile";
+      })();
+      setSelectedPriceType(inferredPriceType as PriceType);
+
       if (selectedService.monthlyPriceCents) {
         setMonthlyPrice((selectedService.monthlyPriceCents / 100).toFixed(2));
       }
