@@ -78,14 +78,20 @@ function NotificationItem({ notification, onMarkAsRead }: { notification: Notifi
 
 export function NotificationBell() {
   const { user } = useAuth();
-  const { notifications, unreadCount, isLoading, markAsRead } = useNotifications();
+  const { notifications, unreadCount, isLoading, markAsRead, markAllAsRead } = useNotifications();
   
   if (!user) {
     return null;
   }
 
+  const handleOpenChange = (open: boolean) => {
+    if (open && unreadCount > 0) {
+      markAllAsRead();
+    }
+  };
+
   return (
-    <Popover>
+    <Popover onOpenChange={handleOpenChange}>
       <PopoverTrigger asChild>
         <Button
           variant="ghost"
