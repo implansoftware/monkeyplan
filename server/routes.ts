@@ -46013,7 +46013,7 @@ export function registerRoutes(app: Express): Server {
       const plans = await storage.listLicensePlans();
       const enriched = allLicenses.map(lic => {
         const plan = plans.find(p => p.id === lic.licensePlanId);
-        return { ...lic, planName: plan?.name || "N/A", planDuration: plan?.durationMonths || 0 };
+        return { ...lic, planName: plan?.name || "N/A", planDuration: plan?.durationMonths || 0, planPrice: plan?.priceCents || 0, planDescription: plan?.description || null, planFeatures: plan?.features || null, planMaxStaffUsers: plan?.maxStaffUsers || null };
       });
       res.json(enriched);
     } catch (error: any) {

@@ -27,9 +27,16 @@ interface EnrichedHistory {
   startDate: string;
   endDate: string;
   paymentMethod: string;
+  paymentId?: string | null;
+  autoRenew?: boolean;
+  notes?: string | null;
   createdAt: string;
   planName: string;
   planDuration: number;
+  planPrice: number;
+  planDescription?: string | null;
+  planFeatures?: string | null;
+  planMaxStaffUsers?: number | null;
 }
 
 interface PaymentMethods {
@@ -56,6 +63,7 @@ export default function MyLicense() {
   const [selectedPlan, setSelectedPlan] = useState<LicensePlan | null>(null);
   const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [selectedHistoryItem, setSelectedHistoryItem] = useState<EnrichedHistory | null>(null);
 
   const { data: currentLicense, isLoading: loadingCurrent } = useQuery<MyLicenseResponse>({
     queryKey: ["/api/licenses/my"],
@@ -451,7 +459,12 @@ export default function MyLicense() {
                 {history.map(h => {
                   const statusInfo = STATUS_MAP[h.status] || { label: h.status, variant: "outline" as const };
                   return (
-                    <div key={h.id} className="flex flex-wrap items-center justify-between gap-3 py-2 border-b last:border-0" data-testid={`row-history-${h.id}`}>
+                    <div
+                      key={h.id}
+                      className="flex flex-wrap items-center justify-between gap-3 py-2 border-b last:border-0 cursor-pointer hover-elevate rounded-md px-2 -mx-2"
+                      data-testid={`row-history-${h.id}`}
+                      onClick={() => setSelectedHistoryItem(h)}
+                    >
                       <div className="min-w-0">
                         <p className="font-medium">{h.planName}</p>
                         <p className="text-sm text-muted-foreground">
@@ -470,6 +483,94 @@ export default function MyLicense() {
           </Card>
         </div>
       )}
+
+      <Dialog open={!!selectedHistoryItem} onOpenChange={(open) => { if (!open) setSelectedHistoryItem(null); }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle data-testid="text-history-detail-title">Dettagli Licenza</DialogTitle>
+          </DialogHeader>
+          {selectedHistoryItem && (() => {
+            const h = selectedHistoryItem;
+            const statusInfo = STATUS_MAP[h.status] || { label: h.status, variant: "outline" as const };
+            const priceFormatted = h.planPrice > 0 ? `${(h.planPrice / 100).toFixed(2)} €` : "Gratuito";
+            const features = h.planFeatures ? h.planFeatures.split("\n").map(f => f.trim()).filter(Boolean) : [];
+            return (
+              <div className="space-y-4">
+                <div className="flex items-center justify-between gap-2 flex-wrap">
+                  <h3 className="text-lg font-semibold">{h.planName}</h3>
+                  <Badge variant={statusInfo.variant}>{statusInfo.label}</Badge>
+                </div>
+
+                {h.planDescription && (
+                  <p className="text-sm text-muted-foreground">{h.planDescription}</p>
+                )}
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <p className="text-xs text-muted-foreground">Prezzo</p>
+                    <p className="font-medium" data-testid="text-history-price">{priceFormatted}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground">Durata</p>
+                    <p className="font-medium" data-testid="text-history-duration">{DURATION_LABELS[h.planDuration] || `${h.planDuration} mesi`}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground">Inizio</p>
+                    <p className="font-medium" data-testid="text-history-start">{format(new Date(h.startDate), "dd MMM yyyy", { locale: it })}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground">Scadenza</p>
+                    <p className="font-medium" data-testid="text-history-end">{format(new Date(h.endDate), "dd MMM yyyy", { locale: it })}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground">Metodo di pagamento</p>
+                    <p className="font-medium capitalize" data-testid="text-history-payment">{h.paymentMethod}</p>
+                  </div>
+                  {h.planMaxStaffUsers != null && (
+                    <div>
+                      <p className="text-xs text-muted-foreground">Max utenti staff</p>
+                      <p className="font-medium" data-testid="text-history-staff">{h.planMaxStaffUsers}</p>
+                    </div>
+                  )}
+                  <div>
+                    <p className="text-xs text-muted-foreground">Rinnovo automatico</p>
+                    <p className="font-medium" data-testid="text-history-autorenew">{h.autoRenew ? "Si" : "No"}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground">Data acquisto</p>
+                    <p className="font-medium" data-testid="text-history-created">{format(new Date(h.createdAt), "dd MMM yyyy", { locale: it })}</p>
+                  </div>
+                </div>
+
+                {h.paymentId && (
+                  <div>
+                    <p className="text-xs text-muted-foreground">ID Pagamento</p>
+                    <p className="text-sm font-mono break-all" data-testid="text-history-paymentid">{h.paymentId}</p>
+                  </div>
+                )}
+
+                {features.length > 0 && (
+                  <div>
+                    <p className="text-xs text-muted-foreground mb-1">Funzionalità incluse</p>
+                    <div className="flex flex-wrap gap-1">
+                      {features.map((f, i) => (
+                        <Badge key={i} variant="secondary">{f}</Badge>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {h.notes && (
+                  <div>
+                    <p className="text-xs text-muted-foreground">Note</p>
+                    <p className="text-sm" data-testid="text-history-notes">{h.notes}</p>
+                  </div>
+                )}
+              </div>
+            );
+          })()}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
