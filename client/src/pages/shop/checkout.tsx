@@ -10,7 +10,8 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { ArrowLeft, Plus, MapPin, CreditCard, Truck, Check, Loader2, Building } from "lucide-react";
+import { ArrowLeft, Plus, MapPin, CreditCard, Truck, Check, Loader2, Building, Lock, FileText } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -187,10 +188,18 @@ export default function ShopCheckout() {
   const grandTotal = (cart?.subtotal || 0) - (cart?.discount || 0) + shippingCost;
   const canPlaceOrder = selectedShippingAddress && selectedShippingMethod && paymentMethod && paymentConfig?.hasAnyMethod;
   
+  const checkoutSteps = [
+    { label: "Spedizione", icon: Truck, completed: !!selectedShippingAddress && !!selectedShippingMethod },
+    { label: "Pagamento", icon: CreditCard, completed: !!paymentMethod },
+    { label: "Conferma", icon: Check, completed: false },
+  ];
+
+  const currentStep = !selectedShippingAddress || !selectedShippingMethod ? 0 : !paymentMethod ? 1 : 2;
+
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-center gap-4">
-        <Button variant="ghost" size="icon" onClick={() => setLocation(`/shop/${resellerId}/cart`)}>
+        <Button variant="ghost" size="icon" onClick={() => setLocation(`/shop/${resellerId}/cart`)} data-testid="button-back-to-cart">
           <ArrowLeft className="h-5 w-5" />
         </Button>
         <div>
@@ -198,26 +207,69 @@ export default function ShopCheckout() {
           <p className="text-muted-foreground">Completa il tuo ordine</p>
         </div>
       </div>
-      
+
+      <div className="flex items-center justify-center gap-0 py-4">
+        {checkoutSteps.map((step, index) => (
+          <div key={step.label} className="flex items-center" data-testid={`checkout-step-${index}`}>
+            <div className="flex flex-col items-center gap-1.5">
+              <div
+                className={`flex items-center justify-center w-9 h-9 rounded-full text-sm font-semibold transition-colors ${
+                  index <= currentStep
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-muted text-muted-foreground"
+                }`}
+                data-testid={`step-indicator-${index}`}
+              >
+                {index < currentStep ? (
+                  <Check className="h-4 w-4" />
+                ) : (
+                  index + 1
+                )}
+              </div>
+              <span className={`text-xs font-medium ${index <= currentStep ? "text-foreground" : "text-muted-foreground"}`}>
+                {step.label}
+              </span>
+            </div>
+            {index < checkoutSteps.length - 1 && (
+              <div
+                className={`w-16 sm:w-24 h-0.5 mx-2 mb-5 ${
+                  index < currentStep ? "bg-primary" : "bg-muted"
+                }`}
+              />
+            )}
+          </div>
+        ))}
+      </div>
+
       <div className="grid gap-6 lg:grid-cols-3">
         <div className="lg:col-span-2 space-y-6">
           <Card>
             <CardHeader>
               <CardTitle className="flex flex-wrap items-center gap-2">
-                <MapPin className="h-5 w-5" />
+                <MapPin className="h-5 w-5 text-muted-foreground" />
                 Indirizzo di spedizione
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               {isLoadingAddresses ? (
-                <p>Caricamento indirizzi...</p>
+                <div className="flex items-center justify-center py-4">
+                  <Loader2 className="h-6 w-6 animate-spin" />
+                </div>
               ) : addresses?.length === 0 ? (
                 <p className="text-muted-foreground">Nessun indirizzo salvato</p>
               ) : (
-                <RadioGroup value={selectedShippingAddress} onValueChange={setSelectedShippingAddress}>
+                <RadioGroup value={selectedShippingAddress} onValueChange={setSelectedShippingAddress} className="space-y-3">
                   {addresses?.map((addr) => (
-                    <div key={addr.id} className="flex items-start space-x-3 p-3 rounded-lg border hover-elevate">
-                      <RadioGroupItem value={addr.id} id={`addr-${addr.id}`} />
+                    <div
+                      key={addr.id}
+                      className={`flex items-start gap-3 rounded-md border p-4 cursor-pointer transition-shadow ${
+                        selectedShippingAddress === addr.id
+                          ? "ring-2 ring-primary border-primary"
+                          : ""
+                      }`}
+                      onClick={() => setSelectedShippingAddress(addr.id)}
+                    >
+                      <RadioGroupItem value={addr.id} id={`addr-${addr.id}`} className="mt-0.5" />
                       <Label htmlFor={`addr-${addr.id}`} className="flex-1 cursor-pointer">
                         <div className="font-medium">{addr.recipientName}</div>
                         <div className="text-sm text-muted-foreground">
@@ -229,7 +281,7 @@ export default function ShopCheckout() {
                   ))}
                 </RadioGroup>
               )}
-              
+
               <Dialog open={showAddAddressDialog} onOpenChange={setShowAddAddressDialog}>
                 <DialogTrigger asChild>
                   <Button variant="outline" className="w-full" data-testid="button-add-address">
@@ -329,11 +381,11 @@ export default function ShopCheckout() {
               </Dialog>
             </CardContent>
           </Card>
-          
+
           <Card>
             <CardHeader>
               <CardTitle className="flex flex-wrap items-center gap-2">
-                <Truck className="h-5 w-5" />
+                <Truck className="h-5 w-5 text-muted-foreground" />
                 Metodo di consegna
               </CardTitle>
             </CardHeader>
@@ -347,21 +399,32 @@ export default function ShopCheckout() {
                   <p>Nessun metodo di consegna disponibile.</p>
                 </div>
               ) : (
-                <RadioGroup value={selectedShippingMethod} onValueChange={setSelectedShippingMethod}>
+                <RadioGroup value={selectedShippingMethod} onValueChange={setSelectedShippingMethod} className="space-y-3">
                   {shippingMethods.map((method) => (
-                    <div key={method.id} className="flex items-start space-x-3 p-3 rounded-lg border hover-elevate" data-testid={`shipping-method-${method.id}`}>
-                      <RadioGroupItem value={method.id} id={`shipping-${method.id}`} />
+                    <div
+                      key={method.id}
+                      className={`flex items-start gap-3 rounded-md border p-4 cursor-pointer transition-shadow ${
+                        selectedShippingMethod === method.id
+                          ? "ring-2 ring-primary border-primary"
+                          : ""
+                      }`}
+                      onClick={() => setSelectedShippingMethod(method.id)}
+                      data-testid={`shipping-method-${method.id}`}
+                    >
+                      <RadioGroupItem value={method.id} id={`shipping-${method.id}`} className="mt-0.5" />
                       <Label htmlFor={`shipping-${method.id}`} className="flex-1 cursor-pointer">
-                        <div className="flex items-center justify-between">
+                        <div className="flex flex-wrap items-center justify-between gap-2">
                           <span className="font-medium">{method.name}</span>
-                          <span className="font-semibold">
-                            {method.priceCents === 0 ? 'Gratuita' : formatPrice(method.priceCents / 100)}
-                          </span>
+                          {method.priceCents === 0 ? (
+                            <Badge variant="secondary">Gratuita</Badge>
+                          ) : (
+                            <span className="font-semibold">{formatPrice(method.priceCents / 100)}</span>
+                          )}
                         </div>
-                        <div className="text-sm text-muted-foreground">
-                          {method.isPickup 
-                            ? 'Ritiro presso il punto vendita' 
-                            : method.estimatedDays 
+                        <div className="text-sm text-muted-foreground mt-0.5">
+                          {method.isPickup
+                            ? 'Ritiro presso il punto vendita'
+                            : method.estimatedDays
                               ? `Consegna in ${method.estimatedDays} giorni lavorativi`
                               : 'Tempi di consegna variabili'
                           }
@@ -373,11 +436,11 @@ export default function ShopCheckout() {
               )}
             </CardContent>
           </Card>
-          
+
           <Card>
             <CardHeader>
               <CardTitle className="flex flex-wrap items-center gap-2">
-                <CreditCard className="h-5 w-5" />
+                <CreditCard className="h-5 w-5 text-muted-foreground" />
                 Metodo di pagamento
               </CardTitle>
             </CardHeader>
@@ -392,10 +455,16 @@ export default function ShopCheckout() {
                   <p className="text-sm">Contatta il venditore per maggiori informazioni.</p>
                 </div>
               ) : (
-                <RadioGroup value={paymentMethod} onValueChange={setPaymentMethod}>
+                <RadioGroup value={paymentMethod} onValueChange={setPaymentMethod} className="space-y-3">
                   {paymentConfig.stripe.enabled && (
-                    <div className="flex items-start space-x-3 p-3 rounded-lg border hover-elevate" data-testid="payment-option-card">
-                      <RadioGroupItem value="card" id="payment-card" />
+                    <div
+                      className={`flex items-start gap-3 rounded-md border p-4 cursor-pointer transition-shadow ${
+                        paymentMethod === "card" ? "ring-2 ring-primary border-primary" : ""
+                      }`}
+                      onClick={() => setPaymentMethod("card")}
+                      data-testid="payment-option-card"
+                    >
+                      <RadioGroupItem value="card" id="payment-card" className="mt-0.5" />
                       <Label htmlFor="payment-card" className="flex-1 cursor-pointer">
                         <div className="font-medium">Carta di credito/debito</div>
                         <div className="text-sm text-muted-foreground">Visa, Mastercard, American Express</div>
@@ -403,8 +472,14 @@ export default function ShopCheckout() {
                     </div>
                   )}
                   {paymentConfig.paypal.enabled && (
-                    <div className="flex items-start space-x-3 p-3 rounded-lg border hover-elevate" data-testid="payment-option-paypal">
-                      <RadioGroupItem value="paypal" id="payment-paypal" />
+                    <div
+                      className={`flex items-start gap-3 rounded-md border p-4 cursor-pointer transition-shadow ${
+                        paymentMethod === "paypal" ? "ring-2 ring-primary border-primary" : ""
+                      }`}
+                      onClick={() => setPaymentMethod("paypal")}
+                      data-testid="payment-option-paypal"
+                    >
+                      <RadioGroupItem value="paypal" id="payment-paypal" className="mt-0.5" />
                       <Label htmlFor="payment-paypal" className="flex-1 cursor-pointer">
                         <div className="font-medium">PayPal</div>
                         <div className="text-sm text-muted-foreground">Paga con il tuo account PayPal</div>
@@ -412,8 +487,14 @@ export default function ShopCheckout() {
                     </div>
                   )}
                   {paymentConfig.bankTransfer.enabled && (
-                    <div className="flex items-start space-x-3 p-3 rounded-lg border hover-elevate" data-testid="payment-option-bank-transfer">
-                      <RadioGroupItem value="bank_transfer" id="payment-transfer" />
+                    <div
+                      className={`flex items-start gap-3 rounded-md border p-4 cursor-pointer transition-shadow ${
+                        paymentMethod === "bank_transfer" ? "ring-2 ring-primary border-primary" : ""
+                      }`}
+                      onClick={() => setPaymentMethod("bank_transfer")}
+                      data-testid="payment-option-bank-transfer"
+                    >
+                      <RadioGroupItem value="bank_transfer" id="payment-transfer" className="mt-0.5" />
                       <Label htmlFor="payment-transfer" className="flex-1 cursor-pointer">
                         <div className="font-medium">Bonifico bancario</div>
                         <div className="text-sm text-muted-foreground">Le coordinate bancarie saranno mostrate di seguito</div>
@@ -422,8 +503,7 @@ export default function ShopCheckout() {
                   )}
                 </RadioGroup>
               )}
-              
-              {/* Show IBAN details when bank_transfer is selected */}
+
               {paymentMethod === "bank_transfer" && paymentConfig?.bankTransfer.enabled && paymentConfig.bankTransfer.iban && (
                 <Card className="bg-blue-50 dark:bg-blue-950/30 border-blue-200 dark:border-blue-800">
                   <CardContent className="pt-4">
@@ -434,24 +514,24 @@ export default function ShopCheckout() {
                       <div className="space-y-2 flex-1">
                         <h4 className="font-semibold text-blue-900 dark:text-blue-100">Coordinate Bancarie</h4>
                         <div className="grid gap-1.5 text-sm">
-                          <div className="flex justify-between">
+                          <div className="flex justify-between gap-2">
                             <span className="text-blue-700 dark:text-blue-300">IBAN:</span>
                             <span className="font-mono font-medium text-blue-900 dark:text-blue-100" data-testid="text-iban">{paymentConfig.bankTransfer.iban}</span>
                           </div>
                           {paymentConfig.bankTransfer.accountHolder && (
-                            <div className="flex justify-between">
+                            <div className="flex justify-between gap-2">
                               <span className="text-blue-700 dark:text-blue-300">Intestatario:</span>
                               <span className="font-medium text-blue-900 dark:text-blue-100" data-testid="text-account-holder">{paymentConfig.bankTransfer.accountHolder}</span>
                             </div>
                           )}
                           {paymentConfig.bankTransfer.bankName && (
-                            <div className="flex justify-between">
+                            <div className="flex justify-between gap-2">
                               <span className="text-blue-700 dark:text-blue-300">Banca:</span>
                               <span className="font-medium text-blue-900 dark:text-blue-100" data-testid="text-bank-name">{paymentConfig.bankTransfer.bankName}</span>
                             </div>
                           )}
                           {paymentConfig.bankTransfer.bic && (
-                            <div className="flex justify-between">
+                            <div className="flex justify-between gap-2">
                               <span className="text-blue-700 dark:text-blue-300">BIC/SWIFT:</span>
                               <span className="font-mono font-medium text-blue-900 dark:text-blue-100" data-testid="text-bic">{paymentConfig.bankTransfer.bic}</span>
                             </div>
@@ -467,10 +547,13 @@ export default function ShopCheckout() {
               )}
             </CardContent>
           </Card>
-          
+
           <Card>
             <CardHeader>
-              <CardTitle>Note per l'ordine</CardTitle>
+              <CardTitle className="flex flex-wrap items-center gap-2">
+                <FileText className="h-5 w-5 text-muted-foreground" />
+                Note per l'ordine
+              </CardTitle>
               <CardDescription>Aggiungi eventuali istruzioni o richieste speciali</CardDescription>
             </CardHeader>
             <CardContent>
@@ -484,49 +567,51 @@ export default function ShopCheckout() {
             </CardContent>
           </Card>
         </div>
-        
+
         <div>
-          <Card className="sticky top-4">
+          <Card className="sticky top-4 z-10">
             <CardHeader>
-              <CardTitle>Riepilogo ordine</CardTitle>
+              <CardTitle className="flex flex-wrap items-center gap-2">
+                Riepilogo ordine
+              </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
                 {items.map((item) => (
-                  <div key={item.id} className="flex justify-between text-sm">
-                    <span className="line-clamp-1">{item.product?.name} x{item.quantity}</span>
-                    <span>{formatPrice(item.totalPrice)}</span>
+                  <div key={item.id} className="flex justify-between gap-2 text-sm">
+                    <span className="line-clamp-1">{item.product?.name} <span className="text-muted-foreground">x{item.quantity}</span></span>
+                    <span className="shrink-0">{formatPrice(item.totalPrice)}</span>
                   </div>
                 ))}
               </div>
-              
+
               <Separator />
-              
-              <div className="flex justify-between">
-                <span>Subtotale</span>
+
+              <div className="flex justify-between gap-2">
+                <span className="text-muted-foreground">Subtotale</span>
                 <span>{formatPrice(cart?.subtotal || 0)}</span>
               </div>
               {(cart?.discount || 0) > 0 && (
-                <div className="flex justify-between text-green-600">
+                <div className="flex justify-between gap-2 text-green-600 dark:text-green-400">
                   <span>Sconto</span>
                   <span>-{formatPrice(cart?.discount || 0)}</span>
                 </div>
               )}
-              <div className="flex justify-between">
-                <span>Spedizione</span>
+              <div className="flex justify-between gap-2">
+                <span className="text-muted-foreground">Spedizione</span>
                 <span data-testid="text-shipping-cost">
                   {shippingCost > 0 ? formatPrice(shippingCost) : 'Gratuita'}
                 </span>
               </div>
-              
+
               <Separator />
-              
-              <div className="flex justify-between text-lg font-bold">
+
+              <div className="flex justify-between gap-2 text-lg font-bold">
                 <span>Totale</span>
                 <span data-testid="text-checkout-total">{formatPrice((cart?.subtotal || 0) - (cart?.discount || 0) + shippingCost)}</span>
               </div>
               {items.length > 0 && (
-                <div className="flex justify-between text-sm text-muted-foreground">
+                <div className="flex justify-between gap-2 text-sm text-muted-foreground">
                   <span>di cui IVA</span>
                   <span data-testid="text-checkout-vat">
                     {formatPrice(
@@ -541,7 +626,7 @@ export default function ShopCheckout() {
                 </div>
               )}
             </CardContent>
-            <CardFooter>
+            <CardFooter className="flex-col gap-3">
               {paymentMethod === "paypal" && canPlaceOrder ? (
                 <PayPalButton
                   amount={(grandTotal / 100).toFixed(2)}
@@ -594,8 +679,8 @@ export default function ShopCheckout() {
                   }}
                 />
               ) : (
-                <Button 
-                  className="w-full" 
+                <Button
+                  className="w-full"
                   size="lg"
                   onClick={() => placeOrder.mutate()}
                   disabled={!canPlaceOrder || placeOrder.isPending}
@@ -614,6 +699,10 @@ export default function ShopCheckout() {
                   )}
                 </Button>
               )}
+              <div className="flex items-center justify-center gap-1.5 text-xs text-muted-foreground">
+                <Lock className="h-3 w-3" />
+                <span>Pagamento sicuro e protetto</span>
+              </div>
             </CardFooter>
           </Card>
         </div>

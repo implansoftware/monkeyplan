@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Trash2, Plus, Minus, ShoppingBag, ArrowLeft } from "lucide-react";
+import { Trash2, Plus, Minus, ShoppingBag, ArrowLeft, Package } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useAuth } from "@/hooks/use-auth";
@@ -74,20 +74,47 @@ export default function ShopCart() {
   if (isLoading) {
     return (
       <div className="space-y-6">
-        <Skeleton className="h-10 w-48" />
-        <Card>
-          <CardContent className="p-6 space-y-4">
+        <div className="flex flex-wrap items-center gap-4">
+          <Skeleton className="h-9 w-9 rounded-md" />
+          <div className="space-y-2">
+            <Skeleton className="h-8 w-48" />
+            <Skeleton className="h-4 w-24" />
+          </div>
+        </div>
+        <div className="grid gap-6 lg:grid-cols-3">
+          <div className="lg:col-span-2 space-y-4">
             {Array.from({ length: 3 }).map((_, i) => (
-              <div key={i} className="flex gap-4">
-                <Skeleton className="h-20 w-20" />
-                <div className="flex-1 space-y-2">
-                  <Skeleton className="h-6 w-3/4" />
-                  <Skeleton className="h-4 w-1/4" />
-                </div>
-              </div>
+              <Card key={i}>
+                <CardContent className="p-4">
+                  <div className="flex gap-4">
+                    <Skeleton className="w-24 h-24 rounded-md flex-shrink-0" />
+                    <div className="flex-1 space-y-2">
+                      <Skeleton className="h-5 w-3/4" />
+                      <Skeleton className="h-4 w-1/3" />
+                      <Skeleton className="h-4 w-1/4" />
+                    </div>
+                    <div className="space-y-2">
+                      <Skeleton className="h-9 w-9" />
+                      <Skeleton className="h-9 w-28" />
+                      <Skeleton className="h-5 w-20" />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
             ))}
-          </CardContent>
-        </Card>
+          </div>
+          <div>
+            <Card>
+              <CardContent className="p-6 space-y-4">
+                <Skeleton className="h-6 w-40" />
+                <Skeleton className="h-4 w-full" />
+                <Skeleton className="h-4 w-full" />
+                <Skeleton className="h-4 w-full" />
+                <Skeleton className="h-10 w-full" />
+              </CardContent>
+            </Card>
+          </div>
+        </div>
       </div>
     );
   }
@@ -95,10 +122,37 @@ export default function ShopCart() {
   const items = data?.items || [];
   const cart = data?.cart;
   
+  if (items.length === 0) {
+    return (
+      <div className="space-y-6">
+        <div className="flex flex-wrap items-center gap-4">
+          <Button variant="ghost" size="icon" onClick={() => setLocation(`/shop/${resellerId}`)} data-testid="button-back-to-shop">
+            <ArrowLeft className="h-5 w-5" />
+          </Button>
+          <div>
+            <h1 className="text-3xl font-bold" data-testid="text-cart-title">Carrello</h1>
+            <p className="text-muted-foreground">0 prodotti</p>
+          </div>
+        </div>
+
+        <div className="flex flex-col items-center justify-center py-20">
+          <div className="w-24 h-24 rounded-full bg-muted flex items-center justify-center mb-6">
+            <ShoppingBag className="h-10 w-10 text-muted-foreground" />
+          </div>
+          <h3 className="text-xl font-semibold mb-2">Il tuo carrello è vuoto</h3>
+          <p className="text-muted-foreground mb-6">Esplora il catalogo e aggiungi i prodotti che desideri</p>
+          <Button onClick={() => setLocation(`/shop/${resellerId}`)} data-testid="button-continue-shopping">
+            Continua lo shopping
+          </Button>
+        </div>
+      </div>
+    );
+  }
+  
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-center gap-4">
-        <Button variant="ghost" size="icon" onClick={() => setLocation(`/shop/${resellerId}`)}>
+        <Button variant="ghost" size="icon" onClick={() => setLocation(`/shop/${resellerId}`)} data-testid="button-back-to-shop">
           <ArrowLeft className="h-5 w-5" />
         </Button>
         <div>
@@ -109,49 +163,62 @@ export default function ShopCart() {
         </div>
       </div>
       
-      {items.length === 0 ? (
-        <Card>
-          <CardContent className="p-12 text-center">
-            <ShoppingBag className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-            <h3 className="text-lg font-semibold mb-2">Il tuo carrello è vuoto</h3>
-            <p className="text-muted-foreground mb-4">Aggiungi prodotti per continuare</p>
-            <Button onClick={() => setLocation(`/shop/${resellerId}`)} data-testid="button-continue-shopping">
-              Continua lo shopping
-            </Button>
-          </CardContent>
-        </Card>
-      ) : (
-        <div className="grid gap-6 lg:grid-cols-3">
-          <div className="lg:col-span-2 space-y-4">
-            {items.map((item) => (
-              <Card key={item.id} data-testid={`card-cart-item-${item.id}`}>
-                <CardContent className="p-4">
-                  <div className="flex gap-4">
-                    <div className="w-20 h-20 bg-muted rounded flex-shrink-0 flex items-center justify-center">
-                      {item.product?.imageUrl ? (
-                        <img 
-                          src={item.product.imageUrl} 
-                          alt={item.product?.name}
-                          className="w-full h-full object-cover rounded"
-                        />
-                      ) : (
-                        <div className="text-xs text-muted-foreground">No img</div>
-                      )}
-                    </div>
+      <div className="grid gap-6 lg:grid-cols-3">
+        <div className="lg:col-span-2 space-y-4">
+          {items.map((item) => (
+            <Card key={item.id} data-testid={`card-cart-item-${item.id}`}>
+              <CardContent className="p-4">
+                <div className="flex gap-4">
+                  <div className="w-24 h-24 bg-muted rounded-md flex-shrink-0 overflow-hidden">
+                    {item.product?.imageUrl ? (
+                      <img 
+                        src={item.product.imageUrl} 
+                        alt={item.product?.name}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <div className="w-full h-full bg-gradient-to-br from-muted to-muted-foreground/10 dark:from-muted dark:to-muted-foreground/20 flex items-center justify-center">
+                        <Package className="h-8 w-8 text-muted-foreground/60" />
+                      </div>
+                    )}
+                  </div>
+                  
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-semibold" data-testid={`text-item-name-${item.id}`}>
+                      {item.product?.name || 'Prodotto'}
+                    </h3>
+                    {item.product?.brand && (
+                      <p className="text-sm text-muted-foreground">{item.product.brand}</p>
+                    )}
+                    <p className="text-sm text-muted-foreground mt-1">
+                      {formatPrice(item.unitPrice)} cad.
+                    </p>
                     
-                    <div className="flex-1 min-w-0">
-                      <h3 className="font-semibold" data-testid={`text-item-name-${item.id}`}>
-                        {item.product?.name || 'Prodotto'}
-                      </h3>
-                      {item.product?.brand && (
-                        <p className="text-sm text-muted-foreground">{item.product.brand}</p>
-                      )}
-                      <p className="text-sm text-muted-foreground mt-1">
-                        {formatPrice(item.unitPrice)} cad.
-                      </p>
-                    </div>
-                    
-                    <div className="flex flex-col items-end gap-2">
+                    <div className="flex flex-wrap items-center gap-3 mt-3">
+                      <div className="flex items-center border rounded-md">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => updateQuantity.mutate({ itemId: item.id, quantity: item.quantity - 1 })}
+                          disabled={item.quantity <= 1 || updateQuantity.isPending}
+                          data-testid={`button-decrease-${item.id}`}
+                        >
+                          <Minus className="h-3 w-3" />
+                        </Button>
+                        <span className="w-8 text-center font-medium text-sm" data-testid={`text-quantity-${item.id}`}>
+                          {item.quantity}
+                        </span>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => updateQuantity.mutate({ itemId: item.id, quantity: item.quantity + 1 })}
+                          disabled={updateQuantity.isPending}
+                          data-testid={`button-increase-${item.id}`}
+                        >
+                          <Plus className="h-3 w-3" />
+                        </Button>
+                      </div>
+                      
                       <Button
                         variant="ghost"
                         size="icon"
@@ -161,108 +228,81 @@ export default function ShopCart() {
                       >
                         <Trash2 className="h-4 w-4 text-destructive" />
                       </Button>
-                      
-                      <div className="flex flex-wrap items-center gap-2">
-                        <Button
-                          variant="outline"
-                          size="icon"
-                          className="h-8 w-8"
-                          onClick={() => updateQuantity.mutate({ itemId: item.id, quantity: item.quantity - 1 })}
-                          disabled={item.quantity <= 1 || updateQuantity.isPending}
-                          data-testid={`button-decrease-${item.id}`}
-                        >
-                          <Minus className="h-3 w-3" />
-                        </Button>
-                        <span className="w-8 text-center font-medium" data-testid={`text-quantity-${item.id}`}>
-                          {item.quantity}
-                        </span>
-                        <Button
-                          variant="outline"
-                          size="icon"
-                          className="h-8 w-8"
-                          onClick={() => updateQuantity.mutate({ itemId: item.id, quantity: item.quantity + 1 })}
-                          disabled={updateQuantity.isPending}
-                          data-testid={`button-increase-${item.id}`}
-                        >
-                          <Plus className="h-3 w-3" />
-                        </Button>
-                      </div>
-                      
-                      <p className="font-bold" data-testid={`text-item-total-${item.id}`}>
-                        {formatPrice(item.totalPrice)}
-                      </p>
                     </div>
                   </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-          
-          <div>
-            <Card className="sticky top-4">
-              <CardHeader>
-                <CardTitle>Riepilogo ordine</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex justify-between">
-                  <span>Subtotale</span>
-                  <span data-testid="text-subtotal">{formatPrice(cart?.subtotal || 0)}</span>
-                </div>
-                {(cart?.discount || 0) > 0 && (
-                  <div className="flex justify-between text-green-600">
-                    <span>Sconto</span>
-                    <span>-{formatPrice(cart?.discount || 0)}</span>
+                  
+                  <div className="flex items-center">
+                    <p className="font-bold text-lg" data-testid={`text-item-total-${item.id}`}>
+                      {formatPrice(item.totalPrice)}
+                    </p>
                   </div>
-                )}
-                <div className="flex justify-between">
-                  <span>Spedizione</span>
-                  <span data-testid="text-shipping">
-                    {(cart?.shippingCost || 0) > 0 ? formatPrice(cart?.shippingCost || 0) : 'Calcolata al checkout'}
-                  </span>
                 </div>
-                <Separator />
-                <div className="flex justify-between text-lg font-bold">
-                  <span>Totale</span>
-                  <span data-testid="text-total">{formatPrice(cart?.total || 0)}</span>
-                </div>
-                {items.length > 0 && (
-                  <div className="flex justify-between text-sm text-muted-foreground">
-                    <span>di cui IVA</span>
-                    <span data-testid="text-vat-amount">
-                      {formatPrice(
-                        (() => {
-                          const vatRate = data?.customerVatRate ?? 22;
-                          if (vatRate === 0) return 0;
-                          const totalPrice = items.reduce((sum, item) => sum + item.totalPrice, 0);
-                          return totalPrice - (totalPrice / (1 + vatRate / 100));
-                        })()
-                      )}
-                    </span>
-                  </div>
-                )}
               </CardContent>
-              <CardFooter className="flex-col gap-2">
-                <Button 
-                  className="w-full" 
-                  size="lg"
-                  onClick={handleCheckout}
-                  data-testid="button-checkout"
-                >
-                  Procedi al checkout
-                </Button>
-                <Button 
-                  variant="outline" 
-                  className="w-full"
-                  onClick={() => setLocation(`/shop/${resellerId}`)}
-                  data-testid="button-continue-shopping"
-                >
-                  Continua lo shopping
-                </Button>
-              </CardFooter>
             </Card>
-          </div>
+          ))}
         </div>
-      )}
+        
+        <div>
+          <Card className="sticky top-4 z-10">
+            <CardHeader>
+              <CardTitle>Riepilogo ordine</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div className="flex flex-wrap justify-between gap-1">
+                <span className="text-muted-foreground">Subtotale</span>
+                <span data-testid="text-subtotal">{formatPrice(cart?.subtotal || 0)}</span>
+              </div>
+              {(cart?.discount || 0) > 0 && (
+                <div className="flex flex-wrap justify-between gap-1 text-green-600 dark:text-green-400">
+                  <span>Sconto</span>
+                  <span>-{formatPrice(cart?.discount || 0)}</span>
+                </div>
+              )}
+              <div className="flex flex-wrap justify-between gap-1">
+                <span className="text-muted-foreground">Spedizione</span>
+                <span data-testid="text-shipping">
+                  {(cart?.shippingCost || 0) > 0 ? formatPrice(cart?.shippingCost || 0) : 'Calcolata al checkout'}
+                </span>
+              </div>
+              <Separator />
+              <div className="flex flex-wrap justify-between gap-1 text-lg font-bold">
+                <span>Totale</span>
+                <span data-testid="text-total">{formatPrice(cart?.total || 0)}</span>
+              </div>
+              {items.length > 0 && (
+                <p className="text-sm text-muted-foreground" data-testid="text-vat-amount">
+                  IVA inclusa: {formatPrice(
+                    (() => {
+                      const vatRate = data?.customerVatRate ?? 22;
+                      if (vatRate === 0) return 0;
+                      const totalPrice = items.reduce((sum, item) => sum + item.totalPrice, 0);
+                      return totalPrice - (totalPrice / (1 + vatRate / 100));
+                    })()
+                  )}
+                </p>
+              )}
+            </CardContent>
+            <CardFooter className="flex-col gap-2">
+              <Button 
+                className="w-full" 
+                size="lg"
+                onClick={handleCheckout}
+                data-testid="button-checkout"
+              >
+                Procedi al checkout
+              </Button>
+              <Button 
+                variant="outline" 
+                className="w-full"
+                onClick={() => setLocation(`/shop/${resellerId}`)}
+                data-testid="button-continue-shopping"
+              >
+                Continua lo shopping
+              </Button>
+            </CardFooter>
+          </Card>
+        </div>
+      </div>
     </div>
   );
 }

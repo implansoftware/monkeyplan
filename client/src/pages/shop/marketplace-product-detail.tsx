@@ -4,7 +4,6 @@ import { useParams, Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { 
   Package, 
@@ -13,8 +12,6 @@ import {
   ShoppingCart, 
   Check, 
   Truck,
-  Box,
-  Tag,
   Info
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
@@ -91,13 +88,18 @@ export default function MarketplaceProductDetail() {
 
   if (isLoading) {
     return (
-      <div className="container mx-auto py-8 px-4">
-        <Skeleton className="h-8 w-32 mb-6" />
+      <div className="container mx-auto py-8 px-4 max-w-5xl">
+        <Skeleton className="h-9 w-40 mb-6" />
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           <Skeleton className="aspect-square rounded-lg" />
           <div className="space-y-4">
+            <div className="flex gap-2">
+              <Skeleton className="h-6 w-20" />
+              <Skeleton className="h-6 w-24" />
+            </div>
             <Skeleton className="h-10 w-3/4" />
-            <Skeleton className="h-6 w-1/4" />
+            <Skeleton className="h-5 w-1/4" />
+            <Skeleton className="h-10 w-1/3" />
             <Skeleton className="h-24 w-full" />
             <Skeleton className="h-40 w-full" />
           </div>
@@ -111,7 +113,7 @@ export default function MarketplaceProductDetail() {
 
   if (error || !data) {
     return (
-      <div className="container mx-auto py-8 px-4">
+      <div className="container mx-auto py-8 px-4 max-w-5xl">
         <Link href={backUrl}>
           <Button variant="ghost" className="mb-6" data-testid="button-back">
             <ArrowLeft className="h-4 w-4 mr-2" />
@@ -132,8 +134,13 @@ export default function MarketplaceProductDetail() {
   const { product, specs, sellers, lowestPrice, sellerCount, totalStock, hasValidSellers } = data;
   const images = product.imageUrl ? [product.imageUrl] : [];
 
+  const hasSpecs = specs && (
+    (product.productType === 'dispositivo' && (specs.storage || specs.color || specs.condition || specs.batteryHealth)) ||
+    (product.productType === 'accessorio' && (specs.color || specs.material))
+  );
+
   return (
-    <div className="container mx-auto py-8 px-4">
+    <div className="container mx-auto py-8 px-4 max-w-5xl">
       <Link href={backUrl}>
         <Button variant="ghost" className="mb-6" data-testid="button-back">
           <ArrowLeft className="h-4 w-4 mr-2" />
@@ -148,12 +155,12 @@ export default function MarketplaceProductDetail() {
               <img 
                 src={images[selectedImage]} 
                 alt={product.name} 
-                className="w-full h-full object-contain"
+                className="w-full h-full object-contain p-4"
                 data-testid="img-product-main"
               />
             ) : (
-              <div className="w-full h-full flex items-center justify-center">
-                <Package className="h-24 w-24 text-muted-foreground" />
+              <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-muted to-muted/60">
+                <Package className="h-28 w-28 text-muted-foreground/40" />
               </div>
             )}
           </div>
@@ -178,69 +185,110 @@ export default function MarketplaceProductDetail() {
 
         <div className="space-y-6">
           <div>
-            <div className="flex flex-wrap items-center gap-2 mb-2">
+            <div className="flex flex-wrap items-center gap-2 mb-3">
               <Badge variant="outline">{product.category}</Badge>
               {product.brand && <Badge variant="secondary">{product.brand}</Badge>}
             </div>
-            <h1 className="text-3xl font-bold mb-2" data-testid="text-product-name">{product.name}</h1>
-            <p className="text-sm text-muted-foreground" data-testid="text-product-sku">SKU: {product.sku}</p>
+            <h1 className="text-3xl font-bold tracking-tight mb-1" data-testid="text-product-name">
+              {product.name}
+            </h1>
+            <p className="text-sm text-muted-foreground" data-testid="text-product-sku">
+              SKU: {product.sku}
+            </p>
           </div>
 
-          <div className="flex items-baseline gap-3">
-            <span className="text-3xl font-bold text-primary" data-testid="text-product-price">
+          <div>
+            <span className="text-3xl font-bold" data-testid="text-product-price">
               {formatPrice(lowestPrice)}
             </span>
             {sellerCount > 1 && (
-              <span className="text-muted-foreground">
+              <span className="text-sm text-muted-foreground ml-3">
                 da {sellerCount} venditor{sellerCount > 1 ? 'i' : 'e'}
               </span>
             )}
           </div>
 
           <div className="flex flex-wrap items-center gap-4 text-sm">
-            <div className="flex flex-wrap items-center gap-1">
-              <Box className="h-4 w-4 text-muted-foreground" />
-              <span className={totalStock > 0 ? 'text-green-600' : 'text-red-600'}>
+            <div className="flex items-center gap-2">
+              <span className={`inline-block h-2.5 w-2.5 rounded-full ${
+                totalStock > 0
+                  ? 'bg-green-500 dark:bg-green-400'
+                  : 'bg-red-500 dark:bg-red-400'
+              }`} />
+              <span className={totalStock > 0
+                ? 'text-green-700 dark:text-green-400'
+                : 'text-red-700 dark:text-red-400'
+              }>
                 {totalStock > 0 ? `${totalStock} disponibili` : 'Non disponibile'}
               </span>
             </div>
-            <div className="flex flex-wrap items-center gap-1">
-              <Truck className="h-4 w-4 text-muted-foreground" />
+            <div className="flex items-center gap-1.5 text-muted-foreground">
+              <Truck className="h-4 w-4" />
               <span>Spedizione rapida</span>
             </div>
           </div>
 
           {product.description && (
             <div>
-              <h3 className="font-semibold mb-2 flex items-center gap-2">
+              <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground mb-2 flex items-center gap-2">
                 <Info className="h-4 w-4" />
                 Descrizione
               </h3>
-              <p className="text-muted-foreground" data-testid="text-product-description">
+              <p className="text-sm leading-relaxed" data-testid="text-product-description">
                 {product.description}
               </p>
             </div>
           )}
 
-          {specs && (
+          {hasSpecs && (
             <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-lg">Specifiche Tecniche</CardTitle>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base">Specifiche Tecniche</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm">
-                  {product.productType === 'dispositivo' && specs && (
+                <div className="grid grid-cols-2 gap-x-6 gap-y-3 text-sm">
+                  {product.productType === 'dispositivo' && (
                     <>
-                      {specs.storage && <><span className="text-muted-foreground">Memoria:</span><span>{specs.storage}</span></>}
-                      {specs.color && <><span className="text-muted-foreground">Colore:</span><span>{specs.color}</span></>}
-                      {specs.condition && <><span className="text-muted-foreground">Condizione:</span><span>{specs.condition}</span></>}
-                      {specs.batteryHealth && <><span className="text-muted-foreground">Batteria:</span><span>{specs.batteryHealth}%</span></>}
+                      {specs.storage && (
+                        <div>
+                          <p className="text-muted-foreground text-xs mb-0.5">Memoria</p>
+                          <p className="font-medium">{specs.storage}</p>
+                        </div>
+                      )}
+                      {specs.color && (
+                        <div>
+                          <p className="text-muted-foreground text-xs mb-0.5">Colore</p>
+                          <p className="font-medium">{specs.color}</p>
+                        </div>
+                      )}
+                      {specs.condition && (
+                        <div>
+                          <p className="text-muted-foreground text-xs mb-0.5">Condizione</p>
+                          <p className="font-medium">{specs.condition}</p>
+                        </div>
+                      )}
+                      {specs.batteryHealth && (
+                        <div>
+                          <p className="text-muted-foreground text-xs mb-0.5">Batteria</p>
+                          <p className="font-medium">{specs.batteryHealth}%</p>
+                        </div>
+                      )}
                     </>
                   )}
-                  {product.productType === 'accessorio' && specs && (
+                  {product.productType === 'accessorio' && (
                     <>
-                      {specs.color && <><span className="text-muted-foreground">Colore:</span><span>{specs.color}</span></>}
-                      {specs.material && <><span className="text-muted-foreground">Materiale:</span><span>{specs.material}</span></>}
+                      {specs.color && (
+                        <div>
+                          <p className="text-muted-foreground text-xs mb-0.5">Colore</p>
+                          <p className="font-medium">{specs.color}</p>
+                        </div>
+                      )}
+                      {specs.material && (
+                        <div>
+                          <p className="text-muted-foreground text-xs mb-0.5">Materiale</p>
+                          <p className="font-medium">{specs.material}</p>
+                        </div>
+                      )}
                     </>
                   )}
                 </div>
@@ -248,63 +296,65 @@ export default function MarketplaceProductDetail() {
             </Card>
           )}
 
-          <Separator />
-
           <div>
-            <h3 className="font-semibold mb-4 flex items-center gap-2">
+            <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground mb-4 flex items-center gap-2">
               <Store className="h-4 w-4" />
               Venditori disponibili ({sellers.length})
             </h3>
-            <div className="space-y-3">
+            <div className="space-y-2">
               {sellers.map((seller, idx) => (
-                <Card 
-                  key={seller.resellerId} 
-                  className={`cursor-pointer ${selectedSeller?.resellerId === seller.resellerId ? 'ring-2 ring-primary' : ''}`}
+                <div
+                  key={seller.resellerId}
+                  className={`border rounded-md p-4 cursor-pointer transition-shadow ${
+                    selectedSeller?.resellerId === seller.resellerId
+                      ? 'ring-2 ring-primary'
+                      : ''
+                  }`}
                   onClick={() => setSelectedSeller(seller)}
                   data-testid={`card-seller-${idx}`}
                 >
-                  <CardContent className="p-4">
-                    <div className="flex items-center justify-between gap-2">
-                      <div className="flex flex-wrap items-center gap-3">
-                        <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-                          <Store className="h-5 w-5 text-primary" />
-                        </div>
-                        <div>
-                          <p className="font-medium" data-testid={`text-seller-name-${idx}`}>
-                            {seller.resellerName}
-                            {seller.isAdmin && (
-                              <Badge variant="secondary" className="ml-2 text-xs">Ufficiale</Badge>
-                            )}
-                          </p>
-                          <div className="flex flex-wrap items-center gap-1 text-sm text-muted-foreground">
-                            <Check className="h-3 w-3 text-green-600 dark:text-green-400" />
-                            {seller.isAdmin ? 'Negozio ufficiale' : 'Venditore verificato'}
-                          </div>
-                        </div>
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center flex-shrink-0">
+                        <Store className="h-5 w-5 text-muted-foreground" />
                       </div>
-                      <div className="text-right flex-shrink-0">
-                        <p className="text-xl font-bold" data-testid={`text-seller-price-${idx}`}>
-                          {formatPrice(seller.price)}
-                        </p>
-                        <Button 
-                          size="sm" 
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleAddToCart(seller);
-                          }}
-                          disabled={addToCartMutation.isPending}
-                          data-testid={`button-add-cart-${idx}`}
-                        >
-                          <ShoppingCart className="h-4 w-4 mr-1" />
-                          Aggiungi
-                        </Button>
+                      <div className="min-w-0">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <p className="font-medium truncate" data-testid={`text-seller-name-${idx}`}>
+                            {seller.resellerName}
+                          </p>
+                          {seller.isAdmin && (
+                            <Badge variant="secondary" className="text-xs">Ufficiale</Badge>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-1 text-xs text-muted-foreground mt-0.5">
+                          <Check className="h-3 w-3 text-green-600 dark:text-green-400" />
+                          <span>{seller.isAdmin ? 'Negozio ufficiale' : 'Venditore verificato'}</span>
+                        </div>
                       </div>
                     </div>
-                  </CardContent>
-                </Card>
+                    <div className="flex items-center gap-3 flex-shrink-0">
+                      <span className="text-lg font-bold" data-testid={`text-seller-price-${idx}`}>
+                        {formatPrice(seller.price)}
+                      </span>
+                      <Button 
+                        size="sm" 
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleAddToCart(seller);
+                        }}
+                        disabled={addToCartMutation.isPending}
+                        data-testid={`button-add-cart-${idx}`}
+                      >
+                        <ShoppingCart className="h-4 w-4 mr-1" />
+                        Aggiungi
+                      </Button>
+                    </div>
+                  </div>
+                </div>
               ))}
               {sellers.length === 0 && (
-                <p className="text-muted-foreground text-center py-4">
+                <p className="text-muted-foreground text-center py-6">
                   Nessun venditore disponibile per questo prodotto
                 </p>
               )}
@@ -312,27 +362,25 @@ export default function MarketplaceProductDetail() {
           </div>
 
           {sellers.length > 0 && (
-            <div className="flex gap-2">
-              <Button 
-                className="flex-1" 
-                size="lg"
-                onClick={() => {
-                  if (sellers.length === 0) return;
-                  const bestSeller = sellers.reduce((a, b) => a.price < b.price ? a : b);
-                  handleAddToCart(bestSeller);
-                }}
-                disabled={addToCartMutation.isPending}
-                data-testid="button-buy-best-price"
-              >
-                <ShoppingCart className="h-5 w-5 mr-2" />
-                Acquista al miglior prezzo
-              </Button>
-            </div>
+            <Button 
+              className="w-full" 
+              size="lg"
+              onClick={() => {
+                if (sellers.length === 0) return;
+                const bestSeller = sellers.reduce((a, b) => a.price < b.price ? a : b);
+                handleAddToCart(bestSeller);
+              }}
+              disabled={addToCartMutation.isPending}
+              data-testid="button-buy-best-price"
+            >
+              <ShoppingCart className="h-5 w-5 mr-2" />
+              Acquista al miglior prezzo
+            </Button>
           )}
           
           {sellers.length === 0 && (
-            <div className="text-center p-4 bg-muted rounded-lg">
-              <p className="text-muted-foreground">
+            <div className="text-center p-4 bg-muted rounded-md">
+              <p className="text-muted-foreground text-sm">
                 Questo prodotto non è attualmente disponibile per l'acquisto
               </p>
             </div>
