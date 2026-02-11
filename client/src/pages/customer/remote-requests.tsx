@@ -470,9 +470,35 @@ function RequestCard({
           <div className="border-t pt-4" />
 
           {request.status === "awaiting_shipment" && (
-            <div className="flex flex-wrap items-center gap-2 p-3 bg-muted/40 rounded-md">
-              <Package className="h-4 w-4 text-muted-foreground shrink-0" />
-              <span className="text-sm flex-1">Spedisci i dispositivi al centro di riparazione</span>
+            <div className="space-y-3 p-4 border border-primary/20 rounded-md bg-primary/5" data-testid={`shipping-info-${request.id}`}>
+              <div className="flex items-center gap-2">
+                <Truck className="h-4 w-4 text-primary shrink-0" />
+                <span className="text-sm font-semibold">Spedisci i tuoi dispositivi</span>
+              </div>
+              {request.centerAddress ? (
+                <div className="flex items-start gap-3 p-3 bg-background rounded-md border">
+                  <MapPin className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />
+                  <div>
+                    <p className="text-xs text-muted-foreground mb-0.5">Spedisci a:</p>
+                    <p className="text-sm font-medium" data-testid={`text-ship-to-name-${request.id}`}>{request.centerName}</p>
+                    <p className="text-sm" data-testid={`text-ship-to-address-${request.id}`}>
+                      {request.centerAddress}
+                      {request.centerCap || request.centerCity ? (
+                        <>, {[request.centerCap, request.centerCity].filter(Boolean).join(" ")}</>
+                      ) : null}
+                      {request.centerProvince ? ` (${request.centerProvince})` : ""}
+                    </p>
+                    {request.centerPhone && (
+                      <p className="text-xs text-muted-foreground mt-1">Tel: {request.centerPhone}</p>
+                    )}
+                  </div>
+                </div>
+              ) : (
+                <div className="flex items-center gap-2 p-3 bg-background rounded-md border">
+                  <Clock className="h-4 w-4 text-muted-foreground shrink-0" />
+                  <p className="text-sm text-muted-foreground">Indirizzo di spedizione in fase di assegnazione...</p>
+                </div>
+              )}
               <div className="flex gap-2 flex-wrap">
                 <Button
                   variant="outline"
@@ -481,7 +507,7 @@ function RequestCard({
                   data-testid={`button-download-ddt-${request.id}`}
                 >
                   <Download className="h-4 w-4 mr-1.5" />
-                  DDT
+                  Scarica DDT
                 </Button>
                 <Button
                   size="sm"
@@ -691,14 +717,21 @@ function RequestCard({
             </div>
           )}
 
-          {request.centerName && (
-            <div className="flex items-center gap-3 p-3 bg-muted/40 rounded-md">
-              <MapPin className="h-4 w-4 text-muted-foreground shrink-0" />
+          {request.centerName && request.status !== "awaiting_shipment" && (
+            <div className="flex items-start gap-3 p-3 bg-muted/40 rounded-md">
+              <MapPin className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />
               <div>
-                <p className="text-xs text-muted-foreground">Centro assegnato</p>
+                <p className="text-xs text-muted-foreground">Centro di riparazione</p>
                 <p className="text-sm font-medium">{request.centerName}</p>
                 {request.centerAddress && (
-                  <p className="text-xs text-muted-foreground">{request.centerAddress}{request.centerCity ? `, ${request.centerCity}` : ""}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {request.centerAddress}
+                    {request.centerCap || request.centerCity ? `, ${[request.centerCap, request.centerCity].filter(Boolean).join(" ")}` : ""}
+                    {request.centerProvince ? ` (${request.centerProvince})` : ""}
+                  </p>
+                )}
+                {request.centerPhone && (
+                  <p className="text-xs text-muted-foreground">Tel: {request.centerPhone}</p>
                 )}
               </div>
             </div>
