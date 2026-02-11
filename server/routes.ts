@@ -12484,6 +12484,10 @@ export function registerRoutes(app: Express): Server {
         iban: reseller.iban,
         email: reseller.email,
         phone: reseller.phone,
+        indirizzo: reseller.indirizzo,
+        cap: reseller.cap,
+        citta: reseller.citta,
+        provincia: reseller.provincia,
       });
     } catch (error: any) {
       console.error("Service order creation error:", error);

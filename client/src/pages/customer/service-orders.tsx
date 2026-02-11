@@ -50,6 +50,10 @@ export default function CustomerServiceOrders() {
     iban: string | null;
     email: string | null;
     phone: string | null;
+    indirizzo: string | null;
+    cap: string | null;
+    citta: string | null;
+    provincia: string | null;
   }>({
     queryKey: ["/api/customer/my-reseller"],
     enabled: !!user?.resellerId,
@@ -126,14 +130,10 @@ export default function CustomerServiceOrders() {
     };
 
     if (deliveryForm.deliveryMethod === "shipping") {
-      if (!deliveryForm.shippingAddress || !deliveryForm.shippingCity || !deliveryForm.shippingCap || !deliveryForm.shippingProvince) {
-        toast({ title: "Errore", description: "Compila tutti i campi dell'indirizzo", variant: "destructive" });
-        return;
-      }
-      data.shippingAddress = deliveryForm.shippingAddress;
-      data.shippingCity = deliveryForm.shippingCity;
-      data.shippingCap = deliveryForm.shippingCap;
-      data.shippingProvince = deliveryForm.shippingProvince;
+      data.shippingAddress = myReseller?.indirizzo || "";
+      data.shippingCity = myReseller?.citta || "";
+      data.shippingCap = myReseller?.cap || "";
+      data.shippingProvince = myReseller?.provincia || "";
       data.courierName = deliveryForm.courierName;
       data.trackingNumber = deliveryForm.trackingNumber;
     }
@@ -359,61 +359,45 @@ export default function CustomerServiceOrders() {
 
             {deliveryForm.deliveryMethod === "shipping" && (
               <div className="space-y-4 pt-4 border-t">
-                <div className="space-y-2">
-                  <Label>Indirizzo</Label>
-                  <Input
-                    value={deliveryForm.shippingAddress}
-                    onChange={(e) => setDeliveryForm({ ...deliveryForm, shippingAddress: e.target.value })}
-                    placeholder="Via/Piazza e numero civico"
-                    data-testid="input-shipping-address"
-                  />
+                <div className="flex items-start gap-3 p-3 bg-muted/50 rounded-md border" data-testid="shipping-destination">
+                  <MapPin className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />
+                  <div>
+                    <p className="text-xs text-muted-foreground mb-0.5">Spedisci a:</p>
+                    <p className="text-sm font-medium" data-testid="text-ship-to-name">
+                      {myReseller?.ragioneSociale || myReseller?.fullName || "Rivenditore"}
+                    </p>
+                    {myReseller?.indirizzo ? (
+                      <p className="text-sm" data-testid="text-ship-to-address">
+                        {myReseller.indirizzo}
+                        {myReseller.cap || myReseller.citta ? (
+                          <>, {[myReseller.cap, myReseller.citta].filter(Boolean).join(" ")}</>
+                        ) : null}
+                        {myReseller.provincia ? ` (${myReseller.provincia})` : ""}
+                      </p>
+                    ) : (
+                      <p className="text-xs text-muted-foreground">Contatta il rivenditore per confermare l'indirizzo</p>
+                    )}
+                    {myReseller?.phone && (
+                      <p className="text-xs text-muted-foreground mt-1">Tel: {myReseller.phone}</p>
+                    )}
+                  </div>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label>CAP</Label>
-                    <Input
-                      value={deliveryForm.shippingCap}
-                      onChange={(e) => setDeliveryForm({ ...deliveryForm, shippingCap: e.target.value })}
-                      placeholder="CAP"
-                      data-testid="input-shipping-cap"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Provincia</Label>
-                    <Input
-                      value={deliveryForm.shippingProvince}
-                      onChange={(e) => setDeliveryForm({ ...deliveryForm, shippingProvince: e.target.value })}
-                      placeholder="Provincia"
-                      maxLength={2}
-                      data-testid="input-shipping-province"
-                    />
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <Label>Città</Label>
-                  <Input
-                    value={deliveryForm.shippingCity}
-                    onChange={(e) => setDeliveryForm({ ...deliveryForm, shippingCity: e.target.value })}
-                    placeholder="Città"
-                    data-testid="input-shipping-city"
-                  />
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label>Corriere (opzionale)</Label>
+                    <Label>Corriere</Label>
                     <Input
                       value={deliveryForm.courierName}
                       onChange={(e) => setDeliveryForm({ ...deliveryForm, courierName: e.target.value })}
-                      placeholder="Nome corriere"
+                      placeholder="Nome corriere (es. BRT, DHL, GLS...)"
                       data-testid="input-courier-name"
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label>Tracking (opzionale)</Label>
+                    <Label>Numero Tracking</Label>
                     <Input
                       value={deliveryForm.trackingNumber}
                       onChange={(e) => setDeliveryForm({ ...deliveryForm, trackingNumber: e.target.value })}
-                      placeholder="Numero tracking"
+                      placeholder="Numero di tracking"
                       data-testid="input-tracking-number"
                     />
                   </div>
