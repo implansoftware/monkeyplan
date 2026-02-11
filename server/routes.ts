@@ -31172,7 +31172,16 @@ export function registerRoutes(app: Express): Server {
       if (!order) return res.status(404).json({ error: "Ordine non trovato" });
       if (order.customerId !== req.user.id) return res.status(403).json({ error: "Accesso negato" });
       
-      const items = await storage.listSalesOrderItems(order.id);
+      const rawItems = await storage.listSalesOrderItems(order.id);
+      const items = await Promise.all(rawItems.map(async (item) => {
+        if (!item.productImage && item.productId) {
+          const product = await storage.getProduct(item.productId);
+          if (product?.imageUrl) {
+            return { ...item, productImage: product.imageUrl };
+          }
+        }
+        return item;
+      }));
       const payments = await storage.listSalesOrderPayments(order.id);
       const shipments = await storage.listSalesOrderShipments(order.id);
       
@@ -31225,7 +31234,16 @@ export function registerRoutes(app: Express): Server {
         return res.status(403).json({ error: "Accesso negato" });
       }
       
-      const items = await storage.listSalesOrderItems(order.id);
+      const rawItems = await storage.listSalesOrderItems(order.id);
+      const items = await Promise.all(rawItems.map(async (item) => {
+        if (!item.productImage && item.productId) {
+          const product = await storage.getProduct(item.productId);
+          if (product?.imageUrl) {
+            return { ...item, productImage: product.imageUrl };
+          }
+        }
+        return item;
+      }));
       const payments = await storage.listSalesOrderPayments(order.id);
       const shipments = await storage.listSalesOrderShipments(order.id);
       const history = await storage.listSalesOrderStateHistory(order.id);
