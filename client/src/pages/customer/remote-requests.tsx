@@ -3,7 +3,7 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/use-auth";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -11,7 +11,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Loader2, Plus, Package, Truck, Check, X, Clock, Send, MapPin, Upload, Image, Globe, Trash2, Smartphone, FileText, Euro, CreditCard, Store, Download, Search } from "lucide-react";
+import { Loader2, Plus, Package, Truck, Check, X, Clock, Send, MapPin, Upload, Image, Trash2, Smartphone, FileText, Euro, CreditCard, Store, Download, Search, ChevronRight, ArrowLeft, ArrowRight, AlertCircle } from "lucide-react";
 import { loadStripe } from "@stripe/stripe-js";
 import { Elements, PaymentElement, useStripe, useElements } from "@stripe/react-stripe-js";
 import type { RemoteRepairRequest, RemoteRepairRequestDevice, DeviceType, DeviceBrand, DeviceModel } from "@shared/schema";
@@ -28,17 +28,17 @@ type EnrichedRequest = RemoteRepairRequest & {
   centerPhone?: string | null;
 };
 
-const statusLabels: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
-  pending: { label: "In attesa", variant: "secondary" },
+const statusConfig: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline"; icon?: any }> = {
+  pending: { label: "In attesa", variant: "secondary", icon: Clock },
   assigned: { label: "Assegnata", variant: "outline" },
   accepted: { label: "Accettata", variant: "default" },
   rejected: { label: "Rifiutata", variant: "destructive" },
-  awaiting_shipment: { label: "Attesa spedizione", variant: "outline" },
-  in_transit: { label: "In transito", variant: "default" },
-  received: { label: "Ricevuto", variant: "default" },
-  repair_created: { label: "Riparazione creata", variant: "default" },
+  awaiting_shipment: { label: "Attesa spedizione", variant: "outline", icon: Package },
+  in_transit: { label: "In transito", variant: "default", icon: Truck },
+  received: { label: "Ricevuto", variant: "default", icon: Check },
+  repair_created: { label: "In riparazione", variant: "default" },
   cancelled: { label: "Annullata", variant: "destructive" },
-  quoted: { label: "Preventivo ricevuto", variant: "outline" },
+  quoted: { label: "Preventivo ricevuto", variant: "outline", icon: Euro },
   quote_accepted: { label: "Preventivo accettato", variant: "default" },
   quote_declined: { label: "Preventivo rifiutato", variant: "destructive" },
 };
@@ -161,7 +161,7 @@ function DeviceModelAutocomplete({
                 key={model.id}
                 type="button"
                 role="option"
-                className="w-full text-left px-3 py-2 text-sm hover-elevate cursor-pointer flex items-center justify-between gap-2"
+                className="w-full text-left px-3 py-2 text-sm cursor-pointer flex items-center justify-between gap-2 transition-colors"
                 onMouseDown={(e) => { e.preventDefault(); handleSelect(model); }}
                 data-testid={`suggestion-${model.id}`}
               >
@@ -245,6 +245,474 @@ function StripePaymentForm({ onSuccess, onError }: { onSuccess: () => void; onEr
         {isProcessing ? "Elaborazione..." : "Paga Ora"}
       </Button>
     </form>
+  );
+}
+
+function DeviceFormCard({
+  device,
+  index,
+  total,
+  onUpdate,
+  onRemove,
+  onPhotoChange,
+  onRemovePhoto,
+  deviceTypes,
+  deviceBrands,
+}: {
+  device: DeviceEntry;
+  index: number;
+  total: number;
+  onUpdate: (updates: Partial<DeviceEntry>) => void;
+  onRemove: () => void;
+  onPhotoChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onRemovePhoto: (photoIndex: number) => void;
+  deviceTypes?: DeviceType[];
+  deviceBrands?: DeviceBrand[];
+}) {
+  return (
+    <div className="space-y-4 p-4 border rounded-md bg-muted/20" data-testid={`card-device-form-${index}`}>
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex items-center gap-2">
+          <div className="h-7 w-7 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+            <span className="text-xs font-bold text-primary">{index + 1}</span>
+          </div>
+          <span className="text-sm font-medium">Dispositivo {index + 1}</span>
+        </div>
+        {total > 1 && (
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            onClick={onRemove}
+            data-testid={`button-remove-device-${index}`}
+          >
+            <Trash2 className="h-4 w-4 text-destructive" />
+          </Button>
+        )}
+      </div>
+
+      <div className="space-y-1.5">
+        <Label className="text-xs text-muted-foreground">Quale dispositivo vuoi riparare?</Label>
+        <DeviceModelAutocomplete
+          value={device.productSearch}
+          onChange={(updates) => onUpdate(updates)}
+          deviceTypes={deviceTypes}
+          deviceBrands={deviceBrands}
+        />
+        {device.brand && device.model && (
+          <div className="flex items-center gap-1.5 mt-1">
+            <Check className="h-3 w-3 text-emerald-600 dark:text-emerald-400" />
+            <p className="text-xs text-muted-foreground">
+              {device.deviceType && <span>{device.deviceType} — </span>}
+              {device.brand} {device.model}
+            </p>
+          </div>
+        )}
+      </div>
+
+      <div className="space-y-1.5">
+        <Label className="text-xs text-muted-foreground">Descrivi il problema</Label>
+        <Textarea
+          value={device.issueDescription}
+          onChange={(e) => onUpdate({ issueDescription: e.target.value })}
+          placeholder="Cosa non funziona? Descrivi il difetto in dettaglio..."
+          rows={3}
+          data-testid={`input-issue-${index}`}
+        />
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <div className="space-y-1.5">
+          <Label className="text-xs text-muted-foreground">Quantità</Label>
+          <Input
+            type="number"
+            min={1}
+            value={device.quantity}
+            onChange={(e) => onUpdate({ quantity: Math.max(1, parseInt(e.target.value) || 1) })}
+            data-testid={`input-quantity-${index}`}
+          />
+        </div>
+        <div className="space-y-1.5">
+          <Label className="text-xs text-muted-foreground">IMEI (opzionale)</Label>
+          <Input
+            value={device.imei}
+            onChange={(e) => onUpdate({ imei: e.target.value })}
+            placeholder="Codice IMEI"
+            data-testid={`input-imei-${index}`}
+          />
+        </div>
+        <div className="space-y-1.5">
+          <Label className="text-xs text-muted-foreground">Seriale (opzionale)</Label>
+          <Input
+            value={device.serial}
+            onChange={(e) => onUpdate({ serial: e.target.value })}
+            placeholder="Numero di serie"
+            data-testid={`input-serial-${index}`}
+          />
+        </div>
+      </div>
+
+      <div className="space-y-1.5">
+        <Label className="text-xs text-muted-foreground">Foto del difetto (opzionale, max 5)</Label>
+        <div className="flex flex-wrap items-center gap-2">
+          <label className="cursor-pointer" data-testid={`label-upload-photos-${index}`}>
+            <input type="file" accept="image/*" multiple onChange={onPhotoChange} className="hidden" data-testid={`input-photos-${index}`} />
+            <Button type="button" variant="outline" size="sm" asChild>
+              <div>
+                <Upload className="h-4 w-4 mr-1.5" />
+                Carica foto
+              </div>
+            </Button>
+          </label>
+          {device.photos.length > 0 && (
+            <span className="text-xs text-muted-foreground">{device.photos.length} foto selezionat{device.photos.length === 1 ? "a" : "e"}</span>
+          )}
+        </div>
+        {device.photoPreviewUrls.length > 0 && (
+          <div className="flex flex-wrap gap-2 mt-1.5">
+            {device.photoPreviewUrls.map((url, pi) => (
+              <div key={pi} className="relative group">
+                <img src={url} alt={`Preview ${pi + 1}`} className="w-14 h-14 object-cover rounded-md border" data-testid={`img-preview-${index}-${pi}`} />
+                <button
+                  type="button"
+                  onClick={() => onRemovePhoto(pi)}
+                  className="absolute -top-1.5 -right-1.5 bg-destructive text-destructive-foreground rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
+                  data-testid={`button-remove-photo-${index}-${pi}`}
+                >
+                  <X className="h-3 w-3" />
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function RequestCard({
+  request,
+  onShip,
+  onAcceptQuote,
+  onDeclineQuote,
+  onStripePayment,
+  onPayPalPayment,
+  onCapturePayPal,
+  isProcessingPayment,
+  pendingPaypalCapture,
+  acceptQuotePending,
+  declineQuotePending,
+}: {
+  request: EnrichedRequest;
+  onShip: (r: EnrichedRequest) => void;
+  onAcceptQuote: (id: string, method: string) => void;
+  onDeclineQuote: (id: string) => void;
+  onStripePayment: (r: EnrichedRequest) => void;
+  onPayPalPayment: (r: EnrichedRequest) => void;
+  onCapturePayPal: (requestId: string, orderID: string) => void;
+  isProcessingPayment: boolean;
+  pendingPaypalCapture: { token: string; requestId?: string } | null;
+  acceptQuotePending: boolean;
+  declineQuotePending: boolean;
+}) {
+  const { toast } = useToast();
+  const [expanded, setExpanded] = useState(false);
+  const sc = statusConfig[request.status] || { label: request.status, variant: "secondary" as const };
+  const deviceCount = request.devices?.length || 0;
+  const totalQty = request.devices?.reduce((s, d) => s + (d.quantity || 1), 0) || 0;
+  const hasQuote = request.quoteAmount && request.status !== 'quote_declined';
+  const needsAction = request.status === 'quoted' || request.status === 'awaiting_shipment' || (request.status === 'quote_accepted' && request.paymentStatus !== 'paid');
+
+  return (
+    <Card className={needsAction ? "border-primary/30" : ""} data-testid={`card-request-${request.id}`}>
+      <div
+        className="p-4 cursor-pointer"
+        onClick={() => setExpanded(!expanded)}
+        data-testid={`toggle-request-${request.id}`}
+      >
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="h-10 w-10 rounded-md bg-muted flex items-center justify-center shrink-0">
+              <Smartphone className="h-5 w-5 text-muted-foreground" />
+            </div>
+            <div className="min-w-0">
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="font-semibold text-sm" data-testid={`text-request-number-${request.id}`}>{request.requestNumber}</span>
+                <Badge variant={sc.variant} data-testid={`badge-status-${request.id}`}>
+                  {sc.label}
+                </Badge>
+                {needsAction && (
+                  <Badge variant="outline" className="text-xs border-primary/40 text-primary">
+                    <AlertCircle className="h-3 w-3 mr-1" />
+                    Azione richiesta
+                  </Badge>
+                )}
+              </div>
+              <div className="flex items-center gap-2 mt-0.5 text-xs text-muted-foreground">
+                <span>{format(new Date(request.createdAt), "d MMM yyyy", { locale: it })}</span>
+                <span>·</span>
+                <span>{deviceCount} dispositiv{deviceCount === 1 ? "o" : "i"}{totalQty > deviceCount ? ` (${totalQty} unità)` : ""}</span>
+                {request.quoteAmount && request.status !== 'quote_declined' && (
+                  <>
+                    <span>·</span>
+                    <span className="font-medium text-foreground">{(request.quoteAmount / 100).toFixed(2)} EUR</span>
+                  </>
+                )}
+              </div>
+            </div>
+          </div>
+          <ChevronRight className={`h-5 w-5 text-muted-foreground shrink-0 transition-transform ${expanded ? "rotate-90" : ""}`} />
+        </div>
+      </div>
+
+      {expanded && (
+        <CardContent className="pt-0 space-y-4">
+          <div className="border-t pt-4" />
+
+          {request.status === "awaiting_shipment" && (
+            <div className="flex flex-wrap items-center gap-2 p-3 bg-muted/40 rounded-md">
+              <Package className="h-4 w-4 text-muted-foreground shrink-0" />
+              <span className="text-sm flex-1">Spedisci i dispositivi al centro di riparazione</span>
+              <div className="flex gap-2 flex-wrap">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={(e) => { e.stopPropagation(); window.open(`/api/customer/remote-requests/${request.id}/ddt`, "_blank"); }}
+                  data-testid={`button-download-ddt-${request.id}`}
+                >
+                  <Download className="h-4 w-4 mr-1.5" />
+                  DDT
+                </Button>
+                <Button
+                  size="sm"
+                  onClick={(e) => { e.stopPropagation(); onShip(request); }}
+                  data-testid={`button-ship-${request.id}`}
+                >
+                  <Truck className="h-4 w-4 mr-1.5" />
+                  Inserisci Tracking
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {request.devices?.map((device) => (
+            <div key={device.id} className="p-3 border rounded-md space-y-2" data-testid={`device-${device.id}`}>
+              <div className="flex items-start justify-between gap-2">
+                <div className="flex items-center gap-2 min-w-0">
+                  <Smartphone className="h-4 w-4 text-muted-foreground shrink-0" />
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium truncate">{device.brand} {device.model}</p>
+                    <p className="text-xs text-muted-foreground">{device.deviceType} · Qtà: {device.quantity}</p>
+                  </div>
+                </div>
+                <Badge variant={statusConfig[device.status]?.variant || "secondary"} className="text-xs shrink-0">
+                  {statusConfig[device.status]?.label || device.status}
+                </Badge>
+              </div>
+              <p className="text-sm text-muted-foreground">{device.issueDescription}</p>
+              {device.photos && device.photos.length > 0 && (
+                <div className="flex flex-wrap gap-1.5">
+                  {device.photos.map((photo: string, pi: number) => (
+                    <a key={pi} href={photo} target="_blank" rel="noopener noreferrer" data-testid={`link-photo-${device.id}-${pi}`}>
+                      <img src={photo} alt={`Foto ${pi + 1}`} className="w-12 h-12 object-cover rounded-md border transition-opacity" />
+                    </a>
+                  ))}
+                </div>
+              )}
+            </div>
+          ))}
+
+          {hasQuote && (
+            <div className="p-4 border rounded-md bg-muted/20 space-y-3" data-testid={`quote-card-${request.id}`}>
+              <div className="flex items-center justify-between gap-2 flex-wrap">
+                <div className="flex items-center gap-2">
+                  <Euro className="h-4 w-4 text-muted-foreground" />
+                  <span className="text-sm font-medium">Preventivo</span>
+                </div>
+                <Badge variant={request.paymentStatus === 'paid' ? 'default' : 'outline'}>
+                  {request.paymentStatus === 'paid' ? 'Pagato' : request.status === 'quote_accepted' ? 'Da pagare' : request.status === 'quoted' ? 'In attesa' : 'Accettato'}
+                </Badge>
+              </div>
+              <div>
+                <p className="text-xl font-bold" data-testid={`text-quote-amount-${request.id}`}>
+                  {(request.quoteAmount! / 100).toFixed(2)} EUR
+                </p>
+                {request.quoteDescription && <p className="text-sm text-muted-foreground mt-1">{request.quoteDescription}</p>}
+                {request.quoteValidUntil && (
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Valido fino al {format(new Date(request.quoteValidUntil), "d MMMM yyyy", { locale: it })}
+                  </p>
+                )}
+              </div>
+
+              {request.status === 'quoted' && (
+                <div className="space-y-3 pt-3 border-t">
+                  <p className="text-sm text-muted-foreground">Scegli come procedere:</p>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                    <Button
+                      variant="outline"
+                      onClick={(e) => { e.stopPropagation(); onAcceptQuote(request.id, 'in_store'); }}
+                      disabled={acceptQuotePending}
+                      data-testid={`button-pay-in-store-${request.id}`}
+                    >
+                      <Store className="h-4 w-4 mr-2" />
+                      In Negozio
+                    </Button>
+                    <Button
+                      onClick={(e) => { e.stopPropagation(); onAcceptQuote(request.id, 'online_stripe'); }}
+                      disabled={acceptQuotePending}
+                      data-testid={`button-pay-stripe-${request.id}`}
+                    >
+                      <CreditCard className="h-4 w-4 mr-2" />
+                      Carta
+                    </Button>
+                    <Button
+                      variant="outline"
+                      onClick={(e) => { e.stopPropagation(); onAcceptQuote(request.id, 'online_paypal'); }}
+                      disabled={acceptQuotePending}
+                      data-testid={`button-pay-paypal-${request.id}`}
+                    >
+                      <CreditCard className="h-4 w-4 mr-2" />
+                      PayPal
+                    </Button>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="text-destructive"
+                    onClick={(e) => { e.stopPropagation(); onDeclineQuote(request.id); }}
+                    disabled={declineQuotePending}
+                    data-testid={`button-decline-quote-${request.id}`}
+                  >
+                    <X className="h-4 w-4 mr-1.5" />
+                    Rifiuta preventivo
+                  </Button>
+                </div>
+              )}
+
+              {request.status === 'quote_accepted' && request.paymentStatus !== 'paid' && (
+                <div className="space-y-3 pt-3 border-t">
+                  <p className="text-sm text-muted-foreground">Completa il pagamento per procedere:</p>
+                  <div className="flex flex-wrap gap-2">
+                    {request.paymentMethod === 'online_stripe' && (
+                      <Button
+                        onClick={(e) => { e.stopPropagation(); onStripePayment(request); }}
+                        disabled={isProcessingPayment}
+                        data-testid={`button-checkout-stripe-${request.id}`}
+                      >
+                        {isProcessingPayment ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <CreditCard className="h-4 w-4 mr-2" />}
+                        Paga con Carta
+                      </Button>
+                    )}
+                    {request.paymentMethod === 'online_paypal' && (
+                      <>
+                        <Button
+                          variant="outline"
+                          onClick={(e) => { e.stopPropagation(); onPayPalPayment(request); }}
+                          disabled={isProcessingPayment}
+                          data-testid={`button-checkout-paypal-${request.id}`}
+                        >
+                          {isProcessingPayment ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <CreditCard className="h-4 w-4 mr-2" />}
+                          {request.paypalOrderId ? 'Riprova PayPal' : 'Apri PayPal'}
+                        </Button>
+                        {pendingPaypalCapture && pendingPaypalCapture.token === request.paypalOrderId && (
+                          <Button
+                            onClick={(e) => { e.stopPropagation(); onCapturePayPal(request.id, request.paypalOrderId!); }}
+                            disabled={isProcessingPayment}
+                            data-testid={`button-retry-paypal-${request.id}`}
+                          >
+                            {isProcessingPayment ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Check className="h-4 w-4 mr-2" />}
+                            Conferma Pagamento
+                          </Button>
+                        )}
+                      </>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {request.paymentStatus === 'paid' && (
+                <div className="flex items-center justify-between gap-2 flex-wrap pt-3 border-t">
+                  <div className="flex items-center gap-2 text-sm text-emerald-600 dark:text-emerald-400">
+                    <Check className="h-4 w-4" />
+                    <span className="font-medium">Pagamento completato</span>
+                  </div>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={async (e) => {
+                      e.stopPropagation();
+                      try {
+                        const res = await fetch(`/api/invoices/by-remote-request/${request.id}`, { credentials: 'include' });
+                        if (!res.ok) {
+                          toast({ title: "Fattura non disponibile", description: "La fattura potrebbe non essere stata ancora generata.", variant: "destructive" });
+                          return;
+                        }
+                        const invoice = await res.json();
+                        window.open(`/api/invoices/${invoice.id}/pdf`, "_blank");
+                      } catch {
+                        toast({ title: "Errore", description: "Impossibile scaricare la fattura.", variant: "destructive" });
+                      }
+                    }}
+                    data-testid={`button-download-invoice-${request.id}`}
+                  >
+                    <Download className="h-4 w-4 mr-1.5" />
+                    Fattura
+                  </Button>
+                </div>
+              )}
+              {request.paymentMethod === 'in_store' && request.paymentStatus !== 'paid' && request.status !== 'quoted' && (
+                <p className="text-xs text-muted-foreground pt-2">Pagherai direttamente in negozio alla consegna.</p>
+              )}
+            </div>
+          )}
+
+          {request.status === 'quote_declined' && (
+            <div className="flex items-center gap-2 p-3 bg-destructive/10 rounded-md">
+              <X className="h-4 w-4 text-destructive shrink-0" />
+              <p className="text-sm text-destructive">Preventivo rifiutato. La richiesta è stata chiusa.</p>
+            </div>
+          )}
+
+          {request.rejectionReason && (
+            <div className="p-3 bg-destructive/10 rounded-md">
+              <p className="text-xs text-muted-foreground mb-0.5">Motivo rifiuto</p>
+              <p className="text-sm text-destructive">{request.rejectionReason}</p>
+            </div>
+          )}
+
+          {request.trackingNumber && (
+            <div className="flex items-center gap-3 p-3 bg-muted/40 rounded-md">
+              <Truck className="h-4 w-4 text-muted-foreground shrink-0" />
+              <div>
+                <p className="text-xs text-muted-foreground">Tracking spedizione</p>
+                <p className="text-sm font-medium">{request.courierName}: {request.trackingNumber}</p>
+              </div>
+            </div>
+          )}
+
+          {request.centerName && (
+            <div className="flex items-center gap-3 p-3 bg-muted/40 rounded-md">
+              <MapPin className="h-4 w-4 text-muted-foreground shrink-0" />
+              <div>
+                <p className="text-xs text-muted-foreground">Centro assegnato</p>
+                <p className="text-sm font-medium">{request.centerName}</p>
+                {request.centerAddress && (
+                  <p className="text-xs text-muted-foreground">{request.centerAddress}{request.centerCity ? `, ${request.centerCity}` : ""}</p>
+                )}
+              </div>
+            </div>
+          )}
+
+          {request.customerNotes && (
+            <div className="text-sm">
+              <p className="text-xs text-muted-foreground mb-0.5">Le tue note</p>
+              <p className="text-muted-foreground">{request.customerNotes}</p>
+            </div>
+          )}
+        </CardContent>
+      )}
+    </Card>
   );
 }
 
@@ -344,7 +812,7 @@ export default function CustomerRemoteRequests() {
       setDevices([emptyDevice()]);
       setCustomerNotes("");
       setRequestedCenterId("");
-      toast({ title: "Richiesta inviata", description: "La tua richiesta di riparazione remota è stata inviata con successo" });
+      toast({ title: "Richiesta inviata", description: "La tua richiesta di riparazione è stata inviata con successo. Riceverai un preventivo a breve." });
     },
     onError: (error: Error) => {
       toast({ title: "Errore", description: error.message, variant: "destructive" });
@@ -515,7 +983,7 @@ export default function CustomerRemoteRequests() {
     for (const d of devices) {
       const hasDevice = (d.brand && d.model) || d.productSearch;
       if (!hasDevice || !d.issueDescription) {
-        toast({ title: "Errore", description: "Seleziona un dispositivo e descrivi il problema per ogni dispositivo", variant: "destructive" });
+        toast({ title: "Dati mancanti", description: "Seleziona un dispositivo e descrivi il problema per ogni dispositivo", variant: "destructive" });
         return;
       }
       if (d.quantity < 1) {
@@ -579,177 +1047,86 @@ export default function CustomerRemoteRequests() {
   }
 
   const totalDeviceCount = devices.reduce((sum, d) => sum + d.quantity, 0);
+  const actionRequiredCount = requests?.filter(r =>
+    r.status === 'quoted' || r.status === 'awaiting_shipment' || (r.status === 'quote_accepted' && r.paymentStatus !== 'paid')
+  ).length || 0;
 
   return (
-    <div className="container max-w-6xl mx-auto py-6 space-y-6">
-      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-500 p-6">
-        <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl animate-pulse" />
-        <div className="absolute bottom-0 left-0 w-48 h-48 bg-cyan-300/20 rounded-full blur-3xl animate-pulse" style={{ animationDelay: "1s" }} />
-        <div className="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div className="flex flex-wrap items-center gap-4">
-            <div className="h-12 w-12 rounded-xl bg-white/20 backdrop-blur-sm border border-white/30 flex items-center justify-center">
-              <Globe className="h-6 w-6 text-white" />
-            </div>
-            <div>
-              <h1 className="text-2xl font-bold text-white" data-testid="text-page-title">
-                Richieste di Riparazione Remota
-              </h1>
-              <p className="text-white/80 text-sm">Richiedi una riparazione senza recarti in negozio</p>
-            </div>
-          </div>
-          <Dialog open={isNewRequestOpen} onOpenChange={setIsNewRequestOpen}>
-            <DialogTrigger asChild>
-              <Button data-testid="button-new-request">
+    <div className="max-w-3xl mx-auto py-6 px-4 space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
+        <div>
+          <h1 className="text-xl font-bold" data-testid="text-page-title">Richiedi una Riparazione</h1>
+          <p className="text-sm text-muted-foreground mt-0.5">
+            Invia i tuoi dispositivi da riparare senza recarti in negozio
+          </p>
+        </div>
+        <Dialog open={isNewRequestOpen} onOpenChange={(open) => {
+          setIsNewRequestOpen(open);
+          if (!open) {
+            devices.forEach((d) => d.photoPreviewUrls.forEach((u) => URL.revokeObjectURL(u)));
+            setDevices([emptyDevice()]);
+            setCustomerNotes("");
+            setRequestedCenterId("");
+          }
+        }}>
+          <DialogTrigger asChild>
+            <Button data-testid="button-new-request">
+              <Plus className="h-4 w-4 mr-2" />
+              Nuova Richiesta
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Nuova Richiesta di Riparazione</DialogTitle>
+              <DialogDescription>
+                Aggiungi i dispositivi da riparare e descrivi il problema. Riceverai un preventivo dal centro di riparazione.
+              </DialogDescription>
+            </DialogHeader>
+            <form onSubmit={handleCreateRequest} className="space-y-4">
+              {devices.map((device, idx) => (
+                <DeviceFormCard
+                  key={idx}
+                  device={device}
+                  index={idx}
+                  total={devices.length}
+                  onUpdate={(updates) => updateDevice(idx, updates)}
+                  onRemove={() => removeDevice(idx)}
+                  onPhotoChange={(e) => handleDevicePhotoChange(idx, e)}
+                  onRemovePhoto={(pi) => removeDevicePhoto(idx, pi)}
+                  deviceTypes={deviceTypes}
+                  deviceBrands={deviceBrands}
+                />
+              ))}
+
+              <Button type="button" variant="outline" className="w-full" onClick={addDevice} data-testid="button-add-device">
                 <Plus className="h-4 w-4 mr-2" />
-                Nuova Richiesta
+                Aggiungi altro dispositivo
               </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
-              <DialogHeader>
-                <DialogTitle>Nuova Richiesta di Riparazione</DialogTitle>
-                <DialogDescription>Aggiungi uno o più dispositivi e descrivi il problema</DialogDescription>
-              </DialogHeader>
-              <form onSubmit={handleCreateRequest} className="space-y-4">
-                {devices.map((device, idx) => (
-                  <Card key={idx} data-testid={`card-device-form-${idx}`}>
-                    <CardHeader className="pb-3">
-                      <div className="flex items-center justify-between gap-2">
-                        <CardTitle className="text-base flex items-center gap-2">
-                          <Smartphone className="h-4 w-4" />
-                          Dispositivo {idx + 1}
-                        </CardTitle>
-                        {devices.length > 1 && (
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => removeDevice(idx)}
-                            data-testid={`button-remove-device-${idx}`}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        )}
-                      </div>
-                    </CardHeader>
-                    <CardContent className="space-y-3">
-                      <div className="space-y-1">
-                        <Label>Dispositivo</Label>
-                        <DeviceModelAutocomplete
-                          value={device.productSearch}
-                          onChange={(updates) => updateDevice(idx, updates)}
-                          deviceTypes={deviceTypes}
-                          deviceBrands={deviceBrands}
-                        />
-                        {device.brand && device.model && (
-                          <p className="text-xs text-muted-foreground mt-1">
-                            {device.deviceType && <span>{device.deviceType} &middot; </span>}
-                            {device.brand} &middot; {device.model}
-                          </p>
-                        )}
-                      </div>
-                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                        <div className="space-y-1">
-                          <Label>Quantità</Label>
-                          <Input
-                            type="number"
-                            min={1}
-                            value={device.quantity}
-                            onChange={(e) => updateDevice(idx, { quantity: Math.max(1, parseInt(e.target.value) || 1) })}
-                            data-testid={`input-quantity-${idx}`}
-                          />
-                        </div>
-                        <div className="space-y-1">
-                          <Label>IMEI (opzionale)</Label>
-                          <Input
-                            value={device.imei}
-                            onChange={(e) => updateDevice(idx, { imei: e.target.value })}
-                            placeholder="IMEI"
-                            data-testid={`input-imei-${idx}`}
-                          />
-                        </div>
-                        <div className="space-y-1">
-                          <Label>Seriale (opzionale)</Label>
-                          <Input
-                            value={device.serial}
-                            onChange={(e) => updateDevice(idx, { serial: e.target.value })}
-                            placeholder="Numero di serie"
-                            data-testid={`input-serial-${idx}`}
-                          />
-                        </div>
-                      </div>
-                      <div className="space-y-1">
-                        <Label>Descrizione Problema</Label>
-                        <Textarea
-                          value={device.issueDescription}
-                          onChange={(e) => updateDevice(idx, { issueDescription: e.target.value })}
-                          placeholder="Descrivi il problema del dispositivo in dettaglio..."
-                          rows={3}
-                          data-testid={`input-issue-${idx}`}
-                        />
-                      </div>
-                      <div className="space-y-1">
-                        <Label>Foto (opzionale, max 5)</Label>
-                        <div className="flex flex-wrap items-center gap-2">
-                          <label className="cursor-pointer">
-                            <input type="file" accept="image/*" multiple onChange={(e) => handleDevicePhotoChange(idx, e)} className="hidden" data-testid={`input-photos-${idx}`} />
-                            <div className="flex flex-wrap items-center gap-2 px-4 py-2 border rounded-md hover-elevate">
-                              <Upload className="h-4 w-4" />
-                              <span className="text-sm">Seleziona foto</span>
-                            </div>
-                          </label>
-                          {device.photos.length > 0 && (
-                            <span className="text-sm text-muted-foreground">{device.photos.length} foto</span>
-                          )}
-                        </div>
-                        {device.photoPreviewUrls.length > 0 && (
-                          <div className="flex flex-wrap gap-2 mt-1">
-                            {device.photoPreviewUrls.map((url, pi) => (
-                              <div key={pi} className="relative group">
-                                <img src={url} alt={`Preview ${pi + 1}`} className="w-16 h-16 object-cover rounded-md border" />
-                                <button
-                                  type="button"
-                                  onClick={() => removeDevicePhoto(idx, pi)}
-                                  className="absolute -top-2 -right-2 bg-destructive text-destructive-foreground rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
-                                >
-                                  <X className="h-3 w-3" />
-                                </button>
-                              </div>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
 
-                <Button type="button" variant="outline" className="w-full" onClick={addDevice} data-testid="button-add-device">
-                  <Plus className="h-4 w-4 mr-2" />
-                  Aggiungi altro dispositivo
-                </Button>
+              <div className="space-y-1.5">
+                <Label className="text-xs text-muted-foreground">Note aggiuntive (opzionale)</Label>
+                <Textarea
+                  value={customerNotes}
+                  onChange={(e) => setCustomerNotes(e.target.value)}
+                  placeholder="Altre informazioni utili per il centro..."
+                  rows={2}
+                  data-testid="input-customer-notes"
+                />
+              </div>
 
-                <div className="space-y-2">
-                  <Label>Note Aggiuntive (opzionale)</Label>
-                  <Textarea
-                    value={customerNotes}
-                    onChange={(e) => setCustomerNotes(e.target.value)}
-                    placeholder="Altre informazioni utili..."
-                    rows={2}
-                    data-testid="input-customer-notes"
-                  />
-                </div>
-
-                <DialogFooter className="flex-col sm:flex-row gap-2">
-                  <div className="text-sm text-muted-foreground mr-auto">
-                    {devices.length} dispositiv{devices.length === 1 ? "o" : "i"} - {totalDeviceCount} unit&agrave; totali
-                  </div>
-                  <Button type="button" variant="outline" onClick={() => setIsNewRequestOpen(false)}>
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-2 border-t">
+                <p className="text-sm text-muted-foreground">
+                  {devices.length} dispositiv{devices.length === 1 ? "o" : "i"} · {totalDeviceCount} unità
+                </p>
+                <div className="flex gap-2">
+                  <Button type="button" variant="outline" onClick={() => setIsNewRequestOpen(false)} data-testid="button-cancel-request">
                     Annulla
                   </Button>
                   <Button type="submit" disabled={createMutation.isPending || isUploading} data-testid="button-submit-request">
                     {createMutation.isPending || isUploading ? (
                       <>
                         <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                        Invio...
+                        Invio in corso...
                       </>
                     ) : (
                       <>
@@ -758,322 +1135,74 @@ export default function CustomerRemoteRequests() {
                       </>
                     )}
                   </Button>
-                </DialogFooter>
-              </form>
-            </DialogContent>
-          </Dialog>
-        </div>
+                </div>
+              </div>
+            </form>
+          </DialogContent>
+        </Dialog>
       </div>
 
-      {requests && requests.length === 0 ? (
-        <Card>
-          <CardContent className="flex flex-col items-center justify-center py-12">
-            <Package className="h-12 w-12 text-muted-foreground mb-4" />
-            <h3 className="text-lg font-medium">Nessuna richiesta</h3>
-            <p className="text-muted-foreground text-center mt-2">
-              Non hai ancora effettuato richieste di riparazione remota.
-              <br />
-              Clicca su "Nuova Richiesta" per iniziare.
-            </p>
-          </CardContent>
-        </Card>
-      ) : (
-        <div className="space-y-4">
-          {requests?.map((request) => (
-            <Card key={request.id} data-testid={`card-request-${request.id}`}>
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <CardTitle className="text-lg flex items-center gap-2">
-                      <span data-testid={`text-request-number-${request.id}`}>{request.requestNumber}</span>
-                      <Badge {...statusLabels[request.status]} data-testid={`badge-status-${request.id}`}>
-                        {statusLabels[request.status]?.label || request.status}
-                      </Badge>
-                      {request.devices && request.devices.length > 0 && (
-                        <Badge variant="secondary" className="text-xs">
-                          {request.devices.length} dispositiv{request.devices.length === 1 ? "o" : "i"}
-                        </Badge>
-                      )}
-                    </CardTitle>
-                    <CardDescription>
-                      Creata il {format(new Date(request.createdAt), "d MMMM yyyy 'alle' HH:mm", { locale: it })}
-                    </CardDescription>
-                  </div>
-                  {request.status === "awaiting_shipment" && (
-                    <div className="flex gap-2">
-                      <Button
-                        variant="outline"
-                        onClick={() => window.open(`/api/customer/remote-requests/${request.id}/ddt`, "_blank")}
-                        data-testid={`button-download-ddt-${request.id}`}
-                      >
-                        <Package className="h-4 w-4 mr-2" />
-                        Scarica DDT
-                      </Button>
-                      <Button onClick={() => openShippingDialog(request)} data-testid={`button-ship-${request.id}`}>
-                        <Truck className="h-4 w-4 mr-2" />
-                        Invia Dati Spedizione
-                      </Button>
-                    </div>
-                  )}
-                </div>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                {request.devices?.map((device, di) => (
-                  <div key={device.id} className="p-3 border rounded-md space-y-2" data-testid={`device-${device.id}`}>
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                      <div>
-                        <p className="text-xs text-muted-foreground">Dispositivo</p>
-                        <p className="text-sm font-medium">{device.deviceType}</p>
-                      </div>
-                      <div>
-                        <p className="text-xs text-muted-foreground">Marca / Modello</p>
-                        <p className="text-sm font-medium">{device.brand} {device.model}</p>
-                      </div>
-                      <div>
-                        <p className="text-xs text-muted-foreground">Quantità</p>
-                        <p className="text-sm font-medium">{device.quantity}</p>
-                      </div>
-                      <div>
-                        <p className="text-xs text-muted-foreground">Stato</p>
-                        <Badge variant={statusLabels[device.status]?.variant || "secondary"} className="text-xs">
-                          {statusLabels[device.status]?.label || device.status}
-                        </Badge>
-                      </div>
-                    </div>
-                    <div>
-                      <p className="text-xs text-muted-foreground">Problema</p>
-                      <p className="text-sm">{device.issueDescription}</p>
-                    </div>
-                    {device.photos && device.photos.length > 0 && (
-                      <div>
-                        <p className="text-xs text-muted-foreground flex items-center gap-1 mb-1">
-                          <Image className="h-3 w-3" /> Foto
-                        </p>
-                        <div className="flex flex-wrap gap-1">
-                          {device.photos.map((photo: string, pi: number) => (
-                            <a key={pi} href={photo} target="_blank" rel="noopener noreferrer">
-                              <img src={photo} alt={`Foto ${pi + 1}`} className="w-16 h-16 object-cover rounded-md border hover:opacity-80 transition-opacity" />
-                            </a>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                ))}
-                {request.quoteAmount && request.status !== 'quote_declined' && (
-                  <div className="p-4 border rounded-md bg-muted/30 space-y-3" data-testid={`quote-card-${request.id}`}>
-                    <div className="flex items-center justify-between gap-2 flex-wrap">
-                      <div className="flex items-center gap-2">
-                        <Euro className="h-5 w-5 text-muted-foreground" />
-                        <span className="font-semibold">Preventivo</span>
-                      </div>
-                      <Badge variant={request.status === 'quote_accepted' || request.status === 'awaiting_shipment' ? 'default' : 'outline'}>
-                        {request.paymentStatus === 'paid' ? 'Pagato' : request.status === 'quote_accepted' ? 'Da pagare' : request.status === 'quoted' ? 'In attesa di risposta' : 'Accettato'}
-                      </Badge>
-                    </div>
-                    <div>
-                      <p className="text-2xl font-bold" data-testid={`text-quote-amount-${request.id}`}>{(request.quoteAmount / 100).toFixed(2)} EUR</p>
-                      {request.quoteDescription && <p className="text-sm text-muted-foreground mt-1">{request.quoteDescription}</p>}
-                      {request.quoteValidUntil && <p className="text-xs text-muted-foreground mt-1">Valido fino al: {format(new Date(request.quoteValidUntil), "d MMMM yyyy", { locale: it })}</p>}
-                    </div>
-                    {request.status === 'quoted' && (
-                      <div className="space-y-3 pt-2 border-t">
-                        <p className="text-sm font-medium">Come desideri pagare?</p>
-                        <div className="flex flex-wrap gap-2">
-                          <Button
-                            onClick={() => acceptQuoteMutation.mutate({ id: request.id, paymentMethod: 'in_store' })}
-                            disabled={acceptQuoteMutation.isPending}
-                            variant="outline"
-                            data-testid={`button-pay-in-store-${request.id}`}
-                          >
-                            <Store className="h-4 w-4 mr-2" />
-                            Pago in Negozio
-                          </Button>
-                          <Button
-                            onClick={() => acceptQuoteMutation.mutate({ id: request.id, paymentMethod: 'online_stripe' })}
-                            disabled={acceptQuoteMutation.isPending}
-                            data-testid={`button-pay-stripe-${request.id}`}
-                          >
-                            <CreditCard className="h-4 w-4 mr-2" />
-                            Paga con Carta
-                          </Button>
-                          <Button
-                            onClick={() => acceptQuoteMutation.mutate({ id: request.id, paymentMethod: 'online_paypal' })}
-                            disabled={acceptQuoteMutation.isPending}
-                            data-testid={`button-pay-paypal-${request.id}`}
-                          >
-                            <CreditCard className="h-4 w-4 mr-2" />
-                            Paga con PayPal
-                          </Button>
-                        </div>
-                        <Button
-                          variant="destructive"
-                          onClick={() => declineQuoteMutation.mutate(request.id)}
-                          disabled={declineQuoteMutation.isPending}
-                          data-testid={`button-decline-quote-${request.id}`}
-                        >
-                          <X className="h-4 w-4 mr-2" />
-                          Rifiuta Preventivo
-                        </Button>
-                      </div>
-                    )}
-                    {request.status === 'quote_accepted' && request.paymentStatus !== 'paid' && (
-                      <div className="space-y-3 pt-2 border-t">
-                        <p className="text-sm font-medium">Completa il pagamento</p>
-                        <div className="flex flex-wrap gap-2">
-                          {request.paymentMethod === 'online_stripe' && (
-                            <Button
-                              onClick={() => initiateStripePayment(request)}
-                              disabled={isProcessingPayment}
-                              data-testid={`button-checkout-stripe-${request.id}`}
-                            >
-                              {isProcessingPayment ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <CreditCard className="h-4 w-4 mr-2" />}
-                              Paga con Carta
-                            </Button>
-                          )}
-                          {request.paymentMethod === 'online_paypal' && (
-                            <div className="flex flex-wrap gap-2">
-                              <Button
-                                variant="outline"
-                                onClick={() => initiatePayPalPayment(request)}
-                                disabled={isProcessingPayment}
-                                data-testid={`button-checkout-paypal-${request.id}`}
-                              >
-                                {isProcessingPayment ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <CreditCard className="h-4 w-4 mr-2" />}
-                                {request.paypalOrderId ? 'Riprova PayPal' : 'Apri PayPal'}
-                              </Button>
-                              {pendingPaypalCapture && pendingPaypalCapture.token === request.paypalOrderId && (
-                                <Button
-                                  onClick={() => capturePayPalPayment(request.id, request.paypalOrderId!)}
-                                  disabled={isProcessingPayment}
-                                  data-testid={`button-retry-paypal-${request.id}`}
-                                >
-                                  {isProcessingPayment ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Check className="h-4 w-4 mr-2" />}
-                                  Conferma Pagamento
-                                </Button>
-                              )}
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    )}
-                    {request.paymentStatus === 'paid' && (
-                      <div className="p-2 bg-green-100 dark:bg-green-900/30 rounded-md flex items-center justify-between gap-2 flex-wrap">
-                        <p className="text-sm font-medium text-green-700 dark:text-green-300 flex items-center gap-2">
-                          <Check className="h-4 w-4" />
-                          Pagamento completato
-                        </p>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={async () => {
-                            try {
-                              const res = await fetch(`/api/invoices/by-remote-request/${request.id}`, { credentials: 'include' });
-                              if (!res.ok) {
-                                toast({ title: "Fattura non ancora disponibile", description: "La fattura potrebbe non essere stata ancora generata.", variant: "destructive" });
-                                return;
-                              }
-                              const invoice = await res.json();
-                              window.open(`/api/invoices/${invoice.id}/pdf`, "_blank");
-                            } catch {
-                              toast({ title: "Errore", description: "Impossibile scaricare la fattura.", variant: "destructive" });
-                            }
-                          }}
-                          data-testid={`button-download-invoice-${request.id}`}
-                        >
-                          <Download className="h-4 w-4 mr-1" />
-                          Scarica Fattura
-                        </Button>
-                      </div>
-                    )}
-                    {request.paymentMethod === 'in_store' && request.paymentStatus !== 'paid' && request.status !== 'quoted' && (
-                      <p className="text-xs text-muted-foreground">Pagherai direttamente in negozio alla consegna del dispositivo.</p>
-                    )}
-                  </div>
-                )}
-                {request.status === 'quote_declined' && (
-                  <div className="p-3 bg-destructive/10 rounded-md">
-                    <p className="text-sm text-destructive flex items-center gap-2">
-                      <X className="h-4 w-4" /> Preventivo rifiutato. La richiesta è stata chiusa.
-                    </p>
-                  </div>
-                )}
-                {request.rejectionReason && (
-                  <div className="p-3 bg-destructive/10 rounded-md">
-                    <p className="text-sm text-muted-foreground">Motivo Rifiuto</p>
-                    <p className="text-sm text-destructive">{request.rejectionReason}</p>
-                  </div>
-                )}
-                {request.trackingNumber && (
-                  <div className="p-3 bg-muted rounded-md">
-                    <p className="text-sm text-muted-foreground">Tracking</p>
-                    <p className="font-medium">{request.courierName}: {request.trackingNumber}</p>
-                  </div>
-                )}
-                {request.customerAddress && (
-                  <div className="p-3 bg-muted rounded-md">
-                    <p className="text-sm text-muted-foreground flex items-center gap-1">
-                      <MapPin className="h-3 w-3" /> Indirizzo di Spedizione
-                    </p>
-                    <p className="text-sm">
-                      {request.customerAddress}, {request.customerCap} {request.customerCity} ({request.customerProvince})
-                    </p>
-                  </div>
-                )}
-                {request.status === "repair_created" && (
-                  <div className="p-3 bg-green-100 dark:bg-green-900/30 rounded-md">
-                    <p className="text-sm font-medium text-green-700 dark:text-green-300 flex items-center gap-2">
-                      <Check className="h-4 w-4" />
-                      La riparazione è stata avviata! Il centro sta lavorando ai tuoi dispositivi.
-                    </p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          ))}
+      {actionRequiredCount > 0 && (
+        <div className="flex items-center gap-2 p-3 rounded-md border border-primary/30 bg-primary/5">
+          <AlertCircle className="h-4 w-4 text-primary shrink-0" />
+          <p className="text-sm">
+            Hai <span className="font-semibold">{actionRequiredCount}</span> richiest{actionRequiredCount === 1 ? "a" : "e"} che richied{actionRequiredCount === 1 ? "e" : "ono"} la tua attenzione
+          </p>
         </div>
       )}
 
-      {isPaymentOpen && stripeClientSecret && stripePromise && (
-        <Dialog open={isPaymentOpen} onOpenChange={(open) => {
-          if (!open) {
-            setIsPaymentOpen(false);
-            setStripeClientSecret(null);
-            setStripePromise(null);
-          }
-        }}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Pagamento con Carta</DialogTitle>
-              <DialogDescription>
-                Importo: {paymentRequest?.quoteAmount ? (paymentRequest.quoteAmount / 100).toFixed(2) : '0.00'} EUR
-              </DialogDescription>
-            </DialogHeader>
-            <Elements stripe={stripePromise} options={{ clientSecret: stripeClientSecret, appearance: { theme: 'stripe' } }}>
-              <StripePaymentForm
-                onSuccess={() => paymentRequest && confirmStripePayment(paymentRequest.id)}
-                onError={(msg) => toast({ title: "Errore pagamento", description: msg, variant: "destructive" })}
-              />
-            </Elements>
-          </DialogContent>
-        </Dialog>
+      {requests && requests.length === 0 ? (
+        <div className="flex flex-col items-center justify-center py-16 text-center">
+          <div className="h-16 w-16 rounded-full bg-muted flex items-center justify-center mb-4">
+            <Send className="h-7 w-7 text-muted-foreground" />
+          </div>
+          <h3 className="text-lg font-medium" data-testid="text-empty-title">Nessuna richiesta ancora</h3>
+          <p className="text-sm text-muted-foreground mt-1 max-w-sm">
+            Hai un dispositivo da riparare? Invia una richiesta e riceverai un preventivo dal centro di riparazione.
+          </p>
+          <Button className="mt-4" onClick={() => setIsNewRequestOpen(true)} data-testid="button-empty-new-request">
+            <Plus className="h-4 w-4 mr-2" />
+            Crea la tua prima richiesta
+          </Button>
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {requests?.map((request) => (
+            <RequestCard
+              key={request.id}
+              request={request}
+              onShip={openShippingDialog}
+              onAcceptQuote={(id, method) => acceptQuoteMutation.mutate({ id, paymentMethod: method })}
+              onDeclineQuote={(id) => declineQuoteMutation.mutate(id)}
+              onStripePayment={initiateStripePayment}
+              onPayPalPayment={initiatePayPalPayment}
+              onCapturePayPal={capturePayPalPayment}
+              isProcessingPayment={isProcessingPayment}
+              pendingPaypalCapture={pendingPaypalCapture}
+              acceptQuotePending={acceptQuoteMutation.isPending}
+              declineQuotePending={declineQuoteMutation.isPending}
+            />
+          ))}
+        </div>
       )}
 
       <Dialog open={isShippingOpen} onOpenChange={setIsShippingOpen}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Dati Spedizione</DialogTitle>
-            <DialogDescription>Inserisci i dati del corriere e il numero di tracking</DialogDescription>
+            <DialogDescription>
+              Inserisci il corriere e il numero di tracking per la richiesta {selectedRequest?.requestNumber}
+            </DialogDescription>
           </DialogHeader>
           <form onSubmit={handleShippingSubmit} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="courierName">Nome Corriere</Label>
+            <div className="space-y-1.5">
+              <Label>Corriere</Label>
               <Select value={shippingInfo.courierName} onValueChange={(v) => setShippingInfo({ ...shippingInfo, courierName: v })}>
-                <SelectTrigger data-testid="select-courier-name">
-                  <SelectValue placeholder="Seleziona corriere..." />
+                <SelectTrigger data-testid="select-courier">
+                  <SelectValue placeholder="Seleziona corriere" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="BRT">BRT (Bartolini)</SelectItem>
+                  <SelectItem value="BRT">BRT</SelectItem>
                   <SelectItem value="DHL">DHL</SelectItem>
                   <SelectItem value="GLS">GLS</SelectItem>
                   <SelectItem value="UPS">UPS</SelectItem>
@@ -1086,23 +1215,44 @@ export default function CustomerRemoteRequests() {
                 </SelectContent>
               </Select>
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="trackingNumber">Numero Tracking</Label>
+            <div className="space-y-1.5">
+              <Label>Numero Tracking</Label>
               <Input
-                id="trackingNumber"
                 value={shippingInfo.trackingNumber}
                 onChange={(e) => setShippingInfo({ ...shippingInfo, trackingNumber: e.target.value })}
                 placeholder="Numero di tracking"
                 data-testid="input-tracking-number"
               />
             </div>
-            <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => setIsShippingOpen(false)}>Annulla</Button>
+            <DialogFooter className="gap-2">
+              <Button type="button" variant="outline" onClick={() => setIsShippingOpen(false)} data-testid="button-cancel-shipping">
+                Annulla
+              </Button>
               <Button type="submit" disabled={shippingMutation.isPending} data-testid="button-confirm-shipping">
-                {shippingMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Conferma Spedizione"}
+                {shippingMutation.isPending ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Truck className="h-4 w-4 mr-2" />}
+                Conferma Spedizione
               </Button>
             </DialogFooter>
           </form>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isPaymentOpen} onOpenChange={setIsPaymentOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Pagamento con Carta</DialogTitle>
+            <DialogDescription>
+              Importo: {paymentRequest?.quoteAmount ? `${(paymentRequest.quoteAmount / 100).toFixed(2)} EUR` : ""}
+            </DialogDescription>
+          </DialogHeader>
+          {stripePromise && stripeClientSecret && paymentRequest && (
+            <Elements stripe={stripePromise} options={{ clientSecret: stripeClientSecret }}>
+              <StripePaymentForm
+                onSuccess={() => confirmStripePayment(paymentRequest.id)}
+                onError={(msg) => toast({ title: "Errore Pagamento", description: msg, variant: "destructive" })}
+              />
+            </Elements>
+          )}
         </DialogContent>
       </Dialog>
     </div>
