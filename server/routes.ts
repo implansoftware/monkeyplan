@@ -8572,6 +8572,7 @@ export function registerRoutes(app: Express): Server {
         status: "scheduled",
       });
       
+      if (appointment.customerId) { try { await storage.createNotification({ userId: appointment.customerId, type: "system", title: "Nuovo appuntamento", message: `È stato fissato un appuntamento per il ${new Date(appointment.date).toLocaleDateString("it-IT")} alle ${appointment.startTime}`, data: JSON.stringify({ appointmentId: appointment.id }) }); } catch(e) { console.error("Notification error:", e); } }
       res.status(201).json(appointment);
     } catch (error: any) {
       console.error("Service order creation error:", error);
@@ -17780,6 +17781,34 @@ export function registerRoutes(app: Express): Server {
         status: 'preventivo_accettato' as any,
       });
       
+      // Notify reseller about quote acceptance
+      try {
+        if (repairOrder.resellerId) {
+          await storage.createNotification({
+            userId: repairOrder.resellerId,
+            type: "system",
+            title: "Preventivo accettato",
+            message: `Il cliente ha accettato il preventivo per la riparazione #${repairOrder.orderNumber}`,
+            data: JSON.stringify({ repairOrderId: req.params.id }),
+          });
+          broadcastNotification(repairOrder.resellerId, { type: "system", title: "Preventivo accettato", message: `Il cliente ha accettato il preventivo per la riparazione #${repairOrder.orderNumber}` });
+        }
+      } catch(e) { console.error("Notification error:", e); }
+      // Notify repair center about quote acceptance
+      try {
+        const rc = repairOrder.repairCenterId ? await storage.getRepairCenter(repairOrder.repairCenterId) : null;
+        if (rc?.userId) {
+          await storage.createNotification({
+            userId: rc.userId,
+            type: "system",
+            title: "Preventivo accettato",
+            message: `Il cliente ha accettato il preventivo per la riparazione #${repairOrder.orderNumber}`,
+            data: JSON.stringify({ repairOrderId: req.params.id }),
+          });
+          broadcastNotification(rc.userId, { type: "system", title: "Preventivo accettato", message: `Il cliente ha accettato il preventivo per la riparazione #${repairOrder.orderNumber}` });
+        }
+      } catch(e) { console.error("Notification error:", e); }
+
       res.json({ message: "Quote accepted successfully" });
     } catch (error: any) {
       console.error("Service order creation error:", error);
@@ -17819,6 +17848,34 @@ export function registerRoutes(app: Express): Server {
         status: 'preventivo_rifiutato' as any,
       });
       
+      // Notify reseller about quote rejection
+      try {
+        if (repairOrder.resellerId) {
+          await storage.createNotification({
+            userId: repairOrder.resellerId,
+            type: "system",
+            title: "Preventivo rifiutato",
+            message: `Il cliente ha rifiutato il preventivo per la riparazione #${repairOrder.orderNumber}`,
+            data: JSON.stringify({ repairOrderId: req.params.id }),
+          });
+          broadcastNotification(repairOrder.resellerId, { type: "system", title: "Preventivo rifiutato", message: `Il cliente ha rifiutato il preventivo per la riparazione #${repairOrder.orderNumber}` });
+        }
+      } catch(e) { console.error("Notification error:", e); }
+      // Notify repair center about quote rejection
+      try {
+        const rc = repairOrder.repairCenterId ? await storage.getRepairCenter(repairOrder.repairCenterId) : null;
+        if (rc?.userId) {
+          await storage.createNotification({
+            userId: rc.userId,
+            type: "system",
+            title: "Preventivo rifiutato",
+            message: `Il cliente ha rifiutato il preventivo per la riparazione #${repairOrder.orderNumber}`,
+            data: JSON.stringify({ repairOrderId: req.params.id }),
+          });
+          broadcastNotification(rc.userId, { type: "system", title: "Preventivo rifiutato", message: `Il cliente ha rifiutato il preventivo per la riparazione #${repairOrder.orderNumber}` });
+        }
+      } catch(e) { console.error("Notification error:", e); }
+
       res.json({ message: "Quote rejected successfully" });
     } catch (error: any) {
       console.error("Service order creation error:", error);
@@ -18614,6 +18671,20 @@ export function registerRoutes(app: Express): Server {
         technicianId: req.user.id,
       });
       
+      // Notify customer about ready for pickup
+      try {
+        if (repairOrder.customerId) {
+          await storage.createNotification({
+            userId: repairOrder.customerId,
+            type: "system",
+            title: "Dispositivo pronto per il ritiro",
+            message: `La riparazione #${repairOrder.orderNumber} è completata. Il dispositivo è pronto per il ritiro.`,
+            data: JSON.stringify({ repairOrderId: req.params.id }),
+          });
+          broadcastNotification(repairOrder.customerId, { type: "system", title: "Dispositivo pronto per il ritiro", message: `La riparazione #${repairOrder.orderNumber} è completata. Il dispositivo è pronto per il ritiro.` });
+        }
+      } catch(e) { console.error("Notification error:", e); }
+
       res.json({ message: "Device marked as ready for pickup" });
     } catch (error: any) {
       console.error("Service order creation error:", error);
@@ -19245,8 +19316,8 @@ export function registerRoutes(app: Express): Server {
       });
       
       res.json(appointment);
+      if (repairOrder.resellerId) { try { await storage.createNotification({ userId: repairOrder.resellerId, type: "system", title: "Nuovo appuntamento prenotato", message: "Un cliente ha prenotato un appuntamento per il ritiro", data: JSON.stringify({ appointmentId: appointment.id, repairOrderId: repairOrder.id }) }); } catch(e) { console.error("Notification error:", e); } }
     } catch (error: any) {
-      console.error("Service order creation error:", error);
       res.status(400).send(error.message);
     }
   });
@@ -19375,6 +19446,7 @@ export function registerRoutes(app: Express): Server {
         });
       }
       
+      if (appointment.customerId && req.user.id !== appointment.customerId) { try { const notifTitle = status === "cancelled" ? "Appuntamento annullato" : "Appuntamento aggiornato"; const notifMsg = status === "cancelled" ? "Il tuo appuntamento è stato annullato" : `Il tuo appuntamento è stato aggiornato al ${updated.date} alle ${updated.startTime}`; await storage.createNotification({ userId: appointment.customerId, type: "system", title: notifTitle, message: notifMsg, data: JSON.stringify({ appointmentId: appointment.id }) }); } catch(e) { console.error("Notification error:", e); } }
       res.json(updated);
     } catch (error: any) {
       console.error("Service order creation error:", error);
@@ -25481,6 +25553,7 @@ export function registerRoutes(app: Express): Server {
       }
       
       res.json(updated);
+      try { await storage.createNotification({ userId: order.createdBy, type: "system", title: "Aggiornamento ordine fornitore", message: `L'ordine fornitore #${order.orderNumber || order.id} è stato aggiornato allo stato: ${status}`, data: JSON.stringify({ supplierOrderId: order.id }) }); } catch(e) { console.error("Notification error:", e); }
     } catch (error: any) {
       console.error("Service order creation error:", error);
       res.status(400).send(error.message);
@@ -25873,6 +25946,7 @@ export function registerRoutes(app: Express): Server {
         }
       }
       
+      try { await storage.createNotification({ userId: returnData.createdBy, type: "system", title: "Aggiornamento reso fornitore", message: "Il reso fornitore è stato aggiornato allo stato: " + status, data: JSON.stringify({ supplierReturnId: returnData.id }) }); } catch(e) { console.error("Notification error:", e); }
       res.json(updated);
     } catch (error: any) {
       console.error("Service order creation error:", error);
@@ -27953,6 +28027,8 @@ export function registerRoutes(app: Express): Server {
         }
       }
       
+      if (practice.customerId) { try { await storage.createNotification({ userId: practice.customerId, type: "system", title: "Aggiornamento pratica", message: `La pratica #${practice.practiceNumber || practice.id} è stata aggiornata allo stato: ${status}`, data: JSON.stringify({ practiceId: practice.id }) }); } catch(e) { console.error("Notification error:", e); } }
+      if (practice.resellerId && req.user.id !== practice.resellerId) { try { await storage.createNotification({ userId: practice.resellerId, type: "system", title: "Aggiornamento pratica", message: `La pratica #${practice.practiceNumber || practice.id} è stata aggiornata allo stato: ${status}`, data: JSON.stringify({ practiceId: practice.id }) }); } catch(e) { console.error("Notification error:", e); } }
       res.json({ practice: updated, invoice });
     } catch (error: any) {
       console.error("Service order creation error:", error);
@@ -32658,6 +32734,7 @@ export function registerRoutes(app: Express): Server {
           });
         }
       }
+      try { await storage.createNotification({ userId: request.targetResellerId, type: "system", title: "Nuova richiesta trasferimento", message: "È stata ricevuta una nuova richiesta di trasferimento stock", data: JSON.stringify({ transferRequestId: request.id }) }); } catch(e) { console.error("Notification error:", e); }
       res.status(201).json(request);
     } catch (error: any) {
       console.error("Service order creation error:", error);
@@ -32714,6 +32791,7 @@ export function registerRoutes(app: Express): Server {
         status: 'completed',
         receivedAt: new Date()
       });
+      try { await storage.createNotification({ userId: request.targetResellerId, type: "system", title: "Trasferimento completato", message: "Il trasferimento è stato ricevuto dal centro di riparazione", data: JSON.stringify({ transferRequestId: request.id }) }); } catch(e) { console.error("Notification error:", e); }
       res.json(updated);
     } catch (error: any) {
       console.error("Service order creation error:", error);
@@ -33053,6 +33131,7 @@ export function registerRoutes(app: Express): Server {
           approvedBy: req.user.id,
           approvedAt: new Date()
         });
+        try { await storage.createNotification({ userId: request.requesterId, type: "system", title: "Trasferimento approvato", message: "La richiesta di trasferimento è stata approvata", data: JSON.stringify({ transferRequestId: request.id }) }); } catch(e) { console.error("Notification error:", e); }
         res.json(updated);
       } else if (decision === 'reject') {
         const updated = await storage.updateTransferRequest(req.params.id, {
@@ -33061,6 +33140,7 @@ export function registerRoutes(app: Express): Server {
           rejectedAt: new Date(),
           rejectionReason
         });
+        try { await storage.createNotification({ userId: request.requesterId, type: "system", title: "Trasferimento rifiutato", message: "La richiesta di trasferimento è stata rifiutata", data: JSON.stringify({ transferRequestId: request.id }) }); } catch(e) { console.error("Notification error:", e); }
         res.json(updated);
       } else {
         res.status(400).json({ error: "Decisione non valida" });
@@ -33115,6 +33195,7 @@ export function registerRoutes(app: Express): Server {
         trackingCarrier: trackingCarrier || null,
         ddtNumber: ddtNumber,
       });
+      try { await storage.createNotification({ userId: request.requesterId, type: "system", title: "Trasferimento spedito", message: "Il trasferimento è stato spedito", data: JSON.stringify({ transferRequestId: request.id }) }); } catch(e) { console.error("Notification error:", e); }
       res.json(updated);
     } catch (error: any) {
       console.error("Service order creation error:", error);
@@ -33374,6 +33455,7 @@ export function registerRoutes(app: Express): Server {
           approvedBy: req.user.id,
           approvedAt: new Date()
         });
+        try { await storage.createNotification({ userId: request.requesterId, type: "system", title: "Trasferimento approvato", message: "La richiesta di trasferimento è stata approvata", data: JSON.stringify({ transferRequestId: request.id }) }); } catch(e) { console.error("Notification error:", e); }
         res.json(updated);
       } else if (decision === 'reject') {
         const updated = await storage.updateTransferRequest(req.params.id, {
@@ -33382,6 +33464,7 @@ export function registerRoutes(app: Express): Server {
           rejectedAt: new Date(),
           rejectionReason
         });
+        try { await storage.createNotification({ userId: request.requesterId, type: "system", title: "Trasferimento rifiutato", message: "La richiesta di trasferimento è stata rifiutata", data: JSON.stringify({ transferRequestId: request.id }) }); } catch(e) { console.error("Notification error:", e); }
         res.json(updated);
       } else {
         res.status(400).json({ error: "Decisione non valida" });
@@ -33423,6 +33506,7 @@ export function registerRoutes(app: Express): Server {
         shippedAt: new Date(),
         shippedBy: req.user.id
       });
+      try { await storage.createNotification({ userId: request.requesterId, type: "system", title: "Trasferimento spedito", message: "Il trasferimento è stato spedito", data: JSON.stringify({ transferRequestId: request.id }) }); } catch(e) { console.error("Notification error:", e); }
       res.json(updated);
     } catch (error: any) {
       console.error("Service order creation error:", error);
@@ -40691,6 +40775,7 @@ export function registerRoutes(app: Express): Server {
         dailyReportGenerated: true,
       });
       
+      if (cashDifference !== 0) { try { const rcEntity = await storage.getRepairCenter(repairCenterId); if (rcEntity && rcEntity.userId) { await storage.createNotification({ userId: rcEntity.userId, type: "system", title: "Discrepanza cassa POS", message: `La sessione cassa è stata chiusa con una discrepanza di ${cashDifference}€`, data: JSON.stringify({ sessionId }) }); } } catch(e) { console.error("Notification error:", e); } }
       res.json(closedSession);
     } catch (error: any) {
       console.error("Service order creation error:", error);
@@ -43778,6 +43863,7 @@ export function registerRoutes(app: Express): Server {
         dailyReportGenerated: true,
       });
       
+      if (cashDifference !== 0) { try { await storage.createNotification({ userId: resellerId, type: "system", title: "Discrepanza cassa POS", message: `La sessione cassa è stata chiusa con una discrepanza di ${cashDifference}€`, data: JSON.stringify({ sessionId }) }); } catch(e) { console.error("Notification error:", e); } }
       res.json(closedSession);
     } catch (error: any) {
       console.error("Service order creation error:", error);
