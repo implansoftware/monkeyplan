@@ -1,0 +1,121 @@
+Agisci come un Senior UX/UI Designer specializzato in SaaS B2B, con esperienza in design system coerenti, dashboard complesse e piattaforme multi-ruolo.
+
+Devi fare il redesign completo della route: [INSERISCI QUI IL NOME DELLA ROUTE].
+
+🎨 FASE 1 – ANALISI STILE ESISTENTE
+
+Analizza attentamente lo stile già applicato nella piattaforma:
+
+Palette colori
+
+Tipografia
+
+Border radius
+
+Ombre
+
+Spaziature
+
+Layout grid
+
+Componenti già utilizzati (card, button, table, badge, modal, input)
+
+Gerarchia visiva
+
+Pattern UI ricorrenti
+
+Non stravolgere il design system esistente.
+
+Mantieni coerenza visiva totale con le altre route.
+
+Se trovi incoerenze, proponi micro-miglioramenti senza rompere l'identità attuale.
+
+🧠 FASE 2 – ANALISI UX DELLA ROUTE
+
+Analizza la route dal punto di vista:
+
+Chiarezza delle informazioni
+
+Gerarchia visiva
+
+Riduzione del carico cognitivo
+
+Azioni primarie vs secondarie
+
+Accessibilità
+
+Mobile responsiveness
+
+Ottimizzazione flusso utente
+
+Eventuali punti di frizione
+
+Scrivi un breve report prima di proporre il redesign.
+
+✨ FASE 3 – REDESIGN STRUTTURALE
+
+Progetta una nuova struttura migliorata della route includendo:
+
+Layout a blocchi chiari
+
+Sezione header con titolo + azione primaria
+
+Eventuale barra filtri o summary KPI
+
+Suddivisione contenuti in card/logical sections
+
+Migliore uso di spaziature e allineamenti
+
+Miglioramento UX delle tabelle (se presenti)
+
+CTA più chiare e gerarchizzate
+
+Devi:
+
+Spiegare le scelte UX fatte
+
+Motivare ogni modifica
+
+Indicare cosa è stato migliorato rispetto alla versione precedente
+
+💻 FASE 4 – OUTPUT TECNICO
+
+Restituisci:
+
+Struttura layout in formato descrittivo
+
+Eventuale wireframe testuale
+
+Proposta struttura JSX (React)
+
+Miglioramenti Tailwind coerenti con lo stile esistente
+
+Nessun cambio drastico ai colori già usati
+
+Non inventare nuovi componenti se già esistono alternative nel progetto
+
+📱 FASE 5 – RESPONSIVE
+
+Spiega:
+
+Come si comporta su tablet
+
+Come si comporta su mobile
+
+Cosa collassa
+
+Cosa diventa stack
+
+Cosa diventa scrollabile
+
+⚠️ REGOLE IMPORTANTI
+
+Non cambiare identità visiva della piattaforma
+
+Non introdurre stili che non esistono nel progetto
+
+Migliora, non stravolgere
+
+Pensa come designer SaaS moderno (Notion, Linear, Stripe style)
+
+Focus su pulizia, ordine, chiarezza
