@@ -1,7 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useQuery } from "@tanstack/react-query";
-import { Wrench, Ticket, CheckCircle, Clock, Building2, Store, Phone, MapPin, Plus, ShoppingBag, Smartphone, Send, ArrowRight, Package, Euro, FileText, Shield, RotateCcw, ChevronRight } from "lucide-react";
+import { Wrench, Ticket, CheckCircle, Clock, Building2, Store, Phone, MapPin, ShoppingBag, Smartphone, Send, ArrowRight, Package, Euro, FileText, Shield, RotateCcw, ChevronRight } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
@@ -89,7 +89,7 @@ export default function CustomerDashboard() {
   const firstName = user?.fullName?.split(" ")[0] || user?.username || "Cliente";
 
   const quickActions = [
-    { label: "Nuovo Ticket", icon: Plus, href: "/customer/tickets", color: "bg-blue-500/10 text-blue-600 dark:text-blue-400" },
+    { label: "Acquista Servizio", icon: ShoppingBag, href: "/customer/service-catalog", color: "bg-blue-500/10 text-blue-600 dark:text-blue-400" },
     { label: "Le Mie Riparazioni", icon: Wrench, href: "/customer/repairs", color: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400" },
     { label: "Richieste Remote", icon: Send, href: "/customer/remote-requests", color: "bg-violet-500/10 text-violet-600 dark:text-violet-400" },
     { label: "Le Mie Garanzie", icon: Shield, href: "/customer/warranties", color: "bg-amber-500/10 text-amber-600 dark:text-amber-400" },
