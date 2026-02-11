@@ -13582,6 +13582,17 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  app.patch("/api/notifications/read-all", requireAuth, async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      const count = await storage.markAllNotificationsAsRead(req.user.id);
+      res.json({ success: true, count });
+    } catch (error: any) {
+      console.error("Mark all notifications read error:", error);
+      res.status(500).send(error.message);
+    }
+  });
+
   app.patch("/api/notifications/:id/read", requireAuth, async (req, res) => {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");

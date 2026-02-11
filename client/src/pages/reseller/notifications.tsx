@@ -95,7 +95,7 @@ function NotificationCard({ notification, onMarkAsRead }: { notification: Notifi
 }
 
 export default function ResellerNotifications() {
-  const { notifications, unreadCount, isLoading, markAsRead } = useNotifications();
+  const { notifications, unreadCount, isLoading, markAsRead, markAllAsRead, markAllAsReadPending } = useNotifications();
 
   return (
     <div className="space-y-6">
@@ -112,9 +112,21 @@ export default function ResellerNotifications() {
           </p>
         </div>
         {unreadCount > 0 && (
-          <Badge variant="destructive" className="h-7 px-3" data-testid="badge-total-unread">
-            {unreadCount} non lette
-          </Badge>
+          <div className="flex items-center gap-2 flex-wrap">
+            <Badge variant="destructive" className="h-7 px-3" data-testid="badge-total-unread">
+              {unreadCount} non lette
+            </Badge>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => markAllAsRead()}
+              disabled={markAllAsReadPending}
+              data-testid="button-mark-all-read"
+            >
+              <CheckCheck className="h-4 w-4 mr-2" />
+              {markAllAsReadPending ? "Aggiornamento..." : "Segna tutte come lette"}
+            </Button>
+          </div>
         )}
       </div>
 

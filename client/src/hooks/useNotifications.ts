@@ -62,6 +62,15 @@ export function useNotifications() {
     },
   });
 
+  const markAllAsRead = useMutation({
+    mutationFn: async () => {
+      return apiRequest('PATCH', '/api/notifications/read-all');
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/notifications'] });
+    },
+  });
+
   const unreadCount = notifications.filter((n) => !n.isRead).length;
 
   return {
@@ -71,5 +80,7 @@ export function useNotifications() {
     isConnected,
     markAsRead: markAsRead.mutate,
     markAsReadPending: markAsRead.isPending,
+    markAllAsRead: markAllAsRead.mutate,
+    markAllAsReadPending: markAllAsRead.isPending,
   };
 }

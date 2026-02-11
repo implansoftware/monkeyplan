@@ -358,6 +358,7 @@ export interface IStorage {
   createNotification(notification: InsertNotification): Promise<Notification>;
   listNotifications(userId: string, filters?: { isRead?: boolean; limit?: number }): Promise<Notification[]>;
   markNotificationAsRead(id: string, userId: string): Promise<Notification>;
+  markAllNotificationsAsRead(userId: string): Promise<number>;
   getNotificationPreferences(userId: string): Promise<NotificationPreferences | undefined>;
   createNotificationPreferences(preferences: InsertNotificationPreferences): Promise<NotificationPreferences>;
   updateNotificationPreferences(userId: string, updates: { emailEnabled?: boolean; pushEnabled?: boolean; types?: string[] }): Promise<NotificationPreferences>;
@@ -4203,6 +4204,15 @@ export class DatabaseStorage implements IStorage {
       throw new Error("Notification not found or access denied");
     }
     return notification;
+  }
+
+  async markAllNotificationsAsRead(userId: string): Promise<number> {
+    const result = await db
+      .update(notifications)
+      .set({ isRead: true })
+      .where(and(eq(notifications.userId, userId), eq(notifications.isRead, false)))
+      .returning();
+    return result.length;
   }
 
   async getNotificationPreferences(userId: string): Promise<NotificationPreferences | undefined> {
