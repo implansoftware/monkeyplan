@@ -813,8 +813,7 @@ export function AppSidebar() {
           const isOpen = isGroupOpen(group);
           const hasActiveItem = groupItems.some(item => location === item.url || location.startsWith(item.url + "/"));
           
-          // Dashboard and Sub-Reseller groups: render items directly without collapsible
-          if (group === "Dashboard" || group === "Principale" || group === "Sub-Reseller") {
+          if (group === "Dashboard" || group === "Principale" || group === "Sub-Reseller" || groupItems.length === 1) {
             return (
               <SidebarGroup key={group} className="px-3 py-2">
                 <SidebarMenu>
