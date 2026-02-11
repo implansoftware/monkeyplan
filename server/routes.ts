@@ -12941,7 +12941,17 @@ export function registerRoutes(app: Express): Server {
         return res.status(404).send("DDT non disponibile");
       }
       
-      const signedUrl = await getSignedDownloadUrl(order.ddtUrl);
+      const bucketId = process.env.DEFAULT_OBJECT_STORAGE_BUCKET_ID;
+      if (!bucketId) {
+        return res.status(500).send("Object storage non configurato");
+      }
+      
+      const signedUrl = await signObjectURL({
+        bucketName: bucketId,
+        objectName: order.ddtUrl,
+        method: "GET",
+        ttlSec: 3600,
+      });
       res.json({ url: signedUrl });
     } catch (error: any) {
       console.error("Service order creation error:", error);
