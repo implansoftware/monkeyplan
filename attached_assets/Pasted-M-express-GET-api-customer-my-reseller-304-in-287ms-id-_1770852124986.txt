@@ -1,0 +1,53 @@
+M [express] GET /api/customer/my-reseller 304 in 287ms :: {"id":"00d54ab9-8a63-46a0-95f2-5b…
+Service order creation error: GaxiosError: Could not refresh access token: request to http://169.254.169.254/computeMetadata/v1/instance/service-accounts/default/token?scopes=https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fiam%2Chttps%3A%2F%2Fwww.googleapis.com%2Fauth%2Fcloud-platform%2Chttps%3A%2F%2Fwww.googleapis.com%2Fauth%2Fdevstorage.full_control failed, reason: connect ECONNREFUSED 169.254.169.254:80
+    at Gaxios._request (/home/runner/workspace/node_modules/gaxios/src/gaxios.ts:157:13)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async metadataAccessor (/home/runner/workspace/node_modules/gcp-metadata/src/index.ts:167:15)
+    at async Compute.refreshTokenNoCache (/home/runner/workspace/node_modules/google-auth-library/build/src/auth/computeclient.js:57:20)
+    at async Compute.getRequestMetadataAsync (/home/runner/workspace/node_modules/google-auth-library/build/src/auth/oauth2client.js:333:17)
+    at async Compute.requestAsync (/home/runner/workspace/node_modules/google-auth-library/build/src/auth/oauth2client.js:418:23)
+    at async Upload.makeRequest (file:///home/runner/workspace/node_modules/@google-cloud/storage/build/esm/src/resumable-upload.js:727:21)
+    at async AsyncRetry.retries (file:///home/runner/workspace/node_modules/@google-cloud/storage/build/esm/src/resumable-upload.js:393:29)
+    at async Upload.createURIAsync (file:///home/runner/workspace/node_modules/@google-cloud/storage/build/esm/src/resumable-upload.js:390:21) {
+  config: {
+    url: 'http://169.254.169.254/computeMetadata/v1/instance/service-accounts/default/token?scopes=https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fiam%2Chttps%3A%2F%2Fwww.googleapis.com%2Fauth%2Fcloud-platform%2Chttps%3A%2F%2Fwww.googleapis.com%2Fauth%2Fdevstorage.full_control',
+    headers: { 'Metadata-Flavor': 'Google' },
+    retryConfig: {
+      noResponseRetries: 3,
+      currentRetryAttempt: 3,
+      retry: 3,
+      httpMethodsToRetry: [Array],
+      retryDelayMultiplier: 2,
+      timeOfFirstRequest: 1770852070369,
+      totalTimeout: 9007199254740991,
+      maxRetryDelay: 9007199254740991,
+      statusCodesToRetry: [Array]
+    },
+    params: {
+      scopes: 'https://www.googleapis.com/auth/iam,https://www.googleapis.com/auth/cloud-platform,https://www.googleapis.com/auth/devstorage.full_control'
+    },
+    responseType: 'text',
+    timeout: 0,
+    paramsSerializer: [Function: paramsSerializer],
+    validateStatus: [Function: validateStatus],
+    method: 'GET',
+    errorRedactor: [Function: defaultErrorRedactor]
+  },
+  response: undefined,
+  error: FetchError: request to http://169.254.169.254/computeMetadata/v1/instance/service-accounts/default/token?scopes=https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fiam%2Chttps%3A%2F%2Fwww.googleapis.com%2Fauth%2Fcloud-platform%2Chttps%3A%2F%2Fwww.googleapis.com%2Fauth%2Fdevstorage.full_control failed, reason: connect ECONNREFUSED 169.254.169.254:80
+      at ClientRequest.<anonymous> (/home/runner/workspace/node_modules/node-fetch/lib/index.js:1501:11)
+      at ClientRequest.emit (node:events:524:28)
+      at emitErrorEvent (node:_http_client:101:11)
+      at Socket.socketErrorListener (node:_http_client:504:5)
+      at Socket.emit (node:events:524:28)
+      at emitErrorNT (node:internal/streams/destroy:169:8)
+      at emitErrorCloseNT (node:internal/streams/destroy:128:3)
+      at process.processTicksAndRejections (node:internal/process/task_queues:82:21) {
+    type: 'system',
+    errno: 'ECONNREFUSED',
+    code: 'ECONNREFUSED'
+  },
+  code: 'ECONNREFUSED',
+  [Symbol(gaxios-gaxios-error)]: '6.7.1'
+}
+11:21:12 PM [express] PATCH /api/customer/service-orders/b62db49f-b696-4c24-8989-c8c11dc8cf55/set-del…

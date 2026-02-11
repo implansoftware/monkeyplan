@@ -12881,16 +12881,13 @@ export function registerRoutes(app: Express): Server {
           const pdfBuffer = await generateTransferDDT(ddtData);
           const fileName = `ddt-service-${order.orderNumber}-${Date.now()}.pdf`;
           
-          // Store DDT in object storage
-          const { Storage } = await import("@google-cloud/storage");
-          const gcs = new Storage();
           const bucketId = process.env.DEFAULT_OBJECT_STORAGE_BUCKET_ID;
           if (bucketId) {
-            const bucket = gcs.bucket(bucketId);
-            const file = bucket.file(`.private/service-ddt/${fileName}`);
+            const objectPath = `.private/service-ddt/${fileName}`;
+            const bucket = objectStorageClient.bucket(bucketId);
+            const file = bucket.file(objectPath);
             await file.save(pdfBuffer, { contentType: 'application/pdf' });
-            const ddtUrl = `.private/service-ddt/${fileName}`;
-            updateData.ddtUrl = ddtUrl;
+            updateData.ddtUrl = objectPath;
           }
         }
       }
