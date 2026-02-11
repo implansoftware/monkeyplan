@@ -12830,52 +12830,52 @@ export function registerRoutes(app: Express): Server {
       let updateData: any = { deliveryMethod };
       
       if (deliveryMethod === 'shipping') {
-        if (!shippingAddress || !shippingCity || !shippingCap || !shippingProvince) {
-          return res.status(400).send("Dati indirizzo spedizione obbligatori");
-        }
-        
         updateData = {
           ...updateData,
-          shippingAddress,
-
-          shippingCity,
-          shippingCap,
-          shippingProvince,
+          shippingAddress: shippingAddress || null,
+          shippingCity: shippingCity || null,
+          shippingCap: shippingCap || null,
+          shippingProvince: shippingProvince || null,
           courierName: courierName || null,
           trackingNumber: trackingNumber || null,
           shippedAt: new Date()
         };
         
-        // Generate DDT for shipping
         const customer = await storage.getUser(req.user.id);
         const reseller = await storage.getUser(order.resellerId);
         
         if (customer && reseller) {
           const ddtData: TransferDdtData = {
-            documentNumber: `DDT-SVC-${order.orderNumber}`,
-            date: new Date(),
+            ddtNumber: `DDT-SVC-${order.orderNumber}`,
+            requestNumber: order.orderNumber,
+            shippedAt: new Date(),
+            trackingNumber: trackingNumber || "-",
+            trackingCarrier: courierName || "Cliente",
             sender: {
               name: customer.fullName || customer.username,
-              address: shippingAddress,
-              city: shippingCity,
-              cap: shippingCap,
-              province: shippingProvince
+              address: shippingAddress || undefined,
+              city: shippingCity || undefined,
+              postalCode: shippingCap || undefined,
+              province: shippingProvince || undefined,
+              phone: customer.phone || undefined,
+              email: customer.email || undefined,
             },
             recipient: {
-              name: reseller.fullName || reseller.username,
-              address: reseller.address || '',
-              city: reseller.city || '',
-              cap: reseller.cap || '',
-              province: reseller.province || ''
+              name: reseller.ragioneSociale || reseller.fullName || reseller.username,
+              address: reseller.indirizzo || undefined,
+              city: reseller.citta || undefined,
+              postalCode: reseller.cap || undefined,
+              province: reseller.provincia || undefined,
+              phone: reseller.phone || undefined,
+              email: reseller.email || undefined,
+              partitaIva: reseller.partitaIva || undefined,
             },
             items: [{
-              description: `Dispositivo per intervento ${order.orderNumber}`,
+              productName: `Dispositivo per intervento ${order.orderNumber}`,
               quantity: 1,
-              unit: 'pz'
             }],
-            transportReason: 'Consegna per riparazione',
-            carrier: courierName || 'Cliente',
-            notes: `Ordine servizio: ${order.orderNumber}`
+            sourceWarehouse: "Cliente",
+            destinationWarehouse: reseller.ragioneSociale || reseller.fullName || "Rivenditore",
           };
           
           const pdfBuffer = await generateTransferDDT(ddtData);
