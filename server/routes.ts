@@ -30654,23 +30654,43 @@ export function registerRoutes(app: Express): Server {
       
       // Get all sellers for this product from marketplace
       const marketplaceProducts = await storage.getMarketplaceProducts();
-      const productEntries = marketplaceProducts.filter(p => p.id === productId);
+      const productEntry = marketplaceProducts.find(p => p.id === productId);
       
-      const sellers = productEntries.map(p => ({
-        resellerId: p.sellerId || 'admin',
-        resellerName: p.sellerName || 'Admin Shop',
-        price: p.effectivePrice || p.unitPrice,
-        isPublished: true,
-      }));
+      const sellers: Array<{ resellerId: string; resellerName: string; price: number; isPublished: boolean; isAdmin: boolean }> = [];
       
-      // If no sellers found, add the product with base price as admin
+      if (productEntry && productEntry.sellers && productEntry.sellers.length > 0) {
+        for (const s of productEntry.sellers) {
+          sellers.push({
+            resellerId: s.sellerId,
+            resellerName: s.sellerName,
+            price: s.price,
+            isPublished: true,
+            isAdmin: s.isAdmin,
+          });
+        }
+      }
+      
+      // If no sellers found, use product creator as fallback
       if (sellers.length === 0) {
-        sellers.push({
-          resellerId: 'admin',
-          resellerName: 'Admin Shop',
-          price: product.unitPrice,
-          isPublished: true,
-        });
+        if (product.createdBy) {
+          sellers.push({
+            resellerId: product.createdBy,
+            resellerName: 'Venditore',
+            price: product.unitPrice,
+            isPublished: true,
+            isAdmin: false,
+          });
+        } else {
+          const allUsers = await storage.listUsers();
+          const adminUser = allUsers.find((u) => u.role === 'admin');
+          sellers.push({
+            resellerId: adminUser?.id || 'system',
+            resellerName: adminUser?.fullName || 'Admin Shop',
+            price: product.unitPrice,
+            isPublished: true,
+            isAdmin: true,
+          });
+        }
       }
       
       const lowestPrice = Math.min(...sellers.map(s => s.price));
@@ -30790,15 +30810,25 @@ export function registerRoutes(app: Express): Server {
       // Verifica se il prodotto è disponibile per questo reseller:
       // 1. Prodotto proprio del reseller (createdBy === resellerId)
       // 2. Prodotto globale assegnato e pubblicato
+      // 3. Prodotto globale admin (createdBy null) - admin è il venditore
       const isOwnProduct = product.createdBy === resellerId;
       let isAssignedProduct = false;
+      let isAdminProduct = false;
       
       if (!isOwnProduct) {
-        const assignment = await storage.getResellerProduct(productId, resellerId);
-        isAssignedProduct = !!assignment && assignment.isPublished;
+        // Check if admin user is selling their own global product
+        if (!product.createdBy) {
+          const allUsers = await storage.listUsers();
+          const adminUser = allUsers.find((u: any) => u.role === 'admin');
+          isAdminProduct = adminUser?.id === resellerId;
+        }
+        if (!isAdminProduct) {
+          const assignment = await storage.getResellerProduct(productId, resellerId);
+          isAssignedProduct = !!assignment && assignment.isPublished;
+        }
       }
       
-      if (!isOwnProduct && !isAssignedProduct) {
+      if (!isOwnProduct && !isAssignedProduct && !isAdminProduct) {
         return res.status(400).json({ error: "Prodotto non disponibile" });
       }
       

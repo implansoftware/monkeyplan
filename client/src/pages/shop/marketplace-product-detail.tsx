@@ -25,6 +25,7 @@ interface ProductSeller {
   resellerName: string;
   price: number;
   isPublished: boolean;
+  isAdmin?: boolean;
 }
 
 interface ProductDetail {
@@ -258,7 +259,7 @@ export default function MarketplaceProductDetail() {
               {sellers.map((seller, idx) => (
                 <Card 
                   key={seller.resellerId} 
-                  className={`hover-elevate cursor-pointer ${selectedSeller?.resellerId === seller.resellerId ? 'ring-2 ring-primary' : ''}`}
+                  className={`cursor-pointer ${selectedSeller?.resellerId === seller.resellerId ? 'ring-2 ring-primary' : ''}`}
                   onClick={() => setSelectedSeller(seller)}
                   data-testid={`card-seller-${idx}`}
                 >
@@ -271,13 +272,13 @@ export default function MarketplaceProductDetail() {
                         <div>
                           <p className="font-medium" data-testid={`text-seller-name-${idx}`}>
                             {seller.resellerName}
-                            {seller.resellerId === 'admin' && (
+                            {seller.isAdmin && (
                               <Badge variant="secondary" className="ml-2 text-xs">Ufficiale</Badge>
                             )}
                           </p>
                           <div className="flex flex-wrap items-center gap-1 text-sm text-muted-foreground">
-                            <Check className="h-3 w-3 text-green-600" />
-                            {seller.resellerId === 'admin' ? 'Negozio ufficiale' : 'Venditore verificato'}
+                            <Check className="h-3 w-3 text-green-600 dark:text-green-400" />
+                            {seller.isAdmin ? 'Negozio ufficiale' : 'Venditore verificato'}
                           </div>
                         </div>
                       </div>
