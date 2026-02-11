@@ -91,7 +91,7 @@ export default function CustomerDashboard() {
   const quickActions = [
     { label: "Acquista Servizio", icon: ShoppingBag, href: "/customer/service-catalog", color: "bg-blue-500/10 text-blue-600 dark:text-blue-400" },
     { label: "Le Mie Riparazioni", icon: Wrench, href: "/customer/repairs", color: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400" },
-    { label: "Richieste Remote", icon: Send, href: "/customer/remote-requests", color: "bg-violet-500/10 text-violet-600 dark:text-violet-400" },
+    { label: "Richiedi Riparazione", icon: Send, href: "/customer/remote-requests", color: "bg-violet-500/10 text-violet-600 dark:text-violet-400" },
     { label: "Le Mie Garanzie", icon: Shield, href: "/customer/warranties", color: "bg-amber-500/10 text-amber-600 dark:text-amber-400" },
   ];
 
