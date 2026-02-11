@@ -704,7 +704,7 @@ function ShopRouter() {
     <>
       <PublicNavbar solid showLandingLinks={false} />
       <ScrollToTop />
-      <div className="pt-16">
+      <div className="pt-16 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto py-6">
         <Switch>
           <Route path="/marketplace/:productId" component={MarketplaceProductDetail} />
           <Route path="/marketplace" component={ShopMarketplace} />
