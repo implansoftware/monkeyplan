@@ -14484,21 +14484,49 @@ export function registerRoutes(app: Express): Server {
       if (req.user.role === 'admin' || req.user.role === 'admin_staff') {
         canUpdate = true;
       }
-      // Reseller/reseller_staff can ONLY close tickets from their customers (even if assigned)
+      // Reseller/reseller_staff permissions
       else if (req.user.role === 'reseller' || req.user.role === 'reseller_staff') {
-        const customer = await storage.getUser(ticket.customerId);
         const resellerId = req.user.role === 'reseller_staff' ? (req.user as any).resellerId : req.user.id;
-        if (customer && customer.resellerId === resellerId) {
-          // Resellers can only close tickets, not reopen or set in_progress
-          if (status === 'closed') {
-            canUpdate = true;
-          } else {
-            return res.status(403).send("I rivenditori possono solo chiudere i ticket");
+        
+        // Internal tickets: initiator can update status
+        if (ticket.ticketType === 'internal' && ticket.initiatorId === resellerId) {
+          canUpdate = true;
+        }
+        // Support tickets: reseller can close tickets from their customers
+        else if (ticket.ticketType === 'support') {
+          const customer = await storage.getUser(ticket.customerId);
+          if (customer && customer.resellerId === resellerId) {
+            if (status === 'closed') {
+              canUpdate = true;
+            } else {
+              return res.status(403).send("I rivenditori possono solo chiudere i ticket");
+            }
           }
         }
+        // Also allow if assigned to the reseller
+        if (!canUpdate && ticket.assignedTo === req.user.id) {
+          canUpdate = true;
+        }
       }
-      // Non-reseller assigned user can update to any status
+      // Repair center: can update internal tickets targeted to them or where they are initiator
+      else if (req.user.role === 'repair_center' || req.user.role === 'repair_center_staff') {
+        if (ticket.ticketType === 'internal') {
+          const rcId = req.user.role === 'repair_center_staff' ? req.user.repairCenterId : 
+            (await storage.getUser(req.user.id))?.repairCenterId;
+          if (ticket.initiatorId === req.user.id || (ticket.targetType === 'repair_center' && ticket.targetId === rcId)) {
+            canUpdate = true;
+          }
+        }
+        if (!canUpdate && ticket.assignedTo === req.user.id) {
+          canUpdate = true;
+        }
+      }
+      // Any assigned user can update status
       else if (ticket.assignedTo === req.user.id) {
+        canUpdate = true;
+      }
+      // Customer can close their own tickets
+      else if (req.user.role === 'customer' && ticket.customerId === req.user.id && status === 'closed') {
         canUpdate = true;
       }
       
