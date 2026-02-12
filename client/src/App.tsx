@@ -118,6 +118,7 @@ import AdminUtilityServices from "@/pages/admin/utility/services";
 import AdminUtilityPractices from "@/pages/admin/utility/practices";
 import AdminUtilityPracticeDetail from "@/pages/admin/utility/practice-detail";
 import AdminUtilityCommissions from "@/pages/admin/utility/commissions";
+import AdminUtilityCommissionDetail from "@/pages/admin/utility/commission-detail";
 import AdminUtilityReports from "@/pages/admin/utility/reports";
 import AdminPosOverview from "@/pages/admin/pos-overview";
 
@@ -384,6 +385,7 @@ function Router() {
       <ProtectedRoute path="/admin/utility/services" component={AdminUtilityServices} />
       <ProtectedRoute path="/admin/utility/practices/:id" component={AdminUtilityPracticeDetail} />
       <ProtectedRoute path="/admin/utility/practices" component={AdminUtilityPractices} />
+      <ProtectedRoute path="/admin/utility/commissions/:id" component={AdminUtilityCommissionDetail} />
       <ProtectedRoute path="/admin/utility/commissions" component={AdminUtilityCommissions} />
       <ProtectedRoute path="/admin/utility/reports" component={AdminUtilityReports} />
       <ProtectedRoute path="/admin/settings" component={AdminSettings} />

@@ -18,7 +18,7 @@ import {
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
 
@@ -65,6 +65,7 @@ export default function AdminUtilityCommissions() {
   const [rejectDialogOpen, setRejectDialogOpen] = useState(false);
   const [rejectingCommission, setRejectingCommission] = useState<UtilityCommission | null>(null);
   const [rejectReason, setRejectReason] = useState("");
+  const [, setLocation] = useLocation();
   const { toast } = useToast();
 
   const { data: commissions = [], isLoading } = useQuery<UtilityCommission[]>({
@@ -376,8 +377,13 @@ export default function AdminUtilityCommissions() {
                   const practice = practices.find(p => p.id === commission.practiceId);
                   const StatusIcon = statusIcons[commission.status];
                   return (
-                    <TableRow key={commission.id} data-testid={`row-commission-${commission.id}`}>
-                      <TableCell className="font-medium">
+                    <TableRow 
+                      key={commission.id} 
+                      data-testid={`row-commission-${commission.id}`}
+                      className="cursor-pointer"
+                      onClick={() => setLocation(`/admin/utility/commissions/${commission.id}`)}
+                    >
+                      <TableCell className="font-medium text-primary">
                         {practice?.practiceNumber || commission.practiceId.slice(0, 8)}
                       </TableCell>
                       <TableCell>
@@ -400,7 +406,7 @@ export default function AdminUtilityCommissions() {
                           ? format(new Date(commission.paidAt), "dd/MM/yyyy", { locale: it })
                           : "-"}
                       </TableCell>
-                      <TableCell className="text-right">
+                      <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
                         <div className="flex items-center justify-end gap-1">
                           {commission.status === "pending" && (
                             <>
@@ -409,7 +415,7 @@ export default function AdminUtilityCommissions() {
                                 size="icon"
                                 onClick={() => handleApprove(commission)}
                                 disabled={approveMutation.isPending}
-                                className="text-green-600 hover:text-green-700 hover:bg-green-50"
+                                className="text-green-600"
                                 data-testid={`button-approve-${commission.id}`}
                                 title="Approva"
                               >
@@ -420,7 +426,7 @@ export default function AdminUtilityCommissions() {
                                 size="icon"
                                 onClick={() => handleReject(commission)}
                                 disabled={rejectMutation.isPending}
-                                className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                                className="text-red-600"
                                 data-testid={`button-reject-${commission.id}`}
                                 title="Rifiuta"
                               >
