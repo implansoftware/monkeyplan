@@ -44917,7 +44917,36 @@ export function registerRoutes(app: Express): Server {
   app.get('/api/admin/warranties', requireAuth, requireRole('admin'), async (req, res) => {
     try {
       const warranties = await storage.listRepairWarranties({});
-      res.json(warranties);
+      const result = [];
+      for (const w of warranties) {
+        const repairOrder = await storage.getRepairOrder(w.repairOrderId);
+        const customer = await storage.getUser(w.customerId);
+        const seller = await storage.getUser(w.sellerId);
+        const daysRemaining = w.endsAt ? Math.ceil((new Date(w.endsAt).getTime() - Date.now()) / (1000 * 60 * 60 * 24)) : null;
+        result.push({
+          id: w.id,
+          repairOrderId: w.repairOrderId,
+          orderNumber: repairOrder?.orderNumber || 'N/A',
+          customerName: customer ? (customer.firstName && customer.lastName ? customer.firstName + ' ' + customer.lastName : customer.username) : 'N/A',
+          customerEmail: customer?.email || '',
+          sellerName: seller ? (seller.firstName && seller.lastName ? seller.firstName + ' ' + seller.lastName : seller.username) : 'N/A',
+          sellerType: w.sellerType,
+          sellerId: w.sellerId,
+          deviceType: repairOrder?.deviceType || '',
+          brand: repairOrder?.brand || '',
+          deviceModel: repairOrder?.deviceModel || '',
+          productName: w.productNameSnapshot,
+          coverageType: w.coverageTypeSnapshot,
+          durationMonths: w.durationMonthsSnapshot,
+          price: w.priceSnapshot,
+          status: w.status,
+          startsAt: w.startsAt ? w.startsAt.toISOString() : null,
+          endsAt: w.endsAt ? w.endsAt.toISOString() : null,
+          offeredAt: w.offeredAt.toISOString(),
+          daysRemaining,
+        });
+      }
+      res.json(result);
     } catch (error: any) {
       console.error('Admin warranties list error:', error);
       res.status(500).send(error.message);
