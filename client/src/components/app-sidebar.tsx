@@ -63,6 +63,7 @@ import {
   SidebarGroupContent,
   SidebarMenu,
   SidebarMenuButton,
+  SidebarMenuBadge,
   SidebarMenuItem,
   SidebarHeader,
   useSidebar,
@@ -884,9 +885,9 @@ export function AppSidebar() {
                     <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform duration-200 ${isOpen ? "" : "-rotate-90"}`} />
                   </SidebarMenuButton>
                 </CollapsibleTrigger>
-                <CollapsibleContent className="overflow-visible">
-                  <SidebarGroupContent className="overflow-visible">
-                    <SidebarMenu className="ml-7 mt-1.5 border-l border-sidebar-border/40 pl-0.5 overflow-visible">
+                <CollapsibleContent>
+                  <SidebarGroupContent>
+                    <SidebarMenu className="ml-7 mt-1.5 border-l border-sidebar-border/40 pl-0.5">
                       {groupItems.map((item, idx) => {
                         const isActive = location === item.url || location.startsWith(item.url + "/");
                         const showTransferBadge = item.url === "/reseller/transfer-requests" && pendingTransferRequestsCount > 0;
@@ -905,11 +906,11 @@ export function AppSidebar() {
                                 {currentSection}
                               </div>
                             )}
-                            <SidebarMenuItem className="overflow-visible">
+                            <SidebarMenuItem>
                               <SidebarMenuButton 
                                 asChild 
                                 isActive={isActive} 
-                                className={`pl-3 py-2 rounded-lg !overflow-visible ${isActive ? "bg-gradient-to-r from-emerald-500/10 to-teal-500/10 text-emerald-600 dark:text-emerald-400 font-medium" : "text-muted-foreground hover-elevate"}`}
+                                className={`pl-3 py-2 rounded-lg ${isActive ? "bg-gradient-to-r from-emerald-500/10 to-teal-500/10 text-emerald-600 dark:text-emerald-400 font-medium" : "text-muted-foreground hover-elevate"}`}
                               >
                                 <Link 
                                   href={item.url} 
@@ -918,48 +919,56 @@ export function AppSidebar() {
                                 >
                                   <item.icon className={`h-3.5 w-3.5 ${isActive ? "text-primary" : ""}`} />
                                   <span className="flex-1 text-[13px]">{item.title}</span>
-                                  {showTransferBadge && (
-                                    <span 
-                                      className="flex h-5 min-w-5 items-center justify-center rounded-full bg-destructive text-destructive-foreground text-xs font-medium px-1.5"
-                                      data-testid="badge-pending-transfer-requests"
-                                    >
-                                      {pendingTransferRequestsCount}
-                                    </span>
-                                  )}
-                                  {showRemoteBadge && (
-                                    <span 
-                                      className="flex h-5 min-w-5 items-center justify-center rounded-full bg-destructive text-destructive-foreground text-xs font-medium px-1.5"
-                                      data-testid="badge-pending-remote-requests"
-                                    >
-                                      {pendingRemoteRequestsCount}
-                                    </span>
-                                  )}
-                                  {showRcRemoteBadge && (
-                                    <span 
-                                      className="flex h-5 min-w-5 items-center justify-center rounded-full bg-destructive text-destructive-foreground text-xs font-medium px-1.5"
-                                      data-testid="badge-pending-rc-remote-requests"
-                                    >
-                                      {rcPendingRemoteRequestsCount}
-                                    </span>
-                                  )}
-                                  {showServiceOrdersBadge && (
-                                    <span 
-                                      className="flex h-5 min-w-5 items-center justify-center rounded-full bg-destructive text-destructive-foreground text-xs font-medium px-1.5"
-                                      data-testid="badge-pending-service-orders"
-                                    >
-                                      {pendingServiceOrdersCount}
-                                    </span>
-                                  )}
-                                  {showNotificationsBadge && (
-                                    <span 
-                                      className="flex h-5 min-w-5 items-center justify-center rounded-full bg-destructive text-destructive-foreground text-xs font-medium px-1.5"
-                                      data-testid="badge-unread-notifications"
-                                    >
-                                      {unreadNotificationsCount > 9 ? '9+' : unreadNotificationsCount}
-                                    </span>
-                                  )}
                                 </Link>
                               </SidebarMenuButton>
+                              {showTransferBadge && (
+                                <SidebarMenuBadge
+                                  className="rounded-full bg-destructive text-destructive-foreground text-xs font-medium"
+                                  data-testid="badge-pending-transfer-requests"
+                                >
+                                  {pendingTransferRequestsCount}
+                                </SidebarMenuBadge>
+                              )}
+                              {showRemoteBadge && (
+                                <SidebarMenuBadge
+                                  className="rounded-full bg-destructive text-destructive-foreground text-xs font-medium"
+                                  data-testid="badge-pending-remote-requests"
+                                >
+                                  {pendingRemoteRequestsCount}
+                                </SidebarMenuBadge>
+                              )}
+                              {showRcRemoteBadge && (
+                                <SidebarMenuBadge
+                                  className="rounded-full bg-destructive text-destructive-foreground text-xs font-medium"
+                                  data-testid="badge-pending-rc-remote-requests"
+                                >
+                                  {rcPendingRemoteRequestsCount}
+                                </SidebarMenuBadge>
+                              )}
+                              {showServiceOrdersBadge && (
+                                <SidebarMenuBadge
+                                  className="rounded-full bg-destructive text-destructive-foreground text-xs font-medium"
+                                  data-testid="badge-pending-service-orders"
+                                >
+                                  {pendingServiceOrdersCount}
+                                </SidebarMenuBadge>
+                              )}
+                              {showTicketsBadge && (
+                                <SidebarMenuBadge
+                                  className="rounded-full bg-destructive text-destructive-foreground text-xs font-medium"
+                                  data-testid="badge-pending-tickets"
+                                >
+                                  {pendingTicketsCount}
+                                </SidebarMenuBadge>
+                              )}
+                              {showNotificationsBadge && (
+                                <SidebarMenuBadge
+                                  className="rounded-full bg-destructive text-destructive-foreground text-xs font-medium"
+                                  data-testid="badge-unread-notifications"
+                                >
+                                  {unreadNotificationsCount > 9 ? '9+' : unreadNotificationsCount}
+                                </SidebarMenuBadge>
+                              )}
                             </SidebarMenuItem>
                           </div>
                         );
