@@ -44194,6 +44194,206 @@ export function registerRoutes(app: Express): Server {
   });
 
   // ==========================================
+  // WARRANTY LIST ROUTES (customer, reseller, repair center)
+  // ==========================================
+
+  app.get('/api/customer/warranties', async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send('Unauthorized');
+      const warranties = await storage.listRepairWarranties({ customerId: req.user.id });
+      const result = [];
+      for (const w of warranties) {
+        const repairOrder = await storage.getRepairOrder(w.repairOrderId);
+        let invoice = null;
+        if (w.invoiceId) {
+          const inv = await storage.getInvoice(w.invoiceId);
+          if (inv) invoice = { id: inv.id, invoiceNumber: inv.invoiceNumber, total: inv.totalAmount };
+        }
+        result.push({
+          warranty: {
+            id: w.id,
+            repairOrderId: w.repairOrderId,
+            warrantyProductId: w.warrantyProductId,
+            status: w.status,
+            priceSnapshot: w.priceSnapshot,
+            durationMonthsSnapshot: w.durationMonthsSnapshot,
+            coverageTypeSnapshot: w.coverageTypeSnapshot,
+            productNameSnapshot: w.productNameSnapshot,
+            startsAt: w.startsAt ? w.startsAt.toISOString() : null,
+            endsAt: w.endsAt ? w.endsAt.toISOString() : null,
+            createdAt: w.createdAt.toISOString(),
+          },
+          repairOrder: repairOrder ? {
+            id: repairOrder.id,
+            orderNumber: repairOrder.orderNumber,
+            deviceType: repairOrder.deviceType,
+            brand: repairOrder.brand,
+            deviceModel: repairOrder.deviceModel,
+          } : { id: w.repairOrderId, orderNumber: 'N/A', deviceType: '', brand: null, deviceModel: '' },
+          invoice,
+        });
+      }
+      res.json(result);
+    } catch (error: any) {
+      console.error('Error fetching customer warranties:', error);
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  app.get('/api/reseller/warranties', async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send('Unauthorized');
+      if (!['reseller', 'sub_reseller', 'reseller_staff'].includes(req.user.role)) {
+        return res.status(403).json({ message: 'Accesso non autorizzato' });
+      }
+      let sellerId = req.user.id;
+      if (req.user.role === 'reseller_staff' || req.user.role === 'sub_reseller') {
+        const userRecord = await storage.getUser(req.user.id);
+        if (userRecord?.parentResellerId) {
+          sellerId = userRecord.parentResellerId;
+        }
+      }
+      const warranties = await storage.listRepairWarranties({ sellerId });
+      const result = [];
+      for (const w of warranties) {
+        const repairOrder = await storage.getRepairOrder(w.repairOrderId);
+        const customer = await storage.getUser(w.customerId);
+        const daysRemaining = w.endsAt ? Math.ceil((new Date(w.endsAt).getTime() - Date.now()) / (1000 * 60 * 60 * 24)) : null;
+        result.push({
+          id: w.id,
+          repairOrderId: w.repairOrderId,
+          orderNumber: repairOrder?.orderNumber || 'N/A',
+          customerName: customer ? (customer.firstName && customer.lastName ? customer.firstName + ' ' + customer.lastName : customer.username) : 'N/A',
+          customerEmail: customer?.email || '',
+          deviceType: repairOrder?.deviceType || '',
+          brand: repairOrder?.brand || '',
+          deviceModel: repairOrder?.deviceModel || '',
+          productName: w.productNameSnapshot,
+          coverageType: w.coverageTypeSnapshot,
+          durationMonths: w.durationMonthsSnapshot,
+          price: w.priceSnapshot,
+          status: w.status,
+          startsAt: w.startsAt ? w.startsAt.toISOString() : null,
+          endsAt: w.endsAt ? w.endsAt.toISOString() : null,
+          offeredAt: w.offeredAt.toISOString(),
+          daysRemaining: daysRemaining,
+        });
+      }
+      res.json(result);
+    } catch (error: any) {
+      console.error('Error fetching reseller warranties:', error);
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  app.get('/api/repair-center/warranties', async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send('Unauthorized');
+      if (req.user.role !== 'repair_center' && req.user.role !== 'repair_center_staff') {
+        return res.status(403).json({ message: 'Accesso non autorizzato' });
+      }
+      let sellerId = req.user.id;
+      if (req.user.role === 'repair_center_staff') {
+        const userRecord = await storage.getUser(req.user.id);
+        if (userRecord?.repairCenterId) {
+          const allUsers = await storage.listUsers();
+          const rcOwner = allUsers.find(u => u.role === 'repair_center' && u.repairCenterId === userRecord.repairCenterId);
+          if (rcOwner) sellerId = rcOwner.id;
+        }
+      }
+      const warranties = await storage.listRepairWarranties({ sellerId });
+      const result = [];
+      for (const w of warranties) {
+        const repairOrder = await storage.getRepairOrder(w.repairOrderId);
+        const customer = await storage.getUser(w.customerId);
+        const daysRemaining = w.endsAt ? Math.ceil((new Date(w.endsAt).getTime() - Date.now()) / (1000 * 60 * 60 * 24)) : null;
+        result.push({
+          id: w.id,
+          repairOrderId: w.repairOrderId,
+          orderNumber: repairOrder?.orderNumber || 'N/A',
+          customerName: customer ? (customer.firstName && customer.lastName ? customer.firstName + ' ' + customer.lastName : customer.username) : 'N/A',
+          customerEmail: customer?.email || '',
+          deviceType: repairOrder?.deviceType || '',
+          brand: repairOrder?.brand || '',
+          deviceModel: repairOrder?.deviceModel || '',
+          productName: w.productNameSnapshot,
+          coverageType: w.coverageTypeSnapshot,
+          durationMonths: w.durationMonthsSnapshot,
+          price: w.priceSnapshot,
+          status: w.status,
+          startsAt: w.startsAt ? w.startsAt.toISOString() : null,
+          endsAt: w.endsAt ? w.endsAt.toISOString() : null,
+          offeredAt: w.offeredAt.toISOString(),
+          daysRemaining: daysRemaining,
+        });
+      }
+      res.json(result);
+    } catch (error: any) {
+      console.error('Error fetching repair center warranties:', error);
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  app.get('/api/repair-center/warranty-stats', async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send('Unauthorized');
+      if (req.user.role !== 'repair_center' && req.user.role !== 'repair_center_staff') {
+        return res.status(403).json({ message: 'Accesso non autorizzato' });
+      }
+      let sellerId = req.user.id;
+      if (req.user.role === 'repair_center_staff') {
+        const userRecord = await storage.getUser(req.user.id);
+        if (userRecord?.repairCenterId) {
+          const allUsers = await storage.listUsers();
+          const rcOwner = allUsers.find(u => u.role === 'repair_center' && u.repairCenterId === userRecord.repairCenterId);
+          if (rcOwner) sellerId = rcOwner.id;
+        }
+      }
+      const allWarranties = await storage.listRepairWarranties({ sellerId });
+      const totalOffered = allWarranties.length;
+      const accepted = allWarranties.filter(w => ['accepted', 'active', 'expired'].includes(w.status));
+      const totalAccepted = accepted.length;
+      const totalDeclined = allWarranties.filter(w => w.status === 'declined').length;
+      const totalRevenue = accepted.reduce((sum, w) => sum + w.priceSnapshot, 0);
+      const conversionRate = totalOffered > 0 ? (totalAccepted / totalOffered) * 100 : 0;
+
+      const productMap = new Map<string, { count: number; revenue: number }>();
+      for (const w of accepted) {
+        const existing = productMap.get(w.productNameSnapshot) || { count: 0, revenue: 0 };
+        existing.count++;
+        existing.revenue += w.priceSnapshot;
+        productMap.set(w.productNameSnapshot, existing);
+      }
+      const topProducts = Array.from(productMap.entries())
+        .map(([productName, data]) => ({ productName, ...data }))
+        .sort((a, b) => b.count - a.count)
+        .slice(0, 5);
+
+      const monthMap = new Map<string, { offered: number; accepted: number; revenue: number }>();
+      for (const w of allWarranties) {
+        const d = w.offeredAt || w.createdAt;
+        const month = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+        const existing = monthMap.get(month) || { offered: 0, accepted: 0, revenue: 0 };
+        existing.offered++;
+        if (['accepted', 'active', 'expired'].includes(w.status)) {
+          existing.accepted++;
+          existing.revenue += w.priceSnapshot;
+        }
+        monthMap.set(month, existing);
+      }
+      const monthlyTrend = Array.from(monthMap.entries())
+        .map(([month, data]) => ({ month, ...data }))
+        .sort((a, b) => a.month.localeCompare(b.month))
+        .slice(-12);
+
+      res.json({ totalOffered, totalAccepted, totalDeclined, totalRevenue, conversionRate, topProducts, monthlyTrend });
+    } catch (error: any) {
+      console.error('Error fetching repair center warranty stats:', error);
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  // ==========================================
   // REPAIR WARRANTY OFFER ROUTES
   // ==========================================
 
