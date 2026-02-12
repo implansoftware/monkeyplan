@@ -1,0 +1,76 @@
+Agisci come Tech Lead full‑stack e Product Engineer. Costruisci un software reale per mance digitali one‑off via QR, con payout diretto allo staff, includendo gestione completa delle Aziende (Merchant).
+
+1) Attori e concetti
+Azienda (Merchant): organizzazione che utilizza la piattaforma (ristorante, catena, hotel, ecc.).
+Sede (Location): punto vendita/struttura dell’azienda (opzionale ma consigliato).
+Staff: persona che riceve mance; QR 1:1.
+Donatore (Guest): lascia la mancia senza login.
+Super Admin (Piattaforma): governa aziende, fee, rischio, audit, report.
+2) Scelte vincolanti (da rispettare)
+QR 1:1 → ogni QR identifica un singolo membro dello staff.
+Mance one‑off.
+Payout diretto allo staff.
+Prodotto API‑first (in futuro app nativa separata).
+3) Moduli funzionali (MVP reale)
+A) Gestione Aziende (Merchant) — esplicita
+Onboarding azienda:
+creazione azienda con stato (pending_verification, active, suspended)
+creazione Merchant Owner/Admin (utente aziendale)
+Anagrafica azienda:
+ragione sociale/nome commerciale, contatti, paese, valuta di default
+branding per pagina guest (logo, colore base, testo “chi siamo” breve)
+(Opzionale ma tipico) Gestione sedi/location:
+sedi collegate all’azienda, utili per report e organizzazione staff
+Policy azienda:
+importi suggeriti di default (preset)
+abilitazione/disabilitazione messaggio e anonimato
+eventuali limiti per importo (min/max) a livello azienda
+B) Guest tipping
+GET info QR: staff + azienda (safe, fiducia)
+importo preset + libero, messaggio facoltativo, anonimato facoltativo
+pagamento + conferma + ricevuta
+C) Staff area
+login staff
+mance personali + payout status + storico
+D) Super Admin / Revenue
+gestione aziende (CRUD + sospensione)
+configurazione fee (globale e/o per azienda)
+report per azienda e globali
+audit
+E) Pagamenti & Payout
+incasso tip via provider
+payout diretto a staff (stati, riconciliazione)
+webhook idempotenti e verificati
+4) Database (schema minimo con aziende)
+Obbligatori:
+
+merchants (azienda) + stato + branding
+merchant_users o mapping users↔merchants con ruoli (merchant_owner, merchant_admin)
+locations (opzionale ma consigliato)
+staff (sempre collegato a merchant, location opzionale)
+tip_links (slug/token univoco per staff)
+tips (sempre collegata a staff e merchant)
+payouts + relazione tips↔payouts
+audit_logs
+5) API endpoints minimi (aggiunte “aziende”)
+Merchant Admin
+
+POST /api/v1/merchant/onboarding (crea azienda + owner) oppure super admin crea azienda e invita owner
+GET/PUT /api/v1/merchant/profile
+CRUD locations (se incluse)
+CRUD staff
+POST /api/v1/merchant/staff/:id/rotate-tip-link
+GET /api/v1/merchant/tips (report per azienda, filtri, paginazione)
+Super Admin
+
+CRUD merchants
+POST /api/v1/admin/merchants/:id/suspend / .../activate
+fee global/per merchant
+report globali + per merchant
+audit logs
+(Public/Guest, Staff, Webhooks come già indicato.)
+
+6) Requisiti chiave “azienda”
+Separazione dati: un merchant vede solo i propri staff e le proprie mance.
+Branding e fiducia in pagina guest: sempre mostrare “per conto di quale azienda”.
+Stati azienda: se suspended, i QR devono risultare non pagabili (messaggio chiaro) ma tracciati.
