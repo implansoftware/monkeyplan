@@ -41210,6 +41210,39 @@ export function registerRoutes(app: Express): Server {
           subtotal += totalPrice;
           continue;
         }
+
+        if (item.isWarranty) {
+          if (!item.warrantyProductId) {
+            return res.status(400).json({ error: "Garanzia richiede warrantyProductId" });
+          }
+          const warrantyProduct = await storage.getWarrantyProduct(item.warrantyProductId);
+          if (!warrantyProduct) return res.status(400).json({ error: `Prodotto garanzia ${item.warrantyProductId} non trovato` });
+          
+          const unitPrice = item.unitPrice ?? warrantyProduct.priceInCents;
+          const itemDiscount = item.discount || 0;
+          const totalPrice = (unitPrice * item.quantity) - itemDiscount;
+          
+          processedItems.push({
+            productId: null,
+            productName: warrantyProduct.name,
+            productSku: null,
+            productBarcode: null,
+            warrantyProductId: item.warrantyProductId,
+            isWarranty: true,
+            isService: false,
+            isTemporary: false,
+            quantity: item.quantity,
+            unitPrice: unitPrice,
+            discount: itemDiscount,
+            totalPrice,
+            vatRate: typeof item.vatRate === 'number' ? item.vatRate : 22,
+            warehouseId: null,
+          });
+          
+          subtotal += totalPrice;
+          continue;
+        }
+
         // Prodotto standard dal catalogo
         const product = await storage.getProduct(item.productId);
         if (!product) return res.status(400).json({ error: `Prodotto ${item.productId} non trovato` });
@@ -41293,6 +41326,40 @@ export function registerRoutes(app: Express): Server {
           await storage.markPosItemInventoryDeducted(item.id);
         }
       }
+
+      // Auto-create warranty records for warranty items sold to registered customers (repair-center)
+      if (customerId) {
+        const center = await storage.getRepairCenter(repairCenterId);
+        for (const item of transactionItems) {
+          if (item.isWarranty && item.warrantyProductId) {
+            try {
+              const wp = await storage.getWarrantyProduct(item.warrantyProductId);
+              if (wp) {
+                const startsAt = new Date();
+                const endsAt = new Date();
+                endsAt.setMonth(endsAt.getMonth() + wp.durationMonths);
+                await storage.createRepairWarranty({
+                  repairOrderId: null,
+                  customerId,
+                  warrantyProductId: wp.id,
+                  sellerType: 'repair_center',
+                  sellerId: repairCenterId,
+                  status: 'accepted',
+                  priceSnapshot: item.unitPrice,
+                  durationMonthsSnapshot: wp.durationMonths,
+                  coverageTypeSnapshot: wp.coverageType,
+                  productNameSnapshot: wp.name,
+                  startsAt,
+                  endsAt,
+                });
+              }
+            } catch (e) {
+              console.error('Auto warranty creation error (RC):', e);
+            }
+          }
+        }
+      }
+
       const sessionTxs = await storage.getPosTransactionsBySession(session.id);
       const completedTxs = sessionTxs.filter(t => t.status === "completed");
       await storage.updatePosSessionTotals(session.id, {
@@ -41761,6 +41828,21 @@ export function registerRoutes(app: Express): Server {
   });
 
   // Lista servizi dal catalogo interventi per POS
+  // Warranty products per repair-center POS
+  app.get("/api/repair-center/pos/warranty-products", requireRole("repair_center", "repair_center_staff"), async (req, res) => {
+    try {
+      const repairCenterId = req.user!.repairCenterId || req.user!.id;
+      const center = await storage.getRepairCenter(repairCenterId);
+      if (!center) return res.status(404).json({ error: "Centro riparazione non trovato" });
+      const resellerId = center.resellerId;
+      const products = await storage.listWarrantyProductsByReseller(resellerId, true);
+      res.json(products.filter(p => p.isActive));
+    } catch (error) {
+      console.error("RC POS warranty products error:", error);
+      res.status(500).json({ error: "Errore caricamento prodotti garanzia" });
+    }
+  });
+
   app.get("/api/repair-center/pos/services", requireRole("repair_center", "repair_center_staff"), async (req, res) => {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
@@ -45311,6 +45393,38 @@ export function registerRoutes(app: Express): Server {
           continue;
         }
         
+        if (item.isWarranty) {
+          if (!item.warrantyProductId) {
+            return res.status(400).json({ error: "Garanzia richiede warrantyProductId" });
+          }
+          const warrantyProduct = await storage.getWarrantyProduct(item.warrantyProductId);
+          if (!warrantyProduct) return res.status(400).json({ error: `Prodotto garanzia ${item.warrantyProductId} non trovato` });
+          
+          const unitPrice = item.unitPrice ?? warrantyProduct.priceInCents;
+          const itemDiscount = item.discount || 0;
+          const totalPrice = (unitPrice * item.quantity) - itemDiscount;
+          
+          processedItems.push({
+            productId: null,
+            productName: warrantyProduct.name,
+            productSku: null,
+            productBarcode: null,
+            warrantyProductId: item.warrantyProductId,
+            isWarranty: true,
+            isService: false,
+            isTemporary: false,
+            quantity: item.quantity,
+            unitPrice: unitPrice,
+            discount: itemDiscount,
+            totalPrice,
+            vatRate: typeof item.vatRate === 'number' ? item.vatRate : 22,
+            warehouseId: null,
+          });
+          
+          subtotal += totalPrice;
+          continue;
+        }
+        
         const product = await storage.getProduct(item.productId);
         if (!product) return res.status(400).json({ error: `Prodotto ${item.productId} non trovato` });
         
@@ -45390,6 +45504,38 @@ export function registerRoutes(app: Express): Server {
         if (item.warehouseId && item.productId && item.quantity > 0 && !item.isTemporary) {
           await storage.updateWarehouseStockQuantity(item.warehouseId, item.productId, -item.quantity);
           await storage.markPosItemInventoryDeducted(item.id);
+        }
+      }
+
+      // Auto-create warranty records for warranty items sold to registered customers
+      if (customerId) {
+        for (const item of transactionItems) {
+          if (item.isWarranty && item.warrantyProductId) {
+            try {
+              const wp = await storage.getWarrantyProduct(item.warrantyProductId);
+              if (wp) {
+                const startsAt = new Date();
+                const endsAt = new Date();
+                endsAt.setMonth(endsAt.getMonth() + wp.durationMonths);
+                await storage.createRepairWarranty({
+                  repairOrderId: null,
+                  customerId,
+                  warrantyProductId: wp.id,
+                  sellerType: 'reseller',
+                  sellerId: resellerId,
+                  status: 'accepted',
+                  priceSnapshot: item.unitPrice,
+                  durationMonthsSnapshot: wp.durationMonths,
+                  coverageTypeSnapshot: wp.coverageType,
+                  productNameSnapshot: wp.name,
+                  startsAt,
+                  endsAt,
+                });
+              }
+            } catch (e) {
+              console.error('Auto warranty creation error:', e);
+            }
+          }
         }
       }
       
@@ -45617,6 +45763,23 @@ export function registerRoutes(app: Express): Server {
       res.status(500).json({ error: error.message });
     }
   });
+  // Warranty products per POS (prodotti garanzia vendibili in cassa)
+  app.get("/api/reseller/pos/:repairCenterId/warranty-products", requireRole("reseller", "reseller_staff", "sub_reseller"), async (req, res) => {
+    try {
+      const { resellerId } = getEffectiveContext(req);
+      const { repairCenterId } = req.params;
+      const center = await storage.getRepairCenter(repairCenterId);
+      if (!center || center.resellerId !== resellerId) {
+        return res.status(403).json({ error: "Non autorizzato" });
+      }
+      const products = await storage.listWarrantyProductsByReseller(resellerId, true);
+      res.json(products.filter(p => p.isActive));
+    } catch (error) {
+      console.error("POS warranty products error:", error);
+      res.status(500).json({ error: "Errore caricamento prodotti garanzia" });
+    }
+  });
+
   // Clienti del centro (per selezione in POS)
   app.get("/api/reseller/pos/:repairCenterId/customers", requireRole("reseller", "reseller_staff", "sub_reseller"), async (req, res) => {
     try {

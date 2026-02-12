@@ -6720,6 +6720,10 @@ export const posTransactionItems = pgTable("pos_transaction_items", {
   serviceItemId: varchar("service_item_id").references(() => serviceItems.id),
   isService: boolean("is_service").notNull().default(false),
   
+  // Garanzia dal catalogo warranty (alternativo a productId/serviceItemId)
+  warrantyProductId: varchar("warranty_product_id").references(() => warrantyProducts.id),
+  isWarranty: boolean("is_warranty").notNull().default(false),
+  
   // Flag prodotto temporaneo (non registrato in catalogo)
   isTemporary: boolean("is_temporary").notNull().default(false),
   

@@ -14,7 +14,7 @@ import {
   ShoppingCart, Receipt, X, Check, DollarSign, 
   RotateCcw, Clock, ChevronRight, Loader2, Search,
   Calculator, LayoutGrid, History, AlertCircle, Wallet,
-  Package, Smartphone
+  Package, Smartphone, Shield
 } from "lucide-react";
 import bwipjs from "bwip-js";
 
@@ -203,6 +203,8 @@ type CartItem = {
   totalPrice: number; // Totale riga IVA esclusa
   isTemporary?: boolean;
   isService?: boolean;
+  isWarranty?: boolean;
+  warrantyProductId?: string | null;
   maxStock?: number;
 };
 
@@ -244,6 +246,17 @@ type ServiceItem = {
   laborMinutes: number;
 };
 
+type WarrantyProductPOS = {
+  id: string;
+  name: string;
+  description: string | null;
+  durationMonths: number;
+  priceInCents: number;
+  coverageType: string;
+  deviceCategories: string[] | null;
+  isActive: boolean;
+};
+
 // formatCurrency importato da @/lib/utils
 
 const paymentMethodLabels: Record<string, { label: string; icon: typeof CreditCard }> = {
@@ -277,6 +290,7 @@ export default function ResellerPosTerminal() {
   const [cart, setCart] = useState<CartItem[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [serviceSearchQuery, setServiceSearchQuery] = useState("");
+  const [warrantySearchQuery, setWarrantySearchQuery] = useState("");
   const [barcodeInput, setBarcodeInput] = useState("");
   const [selectedPayment, setSelectedPayment] = useState<"cash" | "card" | "pos_terminal" | "stripe_link" | "paypal" | "mixed">("cash");
   const [cashReceived, setCashReceived] = useState<string>("");
@@ -461,6 +475,23 @@ export default function ResellerPosTerminal() {
     },
     enabled: !!repairCenterId,
   });
+
+  // Prodotti garanzia disponibili
+  const { data: warrantyProducts = [], isLoading: warrantyProductsLoading } = useQuery<WarrantyProductPOS[]>({
+    queryKey: ["/api/reseller/pos", repairCenterId, "warranty-products"],
+    queryFn: async () => {
+      const res = await fetch(`/api/reseller/pos/${repairCenterId}/warranty-products`, { credentials: "include" });
+      if (!res.ok) return [];
+      return res.json();
+    },
+    enabled: !!repairCenterId,
+  });
+
+  const filteredWarrantyProducts = warrantyProducts.filter(wp =>
+    wp.name.toLowerCase().includes(warrantySearchQuery.toLowerCase()) ||
+    (wp.description || "").toLowerCase().includes(warrantySearchQuery.toLowerCase()) ||
+    wp.coverageType.toLowerCase().includes(warrantySearchQuery.toLowerCase())
+  );
 
   const filteredServices = services.filter(s => 
     s.name.toLowerCase().includes(serviceSearchQuery.toLowerCase()) ||
@@ -781,6 +812,48 @@ export default function ResellerPosTerminal() {
     }
   };
 
+  const addWarrantyToCart = (wp: WarrantyProductPOS) => {
+    const existing = cart.find(item => item.warrantyProductId === wp.id && item.isWarranty);
+    
+    if (existing) {
+      setCart(cart.map(item => 
+        item.warrantyProductId === wp.id && item.isWarranty
+          ? { ...item, quantity: item.quantity + 1, totalPrice: (item.quantity + 1) * item.unitPrice }
+          : item
+      ));
+    } else {
+      setCart([...cart, {
+        warrantyProductId: wp.id,
+        productId: null,
+        name: wp.name,
+        sku: null,
+        barcode: null,
+        category: "Garanzia",
+        imageUrl: null,
+        quantity: 1,
+        unitPrice: wp.priceInCents,
+        vatRate: DEFAULT_VAT_RATE,
+        discount: 0,
+        totalPrice: wp.priceInCents,
+        isWarranty: true,
+      }]);
+    }
+  };
+
+  const updateWarrantyQuantity = (warrantyProductId: string, delta: number) => {
+    setCart(cart.map(item => {
+      if (item.warrantyProductId === warrantyProductId && item.isWarranty) {
+        const newQty = Math.max(0, item.quantity + delta);
+        return { ...item, quantity: newQty, totalPrice: newQty * item.unitPrice };
+      }
+      return item;
+    }).filter(item => item.quantity > 0));
+  };
+
+  const removeWarrantyFromCart = (warrantyProductId: string) => {
+    setCart(cart.filter(item => !(item.warrantyProductId === warrantyProductId && item.isWarranty)));
+  };
+
   const updateQuantity = (productId: string, delta: number) => {
     setCart(cart.map(item => {
       if (item.productId === productId) {
@@ -885,6 +958,8 @@ export default function ResellerPosTerminal() {
       items: cart.map(item => ({
         serviceItemId: item.serviceItemId,
         isService: item.isService || false,
+        isWarranty: item.isWarranty || false,
+        warrantyProductId: item.warrantyProductId || undefined,
         productId: item.productId,
         productName: item.isTemporary ? item.name : undefined,
         quantity: item.quantity,
@@ -1181,6 +1256,10 @@ export default function ResellerPosTerminal() {
                   <FileText className="w-4 h-4 sm:mr-1" />
                   <span className="hidden sm:inline">Interventi</span>
                 </TabsTrigger>
+                <TabsTrigger value="warranties" data-testid="tab-warranties">
+                  <Shield className="w-4 h-4 sm:mr-1" />
+                  <span className="hidden sm:inline">Garanzie</span>
+                </TabsTrigger>
                 <TabsTrigger value="history" data-testid="tab-history">
                   <History className="w-4 h-4 sm:mr-1" />
                   <span className="hidden sm:inline">Storico</span>
@@ -1415,6 +1494,59 @@ export default function ResellerPosTerminal() {
                 </ScrollArea>
               </TabsContent>
 
+
+              <TabsContent value="warranties" className="flex-1 overflow-hidden m-0">
+                <div className="mb-2">
+                  <Input
+                    placeholder="Cerca garanzia..."
+                    value={warrantySearchQuery}
+                    onChange={(e) => setWarrantySearchQuery(e.target.value)}
+                    className="h-10"
+                    data-testid="input-warranty-search"
+                  />
+                </div>
+                <ScrollArea className="h-[calc(100%-3rem)]">
+                  {warrantyProductsLoading ? (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
+                      {[1,2,3,4,5,6,7,8].map(i => <Skeleton key={i} className="h-24 w-full" />)}
+                    </div>
+                  ) : filteredWarrantyProducts.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center h-40 text-muted-foreground">
+                      <Shield className="w-12 h-12 mb-2 opacity-50" />
+                      <span>Nessuna garanzia disponibile</span>
+                      <span className="text-sm">Configura il catalogo garanzie</span>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
+                      {filteredWarrantyProducts.map((wp) => (
+                        <button
+                          key={wp.id}
+                          onClick={() => addWarrantyToCart(wp)}
+                          className="p-3 rounded-lg border bg-card text-left transition-colors min-h-[120px] hover-elevate active-elevate-2"
+                          data-testid={`button-warranty-${wp.id}`}
+                        >
+                          <div className="flex gap-2 mb-2">
+                            <div className="w-12 h-12 bg-gradient-to-br from-emerald-100 to-emerald-200 dark:from-emerald-800 dark:to-emerald-900 rounded-lg flex items-center justify-center flex-shrink-0">
+                              <Shield className="w-6 h-6 text-emerald-600 dark:text-emerald-300" />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <div className="font-medium text-sm line-clamp-2">{wp.name}</div>
+                              <div className="text-xs text-muted-foreground mt-0.5">{wp.durationMonths} mesi</div>
+                            </div>
+                          </div>
+                          <Badge variant="outline" className="mb-2 text-xs">{wp.coverageType === 'basic' ? 'Base' : wp.coverageType === 'extended' ? 'Estesa' : wp.coverageType === 'premium' ? 'Premium' : wp.coverageType}</Badge>
+                          <div className="flex items-center justify-between">
+                            <div className="font-semibold text-primary">
+                              {formatCurrency(wp.priceInCents)}
+                            </div>
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </ScrollArea>
+              </TabsContent>
+
               <TabsContent value="history" className="flex-1 overflow-hidden m-0">
                 <ScrollArea className="h-full">
                   {transactionsLoading ? (
@@ -1498,11 +1630,11 @@ export default function ResellerPosTerminal() {
             ) : (
               <div className="space-y-3">
                 {cart.map((item, idx) => {
-                  const itemKey = item.serviceItemId ? `service-${item.serviceItemId}` : (item.productId || `temp-${idx}`);
+                  const itemKey = item.warrantyProductId ? `warranty-${item.warrantyProductId}` : (item.serviceItemId ? `service-${item.serviceItemId}` : (item.productId || `temp-${idx}`));
                   return (
                   <div
                     key={itemKey}
-                    className={`p-3 rounded border ${item.isTemporary ? 'bg-amber-500/10 border-amber-500/30' : 'bg-muted/30'}`}
+                    className={`p-3 rounded border ${item.isTemporary ? 'bg-amber-500/10 border-amber-500/30' : item.isWarranty ? 'bg-emerald-500/10 border-emerald-500/30' : 'bg-muted/30'}`}
                     data-testid={`cart-item-${itemKey}`}
                   >
                     <div className="flex items-start gap-2 mb-2">
@@ -1513,6 +1645,11 @@ export default function ResellerPosTerminal() {
                           {item.isService && (
                             <Badge variant="outline" className="text-[10px] px-1 py-0 h-4 border-indigo-500 text-indigo-600 dark:text-indigo-400">
                               Servizio
+                            </Badge>
+                          )}
+                          {item.isWarranty && (
+                            <Badge variant="outline" className="text-[10px] px-1 py-0 h-4 border-emerald-500 text-emerald-600 dark:text-emerald-400">
+                              Garanzia
                             </Badge>
                           )}
                           {item.isTemporary && (
@@ -1540,7 +1677,7 @@ export default function ResellerPosTerminal() {
                           variant="ghost"
                           size="icon"
                           className="h-7 w-7"
-                          onClick={() => item.isTemporary ? updateTempQuantity(idx, -1) : (item.isService ? updateServiceQuantity(item.serviceItemId!, -1) : updateQuantity(item.productId!, -1))}
+                          onClick={() => item.isTemporary ? updateTempQuantity(idx, -1) : (item.isWarranty ? updateWarrantyQuantity(item.warrantyProductId!, -1) : (item.isService ? updateServiceQuantity(item.serviceItemId!, -1) : updateQuantity(item.productId!, -1)))}
                           data-testid={`button-decrease-${itemKey}`}
                         >
                           <Minus className="w-3 h-3" />
@@ -1550,8 +1687,8 @@ export default function ResellerPosTerminal() {
                           variant="ghost"
                           size="icon"
                           className="h-7 w-7"
-                          onClick={() => item.isTemporary ? updateTempQuantity(idx, 1) : (item.isService ? updateServiceQuantity(item.serviceItemId!, 1) : updateQuantity(item.productId!, 1))}
-                          disabled={!item.isTemporary && !item.isService && item.maxStock !== undefined && item.quantity >= item.maxStock}
+                          onClick={() => item.isTemporary ? updateTempQuantity(idx, 1) : (item.isWarranty ? updateWarrantyQuantity(item.warrantyProductId!, 1) : (item.isService ? updateServiceQuantity(item.serviceItemId!, 1) : updateQuantity(item.productId!, 1)))}
+                          disabled={!item.isTemporary && !item.isService && !item.isWarranty && item.maxStock !== undefined && item.quantity >= item.maxStock}
                           data-testid={`button-increase-${itemKey}`}
                         >
                           <Plus className="w-3 h-3" />
@@ -1561,7 +1698,7 @@ export default function ResellerPosTerminal() {
                         variant="ghost"
                         size="icon"
                         className="h-7 w-7 text-destructive hover:text-destructive"
-                        onClick={() => item.isTemporary ? removeTempFromCart(idx) : (item.isService ? removeServiceFromCart(item.serviceItemId!) : removeFromCart(item.productId!))}
+                        onClick={() => item.isTemporary ? removeTempFromCart(idx) : (item.isWarranty ? removeWarrantyFromCart(item.warrantyProductId!) : (item.isService ? removeServiceFromCart(item.serviceItemId!) : removeFromCart(item.productId!)))}
                         data-testid={`button-remove-${itemKey}`}
                       >
                         <Trash2 className="w-4 h-4" />
