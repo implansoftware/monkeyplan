@@ -44194,6 +44194,58 @@ export function registerRoutes(app: Express): Server {
   });
 
   // ==========================================
+  // RESELLER WARRANTY STATS
+  // ==========================================
+
+  app.get('/api/reseller/warranty-stats', requireRole('reseller'), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send('Unauthorized');
+      const resellerId = req.user.id;
+
+      const allWarranties = await storage.listRepairWarranties({ sellerId: resellerId });
+
+      const totalOffered = allWarranties.length;
+      const totalAccepted = allWarranties.filter(w => w.status === 'accepted' || w.status === 'active' || w.status === 'expired' || w.status === 'claimed').length;
+      const totalDeclined = allWarranties.filter(w => w.status === 'declined').length;
+      const totalRevenue = allWarranties
+        .filter(w => w.status === 'accepted' || w.status === 'active' || w.status === 'expired' || w.status === 'claimed')
+        .reduce((sum, w) => sum + (w.priceSnapshot || 0), 0);
+      const conversionRate = totalOffered > 0 ? Math.round((totalAccepted / totalOffered) * 100) : 0;
+
+      const productMap = new Map<string, { productName: string; count: number; revenue: number }>();
+      for (const w of allWarranties.filter(w => ['accepted', 'active', 'expired', 'claimed'].includes(w.status))) {
+        const key = w.productNameSnapshot || 'Sconosciuto';
+        const existing = productMap.get(key) || { productName: key, count: 0, revenue: 0 };
+        existing.count++;
+        existing.revenue += w.priceSnapshot || 0;
+        productMap.set(key, existing);
+      }
+      const topProducts = Array.from(productMap.values()).sort((a, b) => b.count - a.count).slice(0, 5);
+
+      const monthMap = new Map<string, { month: string; offered: number; accepted: number; revenue: number }>();
+      for (const w of allWarranties) {
+        const d = w.offeredAt || w.createdAt;
+        if (!d) continue;
+        const date = new Date(d);
+        const month = date.getFullYear() + '-' + String(date.getMonth() + 1).padStart(2, '0');
+        const existing = monthMap.get(month) || { month, offered: 0, accepted: 0, revenue: 0 };
+        existing.offered++;
+        if (['accepted', 'active', 'expired', 'claimed'].includes(w.status)) {
+          existing.accepted++;
+          existing.revenue += w.priceSnapshot || 0;
+        }
+        monthMap.set(month, existing);
+      }
+      const monthlyTrend = Array.from(monthMap.values()).sort((a, b) => a.month.localeCompare(b.month)).slice(-12);
+
+      res.json({ totalOffered, totalAccepted, totalDeclined, totalRevenue, conversionRate, topProducts, monthlyTrend });
+    } catch (error: any) {
+      console.error('Warranty stats error:', error);
+      res.status(500).send(error.message);
+    }
+  });
+
+  // ==========================================
   // RESELLER WARRANTY PRODUCTS
   // ==========================================
 
