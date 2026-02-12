@@ -44194,6 +44194,150 @@ export function registerRoutes(app: Express): Server {
   });
 
   // ==========================================
+  // REPAIR WARRANTY OFFER ROUTES
+  // ==========================================
+
+  app.get('/api/repairs/:id/warranty', async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send('Unauthorized');
+      const warranty = await storage.getRepairWarrantyByRepairOrder(req.params.id);
+      if (!warranty) return res.json(null);
+      res.json({
+        id: warranty.id,
+        repairOrderId: warranty.repairOrderId,
+        warrantyProductId: warranty.warrantyProductId,
+        status: warranty.status,
+        priceSnapshot: warranty.priceSnapshot,
+        durationMonthsSnapshot: warranty.durationMonthsSnapshot,
+        coverageTypeSnapshot: warranty.coverageTypeSnapshot,
+        productNameSnapshot: warranty.productNameSnapshot,
+        startDate: warranty.startsAt ? warranty.startsAt.toISOString() : null,
+        endDate: warranty.endsAt ? warranty.endsAt.toISOString() : null,
+        createdAt: warranty.createdAt.toISOString(),
+      });
+    } catch (error: any) {
+      console.error('Error fetching repair warranty:', error);
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  app.post('/api/repairs/:id/warranty', async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send('Unauthorized');
+      const { warrantyProductId } = req.body;
+      if (!warrantyProductId) return res.status(400).json({ message: 'warrantyProductId richiesto' });
+
+      const existing = await storage.getRepairWarrantyByRepairOrder(req.params.id);
+      if (existing) return res.status(409).json({ message: "Esiste già un'offerta di garanzia per questa riparazione" });
+
+      const repairOrder = await storage.getRepairOrder(req.params.id);
+      if (!repairOrder) return res.status(404).json({ message: 'Ordine di riparazione non trovato' });
+
+      const product = await storage.getWarrantyProduct(warrantyProductId);
+      if (!product) return res.status(404).json({ message: 'Prodotto garanzia non trovato' });
+
+      const warranty = await storage.createRepairWarranty({
+        repairOrderId: req.params.id,
+        customerId: repairOrder.customerId || req.user.id,
+        warrantyProductId: product.id,
+        sellerType: req.user.role === 'admin' ? 'admin' : 'reseller',
+        sellerId: req.user.id,
+        status: 'offered',
+        priceSnapshot: product.priceInCents,
+        durationMonthsSnapshot: product.durationMonths,
+        coverageTypeSnapshot: product.coverageType,
+        productNameSnapshot: product.name,
+      });
+
+      res.status(201).json({
+        id: warranty.id,
+        repairOrderId: warranty.repairOrderId,
+        warrantyProductId: warranty.warrantyProductId,
+        status: warranty.status,
+        priceSnapshot: warranty.priceSnapshot,
+        durationMonthsSnapshot: warranty.durationMonthsSnapshot,
+        coverageTypeSnapshot: warranty.coverageTypeSnapshot,
+        productNameSnapshot: warranty.productNameSnapshot,
+        startDate: null,
+        endDate: null,
+        createdAt: warranty.createdAt.toISOString(),
+      });
+    } catch (error: any) {
+      console.error('Error creating repair warranty:', error);
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  app.post('/api/repairs/:id/warranty/accept', async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send('Unauthorized');
+      const warranty = await storage.getRepairWarrantyByRepairOrder(req.params.id);
+      if (!warranty) return res.status(404).json({ message: 'Offerta di garanzia non trovata' });
+      if (warranty.status !== 'offered') return res.status(400).json({ message: "L'offerta non è in stato offerta" });
+
+      const now = new Date();
+      const endsAt = new Date(now);
+      endsAt.setMonth(endsAt.getMonth() + warranty.durationMonthsSnapshot);
+
+      const updated = await storage.updateRepairWarranty(warranty.id, {
+        status: 'accepted',
+        startsAt: now,
+        endsAt: endsAt,
+        acceptedAt: now,
+      });
+
+      res.json({
+        id: updated.id,
+        repairOrderId: updated.repairOrderId,
+        warrantyProductId: updated.warrantyProductId,
+        status: updated.status,
+        priceSnapshot: updated.priceSnapshot,
+        durationMonthsSnapshot: updated.durationMonthsSnapshot,
+        coverageTypeSnapshot: updated.coverageTypeSnapshot,
+        productNameSnapshot: updated.productNameSnapshot,
+        startDate: updated.startsAt ? updated.startsAt.toISOString() : null,
+        endDate: updated.endsAt ? updated.endsAt.toISOString() : null,
+        createdAt: updated.createdAt.toISOString(),
+      });
+    } catch (error: any) {
+      console.error('Error accepting warranty:', error);
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  app.post('/api/repairs/:id/warranty/decline', async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send('Unauthorized');
+      const warranty = await storage.getRepairWarrantyByRepairOrder(req.params.id);
+      if (!warranty) return res.status(404).json({ message: 'Offerta di garanzia non trovata' });
+      if (warranty.status !== 'offered') return res.status(400).json({ message: "L'offerta non è in stato offerta" });
+
+      const updated = await storage.updateRepairWarranty(warranty.id, {
+        status: 'declined',
+        declinedAt: new Date(),
+      });
+
+      res.json({
+        id: updated.id,
+        repairOrderId: updated.repairOrderId,
+        warrantyProductId: updated.warrantyProductId,
+        status: updated.status,
+        priceSnapshot: updated.priceSnapshot,
+        durationMonthsSnapshot: updated.durationMonthsSnapshot,
+        coverageTypeSnapshot: updated.coverageTypeSnapshot,
+        productNameSnapshot: updated.productNameSnapshot,
+        startDate: null,
+        endDate: null,
+        createdAt: updated.createdAt.toISOString(),
+      });
+    } catch (error: any) {
+      console.error('Error declining warranty:', error);
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+
+  // ==========================================
   // WARRANTY PRODUCTS FOR REPAIR DETAIL
   // ==========================================
 
