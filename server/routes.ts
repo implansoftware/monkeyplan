@@ -28011,7 +28011,7 @@ export function registerRoutes(app: Express): Server {
               periodMonth: now.getMonth() + 1, // 1-12
               periodYear: now.getFullYear(),
               amountCents: commissionAmount,
-              status: paymentMethod === 'card' || paymentMethod === 'paypal' ? 'approved' : 'pending',
+              status: 'pending',
               accruedAt: now,
               notes: `Commissione automatica per pratica ${practice.practiceNumber}`,
             });
