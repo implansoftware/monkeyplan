@@ -1225,30 +1225,30 @@ export default function PosPage() {
           </CardHeader>
           <CardContent className="flex-1 overflow-hidden">
             <Tabs defaultValue="ricambi" className="h-full flex flex-col">
-              <TabsList className="mb-2 w-full justify-start gap-1 overflow-x-auto">
-                <TabsTrigger value="ricambi" data-testid="tab-ricambi" className="text-xs sm:text-sm px-2 sm:px-3">
-                  <Wrench className="w-3.5 h-3.5 sm:mr-1" />
-                  <span className="hidden sm:inline">Ricambi</span>
+              <TabsList className="mb-2 grid grid-cols-3 h-auto gap-1 p-1">
+                <TabsTrigger value="ricambi" data-testid="tab-ricambi" className="text-xs sm:text-sm py-1.5">
+                  <Wrench className="w-3.5 h-3.5 mr-1" />
+                  Ricambi
                 </TabsTrigger>
-                <TabsTrigger value="accessori" data-testid="tab-accessori" className="text-xs sm:text-sm px-2 sm:px-3">
-                  <Package className="w-3.5 h-3.5 sm:mr-1" />
-                  <span className="hidden sm:inline">Accessori</span>
+                <TabsTrigger value="accessori" data-testid="tab-accessori" className="text-xs sm:text-sm py-1.5">
+                  <Package className="w-3.5 h-3.5 mr-1" />
+                  Accessori
                 </TabsTrigger>
-                <TabsTrigger value="dispositivi" data-testid="tab-dispositivi" className="text-xs sm:text-sm px-2 sm:px-3">
-                  <Smartphone className="w-3.5 h-3.5 sm:mr-1" />
-                  <span className="hidden sm:inline">Dispositivi</span>
+                <TabsTrigger value="dispositivi" data-testid="tab-dispositivi" className="text-xs sm:text-sm py-1.5">
+                  <Smartphone className="w-3.5 h-3.5 mr-1" />
+                  Dispositivi
                 </TabsTrigger>
-                <TabsTrigger value="services" data-testid="tab-services" className="text-xs sm:text-sm px-2 sm:px-3">
-                  <FileText className="w-3.5 h-3.5 sm:mr-1" />
-                  <span className="hidden sm:inline">Interventi</span>
+                <TabsTrigger value="services" data-testid="tab-services" className="text-xs sm:text-sm py-1.5">
+                  <FileText className="w-3.5 h-3.5 mr-1" />
+                  Interventi
                 </TabsTrigger>
-                <TabsTrigger value="history" data-testid="tab-history" className="text-xs sm:text-sm px-2 sm:px-3">
-                  <History className="w-3.5 h-3.5 sm:mr-1" />
-                  <span className="hidden sm:inline">Storico</span>
+                <TabsTrigger value="history" data-testid="tab-history" className="text-xs sm:text-sm py-1.5">
+                  <History className="w-3.5 h-3.5 mr-1" />
+                  Storico
                 </TabsTrigger>
-                <TabsTrigger value="warranties" data-testid="tab-warranties" className="text-xs sm:text-sm px-2 sm:px-3">
-                  <Shield className="w-3.5 h-3.5 sm:mr-1" />
-                  <span className="hidden sm:inline">Garanzie</span>
+                <TabsTrigger value="warranties" data-testid="tab-warranties" className="text-xs sm:text-sm py-1.5">
+                  <Shield className="w-3.5 h-3.5 mr-1" />
+                  Garanzie
                 </TabsTrigger>
               </TabsList>
               
