@@ -44813,6 +44813,117 @@ export function registerRoutes(app: Express): Server {
 
 
   // ==========================================
+
+  // ==========================================
+  // ADMIN WARRANTY PRODUCTS (CRUD)
+  // ==========================================
+
+  app.get('/api/admin/warranty-products', requireAuth, requireRole('admin'), async (req, res) => {
+    try {
+      const products = await storage.listWarrantyProducts();
+      res.json(products);
+    } catch (error: any) {
+      console.error('Admin warranty products error:', error);
+      res.status(500).send(error.message);
+    }
+  });
+
+  app.post('/api/admin/warranty-products', requireAuth, requireRole('admin'), async (req, res) => {
+    try {
+      const product = await storage.createWarrantyProduct({
+        ...req.body,
+        resellerId: null,
+      });
+      res.status(201).json(product);
+    } catch (error: any) {
+      console.error('Admin create warranty product error:', error);
+      res.status(400).send(error.message);
+    }
+  });
+
+  app.patch('/api/admin/warranty-products/:id', requireAuth, requireRole('admin'), async (req, res) => {
+    try {
+      const product = await storage.updateWarrantyProduct(req.params.id, req.body);
+      res.json(product);
+    } catch (error: any) {
+      console.error('Admin update warranty product error:', error);
+      res.status(400).send(error.message);
+    }
+  });
+
+  app.delete('/api/admin/warranty-products/:id', requireAuth, requireRole('admin'), async (req, res) => {
+    try {
+      await storage.deleteWarrantyProduct(req.params.id);
+      res.status(204).send();
+    } catch (error: any) {
+      console.error('Admin delete warranty product error:', error);
+      res.status(500).send(error.message);
+    }
+  });
+
+  // ==========================================
+  // ADMIN WARRANTY STATS (global analytics)
+  // ==========================================
+
+  app.get('/api/admin/warranty-stats', requireAuth, requireRole('admin'), async (req, res) => {
+    try {
+      const allWarranties = await storage.listRepairWarranties({});
+
+      const totalOffered = allWarranties.length;
+      const totalAccepted = allWarranties.filter(w => w.status === 'accepted' || w.status === 'active' || w.status === 'expired' || w.status === 'claimed').length;
+      const totalDeclined = allWarranties.filter(w => w.status === 'declined').length;
+      const totalRevenue = allWarranties
+        .filter(w => w.status === 'accepted' || w.status === 'active' || w.status === 'expired' || w.status === 'claimed')
+        .reduce((sum, w) => sum + (w.priceSnapshot || 0), 0);
+      const conversionRate = totalOffered > 0 ? Math.round((totalAccepted / totalOffered) * 100) : 0;
+
+      const productMap = new Map();
+      for (const w of allWarranties.filter(w => ['accepted', 'active', 'expired', 'claimed'].includes(w.status))) {
+        const key = w.productNameSnapshot || 'Sconosciuto';
+        const existing = productMap.get(key) || { productName: key, count: 0, revenue: 0 };
+        existing.count++;
+        existing.revenue += w.priceSnapshot || 0;
+        productMap.set(key, existing);
+      }
+      const topProducts = Array.from(productMap.values()).sort((a, b) => b.count - a.count).slice(0, 5);
+
+      const monthMap = new Map();
+      for (const w of allWarranties) {
+        const d = w.offeredAt || w.createdAt;
+        if (!d) continue;
+        const date = new Date(d);
+        const month = date.getFullYear() + '-' + String(date.getMonth() + 1).padStart(2, '0');
+        const existing = monthMap.get(month) || { month, offered: 0, accepted: 0, revenue: 0 };
+        existing.offered++;
+        if (['accepted', 'active', 'expired', 'claimed'].includes(w.status)) {
+          existing.accepted++;
+          existing.revenue += w.priceSnapshot || 0;
+        }
+        monthMap.set(month, existing);
+      }
+      const monthlyTrend = Array.from(monthMap.values()).sort((a, b) => a.month.localeCompare(b.month)).slice(-12);
+
+      res.json({ totalOffered, totalAccepted, totalDeclined, totalRevenue, conversionRate, topProducts, monthlyTrend });
+    } catch (error: any) {
+      console.error('Admin warranty stats error:', error);
+      res.status(500).send(error.message);
+    }
+  });
+
+  // ==========================================
+  // ADMIN WARRANTIES LIST (all sold warranties)
+  // ==========================================
+
+  app.get('/api/admin/warranties', requireAuth, requireRole('admin'), async (req, res) => {
+    try {
+      const warranties = await storage.listRepairWarranties({});
+      res.json(warranties);
+    } catch (error: any) {
+      console.error('Admin warranties list error:', error);
+      res.status(500).send(error.message);
+    }
+  });
+
   // WARRANTY PRODUCTS FOR REPAIR DETAIL
   // ==========================================
 

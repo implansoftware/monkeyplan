@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { WarrantyProduct } from "@shared/schema";
+import { WarrantyProduct, User } from "@shared/schema";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -52,6 +52,16 @@ export default function AdminWarrantyProducts() {
   const { data: products = [], isLoading } = useQuery<WarrantyProduct[]>({
     queryKey: ["/api/admin/warranty-products"],
   });
+
+  const { data: users = [] } = useQuery<User[]>({
+    queryKey: ["/api/users"],
+  });
+
+  const getOwnerName = (resellerId: string | null) => {
+    if (!resellerId) return "Globale (Admin)";
+    const user = users.find(u => u.id === resellerId);
+    return user ? user.fullName || user.username : resellerId.slice(0, 8);
+  };
 
   const createMutation = useMutation({
     mutationFn: (data: WarrantyFormData) => apiRequest("POST", "/api/admin/warranty-products", data),
@@ -214,6 +224,7 @@ export default function AdminWarrantyProducts() {
               <TableHeader>
                 <TableRow>
                   <TableHead>Nome</TableHead>
+                  <TableHead>Proprietario</TableHead>
                   <TableHead>Copertura</TableHead>
                   <TableHead className="text-center">Durata</TableHead>
                   <TableHead className="text-right">Prezzo</TableHead>
@@ -231,6 +242,11 @@ export default function AdminWarrantyProducts() {
                           <p className="text-xs text-muted-foreground line-clamp-1">{product.description}</p>
                         )}
                       </div>
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant={product.resellerId ? "outline" : "secondary"} data-testid={`text-owner-${product.id}`}>
+                        {getOwnerName(product.resellerId)}
+                      </Badge>
                     </TableCell>
                     <TableCell>{getCoverageBadge(product.coverageType)}</TableCell>
                     <TableCell className="text-center">{product.durationMonths} mesi</TableCell>
