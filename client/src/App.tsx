@@ -277,6 +277,7 @@ import CustomerOrderDetail from "@/pages/customer/order-detail";
 import CustomerSalesReturns from "@/pages/customer/sales-returns";
 import CustomerProfile from "@/pages/customer/profile";
 import CustomerRemoteRequests from "@/pages/customer/remote-requests";
+import NewRemoteRequest from "@/pages/customer/new-remote-request";
 import CustomerServiceCatalog from "@/pages/customer/service-catalog";
 import CustomerServiceOrders from "@/pages/customer/service-orders";
 
@@ -588,6 +589,7 @@ function Router() {
       <ProtectedRoute path="/customer/orders" component={CustomerOrders} />
       <ProtectedRoute path="/customer/sales-returns" component={CustomerSalesReturns} />
       <ProtectedRoute path="/customer/profile" component={CustomerProfile} />
+      <ProtectedRoute path="/customer/remote-requests/new" component={NewRemoteRequest} />
       <ProtectedRoute path="/customer/remote-requests" component={CustomerRemoteRequests} />
       <ProtectedRoute path="/customer/service-catalog" component={CustomerServiceCatalog} />
       <ProtectedRoute path="/customer/service-orders" component={CustomerServiceOrders} />
