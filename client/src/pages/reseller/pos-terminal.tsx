@@ -1247,21 +1247,21 @@ export default function ResellerPosTerminal() {
           </CardHeader>
           <CardContent className="flex-1 overflow-hidden">
             <Tabs defaultValue="search" className="h-full flex flex-col">
-              <TabsList className="mb-2">
-                <TabsTrigger value="search" data-testid="tab-search">
-                  <LayoutGrid className="w-4 h-4 sm:mr-1" />
+              <TabsList className="mb-2 w-full justify-start gap-1 overflow-x-auto">
+                <TabsTrigger value="search" data-testid="tab-search" className="text-xs sm:text-sm px-2 sm:px-3">
+                  <LayoutGrid className="w-3.5 h-3.5 sm:mr-1" />
                   <span className="hidden sm:inline">Prodotti</span>
                 </TabsTrigger>
-                <TabsTrigger value="services" data-testid="tab-services">
-                  <FileText className="w-4 h-4 sm:mr-1" />
+                <TabsTrigger value="services" data-testid="tab-services" className="text-xs sm:text-sm px-2 sm:px-3">
+                  <FileText className="w-3.5 h-3.5 sm:mr-1" />
                   <span className="hidden sm:inline">Interventi</span>
                 </TabsTrigger>
-                <TabsTrigger value="warranties" data-testid="tab-warranties">
-                  <Shield className="w-4 h-4 sm:mr-1" />
+                <TabsTrigger value="warranties" data-testid="tab-warranties" className="text-xs sm:text-sm px-2 sm:px-3">
+                  <Shield className="w-3.5 h-3.5 sm:mr-1" />
                   <span className="hidden sm:inline">Garanzie</span>
                 </TabsTrigger>
-                <TabsTrigger value="history" data-testid="tab-history">
-                  <History className="w-4 h-4 sm:mr-1" />
+                <TabsTrigger value="history" data-testid="tab-history" className="text-xs sm:text-sm px-2 sm:px-3">
+                  <History className="w-3.5 h-3.5 sm:mr-1" />
                   <span className="hidden sm:inline">Storico</span>
                 </TabsTrigger>
               </TabsList>

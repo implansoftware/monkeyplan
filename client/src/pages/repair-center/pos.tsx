@@ -1225,29 +1225,29 @@ export default function PosPage() {
           </CardHeader>
           <CardContent className="flex-1 overflow-hidden">
             <Tabs defaultValue="ricambi" className="h-full flex flex-col">
-              <TabsList className="mb-2 flex-wrap">
-                <TabsTrigger value="ricambi" data-testid="tab-ricambi">
-                  <Wrench className="w-4 h-4 sm:mr-1" />
+              <TabsList className="mb-2 w-full justify-start gap-1 overflow-x-auto">
+                <TabsTrigger value="ricambi" data-testid="tab-ricambi" className="text-xs sm:text-sm px-2 sm:px-3">
+                  <Wrench className="w-3.5 h-3.5 sm:mr-1" />
                   <span className="hidden sm:inline">Ricambi</span>
                 </TabsTrigger>
-                <TabsTrigger value="accessori" data-testid="tab-accessori">
-                  <Package className="w-4 h-4 sm:mr-1" />
+                <TabsTrigger value="accessori" data-testid="tab-accessori" className="text-xs sm:text-sm px-2 sm:px-3">
+                  <Package className="w-3.5 h-3.5 sm:mr-1" />
                   <span className="hidden sm:inline">Accessori</span>
                 </TabsTrigger>
-                <TabsTrigger value="dispositivi" data-testid="tab-dispositivi">
-                  <Smartphone className="w-4 h-4 sm:mr-1" />
+                <TabsTrigger value="dispositivi" data-testid="tab-dispositivi" className="text-xs sm:text-sm px-2 sm:px-3">
+                  <Smartphone className="w-3.5 h-3.5 sm:mr-1" />
                   <span className="hidden sm:inline">Dispositivi</span>
                 </TabsTrigger>
-                <TabsTrigger value="services" data-testid="tab-services">
-                  <FileText className="w-4 h-4 sm:mr-1" />
+                <TabsTrigger value="services" data-testid="tab-services" className="text-xs sm:text-sm px-2 sm:px-3">
+                  <FileText className="w-3.5 h-3.5 sm:mr-1" />
                   <span className="hidden sm:inline">Interventi</span>
                 </TabsTrigger>
-                <TabsTrigger value="history" data-testid="tab-history">
-                  <History className="w-4 h-4 sm:mr-1" />
+                <TabsTrigger value="history" data-testid="tab-history" className="text-xs sm:text-sm px-2 sm:px-3">
+                  <History className="w-3.5 h-3.5 sm:mr-1" />
                   <span className="hidden sm:inline">Storico</span>
                 </TabsTrigger>
-                <TabsTrigger value="warranties" data-testid="tab-warranties">
-                  <Shield className="w-4 h-4 sm:mr-1" />
+                <TabsTrigger value="warranties" data-testid="tab-warranties" className="text-xs sm:text-sm px-2 sm:px-3">
+                  <Shield className="w-3.5 h-3.5 sm:mr-1" />
                   <span className="hidden sm:inline">Garanzie</span>
                 </TabsTrigger>
               </TabsList>
