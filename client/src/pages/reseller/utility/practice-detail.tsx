@@ -264,6 +264,7 @@ export default function ResellerUtilityPracticeDetail() {
       return await res.json();
     },
     onSuccess: (data: { practice: any; invoice: any | null }) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/utility/practices"] });
       queryClient.invalidateQueries({ queryKey: ["/api/utility/practices", params.id] });
       queryClient.invalidateQueries({ queryKey: ["/api/utility/practices", params.id, "timeline"] });
       queryClient.invalidateQueries({ queryKey: ["/api/utility/practices", params.id, "state-history"] });
