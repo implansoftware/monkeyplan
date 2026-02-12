@@ -44194,6 +44194,44 @@ export function registerRoutes(app: Express): Server {
   });
 
   // ==========================================
+  // WARRANTY PRODUCTS FOR REPAIR DETAIL
+  // ==========================================
+
+  app.get('/api/warranty-products', async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send('Unauthorized');
+      const { repairOrderId } = req.query;
+      
+      let resellerId: string | null = null;
+      
+      if (req.user.role === 'reseller' || req.user.role === 'sub_reseller') {
+        resellerId = req.user.id;
+      } else if (req.user.role === 'repair_center' || req.user.role === 'repair_center_staff') {
+        const user = await storage.getUser(req.user.id);
+        if (user?.parentResellerId) {
+          resellerId = user.parentResellerId;
+        }
+      } else if (req.user.role === 'admin' && repairOrderId) {
+        const repair = await storage.getRepairOrder(repairOrderId as string);
+        if (repair?.resellerId) {
+          resellerId = repair.resellerId;
+        }
+      }
+      
+      if (resellerId) {
+        const products = await storage.listWarrantyProductsByReseller(resellerId, true);
+        res.json(products);
+      } else {
+        const products = await storage.listWarrantyProducts(true);
+        res.json(products);
+      }
+    } catch (error: any) {
+      console.error('Warranty products error:', error);
+      res.status(500).send(error.message);
+    }
+  });
+
+  // ==========================================
   // RESELLER WARRANTY STATS
   // ==========================================
 
