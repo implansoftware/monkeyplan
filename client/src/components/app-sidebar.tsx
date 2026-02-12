@@ -319,9 +319,9 @@ const menuItems = {
     { title: "Calendario Team", url: "/repair-center/hr/calendar", icon: CalendarCheck, group: "Gestione HR" },
     { title: "Clienti", url: "/repair-center/customers", icon: Users, group: "Gestione" },
     { title: "Fatture", url: "/repair-center/invoices", icon: FileText, group: "Gestione" },
-    { title: "Garanzie Clienti", url: "/repair-center/warranties", icon: Shield, group: "Gestione" },
-    { title: "Analytics Garanzie", url: "/repair-center/warranty-analytics", icon: BarChart3, group: "Gestione" },
     { title: "Impostazioni", url: "/repair-center/settings", icon: Settings, group: "Gestione" },
+    { title: "Garanzie Clienti", url: "/repair-center/warranties", icon: Shield, group: "Garanzie" },
+    { title: "Analytics Garanzie", url: "/repair-center/warranty-analytics", icon: BarChart3, group: "Garanzie" },
     { title: "Ticket", url: "/repair-center/tickets", icon: Ticket, group: "Assistenza" },
   ],
   customer: [
