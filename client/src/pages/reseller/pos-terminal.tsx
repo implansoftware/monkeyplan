@@ -478,9 +478,12 @@ export default function ResellerPosTerminal() {
 
   // Prodotti garanzia disponibili
   const { data: warrantyProducts = [], isLoading: warrantyProductsLoading } = useQuery<WarrantyProductPOS[]>({
-    queryKey: ["/api/reseller/pos", repairCenterId, "warranty-products"],
+    queryKey: ["/api/reseller/pos", repairCenterId, "warranty-products", selectedPriceListId],
     queryFn: async () => {
-      const res = await fetch(`/api/reseller/pos/${repairCenterId}/warranty-products`, { credentials: "include" });
+      const url = selectedPriceListId
+        ? `/api/reseller/pos/${repairCenterId}/warranty-products?priceListId=${selectedPriceListId}`
+        : `/api/reseller/pos/${repairCenterId}/warranty-products`;
+      const res = await fetch(url, { credentials: "include" });
       if (!res.ok) return [];
       return res.json();
     },

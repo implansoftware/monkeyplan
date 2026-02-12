@@ -7254,9 +7254,10 @@ export const priceListItems = pgTable("price_list_items", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   priceListId: varchar("price_list_id").notNull().references(() => priceLists.id, { onDelete: "cascade" }),
   
-  // Prodotto o servizio (uno dei due deve essere valorizzato)
+  // Prodotto, servizio o garanzia (uno dei tre deve essere valorizzato)
   productId: varchar("product_id").references(() => products.id, { onDelete: "cascade" }),
   serviceItemId: varchar("service_item_id").references(() => serviceItems.id, { onDelete: "cascade" }),
+  warrantyProductId: varchar("warranty_product_id").references(() => warrantyProducts.id, { onDelete: "cascade" }),
   
   // Prezzi
   priceCents: integer("price_cents").notNull(), // Prezzo in centesimi (IVA esclusa)
@@ -7294,6 +7295,10 @@ export const priceListItemsRelations = relations(priceListItems, ({ one }) => ({
   serviceItem: one(serviceItems, {
     fields: [priceListItems.serviceItemId],
     references: [serviceItems.id],
+  }),
+  warrantyProduct: one(warrantyProducts, {
+    fields: [priceListItems.warrantyProductId],
+    references: [warrantyProducts.id],
   }),
 }));
 

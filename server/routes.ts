@@ -41835,8 +41835,43 @@ export function registerRoutes(app: Express): Server {
       const center = await storage.getRepairCenter(repairCenterId);
       if (!center) return res.status(404).json({ error: "Centro riparazione non trovato" });
       const resellerId = center.resellerId;
-      const products = await storage.listWarrantyProductsByReseller(resellerId, true);
-      res.json(products.filter(p => p.isActive));
+      const warrantyProds = await storage.listWarrantyProductsByReseller(resellerId, true);
+      const activeWarranties = warrantyProds.filter(p => p.isActive);
+
+      const priceListId = req.query.priceListId as string | undefined;
+      if (priceListId) {
+        const inheritedLists = await storage.getInheritedPriceLists(repairCenterId, 'repair_center');
+        const isAccessible = inheritedLists.some(pl => pl.id === priceListId);
+        if (!isAccessible) {
+          return res.status(403).json({ error: "Price list not accessible" });
+        }
+        const priceList = await storage.getPriceList(priceListId);
+        if (priceList) {
+          const priceListItems = await storage.listPriceListItems(priceList.id);
+          const defaultVatRate = (priceList as any).defaultVatRate ?? 22;
+          const priceMap = new Map<string, { priceCents: number; vatRate: number }>();
+          for (const pli of priceListItems) {
+            if (pli.warrantyProductId && pli.isActive) {
+              priceMap.set(pli.warrantyProductId, {
+                priceCents: pli.priceCents,
+                vatRate: (pli as any).vatRate ?? defaultVatRate,
+              });
+            }
+          }
+          const withListPrice = activeWarranties.map(wp => {
+            const override = priceMap.get(wp.id);
+            return {
+              ...wp,
+              priceInCents: override ? override.priceCents : wp.priceInCents,
+              vatRate: override ? override.vatRate : defaultVatRate,
+              priceListName: override ? priceList.name : null,
+            };
+          });
+          return res.json(withListPrice);
+        }
+      }
+
+      res.json(activeWarranties);
     } catch (error) {
       console.error("RC POS warranty products error:", error);
       res.status(500).json({ error: "Errore caricamento prodotti garanzia" });
@@ -45772,8 +45807,43 @@ export function registerRoutes(app: Express): Server {
       if (!center || center.resellerId !== resellerId) {
         return res.status(403).json({ error: "Non autorizzato" });
       }
-      const products = await storage.listWarrantyProductsByReseller(resellerId, true);
-      res.json(products.filter(p => p.isActive));
+      const warrantyProds = await storage.listWarrantyProductsByReseller(resellerId, true);
+      const activeWarranties = warrantyProds.filter(p => p.isActive);
+
+      const priceListId = req.query.priceListId as string | undefined;
+      if (priceListId) {
+        const inheritedLists = await storage.getInheritedPriceLists(repairCenterId, 'repair_center');
+        const isAccessible = inheritedLists.some(pl => pl.id === priceListId);
+        if (!isAccessible) {
+          return res.status(403).json({ error: "Price list not accessible" });
+        }
+        const priceList = await storage.getPriceList(priceListId);
+        if (priceList) {
+          const priceListItems = await storage.listPriceListItems(priceList.id);
+          const defaultVatRate = (priceList as any).defaultVatRate ?? 22;
+          const priceMap = new Map<string, { priceCents: number; vatRate: number }>();
+          for (const pli of priceListItems) {
+            if (pli.warrantyProductId && pli.isActive) {
+              priceMap.set(pli.warrantyProductId, {
+                priceCents: pli.priceCents,
+                vatRate: (pli as any).vatRate ?? defaultVatRate,
+              });
+            }
+          }
+          const withListPrice = activeWarranties.map(wp => {
+            const override = priceMap.get(wp.id);
+            return {
+              ...wp,
+              priceInCents: override ? override.priceCents : wp.priceInCents,
+              vatRate: override ? override.vatRate : defaultVatRate,
+              priceListName: override ? priceList.name : null,
+            };
+          });
+          return res.json(withListPrice);
+        }
+      }
+
+      res.json(activeWarranties);
     } catch (error) {
       console.error("POS warranty products error:", error);
       res.status(500).json({ error: "Errore caricamento prodotti garanzia" });

@@ -460,9 +460,12 @@ export default function PosPage() {
 
   // Prodotti garanzia disponibili
   const { data: warrantyProducts = [], isLoading: warrantyProductsLoading } = useQuery<WarrantyProductPOS[]>({
-    queryKey: ["/api/repair-center/pos/warranty-products"],
+    queryKey: ["/api/repair-center/pos/warranty-products", selectedPriceListId],
     queryFn: async () => {
-      const res = await fetch("/api/repair-center/pos/warranty-products", { credentials: "include" });
+      const url = selectedPriceListId
+        ? `/api/repair-center/pos/warranty-products?priceListId=${selectedPriceListId}`
+        : "/api/repair-center/pos/warranty-products";
+      const res = await fetch(url, { credentials: "include" });
       if (!res.ok) return [];
       return res.json();
     },
