@@ -1731,65 +1731,63 @@ export default function PosPage() {
                 <span>Carrello vuoto</span>
               </div>
             ) : (
-              <div className="space-y-3">
+              <div className="space-y-2">
                 {cart.map((item, idx) => {
                   const itemKey = item.warrantyProductId ? `warranty-${item.warrantyProductId}` : (item.serviceItemId ? `service-${item.serviceItemId}` : (item.productId || `temp-${idx}`));
                   return (
                   <div
                     key={itemKey}
-                    className={`p-3 rounded border ${item.isTemporary ? 'bg-amber-500/10 border-amber-500/30' : item.isWarranty ? 'bg-emerald-500/10 border-emerald-500/30' : 'bg-muted/30'}`}
+                    className={`p-2.5 rounded-md border ${item.isTemporary ? 'bg-amber-500/10 border-amber-500/30' : item.isWarranty ? 'bg-emerald-500/10 border-emerald-500/30' : item.isService ? 'bg-indigo-500/5 border-indigo-500/20' : 'bg-muted/30 border-border'}`}
                     data-testid={`cart-item-${itemKey}`}
                   >
-                    <div className="flex items-start gap-2 mb-2">
+                    <div className="flex items-center gap-2">
                       <ProductImage category={item.category} imageUrl={item.imageUrl} size="sm" />
                       <div className="flex-1 min-w-0">
-                        <div className="flex flex-wrap items-center gap-2">
-                          <div className="font-medium text-sm line-clamp-1">{item.name}</div>
+                        <div className="font-medium text-sm truncate" title={item.name}>{item.name}</div>
+                        <div className="flex flex-wrap items-center gap-1.5 mt-0.5">
                           {item.isService && (
-                            <Badge variant="outline" className="text-[10px] px-1 py-0 h-4 border-indigo-500 text-indigo-600 dark:text-indigo-400">
+                            <Badge variant="outline" className="text-[10px] px-1.5 py-0 border-indigo-500/50 text-indigo-600 dark:text-indigo-400">
                               Servizio
                             </Badge>
                           )}
                           {item.isWarranty && (
-                            <Badge variant="outline" className="text-[10px] px-1 py-0 h-4 border-emerald-500 text-emerald-600 dark:text-emerald-400">
+                            <Badge variant="outline" className="text-[10px] px-1.5 py-0 border-emerald-500/50 text-emerald-600 dark:text-emerald-400">
                               Garanzia
                             </Badge>
                           )}
                           {item.isTemporary && (
-                            <Badge variant="outline" className="text-[10px] px-1 py-0 h-4 border-amber-500 text-amber-600 dark:text-amber-400">
+                            <Badge variant="outline" className="text-[10px] px-1.5 py-0 border-amber-500/50 text-amber-600 dark:text-amber-400">
                               Temp
                             </Badge>
                           )}
-                        </div>
-                        <div className="text-xs text-muted-foreground">
-                          {formatCurrency(item.unitPrice)} x {item.quantity}
+                          <span className="text-xs text-muted-foreground">
+                            {formatCurrency(item.unitPrice)} x {item.quantity}
+                          </span>
                         </div>
                       </div>
-                      <div className="text-right">
-                        <div className="font-semibold text-sm">{formatCurrency(item.totalPrice)}</div>
-                      </div>
+                      <div className="font-semibold text-sm whitespace-nowrap pl-1">{formatCurrency(item.totalPrice)}</div>
                     </div>
                     {item.barcode && (
-                      <div className="mb-2 flex justify-center">
+                      <div className="mt-1.5 flex justify-center">
                         <BarcodeDisplay code={item.barcode} width={120} height={28} />
                       </div>
                     )}
-                    <div className="flex items-center justify-between gap-2">
-                      <div className="flex flex-wrap items-center gap-1">
+                    <div className="flex items-center justify-between mt-1.5 pt-1.5 border-t border-border/50">
+                      <div className="flex items-center gap-0.5">
                         <Button
-                          variant="ghost"
+                          variant="outline"
                           size="icon"
-                          className="h-7 w-7"
+                          className="h-6 w-6"
                           onClick={() => item.isTemporary ? updateTempQuantity(idx, -1) : (item.isWarranty ? updateWarrantyQuantity(item.warrantyProductId!, -1) : (item.isService ? updateServiceQuantity(item.serviceItemId!, -1) : updateQuantity(item.productId!, -1)))}
                           data-testid={`button-decrease-${itemKey}`}
                         >
                           <Minus className="w-3 h-3" />
                         </Button>
-                        <span className="w-6 text-center font-medium">{item.quantity}</span>
+                        <span className="w-7 text-center font-semibold text-sm">{item.quantity}</span>
                         <Button
-                          variant="ghost"
+                          variant="outline"
                           size="icon"
-                          className="h-7 w-7"
+                          className="h-6 w-6"
                           onClick={() => item.isTemporary ? updateTempQuantity(idx, 1) : (item.isWarranty ? updateWarrantyQuantity(item.warrantyProductId!, 1) : (item.isService ? updateServiceQuantity(item.serviceItemId!, 1) : updateQuantity(item.productId!, 1)))}
                           data-testid={`button-increase-${itemKey}`}
                         >
@@ -1799,11 +1797,11 @@ export default function PosPage() {
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="h-7 w-7 text-destructive hover:text-destructive"
+                        className="h-6 w-6 text-destructive"
                         onClick={() => item.isTemporary ? removeTempFromCart(idx) : (item.isWarranty ? removeWarrantyFromCart(item.warrantyProductId!) : (item.isService ? removeServiceFromCart(item.serviceItemId!) : removeFromCart(item.productId!)))}
                         data-testid={`button-remove-${itemKey}`}
                       >
-                        <Trash2 className="w-4 h-4" />
+                        <Trash2 className="w-3.5 h-3.5" />
                       </Button>
                     </div>
                   </div>
