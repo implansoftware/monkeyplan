@@ -10,7 +10,7 @@ import { it } from "date-fns/locale";
 
 type AdminWarrantyItem = {
   id: string;
-  repairOrderId: string;
+  repairOrderId: string | null;
   orderNumber: string;
   customerName: string;
   customerEmail: string;
@@ -203,6 +203,7 @@ export default function AdminWarranties() {
           {filtered.map((w) => {
             const status = statusConfig[w.status] || statusConfig.offered;
             const isActive = w.status === "accepted" && w.daysRemaining !== null && w.daysRemaining > 0;
+            const isStandalone = !w.repairOrderId;
 
             return (
               <Card key={w.id} data-testid={`card-admin-warranty-${w.id}`} className="hover-elevate">
@@ -217,10 +218,11 @@ export default function AdminWarranties() {
                         <div>
                           <p className="font-semibold text-sm">{w.productName}</p>
                           <p className="text-xs text-muted-foreground">
-                            Ordine #{w.orderNumber}
+                            {isStandalone ? "Garanzia Diretta" : `Ordine #${w.orderNumber}`}
                           </p>
                         </div>
                         <div className="flex flex-wrap items-center gap-2">
+                          {isStandalone && <Badge variant="outline" className="text-xs">Diretta</Badge>}
                           {getDaysRemainingBadge(w.daysRemaining, w.status)}
                           <Badge variant={status.variant}>{status.label}</Badge>
                         </div>

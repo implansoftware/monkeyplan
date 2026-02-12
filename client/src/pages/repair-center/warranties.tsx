@@ -1,17 +1,24 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useLocation } from "wouter";
+import { WarrantyProduct, User } from "@shared/schema";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Loader2, Shield, Search, Calendar, AlertTriangle, CheckCircle2, XCircle, Clock, User, Smartphone, ChevronRight } from "lucide-react";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Loader2, Shield, Search, Calendar, AlertTriangle, CheckCircle2, XCircle, Clock, User as UserIcon, Smartphone, Plus } from "lucide-react";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
+import { useToast } from "@/hooks/use-toast";
+import { apiRequest } from "@/lib/queryClient";
 
 type WarrantyItem = {
   id: string;
-  repairOrderId: string;
+  repairOrderId: string | null;
   orderNumber: string;
   customerName: string;
   customerEmail: string;
@@ -57,10 +64,48 @@ export default function RepairCenterWarranties() {
   const [, navigate] = useLocation();
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [selectedCustomerId, setSelectedCustomerId] = useState("");
+  const [selectedProductId, setSelectedProductId] = useState("");
+  const [notes, setNotes] = useState("");
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   const { data: warranties = [], isLoading } = useQuery<WarrantyItem[]>({
     queryKey: ["/api/repair-center/warranties"],
   });
+
+  const { data: customers = [] } = useQuery<User[]>({
+    queryKey: ["/api/customers"],
+  });
+
+  const { data: products = [] } = useQuery<WarrantyProduct[]>({
+    queryKey: ["/api/warranty-products"],
+  });
+
+  const createMutation = useMutation({
+    mutationFn: (data: { customerId: string; warrantyProductId: string; notes?: string }) =>
+      apiRequest("POST", "/api/repair-center/warranties", data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/repair-center/warranties"] });
+      toast({ title: "Garanzia creata", description: "La garanzia è stata assegnata al cliente con successo" });
+      setIsCreateOpen(false);
+      setSelectedCustomerId("");
+      setSelectedProductId("");
+      setNotes("");
+    },
+    onError: (error: any) => {
+      toast({ title: "Errore", description: error.message || "Impossibile creare la garanzia", variant: "destructive" });
+    },
+  });
+
+  const handleCreate = () => {
+    if (!selectedCustomerId || !selectedProductId) {
+      toast({ title: "Errore", description: "Seleziona un cliente e un prodotto garanzia", variant: "destructive" });
+      return;
+    }
+    createMutation.mutate({ customerId: selectedCustomerId, warrantyProductId: selectedProductId, notes: notes || undefined });
+  };
 
   const filtered = warranties.filter(w => {
     if (statusFilter !== "all" && w.status !== statusFilter) return false;
@@ -83,6 +128,8 @@ export default function RepairCenterWarranties() {
   const expiredCount = warranties.filter(w => w.status === "accepted" && w.daysRemaining !== null && w.daysRemaining <= 0).length;
   const pendingCount = warranties.filter(w => w.status === "offered").length;
 
+  const activeProducts = products.filter((p: any) => p.isActive);
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -96,14 +143,20 @@ export default function RepairCenterWarranties() {
       <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-500 p-6">
         <div className="absolute -top-20 -left-20 w-80 h-80 rounded-full bg-orange-400/20 blur-3xl animate-pulse" />
         <div className="absolute bottom-0 right-0 w-64 h-64 rounded-full bg-yellow-400/20 blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
-        <div className="relative flex items-center gap-3">
-          <div className="h-12 w-12 rounded-2xl bg-white/20 backdrop-blur-sm border border-white/30 flex items-center justify-center">
-            <Shield className="h-6 w-6 text-white" />
+        <div className="relative flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <div className="h-12 w-12 rounded-2xl bg-white/20 backdrop-blur-sm border border-white/30 flex items-center justify-center">
+              <Shield className="h-6 w-6 text-white" />
+            </div>
+            <div>
+              <h1 className="text-2xl font-bold tracking-tight text-white">Garanzie Clienti</h1>
+              <p className="text-sm text-white/80">Gestisci le garanzie attive e monitora le scadenze</p>
+            </div>
           </div>
-          <div>
-            <h1 className="text-2xl font-bold tracking-tight text-white">Garanzie Clienti</h1>
-            <p className="text-sm text-white/80">Gestisci le garanzie attive e monitora le scadenze</p>
-          </div>
+          <Button onClick={() => setIsCreateOpen(true)} className="bg-white/20 backdrop-blur-sm border border-white/30 text-white" data-testid="button-new-warranty">
+            <Plus className="h-4 w-4 mr-2" />
+            Nuova Garanzia
+          </Button>
         </div>
       </div>
 
@@ -196,6 +249,7 @@ export default function RepairCenterWarranties() {
           {filtered.map((w) => {
             const status = statusConfig[w.status] || statusConfig.offered;
             const isActive = w.status === "accepted" && w.daysRemaining !== null && w.daysRemaining > 0;
+            const isStandalone = !w.repairOrderId;
 
             return (
               <Card key={w.id} data-testid={`card-warranty-${w.id}`} className="hover-elevate cursor-pointer" onClick={() => navigate(`/repair-center/warranties/${w.id}`)}>
@@ -210,10 +264,11 @@ export default function RepairCenterWarranties() {
                         <div>
                           <p className="font-semibold text-sm">{w.productName}</p>
                           <p className="text-xs text-muted-foreground">
-                            Ordine #{w.orderNumber}
+                            {isStandalone ? "Garanzia Diretta" : `Ordine #${w.orderNumber}`}
                           </p>
                         </div>
                         <div className="flex flex-wrap items-center gap-2">
+                          {isStandalone && <Badge variant="outline" className="text-xs">Diretta</Badge>}
                           {getDaysRemainingBadge(w.daysRemaining, w.status)}
                           <Badge variant={status.variant}>{status.label}</Badge>
                         </div>
@@ -221,19 +276,21 @@ export default function RepairCenterWarranties() {
 
                       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
                         <div className="flex items-center gap-2">
-                          <User className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                          <UserIcon className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
                           <div className="min-w-0">
                             <p className="text-muted-foreground">Cliente</p>
                             <p className="font-medium truncate">{w.customerName}</p>
                           </div>
                         </div>
-                        <div className="flex items-center gap-2">
-                          <Smartphone className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-                          <div className="min-w-0">
-                            <p className="text-muted-foreground">Dispositivo</p>
-                            <p className="font-medium truncate">{[w.brand, w.deviceModel].filter(Boolean).join(" ") || w.deviceType || "N/A"}</p>
+                        {!isStandalone && (
+                          <div className="flex items-center gap-2">
+                            <Smartphone className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                            <div className="min-w-0">
+                              <p className="text-muted-foreground">Dispositivo</p>
+                              <p className="font-medium truncate">{[w.brand, w.deviceModel].filter(Boolean).join(" ") || w.deviceType || "N/A"}</p>
+                            </div>
                           </div>
-                        </div>
+                        )}
                         <div className="flex items-center gap-2">
                           <Shield className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
                           <div>
@@ -279,6 +336,65 @@ export default function RepairCenterWarranties() {
           })}
         </div>
       )}
+
+      <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Nuova Garanzia Diretta</DialogTitle>
+            <DialogDescription>
+              Assegna una garanzia a un cliente senza passare dalla riparazione
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="space-y-2">
+              <Label htmlFor="customer">Cliente</Label>
+              <Select value={selectedCustomerId} onValueChange={setSelectedCustomerId}>
+                <SelectTrigger data-testid="select-warranty-customer">
+                  <SelectValue placeholder="Seleziona un cliente" />
+                </SelectTrigger>
+                <SelectContent>
+                  {customers.filter((c: any) => c.role === 'customer').map((c: any) => (
+                    <SelectItem key={c.id} value={c.id}>
+                      {c.firstName && c.lastName ? `${c.firstName} ${c.lastName}` : c.username} {c.email ? `(${c.email})` : ''}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="product">Prodotto Garanzia</Label>
+              <Select value={selectedProductId} onValueChange={setSelectedProductId}>
+                <SelectTrigger data-testid="select-warranty-product">
+                  <SelectValue placeholder="Seleziona un prodotto" />
+                </SelectTrigger>
+                <SelectContent>
+                  {activeProducts.map((p: any) => (
+                    <SelectItem key={p.id} value={p.id}>
+                      {p.name} - {coverageLabels[p.coverageType] || p.coverageType} - {p.durationMonths} mesi - {(p.priceInCents / 100).toLocaleString('it-IT', { style: 'currency', currency: 'EUR' })}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="notes">Note (opzionale)</Label>
+              <Textarea
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                placeholder="Eventuali note sulla garanzia..."
+                data-testid="textarea-warranty-notes"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsCreateOpen(false)} data-testid="button-cancel-warranty">Annulla</Button>
+            <Button onClick={handleCreate} disabled={createMutation.isPending || !selectedCustomerId || !selectedProductId} data-testid="button-confirm-warranty">
+              {createMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Shield className="h-4 w-4 mr-2" />}
+              Crea Garanzia
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

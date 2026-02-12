@@ -8,7 +8,7 @@ import { it } from "date-fns/locale";
 type CustomerWarranty = {
   warranty: {
     id: string;
-    repairOrderId: string;
+    repairOrderId: string | null;
     warrantyProductId: string;
     status: "offered" | "accepted" | "declined" | "expired";
     priceSnapshot: number;
@@ -25,7 +25,7 @@ type CustomerWarranty = {
     deviceType: string;
     brand: string | null;
     deviceModel: string;
-  };
+  } | null;
   invoice: {
     id: string;
     invoiceNumber: string;
@@ -109,7 +109,7 @@ export default function CustomerWarranties() {
                       <div>
                         <CardTitle className="text-lg">{warranty.productNameSnapshot}</CardTitle>
                         <p className="text-sm text-muted-foreground">
-                          Riparazione #{repairOrder.orderNumber}
+                          {repairOrder ? `Riparazione #${repairOrder.orderNumber}` : "Garanzia Diretta"}
                         </p>
                       </div>
                     </div>
@@ -121,12 +121,14 @@ export default function CustomerWarranties() {
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                    {repairOrder && (
                     <div>
                       <p className="text-muted-foreground">Dispositivo</p>
                       <p className="font-medium">
                         {[repairOrder.brand, repairOrder.deviceModel].filter(Boolean).join(" ") || repairOrder.deviceType || "N/A"}
                       </p>
                     </div>
+                    )}
                     <div>
                       <p className="text-muted-foreground">Copertura</p>
                       <p className="font-medium">{coverageLabels[warranty.coverageTypeSnapshot] || warranty.coverageTypeSnapshot}</p>

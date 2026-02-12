@@ -44231,7 +44231,7 @@ export function registerRoutes(app: Express): Server {
       const warranties = await storage.listRepairWarranties({ customerId: req.user.id });
       const result = [];
       for (const w of warranties) {
-        const repairOrder = await storage.getRepairOrder(w.repairOrderId);
+        const repairOrder = w.repairOrderId ? await storage.getRepairOrder(w.repairOrderId) : null;
         let invoice = null;
         if (w.invoiceId) {
           const inv = await storage.getInvoice(w.invoiceId);
@@ -44257,7 +44257,7 @@ export function registerRoutes(app: Express): Server {
             deviceType: repairOrder.deviceType,
             brand: repairOrder.brand,
             deviceModel: repairOrder.deviceModel,
-          } : { id: w.repairOrderId, orderNumber: 'N/A', deviceType: '', brand: null, deviceModel: '' },
+          } : (w.repairOrderId ? { id: w.repairOrderId, orderNumber: 'N/A', deviceType: '', brand: null, deviceModel: '' } : null),
           invoice,
         });
       }
@@ -44284,7 +44284,7 @@ export function registerRoutes(app: Express): Server {
       const warranties = await storage.listRepairWarranties({ sellerId });
       const result = [];
       for (const w of warranties) {
-        const repairOrder = await storage.getRepairOrder(w.repairOrderId);
+        const repairOrder = w.repairOrderId ? await storage.getRepairOrder(w.repairOrderId) : null;
         const customer = await storage.getUser(w.customerId);
         const daysRemaining = w.endsAt ? Math.ceil((new Date(w.endsAt).getTime() - Date.now()) / (1000 * 60 * 60 * 24)) : null;
         result.push({
@@ -44314,7 +44314,61 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
-  // Reseller Warranty Detail
+  // Reseller Standalone Warranty (senza riparazione)
+  app.post('/api/reseller/warranties', async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send('Unauthorized');
+      if (!['reseller', 'sub_reseller', 'reseller_staff'].includes(req.user.role)) {
+        return res.status(403).json({ message: 'Accesso non autorizzato' });
+      }
+      const { customerId, warrantyProductId, notes } = req.body;
+      if (!customerId || !warrantyProductId) {
+        return res.status(400).json({ message: 'customerId e warrantyProductId sono obbligatori' });
+      }
+
+      let sellerId = req.user.id;
+      if (req.user.role === 'reseller_staff' || req.user.role === 'sub_reseller') {
+        const userRecord = await storage.getUser(req.user.id);
+        if (userRecord?.parentResellerId) {
+          sellerId = userRecord.parentResellerId;
+        }
+      }
+
+      const customer = await storage.getUser(customerId);
+      if (!customer) return res.status(404).json({ message: 'Cliente non trovato' });
+
+      const product = await storage.getWarrantyProduct(warrantyProductId);
+      if (!product) return res.status(404).json({ message: 'Prodotto garanzia non trovato' });
+
+      const now = new Date();
+      const endsAt = new Date(now);
+      endsAt.setMonth(endsAt.getMonth() + product.durationMonths);
+
+      const warranty = await storage.createRepairWarranty({
+        repairOrderId: null,
+        customerId,
+        warrantyProductId: product.id,
+        sellerType: req.user.role === 'sub_reseller' ? 'sub_reseller' : 'reseller',
+        sellerId,
+        status: 'accepted',
+        priceSnapshot: product.priceInCents,
+        durationMonthsSnapshot: product.durationMonths,
+        coverageTypeSnapshot: product.coverageType,
+        productNameSnapshot: product.name,
+        startsAt: now,
+        endsAt,
+        acceptedAt: now,
+        notes: notes || null,
+      });
+
+      res.status(201).json(warranty);
+    } catch (error: any) {
+      console.error('Error creating standalone reseller warranty:', error);
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+    // Reseller Warranty Detail
   app.get('/api/reseller/warranties/:id', async (req, res) => {
     try {
       if (!req.user) return res.status(401).send('Unauthorized');
@@ -44453,7 +44507,7 @@ export function registerRoutes(app: Express): Server {
       const warranties = await storage.listRepairWarranties({ sellerId });
       const result = [];
       for (const w of warranties) {
-        const repairOrder = await storage.getRepairOrder(w.repairOrderId);
+        const repairOrder = w.repairOrderId ? await storage.getRepairOrder(w.repairOrderId) : null;
         const customer = await storage.getUser(w.customerId);
         const daysRemaining = w.endsAt ? Math.ceil((new Date(w.endsAt).getTime() - Date.now()) / (1000 * 60 * 60 * 24)) : null;
         result.push({
@@ -44479,6 +44533,62 @@ export function registerRoutes(app: Express): Server {
       res.json(result);
     } catch (error: any) {
       console.error('Error fetching repair center warranties:', error);
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  // Repair Center Standalone Warranty (senza riparazione)
+  app.post('/api/repair-center/warranties', async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send('Unauthorized');
+      if (req.user.role !== 'repair_center' && req.user.role !== 'repair_center_staff') {
+        return res.status(403).json({ message: 'Accesso non autorizzato' });
+      }
+      const { customerId, warrantyProductId, notes } = req.body;
+      if (!customerId || !warrantyProductId) {
+        return res.status(400).json({ message: 'customerId e warrantyProductId sono obbligatori' });
+      }
+
+      let sellerId = req.user.id;
+      if (req.user.role === 'repair_center_staff') {
+        const userRecord = await storage.getUser(req.user.id);
+        if (userRecord?.repairCenterId) {
+          const allUsers = await storage.listUsers();
+          const rcOwner = allUsers.find((u) => u.role === 'repair_center' && u.repairCenterId === userRecord.repairCenterId);
+          if (rcOwner) sellerId = rcOwner.id;
+        }
+      }
+
+      const customer = await storage.getUser(customerId);
+      if (!customer) return res.status(404).json({ message: 'Cliente non trovato' });
+
+      const product = await storage.getWarrantyProduct(warrantyProductId);
+      if (!product) return res.status(404).json({ message: 'Prodotto garanzia non trovato' });
+
+      const now = new Date();
+      const endsAt = new Date(now);
+      endsAt.setMonth(endsAt.getMonth() + product.durationMonths);
+
+      const warranty = await storage.createRepairWarranty({
+        repairOrderId: null,
+        customerId,
+        warrantyProductId: product.id,
+        sellerType: 'repair_center',
+        sellerId,
+        status: 'accepted',
+        priceSnapshot: product.priceInCents,
+        durationMonthsSnapshot: product.durationMonths,
+        coverageTypeSnapshot: product.coverageType,
+        productNameSnapshot: product.name,
+        startsAt: now,
+        endsAt,
+        acceptedAt: now,
+        notes: notes || null,
+      });
+
+      res.status(201).json(warranty);
+    } catch (error: any) {
+      console.error('Error creating standalone repair-center warranty:', error);
       res.status(500).json({ message: error.message });
     }
   });
@@ -44919,7 +45029,7 @@ export function registerRoutes(app: Express): Server {
       const warranties = await storage.listRepairWarranties({});
       const result = [];
       for (const w of warranties) {
-        const repairOrder = await storage.getRepairOrder(w.repairOrderId);
+        const repairOrder = w.repairOrderId ? await storage.getRepairOrder(w.repairOrderId) : null;
         const customer = await storage.getUser(w.customerId);
         const seller = await storage.getUser(w.sellerId);
         const daysRemaining = w.endsAt ? Math.ceil((new Date(w.endsAt).getTime() - Date.now()) / (1000 * 60 * 60 * 24)) : null;

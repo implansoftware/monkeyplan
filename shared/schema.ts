@@ -3575,7 +3575,7 @@ export const warrantyProducts = pgTable("warranty_products", {
 // Repair Warranties - Garanzie associate a riparazioni
 export const repairWarranties = pgTable("repair_warranties", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  repairOrderId: varchar("repair_order_id").notNull(), // FK a repairOrders
+  repairOrderId: varchar("repair_order_id"), // FK a repairOrders (nullable per garanzie standalone)
   customerId: varchar("customer_id").notNull(), // FK a users (cliente)
   warrantyProductId: varchar("warranty_product_id").notNull(), // FK a warrantyProducts
   
