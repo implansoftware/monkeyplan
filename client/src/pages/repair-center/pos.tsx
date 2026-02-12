@@ -1246,6 +1246,10 @@ export default function PosPage() {
                   <History className="w-4 h-4 sm:mr-1" />
                   <span className="hidden sm:inline">Storico</span>
                 </TabsTrigger>
+                <TabsTrigger value="warranties" data-testid="tab-warranties">
+                  <Shield className="w-4 h-4 sm:mr-1" />
+                  <span className="hidden sm:inline">Garanzie</span>
+                </TabsTrigger>
               </TabsList>
               
               {/* Selezione Listino */}
