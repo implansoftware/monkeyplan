@@ -327,6 +327,8 @@ import ResellerWarrantyAnalytics from "@/pages/reseller/warranty-analytics";
 import ResellerWarranties from "@/pages/reseller/warranties";
 import RepairCenterWarrantyAnalytics from "@/pages/repair-center/warranty-analytics";
 import RepairCenterWarranties from "@/pages/repair-center/warranties";
+import ResellerWarrantyDetail from "@/pages/reseller/warranty-detail";
+import RepairCenterWarrantyDetail from "@/pages/repair-center/warranty-detail";
 import PosPaymentSuccess from "@/pages/pos-payment-success";
 
 function Router() {
@@ -458,6 +460,7 @@ function Router() {
       <ProtectedRoute path="/reseller/warranty-products" component={ResellerWarrantyProducts} allowedRoles={["reseller"]} />
       <ProtectedRoute path="/reseller/reports" component={ResellerReports} allowedRoles={["reseller", "reseller_staff", "sub_reseller"]} />
       <ProtectedRoute path="/reseller/warranty-analytics" component={ResellerWarrantyAnalytics} allowedRoles={["reseller", "sub_reseller"]} />
+      <ProtectedRoute path="/reseller/warranties/:id" component={ResellerWarrantyDetail} allowedRoles={["reseller", "sub_reseller"]} />
       <ProtectedRoute path="/reseller/warranties" component={ResellerWarranties} allowedRoles={["reseller", "sub_reseller"]} />
       <ProtectedRoute path="/reseller/sifar/settings" component={ResellerSifarSettings} allowedRoles={["reseller", "reseller_staff", "sub_reseller"]} />
       <ProtectedRoute path="/reseller/sifar/catalog" component={ResellerSifarCatalog} allowedRoles={["reseller", "reseller_staff", "sub_reseller"]} />
@@ -533,6 +536,7 @@ function Router() {
       <ProtectedRoute path="/repair-center/invoices" component={RepairCenterInvoices} />
       <ProtectedRoute path="/repair-center/b2b-returns" component={RepairCenterB2BReturns} />
       <ProtectedRoute path="/repair-center/warranty-analytics" component={RepairCenterWarrantyAnalytics} allowedRoles={["repair_center", "repair_center_staff"]} />
+      <ProtectedRoute path="/repair-center/warranties/:id" component={RepairCenterWarrantyDetail} allowedRoles={["repair_center", "repair_center_staff"]} />
       <ProtectedRoute path="/repair-center/warranties" component={RepairCenterWarranties} allowedRoles={["repair_center", "repair_center_staff"]} />
       <ProtectedRoute path="/repair-center/marketplace" component={RepairCenterMarketplace} />
       <ProtectedRoute path="/repair-center/suppliers" component={RepairCenterSuppliers} />

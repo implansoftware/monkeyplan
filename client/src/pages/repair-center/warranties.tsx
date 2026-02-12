@@ -1,10 +1,11 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useLocation } from "wouter";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Loader2, Shield, Search, Calendar, AlertTriangle, CheckCircle2, XCircle, Clock, User, Smartphone } from "lucide-react";
+import { Loader2, Shield, Search, Calendar, AlertTriangle, CheckCircle2, XCircle, Clock, User, Smartphone, ChevronRight } from "lucide-react";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
 
@@ -53,6 +54,7 @@ function getDaysRemainingBadge(daysRemaining: number | null, status: string) {
 }
 
 export default function RepairCenterWarranties() {
+  const [, navigate] = useLocation();
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
 
@@ -196,7 +198,7 @@ export default function RepairCenterWarranties() {
             const isActive = w.status === "accepted" && w.daysRemaining !== null && w.daysRemaining > 0;
 
             return (
-              <Card key={w.id} data-testid={`card-warranty-${w.id}`} className="hover-elevate">
+              <Card key={w.id} data-testid={`card-warranty-${w.id}`} className="hover-elevate cursor-pointer" onClick={() => navigate(`/repair-center/warranties/${w.id}`)}>
                 <CardContent className="p-4">
                   <div className="flex flex-col sm:flex-row sm:items-start gap-4">
                     <div className={`h-10 w-10 shrink-0 rounded-lg flex items-center justify-center ${isActive ? 'bg-emerald-100 dark:bg-emerald-900' : 'bg-muted'}`}>

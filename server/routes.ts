@@ -44286,6 +44286,127 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // Reseller Warranty Detail
+  app.get('/api/reseller/warranties/:id', async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send('Unauthorized');
+      if (!['reseller', 'sub_reseller'].includes(req.user.role)) {
+        return res.status(403).json({ message: 'Accesso non autorizzato' });
+      }
+      let sellerId = req.user.id;
+      if (req.user.role === 'reseller_staff' || req.user.role === 'sub_reseller') {
+        const userRecord = await storage.getUser(req.user.id);
+        if (userRecord?.parentResellerId) sellerId = userRecord.parentResellerId;
+      }
+      const warranty = await storage.getRepairWarranty(req.params.id);
+      if (!warranty) return res.status(404).json({ message: 'Garanzia non trovata' });
+      if (warranty.sellerId !== sellerId) return res.status(403).json({ message: 'Accesso non autorizzato' });
+      const repairOrder = await storage.getRepairOrder(warranty.repairOrderId);
+      const customer = await storage.getUser(warranty.customerId);
+      const daysRemaining = warranty.endsAt ? Math.ceil((new Date(warranty.endsAt).getTime() - Date.now()) / (1000 * 60 * 60 * 24)) : null;
+      res.json({
+        id: warranty.id, repairOrderId: warranty.repairOrderId,
+        orderNumber: repairOrder?.orderNumber || 'N/A',
+        customerName: customer ? (customer.firstName && customer.lastName ? customer.firstName + ' ' + customer.lastName : customer.username) : 'N/A',
+        customerEmail: customer?.email || '', customerPhone: customer?.phone || '',
+        deviceType: repairOrder?.deviceType || '', brand: repairOrder?.brand || '',
+        deviceModel: repairOrder?.deviceModel || '', serialNumber: repairOrder?.serialNumber || '',
+        productName: warranty.productNameSnapshot, coverageType: warranty.coverageTypeSnapshot,
+        durationMonths: warranty.durationMonthsSnapshot, price: warranty.priceSnapshot,
+        status: warranty.status, notes: warranty.notes || '',
+        startsAt: warranty.startsAt ? warranty.startsAt.toISOString() : null,
+        endsAt: warranty.endsAt ? warranty.endsAt.toISOString() : null,
+        offeredAt: warranty.offeredAt.toISOString(),
+        acceptedAt: warranty.acceptedAt ? warranty.acceptedAt.toISOString() : null,
+        declinedAt: warranty.declinedAt ? warranty.declinedAt.toISOString() : null,
+        createdAt: warranty.createdAt.toISOString(), daysRemaining,
+      });
+    } catch (error: any) {
+      console.error('Error fetching reseller warranty detail:', error);
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  app.patch('/api/reseller/warranties/:id', async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send('Unauthorized');
+      if (!['reseller', 'sub_reseller'].includes(req.user.role)) {
+        return res.status(403).json({ message: 'Accesso non autorizzato' });
+      }
+      let sellerId = req.user.id;
+      if (req.user.role === 'sub_reseller') {
+        const userRecord = await storage.getUser(req.user.id);
+        if (userRecord?.parentResellerId) sellerId = userRecord.parentResellerId;
+      }
+      const warranty = await storage.getRepairWarranty(req.params.id);
+      if (!warranty) return res.status(404).json({ message: 'Garanzia non trovata' });
+      if (warranty.sellerId !== sellerId) return res.status(403).json({ message: 'Accesso non autorizzato' });
+      const allowedFields = ['notes'] as const;
+      const offeredOnlyFields = ['priceSnapshot', 'durationMonthsSnapshot', 'coverageTypeSnapshot', 'productNameSnapshot'] as const;
+      const updates: Record<string, any> = {};
+      for (const key of allowedFields) {
+        if (req.body[key] !== undefined) updates[key] = String(req.body[key]);
+      }
+      if (warranty.status === 'offered') {
+        if (req.body.priceSnapshot !== undefined) {
+          const price = Number(req.body.priceSnapshot);
+          if (isNaN(price) || price < 0) return res.status(400).json({ message: 'Prezzo non valido' });
+          updates.priceSnapshot = price;
+        }
+        if (req.body.durationMonthsSnapshot !== undefined) {
+          const dur = Number(req.body.durationMonthsSnapshot);
+          if (isNaN(dur) || dur < 1) return res.status(400).json({ message: 'Durata non valida' });
+          updates.durationMonthsSnapshot = dur;
+        }
+        if (req.body.coverageTypeSnapshot !== undefined) {
+          if (!['basic', 'extended', 'full'].includes(req.body.coverageTypeSnapshot)) {
+            return res.status(400).json({ message: 'Tipo copertura non valido' });
+          }
+          updates.coverageTypeSnapshot = req.body.coverageTypeSnapshot;
+        }
+        if (req.body.productNameSnapshot !== undefined) {
+          if (typeof req.body.productNameSnapshot !== 'string' || !req.body.productNameSnapshot.trim()) {
+            return res.status(400).json({ message: 'Nome prodotto non valido' });
+          }
+          updates.productNameSnapshot = req.body.productNameSnapshot.trim();
+        }
+      }
+      if (Object.keys(updates).length === 0) {
+        return res.status(400).json({ message: 'Nessun campo modificabile fornito' });
+      }
+      const updated = await storage.updateRepairWarranty(req.params.id, updates);
+      res.json(updated);
+    } catch (error: any) {
+      console.error('Error updating reseller warranty:', error);
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  app.delete('/api/reseller/warranties/:id', async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send('Unauthorized');
+      if (!['reseller', 'sub_reseller'].includes(req.user.role)) {
+        return res.status(403).json({ message: 'Accesso non autorizzato' });
+      }
+      let sellerId = req.user.id;
+      if (req.user.role === 'reseller_staff' || req.user.role === 'sub_reseller') {
+        const userRecord = await storage.getUser(req.user.id);
+        if (userRecord?.parentResellerId) sellerId = userRecord.parentResellerId;
+      }
+      const warranty = await storage.getRepairWarranty(req.params.id);
+      if (!warranty) return res.status(404).json({ message: 'Garanzia non trovata' });
+      if (warranty.sellerId !== sellerId) return res.status(403).json({ message: 'Accesso non autorizzato' });
+      if (warranty.status !== 'offered') {
+        return res.status(400).json({ message: 'Solo le garanzie in attesa possono essere cancellate' });
+      }
+      await storage.deleteRepairWarranty(req.params.id);
+      res.json({ message: 'Garanzia cancellata con successo' });
+    } catch (error: any) {
+      console.error('Error deleting reseller warranty:', error);
+      res.status(500).json({ message: error.message });
+    }
+  });
+
   app.get('/api/repair-center/warranties', async (req, res) => {
     try {
       if (!req.user) return res.status(401).send('Unauthorized');
@@ -44330,6 +44451,132 @@ export function registerRoutes(app: Express): Server {
       res.json(result);
     } catch (error: any) {
       console.error('Error fetching repair center warranties:', error);
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  // Repair Center Warranty Detail
+  app.get('/api/repair-center/warranties/:id', async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send('Unauthorized');
+      if (req.user.role !== 'repair_center' && req.user.role !== 'repair_center_staff') {
+        return res.status(403).json({ message: 'Accesso non autorizzato' });
+      }
+      let sellerId = req.user.id;
+      if (req.user.role === 'repair_center_staff') {
+        const userRecord = await storage.getUser(req.user.id);
+        if (userRecord?.repairCenterId) {
+          const allUsers = await storage.listUsers();
+          const rcOwner = allUsers.find((u) => u.role === 'repair_center' && u.repairCenterId === userRecord.repairCenterId);
+          if (rcOwner) sellerId = rcOwner.id;
+        }
+      }
+      const warranty = await storage.getRepairWarranty(req.params.id);
+      if (!warranty) return res.status(404).json({ message: 'Garanzia non trovata' });
+      if (warranty.sellerId !== sellerId) return res.status(403).json({ message: 'Accesso non autorizzato' });
+      const repairOrder = await storage.getRepairOrder(warranty.repairOrderId);
+      const customer = await storage.getUser(warranty.customerId);
+      const daysRemaining = warranty.endsAt ? Math.ceil((new Date(warranty.endsAt).getTime() - Date.now()) / (1000 * 60 * 60 * 24)) : null;
+      res.json({
+        id: warranty.id, repairOrderId: warranty.repairOrderId,
+        orderNumber: repairOrder?.orderNumber || 'N/A',
+        customerName: customer ? (customer.firstName && customer.lastName ? customer.firstName + ' ' + customer.lastName : customer.username) : 'N/A',
+        customerEmail: customer?.email || '', customerPhone: customer?.phone || '',
+        deviceType: repairOrder?.deviceType || '', brand: repairOrder?.brand || '',
+        deviceModel: repairOrder?.deviceModel || '', serialNumber: repairOrder?.serialNumber || '',
+        productName: warranty.productNameSnapshot, coverageType: warranty.coverageTypeSnapshot,
+        durationMonths: warranty.durationMonthsSnapshot, price: warranty.priceSnapshot,
+        status: warranty.status, notes: warranty.notes || '',
+        startsAt: warranty.startsAt ? warranty.startsAt.toISOString() : null,
+        endsAt: warranty.endsAt ? warranty.endsAt.toISOString() : null,
+        offeredAt: warranty.offeredAt.toISOString(),
+        acceptedAt: warranty.acceptedAt ? warranty.acceptedAt.toISOString() : null,
+        declinedAt: warranty.declinedAt ? warranty.declinedAt.toISOString() : null,
+        createdAt: warranty.createdAt.toISOString(), daysRemaining,
+      });
+    } catch (error: any) {
+      console.error('Error fetching repair center warranty detail:', error);
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  app.patch('/api/repair-center/warranties/:id', async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send('Unauthorized');
+      if (req.user.role !== 'repair_center' && req.user.role !== 'repair_center_staff') {
+        return res.status(403).json({ message: 'Accesso non autorizzato' });
+      }
+      let sellerId = req.user.id;
+      if (req.user.role === 'repair_center_staff' && req.user.repairCenterId) {
+        const allUsers = await storage.listUsers();
+        const owner = allUsers.find((u) => u.role === 'repair_center' && u.repairCenterId === req.user!.repairCenterId);
+        if (owner) sellerId = owner.id;
+      }
+      const warranty = await storage.getRepairWarranty(req.params.id);
+      if (!warranty) return res.status(404).json({ message: 'Garanzia non trovata' });
+      if (warranty.sellerId !== sellerId) return res.status(403).json({ message: 'Accesso non autorizzato' });
+      const updates: Record<string, any> = {};
+      if (req.body.notes !== undefined) updates.notes = String(req.body.notes);
+      if (warranty.status === 'offered') {
+        if (req.body.priceSnapshot !== undefined) {
+          const price = Number(req.body.priceSnapshot);
+          if (isNaN(price) || price < 0) return res.status(400).json({ message: 'Prezzo non valido' });
+          updates.priceSnapshot = price;
+        }
+        if (req.body.durationMonthsSnapshot !== undefined) {
+          const dur = Number(req.body.durationMonthsSnapshot);
+          if (isNaN(dur) || dur < 1) return res.status(400).json({ message: 'Durata non valida' });
+          updates.durationMonthsSnapshot = dur;
+        }
+        if (req.body.coverageTypeSnapshot !== undefined) {
+          if (!['basic', 'extended', 'full'].includes(req.body.coverageTypeSnapshot)) {
+            return res.status(400).json({ message: 'Tipo copertura non valido' });
+          }
+          updates.coverageTypeSnapshot = req.body.coverageTypeSnapshot;
+        }
+        if (req.body.productNameSnapshot !== undefined) {
+          if (typeof req.body.productNameSnapshot !== 'string' || !req.body.productNameSnapshot.trim()) {
+            return res.status(400).json({ message: 'Nome prodotto non valido' });
+          }
+          updates.productNameSnapshot = req.body.productNameSnapshot.trim();
+        }
+      }
+      if (Object.keys(updates).length === 0) {
+        return res.status(400).json({ message: 'Nessun campo modificabile fornito' });
+      }
+      const updated = await storage.updateRepairWarranty(req.params.id, updates);
+      res.json(updated);
+    } catch (error: any) {
+      console.error('Error updating repair center warranty:', error);
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  app.delete('/api/repair-center/warranties/:id', async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send('Unauthorized');
+      if (req.user.role !== 'repair_center' && req.user.role !== 'repair_center_staff') {
+        return res.status(403).json({ message: 'Accesso non autorizzato' });
+      }
+      let sellerId = req.user.id;
+      if (req.user.role === 'repair_center_staff') {
+        const userRecord = await storage.getUser(req.user.id);
+        if (userRecord?.repairCenterId) {
+          const allUsers = await storage.listUsers();
+          const rcOwner = allUsers.find((u) => u.role === 'repair_center' && u.repairCenterId === userRecord.repairCenterId);
+          if (rcOwner) sellerId = rcOwner.id;
+        }
+      }
+      const warranty = await storage.getRepairWarranty(req.params.id);
+      if (!warranty) return res.status(404).json({ message: 'Garanzia non trovata' });
+      if (warranty.sellerId !== sellerId) return res.status(403).json({ message: 'Accesso non autorizzato' });
+      if (warranty.status !== 'offered') {
+        return res.status(400).json({ message: 'Solo le garanzie in attesa possono essere cancellate' });
+      }
+      await storage.deleteRepairWarranty(req.params.id);
+      res.json({ message: 'Garanzia cancellata con successo' });
+    } catch (error: any) {
+      console.error('Error deleting repair center warranty:', error);
       res.status(500).json({ message: error.message });
     }
   });

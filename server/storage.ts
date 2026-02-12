@@ -1183,6 +1183,7 @@ export interface IStorage {
   getRepairWarrantyByRepairOrder(repairOrderId: string): Promise<RepairWarranty | undefined>;
   createRepairWarranty(warranty: InsertRepairWarranty): Promise<RepairWarranty>;
   updateRepairWarranty(id: string, updates: UpdateRepairWarranty): Promise<RepairWarranty>;
+  deleteRepairWarranty(id: string): Promise<void>;
   acceptRepairWarranty(id: string): Promise<RepairWarranty>;
   declineRepairWarranty(id: string): Promise<RepairWarranty>;
   
@@ -12742,6 +12743,10 @@ export class DatabaseStorage implements IStorage {
       .where(eq(repairWarranties.id, id))
       .returning();
     return updated;
+  }
+
+  async deleteRepairWarranty(id: string): Promise<void> {
+    await db.delete(repairWarranties).where(eq(repairWarranties.id, id));
   }
 
   async acceptRepairWarranty(id: string): Promise<RepairWarranty> {
