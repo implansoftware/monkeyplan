@@ -74,7 +74,6 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Link, useLocation } from "wouter";
 import { ContextSwitcher } from "@/components/ContextSwitcher";
-import { useNotifications } from "@/hooks/useNotifications";
 import { Badge } from "@/components/ui/badge";
 
 // Type for context response
@@ -519,49 +518,6 @@ export function AppSidebar() {
   });
   const actingAs = contextData?.actingAs;
 
-  // Query pending incoming transfer requests count for badge (reseller/reseller_staff)
-  const { data: transferRequestsSummary } = useQuery<{ pendingCount: number }>({
-    queryKey: ["/api/reseller/incoming-transfer-requests/summary"],
-    enabled: user?.role === "reseller" || user?.role === "reseller_staff",
-    refetchInterval: 30000, // Refresh every 30 seconds
-  });
-  const pendingTransferRequestsCount = transferRequestsSummary?.pendingCount || 0;
-
-  // Query pending remote repair requests count for badge (reseller/reseller_staff)
-  const { data: remoteRequestsSummary } = useQuery<{ count: number }>({
-    queryKey: ["/api/reseller/remote-requests/pending-count"],
-    enabled: user?.role === "reseller" || user?.role === "reseller_staff",
-    refetchInterval: 30000, // Refresh every 30 seconds
-  });
-  const pendingRemoteRequestsCount = remoteRequestsSummary?.count || 0;
-
-  // Query pending remote repair requests count for badge (repair_center)
-  const { data: rcRemoteRequestsSummary } = useQuery<{ count: number }>({
-    queryKey: ["/api/repair-center/remote-requests/pending-count"],
-    enabled: user?.role === "repair_center",
-    refetchInterval: 30000, // Refresh every 30 seconds
-  });
-  const rcPendingRemoteRequestsCount = rcRemoteRequestsSummary?.count || 0;
-
-  // Query pending service orders count for badge (reseller/reseller_staff)
-  const { data: serviceOrdersSummary } = useQuery<{ count: number }>({
-    queryKey: ["/api/reseller/service-orders/pending-count"],
-    enabled: user?.role === "reseller" || user?.role === "reseller_staff",
-    refetchInterval: 30000, // Refresh every 30 seconds
-  });
-  const pendingServiceOrdersCount = serviceOrdersSummary?.count || 0;
-
-  // Query pending customer tickets count for badge (reseller/reseller_staff)
-  const { data: ticketsSummary } = useQuery<{ count: number }>({
-    queryKey: ["/api/reseller/tickets/pending-count"],
-    enabled: user?.role === "reseller" || user?.role === "reseller_staff",
-    refetchInterval: 30000, // Refresh every 30 seconds
-  });
-  const pendingTicketsCount = ticketsSummary?.count || 0;
-
-  // Get notification count for badge
-  const { unreadCount: unreadNotificationsCount } = useNotifications();
-
   // Query configured integrations (only those with reseller credentials)
   const { data: configuredIntegrationCodes = [] } = useQuery<string[]>({
     queryKey: ["/api/reseller/configured-integrations"],
@@ -851,38 +807,6 @@ export function AppSidebar() {
                     <span className={`flex-1 text-left font-medium ${hasActiveItem ? "text-foreground" : "text-muted-foreground"}`}>
                       {group}
                     </span>
-                    {(group === "Interscambio" || group === "Magazzino e Fornitori") && pendingTransferRequestsCount > 0 && !isOpen && (
-                      <span 
-                        className="flex h-5 min-w-5 items-center justify-center rounded-full bg-destructive text-destructive-foreground text-xs font-medium px-1.5"
-                        data-testid="badge-pending-transfer-requests-group"
-                      >
-                        {pendingTransferRequestsCount}
-                      </span>
-                    )}
-                    {group === "Assistenza" && (pendingRemoteRequestsCount + pendingTicketsCount) > 0 && !isOpen && (
-                      <span 
-                        className="flex h-5 min-w-5 items-center justify-center rounded-full bg-destructive text-destructive-foreground text-xs font-medium px-1.5"
-                        data-testid="badge-pending-assistenza-group"
-                      >
-                        {pendingRemoteRequestsCount + pendingTicketsCount}
-                      </span>
-                    )}
-                    {group === "Lavorazioni" && rcPendingRemoteRequestsCount > 0 && !isOpen && (
-                      <span 
-                        className="flex h-5 min-w-5 items-center justify-center rounded-full bg-destructive text-destructive-foreground text-xs font-medium px-1.5"
-                        data-testid="badge-pending-rc-remote-requests-group"
-                      >
-                        {rcPendingRemoteRequestsCount}
-                      </span>
-                    )}
-                    {group === "Centri & Riparazioni" && pendingServiceOrdersCount > 0 && !isOpen && (
-                      <span 
-                        className="flex h-5 min-w-5 items-center justify-center rounded-full bg-destructive text-destructive-foreground text-xs font-medium px-1.5"
-                        data-testid="badge-pending-service-orders-group"
-                      >
-                        {pendingServiceOrdersCount}
-                      </span>
-                    )}
                     <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform duration-200 ${isOpen ? "" : "-rotate-90"}`} />
                   </SidebarMenuButton>
                 </CollapsibleTrigger>
@@ -891,12 +815,6 @@ export function AppSidebar() {
                     <SidebarMenu className="ml-7 mt-1.5 border-l border-sidebar-border/40 pl-0.5">
                       {groupItems.map((item, idx) => {
                         const isActive = location === item.url || location.startsWith(item.url + "/");
-                        const showTransferBadge = item.url === "/reseller/transfer-requests" && pendingTransferRequestsCount > 0;
-                        const showRemoteBadge = item.url === "/reseller/remote-requests" && pendingRemoteRequestsCount > 0;
-                        const showRcRemoteBadge = item.url === "/repair-center/remote-requests" && rcPendingRemoteRequestsCount > 0;
-                        const showServiceOrdersBadge = item.url === "/reseller/service-orders" && pendingServiceOrdersCount > 0;
-                        const showTicketsBadge = item.url === "/reseller/tickets" && pendingTicketsCount > 0;
-                        const showNotificationsBadge = item.title === "Notifiche" && unreadNotificationsCount > 0;
                         const currentSection = (item as any).section;
                         const prevSection = idx > 0 ? (groupItems[idx - 1] as any).section : undefined;
                         const showSectionLabel = currentSection && currentSection !== prevSection;
@@ -920,54 +838,6 @@ export function AppSidebar() {
                                 >
                                   <item.icon className={`h-3.5 w-3.5 ${isActive ? "text-primary" : ""}`} />
                                   <span className="flex-1 text-[13px]">{item.title}</span>
-                                  {showTransferBadge && (
-                                    <span
-                                      className="flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive text-destructive-foreground text-[10px] font-medium px-1 ml-auto shrink-0"
-                                      data-testid="badge-pending-transfer-requests"
-                                    >
-                                      {pendingTransferRequestsCount}
-                                    </span>
-                                  )}
-                                  {showRemoteBadge && (
-                                    <span
-                                      className="flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive text-destructive-foreground text-[10px] font-medium px-1 ml-auto shrink-0"
-                                      data-testid="badge-pending-remote-requests"
-                                    >
-                                      {pendingRemoteRequestsCount}
-                                    </span>
-                                  )}
-                                  {showRcRemoteBadge && (
-                                    <span
-                                      className="flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive text-destructive-foreground text-[10px] font-medium px-1 ml-auto shrink-0"
-                                      data-testid="badge-pending-rc-remote-requests"
-                                    >
-                                      {rcPendingRemoteRequestsCount}
-                                    </span>
-                                  )}
-                                  {showServiceOrdersBadge && (
-                                    <span
-                                      className="flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive text-destructive-foreground text-[10px] font-medium px-1 ml-auto shrink-0"
-                                      data-testid="badge-pending-service-orders"
-                                    >
-                                      {pendingServiceOrdersCount}
-                                    </span>
-                                  )}
-                                  {showTicketsBadge && (
-                                    <span
-                                      className="flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive text-destructive-foreground text-[10px] font-medium px-1 ml-auto shrink-0"
-                                      data-testid="badge-pending-tickets"
-                                    >
-                                      {pendingTicketsCount}
-                                    </span>
-                                  )}
-                                  {showNotificationsBadge && (
-                                    <span
-                                      className="flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive text-destructive-foreground text-[10px] font-medium px-1 ml-auto shrink-0"
-                                      data-testid="badge-unread-notifications"
-                                    >
-                                      {unreadNotificationsCount > 9 ? '9+' : unreadNotificationsCount}
-                                    </span>
-                                  )}
                                 </Link>
                               </SidebarMenuButton>
                             </SidebarMenuItem>
