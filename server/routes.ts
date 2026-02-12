@@ -44194,6 +44194,61 @@ export function registerRoutes(app: Express): Server {
   });
 
   // ==========================================
+  // RESELLER WARRANTY PRODUCTS
+  // ==========================================
+
+  app.get('/api/reseller/warranty-products', requireRole('reseller'), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send('Unauthorized');
+      const products = await storage.listWarrantyProductsByReseller(req.user.id, false);
+      res.json(products);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
+  app.post('/api/reseller/warranty-products', requireRole('reseller'), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send('Unauthorized');
+      const product = await storage.createWarrantyProduct({
+        ...req.body,
+        resellerId: req.user.id,
+      });
+      res.json(product);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
+  app.patch('/api/reseller/warranty-products/:id', requireRole('reseller'), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send('Unauthorized');
+      const existing = await storage.getWarrantyProduct(req.params.id);
+      if (!existing || existing.resellerId !== req.user.id) {
+        return res.status(404).send('Prodotto non trovato');
+      }
+      const updated = await storage.updateWarrantyProduct(req.params.id, req.body);
+      res.json(updated);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
+  app.delete('/api/reseller/warranty-products/:id', requireRole('reseller'), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send('Unauthorized');
+      const existing = await storage.getWarrantyProduct(req.params.id);
+      if (!existing || existing.resellerId !== req.user.id) {
+        return res.status(404).send('Prodotto non trovato');
+      }
+      await storage.deleteWarrantyProduct(req.params.id);
+      res.json({ success: true });
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
+  // ==========================================
   // RESELLER POS TERMINAL ENDPOINTS
   // ==========================================
   
