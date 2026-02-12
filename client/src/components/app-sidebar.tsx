@@ -320,6 +320,7 @@ const menuItems = {
     { title: "Clienti", url: "/repair-center/customers", icon: Users, group: "Gestione" },
     { title: "Fatture", url: "/repair-center/invoices", icon: FileText, group: "Gestione" },
     { title: "Impostazioni", url: "/repair-center/settings", icon: Settings, group: "Gestione" },
+    { title: "Catalogo Garanzie", url: "/repair-center/warranty-products", icon: Shield, group: "Garanzie" },
     { title: "Garanzie Clienti", url: "/repair-center/warranties", icon: Shield, group: "Garanzie" },
     { title: "Analytics Garanzie", url: "/repair-center/warranty-analytics", icon: BarChart3, group: "Garanzie" },
     { title: "Ticket", url: "/repair-center/tickets", icon: Ticket, group: "Assistenza" },

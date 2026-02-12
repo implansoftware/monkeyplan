@@ -41827,7 +41827,20 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
-  // Lista servizi dal catalogo interventi per POS
+  // Catalogo garanzie disponibili per repair-center (read-only)
+  app.get("/api/repair-center/warranty-products", requireRole("repair_center", "repair_center_staff"), async (req, res) => {
+    try {
+      const repairCenterId = req.user!.repairCenterId || req.user!.id;
+      const center = await storage.getRepairCenter(repairCenterId);
+      if (!center) return res.status(404).json({ error: "Centro riparazione non trovato" });
+      const resellerId = center.resellerId;
+      const warrantyProds = await storage.listWarrantyProductsByReseller(resellerId, true);
+      res.json(warrantyProds);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   // Warranty products per repair-center POS
   app.get("/api/repair-center/pos/warranty-products", requireRole("repair_center", "repair_center_staff"), async (req, res) => {
     try {

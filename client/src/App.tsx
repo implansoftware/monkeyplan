@@ -329,6 +329,7 @@ import ResellerWarrantyAnalytics from "@/pages/reseller/warranty-analytics";
 import ResellerWarranties from "@/pages/reseller/warranties";
 import RepairCenterWarrantyAnalytics from "@/pages/repair-center/warranty-analytics";
 import RepairCenterWarranties from "@/pages/repair-center/warranties";
+import RepairCenterWarrantyProducts from "@/pages/repair-center/warranty-products";
 import ResellerWarrantyDetail from "@/pages/reseller/warranty-detail";
 import RepairCenterWarrantyDetail from "@/pages/repair-center/warranty-detail";
 import PosPaymentSuccess from "@/pages/pos-payment-success";
@@ -539,6 +540,7 @@ function Router() {
       <ProtectedRoute path="/repair-center/settings" component={RepairCenterSettings} />
       <ProtectedRoute path="/repair-center/invoices" component={RepairCenterInvoices} />
       <ProtectedRoute path="/repair-center/b2b-returns" component={RepairCenterB2BReturns} />
+      <ProtectedRoute path="/repair-center/warranty-products" component={RepairCenterWarrantyProducts} allowedRoles={["repair_center", "repair_center_staff"]} />
       <ProtectedRoute path="/repair-center/warranty-analytics" component={RepairCenterWarrantyAnalytics} allowedRoles={["repair_center", "repair_center_staff"]} />
       <ProtectedRoute path="/repair-center/warranties/:id" component={RepairCenterWarrantyDetail} allowedRoles={["repair_center", "repair_center_staff"]} />
       <ProtectedRoute path="/repair-center/warranties" component={RepairCenterWarranties} allowedRoles={["repair_center", "repair_center_staff"]} />
