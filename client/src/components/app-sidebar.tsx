@@ -329,7 +329,7 @@ const menuItems = {
     { title: "Dashboard", url: "/customer", icon: LayoutDashboard, group: "Dashboard" },
     { title: "Riparazioni", url: "/customer/repairs", icon: Wrench, group: "Riparazioni" },
     { title: "Richieste Remote", url: "/customer/remote-requests", icon: Send, group: "Riparazioni" },
-    { title: "Le Mie Garanzie", url: "/customer/warranties", icon: Shield, group: "Garanzie" },
+    { title: "Le Mie Garanzie", url: "/customer/warranties", icon: Shield, group: "Servizi" },
     { title: "Catalogo Servizi", url: "/customer/service-catalog", icon: Package, group: "Servizi" },
     { title: "Ordini Servizi", url: "/customer/service-orders", icon: ClipboardList, group: "Servizi" },
     { title: "Ordini Shop", url: "/customer/orders", icon: ShoppingCart, group: "Acquisti" },
