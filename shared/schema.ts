@@ -7455,3 +7455,82 @@ export const insertLicenseSchema = createInsertSchema(licenses).omit({
 
 export type License = typeof licenses.$inferSelect;
 export type InsertLicense = z.infer<typeof insertLicenseSchema>;
+
+// ==========================================
+// STANDALONE QUOTES (Preventivi standalone)
+// ==========================================
+export const standaloneQuoteStatusEnum = pgEnum("standalone_quote_status", [
+  "draft",
+  "sent",
+  "accepted",
+  "rejected",
+  "expired",
+]);
+
+export const standaloneQuotes = pgTable("standalone_quotes", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  quoteNumber: text("quote_number").notNull().unique(),
+  customerId: varchar("customer_id").references(() => users.id, { onDelete: "set null" }),
+  customerName: text("customer_name"),
+  customerEmail: text("customer_email"),
+  customerPhone: text("customer_phone"),
+  deviceTypeId: varchar("device_type_id").references(() => deviceTypes.id),
+  brandId: varchar("brand_id").references(() => deviceBrands.id),
+  modelId: varchar("model_id").references(() => deviceModels.id),
+  deviceDescription: text("device_description"),
+  subtotalCents: integer("subtotal_cents").notNull().default(0),
+  vatAmountCents: integer("vat_amount_cents").notNull().default(0),
+  totalAmountCents: integer("total_amount_cents").notNull().default(0),
+  status: standaloneQuoteStatusEnum("status").notNull().default("draft"),
+  validUntil: timestamp("valid_until"),
+  notes: text("notes"),
+  createdBy: varchar("created_by").notNull().references(() => users.id),
+  resellerId: varchar("reseller_id").references(() => users.id),
+  repairCenterId: varchar("repair_center_id").references(() => repairCenters.id),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+export const standaloneQuoteItems = pgTable("standalone_quote_items", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  quoteId: varchar("quote_id").notNull().references(() => standaloneQuotes.id, { onDelete: "cascade" }),
+  serviceItemId: varchar("service_item_id").references(() => serviceItems.id, { onDelete: "set null" }),
+  name: text("name").notNull(),
+  description: text("description"),
+  quantity: integer("quantity").notNull().default(1),
+  unitPriceCents: integer("unit_price_cents").notNull(),
+  vatRate: real("vat_rate").notNull().default(22),
+  totalCents: integer("total_cents").notNull(),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const standaloneQuotesRelations = relations(standaloneQuotes, ({ one, many }) => ({
+  customer: one(users, { fields: [standaloneQuotes.customerId], references: [users.id] }),
+  creator: one(users, { fields: [standaloneQuotes.createdBy], references: [users.id], relationName: "quoteCreator" }),
+  deviceType: one(deviceTypes, { fields: [standaloneQuotes.deviceTypeId], references: [deviceTypes.id] }),
+  brand: one(deviceBrands, { fields: [standaloneQuotes.brandId], references: [deviceBrands.id] }),
+  model: one(deviceModels, { fields: [standaloneQuotes.modelId], references: [deviceModels.id] }),
+  items: many(standaloneQuoteItems),
+}));
+
+export const standaloneQuoteItemsRelations = relations(standaloneQuoteItems, ({ one }) => ({
+  quote: one(standaloneQuotes, { fields: [standaloneQuoteItems.quoteId], references: [standaloneQuotes.id] }),
+  serviceItem: one(serviceItems, { fields: [standaloneQuoteItems.serviceItemId], references: [serviceItems.id] }),
+}));
+
+export const insertStandaloneQuoteSchema = createInsertSchema(standaloneQuotes).omit({
+  id: true,
+  quoteNumber: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertStandaloneQuoteItemSchema = createInsertSchema(standaloneQuoteItems).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type StandaloneQuote = typeof standaloneQuotes.$inferSelect;
+export type InsertStandaloneQuote = z.infer<typeof insertStandaloneQuoteSchema>;
+export type StandaloneQuoteItem = typeof standaloneQuoteItems.$inferSelect;
+export type InsertStandaloneQuoteItem = z.infer<typeof insertStandaloneQuoteItemSchema>;
