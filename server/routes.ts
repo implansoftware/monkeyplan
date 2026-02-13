@@ -47621,5 +47621,127 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+
+  // ==========================================
+  // STANDALONE QUOTES (Preventivi standalone)
+  // ==========================================
+
+  app.get("/api/standalone-quotes", requireAuth, async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      const { status, search } = req.query;
+      const filters: any = {};
+
+      if (req.user.role === "reseller" || req.user.role === "reseller_staff" || req.user.role === "sub_reseller") {
+        filters.resellerId = req.user.role === "reseller_staff" ? req.user.resellerId : req.user.id;
+      } else if (req.user.role === "repair_center") {
+        filters.repairCenterId = req.user.repairCenterId;
+      } else if (req.user.role === "admin" || req.user.role === "admin_staff") {
+        // admin sees all
+      } else {
+        return res.status(403).send("Accesso negato");
+      }
+
+      if (status && status !== "all") filters.status = status as string;
+      if (search) filters.search = search as string;
+
+      const quotes = await storage.listStandaloneQuotes(filters);
+      res.json(quotes);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.get("/api/standalone-quotes/:id", requireAuth, async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      const quote = await storage.getStandaloneQuote(req.params.id);
+      if (!quote) return res.status(404).send("Preventivo non trovato");
+      res.json(quote);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.post("/api/standalone-quotes", requireAuth, async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      const allowedRoles = ["admin", "admin_staff", "reseller", "reseller_staff", "sub_reseller", "repair_center"];
+      if (!allowedRoles.includes(req.user.role)) return res.status(403).send("Accesso negato");
+
+      const { items, ...quoteData } = req.body;
+      if (!items || !Array.isArray(items) || items.length === 0) {
+        return res.status(400).send("Almeno un servizio è obbligatorio");
+      }
+
+      let subtotalCents = 0;
+      let vatAmountCents = 0;
+      const processedItems = items.map((item: any) => {
+        const unitPriceCents = Math.round(Number(item.unitPriceCents) || 0);
+        const quantity = Math.max(1, Math.round(Number(item.quantity) || 1));
+        const vatRate = Number(item.vatRate) || 22;
+        const totalCents = unitPriceCents * quantity;
+        const vatForItem = Math.round(totalCents * vatRate / 100);
+        subtotalCents += totalCents;
+        vatAmountCents += vatForItem;
+        return {
+          serviceItemId: item.serviceItemId || null,
+          name: item.name,
+          description: item.description || null,
+          quantity,
+          unitPriceCents,
+          vatRate,
+          totalCents,
+        };
+      });
+
+      const totalAmountCents = subtotalCents + vatAmountCents;
+
+      let resellerId: string | null = null;
+      let repairCenterId: string | null = null;
+      if (req.user.role === "reseller" || req.user.role === "sub_reseller") {
+        resellerId = req.user.id;
+      } else if (req.user.role === "reseller_staff") {
+        resellerId = req.user.resellerId || req.user.id;
+      } else if (req.user.role === "repair_center") {
+        repairCenterId = req.user.repairCenterId || null;
+      }
+
+      const quote = await storage.createStandaloneQuote(
+        {
+          ...quoteData,
+          createdBy: req.user.id,
+          resellerId,
+          repairCenterId,
+          subtotalCents,
+          vatAmountCents,
+          totalAmountCents,
+          validUntil: quoteData.validUntil ? new Date(quoteData.validUntil) : null,
+        },
+        processedItems
+      );
+
+      res.status(201).json(quote);
+    } catch (error: any) {
+      console.error("Standalone quote creation error:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.patch("/api/standalone-quotes/:id/status", requireAuth, async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      const { status } = req.body;
+      const validStatuses = ["draft", "sent", "accepted", "rejected", "expired"];
+      if (!status || !validStatuses.includes(status)) {
+        return res.status(400).send("Stato non valido");
+      }
+      const quote = await storage.updateStandaloneQuoteStatus(req.params.id, status);
+      res.json(quote);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   return httpServer;
 }
