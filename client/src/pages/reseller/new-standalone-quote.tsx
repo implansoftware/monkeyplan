@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import { apiRequest } from "@/lib/queryClient";
@@ -19,6 +19,12 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@/components/ui/tabs";
+import {
   ArrowLeft,
   ArrowRight,
   FileText,
@@ -31,6 +37,9 @@ import {
   Euro,
   Search,
   Loader2,
+  Package,
+  Warehouse,
+  Truck,
 } from "lucide-react";
 import type { ServiceItem } from "@shared/schema";
 
@@ -42,6 +51,8 @@ interface ServiceItemWithPrice extends ServiceItem {
 
 interface QuoteLineItem {
   serviceItemId: string | null;
+  productId: string | null;
+  itemType: "service" | "product" | "custom";
   name: string;
   description: string;
   quantity: number;
@@ -59,6 +70,7 @@ function formatCurrency(cents: number): string {
 const STEPS = [
   { id: "device", label: "Dispositivo", icon: Smartphone },
   { id: "services", label: "Servizi", icon: Wrench },
+  { id: "products", label: "Prodotti", icon: Package },
   { id: "customer", label: "Cliente", icon: User },
   { id: "summary", label: "Riepilogo", icon: CheckCircle },
 ];
@@ -86,6 +98,8 @@ export default function NewStandaloneQuote() {
   const [validDays, setValidDays] = useState("30");
 
   const [serviceSearch, setServiceSearch] = useState("");
+  const [productSearch, setProductSearch] = useState("");
+  const [productTab, setProductTab] = useState("warehouse");
 
   const { data: deviceTypes = [] } = useQuery<any[]>({
     queryKey: ["/api/device-types"],
@@ -123,24 +137,59 @@ export default function NewStandaloneQuote() {
     enabled: currentStep === 1,
   });
 
-  const { data: customers = [] } = useQuery<any[]>({
-    queryKey: ["/api/users?role=customer&limit=100"],
+  const { data: warehouses = [] } = useQuery<any[]>({
+    queryKey: ["/api/warehouses"],
     enabled: currentStep === 2,
   });
 
-  const filteredBrands = brandId ? deviceBrands : deviceBrands;
+  const userWarehouseId = useMemo(() => {
+    if (warehouses.length > 0) return warehouses[0].id;
+    return null;
+  }, [warehouses]);
+
+  const warehouseProductsUrl = (() => {
+    if (!userWarehouseId) return null;
+    const params = new URLSearchParams();
+    if (productSearch) params.set("search", productSearch);
+    params.set("limit", "50");
+    return `/api/warehouses/${userWarehouseId}/products?${params}`;
+  })();
+
+  const { data: warehouseProducts = [], isLoading: warehouseProductsLoading } = useQuery<any[]>({
+    queryKey: [warehouseProductsUrl],
+    enabled: currentStep === 2 && !!userWarehouseId && productTab === "warehouse",
+  });
+
+  const supplierProductsUrl = (() => {
+    const params = new URLSearchParams();
+    if (productSearch) params.set("search", productSearch);
+    params.set("limit", "50");
+    return `/api/products?${params}`;
+  })();
+
+  const { data: allProducts = [], isLoading: allProductsLoading } = useQuery<any[]>({
+    queryKey: [supplierProductsUrl],
+    enabled: currentStep === 2 && productTab === "supplier",
+  });
+
+  const { data: customers = [] } = useQuery<any[]>({
+    queryKey: ["/api/users?role=customer&limit=100"],
+    enabled: currentStep === 3,
+  });
 
   const addServiceToQuote = (service: ServiceItemWithPrice) => {
-    const existing = lineItems.find(li => li.serviceItemId === service.id);
+    const existing = lineItems.find(li => li.serviceItemId === service.id && li.itemType === "service");
     if (existing) {
       setLineItems(prev => prev.map(li =>
-        li.serviceItemId === service.id
+        li.serviceItemId === service.id && li.itemType === "service"
           ? { ...li, quantity: li.quantity + 1 }
           : li
       ));
     } else {
       setLineItems(prev => [...prev, {
         serviceItemId: service.id,
+        productId: null,
+        itemType: "service",
         name: service.name,
         description: service.description || "",
         quantity: 1,
@@ -149,6 +198,30 @@ export default function NewStandaloneQuote() {
       }]);
     }
     toast({ title: `${service.name} aggiunto al preventivo` });
+  };
+
+  const addProductToQuote = (product: any) => {
+    const pid = product.id;
+    const existing = lineItems.find(li => li.productId === pid && li.itemType === "product");
+    if (existing) {
+      setLineItems(prev => prev.map(li =>
+        li.productId === pid && li.itemType === "product"
+          ? { ...li, quantity: li.quantity + 1 }
+          : li
+      ));
+    } else {
+      setLineItems(prev => [...prev, {
+        serviceItemId: null,
+        productId: pid,
+        itemType: "product",
+        name: product.name || "",
+        description: product.description || "",
+        quantity: 1,
+        unitPriceCents: product.unitPrice || 0,
+        vatRate: product.vatRate || 22,
+      }]);
+    }
+    toast({ title: `${product.name} aggiunto al preventivo` });
   };
 
   const removeLineItem = (index: number) => {
@@ -162,6 +235,8 @@ export default function NewStandaloneQuote() {
   const addCustomLineItem = () => {
     setLineItems(prev => [...prev, {
       serviceItemId: null,
+      productId: null,
+      itemType: "custom",
       name: "",
       description: "",
       quantity: 1,
@@ -204,6 +279,8 @@ export default function NewStandaloneQuote() {
           status: "draft",
           items: lineItems.map(li => ({
             serviceItemId: li.serviceItemId,
+            productId: li.productId,
+            itemType: li.itemType,
             name: li.name,
             description: li.description || null,
             quantity: li.quantity,
@@ -226,9 +303,10 @@ export default function NewStandaloneQuote() {
   const canGoNext = () => {
     switch (currentStep) {
       case 0: return true;
-      case 1: return lineItems.length > 0 && lineItems.every(li => li.name && li.unitPriceCents >= 0);
+      case 1: return true;
       case 2: return true;
       case 3: return true;
+      case 4: return lineItems.length > 0 && lineItems.every(li => li.name && li.unitPriceCents >= 0);
       default: return false;
     }
   };
@@ -238,6 +316,10 @@ export default function NewStandaloneQuote() {
   const modelName = deviceModels.find((dm: any) => dm.id === modelId)?.modelName || "";
 
   const basePath = user?.role === "repair_center" ? "/repair-center" : "/reseller";
+
+  const serviceItems = lineItems.filter(li => li.itemType === "service");
+  const productItems = lineItems.filter(li => li.itemType === "product");
+  const customItems = lineItems.filter(li => li.itemType === "custom");
 
   return (
     <div className="p-6 max-w-4xl mx-auto space-y-6">
@@ -390,7 +472,7 @@ export default function NewStandaloneQuote() {
               ) : (
                 <div className="grid gap-2 max-h-[300px] overflow-y-auto">
                   {services.map((service) => {
-                    const isAdded = lineItems.some(li => li.serviceItemId === service.id);
+                    const isAdded = lineItems.some(li => li.serviceItemId === service.id && li.itemType === "service");
                     return (
                       <div
                         key={service.id}
@@ -442,23 +524,29 @@ export default function NewStandaloneQuote() {
             <CardContent>
               {lineItems.length === 0 ? (
                 <p className="text-sm text-muted-foreground text-center py-4">
-                  Nessun servizio aggiunto. Seleziona dalla lista sopra o aggiungi una voce personalizzata.
+                  Nessuna voce aggiunta. Seleziona dalla lista sopra o aggiungi una voce personalizzata.
                 </p>
               ) : (
                 <div className="space-y-3">
                   {lineItems.map((item, idx) => (
                     <div key={idx} className="flex items-start gap-3 p-3 rounded-md border">
                       <div className="flex-1 space-y-2">
-                        {!item.serviceItemId ? (
-                          <Input
-                            value={item.name}
-                            onChange={(e) => updateLineItem(idx, { name: e.target.value })}
-                            placeholder="Nome voce personalizzata"
-                            data-testid={`input-item-name-${idx}`}
-                          />
-                        ) : (
-                          <div className="font-medium text-sm">{item.name}</div>
-                        )}
+                        <div className="flex items-center gap-2 flex-wrap">
+                          {item.itemType === "service" && <Badge variant="secondary">Servizio</Badge>}
+                          {item.itemType === "product" && <Badge variant="outline">Prodotto</Badge>}
+                          {item.itemType === "custom" && <Badge variant="secondary">Personalizzato</Badge>}
+                          {item.itemType === "custom" ? (
+                            <Input
+                              value={item.name}
+                              onChange={(e) => updateLineItem(idx, { name: e.target.value })}
+                              placeholder="Nome voce personalizzata"
+                              className="flex-1"
+                              data-testid={`input-item-name-${idx}`}
+                            />
+                          ) : (
+                            <span className="font-medium text-sm">{item.name}</span>
+                          )}
+                        </div>
                         <div className="grid grid-cols-3 gap-2">
                           <div>
                             <Label className="text-xs">Quantità</Label>
@@ -516,9 +604,9 @@ export default function NewStandaloneQuote() {
                   <Separator />
                   <div className="flex justify-end">
                     <div className="text-right space-y-1">
-                      <div className="text-sm">Imponibile: <span className="font-semibold">{formatCurrency(subtotalCents)}</span></div>
-                      <div className="text-sm">IVA: <span className="font-semibold">{formatCurrency(vatAmountCents)}</span></div>
-                      <div className="text-lg font-bold">Totale: {formatCurrency(totalCents)}</div>
+                      <div className="text-sm">Imponibile: <span className="font-semibold" data-testid="text-subtotal">{formatCurrency(subtotalCents)}</span></div>
+                      <div className="text-sm">IVA: <span className="font-semibold" data-testid="text-vat">{formatCurrency(vatAmountCents)}</span></div>
+                      <div className="text-lg font-bold" data-testid="text-total">Totale: {formatCurrency(totalCents)}</div>
                     </div>
                   </div>
                 </div>
@@ -529,6 +617,240 @@ export default function NewStandaloneQuote() {
       )}
 
       {currentStep === 2 && (
+        <div className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg flex items-center gap-2">
+                <Package className="h-5 w-5" />
+                Aggiungi Prodotti (opzionale)
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <p className="text-sm text-muted-foreground">
+                Aggiungi dispositivi, accessori o ricambi dal tuo magazzino o dal catalogo fornitori.
+                Puoi saltare questo passaggio se non servono prodotti.
+              </p>
+
+              <Tabs value={productTab} onValueChange={setProductTab}>
+                <TabsList>
+                  <TabsTrigger value="warehouse" data-testid="tab-warehouse">
+                    <Warehouse className="h-4 w-4 mr-1.5" />
+                    Il Mio Magazzino
+                  </TabsTrigger>
+                  <TabsTrigger value="supplier" data-testid="tab-supplier">
+                    <Truck className="h-4 w-4 mr-1.5" />
+                    Catalogo Fornitori
+                  </TabsTrigger>
+                </TabsList>
+
+                <div className="relative mt-3">
+                  <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+                  <Input
+                    value={productSearch}
+                    onChange={(e) => setProductSearch(e.target.value)}
+                    placeholder="Cerca prodotto..."
+                    className="pl-9"
+                    data-testid="input-search-products"
+                  />
+                </div>
+
+                <TabsContent value="warehouse" className="mt-3">
+                  {!userWarehouseId ? (
+                    <p className="text-sm text-muted-foreground text-center py-8">
+                      Nessun magazzino trovato. Crea un magazzino per aggiungere prodotti.
+                    </p>
+                  ) : warehouseProductsLoading ? (
+                    <div className="flex items-center justify-center py-8">
+                      <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                    </div>
+                  ) : warehouseProducts.length === 0 ? (
+                    <p className="text-sm text-muted-foreground text-center py-8">
+                      {productSearch ? "Nessun prodotto trovato nel magazzino." : "Il magazzino è vuoto."}
+                    </p>
+                  ) : (
+                    <div className="grid gap-2 max-h-[300px] overflow-y-auto">
+                      {warehouseProducts.map((product: any) => {
+                        const pid = product.productId || product.id;
+                        const isAdded = lineItems.some(li => li.productId === pid && li.itemType === "product");
+                        return (
+                          <div
+                            key={pid}
+                            className={`flex items-center justify-between gap-3 p-3 rounded-md border transition-colors ${
+                              isAdded ? "border-primary/50 bg-primary/5" : "hover-elevate"
+                            }`}
+                            data-testid={`warehouse-product-${pid}`}
+                          >
+                            <div className="flex-1 min-w-0">
+                              <div className="font-medium text-sm">{product.name}</div>
+                              <div className="text-xs text-muted-foreground flex items-center gap-2 flex-wrap">
+                                {product.sku && <span>{product.sku}</span>}
+                                {product.category && <span>{product.category}</span>}
+                                {product.brand && <span>{product.brand}</span>}
+                                {product.availableQuantity != null && (
+                                  <span>Disp: {product.availableQuantity}</span>
+                                )}
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-2 flex-shrink-0">
+                              <span className="text-sm font-semibold">
+                                {formatCurrency(product.unitPrice || 0)}
+                              </span>
+                              <Button
+                                size="sm"
+                                variant={isAdded ? "secondary" : "default"}
+                                onClick={() => addProductToQuote(product)}
+                                data-testid={`button-add-warehouse-product-${pid}`}
+                              >
+                                <Plus className="h-3 w-3 mr-1" />
+                                {isAdded ? "Aggiungi ancora" : "Aggiungi"}
+                              </Button>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </TabsContent>
+
+                <TabsContent value="supplier" className="mt-3">
+                  {allProductsLoading ? (
+                    <div className="flex items-center justify-center py-8">
+                      <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                    </div>
+                  ) : allProducts.length === 0 ? (
+                    <p className="text-sm text-muted-foreground text-center py-8">
+                      {productSearch ? "Nessun prodotto trovato nel catalogo." : "Catalogo prodotti vuoto."}
+                    </p>
+                  ) : (
+                    <div className="grid gap-2 max-h-[300px] overflow-y-auto">
+                      {allProducts.map((product: any) => {
+                        const pid = product.id;
+                        const isAdded = lineItems.some(li => li.productId === pid && li.itemType === "product");
+                        return (
+                          <div
+                            key={pid}
+                            className={`flex items-center justify-between gap-3 p-3 rounded-md border transition-colors ${
+                              isAdded ? "border-primary/50 bg-primary/5" : "hover-elevate"
+                            }`}
+                            data-testid={`supplier-product-${pid}`}
+                          >
+                            <div className="flex-1 min-w-0">
+                              <div className="font-medium text-sm">{product.name}</div>
+                              <div className="text-xs text-muted-foreground flex items-center gap-2 flex-wrap">
+                                {product.sku && <span>{product.sku}</span>}
+                                {product.category && <span>{product.category}</span>}
+                                {product.brand && <span>{product.brand}</span>}
+                                {product.supplier && (
+                                  <span className="flex items-center gap-1">
+                                    <Truck className="h-3 w-3" />
+                                    {product.supplier}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-2 flex-shrink-0">
+                              <span className="text-sm font-semibold">
+                                {formatCurrency(product.unitPrice || 0)}
+                              </span>
+                              <Button
+                                size="sm"
+                                variant={isAdded ? "secondary" : "default"}
+                                onClick={() => addProductToQuote(product)}
+                                data-testid={`button-add-supplier-product-${pid}`}
+                              >
+                                <Plus className="h-3 w-3 mr-1" />
+                                {isAdded ? "Aggiungi ancora" : "Aggiungi"}
+                              </Button>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </TabsContent>
+              </Tabs>
+            </CardContent>
+          </Card>
+
+          {lineItems.filter(li => li.itemType === "product").length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">Prodotti Selezionati ({lineItems.filter(li => li.itemType === "product").length})</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  {lineItems.map((item, idx) => {
+                    if (item.itemType !== "product") return null;
+                    return (
+                      <div key={idx} className="flex items-start gap-3 p-3 rounded-md border">
+                        <div className="flex-1 space-y-2">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <Badge variant="outline">Prodotto</Badge>
+                            <span className="font-medium text-sm">{item.name}</span>
+                          </div>
+                          <div className="grid grid-cols-3 gap-2">
+                            <div>
+                              <Label className="text-xs">Quantità</Label>
+                              <Input
+                                type="number"
+                                min={1}
+                                value={item.quantity}
+                                onChange={(e) => updateLineItem(idx, { quantity: Math.max(1, parseInt(e.target.value) || 1) })}
+                                data-testid={`input-product-qty-${idx}`}
+                              />
+                            </div>
+                            <div>
+                              <Label className="text-xs">Prezzo unit. (EUR)</Label>
+                              <Input
+                                type="number"
+                                min={0}
+                                step="0.01"
+                                value={(item.unitPriceCents / 100).toFixed(2)}
+                                onChange={(e) => updateLineItem(idx, { unitPriceCents: Math.round(parseFloat(e.target.value || "0") * 100) })}
+                                data-testid={`input-product-price-${idx}`}
+                              />
+                            </div>
+                            <div>
+                              <Label className="text-xs">IVA %</Label>
+                              <Select
+                                value={String(item.vatRate)}
+                                onValueChange={(v) => updateLineItem(idx, { vatRate: parseFloat(v) })}
+                              >
+                                <SelectTrigger data-testid={`select-product-vat-${idx}`}>
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="22">22%</SelectItem>
+                                  <SelectItem value="10">10%</SelectItem>
+                                  <SelectItem value="4">4%</SelectItem>
+                                  <SelectItem value="0">0%</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
+                          </div>
+                          <div className="text-xs text-muted-foreground text-right">
+                            Totale: {formatCurrency(item.unitPriceCents * item.quantity)} + IVA {formatCurrency(Math.round(item.unitPriceCents * item.quantity * item.vatRate / 100))}
+                          </div>
+                        </div>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => removeLineItem(idx)}
+                          data-testid={`button-remove-product-${idx}`}
+                        >
+                          <Trash2 className="h-4 w-4 text-destructive" />
+                        </Button>
+                      </div>
+                    );
+                  })}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+        </div>
+      )}
+
+      {currentStep === 3 && (
         <Card>
           <CardHeader>
             <CardTitle className="text-lg">Dati Cliente (opzionale)</CardTitle>
@@ -625,7 +947,7 @@ export default function NewStandaloneQuote() {
         </Card>
       )}
 
-      {currentStep === 3 && (
+      {currentStep === 4 && (
         <Card>
           <CardHeader>
             <CardTitle className="text-lg">Riepilogo Preventivo</CardTitle>
@@ -645,25 +967,61 @@ export default function NewStandaloneQuote() {
 
             <Separator />
 
-            <div className="space-y-1">
-              <h3 className="text-sm font-semibold flex items-center gap-2"><Wrench className="h-4 w-4" /> Servizi ({lineItems.length})</h3>
-              <div className="space-y-2">
-                {lineItems.map((item, idx) => (
-                  <div key={idx} className="flex items-center justify-between gap-2 text-sm">
-                    <span>{item.quantity}x {item.name}</span>
-                    <span className="font-medium">{formatCurrency(item.unitPriceCents * item.quantity)}</span>
-                  </div>
-                ))}
+            {serviceItems.length > 0 && (
+              <div className="space-y-1">
+                <h3 className="text-sm font-semibold flex items-center gap-2"><Wrench className="h-4 w-4" /> Servizi ({serviceItems.length})</h3>
+                <div className="space-y-2">
+                  {serviceItems.map((item, idx) => (
+                    <div key={idx} className="flex items-center justify-between gap-2 text-sm">
+                      <span>{item.quantity}x {item.name}</span>
+                      <span className="font-medium">{formatCurrency(item.unitPriceCents * item.quantity)}</span>
+                    </div>
+                  ))}
+                </div>
               </div>
-            </div>
+            )}
+
+            {productItems.length > 0 && (
+              <>
+                <Separator />
+                <div className="space-y-1">
+                  <h3 className="text-sm font-semibold flex items-center gap-2"><Package className="h-4 w-4" /> Prodotti ({productItems.length})</h3>
+                  <div className="space-y-2">
+                    {productItems.map((item, idx) => (
+                      <div key={idx} className="flex items-center justify-between gap-2 text-sm">
+                        <span>{item.quantity}x {item.name}</span>
+                        <span className="font-medium">{formatCurrency(item.unitPriceCents * item.quantity)}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </>
+            )}
+
+            {customItems.length > 0 && (
+              <>
+                <Separator />
+                <div className="space-y-1">
+                  <h3 className="text-sm font-semibold flex items-center gap-2"><FileText className="h-4 w-4" /> Voci Personalizzate ({customItems.length})</h3>
+                  <div className="space-y-2">
+                    {customItems.map((item, idx) => (
+                      <div key={idx} className="flex items-center justify-between gap-2 text-sm">
+                        <span>{item.quantity}x {item.name}</span>
+                        <span className="font-medium">{formatCurrency(item.unitPriceCents * item.quantity)}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </>
+            )}
 
             <Separator />
 
             <div className="flex justify-end">
               <div className="text-right space-y-1">
-                <div className="text-sm">Imponibile: <span className="font-semibold">{formatCurrency(subtotalCents)}</span></div>
-                <div className="text-sm">IVA: <span className="font-semibold">{formatCurrency(vatAmountCents)}</span></div>
-                <div className="text-lg font-bold flex items-center gap-1 justify-end">
+                <div className="text-sm">Imponibile: <span className="font-semibold" data-testid="text-summary-subtotal">{formatCurrency(subtotalCents)}</span></div>
+                <div className="text-sm">IVA: <span className="font-semibold" data-testid="text-summary-vat">{formatCurrency(vatAmountCents)}</span></div>
+                <div className="text-lg font-bold flex items-center gap-1 justify-end" data-testid="text-summary-total">
                   <Euro className="h-5 w-5" />
                   Totale: {formatCurrency(totalCents)}
                 </div>

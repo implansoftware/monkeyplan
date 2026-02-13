@@ -47671,7 +47671,7 @@ export function registerRoutes(app: Express): Server {
 
       const { items, ...quoteData } = req.body;
       if (!items || !Array.isArray(items) || items.length === 0) {
-        return res.status(400).send("Almeno un servizio è obbligatorio");
+        return res.status(400).send("Almeno una voce è obbligatoria");
       }
 
       let subtotalCents = 0;
@@ -47686,6 +47686,8 @@ export function registerRoutes(app: Express): Server {
         vatAmountCents += vatForItem;
         return {
           serviceItemId: item.serviceItemId || null,
+          productId: item.productId || null,
+          itemType: item.itemType || "service",
           name: item.name,
           description: item.description || null,
           quantity,

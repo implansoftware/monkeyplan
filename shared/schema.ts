@@ -7495,6 +7495,8 @@ export const standaloneQuoteItems = pgTable("standalone_quote_items", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   quoteId: varchar("quote_id").notNull().references(() => standaloneQuotes.id, { onDelete: "cascade" }),
   serviceItemId: varchar("service_item_id").references(() => serviceItems.id, { onDelete: "set null" }),
+  productId: varchar("product_id").references(() => products.id, { onDelete: "set null" }),
+  itemType: text("item_type").notNull().default("service"),
   name: text("name").notNull(),
   description: text("description"),
   quantity: integer("quantity").notNull().default(1),
@@ -7516,6 +7518,7 @@ export const standaloneQuotesRelations = relations(standaloneQuotes, ({ one, man
 export const standaloneQuoteItemsRelations = relations(standaloneQuoteItems, ({ one }) => ({
   quote: one(standaloneQuotes, { fields: [standaloneQuoteItems.quoteId], references: [standaloneQuotes.id] }),
   serviceItem: one(serviceItems, { fields: [standaloneQuoteItems.serviceItemId], references: [serviceItems.id] }),
+  product: one(products, { fields: [standaloneQuoteItems.productId], references: [products.id] }),
 }));
 
 export const insertStandaloneQuoteSchema = createInsertSchema(standaloneQuotes).omit({
