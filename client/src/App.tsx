@@ -101,6 +101,8 @@ import AdminShipments from "@/pages/admin/shipments";
 import AdminPayments from "@/pages/admin/payments";
 import DiagnosisList from "@/pages/DiagnosisList";
 import QuotesList from "@/pages/QuotesList";
+import StandaloneQuotesList from "@/pages/reseller/standalone-quotes";
+import NewStandaloneQuote from "@/pages/reseller/new-standalone-quote";
 import AdminWarehouses from "@/pages/admin/warehouses";
 import AdminAllWarehouses from "@/pages/admin/all-warehouses";
 import AdminWarrantyProducts from "@/pages/admin/warranty-products";
@@ -433,6 +435,8 @@ function Router() {
       <ProtectedRoute path="/reseller/repairs" component={ResellerRepairs} allowedRoles={["reseller", "reseller_staff", "sub_reseller"]} />
       <ProtectedRoute path="/reseller/diagnostics" component={DiagnosisList} allowedRoles={["reseller", "reseller_staff", "sub_reseller"]} />
       <ProtectedRoute path="/reseller/quotes" component={QuotesList} allowedRoles={["reseller", "reseller_staff", "sub_reseller"]} />
+      <ProtectedRoute path="/reseller/standalone-quotes/new" component={NewStandaloneQuote} allowedRoles={["reseller", "reseller_staff", "sub_reseller"]} />
+      <ProtectedRoute path="/reseller/standalone-quotes" component={StandaloneQuotesList} allowedRoles={["reseller", "reseller_staff", "sub_reseller"]} />
       <ProtectedRoute path="/reseller/service-catalog" component={ResellerServiceCatalog} allowedRoles={["reseller", "reseller_staff", "sub_reseller"]} />
       <ProtectedRoute path="/reseller/price-lists/:id" component={ResellerPriceListDetail} allowedRoles={["reseller", "reseller_staff", "sub_reseller"]} />
       <ProtectedRoute path="/reseller/price-lists" component={ResellerPriceLists} allowedRoles={["reseller", "reseller_staff", "sub_reseller"]} />
@@ -570,6 +574,8 @@ function Router() {
       <ProtectedRoute path="/repair-center/remote-requests" component={RepairCenterRemoteRequests} />
       <ProtectedRoute path="/repair-center/diagnostics" component={DiagnosisList} />
       <ProtectedRoute path="/repair-center/quotes" component={QuotesList} />
+      <ProtectedRoute path="/repair-center/standalone-quotes/new" component={NewStandaloneQuote} />
+      <ProtectedRoute path="/repair-center/standalone-quotes" component={StandaloneQuotesList} />
       <ProtectedRoute path="/repair-center/pos" component={RepairCenterPos} />
       <ProtectedRoute path="/repair-center/pos/sales-history" component={SalesHistory} />
       <ProtectedRoute path="/repair-center/pos/sessions" component={PosSessions} />
