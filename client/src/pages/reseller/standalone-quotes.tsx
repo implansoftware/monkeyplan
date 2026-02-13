@@ -37,6 +37,8 @@ import {
   CheckCircle,
   XCircle,
   Clock,
+  Eye,
+  Download,
 } from "lucide-react";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
@@ -219,7 +221,12 @@ export default function StandaloneQuotesList() {
       ) : (
         <div className="grid gap-3">
           {quotes.map((quote) => (
-            <Card key={quote.id} className="hover-elevate" data-testid={`quote-card-${quote.id}`}>
+            <Card
+              key={quote.id}
+              className="hover-elevate cursor-pointer"
+              onClick={() => navigate(`${basePath}/standalone-quotes/${quote.id}`)}
+              data-testid={`quote-card-${quote.id}`}
+            >
               <CardContent className="p-4">
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex-1 min-w-0 space-y-1.5">
@@ -267,14 +274,54 @@ export default function StandaloneQuotesList() {
 
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon" data-testid={`button-actions-${quote.id}`}>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={(e) => e.stopPropagation()}
+                          data-testid={`button-actions-${quote.id}`}
+                        >
                           <MoreVertical className="h-4 w-4" />
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
+                        <DropdownMenuItem
+                          onClick={(e) => { e.stopPropagation(); navigate(`${basePath}/standalone-quotes/${quote.id}`); }}
+                          data-testid={`action-view-${quote.id}`}
+                        >
+                          <Eye className="h-4 w-4 mr-2" />
+                          Visualizza
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            fetch(`/api/standalone-quotes/${quote.id}/pdf`, { credentials: "include" })
+                              .then(r => {
+                                if (!r.ok) throw new Error("Errore generazione PDF");
+                                return r.blob();
+                              })
+                              .then(blob => {
+                                const url = URL.createObjectURL(blob);
+                                const a = document.createElement("a");
+                                a.href = url;
+                                a.download = `${quote.quoteNumber}.pdf`;
+                                document.body.appendChild(a);
+                                a.click();
+                                document.body.removeChild(a);
+                                URL.revokeObjectURL(url);
+                                toast({ title: "PDF scaricato" });
+                              })
+                              .catch((err: any) => {
+                                toast({ title: "Errore", description: err.message, variant: "destructive" });
+                              });
+                          }}
+                          data-testid={`action-download-${quote.id}`}
+                        >
+                          <Download className="h-4 w-4 mr-2" />
+                          Scarica PDF
+                        </DropdownMenuItem>
                         {quote.status === "draft" && (
                           <DropdownMenuItem
-                            onClick={() => updateStatusMutation.mutate({ id: quote.id, status: "sent" })}
+                            onClick={(e) => { e.stopPropagation(); updateStatusMutation.mutate({ id: quote.id, status: "sent" }); }}
                             data-testid={`action-send-${quote.id}`}
                           >
                             <Send className="h-4 w-4 mr-2" />
@@ -283,7 +330,7 @@ export default function StandaloneQuotesList() {
                         )}
                         {(quote.status === "draft" || quote.status === "sent") && (
                           <DropdownMenuItem
-                            onClick={() => updateStatusMutation.mutate({ id: quote.id, status: "accepted" })}
+                            onClick={(e) => { e.stopPropagation(); updateStatusMutation.mutate({ id: quote.id, status: "accepted" }); }}
                             data-testid={`action-accept-${quote.id}`}
                           >
                             <CheckCircle className="h-4 w-4 mr-2" />
@@ -292,7 +339,7 @@ export default function StandaloneQuotesList() {
                         )}
                         {(quote.status === "draft" || quote.status === "sent") && (
                           <DropdownMenuItem
-                            onClick={() => updateStatusMutation.mutate({ id: quote.id, status: "rejected" })}
+                            onClick={(e) => { e.stopPropagation(); updateStatusMutation.mutate({ id: quote.id, status: "rejected" }); }}
                             data-testid={`action-reject-${quote.id}`}
                           >
                             <XCircle className="h-4 w-4 mr-2" />
@@ -301,7 +348,7 @@ export default function StandaloneQuotesList() {
                         )}
                         {quote.status === "sent" && (
                           <DropdownMenuItem
-                            onClick={() => updateStatusMutation.mutate({ id: quote.id, status: "expired" })}
+                            onClick={(e) => { e.stopPropagation(); updateStatusMutation.mutate({ id: quote.id, status: "expired" }); }}
                             data-testid={`action-expire-${quote.id}`}
                           >
                             <Clock className="h-4 w-4 mr-2" />

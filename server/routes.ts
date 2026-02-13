@@ -47730,6 +47730,41 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+
+  app.get("/api/standalone-quotes/:id/pdf", requireAuth, async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      const allowedRoles = ["admin", "admin_staff", "reseller", "reseller_staff", "sub_reseller", "repair_center"];
+      if (!allowedRoles.includes(req.user.role)) return res.status(403).send("Accesso negato");
+      const quote = await storage.getStandaloneQuote(req.params.id);
+      if (!quote) return res.status(404).send("Preventivo non trovato");
+
+      const creator = await storage.getUser(quote.createdBy);
+      const issuer = {
+        name: creator?.companyName || creator?.fullName || creator?.username || "N/D",
+        address: creator?.address || undefined,
+        city: creator?.city || undefined,
+        postalCode: creator?.postalCode || undefined,
+        province: creator?.province || undefined,
+        vatNumber: creator?.partitaIva || undefined,
+        fiscalCode: creator?.codiceFiscale || undefined,
+        phone: creator?.phone || undefined,
+        email: creator?.email || undefined,
+        pec: (creator as any)?.pec || undefined,
+      };
+
+      const { generateQuotePdf } = await import("./services/quotePdf");
+      const pdfBuffer = await generateQuotePdf({ quote, issuer });
+
+      res.setHeader("Content-Type", "application/pdf");
+      res.setHeader("Content-Disposition", `attachment; filename="${quote.quoteNumber}.pdf"`);
+      res.setHeader("Content-Length", pdfBuffer.length);
+      res.send(pdfBuffer);
+    } catch (error: any) {
+      console.error("Quote PDF generation error:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
   app.patch("/api/standalone-quotes/:id/status", requireAuth, async (req, res) => {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
