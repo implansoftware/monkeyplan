@@ -145,7 +145,9 @@ import {
   expoPushTokens, ExpoPushToken, InsertExpoPushToken,
   pushNotificationLog, PushNotificationLog, InsertPushNotificationLog,
   licensePlans, LicensePlan, InsertLicensePlan,
-  licenses, License, InsertLicense
+  licenses, License, InsertLicense,
+  standaloneQuotes, StandaloneQuote, InsertStandaloneQuote,
+  standaloneQuoteItems, StandaloneQuoteItem, InsertStandaloneQuoteItem
 } from "@shared/schema";
 import { db, pool } from "./db";
 import { eq, and, or, desc, lt, gt, gte, lte, sql, not, inArray, isNull, ilike, SQL } from "drizzle-orm";
@@ -1257,6 +1259,12 @@ export interface IStorage {
   createLicense(data: InsertLicense): Promise<License>;
   updateLicense(id: string, updates: Partial<InsertLicense>): Promise<License>;
 
+  // Standalone Quotes (Preventivi standalone)
+  listStandaloneQuotes(filters?: { createdBy?: string; resellerId?: string; repairCenterId?: string; status?: string; search?: string }): Promise<(StandaloneQuote & { items: StandaloneQuoteItem[] })[]>;
+  getStandaloneQuote(id: string): Promise<(StandaloneQuote & { items: StandaloneQuoteItem[] }) | undefined>;
+  createStandaloneQuote(quote: InsertStandaloneQuote, items: Omit<InsertStandaloneQuoteItem, 'quoteId'>[]): Promise<StandaloneQuote & { items: StandaloneQuoteItem[] }>;
+  updateStandaloneQuoteStatus(id: string, status: string): Promise<StandaloneQuote>;
+  getNextStandaloneQuoteNumber(): Promise<string>;
 }
 
 
@@ -13535,6 +13543,92 @@ export class DatabaseStorage implements IStorage {
       .where(eq(licenses.id, id))
       .returning();
     return license;
+  }
+
+  // ==========================================
+  // STANDALONE QUOTES (Preventivi standalone)
+  // ==========================================
+
+  async getNextStandaloneQuoteNumber(): Promise<string> {
+    const year = new Date().getFullYear();
+    const prefix = `PRV-${year}-`;
+    const result = await db.select({ quoteNumber: standaloneQuotes.quoteNumber })
+      .from(standaloneQuotes)
+      .where(ilike(standaloneQuotes.quoteNumber, `${prefix}%`))
+      .orderBy(desc(standaloneQuotes.quoteNumber))
+      .limit(1);
+    
+    let nextNum = 1;
+    if (result.length > 0) {
+      const lastNum = parseInt(result[0].quoteNumber.replace(prefix, ""), 10);
+      if (!isNaN(lastNum)) nextNum = lastNum + 1;
+    }
+    return `${prefix}${String(nextNum).padStart(4, "0")}`;
+  }
+
+  async listStandaloneQuotes(filters?: { createdBy?: string; resellerId?: string; repairCenterId?: string; status?: string; search?: string }): Promise<(StandaloneQuote & { items: StandaloneQuoteItem[] })[]> {
+    const conditions: SQL[] = [];
+    if (filters?.createdBy) conditions.push(eq(standaloneQuotes.createdBy, filters.createdBy));
+    if (filters?.resellerId) conditions.push(eq(standaloneQuotes.resellerId, filters.resellerId));
+    if (filters?.repairCenterId) conditions.push(eq(standaloneQuotes.repairCenterId, filters.repairCenterId));
+    if (filters?.status) conditions.push(eq(standaloneQuotes.status, filters.status as any));
+    if (filters?.search) {
+      conditions.push(
+        or(
+          ilike(standaloneQuotes.quoteNumber, `%${filters.search}%`),
+          ilike(standaloneQuotes.customerName, `%${filters.search}%`),
+          ilike(standaloneQuotes.customerEmail, `%${filters.search}%`),
+          ilike(standaloneQuotes.deviceDescription, `%${filters.search}%`)
+        )!
+      );
+    }
+    
+    const quotes = await db.select().from(standaloneQuotes)
+      .where(conditions.length > 0 ? and(...conditions) : undefined)
+      .orderBy(desc(standaloneQuotes.createdAt));
+
+    const result: (StandaloneQuote & { items: StandaloneQuoteItem[] })[] = [];
+    for (const q of quotes) {
+      const items = await db.select().from(standaloneQuoteItems)
+        .where(eq(standaloneQuoteItems.quoteId, q.id));
+      result.push({ ...q, items });
+    }
+    return result;
+  }
+
+  async getStandaloneQuote(id: string): Promise<(StandaloneQuote & { items: StandaloneQuoteItem[] }) | undefined> {
+    const [quote] = await db.select().from(standaloneQuotes).where(eq(standaloneQuotes.id, id));
+    if (!quote) return undefined;
+    const items = await db.select().from(standaloneQuoteItems)
+      .where(eq(standaloneQuoteItems.quoteId, quote.id));
+    return { ...quote, items };
+  }
+
+  async createStandaloneQuote(quoteData: InsertStandaloneQuote, items: Omit<InsertStandaloneQuoteItem, 'quoteId'>[]): Promise<StandaloneQuote & { items: StandaloneQuoteItem[] }> {
+    const quoteNumber = await this.getNextStandaloneQuoteNumber();
+    const [quote] = await db.insert(standaloneQuotes).values({
+      ...quoteData,
+      quoteNumber,
+    }).returning();
+
+    const insertedItems: StandaloneQuoteItem[] = [];
+    for (const item of items) {
+      const [inserted] = await db.insert(standaloneQuoteItems).values({
+        ...item,
+        quoteId: quote.id,
+      }).returning();
+      insertedItems.push(inserted);
+    }
+
+    return { ...quote, items: insertedItems };
+  }
+
+  async updateStandaloneQuoteStatus(id: string, status: string): Promise<StandaloneQuote> {
+    const [quote] = await db.update(standaloneQuotes)
+      .set({ status: status as any, updatedAt: new Date() })
+      .where(eq(standaloneQuotes.id, id))
+      .returning();
+    return quote;
   }
 
 }
