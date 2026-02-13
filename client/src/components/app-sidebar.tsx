@@ -89,7 +89,7 @@ interface ContextResponse {
 
 const menuItems = {
   admin: [
-    { title: "Dashboard", url: "/", icon: LayoutDashboard, group: "Dashboard" },
+    { title: "Dashboard", url: "/admin", icon: LayoutDashboard, group: "Dashboard" },
     { title: "Panoramica POS", url: "/admin/pos", icon: Receipt, group: "POS" },
     { title: "Clienti", url: "/admin/customers", icon: Users, group: "Clienti & Rivenditori" },
     { title: "Rivenditori", url: "/admin/resellers", icon: Store, group: "Clienti & Rivenditori" },
@@ -152,7 +152,7 @@ const menuItems = {
     { title: "Richieste Remote", url: "/admin/remote-requests", icon: Send, group: "Centri & Riparazioni" },
   ],
   admin_staff: [
-    { title: "Dashboard", url: "/", icon: LayoutDashboard, group: "Dashboard" },
+    { title: "Dashboard", url: "/admin", icon: LayoutDashboard, group: "Dashboard" },
     { title: "Clienti", url: "/admin/customers", icon: Users, group: "Clienti & Rivenditori" },
     { title: "Rivenditori", url: "/admin/resellers", icon: Store, group: "Clienti & Rivenditori" },
     { title: "Team Rivenditori", url: "/admin/reseller-teams", icon: UsersRound, group: "Clienti & Rivenditori" },

@@ -24,35 +24,22 @@ import FaqPage from "@/pages/public/faq";
 import TermsPage from "@/pages/public/terms";
 import PrivacyPage from "@/pages/public/privacy";
 
-function HomePage() {
-  const { user, isLoading } = useAuth();
-  
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-      </div>
-    );
-  }
-  
-  if (!user) {
-    return <LandingPage />;
-  }
-  
-  switch (user.role) {
+function getRoleHomePath(role: string): string {
+  switch (role) {
     case "admin":
     case "admin_staff":
-      return <AdminDashboard />;
+      return "/admin";
     case "reseller":
     case "reseller_staff":
-      return <Redirect to="/reseller" />;
+    case "sub_reseller":
+      return "/reseller";
     case "repair_center":
     case "repair_center_staff":
-      return <Redirect to="/repair-center" />;
+      return "/repair-center";
     case "customer":
-      return <Redirect to="/customer" />;
+      return "/customer";
     default:
-      return <Redirect to="/auth" />;
+      return "/auth";
   }
 }
 
@@ -347,10 +334,8 @@ function Router() {
       {/* Shared routes (all roles) */}
       <ProtectedRoute path="/profile" component={ProfilePage} />
       
-      {/* Home route - redirects based on user role */}
-      <Route path="/" component={HomePage} />
-      
       {/* Admin routes */}
+      <ProtectedRoute path="/admin" component={AdminDashboard} allowedRoles={["admin", "admin_staff"]} />
       <ProtectedRoute path="/admin/users" component={AdminUsers} />
       <ProtectedRoute path="/admin/customers/:id" component={AdminCustomerDetail} />
       <ProtectedRoute path="/admin/customers" component={AdminCustomers} />
@@ -753,10 +738,21 @@ function AppContent() {
     return <AuthPage />;
   }
   
-  // Landing page renders fullscreen without sidebar
-  if (location === "/" && !user && !isLoading) {
-    return <LandingPage />;
+  // Root path handling — redirect BEFORE loading AppLayout
+  if (location === "/") {
+    if (isLoading) {
+      return (
+        <div className="flex items-center justify-center min-h-screen">
+          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        </div>
+      );
+    }
+    if (!user) {
+      return <LandingPage />;
+    }
+    return <Redirect to={getRoleHomePath(user.role)} />;
   }
+  
   if (location === "/landing") {
     return <LandingPage />;
   }
