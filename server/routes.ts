@@ -47927,16 +47927,162 @@ export function registerRoutes(app: Express): Server {
       
       const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
       
-      const systemPrompt = `Sei MonkeyPlan AI, un assistente intelligente per la piattaforma di gestione riparazioni MonkeyPlan. Aiuti gli utenti con:
+      // Build context from user's actual data (tenant-scoped)
+      let dataContext = "";
+      try {
+        const userRole = req.user.role;
+        const resellerId = (userRole === "reseller") ? req.user.id 
+          : (userRole === "reseller_staff" || userRole === "reseller_collaborator") ? req.user.resellerId 
+          : undefined;
+        const repairCenterId = (userRole === "repair_center") ? (req.user.repairCenterId || req.user.id)
+          : (userRole === "repair_center_staff") ? req.user.repairCenterId
+          : undefined;
+
+        // Load service items scoped to the user's entity
+        if (resellerId) {
+          const resellerPrices = await storage.listServiceItemPricesByReseller(resellerId);
+          if (resellerPrices.length > 0) {
+            const serviceIds = [...new Set(resellerPrices.map(p => p.serviceItemId))];
+            const services: any[] = [];
+            for (const sid of serviceIds.slice(0, 40)) {
+              const s = await storage.getServiceItem(sid);
+              if (s) {
+                const price = resellerPrices.find(p => p.serviceItemId === sid);
+                services.push({ ...s, customPrice: price?.priceCents });
+              }
+            }
+            dataContext += `\n\n--- I TUOI SERVIZI (${services.length}) ---\n`;
+            dataContext += services.map(s => `- ${s.name}: ${s.description || "nessuna desc"}, prezzo: ${s.customPrice ? (Number(s.customPrice) / 100).toFixed(2) + "€" : (s.basePriceCents ? (Number(s.basePriceCents) / 100).toFixed(2) + "€ (base)" : "N/D")}, categoria: ${s.category || "N/D"}`).join("\n");
+          }
+        } else if (repairCenterId) {
+          const rcPrices = await storage.listServiceItemPricesByRepairCenter(repairCenterId);
+          if (rcPrices.length > 0) {
+            const serviceIds = [...new Set(rcPrices.map(p => p.serviceItemId))];
+            const services: any[] = [];
+            for (const sid of serviceIds.slice(0, 40)) {
+              const s = await storage.getServiceItem(sid);
+              if (s) {
+                const price = rcPrices.find(p => p.serviceItemId === sid);
+                services.push({ ...s, customPrice: price?.priceCents });
+              }
+            }
+            dataContext += `\n\n--- I TUOI SERVIZI (${services.length}) ---\n`;
+            dataContext += services.map(s => `- ${s.name}: prezzo: ${s.customPrice ? (Number(s.customPrice) / 100).toFixed(2) + "€" : (s.basePriceCents ? (Number(s.basePriceCents) / 100).toFixed(2) + "€ (base)" : "N/D")}, categoria: ${s.category || "N/D"}`).join("\n");
+          }
+        } else if (userRole === "admin") {
+          const allServices = await storage.listServiceItems();
+          const servicesSlice = allServices.slice(0, 30);
+          if (servicesSlice.length > 0) {
+            dataContext += `\n\n--- CATALOGO SERVIZI (${allServices.length} totali) ---\n`;
+            dataContext += servicesSlice.map(s => `- ${s.name}: prezzo base: ${s.basePriceCents ? (Number(s.basePriceCents) / 100).toFixed(2) + "€" : "N/D"}, categoria: ${s.category || "N/D"}`).join("\n");
+            if (allServices.length > 30) dataContext += `\n... e altri ${allServices.length - 30} servizi`;
+          }
+        }
+
+        // Load warehouses and stock scoped to the user's entity
+        if (resellerId) {
+          const userWarehouses = await storage.listWarehouses({ ownerType: "reseller", ownerId: resellerId });
+          if (userWarehouses.length > 0) {
+            const products = await storage.listProductsByReseller(resellerId);
+            const productMap = new Map(products.map(p => [p.id, p]));
+            dataContext += `\n\n--- I TUOI MAGAZZINI (${userWarehouses.length}) ---`;
+            for (const wh of userWarehouses.slice(0, 5)) {
+              const stock = await storage.listWarehouseStock(wh.id);
+              dataContext += `\nMagazzino: ${wh.name} (${wh.location || "sede"})`;
+              if (stock.length > 0) {
+                dataContext += `\n  Articoli in stock (${stock.length}):`;
+                for (const item of stock.slice(0, 20)) {
+                  const prod = productMap.get(item.productId);
+                  dataContext += `\n  - ${prod?.name || "Articolo"}: qtà ${item.quantity}, min: ${item.minStock ?? "N/D"}, posizione: ${item.location || "N/D"}`;
+                }
+                if (stock.length > 20) dataContext += `\n  ... e altri ${stock.length - 20} articoli`;
+              } else {
+                dataContext += `\n  Nessun articolo in stock`;
+              }
+            }
+          }
+        } else if (repairCenterId) {
+          const rcWarehouses = await storage.listWarehouses({ ownerType: "repair_center", ownerId: repairCenterId });
+          if (rcWarehouses.length > 0) {
+            const rc = await storage.getRepairCenter(repairCenterId);
+            const rcProducts = rc?.resellerId ? await storage.listProductsByReseller(rc.resellerId) : [];
+            const productMap = new Map(rcProducts.map(p => [p.id, p]));
+            dataContext += `\n\n--- I TUOI MAGAZZINI (${rcWarehouses.length}) ---`;
+            for (const wh of rcWarehouses.slice(0, 5)) {
+              const stock = await storage.listWarehouseStock(wh.id);
+              dataContext += `\nMagazzino: ${wh.name} (${wh.location || "sede"})`;
+              if (stock.length > 0) {
+                dataContext += `\n  Articoli in stock (${stock.length}):`;
+                for (const item of stock.slice(0, 20)) {
+                  const prod = productMap.get(item.productId);
+                  dataContext += `\n  - ${prod?.name || "Articolo"}: qtà ${item.quantity}, min: ${item.minStock ?? "N/D"}, posizione: ${item.location || "N/D"}`;
+                }
+                if (stock.length > 20) dataContext += `\n  ... e altri ${stock.length - 20} articoli`;
+              } else {
+                dataContext += `\n  Nessun articolo in stock`;
+              }
+            }
+          }
+        }
+
+        // Load repairs scoped to the user's entity
+        const repairFilters: any = {};
+        if (resellerId) repairFilters.resellerId = resellerId;
+        else if (repairCenterId) repairFilters.repairCenterId = repairCenterId;
+        if (resellerId || repairCenterId || userRole === "admin") {
+          const repairs = await storage.listRepairOrders(Object.keys(repairFilters).length > 0 ? repairFilters : undefined);
+          const activeRepairs = repairs.filter(r => r.status !== "completed" && r.status !== "cancelled");
+          if (activeRepairs.length > 0) {
+            dataContext += `\n\n--- RIPARAZIONI ATTIVE (${activeRepairs.length} su ${repairs.length} totali) ---\n`;
+            dataContext += activeRepairs.slice(0, 20).map(r => 
+              `- #${r.orderNumber || r.id.slice(0, 8)}: ${r.deviceType || ""} ${r.deviceBrand || ""} ${r.deviceModel || ""}, stato: ${r.status}, priorità: ${r.priority || "normale"}, cliente: ${r.customerName || "N/D"}`
+            ).join("\n");
+            if (activeRepairs.length > 20) dataContext += `\n... e altre ${activeRepairs.length - 20} riparazioni attive`;
+          }
+        }
+
+        // Load customers scoped to the user's entity
+        if (resellerId) {
+          const customers = await storage.listCustomers({ resellerId });
+          if (customers.length > 0) {
+            dataContext += `\n\n--- I TUOI CLIENTI (${customers.length}) ---\n`;
+            dataContext += customers.slice(0, 30).map(c => 
+              `- ${c.fullName || c.username}: ${c.email || "no email"}, tel: ${c.phone || "N/D"}`
+            ).join("\n");
+            if (customers.length > 30) dataContext += `\n... e altri ${customers.length - 30} clienti`;
+          }
+        } else if (repairCenterId) {
+          const customers = await storage.listCustomers({ repairCenterId });
+          if (customers.length > 0) {
+            dataContext += `\n\n--- I TUOI CLIENTI (${customers.length}) ---\n`;
+            dataContext += customers.slice(0, 30).map(c => 
+              `- ${c.fullName || c.username}: ${c.email || "no email"}, tel: ${c.phone || "N/D"}`
+            ).join("\n");
+            if (customers.length > 30) dataContext += `\n... e altri ${customers.length - 30} clienti`;
+          }
+        }
+      } catch (ctxError) {
+        console.error("AI context loading error:", ctxError);
+        dataContext = "\n\n[Nota: impossibile caricare alcuni dati di contesto]";
+      }
+
+      const systemPrompt = `Sei MonkeyPlan AI, un assistente intelligente per la piattaforma di gestione riparazioni MonkeyPlan. Hai accesso ai dati reali dell'utente e puoi rispondere su:
+- Servizi offerti e catalogo prezzi
+- Ricambi e giacenze in magazzino
+- Stato delle riparazioni attive
+- Lista clienti
 - Gestione ordini di riparazione e workflow
-- Inventario e magazzino
 - Fatturazione e preventivi
 - Ticketing e supporto clienti
 - Gestione garanzie e assicurazioni
 - Ordini B2B e supply chain
-- Configurazione del sistema
 
-Rispondi in italiano in modo professionale e conciso. Se non sei sicuro di qualcosa, dillo chiaramente. Non inventare informazioni specifiche sui dati dell'utente.`;
+L'utente corrente ha ruolo: ${req.user.role}, nome: ${req.user.fullName || req.user.username}.
+
+Ecco i dati aggiornati dell'utente:
+${dataContext || "\nNessun dato specifico disponibile."}
+
+Rispondi in italiano in modo professionale e conciso. Usa i dati sopra per rispondere alle domande dell'utente. Se una informazione non è presente nei dati forniti, dillo chiaramente. Non inventare dati.`;
 
       const completion = await openai.chat.completions.create({
         model: "gpt-4o-mini",
@@ -47947,7 +48093,7 @@ Rispondi in italiano in modo professionale e conciso. Se non sei sicuro di qualc
             content: m.content,
           })),
         ],
-        max_tokens: 1000,
+        max_tokens: 1500,
         temperature: 0.7,
       });
       
