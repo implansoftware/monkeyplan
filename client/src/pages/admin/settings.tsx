@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -146,9 +146,24 @@ interface AiAccessData {
 
 function AiAccessManagement() {
   const { toast } = useToast();
+  const [aiSearch, setAiSearch] = useState("");
   const { data, isLoading } = useQuery<AiAccessData>({
     queryKey: ["/api/admin/ai-access"],
   });
+
+  const filteredResellers = useMemo(() => {
+    if (!data?.resellers) return [];
+    if (!aiSearch.trim()) return data.resellers;
+    const q = aiSearch.toLowerCase().trim();
+    return data.resellers.filter((r) => r.name.toLowerCase().includes(q));
+  }, [data?.resellers, aiSearch]);
+
+  const filteredRepairCenters = useMemo(() => {
+    if (!data?.repairCenters) return [];
+    if (!aiSearch.trim()) return data.repairCenters;
+    const q = aiSearch.toLowerCase().trim();
+    return data.repairCenters.filter((rc) => rc.name.toLowerCase().includes(q));
+  }, [data?.repairCenters, aiSearch]);
 
   const toggleMutation = useMutation({
     mutationFn: async ({ entityType, entityId, enabled, allowSubResellers }: { entityType: string; entityId: string; enabled: boolean; allowSubResellers?: boolean }) => {
@@ -191,13 +206,23 @@ function AiAccessManagement() {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Cerca reseller o centro riparazione..."
+              value={aiSearch}
+              onChange={(e) => setAiSearch(e.target.value)}
+              className="pl-9"
+              data-testid="input-ai-search"
+            />
+          </div>
           <div className="space-y-4">
             <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wider">Reseller</h3>
-            {(!data?.resellers || data.resellers.length === 0) ? (
-              <p className="text-sm text-muted-foreground">Nessun reseller trovato</p>
+            {filteredResellers.length === 0 ? (
+              <p className="text-sm text-muted-foreground">{aiSearch.trim() ? "Nessun reseller corrisponde alla ricerca" : "Nessun reseller trovato"}</p>
             ) : (
               <div className="space-y-3">
-                {data.resellers.map((r) => (
+                {filteredResellers.map((r) => (
                   <div key={r.id} className="flex flex-col gap-3 p-4 rounded-md border" data-testid={`ai-reseller-${r.id}`}>
                     <div className="flex flex-wrap items-center justify-between gap-2">
                       <div className="flex flex-wrap items-center gap-2">
@@ -233,11 +258,11 @@ function AiAccessManagement() {
           </div>
           <div className="space-y-4">
             <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wider">Centri Riparazione</h3>
-            {(!data?.repairCenters || data.repairCenters.length === 0) ? (
-              <p className="text-sm text-muted-foreground">Nessun centro riparazione trovato</p>
+            {filteredRepairCenters.length === 0 ? (
+              <p className="text-sm text-muted-foreground">{aiSearch.trim() ? "Nessun centro corrisponde alla ricerca" : "Nessun centro riparazione trovato"}</p>
             ) : (
               <div className="space-y-3">
-                {data.repairCenters.map((rc) => (
+                {filteredRepairCenters.map((rc) => (
                   <div key={rc.id} className="flex flex-wrap items-center justify-between gap-2 p-4 rounded-md border" data-testid={`ai-rc-${rc.id}`}>
                     <div className="flex flex-wrap items-center gap-2">
                       <span className="font-medium">{rc.name}</span>
