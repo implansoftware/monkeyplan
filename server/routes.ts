@@ -47948,6 +47948,27 @@ export function registerRoutes(app: Express): Server {
           : (userRole === "repair_center_staff") ? req.user.repairCenterId
           : undefined;
 
+        // Load lookup tables for device type/brand/model names
+        const deviceTypes = await storage.listDeviceTypes();
+        const deviceBrands = await storage.listDeviceBrands();
+        const deviceModels = await storage.listDeviceModels();
+        const typeMap = new Map(deviceTypes.map(t => [t.id, t.name]));
+        const brandMap = new Map(deviceBrands.map(b => [b.id, b.name]));
+        const modelMap = new Map(deviceModels.map(m => [m.id, m.modelName]));
+
+        const formatServiceForAI = (s: any) => {
+          const price = s.customPrice ? (Number(s.customPrice) / 100).toFixed(2) + "€" : (s.defaultPriceCents ? (Number(s.defaultPriceCents) / 100).toFixed(2) + "€" : "N/D");
+          const parts = [`- ${s.name}`];
+          if (s.description) parts.push(s.description);
+          parts.push(`prezzo: ${price}`);
+          parts.push(`categoria: ${s.category || "N/D"}`);
+          if (s.deviceTypeId) parts.push(`tipo: ${typeMap.get(s.deviceTypeId) || "N/D"}`);
+          if (s.brandId) parts.push(`marca: ${brandMap.get(s.brandId) || "N/D"}`);
+          if (s.modelId) parts.push(`modello: ${modelMap.get(s.modelId) || "N/D"}`);
+          if (s.defaultLaborMinutes) parts.push(`tempo: ${s.defaultLaborMinutes} min`);
+          return parts.join(", ");
+        };
+
         // Load service items scoped to the user's entity
         // Includes both: services created by the user (createdBy) AND custom-priced services (service_item_prices)
         if (resellerId) {
@@ -47970,12 +47991,7 @@ export function registerRoutes(app: Express): Server {
           ].slice(0, 50);
           if (combined.length > 0) {
             dataContext += `\n\n--- I TUOI SERVIZI (${combined.length}) ---\n`;
-            dataContext += combined.map(s => {
-              const price = s.customPrice ? (Number(s.customPrice) / 100).toFixed(2) + "€" : (s.defaultPriceCents ? (Number(s.defaultPriceCents) / 100).toFixed(2) + "€" : "N/D");
-              const brand = s.brandId ? "marca: sì" : "";
-              const model = s.modelId ? "modello: sì" : "";
-              return `- ${s.name}: ${s.description || "nessuna desc"}, prezzo: ${price}, categoria: ${s.category || "N/D"} ${brand} ${model}`.trim();
-            }).join("\n");
+            dataContext += combined.map(formatServiceForAI).join("\n");
           }
         } else if (repairCenterId) {
           const allServiceItems = await storage.listServiceItems();
@@ -47997,10 +48013,7 @@ export function registerRoutes(app: Express): Server {
           ].slice(0, 50);
           if (combined.length > 0) {
             dataContext += `\n\n--- I TUOI SERVIZI (${combined.length}) ---\n`;
-            dataContext += combined.map(s => {
-              const price = s.customPrice ? (Number(s.customPrice) / 100).toFixed(2) + "€" : (s.defaultPriceCents ? (Number(s.defaultPriceCents) / 100).toFixed(2) + "€" : "N/D");
-              return `- ${s.name}: prezzo: ${price}, categoria: ${s.category || "N/D"}`;
-            }).join("\n");
+            dataContext += combined.map(formatServiceForAI).join("\n");
           }
         } else if (userRole === "admin") {
           const allServices = await storage.listServiceItems();
