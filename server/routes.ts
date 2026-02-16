@@ -47948,10 +47948,13 @@ export function registerRoutes(app: Express): Server {
           : (userRole === "repair_center_staff") ? req.user.repairCenterId
           : undefined;
 
-        // Load lookup tables for device type/brand/model names
-        const deviceTypes = await storage.listDeviceTypes();
-        const deviceBrands = await storage.listDeviceBrands();
-        const deviceModels = await storage.listDeviceModels();
+        // Parallel load: lookup tables + entity-specific data in one batch
+        const [deviceTypes, deviceBrands, deviceModels, allServiceItems] = await Promise.all([
+          storage.listDeviceTypes(),
+          storage.listDeviceBrands(),
+          storage.listDeviceModels(),
+          storage.listServiceItems(),
+        ]);
         const typeMap = new Map(deviceTypes.map(t => [t.id, t.name]));
         const brandMap = new Map(deviceBrands.map(b => [b.id, b.name]));
         const modelMap = new Map(deviceModels.map(m => [m.id, m.modelName]));
@@ -47969,144 +47972,127 @@ export function registerRoutes(app: Express): Server {
           return parts.join(", ");
         };
 
-        // Load service items scoped to the user's entity
-        // Includes both: services created by the user (createdBy) AND custom-priced services (service_item_prices)
-        if (resellerId) {
-          const allServiceItems = await storage.listServiceItems();
-          const ownServices = allServiceItems.filter(s => s.createdBy === resellerId);
-          const resellerPrices = await storage.listServiceItemPricesByReseller(resellerId);
-          const pricedServiceIds = new Set(resellerPrices.map(p => p.serviceItemId));
-          const pricedServices: any[] = [];
-          for (const sid of [...pricedServiceIds].slice(0, 40)) {
-            if (ownServices.some(s => s.id === sid)) continue;
-            const s = await storage.getServiceItem(sid);
-            if (s) {
-              const price = resellerPrices.find(p => p.serviceItemId === sid);
-              pricedServices.push({ ...s, customPrice: price?.priceCents });
+        // --- SERVICES SECTION ---
+        try {
+          if (resellerId) {
+            const ownServices = allServiceItems.filter(s => s.createdBy === resellerId);
+            const resellerPrices = await storage.listServiceItemPricesByReseller(resellerId);
+            const pricedServiceIds = new Set(resellerPrices.map(p => p.serviceItemId));
+            const ownServiceIds = new Set(ownServices.map(s => s.id));
+            const pricedFromCatalog = allServiceItems
+              .filter(s => pricedServiceIds.has(s.id) && !ownServiceIds.has(s.id))
+              .slice(0, 40)
+              .map(s => ({ ...s, customPrice: resellerPrices.find(p => p.serviceItemId === s.id)?.priceCents }));
+            const combined = [
+              ...ownServices.map(s => ({ ...s, customPrice: resellerPrices.find(p => p.serviceItemId === s.id)?.priceCents })),
+              ...pricedFromCatalog,
+            ].slice(0, 50);
+            if (combined.length > 0) {
+              dataContext += `\n\n--- I TUOI SERVIZI (${combined.length}) ---\n`;
+              dataContext += combined.map(formatServiceForAI).join("\n");
+            }
+          } else if (repairCenterId) {
+            const ownServices = allServiceItems.filter(s => s.repairCenterId === repairCenterId);
+            const rcPrices = await storage.listServiceItemPricesByRepairCenter(repairCenterId);
+            const pricedServiceIds = new Set(rcPrices.map(p => p.serviceItemId));
+            const ownServiceIds = new Set(ownServices.map(s => s.id));
+            const pricedFromCatalog = allServiceItems
+              .filter(s => pricedServiceIds.has(s.id) && !ownServiceIds.has(s.id))
+              .slice(0, 40)
+              .map(s => ({ ...s, customPrice: rcPrices.find(p => p.serviceItemId === s.id)?.priceCents }));
+            const combined = [
+              ...ownServices.map(s => ({ ...s, customPrice: rcPrices.find(p => p.serviceItemId === s.id)?.priceCents })),
+              ...pricedFromCatalog,
+            ].slice(0, 50);
+            if (combined.length > 0) {
+              dataContext += `\n\n--- I TUOI SERVIZI (${combined.length}) ---\n`;
+              dataContext += combined.map(formatServiceForAI).join("\n");
+            }
+          } else if (userRole === "admin") {
+            const adminServices = allServiceItems.filter(s => s.createdBy === req.user.id).slice(0, 30);
+            if (adminServices.length > 0) {
+              dataContext += `\n\n--- SERVIZI ADMIN (${adminServices.length}) ---\n`;
+              dataContext += adminServices.map(formatServiceForAI).join("\n");
             }
           }
-          const combined = [
-            ...ownServices.map(s => ({ ...s, customPrice: resellerPrices.find(p => p.serviceItemId === s.id)?.priceCents })),
-            ...pricedServices,
-          ].slice(0, 50);
-          if (combined.length > 0) {
-            dataContext += `\n\n--- I TUOI SERVIZI (${combined.length}) ---\n`;
-            dataContext += combined.map(formatServiceForAI).join("\n");
-          }
-        } else if (repairCenterId) {
-          const allServiceItems = await storage.listServiceItems();
-          const ownServices = allServiceItems.filter(s => s.repairCenterId === repairCenterId);
-          const rcPrices = await storage.listServiceItemPricesByRepairCenter(repairCenterId);
-          const pricedServiceIds = new Set(rcPrices.map(p => p.serviceItemId));
-          const pricedServices: any[] = [];
-          for (const sid of [...pricedServiceIds].slice(0, 40)) {
-            if (ownServices.some(s => s.id === sid)) continue;
-            const s = await storage.getServiceItem(sid);
-            if (s) {
-              const price = rcPrices.find(p => p.serviceItemId === sid);
-              pricedServices.push({ ...s, customPrice: price?.priceCents });
-            }
-          }
-          const combined = [
-            ...ownServices.map(s => ({ ...s, customPrice: rcPrices.find(p => p.serviceItemId === s.id)?.priceCents })),
-            ...pricedServices,
-          ].slice(0, 50);
-          if (combined.length > 0) {
-            dataContext += `\n\n--- I TUOI SERVIZI (${combined.length}) ---\n`;
-            dataContext += combined.map(formatServiceForAI).join("\n");
-          }
-        } else if (userRole === "admin") {
-          const allServices = await storage.listServiceItems();
-          const servicesSlice = allServices.slice(0, 30);
-          if (servicesSlice.length > 0) {
-            dataContext += `\n\n--- CATALOGO SERVIZI (${allServices.length} totali) ---\n`;
-            dataContext += servicesSlice.map(s => `- ${s.name}: prezzo base: ${s.defaultPriceCents ? (Number(s.defaultPriceCents) / 100).toFixed(2) + "€" : "N/D"}, categoria: ${s.category || "N/D"}`).join("\n");
-            if (allServices.length > 30) dataContext += `\n... e altri ${allServices.length - 30} servizi`;
-          }
+        } catch (svcErr) {
+          console.error("AI context: services error:", svcErr);
         }
 
-        // Load warehouses and stock scoped to the user's entity
-        if (resellerId) {
-          const userWarehouses = await storage.listWarehouses({ ownerType: "reseller", ownerId: resellerId });
-          if (userWarehouses.length > 0) {
-            const products = await storage.listProductsByReseller(resellerId);
-            const productMap = new Map(products.map(p => [p.id, p]));
-            dataContext += `\n\n--- I TUOI MAGAZZINI (${userWarehouses.length}) ---`;
-            for (const wh of userWarehouses.slice(0, 5)) {
-              const stock = await storage.listWarehouseStock(wh.id);
-              dataContext += `\nMagazzino: ${wh.name} (${wh.location || "sede"})`;
-              if (stock.length > 0) {
-                dataContext += `\n  Articoli in stock (${stock.length}):`;
-                for (const item of stock.slice(0, 20)) {
-                  const prod = productMap.get(item.productId);
-                  dataContext += `\n  - ${prod?.name || "Articolo"}: qtà ${item.quantity}, min: ${item.minStock ?? "N/D"}, posizione: ${item.location || "N/D"}`;
+        // --- WAREHOUSES SECTION (parallel load) ---
+        try {
+          if (resellerId || repairCenterId) {
+            const ownerType = resellerId ? "reseller" : "repair_center";
+            const ownerId = resellerId || repairCenterId!;
+            const [warehouses, products] = await Promise.all([
+              storage.listWarehouses({ ownerType, ownerId }),
+              resellerId
+                ? storage.listProductsByReseller(resellerId)
+                : storage.getRepairCenter(repairCenterId!).then(rc => rc?.resellerId ? storage.listProductsByReseller(rc.resellerId) : []),
+            ]);
+            if (warehouses.length > 0) {
+              const productMap = new Map(products.map((p: any) => [p.id, p]));
+              dataContext += `\n\n--- I TUOI MAGAZZINI (${warehouses.length}) ---`;
+              for (const wh of warehouses.slice(0, 3)) {
+                const stock = await storage.listWarehouseStock(wh.id);
+                dataContext += `\nMagazzino: ${wh.name} (${wh.location || "sede"})`;
+                if (stock.length > 0) {
+                  dataContext += `\n  Articoli in stock (${stock.length}):`;
+                  for (const item of stock.slice(0, 15)) {
+                    const prod = productMap.get(item.productId);
+                    dataContext += `\n  - ${prod?.name || "Articolo"}: qtà ${item.quantity}, min: ${item.minStock ?? "N/D"}`;
+                  }
+                  if (stock.length > 15) dataContext += `\n  ... e altri ${stock.length - 15} articoli`;
                 }
-                if (stock.length > 20) dataContext += `\n  ... e altri ${stock.length - 20} articoli`;
-              } else {
-                dataContext += `\n  Nessun articolo in stock`;
               }
             }
           }
-        } else if (repairCenterId) {
-          const rcWarehouses = await storage.listWarehouses({ ownerType: "repair_center", ownerId: repairCenterId });
-          if (rcWarehouses.length > 0) {
-            const rc = await storage.getRepairCenter(repairCenterId);
-            const rcProducts = rc?.resellerId ? await storage.listProductsByReseller(rc.resellerId) : [];
-            const productMap = new Map(rcProducts.map(p => [p.id, p]));
-            dataContext += `\n\n--- I TUOI MAGAZZINI (${rcWarehouses.length}) ---`;
-            for (const wh of rcWarehouses.slice(0, 5)) {
-              const stock = await storage.listWarehouseStock(wh.id);
-              dataContext += `\nMagazzino: ${wh.name} (${wh.location || "sede"})`;
-              if (stock.length > 0) {
-                dataContext += `\n  Articoli in stock (${stock.length}):`;
-                for (const item of stock.slice(0, 20)) {
-                  const prod = productMap.get(item.productId);
-                  dataContext += `\n  - ${prod?.name || "Articolo"}: qtà ${item.quantity}, min: ${item.minStock ?? "N/D"}, posizione: ${item.location || "N/D"}`;
-                }
-                if (stock.length > 20) dataContext += `\n  ... e altri ${stock.length - 20} articoli`;
-              } else {
-                dataContext += `\n  Nessun articolo in stock`;
-              }
+        } catch (whErr) {
+          console.error("AI context: warehouse error:", whErr);
+        }
+
+        // --- REPAIRS SECTION ---
+        try {
+          const repairFilters: any = {};
+          if (resellerId) repairFilters.resellerId = resellerId;
+          else if (repairCenterId) repairFilters.repairCenterId = repairCenterId;
+          if (resellerId || repairCenterId || userRole === "admin") {
+            const repairs = await storage.listRepairOrders(Object.keys(repairFilters).length > 0 ? repairFilters : undefined);
+            const activeRepairs = repairs.filter(r => r.status !== "completed" && r.status !== "cancelled");
+            if (activeRepairs.length > 0) {
+              dataContext += `\n\n--- RIPARAZIONI ATTIVE (${activeRepairs.length} su ${repairs.length} totali) ---\n`;
+              dataContext += activeRepairs.slice(0, 15).map(r => 
+                `- #${r.orderNumber || r.id.slice(0, 8)}: ${r.deviceType || ""} ${r.deviceBrand || ""} ${r.deviceModel || ""}, stato: ${r.status}, priorità: ${r.priority || "normale"}, cliente: ${r.customerName || "N/D"}`
+              ).join("\n");
             }
           }
+        } catch (repErr) {
+          console.error("AI context: repairs error:", repErr);
         }
 
-        // Load repairs scoped to the user's entity
-        const repairFilters: any = {};
-        if (resellerId) repairFilters.resellerId = resellerId;
-        else if (repairCenterId) repairFilters.repairCenterId = repairCenterId;
-        if (resellerId || repairCenterId || userRole === "admin") {
-          const repairs = await storage.listRepairOrders(Object.keys(repairFilters).length > 0 ? repairFilters : undefined);
-          const activeRepairs = repairs.filter(r => r.status !== "completed" && r.status !== "cancelled");
-          if (activeRepairs.length > 0) {
-            dataContext += `\n\n--- RIPARAZIONI ATTIVE (${activeRepairs.length} su ${repairs.length} totali) ---\n`;
-            dataContext += activeRepairs.slice(0, 20).map(r => 
-              `- #${r.orderNumber || r.id.slice(0, 8)}: ${r.deviceType || ""} ${r.deviceBrand || ""} ${r.deviceModel || ""}, stato: ${r.status}, priorità: ${r.priority || "normale"}, cliente: ${r.customerName || "N/D"}`
-            ).join("\n");
-            if (activeRepairs.length > 20) dataContext += `\n... e altre ${activeRepairs.length - 20} riparazioni attive`;
+        // --- CUSTOMERS SECTION ---
+        try {
+          if (resellerId) {
+            const customers = await storage.listCustomers({ resellerId });
+            if (customers.length > 0) {
+              dataContext += `\n\n--- I TUOI CLIENTI (${customers.length}) ---\n`;
+              dataContext += customers.slice(0, 20).map(c => 
+                `- ${c.fullName || c.username}: ${c.email || "no email"}, tel: ${c.phone || "N/D"}`
+              ).join("\n");
+            }
+          } else if (repairCenterId) {
+            const customers = await storage.listCustomers({ repairCenterId });
+            if (customers.length > 0) {
+              dataContext += `\n\n--- I TUOI CLIENTI (${customers.length}) ---\n`;
+              dataContext += customers.slice(0, 20).map(c => 
+                `- ${c.fullName || c.username}: ${c.email || "no email"}, tel: ${c.phone || "N/D"}`
+              ).join("\n");
+            }
           }
+        } catch (custErr) {
+          console.error("AI context: customers error:", custErr);
         }
 
-        // Load customers scoped to the user's entity
-        if (resellerId) {
-          const customers = await storage.listCustomers({ resellerId });
-          if (customers.length > 0) {
-            dataContext += `\n\n--- I TUOI CLIENTI (${customers.length}) ---\n`;
-            dataContext += customers.slice(0, 30).map(c => 
-              `- ${c.fullName || c.username}: ${c.email || "no email"}, tel: ${c.phone || "N/D"}`
-            ).join("\n");
-            if (customers.length > 30) dataContext += `\n... e altri ${customers.length - 30} clienti`;
-          }
-        } else if (repairCenterId) {
-          const customers = await storage.listCustomers({ repairCenterId });
-          if (customers.length > 0) {
-            dataContext += `\n\n--- I TUOI CLIENTI (${customers.length}) ---\n`;
-            dataContext += customers.slice(0, 30).map(c => 
-              `- ${c.fullName || c.username}: ${c.email || "no email"}, tel: ${c.phone || "N/D"}`
-            ).join("\n");
-            if (customers.length > 30) dataContext += `\n... e altri ${customers.length - 30} clienti`;
-          }
-        }
       } catch (ctxError) {
         console.error("AI context loading error:", ctxError);
         dataContext = "\n\n[Nota: impossibile caricare alcuni dati di contesto]";
