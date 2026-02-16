@@ -245,7 +245,7 @@ export default function RepairCenterMarketplace() {
 
   if (isLoading) {
     return (
-      <div className="p-6 space-y-4">
+      <div className="p-4 sm:p-6 space-y-4">
         <Skeleton className="h-8 w-64" />
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           {[1,2,3,4].map(i => <Skeleton key={i} className="h-48" />)}
@@ -255,20 +255,20 @@ export default function RepairCenterMarketplace() {
   }
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-4 sm:p-6 space-y-4 sm:space-y-6">
       {/* Hero Header */}
-      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-500 p-6">
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-500 p-4 sm:p-6">
         <div className="absolute -top-20 -left-20 w-80 h-80 rounded-full bg-orange-400/20 blur-3xl animate-pulse" />
         <div className="absolute bottom-0 right-0 w-64 h-64 rounded-full bg-yellow-400/20 blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
         <div className="absolute top-1/2 left-1/3 w-48 h-48 rounded-full bg-emerald-300/20 blur-3xl animate-pulse" style={{ animationDelay: '2s' }} />
         
         <div className="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div className="flex flex-wrap items-center gap-4">
-            <div className="h-14 w-14 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center shadow-xl">
-              <Store className="h-7 w-7 text-white" />
+            <div className="h-10 w-10 sm:h-14 sm:w-14 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center shadow-xl">
+              <Store className="h-5 w-5 sm:h-7 sm:w-7 text-white" />
             </div>
             <div>
-              <h1 className="text-2xl sm:text-3xl font-bold text-white tracking-tight">Marketplace</h1>
+              <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-white tracking-tight">Marketplace</h1>
               <p className="text-emerald-100">Acquista prodotti da tutti i rivenditori</p>
             </div>
           </div>
@@ -279,7 +279,7 @@ export default function RepairCenterMarketplace() {
                 placeholder="Cerca prodotti o rivenditori..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-9 w-72 bg-white/20 backdrop-blur-sm border-white/30 text-white placeholder:text-white/70"
+                className="pl-9 w-full sm:w-72 bg-white/20 backdrop-blur-sm border-white/30 text-white placeholder:text-white/70"
                 data-testid="input-search-rc-marketplace"
               />
             </div>
@@ -321,7 +321,7 @@ export default function RepairCenterMarketplace() {
                 <Badge variant="outline">{products.length} prodotti</Badge>
               </div>
               
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 {products.map((item) => (
                   <Card key={item.product.id} className="hover-elevate overflow-hidden">
                     {item.product.imageUrl ? (

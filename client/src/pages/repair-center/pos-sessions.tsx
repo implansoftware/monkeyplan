@@ -190,8 +190,8 @@ export default function PosSessionsPage() {
   }
 
   return (
-    <div className="p-6 space-y-6">
-      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-500 p-6">
+    <div className="p-6 space-y-4 sm:space-y-6">
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-500 p-4 sm:p-6">
         <div className="absolute -top-20 -left-20 w-80 h-80 rounded-full bg-orange-400/20 blur-3xl animate-pulse" />
         <div className="absolute bottom-0 right-0 w-64 h-64 rounded-full bg-yellow-400/20 blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
         <div className="absolute top-1/2 left-1/3 w-48 h-48 rounded-full bg-emerald-300/20 blur-3xl animate-pulse" style={{ animationDelay: '2s' }} />
@@ -203,18 +203,18 @@ export default function PosSessionsPage() {
                 <ArrowLeft className="h-5 w-5" />
               </Button>
             </Link>
-            <div className="h-14 w-14 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center shadow-xl">
-              <Clock className="h-7 w-7 text-white" />
+            <div className="h-10 w-10 sm:h-14 sm:w-14 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center shadow-xl">
+              <Clock className="h-5 w-5 sm:h-7 sm:w-7 text-white" />
             </div>
             <div>
-              <h1 className="text-2xl sm:text-3xl font-bold text-white tracking-tight">Sessioni POS</h1>
+              <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-white tracking-tight">Sessioni POS</h1>
               <p className="text-emerald-100">Cronologia aperture e chiusure cassa</p>
             </div>
           </div>
-          <div className="flex flex-wrap items-center gap-2 flex-wrap">
+          <div className="flex flex-wrap items-center gap-2">
             {registers.length > 1 && (
               <Select value={selectedRegisterId} onValueChange={setSelectedRegisterId}>
-                <SelectTrigger className="w-48 bg-white/20 backdrop-blur-sm text-white border-white/30" data-testid="select-register-filter">
+                <SelectTrigger className="w-full sm:w-48 bg-white/20 backdrop-blur-sm text-white border-white/30" data-testid="select-register-filter">
                   <Store className="w-4 h-4 mr-1" />
                   <SelectValue placeholder="Tutte le casse" />
                 </SelectTrigger>
@@ -229,7 +229,7 @@ export default function PosSessionsPage() {
               </Select>
             )}
             <Select value={period} onValueChange={setPeriod}>
-              <SelectTrigger className="w-40 bg-white/20 backdrop-blur-sm text-white border-white/30" data-testid="select-period">
+              <SelectTrigger className="w-full sm:w-40 bg-white/20 backdrop-blur-sm text-white border-white/30" data-testid="select-period">
                 <SelectValue placeholder="Periodo" />
               </SelectTrigger>
               <SelectContent>
@@ -340,7 +340,7 @@ export default function PosSessionsPage() {
                       </div>
                     )}
                     <div>
-                      <div className="flex flex-wrap items-center gap-2 flex-wrap">
+                      <div className="flex flex-wrap items-center gap-2">
                         {session.status === "open" ? (
                           <Badge variant="default" className="bg-green-500">Aperta</Badge>
                         ) : (
@@ -370,7 +370,7 @@ export default function PosSessionsPage() {
                     </div>
                   </div>
 
-                  <div className="text-right min-w-[180px]">
+                  <div className="text-right min-w-0 sm:min-w-[180px]">
                     {session.status === "closed" && (
                       <>
                         <div className="text-lg font-bold text-green-600">

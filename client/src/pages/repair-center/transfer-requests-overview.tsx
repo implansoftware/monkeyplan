@@ -367,20 +367,20 @@ export default function RepairCenterTransferRequestsOverviewPage() {
   const stats = data?.stats;
 
   return (
-    <div className="space-y-6" data-testid="page-rc-transfer-requests">
+    <div className="space-y-4 sm:space-y-6" data-testid="page-rc-transfer-requests">
       {/* Hero Header */}
-      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-500 p-6">
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-500 p-4 sm:p-6">
         <div className="absolute -top-20 -left-20 w-80 h-80 rounded-full bg-orange-400/20 blur-3xl animate-pulse" />
         <div className="absolute bottom-0 right-0 w-64 h-64 rounded-full bg-yellow-400/20 blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
         <div className="absolute top-1/2 left-1/3 w-48 h-48 rounded-full bg-emerald-300/20 blur-3xl animate-pulse" style={{ animationDelay: '2s' }} />
         
         <div className="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div className="flex flex-wrap items-center gap-4">
-            <div className="h-14 w-14 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center shadow-xl">
-              <ArrowLeftRight className="h-7 w-7 text-white" />
+            <div className="h-10 w-10 sm:h-14 sm:w-14 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center shadow-xl">
+              <ArrowLeftRight className="h-5 w-5 sm:h-7 sm:w-7 text-white" />
             </div>
             <div>
-              <h1 className="text-2xl sm:text-3xl font-bold text-white tracking-tight">Overview Trasferimenti</h1>
+              <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-white tracking-tight">Overview Trasferimenti</h1>
               <p className="text-emerald-100">
                 Visualizza lo stato delle tue richieste di trasferimento prodotti
               </p>
@@ -450,8 +450,8 @@ export default function RepairCenterTransferRequestsOverviewPage() {
         </Card>
       </div>
 
-      <div className="flex flex-wrap items-center gap-4 flex-wrap">
-        <div className="relative flex-1 min-w-[200px]">
+      <div className="flex flex-wrap items-center gap-2">
+        <div className="relative flex-1 min-w-0">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
             placeholder="Cerca per numero o prodotto..."
@@ -577,15 +577,15 @@ export default function RepairCenterTransferRequestsOverviewPage() {
 
               <div>
                 <h4 className="font-medium mb-2">Prodotti</h4>
-                <div className="border rounded-lg overflow-hidden">
+                <div className="border rounded-lg overflow-x-auto">
                   <table className="w-full text-sm">
                     <thead className="bg-muted">
                       <tr>
                         <th className="text-left p-2">Prodotto</th>
                         <th className="text-right p-2">Richiesti</th>
-                        <th className="text-right p-2">Approvati</th>
-                        <th className="text-right p-2">Spediti</th>
-                        <th className="text-right p-2">Ricevuti</th>
+                        <th className="text-right p-2 hidden md:table-cell">Approvati</th>
+                        <th className="text-right p-2 hidden md:table-cell">Spediti</th>
+                        <th className="text-right p-2 hidden md:table-cell">Ricevuti</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -613,9 +613,9 @@ export default function RepairCenterTransferRequestsOverviewPage() {
                             </div>
                           </td>
                           <td className="text-right p-2">{item.requestedQuantity}</td>
-                          <td className="text-right p-2">{item.approvedQuantity ?? '-'}</td>
-                          <td className="text-right p-2">{item.shippedQuantity ?? '-'}</td>
-                          <td className="text-right p-2">{item.receivedQuantity ?? '-'}</td>
+                          <td className="text-right p-2 hidden md:table-cell">{item.approvedQuantity ?? '-'}</td>
+                          <td className="text-right p-2 hidden md:table-cell">{item.shippedQuantity ?? '-'}</td>
+                          <td className="text-right p-2 hidden md:table-cell">{item.receivedQuantity ?? '-'}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -638,7 +638,7 @@ export default function RepairCenterTransferRequestsOverviewPage() {
           </DialogHeader>
           {selectedRequest && (
             <div className="space-y-4">
-              <div className="border rounded-lg overflow-hidden">
+              <div className="border rounded-lg overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead className="bg-muted">
                     <tr>

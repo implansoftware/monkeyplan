@@ -217,8 +217,8 @@ export default function PosRegistersPage() {
   }
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
-      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-500 p-6">
+    <div className="container mx-auto p-6 space-y-4 sm:space-y-6">
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-500 p-4 sm:p-6">
         <div className="absolute -top-20 -left-20 w-80 h-80 rounded-full bg-orange-400/20 blur-3xl animate-pulse" />
         <div className="absolute bottom-0 right-0 w-64 h-64 rounded-full bg-yellow-400/20 blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
         <div className="absolute top-1/2 left-1/3 w-48 h-48 rounded-full bg-emerald-300/20 blur-3xl animate-pulse" style={{ animationDelay: '2s' }} />
@@ -230,11 +230,11 @@ export default function PosRegistersPage() {
                 <ArrowLeft className="h-5 w-5" />
               </Button>
             </Link>
-            <div className="h-14 w-14 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center shadow-xl">
-              <Monitor className="h-7 w-7 text-white" />
+            <div className="h-10 w-10 sm:h-14 sm:w-14 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center shadow-xl">
+              <Monitor className="h-5 w-5 sm:h-7 sm:w-7 text-white" />
             </div>
             <div>
-              <h1 className="text-2xl sm:text-3xl font-bold text-white tracking-tight">Registratori</h1>
+              <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-white tracking-tight">Registratori</h1>
               <p className="text-emerald-100">Configura i registri di cassa per il tuo punto vendita</p>
             </div>
           </div>
@@ -292,14 +292,15 @@ export default function PosRegistersPage() {
               </Button>
             </div>
           ) : (
+            <div className="overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow>
                   <TableHead>Nome</TableHead>
-                  <TableHead>Descrizione</TableHead>
+                  <TableHead className="hidden md:table-cell">Descrizione</TableHead>
                   <TableHead className="text-center">Stato</TableHead>
                   <TableHead className="text-center">Predefinita</TableHead>
-                  <TableHead>Creata il</TableHead>
+                  <TableHead className="hidden lg:table-cell">Creata il</TableHead>
                   <TableHead className="text-right">Azioni</TableHead>
                 </TableRow>
               </TableHeader>
@@ -307,7 +308,7 @@ export default function PosRegistersPage() {
                 {registers.map((register) => (
                   <TableRow key={register.id} data-testid={`row-register-${register.id}`}>
                     <TableCell className="font-medium">{register.name}</TableCell>
-                    <TableCell className="text-muted-foreground max-w-[200px] truncate">
+                    <TableCell className="hidden md:table-cell text-muted-foreground max-w-[200px] truncate">
                       {register.description || "-"}
                     </TableCell>
                     <TableCell className="text-center">
@@ -341,7 +342,7 @@ export default function PosRegistersPage() {
                         </Button>
                       )}
                     </TableCell>
-                    <TableCell className="text-muted-foreground">
+                    <TableCell className="hidden lg:table-cell text-muted-foreground">
                       {format(new Date(register.createdAt), "dd/MM/yyyy", { locale: it })}
                     </TableCell>
                     <TableCell>
@@ -385,6 +386,7 @@ export default function PosRegistersPage() {
                 ))}
               </TableBody>
             </Table>
+            </div>
           )}
         </CardContent>
       </Card>

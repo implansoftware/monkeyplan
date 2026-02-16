@@ -1028,10 +1028,10 @@ export default function PosPage() {
         </div>
         <Card className="max-w-md w-full">
           <CardHeader className="text-center">
-            <div className="mx-auto w-16 h-16 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-full flex items-center justify-center mb-4">
-              <Receipt className="w-8 h-8 text-white" />
+            <div className="mx-auto w-12 h-12 sm:w-16 sm:h-16 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-full flex items-center justify-center mb-4">
+              <Receipt className="w-6 h-6 sm:w-8 sm:h-8 text-white" />
             </div>
-            <CardTitle className="text-2xl">Cassa POS</CardTitle>
+            <CardTitle className="text-xl sm:text-2xl">Cassa POS</CardTitle>
             <CardDescription>
               Apri la cassa per iniziare a registrare le vendite
             </CardDescription>
@@ -1378,7 +1378,7 @@ export default function PosPage() {
                 </div>
                 <ScrollArea className="h-[calc(100%-3rem)]">
                   {productsLoading ? (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
                       {[1,2,3,4].map(i => <Skeleton key={i} className="h-24 w-full" />)}
                     </div>
                   ) : (() => {
@@ -1389,7 +1389,7 @@ export default function PosPage() {
                         <span>Nessun ricambio disponibile</span>
                       </div>
                     ) : (
-                      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
+                      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
                         {filtered.map((product) => {
                           const isOutOfStock = product.availableQuantity !== undefined && product.availableQuantity <= 0;
                           const price = product.listPrice ?? product.sellingPrice ?? product.unitPrice ?? 0;
@@ -1438,7 +1438,7 @@ export default function PosPage() {
                 </div>
                 <ScrollArea className="h-[calc(100%-3rem)]">
                   {productsLoading ? (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
                       {[1,2,3,4].map(i => <Skeleton key={i} className="h-24 w-full" />)}
                     </div>
                   ) : (() => {
@@ -1449,7 +1449,7 @@ export default function PosPage() {
                         <span>Nessun accessorio disponibile</span>
                       </div>
                     ) : (
-                      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
+                      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
                         {filtered.map((product) => {
                           const isOutOfStock = product.availableQuantity !== undefined && product.availableQuantity <= 0;
                           const price = product.listPrice ?? product.sellingPrice ?? product.unitPrice ?? 0;
@@ -1498,7 +1498,7 @@ export default function PosPage() {
                 </div>
                 <ScrollArea className="h-[calc(100%-3rem)]">
                   {productsLoading ? (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
                       {[1,2,3,4].map(i => <Skeleton key={i} className="h-24 w-full" />)}
                     </div>
                   ) : (() => {
@@ -1509,7 +1509,7 @@ export default function PosPage() {
                         <span>Nessun dispositivo disponibile</span>
                       </div>
                     ) : (
-                      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
+                      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
                         {filtered.map((product) => {
                           const isOutOfStock = product.availableQuantity !== undefined && product.availableQuantity <= 0;
                           const price = product.listPrice ?? product.sellingPrice ?? product.unitPrice ?? 0;
@@ -1557,7 +1557,7 @@ export default function PosPage() {
                 </div>
                 <ScrollArea className="h-[calc(100%-3rem)]">
                   {servicesLoading ? (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
                       {[1,2,3,4,5,6,7,8].map(i => <Skeleton key={i} className="h-24 w-full" />)}
                     </div>
                   ) : filteredServices.length === 0 ? (
@@ -1567,7 +1567,7 @@ export default function PosPage() {
                       <span className="text-sm">Configura il catalogo interventi</span>
                     </div>
                   ) : (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
                       {filteredServices.map((service) => (
                         <button
                           key={service.id}
@@ -1613,7 +1613,7 @@ export default function PosPage() {
                 </div>
                 <ScrollArea className="h-[calc(100%-3rem)]">
                   {warrantyProductsLoading ? (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
                       {[1,2,3,4,5,6,7,8].map(i => <Skeleton key={i} className="h-24 w-full" />)}
                     </div>
                   ) : filteredWarrantyProducts.length === 0 ? (
@@ -1623,7 +1623,7 @@ export default function PosPage() {
                       <span className="text-sm">Configura il catalogo garanzie</span>
                     </div>
                   ) : (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
                       {filteredWarrantyProducts.map((wp) => (
                         <button
                           key={wp.id}
@@ -2114,9 +2114,9 @@ export default function PosPage() {
               </div>
             </div>
 
-            <div className="p-4 rounded bg-primary/10 text-center">
+            <div className="p-3 sm:p-4 rounded bg-primary/10 text-center">
               <div className="text-sm text-muted-foreground">Contanti Attesi</div>
-              <div className="text-2xl font-bold">
+              <div className="text-xl sm:text-2xl font-bold">
                 {formatCurrency((currentSession?.openingCash || 0) + (currentSession?.totalCashSales || 0) - (currentSession?.totalRefunds || 0))}
               </div>
             </div>

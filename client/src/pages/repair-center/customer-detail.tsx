@@ -78,7 +78,7 @@ export default function RepairCenterCustomerDetail() {
 
   if (isLoading) {
     return (
-      <div className="p-6 space-y-6" data-testid="page-customer-detail-loading">
+      <div className="p-4 sm:p-6 space-y-4 sm:space-y-6" data-testid="page-customer-detail-loading">
         <Skeleton className="h-8 w-64" />
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
           {[1, 2, 3].map((i) => (
@@ -92,7 +92,7 @@ export default function RepairCenterCustomerDetail() {
 
   if (error || !customer) {
     return (
-      <div className="p-6 space-y-6" data-testid="page-customer-detail-error">
+      <div className="p-4 sm:p-6 space-y-4 sm:space-y-6" data-testid="page-customer-detail-error">
         <Link href="/repair-center/customers">
           <Button variant="ghost" size="sm" data-testid="button-back-to-customers">
             <ArrowLeft className="h-4 w-4 mr-2" />
@@ -112,7 +112,7 @@ export default function RepairCenterCustomerDetail() {
   const repairs = customer.repairs || [];
 
   return (
-    <div className="p-6 space-y-6" data-testid="page-customer-detail">
+    <div className="p-4 sm:p-6 space-y-4 sm:space-y-6" data-testid="page-customer-detail">
       <div className="flex flex-col sm:flex-row sm:items-center gap-4">
         <Link href="/repair-center/customers">
           <Button variant="ghost" size="sm" className="w-fit" data-testid="button-back-to-customers">
@@ -122,7 +122,7 @@ export default function RepairCenterCustomerDetail() {
         </Link>
         <div className="flex-1">
           <div className="flex flex-wrap items-center gap-3">
-            <h1 className="text-2xl font-semibold tracking-tight" data-testid="text-customer-name">
+            <h1 className="text-xl sm:text-2xl font-semibold tracking-tight" data-testid="text-customer-name">
               {customer.fullName}
             </h1>
             <Badge variant={customer.isActive ? "outline" : "secondary"} className="font-normal" data-testid="badge-customer-status">
@@ -279,13 +279,14 @@ export default function RepairCenterCustomerDetail() {
             </Card>
           ) : (
             <Card>
+              <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
                   <TableRow>
                     <TableHead>Ticket</TableHead>
                     <TableHead>Dispositivo</TableHead>
                     <TableHead>Stato</TableHead>
-                    <TableHead>Data</TableHead>
+                    <TableHead className="hidden md:table-cell">Data</TableHead>
                     <TableHead className="w-10"></TableHead>
                   </TableRow>
                 </TableHeader>
@@ -303,7 +304,7 @@ export default function RepairCenterCustomerDetail() {
                             {statusConfig.label}
                           </Badge>
                         </TableCell>
-                        <TableCell className="text-muted-foreground text-sm">
+                        <TableCell className="hidden md:table-cell text-muted-foreground text-sm">
                           {format(new Date(repair.createdAt), "dd/MM/yy", { locale: it })}
                         </TableCell>
                         <TableCell>
@@ -318,6 +319,7 @@ export default function RepairCenterCustomerDetail() {
                   })}
                 </TableBody>
               </Table>
+              </div>
             </Card>
           )}
         </TabsContent>

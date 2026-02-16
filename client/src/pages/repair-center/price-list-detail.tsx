@@ -48,7 +48,7 @@ export default function RepairCenterPriceListDetail() {
 
   if (isLoading) {
     return (
-      <div className="container mx-auto py-6 space-y-6">
+      <div className="container mx-auto py-4 sm:py-6 space-y-4 sm:space-y-6">
         <Skeleton className="h-10 w-64" />
         <Skeleton className="h-[400px] w-full" />
       </div>
@@ -74,7 +74,7 @@ export default function RepairCenterPriceListDetail() {
   }
 
   return (
-    <div className="container mx-auto py-6 space-y-6">
+    <div className="container mx-auto py-4 sm:py-6 space-y-4 sm:space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center gap-4">
           <Link href="/repair-center/price-lists">
@@ -83,7 +83,7 @@ export default function RepairCenterPriceListDetail() {
             </Button>
           </Link>
           <div>
-            <h1 className="text-2xl font-bold flex items-center gap-2" data-testid="text-page-title">
+            <h1 className="text-xl sm:text-2xl font-bold flex items-center gap-2" data-testid="text-page-title">
               <Euro className="h-6 w-6 text-emerald-500" />
               {priceList.name}
             </h1>
@@ -124,6 +124,7 @@ export default function RepairCenterPriceListDetail() {
               <p>Nessuna voce nel listino</p>
             </div>
           ) : (
+            <div className="overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -158,6 +159,7 @@ export default function RepairCenterPriceListDetail() {
                 ))}
               </TableBody>
             </Table>
+            </div>
           )}
         </CardContent>
       </Card>

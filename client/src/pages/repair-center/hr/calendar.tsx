@@ -56,19 +56,19 @@ export default function RepairCenterHrCalendar() {
   const firstDayOfWeek = (startDate.getDay() + 6) % 7;
 
   return (
-    <div className="space-y-6" data-testid="page-rc-hr-calendar">
-      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-500 p-6">
+    <div className="space-y-4 sm:space-y-6" data-testid="page-rc-hr-calendar">
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-500 p-4 sm:p-6">
         <div className="absolute -top-20 -left-20 w-80 h-80 rounded-full bg-orange-400/20 blur-3xl animate-pulse" />
         <div className="absolute bottom-0 right-0 w-64 h-64 rounded-full bg-yellow-400/20 blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
         <div className="absolute top-1/2 left-1/3 w-48 h-48 rounded-full bg-emerald-300/20 blur-3xl animate-pulse" style={{ animationDelay: '2s' }} />
         
         <div className="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div className="flex flex-wrap items-center gap-4">
-            <div className="h-14 w-14 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center shadow-xl">
-              <Calendar className="h-7 w-7 text-white" />
+            <div className="h-10 w-10 sm:h-14 sm:w-14 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center shadow-xl">
+              <Calendar className="h-5 w-5 sm:h-7 sm:w-7 text-white" />
             </div>
             <div>
-              <h1 className="text-2xl sm:text-3xl font-bold text-white tracking-tight">Calendario</h1>
+              <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-white tracking-tight">Calendario</h1>
               <p className="text-emerald-100">Visualizzazione assenze e presenze</p>
             </div>
           </div>
@@ -124,7 +124,7 @@ export default function RepairCenterHrCalendar() {
               </div>
               <div className="grid grid-cols-7">
                 {Array.from({ length: firstDayOfWeek }).map((_, i) => (
-                  <div key={`empty-${i}`} className="min-h-[100px] border-b border-r bg-muted/20" />
+                  <div key={`empty-${i}`} className="min-h-[60px] sm:min-h-[100px] border-b border-r bg-muted/20" />
                 ))}
                 {days.map((day) => {
                   const dayEvents = getEventsForDay(day);
@@ -132,7 +132,7 @@ export default function RepairCenterHrCalendar() {
                   return (
                     <div
                       key={day.toISOString()}
-                      className={`min-h-[100px] border-b border-r p-1 ${isToday ? "bg-primary/5" : ""}`}
+                      className={`min-h-[60px] sm:min-h-[100px] border-b border-r p-1 ${isToday ? "bg-primary/5" : ""}`}
                     >
                       <div className={`text-sm font-medium mb-1 ${isToday ? "text-primary" : ""}`}>
                         {format(day, "d")}

@@ -103,7 +103,7 @@ export default function RepairCenterServiceOrders() {
   }
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
+    <div className="container mx-auto p-4 sm:p-6 space-y-4 sm:space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold" data-testid="text-page-title">Ordini Intervento</h1>
@@ -127,16 +127,17 @@ export default function RepairCenterServiceOrders() {
         <TabsContent value={activeTab} className="mt-4">
           <Card>
             <CardContent className="p-0">
+              <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
                   <TableRow>
                     <TableHead>Ordine</TableHead>
                     <TableHead>Cliente</TableHead>
                     <TableHead>Servizio</TableHead>
-                    <TableHead>Dispositivo</TableHead>
+                    <TableHead className="hidden md:table-cell">Dispositivo</TableHead>
                     <TableHead>Importo</TableHead>
                     <TableHead>Stato</TableHead>
-                    <TableHead>Pagamento</TableHead>
+                    <TableHead className="hidden sm:table-cell">Pagamento</TableHead>
                     <TableHead>Azioni</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -168,7 +169,7 @@ export default function RepairCenterServiceOrders() {
                             <div>{order.serviceName}</div>
                             <div className="text-sm text-muted-foreground">{order.serviceCode}</div>
                           </TableCell>
-                          <TableCell>
+                          <TableCell className="hidden md:table-cell">
                             {order.brand || order.model ? (
                               <div className="flex items-center gap-2">
                                 <Smartphone className="w-4 h-4 text-muted-foreground" />
@@ -184,7 +185,7 @@ export default function RepairCenterServiceOrders() {
                               {statusLabels[order.status]?.label || order.status}
                             </Badge>
                           </TableCell>
-                          <TableCell>
+                          <TableCell className="hidden sm:table-cell">
                             <div className="flex items-center gap-2">
                               <PaymentIcon className="w-4 h-4 text-muted-foreground" />
                               <Badge variant={paymentStatusLabels[order.paymentStatus]?.variant || "secondary"}>
@@ -235,6 +236,7 @@ export default function RepairCenterServiceOrders() {
                   )}
                 </TableBody>
               </Table>
+              </div>
             </CardContent>
           </Card>
         </TabsContent>
@@ -248,7 +250,7 @@ export default function RepairCenterServiceOrders() {
           </DialogHeader>
           {selectedOrder && (
             <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="text-sm font-medium text-muted-foreground">Cliente</label>
                   <p>{selectedOrder.customerName}</p>

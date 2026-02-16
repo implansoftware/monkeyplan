@@ -125,19 +125,19 @@ export default function RepairCenterInvoices() {
   };
 
   return (
-    <div className="space-y-6" data-testid="page-repair-center-invoices">
-      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-500 p-6">
+    <div className="space-y-4 sm:space-y-6" data-testid="page-repair-center-invoices">
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-500 p-4 sm:p-6">
         <div className="absolute -top-20 -left-20 w-80 h-80 rounded-full bg-orange-400/20 blur-3xl animate-pulse" />
         <div className="absolute bottom-0 right-0 w-64 h-64 rounded-full bg-yellow-400/20 blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
         <div className="absolute top-1/2 left-1/3 w-48 h-48 rounded-full bg-emerald-300/20 blur-3xl animate-pulse" style={{ animationDelay: '2s' }} />
         
         <div className="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div className="flex flex-wrap items-center gap-4">
-            <div className="h-14 w-14 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center shadow-xl">
-              <FileText className="h-7 w-7 text-white" />
+            <div className="h-10 w-10 sm:h-14 sm:w-14 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center shadow-xl">
+              <FileText className="h-5 w-5 sm:h-7 sm:w-7 text-white" />
             </div>
             <div>
-              <h1 className="text-2xl sm:text-3xl font-bold text-white tracking-tight">Fatture</h1>
+              <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-white tracking-tight">Fatture</h1>
               <p className="text-emerald-100">
                 Visualizza le fatture da riparazioni, POS e marketplace
               </p>
@@ -146,7 +146,7 @@ export default function RepairCenterInvoices() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         <Card>
           <CardContent className="pt-6">
             <div className="flex flex-wrap items-center gap-3">
@@ -276,54 +276,56 @@ export default function RepairCenterInvoices() {
               <p>Nessuna fattura trovata</p>
             </div>
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Numero</TableHead>
-                  <TableHead>Data</TableHead>
-                  <TableHead>Fonte</TableHead>
-                  <TableHead className="text-right">Imponibile</TableHead>
-                  <TableHead className="text-right">IVA%</TableHead>
-                  <TableHead className="text-right">IVA</TableHead>
-                  <TableHead className="text-right">Totale</TableHead>
-                  <TableHead>Metodo</TableHead>
-                  <TableHead>Scadenza</TableHead>
-                  <TableHead>Stato</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredInvoices.map((invoice) => (
-                  <TableRow key={invoice.id} data-testid={`row-invoice-${invoice.id}`}>
-                    <TableCell className="font-medium font-mono">{invoice.invoiceNumber}</TableCell>
-                    <TableCell>
-                      {format(new Date(invoice.createdAt), "dd MMM yyyy", { locale: it })}
-                    </TableCell>
-                    <TableCell>{getSourceBadge(invoice.source)}</TableCell>
-                    <TableCell className="text-right text-muted-foreground">
-                      {formatCurrency(invoice.amount)}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <Badge variant="outline" className="font-mono">{invoice.vatRate ?? 22}%</Badge>
-                    </TableCell>
-                    <TableCell className="text-right text-muted-foreground">
-                      {formatCurrency(invoice.tax)}
-                    </TableCell>
-                    <TableCell className="text-right font-semibold">
-                      {formatCurrency(invoice.total)}
-                    </TableCell>
-                    <TableCell className="capitalize">
-                      {invoice.paymentMethod?.replace("_", " ") || "N/D"}
-                    </TableCell>
-                    <TableCell>
-                      {invoice.dueDate
-                        ? format(new Date(invoice.dueDate), "dd MMM yyyy", { locale: it })
-                        : "N/D"}
-                    </TableCell>
-                    <TableCell>{getStatusBadge(invoice.paymentStatus)}</TableCell>
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Numero</TableHead>
+                    <TableHead>Data</TableHead>
+                    <TableHead className="hidden md:table-cell">Fonte</TableHead>
+                    <TableHead className="text-right">Imponibile</TableHead>
+                    <TableHead className="hidden lg:table-cell text-right">IVA%</TableHead>
+                    <TableHead className="hidden lg:table-cell text-right">IVA</TableHead>
+                    <TableHead className="text-right">Totale</TableHead>
+                    <TableHead className="hidden md:table-cell">Metodo</TableHead>
+                    <TableHead className="hidden lg:table-cell">Scadenza</TableHead>
+                    <TableHead>Stato</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {filteredInvoices.map((invoice) => (
+                    <TableRow key={invoice.id} data-testid={`row-invoice-${invoice.id}`}>
+                      <TableCell className="font-medium font-mono">{invoice.invoiceNumber}</TableCell>
+                      <TableCell>
+                        {format(new Date(invoice.createdAt), "dd MMM yyyy", { locale: it })}
+                      </TableCell>
+                      <TableCell className="hidden md:table-cell">{getSourceBadge(invoice.source)}</TableCell>
+                      <TableCell className="text-right text-muted-foreground">
+                        {formatCurrency(invoice.amount)}
+                      </TableCell>
+                      <TableCell className="hidden lg:table-cell text-right">
+                        <Badge variant="outline" className="font-mono">{invoice.vatRate ?? 22}%</Badge>
+                      </TableCell>
+                      <TableCell className="hidden lg:table-cell text-right text-muted-foreground">
+                        {formatCurrency(invoice.tax)}
+                      </TableCell>
+                      <TableCell className="text-right font-semibold">
+                        {formatCurrency(invoice.total)}
+                      </TableCell>
+                      <TableCell className="hidden md:table-cell capitalize">
+                        {invoice.paymentMethod?.replace("_", " ") || "N/D"}
+                      </TableCell>
+                      <TableCell className="hidden lg:table-cell">
+                        {invoice.dueDate
+                          ? format(new Date(invoice.dueDate), "dd MMM yyyy", { locale: it })
+                          : "N/D"}
+                      </TableCell>
+                      <TableCell>{getStatusBadge(invoice.paymentStatus)}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
           )}
         </CardContent>
       </Card>

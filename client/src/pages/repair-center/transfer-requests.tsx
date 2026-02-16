@@ -235,20 +235,20 @@ export default function RepairCenterTransferRequestsPage() {
   }
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-6 space-y-4 sm:space-y-6">
       {/* Hero Header */}
-      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-500 p-6">
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-500 p-4 sm:p-6">
         <div className="absolute -top-20 -left-20 w-80 h-80 rounded-full bg-orange-400/20 blur-3xl animate-pulse" />
         <div className="absolute bottom-0 right-0 w-64 h-64 rounded-full bg-yellow-400/20 blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
         <div className="absolute top-1/2 left-1/3 w-48 h-48 rounded-full bg-emerald-300/20 blur-3xl animate-pulse" style={{ animationDelay: '2s' }} />
         
         <div className="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div className="flex flex-wrap items-center gap-4">
-            <div className="h-14 w-14 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center shadow-xl">
-              <ArrowRightLeft className="h-7 w-7 text-white" />
+            <div className="h-10 w-10 sm:h-14 sm:w-14 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center shadow-xl">
+              <ArrowRightLeft className="h-5 w-5 sm:h-7 sm:w-7 text-white" />
             </div>
             <div>
-              <h1 className="text-2xl sm:text-3xl font-bold text-white tracking-tight" data-testid="text-title">Richieste Trasferimento</h1>
+              <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-white tracking-tight" data-testid="text-title">Richieste Trasferimento</h1>
               <p className="text-emerald-100">Richiedi prodotti dal magazzino del tuo reseller</p>
             </div>
           </div>
@@ -562,8 +562,8 @@ export default function RepairCenterTransferRequestsPage() {
         </div>
       </div>
 
-      <div className="flex flex-wrap items-center gap-4 flex-wrap">
-        <div className="relative flex-1 min-w-[200px]">
+      <div className="flex flex-wrap items-center gap-2">
+        <div className="relative flex-1 min-w-0">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
             placeholder="Cerca per numero richiesta o prodotto..."
@@ -716,15 +716,15 @@ export default function RepairCenterTransferRequestsPage() {
 
               <div>
                 <Label>Articoli:</Label>
-                <div className="mt-2 border rounded-md">
+                <div className="mt-2 border rounded-md overflow-x-auto">
                   <table className="w-full text-sm">
                     <thead className="bg-muted">
                       <tr>
                         <th className="text-left p-2">Prodotto</th>
                         <th className="text-center p-2">Richiesto</th>
-                        <th className="text-center p-2">Approvato</th>
-                        <th className="text-center p-2">Spedito</th>
-                        <th className="text-center p-2">Ricevuto</th>
+                        <th className="text-center p-2 hidden md:table-cell">Approvato</th>
+                        <th className="text-center p-2 hidden md:table-cell">Spedito</th>
+                        <th className="text-center p-2 hidden md:table-cell">Ricevuto</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -752,9 +752,9 @@ export default function RepairCenterTransferRequestsPage() {
                             </div>
                           </td>
                           <td className="text-center p-2">{item.requestedQuantity}</td>
-                          <td className="text-center p-2">{item.approvedQuantity ?? "-"}</td>
-                          <td className="text-center p-2">{item.shippedQuantity ?? "-"}</td>
-                          <td className="text-center p-2">{item.receivedQuantity ?? "-"}</td>
+                          <td className="text-center p-2 hidden md:table-cell">{item.approvedQuantity ?? "-"}</td>
+                          <td className="text-center p-2 hidden md:table-cell">{item.shippedQuantity ?? "-"}</td>
+                          <td className="text-center p-2 hidden md:table-cell">{item.receivedQuantity ?? "-"}</td>
                         </tr>
                       ))}
                     </tbody>

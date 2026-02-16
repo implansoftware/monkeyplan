@@ -287,20 +287,20 @@ export default function RepairCenterRemoteRequests() {
   const completedRequests = requests?.filter(r => ['received', 'repair_created', 'rejected', 'cancelled'].includes(r.status)) || [];
 
   return (
-    <div className="container max-w-6xl mx-auto py-6 space-y-6">
+    <div className="container max-w-6xl mx-auto py-6 space-y-4 sm:space-y-6">
       {/* Hero Header */}
-      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-500 p-6">
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-500 p-4 sm:p-6">
         <div className="absolute -top-20 -left-20 w-80 h-80 rounded-full bg-orange-400/20 blur-3xl animate-pulse" />
         <div className="absolute bottom-0 right-0 w-64 h-64 rounded-full bg-yellow-400/20 blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
         <div className="absolute top-1/2 left-1/3 w-48 h-48 rounded-full bg-emerald-300/20 blur-3xl animate-pulse" style={{ animationDelay: '2s' }} />
         
         <div className="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div className="flex flex-wrap items-center gap-4">
-            <div className="h-14 w-14 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center shadow-xl">
-              <Truck className="h-7 w-7 text-white" />
+            <div className="h-10 w-10 sm:h-14 sm:w-14 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center shadow-xl">
+              <Truck className="h-5 w-5 sm:h-7 sm:w-7 text-white" />
             </div>
             <div>
-              <h1 className="text-2xl sm:text-3xl font-bold text-white tracking-tight" data-testid="text-page-title">Richieste Remote</h1>
+              <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-white tracking-tight" data-testid="text-page-title">Richieste Remote</h1>
               <p className="text-emerald-100">Gestisci le richieste di riparazione inviate dai clienti</p>
             </div>
           </div>
@@ -318,7 +318,7 @@ export default function RepairCenterRemoteRequests() {
           </CardContent>
         </Card>
       ) : (
-        <div className="space-y-6">
+        <div className="space-y-4 sm:space-y-6">
           {pendingRequests.length > 0 && (
             <div>
               <h2 className="text-lg font-semibold mb-3 flex items-center gap-2">
@@ -329,9 +329,9 @@ export default function RepairCenterRemoteRequests() {
                 {pendingRequests.map((request) => (
                   <Card key={request.id} className="border-yellow-200" data-testid={`card-pending-${request.id}`}>
                     <CardHeader>
-                      <div className="flex items-center justify-between">
+                      <div className="flex flex-wrap items-center justify-between gap-2">
                         <div>
-                          <CardTitle className="text-lg flex items-center gap-2">
+                          <CardTitle className="text-lg flex flex-wrap items-center gap-2">
                             {request.requestNumber}
                             <Badge {...statusLabels[request.status]}>
                               {statusLabels[request.status]?.label}
@@ -347,7 +347,7 @@ export default function RepairCenterRemoteRequests() {
                             Ricevuta il {format(new Date(request.createdAt), "d MMMM yyyy 'alle' HH:mm", { locale: it })}
                           </CardDescription>
                         </div>
-                        <div className="flex gap-2">
+                        <div className="flex flex-wrap gap-2">
                           <Button
                             variant="outline"
                             onClick={() => openRejectDialog(request)}
@@ -460,9 +460,9 @@ export default function RepairCenterRemoteRequests() {
                 {activeRequests.map((request) => (
                   <Card key={request.id} data-testid={`card-active-${request.id}`}>
                     <CardHeader>
-                      <div className="flex items-center justify-between">
+                      <div className="flex flex-wrap items-center justify-between gap-2">
                         <div>
-                          <CardTitle className="text-lg flex items-center gap-2">
+                          <CardTitle className="text-lg flex flex-wrap items-center gap-2">
                             {request.requestNumber}
                             <Badge {...statusLabels[request.status]}>
                               {statusLabels[request.status]?.label}
@@ -478,7 +478,7 @@ export default function RepairCenterRemoteRequests() {
                             {format(new Date(request.createdAt), "d MMMM yyyy", { locale: it })}
                           </CardDescription>
                         </div>
-                        <div className="flex gap-2">
+                        <div className="flex flex-wrap gap-2">
                           {request.status === 'accepted' && (
                             <>
                               <Button
@@ -687,7 +687,7 @@ export default function RepairCenterRemoteRequests() {
                 {completedRequests.slice(0, 5).map((request) => (
                   <Card key={request.id} className="opacity-75" data-testid={`card-completed-${request.id}`}>
                     <CardHeader className="py-4">
-                      <div className="flex items-center justify-between">
+                      <div className="flex flex-wrap items-center justify-between gap-2">
                         <div className="flex flex-wrap items-center gap-3">
                           <CardTitle className="text-base">{request.requestNumber}</CardTitle>
                           <Badge {...statusLabels[request.status]}>

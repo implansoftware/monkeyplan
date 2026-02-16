@@ -134,20 +134,20 @@ export default function RepairCenterWarehousesPage() {
   }
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-6 space-y-4 sm:space-y-6">
       {/* Hero Header */}
-      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-500 p-6">
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-500 p-4 sm:p-6">
         <div className="absolute -top-20 -left-20 w-80 h-80 rounded-full bg-orange-400/20 blur-3xl animate-pulse" />
         <div className="absolute bottom-0 right-0 w-64 h-64 rounded-full bg-yellow-400/20 blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
         <div className="absolute top-1/2 left-1/3 w-48 h-48 rounded-full bg-emerald-300/20 blur-3xl animate-pulse" style={{ animationDelay: '2s' }} />
         
         <div className="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div className="flex flex-wrap items-center gap-4">
-            <div className="h-14 w-14 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center shadow-xl">
-              <Warehouse className="h-7 w-7 text-white" />
+            <div className="h-10 w-10 sm:h-14 sm:w-14 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center shadow-xl">
+              <Warehouse className="h-5 w-5 sm:h-7 sm:w-7 text-white" />
             </div>
             <div>
-              <h1 className="text-2xl sm:text-3xl font-bold text-white tracking-tight" data-testid="text-warehouse-title">
+              <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-white tracking-tight" data-testid="text-warehouse-title">
                 Magazzini
               </h1>
               <p className="text-emerald-100">
@@ -359,11 +359,11 @@ export default function RepairCenterWarehousesPage() {
                   <thead className="border-b">
                     <tr>
                       <th className="text-left p-4 font-medium">Prodotto</th>
-                      <th className="text-left p-4 font-medium">SKU</th>
-                      <th className="text-left p-4 font-medium">Tipo</th>
+                      <th className="text-left p-4 font-medium hidden md:table-cell">SKU</th>
+                      <th className="text-left p-4 font-medium hidden lg:table-cell">Tipo</th>
                       <th className="text-right p-4 font-medium">Quantità</th>
-                      <th className="text-right p-4 font-medium">Min. Stock</th>
-                      <th className="text-left p-4 font-medium">Posizione</th>
+                      <th className="text-right p-4 font-medium hidden md:table-cell">Min. Stock</th>
+                      <th className="text-left p-4 font-medium hidden lg:table-cell">Posizione</th>
                       <th className="text-center p-4 font-medium">Azioni</th>
                     </tr>
                   </thead>
@@ -397,8 +397,8 @@ export default function RepairCenterWarehousesPage() {
                               <span className="font-medium">{item.product?.name || "N/D"}</span>
                             </div>
                           </td>
-                          <td className="p-4 text-muted-foreground">{item.product?.sku || "N/D"}</td>
-                          <td className="p-4">
+                          <td className="p-4 text-muted-foreground hidden md:table-cell">{item.product?.sku || "N/D"}</td>
+                          <td className="p-4 hidden lg:table-cell">
                             <Badge variant="outline">{item.product?.category || "N/D"}</Badge>
                           </td>
                           <td className="p-4 text-right">
@@ -406,8 +406,8 @@ export default function RepairCenterWarehousesPage() {
                               {item.quantity}
                             </span>
                           </td>
-                          <td className="p-4 text-right text-muted-foreground">{item.minStock || "-"}</td>
-                          <td className="p-4">{item.location || "-"}</td>
+                          <td className="p-4 text-right text-muted-foreground hidden md:table-cell">{item.minStock || "-"}</td>
+                          <td className="p-4 hidden lg:table-cell">{item.location || "-"}</td>
                           <td className="p-4 text-center">
                             <Button 
                               size="icon" 
@@ -440,8 +440,8 @@ export default function RepairCenterWarehousesPage() {
                       <th className="text-left p-4 font-medium">Tipo</th>
                       <th className="text-left p-4 font-medium">Prodotto</th>
                       <th className="text-right p-4 font-medium">Quantità</th>
-                      <th className="text-left p-4 font-medium">Operatore</th>
-                      <th className="text-left p-4 font-medium">Note</th>
+                      <th className="text-left p-4 font-medium hidden md:table-cell">Operatore</th>
+                      <th className="text-left p-4 font-medium hidden lg:table-cell">Note</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -477,10 +477,10 @@ export default function RepairCenterWarehousesPage() {
                               {['carico', 'trasferimento_in'].includes(mov.movementType) ? '+' : '-'}
                               {mov.quantity}
                             </td>
-                            <td className="p-4 text-muted-foreground">
+                            <td className="p-4 text-muted-foreground hidden md:table-cell">
                               {mov.createdByUser?.fullName || mov.createdByUser?.username || "N/D"}
                             </td>
-                            <td className="p-4 text-muted-foreground truncate max-w-[200px]">
+                            <td className="p-4 text-muted-foreground truncate max-w-[200px] hidden lg:table-cell">
                               {mov.notes || "-"}
                             </td>
                           </tr>

@@ -81,19 +81,19 @@ export default function RepairCenterSupplierOrders() {
   }
 
   return (
-    <div className="p-6 space-y-6">
-      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-500 p-6">
+    <div className="p-6 space-y-4 sm:space-y-6">
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-500 p-4 sm:p-6">
         <div className="absolute -top-20 -left-20 w-80 h-80 rounded-full bg-orange-400/20 blur-3xl animate-pulse" />
         <div className="absolute bottom-0 right-0 w-64 h-64 rounded-full bg-yellow-400/20 blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
         <div className="absolute top-1/2 left-1/3 w-48 h-48 rounded-full bg-emerald-300/20 blur-3xl animate-pulse" style={{ animationDelay: '2s' }} />
         
         <div className="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div className="flex flex-wrap items-center gap-4">
-            <div className="h-14 w-14 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center shadow-xl">
-              <ClipboardList className="h-7 w-7 text-white" />
+            <div className="h-10 w-10 sm:h-14 sm:w-14 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center shadow-xl">
+              <ClipboardList className="h-5 w-5 sm:h-7 sm:w-7 text-white" />
             </div>
             <div>
-              <h1 className="text-2xl sm:text-3xl font-bold text-white tracking-tight" data-testid="text-page-title">Ordini Fornitori</h1>
+              <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-white tracking-tight" data-testid="text-page-title">Ordini Fornitori</h1>
               <p className="text-emerald-100">Gestione ordini a fornitori</p>
             </div>
           </div>
@@ -106,13 +106,13 @@ export default function RepairCenterSupplierOrders() {
       </div>
 
       <Card>
-        <CardHeader className="flex flex-row items-center justify-between gap-4 space-y-0 pb-4">
+        <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-4 space-y-0 pb-4">
           <CardTitle className="flex flex-wrap items-center gap-2">
             <ShoppingCart className="h-5 w-5" />
             I Miei Ordini
           </CardTitle>
-          <div className="flex flex-wrap items-center gap-4">
-            <div className="relative w-64">
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="relative w-full sm:w-64">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
                 placeholder="Cerca ordine..."
@@ -145,6 +145,7 @@ export default function RepairCenterSupplierOrders() {
               <p className="text-sm mt-1">Gli ordini ricambi ai fornitori appariranno qui</p>
             </div>
           ) : (
+            <div className="overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -152,9 +153,9 @@ export default function RepairCenterSupplierOrders() {
                   <TableHead>Fornitore</TableHead>
                   <TableHead>Stato</TableHead>
                   <TableHead>Totale</TableHead>
-                  <TableHead>Data Ordine</TableHead>
-                  <TableHead>Consegna Prevista</TableHead>
-                  <TableHead>Tracking</TableHead>
+                  <TableHead className="hidden md:table-cell">Data Ordine</TableHead>
+                  <TableHead className="hidden lg:table-cell">Consegna Prevista</TableHead>
+                  <TableHead className="hidden lg:table-cell">Tracking</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -179,13 +180,13 @@ export default function RepairCenterSupplierOrders() {
                     <TableCell className="font-medium" data-testid={`text-order-total-${order.id}`}>
                       {formatCurrency(order.totalAmount)}
                     </TableCell>
-                    <TableCell data-testid={`text-order-date-${order.id}`}>
+                    <TableCell className="hidden md:table-cell" data-testid={`text-order-date-${order.id}`}>
                       <div className="flex flex-wrap items-center gap-1 text-muted-foreground">
                         <Calendar className="h-3 w-3" />
                         {format(new Date(order.createdAt), "dd MMM yyyy", { locale: it })}
                       </div>
                     </TableCell>
-                    <TableCell data-testid={`text-order-delivery-${order.id}`}>
+                    <TableCell className="hidden lg:table-cell" data-testid={`text-order-delivery-${order.id}`}>
                       {order.expectedDelivery ? (
                         <div className="flex flex-wrap items-center gap-1 text-muted-foreground">
                           <Calendar className="h-3 w-3" />
@@ -195,13 +196,14 @@ export default function RepairCenterSupplierOrders() {
                         "-"
                       )}
                     </TableCell>
-                    <TableCell data-testid={`text-order-tracking-${order.id}`}>
+                    <TableCell className="hidden lg:table-cell" data-testid={`text-order-tracking-${order.id}`}>
                       {order.trackingNumber || "-"}
                     </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
             </Table>
+            </div>
           )}
         </CardContent>
       </Card>

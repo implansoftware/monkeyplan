@@ -246,8 +246,8 @@ export default function RepairCenterUtilityServices() {
   };
 
   return (
-    <div className="p-6 space-y-6">
-      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-500 p-6">
+    <div className="p-4 sm:p-6 space-y-4 sm:space-y-6">
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-500 p-4 sm:p-6">
         <div className="absolute -top-20 -left-20 w-80 h-80 rounded-full bg-orange-400/20 blur-3xl animate-pulse" />
         <div className="absolute bottom-0 right-0 w-64 h-64 rounded-full bg-yellow-400/20 blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
         <div className="absolute top-1/2 left-1/3 w-48 h-48 rounded-full bg-emerald-300/20 blur-3xl animate-pulse" style={{ animationDelay: '2s' }} />
@@ -259,11 +259,11 @@ export default function RepairCenterUtilityServices() {
                 <ArrowLeft className="h-4 w-4" />
               </Button>
             </Link>
-            <div className="h-14 w-14 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center shadow-xl">
-              <Wrench className="h-7 w-7 text-white" />
+            <div className="h-10 w-10 sm:h-14 sm:w-14 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center shadow-xl">
+              <Wrench className="h-5 w-5 sm:h-7 sm:w-7 text-white" />
             </div>
             <div>
-              <h1 className="text-2xl sm:text-3xl font-bold text-white tracking-tight">Servizi Utility</h1>
+              <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-white tracking-tight">Servizi Utility</h1>
               <p className="text-emerald-100">Aumenta i tuoi guadagni con i servizi utility</p>
             </div>
           </div>
@@ -276,7 +276,7 @@ export default function RepairCenterUtilityServices() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-muted-foreground">Servizi Disponibili</p>
-                <p className="text-3xl font-bold" data-testid="stat-value-total-services">{stats.totalServices}</p>
+                <p className="text-2xl sm:text-3xl font-bold" data-testid="stat-value-total-services">{stats.totalServices}</p>
               </div>
               <div className="p-3 rounded-full bg-primary/20">
                 <Package className="h-6 w-6 text-primary" />
@@ -290,7 +290,7 @@ export default function RepairCenterUtilityServices() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-muted-foreground">Commissione Media</p>
-                <p className="text-3xl font-bold text-green-600 dark:text-green-400" data-testid="stat-value-avg-commission">
+                <p className="text-2xl sm:text-3xl font-bold text-green-600 dark:text-green-400" data-testid="stat-value-avg-commission">
                   {formatCurrency(stats.avgCommission * 100)}
                 </p>
               </div>
@@ -306,7 +306,7 @@ export default function RepairCenterUtilityServices() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-muted-foreground">Commissione Max</p>
-                <p className="text-3xl font-bold text-yellow-600 dark:text-yellow-400" data-testid="stat-value-max-commission">
+                <p className="text-2xl sm:text-3xl font-bold text-yellow-600 dark:text-yellow-400" data-testid="stat-value-max-commission">
                   {formatCurrency(stats.maxCommission * 100)}
                 </p>
               </div>
@@ -322,7 +322,7 @@ export default function RepairCenterUtilityServices() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-muted-foreground">Categorie</p>
-                <p className="text-3xl font-bold text-purple-600 dark:text-purple-400" data-testid="stat-value-categories">
+                <p className="text-2xl sm:text-3xl font-bold text-purple-600 dark:text-purple-400" data-testid="stat-value-categories">
                   {stats.categoriesCount}
                 </p>
               </div>
@@ -419,16 +419,17 @@ export default function RepairCenterUtilityServices() {
               ))}
             </div>
           ) : (
+            <div className="overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow>
                   <TableHead>Codice</TableHead>
                   <TableHead>Nome</TableHead>
-                  <TableHead>Fornitore</TableHead>
-                  <TableHead>Categoria</TableHead>
-                  <TableHead>Prezzo Mensile</TableHead>
+                  <TableHead className="hidden md:table-cell">Fornitore</TableHead>
+                  <TableHead className="hidden lg:table-cell">Categoria</TableHead>
+                  <TableHead className="hidden md:table-cell">Prezzo Mensile</TableHead>
                   <TableHead>Commissione</TableHead>
-                  <TableHead>Guadagno 10 Vendite</TableHead>
+                  <TableHead className="hidden lg:table-cell">Guadagno 10 Vendite</TableHead>
                   <TableHead>Azioni</TableHead>
                 </TableRow>
               </TableHeader>
@@ -444,7 +445,7 @@ export default function RepairCenterUtilityServices() {
                       <TableCell className="font-medium">
                         {service.name}
                       </TableCell>
-                      <TableCell>
+                      <TableCell className="hidden md:table-cell">
                         {supplier ? (
                           <div className="flex flex-wrap items-center gap-1">
                             <Building2 className="h-3 w-3 text-muted-foreground" />
@@ -452,12 +453,12 @@ export default function RepairCenterUtilityServices() {
                           </div>
                         ) : "-"}
                       </TableCell>
-                      <TableCell>
+                      <TableCell className="hidden lg:table-cell">
                         <Badge className={categoryColors[service.category]}>
                           {categoryLabels[service.category]}
                         </Badge>
                       </TableCell>
-                      <TableCell>
+                      <TableCell className="hidden md:table-cell">
                         {formatCurrency(service.monthlyPriceCents)}
                       </TableCell>
                       <TableCell>
@@ -465,7 +466,7 @@ export default function RepairCenterUtilityServices() {
                           {formatCurrency(commission * 100)}
                         </span>
                       </TableCell>
-                      <TableCell>
+                      <TableCell className="hidden lg:table-cell">
                         <span className="font-semibold text-primary">
                           {formatCurrency(commission * 10 * 100)}
                         </span>
@@ -487,6 +488,7 @@ export default function RepairCenterUtilityServices() {
                 })}
               </TableBody>
             </Table>
+            </div>
           )}
         </CardContent>
       </Card>

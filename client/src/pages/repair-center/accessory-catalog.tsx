@@ -107,19 +107,19 @@ export default function RepairCenterAccessoryCatalog() {
   const cartItemCount = cart.reduce((sum, item) => sum + item.quantity, 0);
 
   return (
-    <div className="p-6 space-y-6">
-      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-500 p-6">
+    <div className="p-4 sm:p-6 space-y-4 sm:space-y-6">
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-500 p-4 sm:p-6">
         <div className="absolute -top-20 -left-20 w-80 h-80 rounded-full bg-orange-400/20 blur-3xl animate-pulse" />
         <div className="absolute bottom-0 right-0 w-64 h-64 rounded-full bg-yellow-400/20 blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
         <div className="absolute top-1/2 left-1/3 w-48 h-48 rounded-full bg-emerald-300/20 blur-3xl animate-pulse" style={{ animationDelay: '2s' }} />
         
         <div className="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div className="flex flex-wrap items-center gap-4">
-            <div className="h-14 w-14 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center shadow-xl">
-              <Package className="h-7 w-7 text-white" />
+            <div className="h-10 w-10 sm:h-14 sm:w-14 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center shadow-xl">
+              <Package className="h-5 w-5 sm:h-7 sm:w-7 text-white" />
             </div>
             <div>
-              <h1 className="text-2xl sm:text-3xl font-bold text-white tracking-tight" data-testid="text-page-title">Catalogo Accessori</h1>
+              <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-white tracking-tight" data-testid="text-page-title">Catalogo Accessori</h1>
               <p className="text-emerald-100">Accessori disponibili dal tuo rivenditore</p>
             </div>
           </div>
@@ -189,9 +189,9 @@ export default function RepairCenterAccessoryCatalog() {
                 <TableHeader>
                   <TableRow>
                     <TableHead>Prodotto</TableHead>
-                    <TableHead>Barcode</TableHead>
-                    <TableHead>Tipo</TableHead>
-                    <TableHead>Compatibilità</TableHead>
+                    <TableHead className="hidden lg:table-cell">Barcode</TableHead>
+                    <TableHead className="hidden sm:table-cell">Tipo</TableHead>
+                    <TableHead className="hidden md:table-cell">Compatibilità</TableHead>
                     <TableHead className="text-right">Prezzo B2B</TableHead>
                     <TableHead className="text-center">Disponibilità</TableHead>
                     <TableHead className="text-right">Azioni</TableHead>
@@ -222,7 +222,7 @@ export default function RepairCenterAccessoryCatalog() {
                             </div>
                           </div>
                         </TableCell>
-                        <TableCell>
+                        <TableCell className="hidden lg:table-cell">
                           <Badge variant="outline">
                         <TableCell>
                           <BarcodeDisplay value={acc.barcode || ""} size="sm" />
@@ -231,7 +231,7 @@ export default function RepairCenterAccessoryCatalog() {
                             {typeInfo.label}
                           </Badge>
                         </TableCell>
-                        <TableCell>
+                        <TableCell className="hidden md:table-cell">
                           <div className="flex flex-wrap gap-1">
                             {acc.specs?.isUniversal ? (
                               <Badge variant="secondary">Universale</Badge>

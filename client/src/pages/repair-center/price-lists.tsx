@@ -37,9 +37,9 @@ export default function RepairCenterPriceLists() {
   ) || [];
 
   return (
-    <div className="container mx-auto py-6 space-y-6">
+    <div className="container mx-auto py-4 sm:py-6 space-y-4 sm:space-y-6">
       <div>
-        <h1 className="text-2xl font-bold flex items-center gap-2" data-testid="text-page-title">
+        <h1 className="text-xl sm:text-2xl font-bold flex items-center gap-2" data-testid="text-page-title">
           <ListOrdered className="h-6 w-6 text-emerald-500" />
           Listini Prezzi
         </h1>
@@ -83,13 +83,14 @@ export default function RepairCenterPriceLists() {
               <p>Nessun listino disponibile dal reseller</p>
             </div>
           ) : (
+            <div className="overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow>
                   <TableHead>Nome</TableHead>
-                  <TableHead>Descrizione</TableHead>
+                  <TableHead className="hidden md:table-cell">Descrizione</TableHead>
                   <TableHead>Stato</TableHead>
-                  <TableHead>Data</TableHead>
+                  <TableHead className="hidden md:table-cell">Data</TableHead>
                   <TableHead className="text-right">Azioni</TableHead>
                 </TableRow>
               </TableHeader>
@@ -97,7 +98,7 @@ export default function RepairCenterPriceLists() {
                 {filteredLists.map((list) => (
                   <TableRow key={list.id} data-testid={`row-pricelist-${list.id}`}>
                     <TableCell className="font-medium">{list.name}</TableCell>
-                    <TableCell className="text-muted-foreground max-w-xs truncate">
+                    <TableCell className="hidden md:table-cell text-muted-foreground max-w-xs truncate">
                       {list.description || "-"}
                     </TableCell>
                     <TableCell>
@@ -105,7 +106,7 @@ export default function RepairCenterPriceLists() {
                         {list.isActive ? "Attivo" : "Disattivato"}
                       </Badge>
                     </TableCell>
-                    <TableCell className="text-muted-foreground">
+                    <TableCell className="hidden md:table-cell text-muted-foreground">
                       {formatDate(list.createdAt)}
                     </TableCell>
                     <TableCell className="text-right">
@@ -120,6 +121,7 @@ export default function RepairCenterPriceLists() {
                 ))}
               </TableBody>
             </Table>
+            </div>
           )}
         </CardContent>
       </Card>

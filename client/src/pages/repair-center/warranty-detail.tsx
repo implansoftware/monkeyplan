@@ -176,7 +176,7 @@ export default function RepairCenterWarrantyDetail() {
   const canDelete = warranty.status === "offered";
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <Button variant="ghost" onClick={() => navigate("/repair-center/warranties")} data-testid="button-back">
           <ArrowLeft className="h-4 w-4 mr-2" />
@@ -210,15 +210,15 @@ export default function RepairCenterWarrantyDetail() {
         </div>
       </div>
 
-      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-500 p-6">
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-500 p-4 sm:p-6">
         <div className="absolute -top-20 -left-20 w-80 h-80 rounded-full bg-orange-400/20 blur-3xl animate-pulse" />
         <div className="relative flex flex-wrap items-center justify-between gap-4">
           <div className="flex items-center gap-3">
-            <div className="h-12 w-12 rounded-2xl bg-white/20 backdrop-blur-sm border border-white/30 flex items-center justify-center">
-              <Shield className="h-6 w-6 text-white" />
+            <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-2xl bg-white/20 backdrop-blur-sm border border-white/30 flex items-center justify-center">
+              <Shield className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold tracking-tight text-white" data-testid="text-warranty-name">
+              <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-white" data-testid="text-warranty-name">
                 {warranty.productName}
               </h1>
               <p className="text-sm text-white/80">Ordine #{warranty.orderNumber}</p>
@@ -245,7 +245,7 @@ export default function RepairCenterWarrantyDetail() {
         </div>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-2">
+      <div className="grid gap-4 sm:gap-6 grid-cols-1 lg:grid-cols-2">
         <Card>
           <CardHeader>
             <CardTitle className="text-base flex items-center gap-2">

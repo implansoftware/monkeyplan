@@ -201,7 +201,7 @@ export default function PosRegisterSettingsPage() {
         </div>
       </div>
 
-      <div className="space-y-6">
+      <div className="space-y-4 sm:space-y-6">
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">

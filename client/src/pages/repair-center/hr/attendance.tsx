@@ -183,19 +183,19 @@ export default function RepairCenterHrAttendance() {
   };
 
   return (
-    <div className="space-y-6" data-testid="page-rc-hr-attendance">
-      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-500 p-6">
+    <div className="space-y-4 sm:space-y-6" data-testid="page-rc-hr-attendance">
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-500 p-4 sm:p-6">
         <div className="absolute -top-20 -left-20 w-80 h-80 rounded-full bg-orange-400/20 blur-3xl animate-pulse" />
         <div className="absolute bottom-0 right-0 w-64 h-64 rounded-full bg-yellow-400/20 blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
         <div className="absolute top-1/2 left-1/3 w-48 h-48 rounded-full bg-emerald-300/20 blur-3xl animate-pulse" style={{ animationDelay: '2s' }} />
         
         <div className="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div className="flex flex-wrap items-center gap-4">
-            <div className="h-14 w-14 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center shadow-xl">
-              <Clock className="h-7 w-7 text-white" />
+            <div className="h-10 w-10 sm:h-14 sm:w-14 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center shadow-xl">
+              <Clock className="h-5 w-5 sm:h-7 sm:w-7 text-white" />
             </div>
             <div>
-              <h1 className="text-2xl sm:text-3xl font-bold text-white tracking-tight">Presenze</h1>
+              <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-white tracking-tight">Presenze</h1>
               <p className="text-emerald-100">Timbrature e registrazione orari</p>
             </div>
           </div>
@@ -267,7 +267,7 @@ export default function RepairCenterHrAttendance() {
             </Button>
             <Popover open={datePickerOpen} onOpenChange={setDatePickerOpen}>
               <PopoverTrigger asChild>
-                <Button variant="outline" className="min-w-[200px] justify-start text-left font-normal" data-testid="button-date-picker">
+                <Button variant="outline" className="min-w-0 justify-start text-left font-normal" data-testid="button-date-picker">
                   <CalendarIcon className="mr-2 h-4 w-4" />
                   {format(selectedDate, "EEEE d MMMM yyyy", { locale: it })}
                 </Button>
@@ -310,14 +310,15 @@ export default function RepairCenterHrAttendance() {
               <p>{isToday ? "Nessuna timbratura registrata oggi" : `Nessuna timbratura per il ${format(selectedDate, "d MMMM yyyy", { locale: it })}`}</p>
             </div>
           ) : (
+            <div className="overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow>
                   <TableHead>Dipendente</TableHead>
                   <TableHead>Tipo</TableHead>
                   <TableHead>Orario</TableHead>
-                  <TableHead>Posizione</TableHead>
-                  <TableHead>Note</TableHead>
+                  <TableHead className="hidden sm:table-cell">Posizione</TableHead>
+                  <TableHead className="hidden md:table-cell">Note</TableHead>
                   <TableHead className="w-[80px]">Azioni</TableHead>
                 </TableRow>
               </TableHeader>
@@ -335,7 +336,7 @@ export default function RepairCenterHrAttendance() {
                         </Badge>
                       </TableCell>
                       <TableCell>{format(new Date(event.eventTime), "HH:mm", { locale: it })}</TableCell>
-                      <TableCell>
+                      <TableCell className="hidden sm:table-cell">
                         {event.latitude && event.longitude ? (
                           <Badge variant="secondary" className="gap-1">
                             <MapPin className="h-3 w-3" />
@@ -345,7 +346,7 @@ export default function RepairCenterHrAttendance() {
                           <span className="text-muted-foreground">-</span>
                         )}
                       </TableCell>
-                      <TableCell className="text-muted-foreground">{event.notes || "-"}</TableCell>
+                      <TableCell className="hidden md:table-cell text-muted-foreground">{event.notes || "-"}</TableCell>
                       <TableCell>
                         <Button size="icon" variant="ghost" onClick={() => openEditDialog(event)} data-testid={`button-edit-clock-${event.id}`}>
                           <Pencil className="h-4 w-4" />
@@ -356,6 +357,7 @@ export default function RepairCenterHrAttendance() {
                 })}
               </TableBody>
             </Table>
+            </div>
           )}
         </CardContent>
       </Card>

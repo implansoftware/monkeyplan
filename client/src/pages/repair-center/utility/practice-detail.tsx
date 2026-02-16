@@ -329,7 +329,7 @@ export default function RepairCenterUtilityPracticeDetail() {
 
   if (isLoading) {
     return (
-      <div className="p-6 space-y-6">
+      <div className="p-4 sm:p-6 space-y-4 sm:space-y-6">
         <Skeleton className="h-10 w-48" />
         <Skeleton className="h-64 w-full" />
       </div>
@@ -338,7 +338,7 @@ export default function RepairCenterUtilityPracticeDetail() {
 
   if (!practice) {
     return (
-      <div className="p-6">
+      <div className="p-4 sm:p-6">
         <div className="text-center py-12">
           <AlertCircle className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
           <h2 className="text-xl font-semibold mb-2">Pratica non trovata</h2>
@@ -354,8 +354,8 @@ export default function RepairCenterUtilityPracticeDetail() {
   const totalTasks = tasks.length;
 
   return (
-    <div className="p-6 space-y-6">
-      <div className="flex items-center justify-between gap-4">
+    <div className="p-4 sm:p-6 space-y-4 sm:space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex flex-wrap items-center gap-4">
           <Link href="/repair-center/utility/practices">
             <Button variant="ghost" size="icon" data-testid="button-back">
@@ -363,7 +363,7 @@ export default function RepairCenterUtilityPracticeDetail() {
             </Button>
           </Link>
           <div>
-            <h1 className="text-2xl font-bold" data-testid="text-practice-number">{practice.practiceNumber}</h1>
+            <h1 className="text-xl sm:text-2xl font-bold" data-testid="text-practice-number">{practice.practiceNumber}</h1>
             <p className="text-muted-foreground">
               {practice.itemType === "product" 
                 ? product?.name || "Prodotto" 
@@ -390,7 +390,7 @@ export default function RepairCenterUtilityPracticeDetail() {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-        <TabsList className="grid w-full grid-cols-5" data-testid="tabs-practice">
+        <TabsList className="grid w-full grid-cols-2 sm:grid-cols-5" data-testid="tabs-practice">
           <TabsTrigger value="panoramica" className="flex flex-wrap items-center gap-2" data-testid="tab-panoramica">
             <FileText className="h-4 w-4" />
             Panoramica

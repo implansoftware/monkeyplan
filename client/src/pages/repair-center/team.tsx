@@ -185,19 +185,19 @@ export default function RepairCenterTeam() {
   };
 
   return (
-    <div className="p-6 space-y-6">
-      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-500 p-6">
+    <div className="p-6 space-y-4 sm:space-y-6">
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-500 p-4 sm:p-6">
         <div className="absolute -top-20 -left-20 w-80 h-80 rounded-full bg-orange-400/20 blur-3xl animate-pulse" />
         <div className="absolute bottom-0 right-0 w-64 h-64 rounded-full bg-yellow-400/20 blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
         <div className="absolute top-1/2 left-1/3 w-48 h-48 rounded-full bg-emerald-300/20 blur-3xl animate-pulse" style={{ animationDelay: '2s' }} />
         
         <div className="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div className="flex flex-wrap items-center gap-4">
-            <div className="h-14 w-14 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center shadow-xl">
-              <Users className="h-7 w-7 text-white" />
+            <div className="h-10 w-10 sm:h-14 sm:w-14 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center shadow-xl">
+              <Users className="h-5 w-5 sm:h-7 sm:w-7 text-white" />
             </div>
             <div>
-              <h1 className="text-2xl sm:text-3xl font-bold text-white tracking-tight" data-testid="text-page-title">Team</h1>
+              <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-white tracking-tight" data-testid="text-page-title">Team</h1>
               <p className="text-emerald-100">Gestisci i membri del tuo team</p>
             </div>
           </div>
@@ -254,14 +254,14 @@ export default function RepairCenterTeam() {
 
       <Card>
         <CardHeader>
-          <div className="flex items-center justify-between gap-4">
+          <div className="flex flex-wrap items-center justify-between gap-4">
             <div>
               <CardTitle>Membri del Team</CardTitle>
               <CardDescription>
                 {activeFilter === "all" ? "Tutti i membri" : activeFilter === "active" ? "Solo attivi" : "Solo inattivi"}
               </CardDescription>
             </div>
-            <div className="relative w-72">
+            <div className="relative w-full sm:w-72">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 placeholder="Cerca membri..."
@@ -286,15 +286,16 @@ export default function RepairCenterTeam() {
               <p className="text-muted-foreground">Nessun membro trovato</p>
             </div>
           ) : (
+            <div className="overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow>
                   <TableHead>Nome</TableHead>
                   <TableHead>Username</TableHead>
-                  <TableHead>Email</TableHead>
-                  <TableHead>Telefono</TableHead>
+                  <TableHead className="hidden md:table-cell">Email</TableHead>
+                  <TableHead className="hidden lg:table-cell">Telefono</TableHead>
                   <TableHead>Stato</TableHead>
-                  <TableHead>Data Creazione</TableHead>
+                  <TableHead className="hidden md:table-cell">Data Creazione</TableHead>
                   <TableHead className="text-right">Azioni</TableHead>
                 </TableRow>
               </TableHeader>
@@ -314,8 +315,8 @@ export default function RepairCenterTeam() {
                         </div>
                       </TableCell>
                       <TableCell>{member.username}</TableCell>
-                      <TableCell>{member.email}</TableCell>
-                      <TableCell>{member.phone || "-"}</TableCell>
+                      <TableCell className="hidden md:table-cell">{member.email}</TableCell>
+                      <TableCell className="hidden lg:table-cell">{member.phone || "-"}</TableCell>
                       <TableCell>
                         <div className="flex flex-wrap items-center gap-2">
                           <Switch
@@ -331,7 +332,7 @@ export default function RepairCenterTeam() {
                           </Badge>
                         </div>
                       </TableCell>
-                      <TableCell>{format(new Date(member.createdAt), "dd/MM/yyyy")}</TableCell>
+                      <TableCell className="hidden md:table-cell">{format(new Date(member.createdAt), "dd/MM/yyyy")}</TableCell>
                       <TableCell className="text-right">
                         <div className="flex items-center justify-end gap-1">
                           {!isOwner && (
@@ -375,6 +376,7 @@ export default function RepairCenterTeam() {
                 })}
               </TableBody>
             </Table>
+            </div>
           )}
         </CardContent>
       </Card>

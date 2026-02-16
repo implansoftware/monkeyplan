@@ -92,20 +92,20 @@ export default function RepairCenterB2BReturns() {
   };
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-6 space-y-4 sm:space-y-6">
       {/* Hero Header */}
-      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-500 p-6">
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-500 p-4 sm:p-6">
         <div className="absolute -top-20 -left-20 w-80 h-80 rounded-full bg-orange-400/20 blur-3xl animate-pulse" />
         <div className="absolute bottom-0 right-0 w-64 h-64 rounded-full bg-yellow-400/20 blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
         <div className="absolute top-1/2 left-1/3 w-48 h-48 rounded-full bg-emerald-300/20 blur-3xl animate-pulse" style={{ animationDelay: '2s' }} />
         
         <div className="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div className="flex flex-wrap items-center gap-4">
-            <div className="h-14 w-14 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center shadow-xl">
-              <RotateCcw className="h-7 w-7 text-white" />
+            <div className="h-10 w-10 sm:h-14 sm:w-14 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center shadow-xl">
+              <RotateCcw className="h-5 w-5 sm:h-7 sm:w-7 text-white" />
             </div>
             <div>
-              <h1 className="text-2xl sm:text-3xl font-bold text-white tracking-tight" data-testid="text-page-title">Resi B2B</h1>
+              <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-white tracking-tight" data-testid="text-page-title">Resi B2B</h1>
               <p className="text-emerald-100">Gestisci i resi dei tuoi ordini B2B</p>
             </div>
           </div>
@@ -127,7 +127,7 @@ export default function RepairCenterB2BReturns() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <Card>
           <CardContent className="pt-6">
             <div className="flex flex-wrap items-center gap-4">
@@ -186,7 +186,7 @@ export default function RepairCenterB2BReturns() {
         <CardHeader className="pb-3">
           <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
             <CardTitle className="text-lg">Elenco Resi</CardTitle>
-            <div className="flex gap-4 w-full md:w-auto">
+            <div className="flex flex-wrap gap-2 w-full md:w-auto">
               <div className="relative flex-1 md:w-60">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
@@ -230,13 +230,14 @@ export default function RepairCenterB2BReturns() {
             </div>
           ) : (
             <ScrollArea className="h-[400px]">
+              <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
                   <TableRow>
                     <TableHead>Numero Reso</TableHead>
-                    <TableHead>Data Richiesta</TableHead>
-                    <TableHead>Motivo</TableHead>
-                    <TableHead className="text-right">Importo</TableHead>
+                    <TableHead className="hidden md:table-cell">Data Richiesta</TableHead>
+                    <TableHead className="hidden lg:table-cell">Motivo</TableHead>
+                    <TableHead className="text-right hidden md:table-cell">Importo</TableHead>
                     <TableHead className="text-center">Stato</TableHead>
                     <TableHead className="text-right">Azioni</TableHead>
                   </TableRow>
@@ -248,9 +249,9 @@ export default function RepairCenterB2BReturns() {
                     return (
                       <TableRow key={ret.id} data-testid={`row-return-${ret.id}`}>
                         <TableCell className="font-medium">{ret.returnNumber}</TableCell>
-                        <TableCell>{formatDate(ret.requestedAt)}</TableCell>
-                        <TableCell>{reasonLabels[ret.reason] || ret.reason}</TableCell>
-                        <TableCell className="text-right font-medium">{formatCurrency(ret.totalAmount)}</TableCell>
+                        <TableCell className="hidden md:table-cell">{formatDate(ret.requestedAt)}</TableCell>
+                        <TableCell className="hidden lg:table-cell">{reasonLabels[ret.reason] || ret.reason}</TableCell>
+                        <TableCell className="text-right font-medium hidden md:table-cell">{formatCurrency(ret.totalAmount)}</TableCell>
                         <TableCell className="text-center">
                           <Badge className={status.color}>
                             <StatusIcon className="h-3 w-3 mr-1" />
@@ -291,6 +292,7 @@ export default function RepairCenterB2BReturns() {
                   })}
                 </TableBody>
               </Table>
+              </div>
             </ScrollArea>
           )}
         </CardContent>

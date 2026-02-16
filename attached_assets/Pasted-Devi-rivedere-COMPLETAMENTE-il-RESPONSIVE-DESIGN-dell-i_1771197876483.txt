@@ -1,0 +1,84 @@
+Devi rivedere COMPLETAMENTE il RESPONSIVE DESIGN dell’intero software, migliorando esclusivamente l’aspetto grafico e l’esperienza responsive su:
+
+- Desktop
+- Laptop
+- Tablet
+- Smartphone
+
+ATTENZIONE CRITICA:
+❌ NON modificare logica
+❌ NON modificare API
+❌ NON modificare funzioni
+❌ NON modificare backend
+❌ NON modificare stato, hooks o flussi
+❌ NON rinominare variabili
+❌ NON alterare routing
+❌ NON toccare validazioni o business logic
+
+Devi intervenire SOLO su:
+- Layout
+- Spaziature
+- Breakpoints
+- Gerarchie visive
+- Allineamenti
+- Dimensioni componenti
+- Ottimizzazione mobile
+- UX responsive
+- Miglioramento leggibilità
+- Coerenza design system
+
+Il software è multi-ruolo e devi revisionare TUTTE le pagine di:
+
+- Admin
+- Aziende
+- Collaboratori
+- Clienti finali
+- Eventuali ruoli secondari
+
+Per OGNI pagina:
+1. Analizza struttura attuale
+2. Migliora la distribuzione responsive
+3. Rendi il layout fluido e professionale
+4. Ottimizza sidebar, navbar, tabelle, card, form e dashboard
+5. Migliora la resa mobile delle tabelle (stack, scroll intelligente o trasformazione in card)
+6. Rendi coerente tipografia, padding, margini e spaziature
+7. Mantieni lo stile attuale ma rendilo più moderno e SaaS-level
+
+LINEE GUIDA TECNICHE:
+
+- Usa Tailwind in modo professionale
+- Ottimizza breakpoint (sm, md, lg, xl, 2xl)
+- Evita overflow orizzontali
+- Riduci scroll inutili
+- Mantieni performance elevate
+- Migliora usabilità touch su mobile
+- Sidebar collapsable su tablet/mobile
+- Header adattivo
+- Bottoni full-width su mobile dove necessario
+- Tabelle trasformate in layout verticale su mobile
+- Migliora gestione modali su schermi piccoli
+
+Se necessario:
+- Crea wrapper responsive
+- Uniforma container max-width
+- Applica griglie fluide (grid-cols responsive)
+- Rendi dashboard adattive
+
+PRIMA DI APPORTARE MODIFICHE:
+Fornisci un piano sintetico delle migliorie che applicherai.
+
+POI:
+Procedi pagina per pagina.
+
+NON interrompere finché non hai revisionato tutte le pagine del progetto.
+
+Output richiesto:
+- Codice aggiornato SOLO per le parti modificate
+- Nessuna spiegazione teorica
+- Nessuna modifica fuori dallo scope design
+
+Il risultato finale deve sembrare un SaaS enterprise moderno, pulito, professionale e perfettamente responsive.
+
+Lavora un file alla volta.
+Mostrami prima le modifiche proposte.
+Procedi solo dopo conferma.

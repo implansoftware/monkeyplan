@@ -84,19 +84,19 @@ export default function SalesHistoryPage() {
   }
 
   return (
-    <div className="space-y-6 p-6">
-      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-500 p-6">
+    <div className="space-y-4 sm:space-y-6 p-6">
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-500 p-4 sm:p-6">
         <div className="absolute -top-20 -left-20 w-80 h-80 rounded-full bg-orange-400/20 blur-3xl animate-pulse" />
         <div className="absolute bottom-0 right-0 w-64 h-64 rounded-full bg-yellow-400/20 blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
         <div className="absolute top-1/2 left-1/3 w-48 h-48 rounded-full bg-emerald-300/20 blur-3xl animate-pulse" style={{ animationDelay: '2s' }} />
         
         <div className="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div className="flex flex-wrap items-center gap-4">
-            <div className="h-14 w-14 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center shadow-xl">
-              <FileText className="h-7 w-7 text-white" />
+            <div className="h-10 w-10 sm:h-14 sm:w-14 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center shadow-xl">
+              <FileText className="h-5 w-5 sm:h-7 sm:w-7 text-white" />
             </div>
             <div>
-              <h1 className="text-2xl sm:text-3xl font-bold text-white tracking-tight">Fatture POS</h1>
+              <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-white tracking-tight">Fatture POS</h1>
               <p className="text-emerald-100">Tutte le transazioni effettuate dal POS</p>
             </div>
           </div>
@@ -156,9 +156,9 @@ export default function SalesHistoryPage() {
                   <TableRow>
                     <TableHead>Numero</TableHead>
                     <TableHead>Data</TableHead>
-                    <TableHead>Cassa</TableHead>
-                    <TableHead>Articoli</TableHead>
-                    <TableHead>Pagamento</TableHead>
+                    <TableHead className="hidden md:table-cell">Cassa</TableHead>
+                    <TableHead className="hidden lg:table-cell">Articoli</TableHead>
+                    <TableHead className="hidden md:table-cell">Pagamento</TableHead>
                     <TableHead>Importo</TableHead>
                     <TableHead>Stato</TableHead>
                     <TableHead className="text-right">Azioni</TableHead>
@@ -171,7 +171,7 @@ export default function SalesHistoryPage() {
                       <TableCell>
                         {format(new Date(tx.createdAt), "dd MMM yyyy, HH:mm", { locale: it })}
                       </TableCell>
-                      <TableCell>
+                      <TableCell className="hidden md:table-cell">
                         {tx.registerName ? (
                           <div className="flex flex-wrap items-center gap-1">
                             <Store className="h-3.5 w-3.5 text-muted-foreground" />
@@ -181,13 +181,13 @@ export default function SalesHistoryPage() {
                           <span className="text-muted-foreground">-</span>
                         )}
                       </TableCell>
-                      <TableCell>
+                      <TableCell className="hidden lg:table-cell">
                         <div className="flex flex-wrap items-center gap-1">
                           <Package className="h-3.5 w-3.5 text-muted-foreground" />
                           <span>{tx.itemCount}</span>
                         </div>
                       </TableCell>
-                      <TableCell>
+                      <TableCell className="hidden md:table-cell">
                         <Badge variant="outline" className="font-normal">
                           {getPaymentMethodLabel(tx.paymentMethod)}
                         </Badge>

@@ -139,19 +139,19 @@ export default function RepairCenterHrSickLeave() {
   };
 
   return (
-    <div className="space-y-6" data-testid="page-rc-hr-sick-leave">
-      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-500 p-6">
+    <div className="space-y-4 sm:space-y-6" data-testid="page-rc-hr-sick-leave">
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-500 p-4 sm:p-6">
         <div className="absolute -top-20 -left-20 w-80 h-80 rounded-full bg-orange-400/20 blur-3xl animate-pulse" />
         <div className="absolute bottom-0 right-0 w-64 h-64 rounded-full bg-yellow-400/20 blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
         <div className="absolute top-1/2 left-1/3 w-48 h-48 rounded-full bg-emerald-300/20 blur-3xl animate-pulse" style={{ animationDelay: '2s' }} />
         
         <div className="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div className="flex flex-wrap items-center gap-4">
-            <div className="h-14 w-14 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center shadow-xl">
-              <HeartPulse className="h-7 w-7 text-white" />
+            <div className="h-10 w-10 sm:h-14 sm:w-14 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center shadow-xl">
+              <HeartPulse className="h-5 w-5 sm:h-7 sm:w-7 text-white" />
             </div>
             <div>
-              <h1 className="text-2xl sm:text-3xl font-bold text-white tracking-tight">Malattia</h1>
+              <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-white tracking-tight">Malattia</h1>
               <p className="text-emerald-100">Certificati e assenze per malattia</p>
             </div>
           </div>
@@ -184,15 +184,16 @@ export default function RepairCenterHrSickLeave() {
               Nessuna malattia registrata
             </div>
           ) : (
+            <div className="overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow>
                   <TableHead>Dipendente</TableHead>
                   <TableHead>Data Inizio</TableHead>
-                  <TableHead>Data Fine</TableHead>
-                  <TableHead>N. Certificato</TableHead>
+                  <TableHead className="hidden sm:table-cell">Data Fine</TableHead>
+                  <TableHead className="hidden md:table-cell">N. Certificato</TableHead>
                   <TableHead>Certificato</TableHead>
-                  <TableHead>Note</TableHead>
+                  <TableHead className="hidden md:table-cell">Note</TableHead>
                   <TableHead>Azioni</TableHead>
                 </TableRow>
               </TableHeader>
@@ -201,8 +202,8 @@ export default function RepairCenterHrSickLeave() {
                   <TableRow key={sickLeave.id}>
                     <TableCell className="font-medium">{sickLeave.user?.fullName || "N/A"}</TableCell>
                     <TableCell>{format(new Date(sickLeave.startDate), "dd/MM/yyyy", { locale: it })}</TableCell>
-                    <TableCell>{sickLeave.endDate ? format(new Date(sickLeave.endDate), "dd/MM/yyyy", { locale: it }) : "-"}</TableCell>
-                    <TableCell>{sickLeave.protocolNumber || "-"}</TableCell>
+                    <TableCell className="hidden sm:table-cell">{sickLeave.endDate ? format(new Date(sickLeave.endDate), "dd/MM/yyyy", { locale: it }) : "-"}</TableCell>
+                    <TableCell className="hidden md:table-cell">{sickLeave.protocolNumber || "-"}</TableCell>
                     <TableCell>
                       {sickLeave.certificate ? (
                         <Button size="sm" variant="ghost" asChild>
@@ -217,7 +218,7 @@ export default function RepairCenterHrSickLeave() {
                         </Button>
                       )}
                     </TableCell>
-                    <TableCell className="text-muted-foreground max-w-[200px] truncate">{sickLeave.notes || "-"}</TableCell>
+                    <TableCell className="hidden md:table-cell text-muted-foreground max-w-[200px] truncate">{sickLeave.notes || "-"}</TableCell>
                     <TableCell>
                       {sickLeave.status === 'pending' && (
                         <Button size="sm" variant="ghost" onClick={() => openEditDialog(sickLeave)} data-testid={`button-edit-sick-${sickLeave.id}`}>
@@ -229,6 +230,7 @@ export default function RepairCenterHrSickLeave() {
                 ))}
               </TableBody>
             </Table>
+            </div>
           )}
         </CardContent>
       </Card>

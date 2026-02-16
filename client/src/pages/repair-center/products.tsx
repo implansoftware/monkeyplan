@@ -72,20 +72,20 @@ export default function RepairCenterProductsPage() {
   }
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-6 space-y-4 sm:space-y-6">
       {/* Hero Header */}
-      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-500 p-6">
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-500 p-4 sm:p-6">
         <div className="absolute -top-20 -left-20 w-80 h-80 rounded-full bg-orange-400/20 blur-3xl animate-pulse" />
         <div className="absolute bottom-0 right-0 w-64 h-64 rounded-full bg-yellow-400/20 blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
         <div className="absolute top-1/2 left-1/3 w-48 h-48 rounded-full bg-emerald-300/20 blur-3xl animate-pulse" style={{ animationDelay: '2s' }} />
         
         <div className="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div className="flex flex-wrap items-center gap-4">
-            <div className="h-14 w-14 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center shadow-xl">
-              <Package className="h-7 w-7 text-white" />
+            <div className="h-10 w-10 sm:h-14 sm:w-14 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center shadow-xl">
+              <Package className="h-5 w-5 sm:h-7 sm:w-7 text-white" />
             </div>
             <div>
-              <h1 className="text-2xl sm:text-3xl font-bold text-white tracking-tight" data-testid="text-products-title">Prodotti</h1>
+              <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-white tracking-tight" data-testid="text-products-title">Prodotti</h1>
               <p className="text-emerald-100">Visualizza i ricambi disponibili e il tuo stock</p>
             </div>
           </div>
@@ -134,8 +134,8 @@ export default function RepairCenterProductsPage() {
         </Card>
       </div>
 
-      <div className="flex flex-wrap items-center gap-4">
-        <div className="relative flex-1 min-w-[200px] max-w-sm">
+      <div className="flex flex-wrap items-center gap-2">
+        <div className="relative flex-1 min-w-0 max-w-sm">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
             placeholder="Cerca per nome, SKU o marca..."
@@ -166,9 +166,9 @@ export default function RepairCenterProductsPage() {
               <thead className="border-b">
                 <tr>
                   <th className="text-left p-4 font-medium">Prodotto</th>
-                  <th className="text-left p-4 font-medium">SKU</th>
-                  <th className="text-left p-4 font-medium">Categoria</th>
-                  <th className="text-left p-4 font-medium">Marca</th>
+                  <th className="text-left p-4 font-medium hidden md:table-cell">SKU</th>
+                  <th className="text-left p-4 font-medium hidden lg:table-cell">Categoria</th>
+                  <th className="text-left p-4 font-medium hidden lg:table-cell">Marca</th>
                   <th className="text-right p-4 font-medium">Mio Stock</th>
                   <th className="text-right p-4 font-medium">Prezzo</th>
                   <th className="text-center p-4 font-medium">Azioni</th>
@@ -200,11 +200,11 @@ export default function RepairCenterProductsPage() {
                           <span className="font-medium">{product.name}</span>
                         </div>
                       </td>
-                      <td className="p-4 text-muted-foreground">{product.sku}</td>
-                      <td className="p-4">
+                      <td className="p-4 text-muted-foreground hidden md:table-cell">{product.sku}</td>
+                      <td className="p-4 hidden lg:table-cell">
                         <Badge variant="outline">{product.category || "N/D"}</Badge>
                       </td>
-                      <td className="p-4 text-muted-foreground">{product.brand || "-"}</td>
+                      <td className="p-4 text-muted-foreground hidden lg:table-cell">{product.brand || "-"}</td>
                       <td className="p-4 text-right">
                         <Badge variant={product.myStock && product.myStock > 0 ? "default" : "secondary"}>
                           {product.myStock || 0}

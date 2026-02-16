@@ -204,19 +204,19 @@ export default function RepairCenterRepairs() {
   }).length;
 
   return (
-    <div className="space-y-6" data-testid="page-repair-center-repairs">
-      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-500 p-6">
+    <div className="space-y-4 sm:space-y-6" data-testid="page-repair-center-repairs">
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-500 p-4 sm:p-6">
         <div className="absolute -top-20 -left-20 w-80 h-80 rounded-full bg-orange-400/20 blur-3xl animate-pulse" />
         <div className="absolute bottom-0 right-0 w-64 h-64 rounded-full bg-yellow-400/20 blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
         <div className="absolute top-1/2 left-1/3 w-48 h-48 rounded-full bg-emerald-300/20 blur-3xl animate-pulse" style={{ animationDelay: '2s' }} />
         
         <div className="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div className="flex flex-wrap items-center gap-4">
-            <div className="h-14 w-14 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center shadow-xl">
-              <Wrench className="h-7 w-7 text-white" />
+            <div className="h-10 w-10 sm:h-14 sm:w-14 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center shadow-xl">
+              <Wrench className="h-5 w-5 sm:h-7 sm:w-7 text-white" />
             </div>
             <div>
-              <h1 className="text-2xl sm:text-3xl font-bold text-white tracking-tight">Riparazioni</h1>
+              <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-white tracking-tight">Riparazioni</h1>
               <p className="text-emerald-100">Gestisci tutte le riparazioni assegnate al tuo centro</p>
             </div>
           </div>
@@ -253,7 +253,7 @@ export default function RepairCenterRepairs() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1">Totale Lavorazioni</p>
-                <p className="text-3xl font-bold tabular-nums">{totalRepairs}</p>
+                <p className="text-2xl sm:text-3xl font-bold tabular-nums">{totalRepairs}</p>
                 <p className="text-xs text-muted-foreground mt-1">
                   {repairs.length > 0 ? `Pagina ${page}/${totalPages}` : 'Nessun filtro'}
                 </p>
@@ -271,7 +271,7 @@ export default function RepairCenterRepairs() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1">In Lavorazione</p>
-                <p className="text-3xl font-bold tabular-nums text-blue-600 dark:text-blue-400">{inProgressRepairs}</p>
+                <p className="text-2xl sm:text-3xl font-bold tabular-nums text-blue-600 dark:text-blue-400">{inProgressRepairs}</p>
                 <p className="text-xs text-muted-foreground mt-1">
                   Diagnosi, riparazione, test
                 </p>
@@ -289,7 +289,7 @@ export default function RepairCenterRepairs() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1">Pronte Ritiro</p>
-                <p className="text-3xl font-bold tabular-nums text-amber-600 dark:text-amber-400">{readyForPickup}</p>
+                <p className="text-2xl sm:text-3xl font-bold tabular-nums text-amber-600 dark:text-amber-400">{readyForPickup}</p>
                 <p className="text-xs text-muted-foreground mt-1">
                   In attesa del cliente
                 </p>
@@ -307,7 +307,7 @@ export default function RepairCenterRepairs() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1">Consegnate Oggi</p>
-                <p className="text-3xl font-bold tabular-nums text-emerald-600 dark:text-emerald-400">{completedToday}</p>
+                <p className="text-2xl sm:text-3xl font-bold tabular-nums text-emerald-600 dark:text-emerald-400">{completedToday}</p>
                 <p className="text-xs text-muted-foreground mt-1">
                   Riparazioni completate
                 </p>
@@ -323,7 +323,7 @@ export default function RepairCenterRepairs() {
       <Card>
         <CardHeader>
           <div className="flex flex-col sm:flex-row gap-4 flex-wrap">
-            <div className="flex-1 relative min-w-[200px]">
+            <div className="flex-1 relative min-w-0">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 placeholder="Cerca lavorazione..."
@@ -399,7 +399,7 @@ export default function RepairCenterRepairs() {
             </Select>
             <Popover>
               <PopoverTrigger asChild>
-                <Button variant="outline" className="w-full sm:w-64" data-testid="button-date-range">
+                <Button variant="outline" className="w-full sm:w-auto" data-testid="button-date-range">
                   <CalendarIcon className="mr-2 h-4 w-4" />
                   {dateRange?.from ? (
                     dateRange.to ? (
@@ -445,15 +445,16 @@ export default function RepairCenterRepairs() {
               <p>Nessuna lavorazione trovata</p>
             </div>
           ) : (
+            <div className="overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow>
                   <TableHead>Ordine</TableHead>
-                  <TableHead>Cliente</TableHead>
+                  <TableHead className="hidden sm:table-cell">Cliente</TableHead>
                   <TableHead>Dispositivo</TableHead>
                   <TableHead>Stato</TableHead>
-                  <TableHead>SLA</TableHead>
-                  <TableHead>Data</TableHead>
+                  <TableHead className="hidden md:table-cell">SLA</TableHead>
+                  <TableHead className="hidden lg:table-cell">Data</TableHead>
                   <TableHead className="text-right">Azioni</TableHead>
                 </TableRow>
               </TableHeader>
@@ -470,7 +471,7 @@ export default function RepairCenterRepairs() {
                     <TableCell className="font-mono font-medium">
                       {repair.orderNumber}
                     </TableCell>
-                    <TableCell className="max-w-[150px]">
+                    <TableCell className="hidden sm:table-cell max-w-[150px]">
                       <span className="truncate block" title={repair.customerName || "—"}>
                         {repair.customerName || "—"}
                       </span>
@@ -484,7 +485,7 @@ export default function RepairCenterRepairs() {
                     <TableCell>
                       {getStatusBadge(repair.status)}
                     </TableCell>
-                    <TableCell>
+                    <TableCell className="hidden md:table-cell">
                       {repair.slaSeverity && (
                         <Tooltip>
                           <TooltipTrigger asChild>
@@ -522,7 +523,7 @@ export default function RepairCenterRepairs() {
                         </Tooltip>
                       )}
                     </TableCell>
-                    <TableCell className="text-sm text-muted-foreground">
+                    <TableCell className="hidden lg:table-cell text-sm text-muted-foreground">
                       {formatDistanceToNow(new Date(repair.createdAt), { addSuffix: true, locale: it })}
                     </TableCell>
                     <TableCell>
@@ -552,10 +553,11 @@ export default function RepairCenterRepairs() {
                 ))}
               </TableBody>
             </Table>
+            </div>
           )}
         </CardContent>
         {viewMode === "table" && totalPages > 1 && (
-          <CardFooter className="flex items-center justify-between border-t pt-4">
+          <CardFooter className="flex flex-col sm:flex-row items-center justify-between gap-2 border-t pt-4">
             <div className="text-sm text-muted-foreground">
               Pagina {page} di {totalPages} ({total} risultati)
             </div>
