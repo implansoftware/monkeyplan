@@ -47822,8 +47822,8 @@ export function registerRoutes(app: Express): Server {
             id: r.id,
             name: r.fullName || r.username || `Reseller ${r.id}`,
             type: "reseller" as const,
-            aiEnabled: setting?.value === "true",
-            allowSubResellers: subSetting?.value === "true",
+            aiEnabled: setting?.settingValue === "true",
+            allowSubResellers: subSetting?.settingValue === "true",
           };
         })
       );
@@ -47835,7 +47835,7 @@ export function registerRoutes(app: Express): Server {
             id: rc.id,
             name: rc.ragioneSociale || rc.name || `Centro ${rc.id}`,
             type: "repair_center" as const,
-            aiEnabled: setting?.value === "true",
+            aiEnabled: setting?.settingValue === "true",
           };
         })
       );
@@ -47859,7 +47859,7 @@ export function registerRoutes(app: Express): Server {
         const resellerId = req.user.resellerId;
         if (!resellerId) return res.json({ enabled: false });
         const setting = await storage.getResellerSetting(resellerId, "ai_enabled");
-        return res.json({ enabled: setting?.value === "true" });
+        return res.json({ enabled: setting?.settingValue === "true" });
       }
       
       if (req.user.role === "sub_reseller") {
@@ -47870,17 +47870,17 @@ export function registerRoutes(app: Express): Server {
         if (reseller && reseller.parentResellerId) {
           const parentSetting = await storage.getResellerSetting(reseller.parentResellerId, "ai_sub_resellers_enabled");
           const parentEnabled = await storage.getResellerSetting(reseller.parentResellerId, "ai_enabled");
-          return res.json({ enabled: parentEnabled?.value === "true" && parentSetting?.value === "true" });
+          return res.json({ enabled: parentEnabled?.settingValue === "true" && parentSetting?.settingValue === "true" });
         }
         const setting = await storage.getResellerSetting(resellerId, "ai_enabled");
-        return res.json({ enabled: setting?.value === "true" });
+        return res.json({ enabled: setting?.settingValue === "true" });
       }
       
       if (req.user.role === "repair_center" || req.user.role === "repair_center_staff") {
         const rcId = req.user.repairCenterId;
         if (!rcId) return res.json({ enabled: false });
         const setting = await storage.getRepairCenterSetting(rcId, "ai_enabled");
-        return res.json({ enabled: setting?.value === "true" });
+        return res.json({ enabled: setting?.settingValue === "true" });
       }
       
       return res.json({ enabled: false });
@@ -47900,7 +47900,7 @@ export function registerRoutes(app: Express): Server {
         hasAccess = true;
       } else if (req.user.role === "reseller" || req.user.role === "reseller_collaborator" || req.user.role === "reseller_staff") {
         const setting = req.user.resellerId ? await storage.getResellerSetting(req.user.resellerId, "ai_enabled") : null;
-        hasAccess = setting?.value === "true";
+        hasAccess = setting?.settingValue === "true";
       } else if (req.user.role === "sub_reseller") {
         const resellerId = req.user.resellerId;
         if (resellerId) {
@@ -47908,15 +47908,15 @@ export function registerRoutes(app: Express): Server {
           if (reseller && reseller.parentResellerId) {
             const parentSetting = await storage.getResellerSetting(reseller.parentResellerId, "ai_sub_resellers_enabled");
             const parentEnabled = await storage.getResellerSetting(reseller.parentResellerId, "ai_enabled");
-            hasAccess = parentEnabled?.value === "true" && parentSetting?.value === "true";
+            hasAccess = parentEnabled?.settingValue === "true" && parentSetting?.settingValue === "true";
           } else {
             const setting = await storage.getResellerSetting(resellerId, "ai_enabled");
-            hasAccess = setting?.value === "true";
+            hasAccess = setting?.settingValue === "true";
           }
         }
       } else if (req.user.role === "repair_center" || req.user.role === "repair_center_staff") {
         const setting = req.user.repairCenterId ? await storage.getRepairCenterSetting(req.user.repairCenterId, "ai_enabled") : null;
-        hasAccess = setting?.value === "true";
+        hasAccess = setting?.settingValue === "true";
       }
       
       if (!hasAccess) {
