@@ -43,13 +43,14 @@ import {
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
 import type { StandaloneQuote, StandaloneQuoteItem } from "@shared/schema";
+import { useTranslation } from "react-i18next";
 
 const statusLabels: Record<string, string> = {
-  draft: "Bozza",
+  draft: t("invoices.draft"),
   sent: "Inviato",
-  accepted: "Accettato",
-  rejected: "Rifiutato",
-  expired: "Scaduto",
+  accepted: t("standalone.accepted"),
+  rejected: t("b2b.status.cancelled"),
+  expired: t("standalone.expired"),
 };
 
 const statusClasses: Record<string, string> = {
@@ -70,6 +71,7 @@ function formatCurrency(cents: number): string {
 type QuoteWithItems = StandaloneQuote & { items: StandaloneQuoteItem[] };
 
 export default function StandaloneQuotesList() {
+  const { t } = useTranslation();
   const [, navigate] = useLocation();
   const { toast } = useToast();
   const { user } = useAuth();
@@ -97,10 +99,10 @@ export default function StandaloneQuotesList() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/standalone-quotes"] });
-      toast({ title: "Stato aggiornato" });
+      toast({ title: t("tickets.statusUpdated") });
     },
     onError: (error: any) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -118,7 +120,7 @@ export default function StandaloneQuotesList() {
       <div className="p-6 space-y-4">
         <div className="flex items-center gap-2 mb-6 flex-wrap">
           <FileText className="h-6 w-6" />
-          <h1 className="text-2xl font-bold">Preventivi</h1>
+          <h1 className="text-2xl font-bold">{t("sidebar.items.quotes")}</h1>
         </div>
         <div className="grid gap-4">
           {[1, 2, 3].map((i) => (
@@ -134,7 +136,7 @@ export default function StandaloneQuotesList() {
       <div className="flex items-center justify-between gap-4 flex-wrap mb-4">
         <div className="flex items-center gap-2 flex-wrap">
           <FileText className="h-6 w-6" />
-          <h1 className="text-2xl font-bold">Preventivi</h1>
+          <h1 className="text-2xl font-bold">{t("sidebar.items.quotes")}</h1>
           {quotes && <Badge variant="secondary">{quotes.length}</Badge>}
         </div>
         <div className="flex items-center gap-2 flex-wrap">
@@ -144,14 +146,10 @@ export default function StandaloneQuotesList() {
             onClick={() => setShowFilters(!showFilters)}
             data-testid="button-toggle-filters"
           >
-            <Filter className="h-4 w-4 mr-1" />
-            Filtri
-          </Button>
+            <Filter className="h-4 w-4 mr-1" />{t("common.filters")}</Button>
           <Link href={`${basePath}/standalone-quotes/new`}>
             <Button data-testid="button-new-quote">
-              <Plus className="h-4 w-4 mr-1" />
-              Nuovo Preventivo
-            </Button>
+              <Plus className="h-4 w-4 mr-1" />{t("standalone.newQuote")}</Button>
           </Link>
         </div>
       </div>
@@ -175,15 +173,15 @@ export default function StandaloneQuotesList() {
               <div className="w-[160px]">
                 <Select value={statusFilter} onValueChange={setStatusFilter}>
                   <SelectTrigger data-testid="select-status-filter">
-                    <SelectValue placeholder="Stato" />
+                    <SelectValue placeholder={t("common.status")} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">Tutti</SelectItem>
-                    <SelectItem value="draft">Bozza</SelectItem>
+                    <SelectItem value="all">{t("common.allMasc")}</SelectItem>
+                    <SelectItem value="draft">{t("invoices.draft")}</SelectItem>
                     <SelectItem value="sent">Inviato</SelectItem>
-                    <SelectItem value="accepted">Accettato</SelectItem>
-                    <SelectItem value="rejected">Rifiutato</SelectItem>
-                    <SelectItem value="expired">Scaduto</SelectItem>
+                    <SelectItem value="accepted">{t("standalone.accepted")}</SelectItem>
+                    <SelectItem value="rejected">{t("b2b.status.cancelled")}</SelectItem>
+                    <SelectItem value="expired">{t("standalone.expired")}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -211,9 +209,7 @@ export default function StandaloneQuotesList() {
             {!hasActiveFilters && (
               <Link href={`${basePath}/standalone-quotes/new`}>
                 <Button data-testid="button-new-quote-empty">
-                  <Plus className="h-4 w-4 mr-1" />
-                  Nuovo Preventivo
-                </Button>
+                  <Plus className="h-4 w-4 mr-1" />{t("standalone.newQuote")}</Button>
               </Link>
             )}
           </CardContent>
@@ -288,9 +284,7 @@ export default function StandaloneQuotesList() {
                           onClick={(e) => { e.stopPropagation(); navigate(`${basePath}/standalone-quotes/${quote.id}`); }}
                           data-testid={`action-view-${quote.id}`}
                         >
-                          <Eye className="h-4 w-4 mr-2" />
-                          Visualizza
-                        </DropdownMenuItem>
+                          <Eye className="h-4 w-4 mr-2" />{t("common.view")}</DropdownMenuItem>
                         <DropdownMenuItem
                           onClick={(e) => {
                             e.stopPropagation();
@@ -311,14 +305,12 @@ export default function StandaloneQuotesList() {
                                 toast({ title: "PDF scaricato" });
                               })
                               .catch((err: any) => {
-                                toast({ title: "Errore", description: err.message, variant: "destructive" });
+                                toast({ title: t("common.error"), description: err.message, variant: "destructive" });
                               });
                           }}
                           data-testid={`action-download-${quote.id}`}
                         >
-                          <Download className="h-4 w-4 mr-2" />
-                          Scarica PDF
-                        </DropdownMenuItem>
+                          <Download className="h-4 w-4 mr-2" />{t("invoices.downloadPdf")}</DropdownMenuItem>
                         {quote.status === "draft" && (
                           <DropdownMenuItem
                             onClick={(e) => { e.stopPropagation(); updateStatusMutation.mutate({ id: quote.id, status: "sent" }); }}

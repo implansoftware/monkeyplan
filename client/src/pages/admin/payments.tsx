@@ -19,6 +19,7 @@ import { Link } from "wouter";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import type { SalesOrderPayment } from "@shared/schema";
+import { useTranslation } from "react-i18next";
 
 const statusLabels: Record<string, string> = {
   pending: "In attesa",
@@ -70,6 +71,7 @@ const methodIcons: Record<string, any> = {
 };
 
 export default function AdminPayments() {
+  const { t } = useTranslation();
   const { toast } = useToast();
   
   const [search, setSearch] = useState("");
@@ -101,11 +103,11 @@ export default function AdminPayments() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/admin/payments'] });
-      toast({ title: "Pagamento aggiornato" });
+      toast({ title: t("common.updatedSuccessfully") });
       setShowDetailDialog(false);
     },
     onError: (error: any) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     }
   });
   
@@ -160,7 +162,7 @@ export default function AdminPayments() {
     if (!selectedPayment) return;
     const amount = parseFloat(refundAmount);
     if (isNaN(amount) || amount <= 0 || amount > selectedPayment.amount) {
-      toast({ title: "Errore", description: "Importo non valido", variant: "destructive" });
+      toast({ title: t("common.error"), description: "Importo non valido", variant: "destructive" });
       return;
     }
     
@@ -170,7 +172,7 @@ export default function AdminPayments() {
   };
   
   const handleExport = () => {
-    toast({ title: "Export", description: "Funzionalità in arrivo" });
+    toast({ title: t("common.export"), description: t("common.comingSoon") });
   };
   
   const stats = {
@@ -223,7 +225,7 @@ export default function AdminPayments() {
               <CreditCard className="h-5 w-5" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold tracking-tight" data-testid="text-admin-payments-title">Pagamenti</h1>
+              <h1 className="text-2xl font-bold tracking-tight" data-testid="text-admin-payments-title">{t("sidebar.items.payments")}</h1>
               <p className="text-sm text-muted-foreground">Gestione di tutti i pagamenti</p>
             </div>
           </div>
@@ -242,7 +244,7 @@ export default function AdminPayments() {
                 <CreditCard className="h-5 w-5 text-primary" />
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">Totale</p>
+                <p className="text-sm text-muted-foreground">{t("common.total")}</p>
                 <p className="text-2xl font-bold" data-testid="stat-total-payments">{stats.total}</p>
               </div>
             </div>
@@ -255,7 +257,7 @@ export default function AdminPayments() {
                 <Clock className="h-5 w-5 text-yellow-600" />
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">In attesa</p>
+                <p className="text-sm text-muted-foreground">{t("b2b.status.pending")}</p>
                 <p className="text-2xl font-bold" data-testid="stat-pending-payments">{stats.pending}</p>
               </div>
             </div>
@@ -293,7 +295,7 @@ export default function AdminPayments() {
         <div className="relative flex-1 min-w-[200px]">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder="Cerca per n. ordine, reseller..."
+            placeholder={t("common.search")}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="pl-10"
@@ -303,10 +305,10 @@ export default function AdminPayments() {
         
         <Select value={orderTypeFilter} onValueChange={setOrderTypeFilter}>
           <SelectTrigger className="w-full sm:w-[140px]" data-testid="select-order-type-filter">
-            <SelectValue placeholder="Tutti i tipi" />
+            <SelectValue placeholder={t("common.allTypes")} />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">Tutti i tipi</SelectItem>
+            <SelectItem value="all">{t("common.allTypes")}</SelectItem>
             <SelectItem value="b2c">B2C</SelectItem>
             <SelectItem value="b2b">B2B</SelectItem>
           </SelectContent>
@@ -315,10 +317,10 @@ export default function AdminPayments() {
         <Select value={methodFilter} onValueChange={setMethodFilter}>
           <SelectTrigger className="w-full sm:w-[160px]" data-testid="select-method-filter">
             <CreditCard className="mr-2 h-4 w-4" />
-            <SelectValue placeholder="Tutti i metodi" />
+            <SelectValue placeholder={t("common.allMethods")} />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">Tutti i metodi</SelectItem>
+            <SelectItem value="all">{t("common.allMethods")}</SelectItem>
             {Object.entries(methodLabels).map(([value, label]) => (
               <SelectItem key={value} value={value}>{label}</SelectItem>
             ))}
@@ -327,10 +329,10 @@ export default function AdminPayments() {
         
         <Select value={statusFilter} onValueChange={setStatusFilter}>
           <SelectTrigger className="w-full sm:w-[160px]" data-testid="select-status-filter">
-            <SelectValue placeholder="Tutti gli stati" />
+            <SelectValue placeholder={t("common.allStatuses")} />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">Tutti gli stati</SelectItem>
+            <SelectItem value="all">{t("repairs.allStatuses")}</SelectItem>
             {Object.entries(statusLabels).map(([value, label]) => (
               <SelectItem key={value} value={value}>{label}</SelectItem>
             ))}
@@ -349,14 +351,14 @@ export default function AdminPayments() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Tipo</TableHead>
+                  <TableHead>{t("common.type")}</TableHead>
                   <TableHead>N. Ordine</TableHead>
-                  <TableHead>Reseller</TableHead>
-                  <TableHead>Data</TableHead>
-                  <TableHead>Metodo</TableHead>
-                  <TableHead>Importo</TableHead>
-                  <TableHead>Stato</TableHead>
-                  <TableHead className="text-right">Azioni</TableHead>
+                  <TableHead>{t("admin.resellers.reseller")}</TableHead>
+                  <TableHead>{t("common.date")}</TableHead>
+                  <TableHead>{t("common.method")}</TableHead>
+                  <TableHead>{t("common.amount")}</TableHead>
+                  <TableHead>{t("common.status")}</TableHead>
+                  <TableHead className="text-right">{t("common.actions")}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -436,7 +438,7 @@ export default function AdminPayments() {
       <Dialog open={showDetailDialog} onOpenChange={setShowDetailDialog}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Dettaglio pagamento</DialogTitle>
+            <DialogTitle>{t("common.paymentDetail")}</DialogTitle>
             <DialogDescription>
               {selectedPayment?.transactionId || selectedPayment?.id}
             </DialogDescription>
@@ -460,11 +462,11 @@ export default function AdminPayments() {
                   <p className="font-mono">{paymentAny.orderNumber || selectedPayment.orderId?.slice(0, 8) || '-'}</p>
                 </div>
                 <div>
-                  <Label className="text-muted-foreground">Importo</Label>
+                  <Label className="text-muted-foreground">{t("common.amount")}</Label>
                   <p className="text-lg font-semibold">{formatPrice(selectedPayment.amount)}</p>
                 </div>
                 <div>
-                  <Label className="text-muted-foreground">Stato</Label>
+                  <Label className="text-muted-foreground">{t("common.status")}</Label>
                   <div className="mt-1">
                     <Badge variant={statusColors[selectedPayment.status] as any}>
                       {statusLabels[selectedPayment.status]}
@@ -476,7 +478,7 @@ export default function AdminPayments() {
                   <p>{methodLabels[selectedPayment.method]}</p>
                 </div>
                 <div>
-                  <Label className="text-muted-foreground">Data</Label>
+                  <Label className="text-muted-foreground">{t("common.date")}</Label>
                   <p>{formatDate(selectedPayment.paidAt || selectedPayment.createdAt)}</p>
                 </div>
                 {orderType === 'b2b' && (
@@ -495,14 +497,14 @@ export default function AdminPayments() {
               
               {selectedPayment.notes && (
                 <div>
-                  <Label className="text-muted-foreground">Note</Label>
+                  <Label className="text-muted-foreground">{t("common.notes")}</Label>
                   <p className="text-sm">{selectedPayment.notes}</p>
                 </div>
               )}
               
               {selectedPayment.status === 'pending' && orderType === 'b2c' && (
                 <div className="space-y-2">
-                  <Label>Aggiorna stato</Label>
+                  <Label>{t("common.updateStatus")}</Label>
                   <div className="flex gap-2">
                     <Button
                       variant="default"
@@ -532,14 +534,14 @@ export default function AdminPayments() {
       <Dialog open={showRefundDialog} onOpenChange={setShowRefundDialog}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Rimborsa pagamento</DialogTitle>
+            <DialogTitle>{t("common.refundPayment")}</DialogTitle>
             <DialogDescription>
               Importo originale: {selectedPayment && formatPrice(selectedPayment.amount)}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label>Importo rimborso</Label>
+              <Label>{t("suppliers.refundAmount")}</Label>
               <Input
                 type="number"
                 value={refundAmount}
@@ -551,11 +553,11 @@ export default function AdminPayments() {
               />
             </div>
             <div className="space-y-2">
-              <Label>Motivo (opzionale)</Label>
+              <Label>{t("common.reasonOptional")}</Label>
               <Textarea
                 value={refundReason}
                 onChange={(e) => setRefundReason(e.target.value)}
-                placeholder="Motivo del rimborso..."
+                placeholder={t("common.refundReason")}
                 rows={3}
               />
             </div>

@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Loader2, Shield, TrendingUp, CheckCircle2, DollarSign, BarChart3 } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts";
+import { useTranslation } from "react-i18next";
 
 type WarrantyStats = {
   totalOffered: number;
@@ -15,6 +16,7 @@ type WarrantyStats = {
 };
 
 export default function ResellerWarrantyAnalytics() {
+  const { t } = useTranslation();
   const { data: stats, isLoading } = useQuery<WarrantyStats>({
     queryKey: ["/api/reseller/warranty-stats"],
   });
@@ -61,7 +63,7 @@ export default function ResellerWarrantyAnalytics() {
             <BarChart3 className="h-6 w-6 text-white" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold tracking-tight text-white">Analytics Garanzie</h1>
+            <h1 className="text-2xl font-bold tracking-tight text-white">{t("warranties.analyticsTitle")}</h1>
             <p className="text-sm text-white/80">
               Statistiche e performance delle vendite garanzie
             </p>
@@ -141,9 +143,7 @@ export default function ResellerWarrantyAnalytics() {
                 </BarChart>
               </ResponsiveContainer>
             ) : (
-              <div className="flex items-center justify-center h-[300px] text-muted-foreground">
-                Nessun dato disponibile
-              </div>
+              <div className="flex items-center justify-center h-[300px] text-muted-foreground">{t("common.noData")}</div>
             )}
           </CardContent>
         </Card>

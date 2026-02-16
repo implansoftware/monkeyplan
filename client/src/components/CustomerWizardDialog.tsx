@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
@@ -49,6 +50,7 @@ interface CustomerWizardDialogProps {
 type WizardStep = "type" | "details" | "review";
 
 export function CustomerWizardDialog({ open, onOpenChange, onSuccess }: CustomerWizardDialogProps) {
+  const { t } = useTranslation();
   const [step, setStep] = useState<WizardStep>("type");
   const [customerType, setCustomerType] = useState<"private" | "company">("private");
   const [createdCustomer, setCreatedCustomer] = useState<any>(null);
@@ -145,16 +147,16 @@ export function CustomerWizardDialog({ open, onOpenChange, onSuccess }: Customer
       setCreatedCustomer(data);
       queryClient.invalidateQueries({ queryKey: ["/api/users"] });
       toast({
-        title: "Cliente creato",
-        description: `Cliente ${data.customer.fullName} creato con successo. Password temporanea: ${data.tempPassword}`,
+        title: t("customer.created"),
+        description: t("customer.createdDescription", { name: data.customer.fullName, password: data.tempPassword }),
       });
       if (onSuccess) onSuccess(data);
     },
     onError: (error: any) => {
       toast({
         variant: "destructive",
-        title: "Errore",
-        description: error.message || "Impossibile creare il cliente",
+        title: t("common.error"),
+        description: error.message || t("customer.createError"),
       });
     },
   });
@@ -193,8 +195,8 @@ export function CustomerWizardDialog({ open, onOpenChange, onSuccess }: Customer
         <div className="inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 mb-4">
           <UserPlus className="h-8 w-8 text-white" />
         </div>
-        <h3 className="text-lg font-semibold text-slate-900 dark:text-white">Scegli il tipo di cliente</h3>
-        <p className="text-sm text-slate-500 mt-1">Seleziona il profilo che meglio rappresenta il nuovo cliente</p>
+        <h3 className="text-lg font-semibold text-slate-900 dark:text-white">{t("customer.chooseType")}</h3>
+        <p className="text-sm text-slate-500 mt-1">{t("customer.chooseTypeDescription")}</p>
       </div>
       
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -207,25 +209,25 @@ export function CustomerWizardDialog({ open, onOpenChange, onSuccess }: Customer
             <div className="inline-flex h-14 w-14 items-center justify-center rounded-xl bg-gradient-to-br from-cyan-500 to-blue-600 mb-4 group-hover:scale-110 transition-transform">
               <User className="h-7 w-7 text-white" />
             </div>
-            <h4 className="font-semibold text-slate-900 dark:text-white mb-1">Privato</h4>
-            <p className="text-sm text-slate-500 mb-4">Cliente privato</p>
+            <h4 className="font-semibold text-slate-900 dark:text-white mb-1">{t("customer.private")}</h4>
+            <p className="text-sm text-slate-500 mb-4">{t("customer.privateDescription")}</p>
           </div>
           <ul className="text-sm text-slate-500 space-y-2">
             <li className="flex flex-wrap items-center gap-2">
               <CheckCircle2 className="h-4 w-4 text-emerald-500" />
-              Nome completo
+              {t("customer.fullName")}
             </li>
             <li className="flex flex-wrap items-center gap-2">
               <CheckCircle2 className="h-4 w-4 text-emerald-500" />
-              Email e telefono
+              {t("customer.emailAndPhone")}
             </li>
             <li className="flex flex-wrap items-center gap-2">
               <CheckCircle2 className="h-4 w-4 text-emerald-500" />
-              Indirizzo
+              {t("customer.address")}
             </li>
             <li className="flex flex-wrap items-center gap-2">
               <CheckCircle2 className="h-4 w-4 text-slate-300" />
-              IBAN (opzionale)
+              {t("customer.ibanOptional")}
             </li>
           </ul>
         </div>
@@ -239,25 +241,25 @@ export function CustomerWizardDialog({ open, onOpenChange, onSuccess }: Customer
             <div className="inline-flex h-14 w-14 items-center justify-center rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 mb-4 group-hover:scale-110 transition-transform">
               <Building2 className="h-7 w-7 text-white" />
             </div>
-            <h4 className="font-semibold text-slate-900 dark:text-white mb-1">Azienda</h4>
-            <p className="text-sm text-slate-500 mb-4">Cliente aziendale</p>
+            <h4 className="font-semibold text-slate-900 dark:text-white mb-1">{t("customer.company")}</h4>
+            <p className="text-sm text-slate-500 mb-4">{t("customer.companyDescription")}</p>
           </div>
           <ul className="text-sm text-slate-500 space-y-2">
             <li className="flex flex-wrap items-center gap-2">
               <CheckCircle2 className="h-4 w-4 text-emerald-500" />
-              Ragione sociale
+              {t("customer.companyName")}
             </li>
             <li className="flex flex-wrap items-center gap-2">
               <CheckCircle2 className="h-4 w-4 text-emerald-500" />
-              P.IVA / C.F.
+              {t("customer.vatFiscalCode")}
             </li>
             <li className="flex flex-wrap items-center gap-2">
               <CheckCircle2 className="h-4 w-4 text-emerald-500" />
-              PEC o Codice Univoco
+              {t("customer.pecOrUniqueCode")}
             </li>
             <li className="flex flex-wrap items-center gap-2">
               <CheckCircle2 className="h-4 w-4 text-slate-300" />
-              IBAN (opzionale)
+              {t("customer.ibanOptional")}
             </li>
           </ul>
         </div>
@@ -276,7 +278,7 @@ export function CustomerWizardDialog({ open, onOpenChange, onSuccess }: Customer
                 name="companyName"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="text-slate-700 dark:text-slate-300">Ragione Sociale *</FormLabel>
+                    <FormLabel className="text-slate-700 dark:text-slate-300">{t("customer.companyName")} *</FormLabel>
                     <FormControl>
                       <Input {...field} className="h-11 rounded-xl" data-testid="input-company-name" />
                     </FormControl>
@@ -291,7 +293,7 @@ export function CustomerWizardDialog({ open, onOpenChange, onSuccess }: Customer
                   name="vatNumber"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="text-slate-700 dark:text-slate-300">P.IVA</FormLabel>
+                      <FormLabel className="text-slate-700 dark:text-slate-300">{t("fiscal.vatNumber")}</FormLabel>
                       <FormControl>
                         <Input {...field} value={field.value || ""} className="h-11 rounded-xl" data-testid="input-vat-number" />
                       </FormControl>
@@ -305,7 +307,7 @@ export function CustomerWizardDialog({ open, onOpenChange, onSuccess }: Customer
                   name="fiscalCode"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="text-slate-700 dark:text-slate-300">Codice Fiscale</FormLabel>
+                      <FormLabel className="text-slate-700 dark:text-slate-300">{t("fiscal.fiscalCode")}</FormLabel>
                       <FormControl>
                         <Input {...field} value={field.value || ""} className="h-11 rounded-xl" data-testid="input-fiscal-code" />
                       </FormControl>
@@ -321,11 +323,11 @@ export function CustomerWizardDialog({ open, onOpenChange, onSuccess }: Customer
                   name="pec"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="text-slate-700 dark:text-slate-300">PEC</FormLabel>
+                      <FormLabel className="text-slate-700 dark:text-slate-300">{t("fiscal.pec")}</FormLabel>
                       <FormControl>
                         <Input type="email" {...field} value={field.value || ""} className="h-11 rounded-xl" data-testid="input-pec" />
                       </FormControl>
-                      <FormDescription className="text-xs">Almeno uno tra PEC e Codice Univoco</FormDescription>
+                      <FormDescription className="text-xs">{t("fiscal.pecOrUniqueCodeRequired")}</FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -336,7 +338,7 @@ export function CustomerWizardDialog({ open, onOpenChange, onSuccess }: Customer
                   name="codiceUnivoco"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="text-slate-700 dark:text-slate-300">Codice Univoco</FormLabel>
+                      <FormLabel className="text-slate-700 dark:text-slate-300">{t("fiscal.uniqueCode")}</FormLabel>
                       <FormControl>
                         <Input {...field} value={field.value || ""} className="h-11 rounded-xl" data-testid="input-codice-univoco" />
                       </FormControl>
@@ -352,7 +354,7 @@ export function CustomerWizardDialog({ open, onOpenChange, onSuccess }: Customer
               name="fullName"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="text-slate-700 dark:text-slate-300">Nome Completo *</FormLabel>
+                  <FormLabel className="text-slate-700 dark:text-slate-300">{t("customer.fullName")} *</FormLabel>
                   <FormControl>
                     <Input {...field} className="h-11 rounded-xl" data-testid="input-full-name" />
                   </FormControl>
@@ -370,11 +372,11 @@ export function CustomerWizardDialog({ open, onOpenChange, onSuccess }: Customer
               name="username"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="text-slate-700 dark:text-slate-300">Username *</FormLabel>
+                  <FormLabel className="text-slate-700 dark:text-slate-300">{t("customer.username")} *</FormLabel>
                   <FormControl>
                     <Input {...field} className="h-11 rounded-xl" data-testid="input-username" />
                   </FormControl>
-                  <FormDescription className="text-xs">Per l'accesso al portale</FormDescription>
+                  <FormDescription className="text-xs">{t("customer.usernameDescription")}</FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
@@ -385,11 +387,11 @@ export function CustomerWizardDialog({ open, onOpenChange, onSuccess }: Customer
               name="password"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="text-slate-700 dark:text-slate-300">Password *</FormLabel>
+                  <FormLabel className="text-slate-700 dark:text-slate-300">{t("customer.password")} *</FormLabel>
                   <FormControl>
                     <Input type="password" {...field} className="h-11 rounded-xl" data-testid="input-password" />
                   </FormControl>
-                  <FormDescription className="text-xs">Minimo 6 caratteri</FormDescription>
+                  <FormDescription className="text-xs">{t("customer.passwordMinChars")}</FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
@@ -404,7 +406,7 @@ export function CustomerWizardDialog({ open, onOpenChange, onSuccess }: Customer
               name="email"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="text-slate-700 dark:text-slate-300">Email *</FormLabel>
+                  <FormLabel className="text-slate-700 dark:text-slate-300">{t("common.email")} *</FormLabel>
                   <FormControl>
                     <div className="relative">
                       <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
@@ -421,7 +423,7 @@ export function CustomerWizardDialog({ open, onOpenChange, onSuccess }: Customer
               name="phone"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="text-slate-700 dark:text-slate-300">Telefono *</FormLabel>
+                  <FormLabel className="text-slate-700 dark:text-slate-300">{t("common.phone")} *</FormLabel>
                   <FormControl>
                     <div className="relative">
                       <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
@@ -451,10 +453,10 @@ export function CustomerWizardDialog({ open, onOpenChange, onSuccess }: Customer
                     </FormControl>
                     <div className="space-y-1 leading-none">
                       <FormLabel className="text-sm font-medium text-slate-700 dark:text-slate-300">
-                        Voglio inserire l'indirizzo
+                        {t("customer.wantAddress")}
                       </FormLabel>
                       <FormDescription className="text-xs">
-                        Spunta per inserire l'indirizzo ora
+                        {t("customer.wantAddressDescription")}
                       </FormDescription>
                     </div>
                   </FormItem>
@@ -472,7 +474,7 @@ export function CustomerWizardDialog({ open, onOpenChange, onSuccess }: Customer
                   <FormItem>
                     <FormLabel className="text-slate-700 dark:text-slate-300">
                       <MapPin className="inline h-4 w-4 mr-1" />
-                      Indirizzo {customerType === "private" ? "*" : ""}
+                      {t("customer.address")} {customerType === "private" ? "*" : ""}
                     </FormLabel>
                     <FormControl>
                       <AddressAutocomplete
@@ -484,11 +486,11 @@ export function CustomerWizardDialog({ open, onOpenChange, onSuccess }: Customer
                           form.setValue("city", result.city);
                           form.setValue("zipCode", result.postalCode);
                         }}
-                        placeholder="Inizia a digitare l'indirizzo..."
+                        placeholder={t("form.startTypingAddress")}
                         data-testid="input-address"
                       />
                     </FormControl>
-                    <FormDescription className="text-xs">Inizia a digitare per vedere i suggerimenti</FormDescription>
+                    <FormDescription className="text-xs">{t("form.startTypingForSuggestions")}</FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -500,9 +502,9 @@ export function CustomerWizardDialog({ open, onOpenChange, onSuccess }: Customer
                   name="city"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="text-slate-700 dark:text-slate-300">Citta {customerType === "private" ? "*" : ""}</FormLabel>
+                      <FormLabel className="text-slate-700 dark:text-slate-300">{t("customer.city")} {customerType === "private" ? "*" : ""}</FormLabel>
                       <FormControl>
-                        <Input {...field} placeholder="Citta" className="h-11 rounded-xl" data-testid="input-city" />
+                        <Input {...field} placeholder={t("customer.city")} className="h-11 rounded-xl" data-testid="input-city" />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -514,9 +516,9 @@ export function CustomerWizardDialog({ open, onOpenChange, onSuccess }: Customer
                   name="zipCode"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="text-slate-700 dark:text-slate-300">CAP {customerType === "private" ? "*" : ""}</FormLabel>
+                      <FormLabel className="text-slate-700 dark:text-slate-300">{t("customer.zipCode")} {customerType === "private" ? "*" : ""}</FormLabel>
                       <FormControl>
-                        <Input {...field} placeholder="CAP" className="h-11 rounded-xl" data-testid="input-zip-code" />
+                        <Input {...field} placeholder={t("customer.zipCode")} className="h-11 rounded-xl" data-testid="input-zip-code" />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -528,7 +530,7 @@ export function CustomerWizardDialog({ open, onOpenChange, onSuccess }: Customer
                   name="country"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="text-slate-700 dark:text-slate-300">Paese</FormLabel>
+                      <FormLabel className="text-slate-700 dark:text-slate-300">{t("customer.country")}</FormLabel>
                       <Select onValueChange={field.onChange} defaultValue={field.value}>
                         <FormControl>
                           <SelectTrigger className="h-11 rounded-xl" data-testid="select-country">
@@ -536,10 +538,10 @@ export function CustomerWizardDialog({ open, onOpenChange, onSuccess }: Customer
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          <SelectItem value="IT">Italia</SelectItem>
-                          <SelectItem value="FR">Francia</SelectItem>
-                          <SelectItem value="DE">Germania</SelectItem>
-                          <SelectItem value="ES">Spagna</SelectItem>
+                          <SelectItem value="IT">{t("countries.italy")}</SelectItem>
+                          <SelectItem value="FR">{t("countries.france")}</SelectItem>
+                          <SelectItem value="DE">{t("countries.germany")}</SelectItem>
+                          <SelectItem value="ES">{t("countries.spain")}</SelectItem>
                         </SelectContent>
                       </Select>
                       <FormMessage />
@@ -567,10 +569,10 @@ export function CustomerWizardDialog({ open, onOpenChange, onSuccess }: Customer
                     </FormControl>
                     <div className="space-y-1 leading-none">
                       <FormLabel className="text-sm font-medium text-slate-700 dark:text-slate-300">
-                        Voglio inserire l'IBAN
+                        {t("customer.wantIban")}
                       </FormLabel>
                       <FormDescription className="text-xs">
-                        Spunta per inserire l'IBAN ora
+                        {t("customer.wantIbanDescription")}
                       </FormDescription>
                     </div>
                   </FormItem>
@@ -589,7 +591,7 @@ export function CustomerWizardDialog({ open, onOpenChange, onSuccess }: Customer
                       <FormControl>
                         <Input {...field} value={field.value || ""} className="h-11 rounded-xl font-mono" data-testid="input-iban" />
                       </FormControl>
-                      <FormDescription className="text-xs">Opzionale - per addebito diretto</FormDescription>
+                      <FormDescription className="text-xs">{t("customer.ibanDescription")}</FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -615,10 +617,10 @@ export function CustomerWizardDialog({ open, onOpenChange, onSuccess }: Customer
                     </FormControl>
                     <div className="space-y-1 leading-none">
                       <FormLabel className="text-sm font-medium text-slate-700 dark:text-slate-300">
-                        Voglio inserire il Codice Fiscale
+                        {t("customer.wantFiscalCode")}
                       </FormLabel>
                       <FormDescription className="text-xs">
-                        Spunta per inserire il Codice Fiscale ora
+                        {t("customer.wantFiscalCodeDescription")}
                       </FormDescription>
                     </div>
                   </FormItem>
@@ -630,11 +632,11 @@ export function CustomerWizardDialog({ open, onOpenChange, onSuccess }: Customer
                   name="fiscalCode"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="text-slate-700 dark:text-slate-300">Codice Fiscale</FormLabel>
+                      <FormLabel className="text-slate-700 dark:text-slate-300">{t("fiscal.fiscalCode")}</FormLabel>
                       <FormControl>
                         <Input {...field} value={field.value || ""} className="h-11 rounded-xl font-mono" data-testid="input-fiscal-code" placeholder="RSSMRA85M01H501Z" />
                       </FormControl>
-                      <FormDescription className="text-xs">Opzionale - per fatturazione</FormDescription>
+                      <FormDescription className="text-xs">{t("customer.fiscalCodeDescription")}</FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -647,7 +649,7 @@ export function CustomerWizardDialog({ open, onOpenChange, onSuccess }: Customer
             <>
               <div className="h-px bg-gradient-to-r from-transparent via-slate-200 dark:via-slate-700 to-transparent" />
               <FormItem>
-                <FormLabel className="text-slate-700 dark:text-slate-300">Rivenditore di Riferimento</FormLabel>
+                <FormLabel className="text-slate-700 dark:text-slate-300">{t("customer.referenceReseller")}</FormLabel>
                 <Select 
                   onValueChange={(value) => {
                     const newResellerId = value === "none" ? null : value;
@@ -658,11 +660,11 @@ export function CustomerWizardDialog({ open, onOpenChange, onSuccess }: Customer
                 >
                   <FormControl>
                     <SelectTrigger className="h-11 rounded-xl" data-testid="select-reseller">
-                      <SelectValue placeholder="Seleziona rivenditore (opzionale)" />
+                      <SelectValue placeholder={t("customer.selectResellerOptional")} />
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    <SelectItem value="none">Nessun rivenditore</SelectItem>
+                    <SelectItem value="none">{t("customer.noReseller")}</SelectItem>
                     {resellers.map((reseller) => (
                       <SelectItem key={reseller.id} value={reseller.id}>
                         {reseller.fullName} ({reseller.email})
@@ -671,7 +673,7 @@ export function CustomerWizardDialog({ open, onOpenChange, onSuccess }: Customer
                   </SelectContent>
                 </Select>
                 <FormDescription className="text-xs">
-                  Associa questo cliente a un rivenditore specifico
+                  {t("customer.associateReseller")}
                 </FormDescription>
               </FormItem>
             </>
@@ -680,18 +682,18 @@ export function CustomerWizardDialog({ open, onOpenChange, onSuccess }: Customer
           {isAdmin && selectedResellerId && adminSubResellers.length > 0 && (
             <>
               <FormItem>
-                <FormLabel className="text-slate-700 dark:text-slate-300">Sub-Reseller di Riferimento</FormLabel>
+                <FormLabel className="text-slate-700 dark:text-slate-300">{t("customer.referenceSubReseller")}</FormLabel>
                 <Select 
                   onValueChange={(value) => setSelectedSubResellerId(value === "none" ? null : value)} 
                   value={selectedSubResellerId || "none"}
                 >
                   <FormControl>
                     <SelectTrigger className="h-11 rounded-xl" data-testid="select-admin-sub-reseller">
-                      <SelectValue placeholder="Seleziona sub-reseller (opzionale)" />
+                      <SelectValue placeholder={t("customer.selectSubResellerOptional")} />
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    <SelectItem value="none">Nessun sub-reseller</SelectItem>
+                    <SelectItem value="none">{t("customer.noSubReseller")}</SelectItem>
                     {adminSubResellers.map((subReseller) => (
                       <SelectItem key={subReseller.id} value={subReseller.id}>
                         {subReseller.fullName} ({subReseller.email})
@@ -700,7 +702,7 @@ export function CustomerWizardDialog({ open, onOpenChange, onSuccess }: Customer
                   </SelectContent>
                 </Select>
                 <FormDescription className="text-xs">
-                  Associa questo cliente a un sub-reseller specifico
+                  {t("customer.associateSubReseller")}
                 </FormDescription>
               </FormItem>
             </>
@@ -710,18 +712,18 @@ export function CustomerWizardDialog({ open, onOpenChange, onSuccess }: Customer
             <>
               <div className="h-px bg-gradient-to-r from-transparent via-slate-200 dark:via-slate-700 to-transparent" />
               <FormItem>
-                <FormLabel className="text-slate-700 dark:text-slate-300">Sub-Reseller di Riferimento</FormLabel>
+                <FormLabel className="text-slate-700 dark:text-slate-300">{t("customer.referenceSubReseller")}</FormLabel>
                 <Select 
                   onValueChange={(value) => setSelectedSubResellerId(value === "none" ? null : value)} 
                   value={selectedSubResellerId || "none"}
                 >
                   <FormControl>
                     <SelectTrigger className="h-11 rounded-xl" data-testid="select-sub-reseller">
-                      <SelectValue placeholder="Seleziona sub-reseller (opzionale)" />
+                      <SelectValue placeholder={t("customer.selectSubResellerOptional")} />
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    <SelectItem value="none">Nessun sub-reseller</SelectItem>
+                    <SelectItem value="none">{t("customer.noSubReseller")}</SelectItem>
                     {subResellers.map((subReseller) => (
                       <SelectItem key={subReseller.id} value={subReseller.id}>
                         {subReseller.fullName} ({subReseller.email})
@@ -730,7 +732,7 @@ export function CustomerWizardDialog({ open, onOpenChange, onSuccess }: Customer
                   </SelectContent>
                 </Select>
                 <FormDescription className="text-xs">
-                  Associa questo cliente a un sub-reseller specifico
+                  {t("customer.associateSubReseller")}
                 </FormDescription>
               </FormItem>
             </>
@@ -740,7 +742,7 @@ export function CustomerWizardDialog({ open, onOpenChange, onSuccess }: Customer
             <>
               <div className="h-px bg-gradient-to-r from-transparent via-slate-200 dark:via-slate-700 to-transparent" />
               <FormItem>
-                <FormLabel className="text-slate-700 dark:text-slate-300">Centri di Riparazione Associati</FormLabel>
+                <FormLabel className="text-slate-700 dark:text-slate-300">{t("customer.associatedRepairCenters")}</FormLabel>
                 <div className="space-y-2">
                   <Select 
                     onValueChange={(value) => {
@@ -752,7 +754,7 @@ export function CustomerWizardDialog({ open, onOpenChange, onSuccess }: Customer
                   >
                     <FormControl>
                       <SelectTrigger className="h-11 rounded-xl" data-testid="select-repair-centers">
-                        <SelectValue placeholder="Aggiungi centro di riparazione..." />
+                        <SelectValue placeholder={t("customer.addRepairCenter")} />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
@@ -790,7 +792,7 @@ export function CustomerWizardDialog({ open, onOpenChange, onSuccess }: Customer
                   )}
                 </div>
                 <FormDescription className="text-xs">
-                  Seleziona i centri di riparazione che possono gestire questo cliente
+                  {t("customer.selectRepairCentersDescription")}
                 </FormDescription>
               </FormItem>
             </>
@@ -806,7 +808,7 @@ export function CustomerWizardDialog({ open, onOpenChange, onSuccess }: Customer
             data-testid="button-back"
           >
             <ChevronLeft className="mr-2 h-4 w-4" />
-            Indietro
+            {t("common.back")}
           </Button>
           <Button 
             type="button" 
@@ -814,7 +816,7 @@ export function CustomerWizardDialog({ open, onOpenChange, onSuccess }: Customer
             className="rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700"
             data-testid="button-next"
           >
-            Avanti
+            {t("common.next")}
             <ChevronRight className="ml-2 h-4 w-4" />
           </Button>
         </div>
@@ -832,9 +834,9 @@ export function CustomerWizardDialog({ open, onOpenChange, onSuccess }: Customer
               {customerType === "private" ? <User className="h-5 w-5 text-white" /> : <Building2 className="h-5 w-5 text-white" />}
             </div>
             <div>
-              <p className="text-xs text-slate-500 uppercase tracking-wide">Tipo Cliente</p>
+              <p className="text-xs text-slate-500 uppercase tracking-wide">{t("customer.customerType")}</p>
               <p className="font-semibold text-slate-900 dark:text-white">
-                {values.customerType === "private" ? "Privato" : "Azienda"}
+                {values.customerType === "private" ? t("customer.private") : t("customer.company")}
               </p>
             </div>
           </div>
@@ -842,31 +844,31 @@ export function CustomerWizardDialog({ open, onOpenChange, onSuccess }: Customer
           {values.customerType === "company" ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="col-span-2">
-                <p className="text-xs text-slate-500 uppercase tracking-wide mb-1">Ragione Sociale</p>
+                <p className="text-xs text-slate-500 uppercase tracking-wide mb-1">{t("customer.companyName")}</p>
                 <p className="font-semibold text-slate-900 dark:text-white" data-testid="text-review-company-name">{values.companyName}</p>
               </div>
               {values.vatNumber && (
                 <div>
-                  <p className="text-xs text-slate-500 uppercase tracking-wide mb-1">P.IVA</p>
+                  <p className="text-xs text-slate-500 uppercase tracking-wide mb-1">{t("fiscal.vatNumber")}</p>
                   <p className="font-mono text-slate-900 dark:text-white" data-testid="text-review-vat">{values.vatNumber}</p>
                 </div>
               )}
               {values.pec && (
                 <div>
-                  <p className="text-xs text-slate-500 uppercase tracking-wide mb-1">PEC</p>
+                  <p className="text-xs text-slate-500 uppercase tracking-wide mb-1">{t("fiscal.pec")}</p>
                   <p className="text-slate-900 dark:text-white text-sm" data-testid="text-review-pec">{values.pec}</p>
                 </div>
               )}
               {values.codiceUnivoco && (
                 <div>
-                  <p className="text-xs text-slate-500 uppercase tracking-wide mb-1">Codice Univoco</p>
+                  <p className="text-xs text-slate-500 uppercase tracking-wide mb-1">{t("fiscal.uniqueCode")}</p>
                   <p className="font-mono text-slate-900 dark:text-white" data-testid="text-review-codice">{values.codiceUnivoco}</p>
                 </div>
               )}
             </div>
           ) : (
             <div>
-              <p className="text-xs text-slate-500 uppercase tracking-wide mb-1">Nome Completo</p>
+              <p className="text-xs text-slate-500 uppercase tracking-wide mb-1">{t("customer.fullName")}</p>
               <p className="font-semibold text-slate-900 dark:text-white" data-testid="text-review-full-name">{values.fullName}</p>
             </div>
           )}
@@ -875,14 +877,14 @@ export function CustomerWizardDialog({ open, onOpenChange, onSuccess }: Customer
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <p className="text-xs text-slate-500 uppercase tracking-wide mb-1">Email</p>
+              <p className="text-xs text-slate-500 uppercase tracking-wide mb-1">{t("common.email")}</p>
               <p className="text-slate-900 dark:text-white flex items-center gap-2" data-testid="text-review-email">
                 <Mail className="h-4 w-4 text-blue-500" />
                 {values.email}
               </p>
             </div>
             <div>
-              <p className="text-xs text-slate-500 uppercase tracking-wide mb-1">Telefono</p>
+              <p className="text-xs text-slate-500 uppercase tracking-wide mb-1">{t("common.phone")}</p>
               <p className="text-slate-900 dark:text-white flex items-center gap-2" data-testid="text-review-phone">
                 <Phone className="h-4 w-4 text-emerald-500" />
                 {values.phone}
@@ -891,9 +893,9 @@ export function CustomerWizardDialog({ open, onOpenChange, onSuccess }: Customer
           </div>
 
           <div>
-            <p className="text-xs text-slate-500 uppercase tracking-wide mb-1">Indirizzo</p>
+            <p className="text-xs text-slate-500 uppercase tracking-wide mb-1">{t("customer.address")}</p>
             {!values.showAddress && customerType === "private" ? (
-              <p className="text-slate-400 italic" data-testid="text-review-address">Non inserito</p>
+              <p className="text-slate-400 italic" data-testid="text-review-address">{t("customer.notEntered")}</p>
             ) : (
               <p className="text-slate-900 dark:text-white flex items-center gap-2" data-testid="text-review-address">
                 <MapPin className="h-4 w-4 text-rose-500" />
@@ -906,16 +908,16 @@ export function CustomerWizardDialog({ open, onOpenChange, onSuccess }: Customer
             <div>
               <p className="text-xs text-slate-500 uppercase tracking-wide mb-1">IBAN</p>
               {!values.showIban || !values.iban ? (
-                <p className="text-slate-400 italic" data-testid="text-review-iban">Non inserito</p>
+                <p className="text-slate-400 italic" data-testid="text-review-iban">{t("customer.notEntered")}</p>
               ) : (
                 <p className="font-mono text-sm text-slate-900 dark:text-white" data-testid="text-review-iban">{values.iban}</p>
               )}
             </div>
             {values.customerType === "private" && (
               <div>
-                <p className="text-xs text-slate-500 uppercase tracking-wide mb-1">Codice Fiscale</p>
+                <p className="text-xs text-slate-500 uppercase tracking-wide mb-1">{t("fiscal.fiscalCode")}</p>
                 {!values.showFiscalCode || !values.fiscalCode ? (
-                  <p className="text-slate-400 italic" data-testid="text-review-fiscal-code">Non inserito</p>
+                  <p className="text-slate-400 italic" data-testid="text-review-fiscal-code">{t("customer.notEntered")}</p>
                 ) : (
                   <p className="font-mono text-slate-900 dark:text-white" data-testid="text-review-fiscal-code">{values.fiscalCode}</p>
                 )}
@@ -925,7 +927,7 @@ export function CustomerWizardDialog({ open, onOpenChange, onSuccess }: Customer
 
           {isAdmin && selectedResellerId && (
             <div>
-              <p className="text-xs text-slate-500 uppercase tracking-wide mb-1">Rivenditore di Riferimento</p>
+              <p className="text-xs text-slate-500 uppercase tracking-wide mb-1">{t("customer.referenceReseller")}</p>
               <p className="text-slate-900 dark:text-white flex items-center gap-2" data-testid="text-review-reseller">
                 <Building2 className="h-4 w-4 text-blue-500" />
                 {resellers.find(r => r.id === selectedResellerId)?.fullName || "N/D"}
@@ -935,7 +937,7 @@ export function CustomerWizardDialog({ open, onOpenChange, onSuccess }: Customer
 
           {selectedSubResellerId && (
             <div>
-              <p className="text-xs text-slate-500 uppercase tracking-wide mb-1">Sub-Reseller di Riferimento</p>
+              <p className="text-xs text-slate-500 uppercase tracking-wide mb-1">{t("customer.referenceSubReseller")}</p>
               <p className="text-slate-900 dark:text-white flex items-center gap-2" data-testid="text-review-sub-reseller">
                 <Building2 className="h-4 w-4 text-violet-500" />
                 {(isReseller 
@@ -948,7 +950,7 @@ export function CustomerWizardDialog({ open, onOpenChange, onSuccess }: Customer
 
           {selectedRepairCenterIds.length > 0 && (
             <div>
-              <p className="text-xs text-slate-500 uppercase tracking-wide mb-2">Centri di Riparazione</p>
+              <p className="text-xs text-slate-500 uppercase tracking-wide mb-2">{t("customer.repairCenters")}</p>
               <div className="flex flex-wrap gap-2" data-testid="text-review-repair-centers">
                 {selectedRepairCenterIds.map(id => {
                   const center = repairCenters.find(rc => rc.id === id);
@@ -969,7 +971,7 @@ export function CustomerWizardDialog({ open, onOpenChange, onSuccess }: Customer
               <div className="p-2 rounded-xl bg-gradient-to-br from-emerald-500 to-green-600">
                 <CheckCircle2 className="h-5 w-5 text-white" />
               </div>
-              <h4 className="font-semibold text-emerald-800 dark:text-emerald-300">Cliente Creato con Successo</h4>
+              <h4 className="font-semibold text-emerald-800 dark:text-emerald-300">{t("customer.createdSuccess")}</h4>
             </div>
             <div className="space-y-2 text-sm">
               <p>
@@ -977,13 +979,13 @@ export function CustomerWizardDialog({ open, onOpenChange, onSuccess }: Customer
                 <span className="font-mono font-semibold text-slate-900 dark:text-white">{createdCustomer.customer.username}</span>
               </p>
               <p>
-                <span className="text-slate-500">Password Temporanea:</span>{" "}
+                <span className="text-slate-500">{t("customer.temporaryPassword")}:</span>{" "}
                 <code className="bg-white dark:bg-slate-800 px-3 py-1 rounded-lg font-mono font-semibold text-emerald-600" data-testid="text-temp-password">
                   {createdCustomer.tempPassword}
                 </code>
               </p>
               <p className="text-xs text-slate-500 mt-3">
-                Fornisci queste credenziali al cliente per il primo accesso.
+                {t("customer.provideCredentials")}
               </p>
             </div>
           </div>
@@ -999,11 +1001,11 @@ export function CustomerWizardDialog({ open, onOpenChange, onSuccess }: Customer
             data-testid="button-back-to-details"
           >
             <ChevronLeft className="mr-2 h-4 w-4" />
-            Modifica
+            {t("common.edit")}
           </Button>
           {createdCustomer ? (
             <Button onClick={handleClose} className="rounded-xl bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700" data-testid="button-close">
-              Chiudi
+              {t("common.close")}
             </Button>
           ) : (
             <Button
@@ -1015,10 +1017,10 @@ export function CustomerWizardDialog({ open, onOpenChange, onSuccess }: Customer
               {createCustomerMutation.isPending ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Creazione...
+                  {t("common.creating")}
                 </>
               ) : (
-                "Crea Cliente"
+                t("customer.createCustomer")
               )}
             </Button>
           )}
@@ -1043,14 +1045,14 @@ export function CustomerWizardDialog({ open, onOpenChange, onSuccess }: Customer
             </div>
             <div>
               <DialogTitle className="text-lg">
-                {step === "type" && "Nuovo Cliente"}
-                {step === "details" && `Nuovo ${customerType === "private" ? "Privato" : "Azienda"}`}
-                {step === "review" && "Riepilogo e Conferma"}
+                {step === "type" && t("customer.newCustomer")}
+                {step === "details" && t("customer.newType", { type: customerType === "private" ? t("customer.private") : t("customer.company") })}
+                {step === "review" && t("customer.summaryAndConfirm")}
               </DialogTitle>
               <DialogDescription className="text-sm">
-                {step === "type" && "Seleziona il tipo di cliente da creare"}
-                {step === "details" && "Compila i dati del cliente"}
-                {step === "review" && "Verifica i dati prima di creare il cliente"}
+                {step === "type" && t("customer.selectTypeToCreate")}
+                {step === "details" && t("customer.fillCustomerData")}
+                {step === "review" && t("customer.verifyBeforeCreate")}
               </DialogDescription>
             </div>
           </div>

@@ -19,6 +19,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Link } from "wouter";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
+import { useTranslation } from "react-i18next";
 
 type CommissionStatus = "pending" | "accrued" | "invoiced" | "paid" | "cancelled";
 
@@ -80,6 +81,7 @@ const months = [
 ];
 
 export default function AdminUtilityCommissionDetail() {
+  const { t } = useTranslation();
   const params = useParams<{ id: string }>();
   const [, setLocation] = useLocation();
   const { toast } = useToast();
@@ -108,10 +110,10 @@ export default function AdminUtilityCommissionDetail() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/utility/commissions"] });
-      toast({ title: "Commissione approvata", description: "La commissione è stata approvata con successo" });
+      toast({ title: t("utility.commissionApproved"), description: t("utility.commissionApprovedDesc") });
     },
     onError: (error: Error) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -124,10 +126,10 @@ export default function AdminUtilityCommissionDetail() {
       queryClient.invalidateQueries({ queryKey: ["/api/utility/commissions"] });
       setRejectDialogOpen(false);
       setRejectReason("");
-      toast({ title: "Commissione rifiutata" });
+      toast({ title: t("utility.commissionRejected") });
     },
     onError: (error: Error) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -137,11 +139,11 @@ export default function AdminUtilityCommissionDetail() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/utility/commissions"] });
-      toast({ title: "Commissione eliminata" });
+      toast({ title: t("utility.commissionDeleted") });
       setLocation("/admin/utility/commissions");
     },
     onError: (error: Error) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -257,13 +259,13 @@ export default function AdminUtilityCommissionDetail() {
           <CardContent className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <p className="text-sm text-muted-foreground">Importo</p>
+                <p className="text-sm text-muted-foreground">{t("common.amount")}</p>
                 <p className="text-2xl font-bold" data-testid="text-amount">
                   {formatCurrency(commission.amountCents)}
                 </p>
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">Stato</p>
+                <p className="text-sm text-muted-foreground">{t("common.status")}</p>
                 <Badge className={`mt-1 ${statusColors[commission.status]}`} data-testid="text-status">
                   <StatusIcon className="h-3 w-3 mr-1" />
                   {statusLabels[commission.status]}
@@ -293,7 +295,7 @@ export default function AdminUtilityCommissionDetail() {
               <>
                 <Separator />
                 <div>
-                  <p className="text-sm text-muted-foreground mb-1">Note</p>
+                  <p className="text-sm text-muted-foreground mb-1">{t("common.notes")}</p>
                   <p className="text-sm" data-testid="text-notes">{commission.notes}</p>
                 </div>
               </>
@@ -335,7 +337,7 @@ export default function AdminUtilityCommissionDetail() {
                 <Separator />
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <p className="text-sm text-muted-foreground">Tipo</p>
+                    <p className="text-sm text-muted-foreground">{t("common.type")}</p>
                     <p className="text-sm font-medium" data-testid="text-practice-type">{practice.itemType || "-"}</p>
                   </div>
                   <div>
@@ -349,7 +351,7 @@ export default function AdminUtilityCommissionDetail() {
                   <>
                     <Separator />
                     <div>
-                      <p className="text-sm text-muted-foreground">Cliente</p>
+                      <p className="text-sm text-muted-foreground">{t("common.customer")}</p>
                       <p className="text-sm font-medium" data-testid="text-practice-customer">{practice.temporaryCustomerName}</p>
                     </div>
                   </>
@@ -428,7 +430,7 @@ export default function AdminUtilityCommissionDetail() {
                   <CheckCircle2 className="h-4 w-4 text-green-600 dark:text-green-400" />
                 </div>
                 <div>
-                  <p className="text-sm font-medium">Pagata</p>
+                  <p className="text-sm font-medium">{t("invoices.paid")}</p>
                   <p className="text-xs text-muted-foreground" data-testid="text-paid-at">{formatDate(commission.paidAt)}</p>
                 </div>
               </div>
@@ -469,7 +471,7 @@ export default function AdminUtilityCommissionDetail() {
       <Dialog open={rejectDialogOpen} onOpenChange={setRejectDialogOpen}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>Rifiuta Commissione</DialogTitle>
+            <DialogTitle>{t("utility.rejectCommission")}</DialogTitle>
             <DialogDescription>Inserisci il motivo del rifiuto della commissione.</DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
@@ -479,7 +481,7 @@ export default function AdminUtilityCommissionDetail() {
                 id="rejectReason"
                 value={rejectReason}
                 onChange={(e) => setRejectReason(e.target.value)}
-                placeholder="Inserisci il motivo del rifiuto..."
+                placeholder={t("utility.rejectionReason")}
                 data-testid="textarea-reject-reason"
               />
             </div>
@@ -503,7 +505,7 @@ export default function AdminUtilityCommissionDetail() {
       <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>Elimina Commissione</DialogTitle>
+            <DialogTitle>{t("utility.deleteCommission")}</DialogTitle>
             <DialogDescription>
               Sei sicuro di voler eliminare questa commissione? L'azione non può essere annullata.
             </DialogDescription>

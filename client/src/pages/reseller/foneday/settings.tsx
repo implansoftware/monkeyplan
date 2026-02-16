@@ -11,6 +11,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { Settings, Key, CheckCircle, XCircle, Loader2, TestTube, Trash2, Save, ExternalLink, Package } from "lucide-react";
 import { Link } from "wouter";
+import { useTranslation } from "react-i18next";
 
 type FonedayCredential = {
   id: string;
@@ -26,6 +27,7 @@ type FonedayCredential = {
 };
 
 export default function FonedaySettingsPage() {
+  const { t } = useTranslation();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [apiToken, setApiToken] = useState("");
@@ -45,7 +47,7 @@ export default function FonedaySettingsPage() {
       setApiToken("");
     },
     onError: (error: Error) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -63,7 +65,7 @@ export default function FonedaySettingsPage() {
       }
     },
     onError: (error: Error) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -73,16 +75,16 @@ export default function FonedaySettingsPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/foneday/credentials"] });
-      toast({ title: "Eliminato", description: "Credenziali Foneday eliminate" });
+      toast({ title: t("pages.deleted"), description: "Credenziali Foneday eliminate" });
     },
     onError: (error: Error) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     },
   });
 
   const handleSave = () => {
     if (!apiToken.trim()) {
-      toast({ title: "Errore", description: "Inserisci il token API", variant: "destructive" });
+      toast({ title: t("common.error"), description: "Inserisci il token API", variant: "destructive" });
       return;
     }
     saveMutation.mutate();
@@ -134,7 +136,7 @@ export default function FonedaySettingsPage() {
                 <CardDescription>Le tue credenziali Foneday sono salvate</CardDescription>
               </div>
               <Badge variant={credential.isActive ? "default" : "secondary"}>
-                {credential.isActive ? "Attivo" : "Disattivato"}
+                {credential.isActive ? t("common.active") : "Disattivato"}
               </Badge>
             </div>
           </CardHeader>

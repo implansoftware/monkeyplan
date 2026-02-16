@@ -15,6 +15,7 @@ import { format } from "date-fns";
 import { it } from "date-fns/locale";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
+import { useTranslation } from "react-i18next";
 
 type WarrantyItem = {
   id: string;
@@ -37,10 +38,10 @@ type WarrantyItem = {
 };
 
 const statusConfig: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
-  offered: { label: "In Attesa", variant: "secondary" },
+  offered: { label: t("common.pending"), variant: "secondary" },
   accepted: { label: "Attiva", variant: "default" },
-  declined: { label: "Rifiutata", variant: "destructive" },
-  expired: { label: "Scaduta", variant: "outline" },
+  declined: { label: t("common.rejected"), variant: "destructive" },
+  expired: { label: t("invoices.overdue"), variant: "outline" },
 };
 
 const coverageLabels: Record<string, string> = {
@@ -52,7 +53,7 @@ const coverageLabels: Record<string, string> = {
 function getDaysRemainingBadge(daysRemaining: number | null, status: string) {
   if (status !== "accepted" || daysRemaining === null) return null;
   if (daysRemaining <= 0) {
-    return <Badge variant="destructive" className="gap-1 text-xs"><AlertTriangle className="h-3 w-3" />Scaduta</Badge>;
+    return <Badge variant="destructive" className="gap-1 text-xs"><AlertTriangle className="h-3 w-3" />{t("invoices.overdue")}</Badge>;
   }
   if (daysRemaining <= 30) {
     return <Badge variant="outline" className="gap-1 text-xs border-amber-300 text-amber-700 dark:text-amber-400"><AlertTriangle className="h-3 w-3" />{daysRemaining}g rimasti</Badge>;
@@ -61,6 +62,7 @@ function getDaysRemainingBadge(daysRemaining: number | null, status: string) {
 }
 
 export default function ResellerWarranties() {
+  const { t } = useTranslation();
   const [, navigate] = useLocation();
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
@@ -95,13 +97,13 @@ export default function ResellerWarranties() {
       setNotes("");
     },
     onError: (error: any) => {
-      toast({ title: "Errore", description: error.message || "Impossibile creare la garanzia", variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message || "Impossibile creare la garanzia", variant: "destructive" });
     },
   });
 
   const handleCreate = () => {
     if (!selectedCustomerId || !selectedProductId) {
-      toast({ title: "Errore", description: "Seleziona un cliente e un prodotto garanzia", variant: "destructive" });
+      toast({ title: t("common.error"), description: "Seleziona un cliente e un prodotto garanzia", variant: "destructive" });
       return;
     }
     createMutation.mutate({ customerId: selectedCustomerId, warrantyProductId: selectedProductId, notes: notes || undefined });
@@ -201,7 +203,7 @@ export default function ResellerWarranties() {
             </div>
             <div>
               <p className="text-2xl font-bold">{pendingCount}</p>
-              <p className="text-xs text-muted-foreground">In Attesa</p>
+              <p className="text-xs text-muted-foreground">{t("common.pending")}</p>
             </div>
           </CardContent>
         </Card>
@@ -220,14 +222,14 @@ export default function ResellerWarranties() {
         </div>
         <Select value={statusFilter} onValueChange={setStatusFilter}>
           <SelectTrigger className="w-full sm:w-[180px]" data-testid="select-status-filter">
-            <SelectValue placeholder="Filtra per stato" />
+            <SelectValue placeholder={t("common.filterByStatus")} />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">Tutti gli stati</SelectItem>
-            <SelectItem value="offered">In Attesa</SelectItem>
+            <SelectItem value="all">{t("common.allStatuses")}</SelectItem>
+            <SelectItem value="offered">{t("common.pending")}</SelectItem>
             <SelectItem value="accepted">Attiva</SelectItem>
-            <SelectItem value="declined">Rifiutata</SelectItem>
-            <SelectItem value="expired">Scaduta</SelectItem>
+            <SelectItem value="declined">{t("common.rejected")}</SelectItem>
+            <SelectItem value="expired">{t("invoices.overdue")}</SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -236,7 +238,7 @@ export default function ResellerWarranties() {
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-12 text-center">
             <Shield className="h-12 w-12 text-muted-foreground mb-4" />
-            <p className="text-lg font-medium">Nessuna garanzia trovata</p>
+            <p className="text-lg font-medium">{t("warranties.noWarrantiesFound")}</p>
             <p className="text-sm text-muted-foreground">
               {search || statusFilter !== "all"
                 ? "Prova a modificare i filtri di ricerca"
@@ -278,7 +280,7 @@ export default function ResellerWarranties() {
                         <div className="flex items-center gap-2">
                           <UserIcon className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
                           <div className="min-w-0">
-                            <p className="text-muted-foreground">Cliente</p>
+                            <p className="text-muted-foreground">{t("common.customer")}</p>
                             <p className="font-medium truncate">{w.customerName}</p>
                           </div>
                         </div>
@@ -301,7 +303,7 @@ export default function ResellerWarranties() {
                         <div className="flex items-center gap-2">
                           <Calendar className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
                           <div>
-                            <p className="text-muted-foreground">Prezzo</p>
+                            <p className="text-muted-foreground">{t("common.price")}</p>
                             <p className="font-medium">{(w.price / 100).toLocaleString('it-IT', { style: 'currency', currency: 'EUR' })}</p>
                           </div>
                         </div>
@@ -347,7 +349,7 @@ export default function ResellerWarranties() {
           </DialogHeader>
           <div className="space-y-4 py-2">
             <div className="space-y-2">
-              <Label htmlFor="customer">Cliente</Label>
+              <Label htmlFor="customer">{t("common.customer")}</Label>
               <Select value={selectedCustomerId} onValueChange={setSelectedCustomerId}>
                 <SelectTrigger data-testid="select-warranty-customer">
                   <SelectValue placeholder="Seleziona un cliente" />
@@ -387,7 +389,7 @@ export default function ResellerWarranties() {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsCreateOpen(false)} data-testid="button-cancel-warranty">Annulla</Button>
+            <Button variant="outline" onClick={() => setIsCreateOpen(false)} data-testid="button-cancel-warranty">{t("common.cancel")}</Button>
             <Button onClick={handleCreate} disabled={createMutation.isPending || !selectedCustomerId || !selectedProductId} data-testid="button-confirm-warranty">
               {createMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Shield className="h-4 w-4 mr-2" />}
               Crea Garanzia

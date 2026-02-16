@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useParams, useLocation } from "wouter";
@@ -53,16 +54,17 @@ interface PaymentConfigResponse {
   effectiveConfig: PaymentConfigItem | null;
 }
 
-const PAYMENT_METHODS = [
-  { value: "cash", label: "Contanti", alwaysEnabled: true },
-  { value: "card", label: "Carta (POS fisico)" },
-  { value: "stripe_link", label: "Stripe Payment Link", requiresConfig: "stripeEnabled" },
-  { value: "paypal", label: "PayPal", requiresConfig: "paypalEnabled" },
-  { value: "pos_terminal", label: "Terminale POS" },
-  { value: "mixed", label: "Pagamento Misto" },
-];
 
 export default function PosRegisterSettingsPage() {
+  const { t } = useTranslation();
+  const PAYMENT_METHODS = [
+    { value: "cash", label: t("pos.cash"), alwaysEnabled: true },
+    { value: "card", label: "Carta (POS fisico)" },
+    { value: "stripe_link", label: "Stripe Payment Link", requiresConfig: "stripeEnabled" },
+    { value: "paypal", label: "PayPal", requiresConfig: "paypalEnabled" },
+    { value: "pos_terminal", label: "Terminale POS" },
+    { value: "mixed", label: t("pos.pagamentoMisto") },
+  ];
   const { id } = useParams<{ id: string }>();
   const [, navigate] = useLocation();
   const { toast } = useToast();
@@ -113,18 +115,18 @@ export default function PosRegisterSettingsPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/repair-center/pos/registers"] });
-      toast({ title: "Impostazioni salvate", description: "Le impostazioni della cassa sono state aggiornate" });
+      toast({ title: t("settings.saved"), description: "Le impostazioni della cassa sono state aggiornate" });
     },
     onError: (error: Error) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("auth.error"), description: error.message, variant: "destructive" });
     },
   });
 
   const handleSave = () => {
     if (!enabledPaymentMethods.includes(defaultPaymentMethod)) {
       toast({ 
-        title: "Errore", 
-        description: "Il metodo di pagamento predefinito deve essere tra i metodi abilitati", 
+        title: t("auth.error"), 
+        description: t("pos.defaultPaymentMustBeEnabled"), 
         variant: "destructive" 
       });
       return;
@@ -217,7 +219,7 @@ export default function PosRegisterSettingsPage() {
               <Label>Metodo di Pagamento Predefinito</Label>
               <Select value={defaultPaymentMethod} onValueChange={setDefaultPaymentMethod}>
                 <SelectTrigger data-testid="select-default-payment">
-                  <SelectValue placeholder="Seleziona metodo predefinito" />
+                  <SelectValue placeholder={t("pos.selezionaMetodoPredefinito")} />
                 </SelectTrigger>
                 <SelectContent>
                   {enabledPaymentMethods.map(method => {
@@ -231,7 +233,7 @@ export default function PosRegisterSettingsPage() {
                 </SelectContent>
               </Select>
               <p className="text-sm text-muted-foreground">
-                Questo metodo verrà selezionato automaticamente per le nuove transazioni
+                {t("pos.methodAutoSelected")}
               </p>
             </div>
 
@@ -289,7 +291,7 @@ export default function PosRegisterSettingsPage() {
           <CardContent>
             <div className="flex items-center justify-between">
               <div className="space-y-0.5">
-                <Label htmlFor="auto-print">Stampa automatica scontrino</Label>
+                <Label htmlFor="auto-print">{t("pos.stampaAutomaticaScontrino")}</Label>
                 <p className="text-sm text-muted-foreground">
                   Stampa automaticamente lo scontrino dopo ogni transazione completata
                 </p>

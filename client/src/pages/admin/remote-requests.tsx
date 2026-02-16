@@ -7,6 +7,7 @@ import type { RemoteRepairRequest, User as UserType, RepairCenter, RemoteRepairR
 type EnrichedRemoteRequest = RemoteRepairRequest & { devices: RemoteRepairRequestDevice[] };
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
+import { useTranslation } from "react-i18next";
 
 const statusLabels: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
   pending: { label: "In attesa", variant: "secondary" },
@@ -24,6 +25,7 @@ const statusLabels: Record<string, { label: string; variant: "default" | "second
 };
 
 export default function AdminRemoteRequests() {
+  const { t } = useTranslation();
   const { data: requests, isLoading } = useQuery<EnrichedRemoteRequest[]>({
     queryKey: ["/api/admin/remote-requests"],
   });
@@ -134,7 +136,7 @@ export default function AdminRemoteRequests() {
         <div className="space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle>Tutte le Richieste</CardTitle>
+              <CardTitle>{t("warehouse.allRequests")}</CardTitle>
               <CardDescription>
                 {requests?.length} richieste totali
               </CardDescription>
@@ -190,7 +192,7 @@ export default function AdminRemoteRequests() {
                       <div key={device.id} className="p-3 border rounded-md space-y-2" data-testid={`device-${device.id}`}>
                         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                           <div>
-                            <p className="text-xs text-muted-foreground">Dispositivo</p>
+                            <p className="text-xs text-muted-foreground">{t("repairs.device")}</p>
                             <p className="text-sm font-medium">{device.deviceType}</p>
                           </div>
                           <div>
@@ -198,11 +200,11 @@ export default function AdminRemoteRequests() {
                             <p className="text-sm font-medium">{device.brand} {device.model}</p>
                           </div>
                           <div>
-                            <p className="text-xs text-muted-foreground">Quantità</p>
+                            <p className="text-xs text-muted-foreground">{t("common.quantity")}</p>
                             <p className="text-sm font-medium">{device.quantity}</p>
                           </div>
                           <div>
-                            <p className="text-xs text-muted-foreground">Stato</p>
+                            <p className="text-xs text-muted-foreground">{t("common.status")}</p>
                             <Badge variant={statusLabels[device.status]?.variant || "secondary"} className="text-xs">
                               {statusLabels[device.status]?.label || device.status}
                             </Badge>

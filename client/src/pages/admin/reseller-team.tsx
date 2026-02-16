@@ -21,19 +21,20 @@ import { z } from "zod";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { StaffWizard } from "@/components/StaffWizard";
 import type { User } from "@shared/schema";
+import { useTranslation } from "react-i18next";
 
 const MODULES = [
-  { id: "repairs", name: "Lavorazioni", description: "Gestione riparazioni e ordini" },
-  { id: "customers", name: "Clienti", description: "Anagrafica clienti" },
-  { id: "products", name: "Prodotti", description: "Catalogo prodotti e ricambi" },
-  { id: "inventory", name: "Magazzino", description: "Gestione inventario" },
-  { id: "repair_centers", name: "Centri Riparazione", description: "Gestione centri" },
-  { id: "services", name: "Servizi", description: "Catalogo servizi" },
-  { id: "suppliers", name: "Fornitori", description: "Gestione fornitori" },
-  { id: "supplier_orders", name: "Ordini Fornitori", description: "Ordini ai fornitori" },
-  { id: "appointments", name: "Appuntamenti", description: "Gestione appuntamenti" },
-  { id: "invoices", name: "Fatture", description: "Fatturazione" },
-  { id: "tickets", name: "Ticket Supporto", description: "Assistenza clienti" },
+  { id: "repairs", name: t("admin.permissions.repairs"), description: t("admin.permissions.repairsDesc") },
+  { id: "customers", name: t("admin.permissions.customers"), description: t("admin.permissions.customersDesc") },
+  { id: "products", name: t("admin.permissions.products"), description: t("admin.permissions.productsDesc") },
+  { id: "inventory", name: t("admin.permissions.inventory"), description: t("admin.permissions.inventoryDesc") },
+  { id: "repair_centers", name: t("admin.permissions.repairCenters"), description: t("admin.permissions.repairCentersDesc") },
+  { id: "services", name: t("admin.permissions.services"), description: t("admin.permissions.servicesDesc") },
+  { id: "suppliers", name: t("admin.permissions.suppliers"), description: t("admin.permissions.suppliersDesc") },
+  { id: "supplier_orders", name: t("admin.permissions.supplierOrders"), description: t("admin.permissions.supplierOrdersDesc") },
+  { id: "appointments", name: t("admin.permissions.appointments"), description: t("admin.permissions.appointmentsDesc") },
+  { id: "invoices", name: t("admin.permissions.invoices"), description: t("admin.permissions.invoicesDesc") },
+  { id: "tickets", name: t("admin.permissions.tickets"), description: t("admin.permissions.ticketsDesc") },
 ];
 
 const PERMISSION_ACTIONS = [
@@ -82,6 +83,7 @@ const staffFormSchema = z.object({
 type StaffFormValues = z.infer<typeof staffFormSchema>;
 
 export default function AdminResellerTeam() {
+  const { t } = useTranslation();
   const { resellerId } = useParams<{ resellerId: string }>();
   const [searchQuery, setSearchQuery] = useState("");
   const [wizardOpen, setWizardOpen] = useState(false);
@@ -146,13 +148,13 @@ export default function AdminResellerTeam() {
       setLocalPermissions({});
       setLocalRepairCenterIds([]);
       toast({
-        title: "Membro staff creato",
-        description: "Il nuovo membro del team è stato aggiunto con successo.",
+        title: t("admin.teams.memberCreated"),
+        description: t("admin.teams.memberCreated"),
       });
     },
     onError: (error: any) => {
       toast({
-        title: "Errore",
+        title: t("common.error"),
         description: error.message || "Impossibile creare il membro staff",
         variant: "destructive",
       });
@@ -173,13 +175,13 @@ export default function AdminResellerTeam() {
       setLocalPermissions({});
       setLocalRepairCenterIds([]);
       toast({
-        title: "Aggiornato",
-        description: "Le modifiche sono state salvate con successo.",
+        title: t("common.updatedSuccessfully"),
+        description: t("common.savedSuccessfully"),
       });
     },
     onError: (error: any) => {
       toast({
-        title: "Errore",
+        title: t("common.error"),
         description: error.message || "Impossibile aggiornare",
         variant: "destructive",
       });
@@ -195,13 +197,13 @@ export default function AdminResellerTeam() {
       setDeleteDialogOpen(false);
       setSelectedMember(null);
       toast({
-        title: "Eliminato",
-        description: "Il membro staff è stato rimosso dal team.",
+        title: t("common.deletedSuccessfully"),
+        description: t("admin.teams.memberDeleted"),
       });
     },
     onError: (error: any) => {
       toast({
-        title: "Errore",
+        title: t("common.error"),
         description: error.message || "Impossibile eliminare",
         variant: "destructive",
       });
@@ -386,7 +388,7 @@ export default function AdminResellerTeam() {
           <div className="relative">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" />
             <Input
-              placeholder="Cerca per nome, email o username..."
+              placeholder={t("common.search")}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-12 h-12 rounded-xl border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50"
@@ -426,14 +428,14 @@ export default function AdminResellerTeam() {
               <Table>
                 <TableHeader>
                   <TableRow className="bg-slate-50 dark:bg-slate-800/50">
-                    <TableHead className="text-slate-600 dark:text-slate-400">Nome Completo</TableHead>
-                    <TableHead className="text-slate-600 dark:text-slate-400">Email</TableHead>
-                    <TableHead className="text-slate-600 dark:text-slate-400">Username</TableHead>
-                    <TableHead className="text-slate-600 dark:text-slate-400">Stato</TableHead>
-                    <TableHead className="text-slate-600 dark:text-slate-400">Permessi</TableHead>
+                    <TableHead className="text-slate-600 dark:text-slate-400">{t("auth.fullName")}</TableHead>
+                    <TableHead className="text-slate-600 dark:text-slate-400">{t("common.email")}</TableHead>
+                    <TableHead className="text-slate-600 dark:text-slate-400">{t("auth.username")}</TableHead>
+                    <TableHead className="text-slate-600 dark:text-slate-400">{t("common.status")}</TableHead>
+                    <TableHead className="text-slate-600 dark:text-slate-400">{t("common.permissions")}</TableHead>
                     <TableHead className="text-slate-600 dark:text-slate-400">Centri Assegnati</TableHead>
                     <TableHead className="text-slate-600 dark:text-slate-400">Data Creazione</TableHead>
-                    <TableHead className="text-slate-600 dark:text-slate-400">Azioni</TableHead>
+                    <TableHead className="text-slate-600 dark:text-slate-400">{t("common.actions")}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -446,7 +448,7 @@ export default function AdminResellerTeam() {
                       <TableCell className="font-mono text-sm text-slate-500">{member.username}</TableCell>
                       <TableCell>
                         {member.isActive ? (
-                          <Badge className="bg-emerald-100 text-emerald-700 hover:bg-emerald-100">Attivo</Badge>
+                          <Badge className="bg-emerald-100 text-emerald-700 hover:bg-emerald-100">{t("common.active")}</Badge>
                         ) : (
                           <Badge className="bg-slate-100 text-slate-600 hover:bg-slate-100">Disattivato</Badge>
                         )}
@@ -541,9 +543,9 @@ export default function AdminResellerTeam() {
                   name="fullName"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="text-slate-700 dark:text-slate-300">Nome Completo</FormLabel>
+                      <FormLabel className="text-slate-700 dark:text-slate-300">{t("auth.fullName")}</FormLabel>
                       <FormControl>
-                        <Input {...field} placeholder="Mario Rossi" className="h-11 rounded-xl" data-testid="input-fullname" />
+                        <Input {...field} placeholder={t("auth.fullName")} className="h-11 rounded-xl" data-testid="input-fullname" />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -555,7 +557,7 @@ export default function AdminResellerTeam() {
                   name="email"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="text-slate-700 dark:text-slate-300">Email</FormLabel>
+                      <FormLabel className="text-slate-700 dark:text-slate-300">{t("common.email")}</FormLabel>
                       <FormControl>
                         <Input {...field} type="email" placeholder="mario@esempio.it" className="h-11 rounded-xl" data-testid="input-email" />
                       </FormControl>
@@ -571,7 +573,7 @@ export default function AdminResellerTeam() {
                       name="username"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel className="text-slate-700 dark:text-slate-300">Username</FormLabel>
+                          <FormLabel className="text-slate-700 dark:text-slate-300">{t("auth.username")}</FormLabel>
                           <FormControl>
                             <Input {...field} placeholder="mario.rossi" className="h-11 rounded-xl" data-testid="input-username" />
                           </FormControl>
@@ -585,7 +587,7 @@ export default function AdminResellerTeam() {
                       name="password"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel className="text-slate-700 dark:text-slate-300">Password</FormLabel>
+                          <FormLabel className="text-slate-700 dark:text-slate-300">{t("auth.password")}</FormLabel>
                           <FormControl>
                             <Input {...field} type="password" placeholder="••••••" className="h-11 rounded-xl" data-testid="input-password" />
                           </FormControl>
@@ -724,7 +726,7 @@ export default function AdminResellerTeam() {
                         </div>
                       </TableHead>
                     ))}
-                    <TableHead className="text-center w-[100px] text-slate-600 dark:text-slate-400">Tutti</TableHead>
+                    <TableHead className="text-center w-[100px] text-slate-600 dark:text-slate-400">{t("common.allMasc")}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>

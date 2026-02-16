@@ -1,5 +1,6 @@
 import { Link } from "wouter";
 import { useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import {
@@ -14,33 +15,34 @@ import { Navbar } from "./landing";
 import { PageFooter } from "./about";
 import { usePageTitle } from "@/hooks/use-page-title";
 
-const contactMethods = [
-  {
-    icon: Mail,
-    title: "Email",
-    description: "Scrivici per qualsiasi domanda o richiesta di informazioni.",
-    detail: "info@monkeyplan.it",
-    action: "mailto:info@monkeyplan.it",
-  },
-  {
-    icon: MessageSquare,
-    title: "Supporto Tecnico",
-    description: "Hai bisogno di assistenza tecnica sulla piattaforma? Apri un ticket.",
-    detail: "Disponibile via ticket dalla dashboard",
-    action: "/auth",
-  },
-  {
-    icon: Phone,
-    title: "Telefono",
-    description: "Per richieste urgenti o commerciali.",
-    detail: "Lun-Ven 9:00-18:00",
-    action: null,
-  },
-];
-
 export default function ContactPage() {
+  const { t } = useTranslation();
   usePageTitle("Contatti");
   useEffect(() => { window.scrollTo(0, 0); }, []);
+
+  const contactMethods = [
+    {
+      icon: Mail,
+      title: t("public.contact.methods.email.title"),
+      description: t("public.contact.methods.email.description"),
+      detail: t("public.contact.methods.email.detail"),
+      action: "mailto:info@monkeyplan.it",
+    },
+    {
+      icon: MessageSquare,
+      title: t("public.contact.methods.support.title"),
+      description: t("public.contact.methods.support.description"),
+      detail: t("public.contact.methods.support.detail"),
+      action: "/auth",
+    },
+    {
+      icon: Phone,
+      title: t("public.contact.methods.phone.title"),
+      description: t("public.contact.methods.phone.description"),
+      detail: t("public.contact.methods.phone.detail"),
+      action: null,
+    },
+  ];
 
   return (
     <div className="min-h-screen bg-white dark:bg-slate-950 text-slate-900 dark:text-white">
@@ -50,17 +52,16 @@ export default function ContactPage() {
         <div className="max-w-4xl mx-auto text-center">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 text-xs font-medium mb-6">
             <Mail className="w-3.5 h-3.5" />
-            Contatti
+            {t("public.contact.badge")}
           </div>
           <h1 className="text-4xl sm:text-5xl font-bold tracking-tight mb-6" data-testid="text-contact-title">
-            Parliamo del tuo{" "}
+            {t("public.contact.title")}{" "}
             <span className="bg-gradient-to-r from-emerald-600 to-teal-500 bg-clip-text text-transparent">
-              progetto
+              {t("public.contact.titleHighlight")}
             </span>
           </h1>
           <p className="text-lg text-slate-600 dark:text-slate-400 max-w-2xl mx-auto leading-relaxed" data-testid="text-contact-subtitle">
-            Siamo qui per aiutarti. Che tu abbia una domanda, un suggerimento o voglia saperne di più,
-            non esitare a contattarci.
+            {t("public.contact.subtitle")}
           </p>
         </div>
       </section>
@@ -86,15 +87,15 @@ export default function ContactPage() {
         <div className="max-w-4xl mx-auto">
           <div className="grid md:grid-cols-2 gap-12">
             <div>
-              <h2 className="text-2xl font-bold mb-6">Informazioni</h2>
+              <h2 className="text-2xl font-bold mb-6">{t("public.contact.info.title")}</h2>
               <div className="space-y-6">
                 <div className="flex items-start gap-4">
                   <div className="w-10 h-10 rounded-lg bg-emerald-100 dark:bg-emerald-900/40 flex items-center justify-center shrink-0">
                     <MapPin className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
                   </div>
                   <div>
-                    <h3 className="font-semibold mb-1">Sede</h3>
-                    <p className="text-sm text-slate-600 dark:text-slate-400">Italia</p>
+                    <h3 className="font-semibold mb-1">{t("public.contact.info.location.title")}</h3>
+                    <p className="text-sm text-slate-600 dark:text-slate-400">{t("public.contact.info.location.value")}</p>
                   </div>
                 </div>
                 <div className="flex items-start gap-4">
@@ -102,9 +103,9 @@ export default function ContactPage() {
                     <Clock className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
                   </div>
                   <div>
-                    <h3 className="font-semibold mb-1">Orari</h3>
-                    <p className="text-sm text-slate-600 dark:text-slate-400">Lunedì - Venerdì: 9:00 - 18:00</p>
-                    <p className="text-sm text-slate-600 dark:text-slate-400">Sabato - Domenica: Chiuso</p>
+                    <h3 className="font-semibold mb-1">{t("public.contact.info.hours.title")}</h3>
+                    <p className="text-sm text-slate-600 dark:text-slate-400">{t("public.contact.info.hours.weekdays")}</p>
+                    <p className="text-sm text-slate-600 dark:text-slate-400">{t("public.contact.info.hours.weekend")}</p>
                   </div>
                 </div>
                 <div className="flex items-start gap-4">
@@ -112,27 +113,24 @@ export default function ContactPage() {
                     <Send className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
                   </div>
                   <div>
-                    <h3 className="font-semibold mb-1">Risposta rapida</h3>
-                    <p className="text-sm text-slate-600 dark:text-slate-400">Rispondiamo entro 24 ore lavorative a tutte le richieste.</p>
+                    <h3 className="font-semibold mb-1">{t("public.contact.info.response.title")}</h3>
+                    <p className="text-sm text-slate-600 dark:text-slate-400">{t("public.contact.info.response.value")}</p>
                   </div>
                 </div>
               </div>
             </div>
             <div>
-              <h2 className="text-2xl font-bold mb-6">Hai bisogno di assistenza?</h2>
+              <h2 className="text-2xl font-bold mb-6">{t("public.contact.support.title")}</h2>
               <Card className="p-6" data-testid="card-contact-support">
                 <p className="text-sm text-slate-600 dark:text-slate-400 mb-4">
-                  Se sei già un utente registrato, il modo più veloce per ricevere supporto
-                  è aprire un ticket direttamente dalla tua dashboard. Il nostro team risponde
-                  rapidamente a ogni segnalazione.
+                  {t("public.contact.support.registered")}
                 </p>
                 <p className="text-sm text-slate-600 dark:text-slate-400 mb-6">
-                  Se non sei ancora registrato, puoi creare un account gratuito e iniziare subito
-                  a esplorare la piattaforma.
+                  {t("public.contact.support.notRegistered")}
                 </p>
                 <Link href="/auth" data-testid="link-contact-cta">
                   <Button data-testid="button-contact-cta">
-                    Accedi alla piattaforma
+                    {t("public.contact.support.ctaButton")}
                     <Send className="w-3.5 h-3.5 ml-2" />
                   </Button>
                 </Link>

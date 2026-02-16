@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useState, useEffect, useRef } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useRoute, useLocation } from "wouter";
@@ -81,6 +82,7 @@ function AttachmentList({ attachments }: { attachments?: TicketAttachment[] }) {
 }
 
 export default function CustomerTicketDetail() {
+  const { t } = useTranslation();
   const [, params] = useRoute("/customer/tickets/:id");
   const [, setLocation] = useLocation();
   const ticketId = params?.id;
@@ -137,13 +139,13 @@ export default function CustomerTicketDetail() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/tickets", ticketId, "messages"] });
       setReplyMessage("");
-      toast({ title: "Messaggio inviato" });
+      toast({ title: t("tickets.messageSent") });
     },
     onError: (error: Error) => {
       const serverMessage = error.message.replace(/^\d+:\s*/, '');
       
       toast({ 
-        title: "Errore", 
+        title: t("auth.error"), 
         description: serverMessage, 
         variant: "destructive" 
       });
@@ -161,18 +163,18 @@ export default function CustomerTicketDetail() {
 
   const getStatusBadge = (status: string) => {
     switch (status) {
-      case "open": return <Badge>Aperto</Badge>;
-      case "in_progress": return <Badge variant="secondary">In lavorazione</Badge>;
-      case "closed": return <Badge variant="outline">Chiuso</Badge>;
+      case "open": return <Badge>{t("tickets.status.open")}</Badge>;
+      case "in_progress": return <Badge variant="secondary">{t("tickets.status.inProgress")}</Badge>;
+      case "closed": return <Badge variant="outline">{t("tickets.status.closed")}</Badge>;
       default: return <Badge variant="outline">{status}</Badge>;
     }
   };
 
   const getPriorityBadge = (priority: string) => {
     switch (priority) {
-      case "high": return <Badge variant="destructive">Alta</Badge>;
-      case "medium": return <Badge variant="secondary">Media</Badge>;
-      case "low": return <Badge variant="outline">Bassa</Badge>;
+      case "high": return <Badge variant="destructive">{t("common.priorityHigh")}</Badge>;
+      case "medium": return <Badge variant="secondary">{t("common.priorityMedium")}</Badge>;
+      case "low": return <Badge variant="outline">{t("common.priorityLow")}</Badge>;
       default: return <Badge variant="outline">{priority}</Badge>;
     }
   };
@@ -222,23 +224,23 @@ export default function CustomerTicketDetail() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Dettagli Ticket</CardTitle>
+          <CardTitle>{t("tickets.ticketDetails")}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div>
-            <div className="text-sm font-medium mb-1">Descrizione</div>
+            <div className="text-sm font-medium mb-1">{t("common.description")}</div>
             <p className="text-sm text-muted-foreground">{ticket.description}</p>
           </div>
           <Separator />
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
             <div>
-              <div className="font-medium mb-1">Creato il</div>
+              <div className="font-medium mb-1">{t("common.createdAt")}</div>
               <div className="text-muted-foreground">
                 {format(new Date(ticket.createdAt), "dd MMMM yyyy 'alle' HH:mm", { locale: it })}
               </div>
             </div>
             <div>
-              <div className="font-medium mb-1">Ultimo aggiornamento</div>
+              <div className="font-medium mb-1">{t("admin.common.lastUpdate")}</div>
               <div className="text-muted-foreground">
                 {format(new Date(ticket.updatedAt), "dd MMMM yyyy 'alle' HH:mm", { locale: it })}
               </div>
@@ -249,7 +251,7 @@ export default function CustomerTicketDetail() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Conversazione</CardTitle>
+          <CardTitle>{t("tickets.conversation")}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           {messagesLoading ? (
@@ -293,9 +295,9 @@ export default function CustomerTicketDetail() {
             <>
               <Separator />
               <div className="space-y-3">
-                <div className="text-sm font-medium">Scrivi una risposta</div>
+                <div className="text-sm font-medium">{t("tickets.writeReply")}</div>
                 <Textarea
-                  placeholder="Digita il tuo messaggio..."
+                  placeholder={t("tickets.typeMessage")}
                   value={replyMessage}
                   onChange={(e) => setReplyMessage(e.target.value)}
                   rows={4}
@@ -315,7 +317,7 @@ export default function CustomerTicketDetail() {
 
           {ticket.status === "closed" && (
             <div className="text-center py-4 text-muted-foreground text-sm">
-              Questo ticket è stato chiuso. Non è più possibile inviare messaggi.
+              {t("tickets.ticketClosedNoMessages")}
             </div>
           )}
         </CardContent>

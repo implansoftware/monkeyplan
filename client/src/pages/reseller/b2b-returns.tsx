@@ -17,6 +17,7 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
+import { useTranslation } from "react-i18next";
 
 interface B2BReturnWithItems extends B2bReturn {
   items: (B2bReturnItem & { product?: Product })[];
@@ -27,15 +28,15 @@ function formatPrice(cents: number): string {
 }
 
 const statusConfig: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline"; icon: any }> = {
-  requested: { label: "In Attesa", variant: "secondary", icon: Clock },
-  approved: { label: "Approvato", variant: "default", icon: CheckCircle },
+  requested: { label: t("common.pending"), variant: "secondary", icon: Clock },
+  approved: { label: t("repairs.status.approved"), variant: "default", icon: CheckCircle },
   awaiting_shipment: { label: "Da Spedire", variant: "outline", icon: Send },
-  rejected: { label: "Rifiutato", variant: "destructive", icon: XCircle },
-  shipped: { label: "Spedito", variant: "default", icon: Truck },
-  received: { label: "Ricevuto", variant: "default", icon: PackageCheck },
+  rejected: { label: t("b2b.status.cancelled"), variant: "destructive", icon: XCircle },
+  shipped: { label: t("b2b.status.shipped"), variant: "default", icon: Truck },
+  received: { label: t("repairs.status.received"), variant: "default", icon: PackageCheck },
   inspecting: { label: "In Ispezione", variant: "secondary", icon: Eye },
-  completed: { label: "Completato", variant: "default", icon: CheckCircle },
-  cancelled: { label: "Annullato", variant: "destructive", icon: XCircle },
+  completed: { label: t("common.completed"), variant: "default", icon: CheckCircle },
+  cancelled: { label: t("repairs.status.cancelled"), variant: "destructive", icon: XCircle },
 };
 
 const reasonLabels: Record<string, string> = {
@@ -45,10 +46,11 @@ const reasonLabels: Record<string, string> = {
   damaged_in_transit: "Danneggiato",
   excess_stock: "Eccesso stock",
   quality_issue: "Qualità",
-  other: "Altro",
+  other: t("common.other"),
 };
 
 export default function ResellerB2BReturns() {
+  const { t } = useTranslation();
   const [selectedReturn, setSelectedReturn] = useState<B2BReturnWithItems | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
   const [shipDialogOpen, setShipDialogOpen] = useState(false);
@@ -66,7 +68,7 @@ export default function ResellerB2BReturns() {
       return res.json();
     },
     onSuccess: () => {
-      toast({ title: "Spedizione registrata", description: "Il reso è stato marcato come spedito" });
+      toast({ title: t("warehouse.shipmentRegistered"), description: "Il reso è stato marcato come spedito" });
       queryClient.invalidateQueries({ queryKey: ['/api/reseller/b2b-returns'] });
       setShipDialogOpen(false);
       setDetailOpen(false);
@@ -74,7 +76,7 @@ export default function ResellerB2BReturns() {
       setCarrier("");
     },
     onError: (error: any) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -125,9 +127,7 @@ export default function ResellerB2BReturns() {
         <CardFooter className="flex justify-between items-center">
           <span className="font-semibold text-primary">{formatPrice(ret.totalAmount || 0)}</span>
           <Button variant="ghost" size="sm">
-            <Eye className="h-4 w-4 mr-1" />
-            Dettagli
-          </Button>
+            <Eye className="h-4 w-4 mr-1" />{t("common.details")}</Button>
         </CardFooter>
       </Card>
     );
@@ -155,7 +155,7 @@ export default function ResellerB2BReturns() {
               <RotateCcw className="h-6 w-6 text-white" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold tracking-tight text-white">I Miei Resi B2B</h1>
+              <h1 className="text-2xl font-bold tracking-tight text-white">{t("sidebar.items.myB2BReturns")}</h1>
               <p className="text-sm text-white/80">Gestisci le tue richieste di reso per ordini B2B</p>
             </div>
           </div>
@@ -252,9 +252,9 @@ export default function ResellerB2BReturns() {
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead>Prodotto</TableHead>
-                        <TableHead className="text-right">Qtà</TableHead>
-                        <TableHead className="text-right">Totale</TableHead>
+                        <TableHead>{t("common.product")}</TableHead>
+                        <TableHead className="text-right">{t("common.qty")}</TableHead>
+                        <TableHead className="text-right">{t("common.total")}</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -373,14 +373,10 @@ export default function ResellerB2BReturns() {
               </div>
 
               <DialogFooter className="gap-2">
-                <Button variant="outline" onClick={() => setDetailOpen(false)}>
-                  Chiudi
-                </Button>
+                <Button variant="outline" onClick={() => setDetailOpen(false)}>{t("common.close")}</Button>
                 {(selectedReturn.status === 'approved' || selectedReturn.status === 'awaiting_shipment') && (
                   <Button onClick={() => setShipDialogOpen(true)} data-testid="button-ship-return">
-                    <Truck className="h-4 w-4 mr-2" />
-                    Registra Spedizione
-                  </Button>
+                    <Truck className="h-4 w-4 mr-2" />{t("warehouse.registerShipment")}</Button>
                 )}
               </DialogFooter>
             </>
@@ -400,7 +396,7 @@ export default function ResellerB2BReturns() {
 
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label>Corriere</Label>
+              <Label>{t("shipping.carrier")}</Label>
               <Input
                 value={carrier}
                 onChange={(e) => setCarrier(e.target.value)}
@@ -420,15 +416,13 @@ export default function ResellerB2BReturns() {
           </div>
 
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShipDialogOpen(false)}>
-              Annulla
-            </Button>
+            <Button variant="outline" onClick={() => setShipDialogOpen(false)}>{t("common.cancel")}</Button>
             <Button
               onClick={() => selectedReturn && shipReturnMutation.mutate({ id: selectedReturn.id, trackingNumber, carrier })}
               disabled={!trackingNumber || shipReturnMutation.isPending}
               data-testid="button-confirm-ship"
             >
-              {shipReturnMutation.isPending ? "Invio..." : "Conferma Spedizione"}
+              {shipReturnMutation.isPending ? t("pages.sending") : "Conferma Spedizione"}
             </Button>
           </DialogFooter>
         </DialogContent>

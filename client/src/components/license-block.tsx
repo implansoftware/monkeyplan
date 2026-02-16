@@ -1,9 +1,11 @@
 import { Shield, AlertTriangle } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useLocation } from "wouter";
 
 export function LicenseBlockPage() {
+  const { t } = useTranslation();
   const [, setLocation] = useLocation();
 
   return (
@@ -13,11 +15,11 @@ export function LicenseBlockPage() {
           <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-destructive/10">
             <Shield className="h-8 w-8 text-destructive" />
           </div>
-          <CardTitle className="text-xl">Licenza non attiva</CardTitle>
+          <CardTitle className="text-xl">{t("license.notActive")}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4 text-center">
           <p className="text-muted-foreground">
-            La tua licenza è scaduta o non è ancora stata attivata. Per continuare a usare la piattaforma, acquista o rinnova il tuo piano.
+            {t("license.notActiveDesc")}
           </p>
           <Button
             onClick={() => setLocation("/reseller/my-license")}
@@ -25,7 +27,7 @@ export function LicenseBlockPage() {
             data-testid="button-go-to-license"
           >
             <Shield className="mr-2 h-4 w-4" />
-            Vai alla Licenza
+            {t("license.goToLicense")}
           </Button>
         </CardContent>
       </Card>
@@ -34,6 +36,7 @@ export function LicenseBlockPage() {
 }
 
 export function LicenseExpiringBanner({ daysRemaining }: { daysRemaining: number }) {
+  const { t } = useTranslation();
   const [, setLocation] = useLocation();
 
   return (
@@ -44,7 +47,7 @@ export function LicenseExpiringBanner({ daysRemaining }: { daysRemaining: number
       <div className="flex items-center gap-2">
         <AlertTriangle className="h-4 w-4 text-amber-500 shrink-0" />
         <span className="text-foreground">
-          La tua licenza scade tra <strong>{daysRemaining}</strong> {daysRemaining === 1 ? "giorno" : "giorni"}.
+          {t("license.expiresInDays", { count: daysRemaining })}
         </span>
       </div>
       <Button
@@ -53,7 +56,7 @@ export function LicenseExpiringBanner({ daysRemaining }: { daysRemaining: number
         onClick={() => setLocation("/reseller/my-license")}
         data-testid="button-renew-license"
       >
-        Rinnova ora
+        {t("license.renewNow")}
       </Button>
     </div>
   );

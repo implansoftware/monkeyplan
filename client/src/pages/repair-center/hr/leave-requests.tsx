@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useQuery, useMutation } from "@tanstack/react-query";
@@ -27,22 +28,7 @@ interface LeaveRequest {
   user?: { fullName: string };
 }
 
-const leaveTypeLabels: Record<string, string> = {
-  ferie: "Ferie",
-  permesso: "Permesso",
-  rol: "ROL",
-  malattia: "Malattia",
-  maternita: "Maternità",
-  paternita: "Paternità",
-  lutto: "Lutto",
-  altro: "Altro"
-};
 
-const statusLabels: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
-  pending: { label: "In Attesa", variant: "secondary" },
-  approved: { label: "Approvata", variant: "default" },
-  rejected: { label: "Rifiutata", variant: "destructive" }
-};
 
 interface StaffMember {
   id: string;
@@ -50,6 +36,22 @@ interface StaffMember {
 }
 
 export default function RepairCenterHrLeaveRequests() {
+  const { t } = useTranslation();
+  const leaveTypeLabels: Record<string, string> = {
+    ferie: t("hr.vacation"),
+    permesso: "Permesso",
+    rol: "ROL",
+    malattia: "Malattia",
+    maternita: t("hr.maternity"),
+    paternita: t("hr.paternity"),
+    lutto: "Lutto",
+    altro: "Altro"
+  };
+  const statusLabels: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
+    pending: { label: t("common.pending"), variant: "secondary" },
+    approved: { label: t("common.approved"), variant: "default" },
+    rejected: { label: t("common.rejected"), variant: "destructive" }
+  };
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [editingRequest, setEditingRequest] = useState<LeaveRequest | null>(null);
@@ -73,10 +75,10 @@ export default function RepairCenterHrLeaveRequests() {
       queryClient.invalidateQueries({ queryKey: ["/api/repair-center/hr/leave-requests"] });
       setDialogOpen(false);
       setNewRequest({ leaveType: "ferie", startDate: "", endDate: "", notes: "", userId: "" });
-      toast({ title: "Richiesta inviata", description: "La richiesta è stata inviata con successo." });
+      toast({ title: "Richiesta inviata", description: t("hr.laRichiestaStataInviataConSuccesso") });
     },
     onError: (error: any) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("auth.error"), description: error.message, variant: "destructive" });
     }
   });
 
@@ -86,10 +88,10 @@ export default function RepairCenterHrLeaveRequests() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/repair-center/hr/leave-requests"] });
-      toast({ title: "Stato aggiornato" });
+      toast({ title: t("tickets.statusUpdated") });
     },
     onError: (error: any) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("auth.error"), description: error.message, variant: "destructive" });
     }
   });
 
@@ -104,7 +106,7 @@ export default function RepairCenterHrLeaveRequests() {
       toast({ title: "Richiesta modificata", description: "Le modifiche sono state salvate." });
     },
     onError: (error: any) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("auth.error"), description: error.message, variant: "destructive" });
     }
   });
 
@@ -132,7 +134,7 @@ export default function RepairCenterHrLeaveRequests() {
               <CalendarDays className="h-5 w-5 sm:h-7 sm:w-7 text-white" />
             </div>
             <div>
-              <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-white tracking-tight">Richieste Ferie</h1>
+              <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-white tracking-tight">{t("hr.richiesteFerie")}</h1>
               <p className="text-emerald-100">Gestione richieste ferie, permessi e ROL</p>
             </div>
           </div>
@@ -153,7 +155,7 @@ export default function RepairCenterHrLeaveRequests() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Richieste</CardTitle>
+          <CardTitle>{t("hr.richieste")}</CardTitle>
         </CardHeader>
         <CardContent>
           {isLoading ? (
@@ -169,12 +171,12 @@ export default function RepairCenterHrLeaveRequests() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Dipendente</TableHead>
-                  <TableHead>Tipo</TableHead>
+                  <TableHead>{t("hr.employee")}</TableHead>
+                  <TableHead>{t("common.type")}</TableHead>
                   <TableHead>Dal</TableHead>
                   <TableHead className="hidden sm:table-cell">Al</TableHead>
-                  <TableHead>Stato</TableHead>
-                  <TableHead>Azioni</TableHead>
+                  <TableHead>{t("common.status")}</TableHead>
+                  <TableHead>{t("common.actions")}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -218,15 +220,15 @@ export default function RepairCenterHrLeaveRequests() {
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Nuova Richiesta</DialogTitle>
+            <DialogTitle>{t("sidebar.items.newRequest")}</DialogTitle>
             <DialogDescription>Inserisci una nuova richiesta di ferie o permesso</DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div>
-              <label className="text-sm font-medium">Dipendente</label>
+              <label className="text-sm font-medium">{t("hr.employee")}</label>
               <Select value={newRequest.userId} onValueChange={(v) => setNewRequest({ ...newRequest, userId: v })}>
                 <SelectTrigger data-testid="select-employee">
-                  <SelectValue placeholder="Seleziona dipendente" />
+                  <SelectValue placeholder={t("hr.selezionaDipendente")} />
                 </SelectTrigger>
                 <SelectContent>
                   {staffMembers.map((member) => (
@@ -236,7 +238,7 @@ export default function RepairCenterHrLeaveRequests() {
               </Select>
             </div>
             <div>
-              <label className="text-sm font-medium">Tipo</label>
+              <label className="text-sm font-medium">{t("common.type")}</label>
               <Select value={newRequest.leaveType} onValueChange={(v) => setNewRequest({ ...newRequest, leaveType: v })}>
                 <SelectTrigger data-testid="select-leave-type">
                   <SelectValue />
@@ -250,11 +252,11 @@ export default function RepairCenterHrLeaveRequests() {
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="text-sm font-medium">Data Inizio</label>
+                <label className="text-sm font-medium">{t("common.startDate")}</label>
                 <Input type="date" value={newRequest.startDate} onChange={(e) => setNewRequest({ ...newRequest, startDate: e.target.value })} />
               </div>
               <div>
-                <label className="text-sm font-medium">Data Fine</label>
+                <label className="text-sm font-medium">{t("common.endDate")}</label>
                 <Input type="date" value={newRequest.endDate} onChange={(e) => setNewRequest({ ...newRequest, endDate: e.target.value })} />
               </div>
             </div>
@@ -264,7 +266,7 @@ export default function RepairCenterHrLeaveRequests() {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDialogOpen(false)}>Annulla</Button>
+            <Button variant="outline" onClick={() => setDialogOpen(false)}>{t("profile.cancel")}</Button>
             <Button onClick={() => createMutation.mutate(newRequest)} disabled={createMutation.isPending || !newRequest.userId || !newRequest.startDate || !newRequest.endDate} data-testid="button-submit-leave">
               Invia Richiesta
             </Button>
@@ -275,12 +277,12 @@ export default function RepairCenterHrLeaveRequests() {
       <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Modifica Richiesta</DialogTitle>
+            <DialogTitle>{t("hr.modificaRichiesta")}</DialogTitle>
             <DialogDescription>Modifica i dati della richiesta di {editingRequest?.user?.fullName}</DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div>
-              <label className="text-sm font-medium">Tipo</label>
+              <label className="text-sm font-medium">{t("common.type")}</label>
               <Select value={editForm.leaveType} onValueChange={(v) => setEditForm({ ...editForm, leaveType: v })}>
                 <SelectTrigger>
                   <SelectValue />
@@ -294,11 +296,11 @@ export default function RepairCenterHrLeaveRequests() {
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="text-sm font-medium">Data Inizio</label>
+                <label className="text-sm font-medium">{t("common.startDate")}</label>
                 <Input type="date" value={editForm.startDate} onChange={(e) => setEditForm({ ...editForm, startDate: e.target.value })} />
               </div>
               <div>
-                <label className="text-sm font-medium">Data Fine</label>
+                <label className="text-sm font-medium">{t("common.endDate")}</label>
                 <Input type="date" value={editForm.endDate} onChange={(e) => setEditForm({ ...editForm, endDate: e.target.value })} />
               </div>
             </div>
@@ -308,7 +310,7 @@ export default function RepairCenterHrLeaveRequests() {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setEditDialogOpen(false)}>Annulla</Button>
+            <Button variant="outline" onClick={() => setEditDialogOpen(false)}>{t("profile.cancel")}</Button>
             <Button 
               onClick={() => editingRequest && editMutation.mutate({ id: editingRequest.id, data: editForm })} 
               disabled={editMutation.isPending || !editForm.startDate || !editForm.endDate}

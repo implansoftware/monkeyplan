@@ -42,6 +42,7 @@ import {
   Truck,
 } from "lucide-react";
 import type { ServiceItem } from "@shared/schema";
+import { useTranslation } from "react-i18next";
 
 interface ServiceItemWithPrice extends ServiceItem {
   effectivePriceCents: number;
@@ -68,14 +69,15 @@ function formatCurrency(cents: number): string {
 }
 
 const STEPS = [
-  { id: "device", label: "Dispositivo", icon: Smartphone },
-  { id: "services", label: "Servizi", icon: Wrench },
-  { id: "products", label: "Prodotti", icon: Package },
-  { id: "customer", label: "Cliente", icon: User },
-  { id: "summary", label: "Riepilogo", icon: CheckCircle },
+  { id: "device", label: t("repairs.device"), icon: Smartphone },
+  { id: "services", label: t("utility.services"), icon: Wrench },
+  { id: "products", label: t("products.title"), icon: Package },
+  { id: "customer", label: t("common.customer"), icon: User },
+  { id: "summary", label: t("reports.summary"), icon: CheckCircle },
 ];
 
 export default function NewStandaloneQuote() {
+  const { t } = useTranslation();
   const [, navigate] = useLocation();
   const { toast } = useToast();
   const { user } = useAuth();
@@ -296,7 +298,7 @@ export default function NewStandaloneQuote() {
       navigate(`${basePath}/standalone-quotes`);
     },
     onError: (error: any) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -333,7 +335,7 @@ export default function NewStandaloneQuote() {
           <ArrowLeft className="h-5 w-5" />
         </Button>
         <FileText className="h-6 w-6" />
-        <h1 className="text-2xl font-bold">Nuovo Preventivo</h1>
+        <h1 className="text-2xl font-bold">{t("standalone.newQuote")}</h1>
       </div>
 
       <div className="flex items-center gap-2 overflow-x-auto pb-2">
@@ -375,7 +377,7 @@ export default function NewStandaloneQuote() {
             </p>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div className="space-y-1.5">
-                <Label>Tipo Dispositivo</Label>
+                <Label>{t("repairs.deviceType")}</Label>
                 <Select value={deviceTypeId} onValueChange={(v) => { setDeviceTypeId(v); setBrandId(""); setModelId(""); }}>
                   <SelectTrigger data-testid="select-device-type">
                     <SelectValue placeholder="Seleziona tipo..." />
@@ -388,7 +390,7 @@ export default function NewStandaloneQuote() {
                 </Select>
               </div>
               <div className="space-y-1.5">
-                <Label>Marca</Label>
+                <Label>{t("products.brand")}</Label>
                 <Select value={brandId} onValueChange={(v) => { setBrandId(v); setModelId(""); }} disabled={!deviceTypeId}>
                   <SelectTrigger data-testid="select-brand">
                     <SelectValue placeholder="Seleziona marca..." />
@@ -401,10 +403,10 @@ export default function NewStandaloneQuote() {
                 </Select>
               </div>
               <div className="space-y-1.5">
-                <Label>Modello</Label>
+                <Label>{t("products.model")}</Label>
                 <Select value={modelId} onValueChange={setModelId} disabled={!brandId}>
                   <SelectTrigger data-testid="select-model">
-                    <SelectValue placeholder="Seleziona modello..." />
+                    <SelectValue placeholder={t("products.selectModel")} />
                   </SelectTrigger>
                   <SelectContent>
                     {deviceModels.map((m: any) => (
@@ -455,7 +457,7 @@ export default function NewStandaloneQuote() {
                 <Input
                   value={serviceSearch}
                   onChange={(e) => setServiceSearch(e.target.value)}
-                  placeholder="Cerca servizio..."
+                  placeholder={t("products.searchService")}
                   className="pl-9"
                   data-testid="input-search-services"
                 />
@@ -502,7 +504,7 @@ export default function NewStandaloneQuote() {
                             data-testid={`button-add-service-${service.id}`}
                           >
                             <Plus className="h-3 w-3 mr-1" />
-                            {isAdded ? "Aggiungi ancora" : "Aggiungi"}
+                            {isAdded ? "Aggiungi ancora" : t("common.add")}
                           </Button>
                         </div>
                       </div>
@@ -532,9 +534,9 @@ export default function NewStandaloneQuote() {
                     <div key={idx} className="flex items-start gap-3 p-3 rounded-md border">
                       <div className="flex-1 space-y-2">
                         <div className="flex items-center gap-2 flex-wrap">
-                          {item.itemType === "service" && <Badge variant="secondary">Servizio</Badge>}
-                          {item.itemType === "product" && <Badge variant="outline">Prodotto</Badge>}
-                          {item.itemType === "custom" && <Badge variant="secondary">Personalizzato</Badge>}
+                          {item.itemType === "service" && <Badge variant="secondary">{t("common.service")}</Badge>}
+                          {item.itemType === "product" && <Badge variant="outline">{t("common.product")}</Badge>}
+                          {item.itemType === "custom" && <Badge variant="secondary">{t("suppliers.custom")}</Badge>}
                           {item.itemType === "custom" ? (
                             <Input
                               value={item.name}
@@ -549,7 +551,7 @@ export default function NewStandaloneQuote() {
                         </div>
                         <div className="grid grid-cols-3 gap-2">
                           <div>
-                            <Label className="text-xs">Quantità</Label>
+                            <Label className="text-xs">{t("common.quantity")}</Label>
                             <Input
                               type="number"
                               min={1}
@@ -634,9 +636,7 @@ export default function NewStandaloneQuote() {
               <Tabs value={productTab} onValueChange={setProductTab}>
                 <TabsList>
                   <TabsTrigger value="warehouse" data-testid="tab-warehouse">
-                    <Warehouse className="h-4 w-4 mr-1.5" />
-                    Il Mio Magazzino
-                  </TabsTrigger>
+                    <Warehouse className="h-4 w-4 mr-1.5" />{t("sidebar.items.myWarehouse")}</TabsTrigger>
                   <TabsTrigger value="supplier" data-testid="tab-supplier">
                     <Truck className="h-4 w-4 mr-1.5" />
                     Catalogo Fornitori
@@ -648,7 +648,7 @@ export default function NewStandaloneQuote() {
                   <Input
                     value={productSearch}
                     onChange={(e) => setProductSearch(e.target.value)}
-                    placeholder="Cerca prodotto..."
+                    placeholder={t("products.searchProduct")}
                     className="pl-9"
                     data-testid="input-search-products"
                   />
@@ -702,7 +702,7 @@ export default function NewStandaloneQuote() {
                                 data-testid={`button-add-warehouse-product-${pid}`}
                               >
                                 <Plus className="h-3 w-3 mr-1" />
-                                {isAdded ? "Aggiungi ancora" : "Aggiungi"}
+                                {isAdded ? "Aggiungi ancora" : t("common.add")}
                               </Button>
                             </div>
                           </div>
@@ -759,7 +759,7 @@ export default function NewStandaloneQuote() {
                                 data-testid={`button-add-supplier-product-${pid}`}
                               >
                                 <Plus className="h-3 w-3 mr-1" />
-                                {isAdded ? "Aggiungi ancora" : "Aggiungi"}
+                                {isAdded ? "Aggiungi ancora" : t("common.add")}
                               </Button>
                             </div>
                           </div>
@@ -785,12 +785,12 @@ export default function NewStandaloneQuote() {
                       <div key={idx} className="flex items-start gap-3 p-3 rounded-md border">
                         <div className="flex-1 space-y-2">
                           <div className="flex items-center gap-2 flex-wrap">
-                            <Badge variant="outline">Prodotto</Badge>
+                            <Badge variant="outline">{t("common.product")}</Badge>
                             <span className="font-medium text-sm">{item.name}</span>
                           </div>
                           <div className="grid grid-cols-3 gap-2">
                             <div>
-                              <Label className="text-xs">Quantità</Label>
+                              <Label className="text-xs">{t("common.quantity")}</Label>
                               <Input
                                 type="number"
                                 min={1}
@@ -887,17 +887,17 @@ export default function NewStandaloneQuote() {
             <Separator />
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div className="space-y-1.5">
-                <Label>Nome</Label>
+                <Label>{t("common.name")}</Label>
                 <Input
                   value={customerName}
                   onChange={(e) => setCustomerName(e.target.value)}
-                  placeholder="Nome completo"
+                  placeholder={t("auth.fullName")}
                   disabled={!!customerId}
                   data-testid="input-customer-name"
                 />
               </div>
               <div className="space-y-1.5">
-                <Label>Email</Label>
+                <Label>{t("common.email")}</Label>
                 <Input
                   type="email"
                   value={customerEmail}
@@ -908,7 +908,7 @@ export default function NewStandaloneQuote() {
                 />
               </div>
               <div className="space-y-1.5">
-                <Label>Telefono</Label>
+                <Label>{t("common.phone")}</Label>
                 <Input
                   value={customerPhone}
                   onChange={(e) => setCustomerPhone(e.target.value)}
@@ -919,7 +919,7 @@ export default function NewStandaloneQuote() {
               </div>
             </div>
             <div className="space-y-1.5">
-              <Label>Note</Label>
+              <Label>{t("common.notes")}</Label>
               <Textarea
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
@@ -955,7 +955,7 @@ export default function NewStandaloneQuote() {
           <CardContent className="space-y-4">
             {(deviceTypeName || brandName || modelName || deviceDescription) && (
               <div className="space-y-1">
-                <h3 className="text-sm font-semibold flex items-center gap-2"><Smartphone className="h-4 w-4" /> Dispositivo</h3>
+                <h3 className="text-sm font-semibold flex items-center gap-2"><Smartphone className="h-4 w-4" />{t("repairs.device")}</h3>
                 <div className="flex items-center gap-2 flex-wrap">
                   {deviceTypeName && <Badge variant="secondary">{deviceTypeName}</Badge>}
                   {brandName && <Badge variant="secondary">{brandName}</Badge>}
@@ -1032,7 +1032,7 @@ export default function NewStandaloneQuote() {
 
             {(customerName || customerEmail) && (
               <div className="space-y-1">
-                <h3 className="text-sm font-semibold flex items-center gap-2"><User className="h-4 w-4" /> Cliente</h3>
+                <h3 className="text-sm font-semibold flex items-center gap-2"><User className="h-4 w-4" />{t("common.customer")}</h3>
                 <div className="text-sm space-y-0.5">
                   {customerName && <p>{customerName}</p>}
                   {customerEmail && <p className="text-muted-foreground">{customerEmail}</p>}
@@ -1041,14 +1041,14 @@ export default function NewStandaloneQuote() {
               </div>
             )}
             {!customerName && !customerEmail && (
-              <p className="text-sm text-muted-foreground">Nessun cliente associato</p>
+              <p className="text-sm text-muted-foreground">{t("admin.resellerDetail.noCustomersFound")}</p>
             )}
 
             {notes && (
               <>
                 <Separator />
                 <div className="space-y-1">
-                  <h3 className="text-sm font-semibold">Note</h3>
+                  <h3 className="text-sm font-semibold">{t("common.notes")}</h3>
                   <p className="text-sm text-muted-foreground">{notes}</p>
                 </div>
               </>
@@ -1068,18 +1068,14 @@ export default function NewStandaloneQuote() {
           disabled={currentStep === 0}
           data-testid="button-prev-step"
         >
-          <ArrowLeft className="h-4 w-4 mr-1" />
-          Indietro
-        </Button>
+          <ArrowLeft className="h-4 w-4 mr-1" />{t("common.back")}</Button>
 
         {currentStep < STEPS.length - 1 ? (
           <Button
             onClick={() => setCurrentStep(prev => prev + 1)}
             disabled={!canGoNext()}
             data-testid="button-next-step"
-          >
-            Avanti
-            <ArrowRight className="h-4 w-4 ml-1" />
+          >{t("common.next")}<ArrowRight className="h-4 w-4 ml-1" />
           </Button>
         ) : (
           <Button

@@ -13,6 +13,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Package, Search, Users, Store, Check, X } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { useTranslation } from "react-i18next";
 
 interface GlobalProductWithCounts extends Product {
   assignedCount: number;
@@ -41,6 +42,7 @@ function formatPrice(cents: number): string {
 }
 
 export default function AdminProductAssignments() {
+  const { t } = useTranslation();
   const [searchQuery, setSearchQuery] = useState("");
   const [assignDialogOpen, setAssignDialogOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<GlobalProductWithCounts | null>(null);
@@ -62,13 +64,13 @@ export default function AdminProductAssignments() {
       return res.json();
     },
     onSuccess: (data) => {
-      toast({ title: "Successo", description: data.message });
+      toast({ title: t("common.success"), description: data.message });
       queryClient.invalidateQueries({ queryKey: ['/api/admin/global-products'] });
       queryClient.invalidateQueries({ queryKey: ['/api/admin/products', selectedProduct?.id, 'reseller-assignments'] });
       setSelectedResellers(new Set());
     },
     onError: (error: any) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -77,12 +79,12 @@ export default function AdminProductAssignments() {
       await apiRequest('DELETE', `/api/admin/products/${productId}/assign/${resellerId}`);
     },
     onSuccess: () => {
-      toast({ title: "Successo", description: "Assegnazione rimossa" });
+      toast({ title: t("common.success"), description: "Assegnazione rimossa" });
       queryClient.invalidateQueries({ queryKey: ['/api/admin/global-products'] });
       queryClient.invalidateQueries({ queryKey: ['/api/admin/products', selectedProduct?.id, 'reseller-assignments'] });
     },
     onError: (error: any) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -134,13 +136,13 @@ export default function AdminProductAssignments() {
         <CardHeader className="pb-3">
           <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <div>
-              <CardTitle>Prodotti Globali</CardTitle>
-              <CardDescription>Prodotti creati dall'admin disponibili per l'assegnazione</CardDescription>
+              <CardTitle>{t("products.globalProducts")}</CardTitle>
+              <CardDescription>{t("products.globalProductsDesc")}</CardDescription>
             </div>
             <div className="relative w-full md:w-80">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Cerca prodotti..."
+                placeholder={t("common.search")}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-10"
@@ -166,13 +168,13 @@ export default function AdminProductAssignments() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Prodotto</TableHead>
-                  <TableHead>SKU</TableHead>
-                  <TableHead>Categoria</TableHead>
-                  <TableHead>Prezzo Base</TableHead>
+                  <TableHead>{t("products.product")}</TableHead>
+                  <TableHead>{t("products.sku")}</TableHead>
+                  <TableHead>{t("common.category")}</TableHead>
+                  <TableHead>{t("products.basePrice")}</TableHead>
                   <TableHead className="text-center">Assegnati</TableHead>
                   <TableHead className="text-center">Pubblicati</TableHead>
-                  <TableHead className="text-right">Azioni</TableHead>
+                  <TableHead className="text-right">{t("common.actions")}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -231,7 +233,7 @@ export default function AdminProductAssignments() {
       <Dialog open={assignDialogOpen} onOpenChange={setAssignDialogOpen}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle>Gestisci Assegnazioni</DialogTitle>
+            <DialogTitle>{t("products.manageAssignments")}</DialogTitle>
             <DialogDescription>
               {selectedProduct?.name} - Seleziona i reseller a cui assegnare questo prodotto
             </DialogDescription>

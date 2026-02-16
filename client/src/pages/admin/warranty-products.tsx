@@ -15,6 +15,7 @@ import { Search, Shield, Plus, Pencil, Trash2, Euro } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
+import { useTranslation } from "react-i18next";
 
 type WarrantyFormData = {
   name: string;
@@ -41,6 +42,7 @@ const defaultFormData: WarrantyFormData = {
 };
 
 export default function AdminWarrantyProducts() {
+  const { t } = useTranslation();
   const [searchQuery, setSearchQuery] = useState("");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<WarrantyProduct | null>(null);
@@ -67,11 +69,11 @@ export default function AdminWarrantyProducts() {
     mutationFn: (data: WarrantyFormData) => apiRequest("POST", "/api/admin/warranty-products", data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/warranty-products"] });
-      toast({ title: "Prodotto creato", description: "Il prodotto garanzia è stato creato con successo" });
+      toast({ title: t("warranties.productCreated"), description: t("warranties.productCreatedDesc") });
       closeDialog();
     },
     onError: () => {
-      toast({ title: "Errore", description: "Impossibile creare il prodotto", variant: "destructive" });
+      toast({ title: t("common.error"), description: "Impossibile creare il prodotto", variant: "destructive" });
     },
   });
 
@@ -80,11 +82,11 @@ export default function AdminWarrantyProducts() {
       apiRequest("PATCH", `/api/admin/warranty-products/${id}`, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/warranty-products"] });
-      toast({ title: "Prodotto aggiornato", description: "Il prodotto garanzia è stato aggiornato" });
+      toast({ title: t("warranties.productUpdated"), description: t("warranties.productUpdatedDesc") });
       closeDialog();
     },
     onError: () => {
-      toast({ title: "Errore", description: "Impossibile aggiornare il prodotto", variant: "destructive" });
+      toast({ title: t("common.error"), description: "Impossibile aggiornare il prodotto", variant: "destructive" });
     },
   });
 
@@ -92,11 +94,11 @@ export default function AdminWarrantyProducts() {
     mutationFn: (id: string) => apiRequest("DELETE", `/api/admin/warranty-products/${id}`),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/warranty-products"] });
-      toast({ title: "Prodotto eliminato", description: "Il prodotto garanzia è stato eliminato" });
+      toast({ title: t("warranties.productDeleted"), description: t("warranties.productDeletedDesc") });
       setDeleteConfirmId(null);
     },
     onError: () => {
-      toast({ title: "Errore", description: "Impossibile eliminare il prodotto", variant: "destructive" });
+      toast({ title: t("common.error"), description: "Impossibile eliminare il prodotto", variant: "destructive" });
     },
   });
 
@@ -130,7 +132,7 @@ export default function AdminWarrantyProducts() {
 
   const handleSubmit = () => {
     if (!formData.name || formData.durationMonths <= 0 || formData.priceInCents <= 0) {
-      toast({ title: "Errore", description: "Compila tutti i campi obbligatori", variant: "destructive" });
+      toast({ title: t("common.error"), description: "Compila tutti i campi obbligatori", variant: "destructive" });
       return;
     }
 
@@ -197,7 +199,7 @@ export default function AdminWarrantyProducts() {
             <div className="flex-1 relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Cerca prodotto..."
+                placeholder={t("products.searchProduct")}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-9"
@@ -223,13 +225,13 @@ export default function AdminWarrantyProducts() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Nome</TableHead>
-                  <TableHead>Proprietario</TableHead>
-                  <TableHead>Copertura</TableHead>
+                  <TableHead>{t("common.name")}</TableHead>
+                  <TableHead>{t("warehouse.owner")}</TableHead>
+                  <TableHead>{t("warranties.coverage")}</TableHead>
                   <TableHead className="text-center">Durata</TableHead>
-                  <TableHead className="text-right">Prezzo</TableHead>
-                  <TableHead className="text-center">Stato</TableHead>
-                  <TableHead className="text-right">Azioni</TableHead>
+                  <TableHead className="text-right">{t("common.price")}</TableHead>
+                  <TableHead className="text-center">{t("common.status")}</TableHead>
+                  <TableHead className="text-right">{t("common.actions")}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -294,7 +296,7 @@ export default function AdminWarrantyProducts() {
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label htmlFor="name">Nome *</Label>
+              <Label htmlFor="name">{t("common.name")} *</Label>
               <Input
                 id="name"
                 value={formData.name}
@@ -304,19 +306,19 @@ export default function AdminWarrantyProducts() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="description">Descrizione</Label>
+              <Label htmlFor="description">{t("common.description")}</Label>
               <Textarea
                 id="description"
                 value={formData.description}
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                placeholder="Descrizione della copertura..."
+                placeholder={t("warranties.coverageDescription")}
                 rows={2}
                 data-testid="input-warranty-description"
               />
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="durationMonths">Durata (mesi) *</Label>
+                <Label htmlFor="durationMonths">{t("warranties.durationMonths")} *</Label>
                 <Input
                   id="durationMonths"
                   type="number"
@@ -327,7 +329,7 @@ export default function AdminWarrantyProducts() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="price">Prezzo (EUR) *</Label>
+                <Label htmlFor="price">{t("common.price")} (EUR) *</Label>
                 <div className="relative">
                   <Euro className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input
@@ -347,7 +349,7 @@ export default function AdminWarrantyProducts() {
               </div>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="coverageType">Tipo Copertura *</Label>
+              <Label htmlFor="coverageType">{t("warranties.coverageType")} *</Label>
               <Select
                 value={formData.coverageType}
                 onValueChange={(value: "basic" | "extended" | "full") => setFormData({ ...formData, coverageType: value })}
@@ -356,15 +358,15 @@ export default function AdminWarrantyProducts() {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="basic">Base - Solo difetti manifattura</SelectItem>
-                  <SelectItem value="extended">Estesa - Include danni accidentali</SelectItem>
-                  <SelectItem value="full">Completa - Copertura totale</SelectItem>
+                  <SelectItem value="basic">{t("warranties.basic")}</SelectItem>
+                  <SelectItem value="extended">{t("warranties.extended")}</SelectItem>
+                  <SelectItem value="full">{t("warranties.full")}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="maxClaimAmount">Massimale Rimborso (EUR)</Label>
+                <Label htmlFor="maxClaimAmount">{t("warranties.maxClaimAmount")} (EUR)</Label>
                 <Input
                   id="maxClaimAmount"
                   type="text"
@@ -375,12 +377,12 @@ export default function AdminWarrantyProducts() {
                     const val = e.target.value.replace(',', '.');
                     setFormData({ ...formData, maxClaimAmount: val ? Math.round(parseFloat(val) * 100) : null });
                   }}
-                  placeholder="Illimitato"
+                  placeholder={t("common.unlimited")}
                   data-testid="input-warranty-max-claim"
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="deductibleAmount">Franchigia (EUR)</Label>
+                <Label htmlFor="deductibleAmount">{t("warranties.deductibleAmount")} (EUR)</Label>
                 <Input
                   id="deductibleAmount"
                   type="text"
@@ -396,18 +398,18 @@ export default function AdminWarrantyProducts() {
               </div>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="terms">Termini e Condizioni</Label>
+              <Label htmlFor="terms">{t("warranties.terms")}</Label>
               <Textarea
                 id="terms"
                 value={formData.termsAndConditions}
                 onChange={(e) => setFormData({ ...formData, termsAndConditions: e.target.value })}
-                placeholder="Termini e condizioni della garanzia..."
+                placeholder={t("warranties.warrantyTerms")}
                 rows={3}
                 data-testid="input-warranty-terms"
               />
             </div>
             <div className="flex items-center justify-between">
-              <Label htmlFor="isActive">Prodotto Attivo</Label>
+              <Label htmlFor="isActive">{t("products.activeProduct")}</Label>
               <Switch
                 id="isActive"
                 checked={formData.isActive}
@@ -417,13 +419,13 @@ export default function AdminWarrantyProducts() {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={closeDialog}>Annulla</Button>
+            <Button variant="outline" onClick={closeDialog}>{t("common.cancel")}</Button>
             <Button 
               onClick={handleSubmit} 
               disabled={createMutation.isPending || updateMutation.isPending}
               data-testid="button-save-warranty"
             >
-              {createMutation.isPending || updateMutation.isPending ? "Salvataggio..." : editingProduct ? "Salva Modifiche" : "Crea Prodotto"}
+              {createMutation.isPending || updateMutation.isPending ? t("settings.savingRate") : editingProduct ? "Salva Modifiche" : "Crea Prodotto"}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -432,20 +434,20 @@ export default function AdminWarrantyProducts() {
       <Dialog open={!!deleteConfirmId} onOpenChange={() => setDeleteConfirmId(null)}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Conferma Eliminazione</DialogTitle>
+            <DialogTitle>{t("common.confirmDeleteTitle")}</DialogTitle>
             <DialogDescription>
               Sei sicuro di voler eliminare questo prodotto garanzia? L'azione non può essere annullata.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDeleteConfirmId(null)}>Annulla</Button>
+            <Button variant="outline" onClick={() => setDeleteConfirmId(null)}>{t("common.cancel")}</Button>
             <Button 
               variant="destructive" 
               onClick={() => deleteConfirmId && deleteMutation.mutate(deleteConfirmId)}
               disabled={deleteMutation.isPending}
               data-testid="button-confirm-delete"
             >
-              {deleteMutation.isPending ? "Eliminazione..." : "Elimina"}
+              {deleteMutation.isPending ? t("admin.resellers.deleting") : "Elimina"}
             </Button>
           </DialogFooter>
         </DialogContent>

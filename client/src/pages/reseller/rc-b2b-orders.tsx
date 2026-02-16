@@ -16,6 +16,7 @@ import { useState } from "react";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
 import { Product } from "@shared/schema";
+import { useTranslation } from "react-i18next";
 
 interface OrderItem {
   id: string;
@@ -68,13 +69,13 @@ function getPaymentMethodName(method: string): string {
 
 function getStatusBadge(status: string) {
   const statusMap: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
-    pending: { label: "In Attesa", variant: "secondary" },
-    approved: { label: "Approvato", variant: "default" },
+    pending: { label: t("common.pending"), variant: "secondary" },
+    approved: { label: t("repairs.status.approved"), variant: "default" },
     paid: { label: "Pagato", variant: "default" },
-    shipped: { label: "Spedito", variant: "default" },
-    delivered: { label: "Consegnato", variant: "default" },
-    rejected: { label: "Rifiutato", variant: "destructive" },
-    cancelled: { label: "Annullato", variant: "destructive" },
+    shipped: { label: t("b2b.status.shipped"), variant: "default" },
+    delivered: { label: t("repairs.status.delivered"), variant: "default" },
+    rejected: { label: t("b2b.status.cancelled"), variant: "destructive" },
+    cancelled: { label: t("repairs.status.cancelled"), variant: "destructive" },
   };
   
   const config = statusMap[status] || { label: status, variant: "outline" as const };
@@ -82,6 +83,7 @@ function getStatusBadge(status: string) {
 }
 
 export default function ResellerRCB2BOrders() {
+  const { t } = useTranslation();
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [rejectReason, setRejectReason] = useState("");
   const [showRejectDialog, setShowRejectDialog] = useState(false);
@@ -112,12 +114,12 @@ export default function ResellerRCB2BOrders() {
       return res.json();
     },
     onSuccess: () => {
-      toast({ title: "Ordine approvato", description: "Stock trasferito al centro riparazione" });
+      toast({ title: t("b2b.orderApproved"), description: "Stock trasferito al centro riparazione" });
       queryClient.invalidateQueries({ queryKey: ['/api/reseller/rc-b2b-orders'] });
       setSelectedOrder(null);
     },
     onError: (error: any) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -127,14 +129,14 @@ export default function ResellerRCB2BOrders() {
       return res.json();
     },
     onSuccess: () => {
-      toast({ title: "Ordine rifiutato" });
+      toast({ title: t("b2b.orderRejectedToast") });
       queryClient.invalidateQueries({ queryKey: ['/api/reseller/rc-b2b-orders'] });
       setSelectedOrder(null);
       setShowRejectDialog(false);
       setRejectReason("");
     },
     onError: (error: any) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -144,7 +146,7 @@ export default function ResellerRCB2BOrders() {
       return res.json();
     },
     onSuccess: () => {
-      toast({ title: "Ordine spedito" });
+      toast({ title: t("b2b.orderShipped") });
       queryClient.invalidateQueries({ queryKey: ['/api/reseller/rc-b2b-orders'] });
       setSelectedOrder(null);
       setShowShipDialog(false);
@@ -152,7 +154,7 @@ export default function ResellerRCB2BOrders() {
       setCarrier("");
     },
     onError: (error: any) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -197,12 +199,12 @@ export default function ResellerRCB2BOrders() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Ordine</TableHead>
-                  <TableHead>Centro Riparazione</TableHead>
-                  <TableHead>Data</TableHead>
-                  <TableHead>Stato</TableHead>
-                  <TableHead>Articoli</TableHead>
-                  <TableHead className="text-right">Totale</TableHead>
+                  <TableHead>{t("common.order")}</TableHead>
+                  <TableHead>{t("roles.repairCenter")}</TableHead>
+                  <TableHead>{t("common.date")}</TableHead>
+                  <TableHead>{t("common.status")}</TableHead>
+                  <TableHead>{t("b2b.items")}</TableHead>
+                  <TableHead className="text-right">{t("common.total")}</TableHead>
                   <TableHead></TableHead>
                 </TableRow>
               </TableHeader>
@@ -253,10 +255,10 @@ export default function ResellerRCB2BOrders() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Prodotto</TableHead>
-                    <TableHead className="text-center">Qtà</TableHead>
-                    <TableHead className="text-right">Prezzo Unit.</TableHead>
-                    <TableHead className="text-right">Totale</TableHead>
+                    <TableHead>{t("common.product")}</TableHead>
+                    <TableHead className="text-center">{t("common.qty")}</TableHead>
+                    <TableHead className="text-right">{t("products.unitPrice")}</TableHead>
+                    <TableHead className="text-right">{t("common.total")}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -319,17 +321,13 @@ export default function ResellerRCB2BOrders() {
                     onClick={() => setShowRejectDialog(true)}
                     data-testid="button-reject"
                   >
-                    <X className="h-4 w-4 mr-2" />
-                    Rifiuta
-                  </Button>
+                    <X className="h-4 w-4 mr-2" />{t("common.reject")}</Button>
                   <Button 
                     onClick={() => approveMutation.mutate(selectedOrder.id)}
                     disabled={approveMutation.isPending}
                     data-testid="button-approve"
                   >
-                    <Check className="h-4 w-4 mr-2" />
-                    Approva
-                  </Button>
+                    <Check className="h-4 w-4 mr-2" />{t("common.approve")}</Button>
                 </>
               )}
               {(selectedOrder.status === 'approved' || selectedOrder.status === 'paid') && (
@@ -341,9 +339,7 @@ export default function ResellerRCB2BOrders() {
                   Segna Spedito
                 </Button>
               )}
-              <Button variant="outline" onClick={() => setSelectedOrder(null)}>
-                Chiudi
-              </Button>
+              <Button variant="outline" onClick={() => setSelectedOrder(null)}>{t("common.close")}</Button>
             </DialogFooter>
           </DialogContent>
         )}
@@ -352,7 +348,7 @@ export default function ResellerRCB2BOrders() {
       <Dialog open={showRejectDialog} onOpenChange={setShowRejectDialog}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Rifiuta Ordine</DialogTitle>
+            <DialogTitle>{t("b2b.rejectOrder")}</DialogTitle>
             <DialogDescription>Indica il motivo del rifiuto</DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
@@ -361,15 +357,13 @@ export default function ResellerRCB2BOrders() {
               <Textarea
                 value={rejectReason}
                 onChange={(e) => setRejectReason(e.target.value)}
-                placeholder="Inserisci il motivo del rifiuto..."
+                placeholder={t("utility.rejectionReason")}
                 data-testid="input-reject-reason"
               />
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowRejectDialog(false)}>
-              Annulla
-            </Button>
+            <Button variant="outline" onClick={() => setShowRejectDialog(false)}>{t("common.cancel")}</Button>
             <Button 
               variant="destructive"
               onClick={() => selectedOrder && rejectMutation.mutate({ orderId: selectedOrder.id, reason: rejectReason })}
@@ -399,7 +393,7 @@ export default function ResellerRCB2BOrders() {
               />
             </div>
             <div className="space-y-2">
-              <Label>Corriere</Label>
+              <Label>{t("shipping.carrier")}</Label>
               <Input
                 value={carrier}
                 onChange={(e) => setCarrier(e.target.value)}
@@ -409,9 +403,7 @@ export default function ResellerRCB2BOrders() {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowShipDialog(false)}>
-              Annulla
-            </Button>
+            <Button variant="outline" onClick={() => setShowShipDialog(false)}>{t("common.cancel")}</Button>
             <Button 
               onClick={() => selectedOrder && shipMutation.mutate({ 
                 orderId: selectedOrder.id, 

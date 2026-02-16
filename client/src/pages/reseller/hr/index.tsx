@@ -22,6 +22,7 @@ import {
   FileSpreadsheet
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useTranslation } from "react-i18next";
 
 interface HrDashboardStats {
   pendingLeaveRequests: number;
@@ -31,13 +32,14 @@ interface HrDashboardStats {
 }
 
 export default function HrDashboard() {
+  const { t } = useTranslation();
   const { data: stats, isLoading } = useQuery<HrDashboardStats>({
     queryKey: ["/api/reseller/hr/dashboard"],
   });
 
   const quickActions = [
     {
-      title: "Presenze",
+      title: t("hr.attendance"),
       description: "Gestione timbrature e orari",
       icon: Clock,
       href: "/reseller/hr/attendance",
@@ -45,7 +47,7 @@ export default function HrDashboard() {
       iconColor: "text-blue-600 dark:text-blue-400"
     },
     {
-      title: "Ferie e Permessi",
+      title: t("sidebar.items.leaveRequests"),
       description: "Richieste ferie, permessi, ROL",
       icon: CalendarDays,
       href: "/reseller/hr/leave-requests",
@@ -53,7 +55,7 @@ export default function HrDashboard() {
       iconColor: "text-emerald-600 dark:text-emerald-400"
     },
     {
-      title: "Malattie",
+      title: t("sidebar.items.sickLeave"),
       description: "Certificati e assenze malattia",
       icon: Thermometer,
       href: "/reseller/hr/sick-leave",
@@ -61,7 +63,7 @@ export default function HrDashboard() {
       iconColor: "text-red-600 dark:text-red-400"
     },
     {
-      title: "Rimborsi Spese",
+      title: t("sidebar.items.expenseReimbursement"),
       description: "Note spese e trasferte",
       icon: Receipt,
       href: "/reseller/hr/expenses",
@@ -69,7 +71,7 @@ export default function HrDashboard() {
       iconColor: "text-amber-600 dark:text-amber-400"
     },
     {
-      title: "Profili Orario",
+      title: t("sidebar.items.workProfiles"),
       description: "Configurazione orari lavoro",
       icon: Briefcase,
       href: "/reseller/hr/work-profiles",
@@ -77,7 +79,7 @@ export default function HrDashboard() {
       iconColor: "text-purple-600 dark:text-purple-400"
     },
     {
-      title: "Calendario Team",
+      title: t("sidebar.items.teamCalendar"),
       description: "Visualizzazione assenze team",
       icon: Calendar,
       href: "/reseller/hr/calendar",

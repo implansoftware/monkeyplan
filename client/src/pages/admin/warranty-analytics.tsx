@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Loader2, Shield, TrendingUp, CheckCircle2, XCircle, DollarSign, BarChart3 } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts";
+import { useTranslation } from "react-i18next";
 
 type WarrantyStats = {
   totalOffered: number;
@@ -15,6 +16,7 @@ type WarrantyStats = {
 };
 
 export default function AdminWarrantyAnalytics() {
+  const { t } = useTranslation();
   const { data: stats, isLoading } = useQuery<WarrantyStats>({
     queryKey: ["/api/admin/warranty-stats"],
   });
@@ -30,7 +32,7 @@ export default function AdminWarrantyAnalytics() {
   if (!stats) {
     return (
       <div className="container mx-auto p-6">
-        <p className="text-muted-foreground">Impossibile caricare le statistiche</p>
+        <p className="text-muted-foreground">{t("warranties.cannotLoadStats")}</p>
       </div>
     );
   }
@@ -45,55 +47,55 @@ export default function AdminWarrantyAnalytics() {
     <div className="container mx-auto p-6 space-y-6">
       <div className="flex flex-wrap items-center gap-3">
         <BarChart3 className="h-8 w-8 text-primary" />
-        <h1 className="text-2xl font-bold">Analytics Garanzie</h1>
+        <h1 className="text-2xl font-bold">{t("warranties.analyticsTitle")}</h1>
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card data-testid="card-total-offered">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 gap-2">
-            <CardTitle className="text-sm font-medium">Garanzie Offerte</CardTitle>
+            <CardTitle className="text-sm font-medium">{t("warranties.warrantiesOffered")}</CardTitle>
             <Shield className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{stats.totalOffered}</div>
-            <p className="text-xs text-muted-foreground">Totale storico</p>
+            <p className="text-xs text-muted-foreground">{t("warranties.historicTotal")}</p>
           </CardContent>
         </Card>
 
         <Card data-testid="card-total-accepted">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 gap-2">
-            <CardTitle className="text-sm font-medium">Garanzie Vendute</CardTitle>
+            <CardTitle className="text-sm font-medium">{t("warranties.warrantiesSold")}</CardTitle>
             <CheckCircle2 className="h-4 w-4 text-emerald-500" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-emerald-600">{stats.totalAccepted}</div>
-            <p className="text-xs text-muted-foreground">Accettate dai clienti</p>
+            <p className="text-xs text-muted-foreground">{t("warranties.acceptedByCustomers")}</p>
           </CardContent>
         </Card>
 
         <Card data-testid="card-conversion-rate">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 gap-2">
-            <CardTitle className="text-sm font-medium">Tasso Conversione</CardTitle>
+            <CardTitle className="text-sm font-medium">{t("warranties.conversionRate")}</CardTitle>
             <TrendingUp className="h-4 w-4 text-blue-500" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-blue-600">{stats.conversionRate.toFixed(1)}%</div>
             <p className="text-xs text-muted-foreground">
-              {stats.totalDeclined} rifiutate
+              {stats.totalDeclined} {t("warranties.declined")}
             </p>
           </CardContent>
         </Card>
 
         <Card data-testid="card-total-revenue">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 gap-2">
-            <CardTitle className="text-sm font-medium">Fatturato Garanzie</CardTitle>
+            <CardTitle className="text-sm font-medium">{t("warranties.warrantyRevenue")}</CardTitle>
             <DollarSign className="h-4 w-4 text-amber-500" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-amber-600">
               {(stats.totalRevenue / 100).toLocaleString('it-IT', { style: 'currency', currency: 'EUR' })}
             </div>
-            <p className="text-xs text-muted-foreground">Totale incassato</p>
+            <p className="text-xs text-muted-foreground">{t("warranties.totalCollected")}</p>
           </CardContent>
         </Card>
       </div>
@@ -101,7 +103,7 @@ export default function AdminWarrantyAnalytics() {
       <div className="grid gap-6 lg:grid-cols-2">
         <Card data-testid="card-monthly-trend">
           <CardHeader>
-            <CardTitle className="text-lg">Trend Mensile</CardTitle>
+            <CardTitle className="text-lg">{t("warranties.monthlyTrend")}</CardTitle>
           </CardHeader>
           <CardContent>
             {chartData.length > 0 ? (
@@ -115,13 +117,13 @@ export default function AdminWarrantyAnalytics() {
                     labelStyle={{ color: 'hsl(var(--foreground))' }}
                   />
                   <Legend />
-                  <Bar dataKey="offered" name="Offerte" fill="hsl(var(--muted-foreground))" />
-                  <Bar dataKey="accepted" name="Vendute" fill="hsl(142 76% 36%)" />
+                  <Bar dataKey="offered" name={t("warranties.offered")} fill="hsl(var(--muted-foreground))" />
+                  <Bar dataKey="accepted" name={t("warranties.sold")} fill="hsl(142 76% 36%)" />
                 </BarChart>
               </ResponsiveContainer>
             ) : (
               <div className="flex items-center justify-center h-[300px] text-muted-foreground">
-                Nessun dato disponibile
+                {t("common.noDataAvailable")}
               </div>
             )}
           </CardContent>
@@ -129,7 +131,7 @@ export default function AdminWarrantyAnalytics() {
 
         <Card data-testid="card-top-products">
           <CardHeader>
-            <CardTitle className="text-lg">Prodotti Più Venduti</CardTitle>
+            <CardTitle className="text-lg">{t("warranties.topSellingProducts")}</CardTitle>
           </CardHeader>
           <CardContent>
             {stats.topProducts.length > 0 ? (
@@ -142,7 +144,7 @@ export default function AdminWarrantyAnalytics() {
                       </Badge>
                       <div>
                         <p className="font-medium">{product.productName}</p>
-                        <p className="text-sm text-muted-foreground">{product.count} vendute</p>
+                        <p className="text-sm text-muted-foreground">{product.count} {t("warranties.sold")}</p>
                       </div>
                     </div>
                     <p className="font-medium text-emerald-600">
@@ -153,7 +155,7 @@ export default function AdminWarrantyAnalytics() {
               </div>
             ) : (
               <div className="flex items-center justify-center h-[200px] text-muted-foreground">
-                Nessun prodotto venduto
+                {t("warranties.noProductsSold")}
               </div>
             )}
           </CardContent>

@@ -8,6 +8,7 @@ import { formatDistanceToNow } from "date-fns";
 import { it } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 import type { Notification } from "@shared/schema";
+import { useTranslation } from "react-i18next";
 
 function NotificationCard({ notification, onMarkAsRead }: { notification: Notification; onMarkAsRead: (id: string) => void }) {
   const getNotificationIcon = (type: string) => {
@@ -95,6 +96,7 @@ function NotificationCard({ notification, onMarkAsRead }: { notification: Notifi
 }
 
 export default function ResellerNotifications() {
+  const { t } = useTranslation();
   const { notifications, unreadCount, isLoading, markAsRead, markAllAsRead, markAllAsReadPending } = useNotifications();
 
   return (
@@ -104,9 +106,7 @@ export default function ResellerNotifications() {
           <h1 className="text-2xl font-bold text-foreground flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-500 to-teal-500 text-white shadow-lg shadow-emerald-500/25">
               <Bell className="h-5 w-5" />
-            </div>
-            Notifiche
-          </h1>
+            </div>{t("notifications.title")}</h1>
           <p className="text-muted-foreground mt-1">
             Gestisci le tue notifiche e aggiornamenti
           </p>
@@ -124,7 +124,7 @@ export default function ResellerNotifications() {
               data-testid="button-mark-all-read"
             >
               <CheckCheck className="h-4 w-4 mr-2" />
-              {markAllAsReadPending ? "Aggiornamento..." : "Segna tutte come lette"}
+              {markAllAsReadPending ? t("profile.updating") : t("notifications.markAllRead")}
             </Button>
           </div>
         )}
@@ -153,7 +153,7 @@ export default function ResellerNotifications() {
             <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-500/10 to-teal-500/10">
               <Bell className="h-8 w-8 text-muted-foreground" />
             </div>
-            <h3 className="mt-4 text-lg font-medium text-foreground">Nessuna notifica</h3>
+            <h3 className="mt-4 text-lg font-medium text-foreground">{t("notifications.noNotifications")}</h3>
             <p className="mt-2 text-sm text-muted-foreground text-center max-w-sm">
               Non hai ancora ricevuto nessuna notifica. Le notifiche appariranno qui quando ci saranno aggiornamenti.
             </p>

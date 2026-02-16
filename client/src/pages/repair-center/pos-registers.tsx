@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -71,6 +72,7 @@ interface RegisterFormData {
 }
 
 export default function PosRegistersPage() {
+  const { t } = useTranslation();
   const { toast } = useToast();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingRegister, setEditingRegister] = useState<PosRegister | null>(null);
@@ -91,11 +93,11 @@ export default function PosRegistersPage() {
     },
     onSuccess: () => {
       invalidatePosQueries();
-      toast({ title: "Cassa creata", description: "La nuova cassa è stata creata con successo" });
+      toast({ title: "Cassa creata", description: t("pos.laNuovaCassaStataCreataConSuccesso") });
       closeDialog();
     },
     onError: (error: Error) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("auth.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -118,7 +120,7 @@ export default function PosRegistersPage() {
       closeDialog();
     },
     onError: (error: Error) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("auth.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -128,11 +130,11 @@ export default function PosRegistersPage() {
     },
     onSuccess: () => {
       invalidatePosQueries();
-      toast({ title: "Cassa eliminata", description: "La cassa è stata eliminata" });
+      toast({ title: "Cassa eliminata", description: t("pos.laCassaStataEliminata") });
       setDeleteRegister(null);
     },
     onError: (error: Error) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("auth.error"), description: error.message, variant: "destructive" });
       setDeleteRegister(null);
     },
   });
@@ -161,7 +163,7 @@ export default function PosRegistersPage() {
 
   const handleSubmit = () => {
     if (!formData.name.trim()) {
-      toast({ title: "Errore", description: "Il nome della cassa è obbligatorio", variant: "destructive" });
+      toast({ title: t("auth.error"), description: t("pos.ilNomeDellaCassaObbligatorio"), variant: "destructive" });
       return;
     }
 
@@ -190,8 +192,8 @@ export default function PosRegistersPage() {
   const handleDelete = (register: PosRegister) => {
     if (register.isDefault) {
       toast({ 
-        title: "Impossibile eliminare", 
-        description: "Non puoi eliminare la cassa predefinita. Imposta prima un'altra cassa come predefinita.", 
+        title: t("common.cannotDelete"), 
+        description: t("pos.cannotDeleteDefaultRegister"), 
         variant: "destructive" 
       });
       return;
@@ -234,7 +236,7 @@ export default function PosRegistersPage() {
               <Monitor className="h-5 w-5 sm:h-7 sm:w-7 text-white" />
             </div>
             <div>
-              <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-white tracking-tight">Registratori</h1>
+              <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-white tracking-tight">{t("sidebar.items.registers")}</h1>
               <p className="text-emerald-100">Configura i registri di cassa per il tuo punto vendita</p>
             </div>
           </div>
@@ -250,7 +252,7 @@ export default function PosRegistersPage() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Totale Casse</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">{t("pos.totaleCasse")}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{registers.length}</div>
@@ -285,7 +287,7 @@ export default function PosRegistersPage() {
           {registers.length === 0 ? (
             <div className="text-center py-12 text-muted-foreground">
               <Store className="h-12 w-12 mx-auto mb-4 opacity-50" />
-              <p>Nessuna cassa configurata</p>
+              <p>{t("pos.nessunaCassaConfigurata")}</p>
               <Button onClick={openCreateDialog} variant="outline" className="mt-4">
                 <Plus className="h-4 w-4 mr-2" />
                 Crea la prima cassa
@@ -296,12 +298,12 @@ export default function PosRegistersPage() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Nome</TableHead>
-                  <TableHead className="hidden md:table-cell">Descrizione</TableHead>
-                  <TableHead className="text-center">Stato</TableHead>
+                  <TableHead>{t("common.name")}</TableHead>
+                  <TableHead className="hidden md:table-cell">{t("common.description")}</TableHead>
+                  <TableHead className="text-center">{t("common.status")}</TableHead>
                   <TableHead className="text-center">Predefinita</TableHead>
-                  <TableHead className="hidden lg:table-cell">Creata il</TableHead>
-                  <TableHead className="text-right">Azioni</TableHead>
+                  <TableHead className="hidden lg:table-cell">{t("pos.creataIl")}</TableHead>
+                  <TableHead className="text-right">{t("common.actions")}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -399,14 +401,14 @@ export default function PosRegistersPage() {
             </DialogTitle>
             <DialogDescription>
               {editingRegister 
-                ? "Modifica i dettagli della cassa selezionata"
-                : "Inserisci i dati per creare una nuova cassa"
+                ? t("pos.editRegisterDetails")
+                : t("pos.enterDataForNewRegister")
               }
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label htmlFor="name">Nome cassa *</Label>
+              <Label htmlFor="name">{t("pos.nomeCassa")}</Label>
               <Input
                 id="name"
                 placeholder="Es. Cassa 1, Cassa Principale..."
@@ -416,10 +418,10 @@ export default function PosRegistersPage() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="description">Descrizione</Label>
+              <Label htmlFor="description">{t("common.description")}</Label>
               <Textarea
                 id="description"
-                placeholder="Descrizione opzionale..."
+                placeholder={t("utility.optionalDescription")}
                 value={formData.description}
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                 rows={3}
@@ -430,7 +432,7 @@ export default function PosRegistersPage() {
               <div className="space-y-0.5">
                 <Label htmlFor="isDefault">Cassa predefinita</Label>
                 <p className="text-sm text-muted-foreground">
-                  Questa cassa verrà selezionata automaticamente
+                  {t("pos.registerAutoSelected")}
                 </p>
               </div>
               <Switch
@@ -450,7 +452,7 @@ export default function PosRegistersPage() {
               disabled={createMutation.isPending || updateMutation.isPending}
               data-testid="button-save-register"
             >
-              {createMutation.isPending || updateMutation.isPending ? "Salvataggio..." : "Salva"}
+              {createMutation.isPending || updateMutation.isPending ? t("settings.saving") : t("common.save")}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -465,18 +467,18 @@ export default function PosRegistersPage() {
             </AlertDialogTitle>
             <AlertDialogDescription>
               Stai per eliminare la cassa "{deleteRegister?.name}". 
-              Le sessioni e transazioni associate a questa cassa rimarranno nel sistema ma non saranno più collegate ad una cassa specifica.
-              Questa azione non può essere annullata.
+              {t("pos.sessionsWillRemain")}
+              {t("common.thisActionCannotBeUndone")}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel data-testid="button-cancel-delete">Annulla</AlertDialogCancel>
+            <AlertDialogCancel data-testid="button-cancel-delete">{t("profile.cancel")}</AlertDialogCancel>
             <AlertDialogAction 
               onClick={confirmDelete}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
               data-testid="button-confirm-delete"
             >
-              {deleteMutation.isPending ? "Eliminazione..." : "Elimina"}
+              {deleteMutation.isPending ? "Eliminazione..." : t("common.delete")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

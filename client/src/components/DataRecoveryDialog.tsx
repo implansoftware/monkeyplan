@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
@@ -36,6 +37,7 @@ export function DataRecoveryDialog({
   deviceDescription,
   onSuccess 
 }: DataRecoveryDialogProps) {
+  const { t } = useTranslation();
   const { toast } = useToast();
   const [selectedTechnicianId, setSelectedTechnicianId] = useState<string>("");
   const [notes, setNotes] = useState("");
@@ -63,7 +65,7 @@ export function DataRecoveryDialog({
     onSuccess: () => {
       toast({
         title: "Recupero dati avviato",
-        description: "Il recupero dati è stato assegnato al tecnico",
+        description: t("dataRecovery.assignedToTechnician"),
       });
       queryClient.invalidateQueries({ queryKey: ["/api/repair-orders", repairOrderId] });
       queryClient.invalidateQueries({ queryKey: ["/api/repair-orders", repairOrderId, "data-recovery"] });
@@ -73,8 +75,8 @@ export function DataRecoveryDialog({
     },
     onError: (error: Error) => {
       toast({
-        title: "Errore",
-        description: error.message || "Impossibile avviare il recupero dati",
+        title: t("common.error"),
+        description: error.message || t("dataRecovery.cannotStart"),
         variant: "destructive",
       });
     },
@@ -88,7 +90,7 @@ export function DataRecoveryDialog({
   const handleSubmitInternal = () => {
     if (!selectedTechnicianId) {
       toast({
-        title: "Seleziona un tecnico",
+        title: t("common.selectTechnician"),
         description: "Devi selezionare un tecnico per il recupero dati interno",
         variant: "destructive",
       });
@@ -116,7 +118,7 @@ export function DataRecoveryDialog({
             <div>
               <span className="text-lg font-semibold">Avvia Recupero Dati</span>
               <DialogDescription className="mt-0.5">
-                {deviceDescription || "Assegna il recupero dati a un tecnico del laboratorio"}
+                {deviceDescription || t("dataRecovery.assignToLabTechnician")}
               </DialogDescription>
             </div>
           </DialogTitle>
@@ -148,12 +150,12 @@ export function DataRecoveryDialog({
                 ) : (
                   <Select value={selectedTechnicianId} onValueChange={setSelectedTechnicianId}>
                     <SelectTrigger id="technician" data-testid="select-technician">
-                      <SelectValue placeholder="Seleziona un tecnico" />
+                      <SelectValue placeholder={t("common.selectTechnician")} />
                     </SelectTrigger>
                     <SelectContent>
                       {staffUsers.filter(u => u.role === "repair_center" || u.role === "admin").map((user) => (
                         <SelectItem key={user.id} value={user.id}>
-                          {user.username} ({user.role === "admin" ? "Admin" : "Tecnico"})
+                          {user.username} ({user.role === "admin" ? t("staff.administrator") : t("common.technician")})
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -167,7 +169,7 @@ export function DataRecoveryDialog({
                 </Label>
                 <Textarea
                   id="notes"
-                  placeholder="Aggiungi note per il tecnico..."
+                  placeholder={t("repair.addNotesForTechnician")}
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
                   className="min-h-[80px]"
@@ -184,7 +186,7 @@ export function DataRecoveryDialog({
                 onClick={() => onOpenChange(false)}
                 data-testid="button-cancel"
               >
-                Annulla
+                {t("common.cancel")}
               </Button>
               <Button
                 onClick={handleSubmitInternal}
@@ -194,7 +196,7 @@ export function DataRecoveryDialog({
                 {createJobMutation.isPending ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Creazione...
+                    {t("common.creating")}
                   </>
                 ) : (
                   <>

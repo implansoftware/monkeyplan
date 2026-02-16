@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Building2, Store, Users } from "lucide-react";
@@ -32,6 +33,7 @@ export function EntityFilterSelector({
   setSelectedEntityId,
   showRepairCenters = true,
 }: EntityFilterSelectorProps) {
+  const { t } = useTranslation();
   const { data: subResellers = [] } = useQuery<SubReseller[]>({
     queryKey: ["/api/reseller/sub-resellers"],
   });
@@ -88,7 +90,7 @@ export function EntityFilterSelector({
             <SelectItem value="repair-center">
               <div className="flex flex-wrap items-center gap-2">
                 <Store className="h-4 w-4" />
-                <span>Centro Riparazione</span>
+                <span>{t("repair.repairCenter")}</span>
               </div>
             </SelectItem>
           )}
@@ -101,7 +103,7 @@ export function EntityFilterSelector({
           onValueChange={setSelectedEntityId}
         >
           <SelectTrigger className="w-full sm:w-[220px]" data-testid="select-sub-reseller">
-            <SelectValue placeholder="Seleziona sub-reseller..." />
+            <SelectValue placeholder={t("customer.selectSubReseller")} />
           </SelectTrigger>
           <SelectContent>
             {subResellers.map((sr) => (
@@ -119,7 +121,7 @@ export function EntityFilterSelector({
           onValueChange={setSelectedEntityId}
         >
           <SelectTrigger className="w-full sm:w-[220px]" data-testid="select-repair-center">
-            <SelectValue placeholder="Seleziona centro..." />
+            <SelectValue placeholder={t("repair.selectCenter")} />
           </SelectTrigger>
           <SelectContent>
             {repairCenters.map((rc) => (

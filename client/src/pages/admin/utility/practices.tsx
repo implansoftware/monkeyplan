@@ -20,6 +20,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Link, useLocation } from "wouter";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PracticesKanbanBoard } from "@/components/PracticesKanbanBoard";
+import { useTranslation } from "react-i18next";
 
 type PracticeStatus = "bozza" | "inviata" | "in_lavorazione" | "attesa_documenti" | "completata" | "rifiutata" | "annullata";
 
@@ -70,6 +71,7 @@ interface PracticeProductItem {
 }
 
 export default function AdminUtilityPractices() {
+  const { t } = useTranslation();
   const [searchQuery, setSearchQuery] = useState("");
   const [, navigate] = useLocation();
   const [statusFilter, setStatusFilter] = useState<string>("all");
@@ -225,7 +227,7 @@ export default function AdminUtilityPractices() {
 
   const handleImportText = () => {
     if (!importText.trim()) {
-      toast({ title: "Nessun testo", description: "Incolla il testo dal documento", variant: "destructive" });
+      toast({ title: t("utility.noText"), description: t("utility.pasteText"), variant: "destructive" });
       return;
     }
     
@@ -294,7 +296,7 @@ export default function AdminUtilityPractices() {
     ].filter(Boolean);
     
     toast({ 
-      title: "Dati importati", 
+      title: t("utility.dataImported"), 
       description: foundFields.length > 0 
         ? `Trovati: ${foundFields.join(", ")}` 
         : "Nessun dato riconosciuto nel testo"
@@ -366,10 +368,10 @@ export default function AdminUtilityPractices() {
       queryClient.invalidateQueries({ queryKey: ["/api/utility/practices"] });
       setDialogOpen(false);
       setEditingPractice(null);
-      toast({ title: "Pratica creata con successo" });
+      toast({ title: t("utility.practiceCreated") });
     },
     onError: (error: Error) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -382,10 +384,10 @@ export default function AdminUtilityPractices() {
       queryClient.invalidateQueries({ queryKey: ["/api/utility/practices"] });
       setDialogOpen(false);
       setEditingPractice(null);
-      toast({ title: "Pratica aggiornata" });
+      toast({ title: t("utility.practiceUpdated") });
     },
     onError: (error: Error) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -395,10 +397,10 @@ export default function AdminUtilityPractices() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/utility/practices"] });
-      toast({ title: "Pratica eliminata" });
+      toast({ title: t("utility.practiceDeleted") });
     },
     onError: (error: Error) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -414,16 +416,16 @@ export default function AdminUtilityPractices() {
       setNewCustomerName("");
       setNewCustomerEmail("");
       setNewCustomerPhone("");
-      toast({ title: "Cliente creato", description: `${newCustomer.fullName} aggiunto con successo` });
+      toast({ title: t("utility.customerCreated"), description: `${newCustomer.fullName} aggiunto con successo` });
     },
     onError: (error: Error) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     },
   });
 
   const handleCreateCustomer = () => {
     if (!newCustomerName.trim()) {
-      toast({ title: "Errore", description: "Il nome è obbligatorio", variant: "destructive" });
+      toast({ title: t("common.error"), description: "Il nome è obbligatorio", variant: "destructive" });
       return;
     }
     createCustomerMutation.mutate({
@@ -785,7 +787,7 @@ export default function AdminUtilityPractices() {
             <div className="flex flex-wrap items-center gap-2">
               <Search className="h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Cerca per numero pratica..."
+                placeholder={t("utility.searchPractice")}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="max-w-xs"
@@ -794,10 +796,10 @@ export default function AdminUtilityPractices() {
             </div>
             <Select value={statusFilter} onValueChange={setStatusFilter}>
               <SelectTrigger className="w-40" data-testid="select-status-filter">
-                <SelectValue placeholder="Stato" />
+                <SelectValue placeholder={t("common.status")} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">Tutti gli stati</SelectItem>
+                <SelectItem value="all">{t("repairs.allStatuses")}</SelectItem>
                 {Object.entries(statusLabels).map(([value, label]) => (
                   <SelectItem key={value} value={value}>{label}</SelectItem>
                 ))}
@@ -848,13 +850,13 @@ export default function AdminUtilityPractices() {
               <TableHeader>
                 <TableRow>
                   <TableHead>N. Pratica</TableHead>
-                  <TableHead>Cliente</TableHead>
-                  <TableHead>Assegnatario</TableHead>
-                  <TableHead>Tipo</TableHead>
-                  <TableHead>Servizio/Prodotto</TableHead>
-                  <TableHead>Prezzo</TableHead>
-                  <TableHead>Stato</TableHead>
-                  <TableHead className="text-right">Azioni</TableHead>
+                  <TableHead>{t("common.customer")}</TableHead>
+                  <TableHead>{t("utility.assignee")}</TableHead>
+                  <TableHead>{t("common.type")}</TableHead>
+                  <TableHead>{t("utility.serviceProduct")}</TableHead>
+                  <TableHead>{t("common.price")}</TableHead>
+                  <TableHead>{t("common.status")}</TableHead>
+                  <TableHead className="text-right">{t("common.actions")}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -1064,7 +1066,7 @@ export default function AdminUtilityPractices() {
                     </Button>
                   </div>
                   <Textarea
-                    placeholder="Seleziona tutto il testo dal PDF (Ctrl+A), copia (Ctrl+C) e incolla qui (Ctrl+V)..."
+                    placeholder={t("utility.pasteFromPdf")}
                     value={importText}
                     onChange={(e) => setImportText(e.target.value)}
                     rows={4}
@@ -1184,7 +1186,7 @@ export default function AdminUtilityPractices() {
                       }}
                     >
                       <SelectTrigger data-testid="select-reseller">
-                        <SelectValue placeholder="Seleziona rivenditore" />
+                        <SelectValue placeholder={t("utility.selectReseller")} />
                       </SelectTrigger>
                       <SelectContent>
                         {parentResellers.map((reseller) => (
@@ -1201,7 +1203,7 @@ export default function AdminUtilityPractices() {
                         onValueChange={setSelectedSubResellerId}
                       >
                         <SelectTrigger data-testid="select-sub-reseller">
-                          <SelectValue placeholder="Assegna a sotto-rivenditore (opzionale)" />
+                          <SelectValue placeholder={t("utility.selectSubReseller")} />
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="none">-- Nessuno (assegna al rivenditore) --</SelectItem>
@@ -1222,7 +1224,7 @@ export default function AdminUtilityPractices() {
                     onValueChange={setSelectedRepairCenterId}
                   >
                     <SelectTrigger className="mt-2" data-testid="select-repair-center">
-                      <SelectValue placeholder="Seleziona centro riparazione" />
+                      <SelectValue placeholder={t("utility.selectRepairCenter")} />
                     </SelectTrigger>
                     <SelectContent>
                       {repairCenters.map((center) => (
@@ -1268,7 +1270,7 @@ export default function AdminUtilityPractices() {
                         <Input
                           value={temporarySupplierName}
                           onChange={(e) => setTemporarySupplierName(e.target.value)}
-                          placeholder="Nome fornitore (es: TIM, Vodafone...)"
+                          placeholder={t("utility.supplierNamePlaceholder")}
                           required
                           data-testid="input-temporary-supplier-name"
                         />
@@ -1313,7 +1315,7 @@ export default function AdminUtilityPractices() {
                         required
                       >
                         <SelectTrigger data-testid="select-supplier">
-                          <SelectValue placeholder="Seleziona fornitore" />
+                          <SelectValue placeholder={t("suppliers.selectSupplier")} />
                         </SelectTrigger>
                         <SelectContent>
                           {suppliers.filter(s => s.isActive).map((supplier) => (
@@ -1348,7 +1350,7 @@ export default function AdminUtilityPractices() {
                       <Input
                         value={customServiceName}
                         onChange={(e) => setCustomServiceName(e.target.value)}
-                        placeholder="Nome servizio (es: Fibra 1Gbps)"
+                        placeholder={t("utility.serviceNamePlaceholder")}
                         required
                         data-testid="input-custom-service-name"
                       />
@@ -1424,7 +1426,7 @@ export default function AdminUtilityPractices() {
                               onValueChange={(val) => updateProduct(index, "productId", val)}
                             >
                               <SelectTrigger data-testid={`select-product-${index}`}>
-                                <SelectValue placeholder="Seleziona prodotto" />
+                                <SelectValue placeholder={t("warehouse.selectProduct")} />
                               </SelectTrigger>
                               <SelectContent>
                                 {products.filter(p => p.isActive).map((product) => (
@@ -1436,7 +1438,7 @@ export default function AdminUtilityPractices() {
                             </Select>
                           </div>
                           <div>
-                            <Label className="text-xs">Quantità</Label>
+                            <Label className="text-xs">{t("common.quantity")}</Label>
                             <Input
                               type="number"
                               min="1"
@@ -1457,7 +1459,7 @@ export default function AdminUtilityPractices() {
                             />
                           </div>
                           <div>
-                            <Label className="text-xs">Totale</Label>
+                            <Label className="text-xs">{t("common.total")}</Label>
                             <div className="h-9 flex items-center px-3 bg-muted rounded-md text-sm font-medium">
                               {formatCurrency(item.quantity * item.unitPriceCents)}
                             </div>
@@ -1513,7 +1515,7 @@ export default function AdminUtilityPractices() {
                     <Input
                       value={temporaryCustomerName}
                       onChange={(e) => setTemporaryCustomerName(e.target.value)}
-                      placeholder="Nome e cognome"
+                      placeholder={t("auth.fullName")}
                       required
                       data-testid="input-temporary-customer-name"
                     />
@@ -1555,7 +1557,7 @@ export default function AdminUtilityPractices() {
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                     <div>
-                      <Label className="text-xs">Email</Label>
+                      <Label className="text-xs">{t("common.email")}</Label>
                       <Input
                         type="email"
                         value={temporaryCustomerEmail}
@@ -1565,7 +1567,7 @@ export default function AdminUtilityPractices() {
                       />
                     </div>
                     <div>
-                      <Label className="text-xs">Telefono</Label>
+                      <Label className="text-xs">{t("common.phone")}</Label>
                       <Input
                         value={temporaryCustomerPhone}
                         onChange={(e) => setTemporaryCustomerPhone(e.target.value)}
@@ -1584,7 +1586,7 @@ export default function AdminUtilityPractices() {
                     required
                   >
                     <SelectTrigger data-testid="select-customer" className="flex-1">
-                      <SelectValue placeholder="Seleziona cliente" />
+                      <SelectValue placeholder={t("utility.selectCustomer")} />
                     </SelectTrigger>
                     <SelectContent>
                       {customerUsers.map((customer) => (
@@ -1644,7 +1646,7 @@ export default function AdminUtilityPractices() {
                   </div>
                 </div>
                 <div className="space-y-2">
-                  <Label className="text-xs">Stato</Label>
+                  <Label className="text-xs">{t("common.status")}</Label>
                   <Select 
                     value={selectedStatus}
                     onValueChange={(v) => setSelectedStatus(v as PracticeStatus)}
@@ -1713,7 +1715,7 @@ export default function AdminUtilityPractices() {
                     name="supplierReference"
                     value={supplierReferenceValue}
                     onChange={(e) => setSupplierReferenceValue(e.target.value)}
-                    placeholder="Codice pratica"
+                    placeholder={t("utility.practiceCode")}
                     data-testid="input-supplier-reference"
                   />
                 </div>
@@ -1725,7 +1727,7 @@ export default function AdminUtilityPractices() {
                   id="notes"
                   name="notes"
                   rows={2}
-                  placeholder="Note aggiuntive..."
+                  placeholder={t("utility.additionalNotes")}
                   defaultValue={editingPractice?.notes || ""}
                   data-testid="input-notes"
                 />
@@ -1762,7 +1764,7 @@ export default function AdminUtilityPractices() {
       <Dialog open={newCustomerDialogOpen} onOpenChange={setNewCustomerDialogOpen}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>Nuovo Cliente</DialogTitle>
+            <DialogTitle>{t("customers.newCustomer")}</DialogTitle>
             <DialogDescription>
               Crea rapidamente un nuovo cliente. Solo il nome è obbligatorio.
             </DialogDescription>
@@ -1774,7 +1776,7 @@ export default function AdminUtilityPractices() {
                 id="newCustomerName"
                 value={newCustomerName}
                 onChange={(e) => setNewCustomerName(e.target.value)}
-                placeholder="Mario Rossi"
+                placeholder={t("auth.fullName")}
                 data-testid="input-new-customer-name"
               />
             </div>
@@ -1819,7 +1821,7 @@ export default function AdminUtilityPractices() {
                 disabled={createCustomerMutation.isPending}
                 data-testid="button-save-new-customer"
               >
-                {createCustomerMutation.isPending ? "Creazione..." : "Crea Cliente"}
+                {createCustomerMutation.isPending ? t("admin.repairCenters.creating") : "Crea Cliente"}
               </Button>
             </div>
           </div>

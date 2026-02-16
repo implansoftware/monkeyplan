@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -68,15 +69,15 @@ type TestChecklistFormData = z.infer<typeof testChecklistSchema>;
 
 const testItems = [
   { key: "displayTest", label: "Display", icon: Monitor, description: "Schermo, colori, pixel morti" },
-  { key: "touchTest", label: "Touch", icon: Hand, description: "Reattività touch, multi-touch" },
-  { key: "batteryTest", label: "Batteria", icon: Battery, description: "Salute batteria, cicli di ricarica" },
+  { key: "touchTest", label: "Touch", icon: Hand, description: t("repair.touchReactivity") },
+  { key: "batteryTest", label: t("repair.battery"), icon: Battery, description: "Salute batteria, cicli di ricarica" },
   { key: "audioTest", label: "Audio", icon: Volume2, description: "Altoparlanti, microfono, capsula" },
-  { key: "cameraTest", label: "Fotocamera", icon: Camera, description: "Fotocamere anteriore/posteriore, flash" },
-  { key: "connectivityTest", label: "Connettività", icon: Wifi, description: "WiFi, Bluetooth, rete cellulare" },
+  { key: "cameraTest", label: t("repair.camera"), icon: Camera, description: "Fotocamere anteriore/posteriore, flash" },
+  { key: "connectivityTest", label: t("diagnosis.connectivity"), icon: Wifi, description: "WiFi, Bluetooth, rete cellulare" },
   { key: "buttonsTest", label: "Pulsanti", icon: MousePointer2, description: "Tasti fisici, volume, accensione" },
-  { key: "sensorsTest", label: "Sensori", icon: Gauge, description: "Prossimità, accelerometro, giroscopio" },
-  { key: "chargingTest", label: "Ricarica", icon: Plug, description: "Porta di ricarica, ricarica wireless" },
-  { key: "softwareTest", label: "Software", icon: Smartphone, description: "Stabilità OS, app, aggiornamenti" },
+  { key: "sensorsTest", label: t("repair.sensors"), icon: Gauge, description: t("repair.proximityAccelerometer") },
+  { key: "chargingTest", label: t("repair.charging"), icon: Plug, description: "Porta di ricarica, ricarica wireless" },
+  { key: "softwareTest", label: "Software", icon: Smartphone, description: t("repair.osStability") },
 ] as const;
 
 export function TestChecklistDialog({
@@ -85,6 +86,7 @@ export function TestChecklistDialog({
   repairOrderId,
   onSuccess,
 }: TestChecklistDialogProps) {
+  const { t } = useTranslation();
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -168,7 +170,7 @@ export function TestChecklistDialog({
     },
     onError: (error: Error) => {
       toast({
-        title: "Errore",
+        title: t("common.error"),
         description: error.message,
         variant: "destructive",
       });
@@ -359,7 +361,7 @@ export function TestChecklistDialog({
                   name="notes"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Note</FormLabel>
+                      <FormLabel>{t("common.notes")}</FormLabel>
                       <FormControl>
                         <Textarea
                           {...field}
@@ -382,14 +384,14 @@ export function TestChecklistDialog({
                 onClick={() => onOpenChange(false)}
                 data-testid="button-close"
               >
-                Chiudi
+                {t("common.close")}
               </Button>
               <Button
                 type="submit"
                 disabled={saveChecklistMutation.isPending}
                 data-testid="button-save-checklist"
               >
-                {saveChecklistMutation.isPending ? "Salvataggio..." : "Salva Checklist"}
+                {saveChecklistMutation.isPending ? t("common.saving") : "Salva Checklist"}
               </Button>
             </div>
           </form>

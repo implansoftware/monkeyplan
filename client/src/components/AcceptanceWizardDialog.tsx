@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useState, useRef } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -80,15 +81,15 @@ interface AcceptanceWizardDialogProps {
 type WizardStep = "device-info" | "acceptance-checks" | "quote" | "review";
 
 const acceptanceWizardSchema = z.object({
-  customerId: z.string().min(1, "Seleziona un cliente"),
+  customerId: z.string().min(1, t("common.selectCustomer")),
   branchId: z.string().optional(),
-  repairCenterId: z.string().min(1, "Seleziona un centro di riparazione"),
-  deviceType: z.string().min(1, "Seleziona il tipo di dispositivo"),
+  repairCenterId: z.string().min(1, t("repair.selectRepairCenter")),
+  deviceType: z.string().min(1, t("repair.selectDeviceType")),
   deviceModel: z.string().optional(),
   brand: z.string().optional(),
   deviceModelId: z.string().optional(), // FK to device catalog
   deviceBrandId: z.string().optional(), // FK to device brand catalog
-  issueDescription: z.string().min(1, "Seleziona almeno un problema"),
+  issueDescription: z.string().min(1, t("repair.selectAtLeastOneProblem")),
   otherIssueDescription: z.string().optional(),
   notes: z.string().optional(),
   imei: z.string().optional(),
@@ -234,6 +235,7 @@ export function AcceptanceWizardDialog({
   onSuccess,
   customerId 
 }: AcceptanceWizardDialogProps) {
+  const { t } = useTranslation();
   const [step, setStep] = useState<WizardStep>("device-info");
   const [selectedTypeId, setSelectedTypeId] = useState<string>("");
   const [selectedBrandId, setSelectedBrandId] = useState<string>("");
@@ -308,7 +310,7 @@ export function AcceptanceWizardDialog({
       if (!data) return [];
       return data.map((u: any) => ({
         id: u.id,
-        fullName: u.fullName || u.companyName || `${u.firstName || ''} ${u.lastName || ''}`.trim() || 'Cliente',
+        fullName: u.fullName || u.companyName || `${u.firstName || ''} ${u.lastName || ''}`.trim() || t("common.customer"),
         email: u.email || '',
       }));
     },
@@ -449,8 +451,8 @@ export function AcceptanceWizardDialog({
   const categoryLabels: Record<string, string> = {
     hardware: "Hardware",
     software: "Software",
-    connectivity: "Connettività",
-    altro: "Altro",
+    connectivity: t("diagnosis.connectivity"),
+    altro: t("common.other"),
   };
 
   const isResellerOrStaff = ["reseller", "reseller_staff"].includes(user?.role as string);
@@ -706,7 +708,7 @@ export function AcceptanceWizardDialog({
         ? ` con ${uploadedCount} foto allegate`
         : "";
       toast({
-        title: "Riparazione ingressata",
+        title: t("repair.repairIntaked"),
         description: `Ordine ${data.order.orderNumber} creato con successo${photoMessage}`,
       });
       handleClose();
@@ -722,8 +724,8 @@ export function AcceptanceWizardDialog({
     onError: (error: any) => {
       toast({
         variant: "destructive",
-        title: "Errore",
-        description: error.message || "Impossibile creare l'ordine",
+        title: t("common.error"),
+        description: error.message || t("repair.cannotCreateOrder"),
       });
     },
   });
@@ -787,7 +789,7 @@ export function AcceptanceWizardDialog({
       const response = await apiRequest("POST", endpoint, payload);
       if (!response.ok) {
         const errorText = await response.text();
-        throw new Error(errorText || "Errore durante la creazione del cliente");
+        throw new Error(errorText || t("customer.createError"));
       }
       return await response.json();
     },
@@ -817,15 +819,15 @@ export function AcceptanceWizardDialog({
         repairCenterId: "",
       });
       toast({
-        title: "Cliente creato",
-        description: `Il cliente ${customerName} è stato creato con successo`,
+        title: t("customer.created"),
+        description: t("customer.customerCreatedSuccess", { name: customerName }),
       });
     },
     onError: (error: any) => {
       toast({
         variant: "destructive",
-        title: "Errore",
-        description: error.message || "Impossibile creare il cliente",
+        title: t("common.error"),
+        description: error.message || t("customer.cannotCreate"),
       });
     },
   });
@@ -837,7 +839,7 @@ export function AcceptanceWizardDialog({
       toast({
         variant: "destructive",
         title: "Dati mancanti",
-        description: "Nome completo è obbligatorio",
+        description: t("customer.fullNameRequired"),
       });
       return;
     }
@@ -846,7 +848,7 @@ export function AcceptanceWizardDialog({
       toast({
         variant: "destructive",
         title: "Dati mancanti",
-        description: "Ragione sociale è obbligatoria",
+        description: t("customer.companyNameRequired"),
       });
       return;
     }
@@ -855,7 +857,7 @@ export function AcceptanceWizardDialog({
       toast({
         variant: "destructive",
         title: "Dati mancanti",
-        description: "Email è obbligatoria",
+        description: t("customer.emailRequired"),
       });
       return;
     }
@@ -864,7 +866,7 @@ export function AcceptanceWizardDialog({
       toast({
         variant: "destructive",
         title: "Dati mancanti",
-        description: "Telefono, indirizzo, città e CAP sono obbligatori",
+        description: t("customer.phoneAddressCityZipRequired"),
       });
       return;
     }
@@ -873,7 +875,7 @@ export function AcceptanceWizardDialog({
       toast({
         variant: "destructive",
         title: "Dati mancanti",
-        description: "Per le aziende, almeno PEC o Codice Univoco è obbligatorio",
+        description: t("customer.pecOrUniqueCodeRequired"),
       });
       return;
     }
@@ -933,16 +935,16 @@ export function AcceptanceWizardDialog({
   const lookupMarketCode = async () => {
     const code = marketCodeInput.trim();
     if (!code) {
-      toast({ variant: "destructive", title: "Inserisci un codice mercato" });
+      toast({ variant: "destructive", title: t("repair.enterMarketCode") });
       return;
     }
     setMarketCodeLoading(true);
     try {
       const res = await fetch(`/api/device-models/by-market-code?code=${encodeURIComponent(code)}`);
-      if (!res.ok) throw new Error("Errore nella ricerca");
+      if (!res.ok) throw new Error(t("common.searchError"));
       const data = await res.json();
       if (!data) {
-        toast({ variant: "destructive", title: "Codice non trovato", description: `Nessun dispositivo con codice ${code}` });
+        toast({ variant: "destructive", title: t("repair.codeNotFound"), description: t("repair.noDeviceWithCode", { code }) });
         return;
       }
       // Populate form fields
@@ -958,9 +960,9 @@ export function AcceptanceWizardDialog({
         form.setValue("deviceModelId", data.modelId);
         form.setValue("deviceModel", data.modelName || "");
       }
-      toast({ title: "Dispositivo trovato", description: `${data.typeName || ""} ${data.brandName || ""} ${data.modelName || ""}`.trim() });
+      toast({ title: t("repair.deviceFound"), description: t("repair.deviceFoundDesc", { type: data.typeName || "", brand: data.brandName || "", model: data.modelName || "" }) });
     } catch (error) {
-      toast({ variant: "destructive", title: "Errore", description: "Impossibile cercare il codice mercato" });
+      toast({ variant: "destructive", title: t("common.error"), description: "Impossibile cercare il codice mercato" });
     } finally {
       setMarketCodeLoading(false);
     }
@@ -1086,7 +1088,7 @@ export function AcceptanceWizardDialog({
       if (failedPhotos.length > 0) {
         toast({
           variant: "destructive",
-          title: "Errore upload foto",
+          title: t("attachment.photoUploadError"),
           description: `${failedPhotos.length} foto non caricate: ${failedPhotos.join(', ')}`,
         });
       }
@@ -1096,8 +1098,8 @@ export function AcceptanceWizardDialog({
       console.error('Error uploading photos:', error);
       toast({
         variant: "destructive",
-        title: "Errore upload foto",
-        description: "Errore di rete durante l'upload delle foto",
+        title: t("attachment.photoUploadError"),
+        description: t("attachment.networkErrorUpload"),
       });
       return successCount;
     } finally {
@@ -1115,12 +1117,12 @@ export function AcceptanceWizardDialog({
               name="customerId"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Cliente *</FormLabel>
+                  <FormLabel>{t("common.customer")} *</FormLabel>
                   <div className="flex gap-2">
                     <Select onValueChange={field.onChange} value={field.value}>
                       <FormControl>
                         <SelectTrigger data-testid="select-customer" className="flex-1">
-                          <SelectValue placeholder="Seleziona cliente" />
+                          <SelectValue placeholder={t("common.selectCustomer")} />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
@@ -1160,7 +1162,7 @@ export function AcceptanceWizardDialog({
                   <Select onValueChange={field.onChange} value={field.value || ""}>
                     <FormControl>
                       <SelectTrigger data-testid="select-branch">
-                        <SelectValue placeholder="Seleziona filiale (opzionale)" />
+                        <SelectValue placeholder={t("customer.selectBranchOptional")} />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
@@ -1187,14 +1189,14 @@ export function AcceptanceWizardDialog({
               <CardHeader className="pb-3">
                 <CardTitle className="text-base flex items-center gap-2">
                   <UserPlus className="h-4 w-4" />
-                  Nuovo Cliente
+                  {t("customer.newCustomer")}
                 </CardTitle>
-                <CardDescription>Inserisci i dati del nuovo cliente</CardDescription>
+                <CardDescription>{t("customer.fillCustomerData")}</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4 max-h-[400px] overflow-y-auto">
                 {/* Tipo Cliente */}
                 <div className="space-y-2">
-                  <Label>Tipo Cliente *</Label>
+                  <Label>{t("customer.customerType")} *</Label>
                   <div className="flex gap-4">
                     <label className="flex flex-wrap items-center gap-2 cursor-pointer">
                       <input
@@ -1205,7 +1207,7 @@ export function AcceptanceWizardDialog({
                         className="w-4 h-4"
                         data-testid="radio-customer-private"
                       />
-                      <span>Privato</span>
+                      <span>{t("customer.private")}</span>
                     </label>
                     <label className="flex flex-wrap items-center gap-2 cursor-pointer">
                       <input
@@ -1216,7 +1218,7 @@ export function AcceptanceWizardDialog({
                         className="w-4 h-4"
                         data-testid="radio-customer-company"
                       />
-                      <span>Azienda</span>
+                      <span>{t("customer.company")}</span>
                     </label>
                   </div>
                 </div>
@@ -1224,7 +1226,7 @@ export function AcceptanceWizardDialog({
                 {/* Nome / Ragione Sociale */}
                 {newCustomerData.customerType === "private" ? (
                   <div className="space-y-1">
-                    <Label htmlFor="new-customer-name">Nome completo *</Label>
+                    <Label htmlFor="new-customer-name">{t("customer.fullName")} *</Label>
                     <Input
                       id="new-customer-name"
                       placeholder="Mario Rossi"
@@ -1249,7 +1251,7 @@ export function AcceptanceWizardDialog({
                 {/* Email e Telefono */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div className="space-y-1">
-                    <Label htmlFor="new-customer-email">Email *</Label>
+                    <Label htmlFor="new-customer-email">{t("common.email")} *</Label>
                     <Input
                       id="new-customer-email"
                       type="email"
@@ -1260,7 +1262,7 @@ export function AcceptanceWizardDialog({
                     />
                   </div>
                   <div className="space-y-1">
-                    <Label htmlFor="new-customer-phone">Telefono *</Label>
+                    <Label htmlFor="new-customer-phone">{t("common.phone")} *</Label>
                     <Input
                       id="new-customer-phone"
                       placeholder="+39 333 1234567"
@@ -1273,7 +1275,7 @@ export function AcceptanceWizardDialog({
 
                 {/* Indirizzo con autocompletamento */}
                 <div className="space-y-1">
-                  <Label htmlFor="new-customer-address">Indirizzo *</Label>
+                  <Label htmlFor="new-customer-address">{t("common.addressLabel")} *</Label>
                   <AddressAutocomplete
                     id="new-customer-address"
                     placeholder="Inizia a digitare l'indirizzo..."
@@ -1295,7 +1297,7 @@ export function AcceptanceWizardDialog({
                 {/* Città, CAP, Paese */}
                 <div className="grid grid-cols-3 gap-3">
                   <div className="space-y-1">
-                    <Label htmlFor="new-customer-city">Città *</Label>
+                    <Label htmlFor="new-customer-city">{t("common.city")} *</Label>
                     <Input
                       id="new-customer-city"
                       placeholder="Milano"
@@ -1305,7 +1307,7 @@ export function AcceptanceWizardDialog({
                     />
                   </div>
                   <div className="space-y-1">
-                    <Label htmlFor="new-customer-zip">CAP *</Label>
+                    <Label htmlFor="new-customer-zip">{t("common.zipCode")} *</Label>
                     <Input
                       id="new-customer-zip"
                       placeholder="20100"
@@ -1315,7 +1317,7 @@ export function AcceptanceWizardDialog({
                     />
                   </div>
                   <div className="space-y-1">
-                    <Label htmlFor="new-customer-country">Paese</Label>
+                    <Label htmlFor="new-customer-country">{t("common.country")}</Label>
                     <Input
                       id="new-customer-country"
                       placeholder="IT"
@@ -1332,7 +1334,7 @@ export function AcceptanceWizardDialog({
                     <Separator />
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <div className="space-y-1">
-                        <Label htmlFor="new-customer-vat">Partita IVA</Label>
+                        <Label htmlFor="new-customer-vat">{t("fiscal.vatNumber")}</Label>
                         <Input
                           id="new-customer-vat"
                           placeholder="IT12345678901"
@@ -1342,7 +1344,7 @@ export function AcceptanceWizardDialog({
                         />
                       </div>
                       <div className="space-y-1">
-                        <Label htmlFor="new-customer-fiscal">Codice Fiscale</Label>
+                        <Label htmlFor="new-customer-fiscal">{t("fiscal.fiscalCode")}</Label>
                         <Input
                           id="new-customer-fiscal"
                           placeholder="12345678901"
@@ -1365,7 +1367,7 @@ export function AcceptanceWizardDialog({
                         />
                       </div>
                       <div className="space-y-1">
-                        <Label htmlFor="new-customer-sdi">Codice Univoco (SDI) *</Label>
+                        <Label htmlFor="new-customer-sdi">{t("fiscal.sdiCode")} *</Label>
                         <Input
                           id="new-customer-sdi"
                           placeholder="A1B2C3D"
@@ -1407,11 +1409,11 @@ export function AcceptanceWizardDialog({
                         />
                       </div>
                       <div className="space-y-1">
-                        <Label htmlFor="new-customer-password">Password *</Label>
+                        <Label htmlFor="new-customer-password">{t("common.password")} *</Label>
                         <Input
                           id="new-customer-password"
                           type="password"
-                          placeholder="Password"
+                          placeholder={t("common.password")}
                           value={newCustomerData.password}
                           onChange={(e) => setNewCustomerData(prev => ({ ...prev, password: e.target.value }))}
                           data-testid="input-new-customer-password"
@@ -1426,16 +1428,16 @@ export function AcceptanceWizardDialog({
                   <>
                     <Separator />
                     <div className="space-y-1">
-                      <Label htmlFor="new-customer-repair-center">Centro di Riparazione</Label>
+                      <Label htmlFor="new-customer-repair-center">{t("repair.repairCenter")}</Label>
                       <Select
                         value={newCustomerData.repairCenterId}
                         onValueChange={(value) => setNewCustomerData(prev => ({ ...prev, repairCenterId: value === "__none__" ? "" : value }))}
                       >
                         <SelectTrigger id="new-customer-repair-center" data-testid="select-new-customer-repair-center">
-                          <SelectValue placeholder="Nessun centro associato" />
+                          <SelectValue placeholder={t("repair.noAssociatedCenter")} />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="__none__">Nessun centro associato</SelectItem>
+                          <SelectItem value="__none__">{t("repair.noAssociatedCenter")}</SelectItem>
                           {resellerRepairCenters.map((center) => (
                             <SelectItem key={center.id} value={center.id}>
                               {center.name}
@@ -1475,7 +1477,7 @@ export function AcceptanceWizardDialog({
                     }}
                     data-testid="button-cancel-new-customer"
                   >
-                    Annulla
+                    {t("common.cancel")}
                   </Button>
                   <Button
                     type="button"
@@ -1486,10 +1488,10 @@ export function AcceptanceWizardDialog({
                     {createCustomerMutation.isPending ? (
                       <>
                         <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                        Creazione...
+                        {t("common.creating")}
                       </>
                     ) : (
-                      "Crea Cliente"
+                      t("customer.createCustomer")
                     )}
                   </Button>
                 </div>
@@ -1509,7 +1511,7 @@ export function AcceptanceWizardDialog({
             <Select onValueChange={field.onChange} value={field.value}>
               <FormControl>
                 <SelectTrigger data-testid="select-repair-center">
-                  <SelectValue placeholder="Seleziona centro di riparazione" />
+                  <SelectValue placeholder={t("repair.selectRepairCenter")} />
                 </SelectTrigger>
               </FormControl>
               <SelectContent>
@@ -1568,7 +1570,7 @@ export function AcceptanceWizardDialog({
 
       {/* Market Code Lookup - PRIMA di Tipo Dispositivo per auto-compilazione */}
       <div className="space-y-2">
-        <Label>Codice Mercato (opzionale)</Label>
+        <Label>{t("repair.marketCodeOptional")}</Label>
         <div className="flex gap-2">
           <Input
             placeholder="es. A2633, SM-G998B"
@@ -1595,7 +1597,7 @@ export function AcceptanceWizardDialog({
         name="deviceType"
         render={({ field }) => (
           <FormItem>
-            <FormLabel>Tipo dispositivo *</FormLabel>
+            <FormLabel>{t("repair.selectDeviceType")} *</FormLabel>
             <Select 
               onValueChange={(name) => {
                 field.onChange(name);
@@ -1621,7 +1623,7 @@ export function AcceptanceWizardDialog({
             >
               <FormControl>
                 <SelectTrigger data-testid="select-device-type">
-                  <SelectValue placeholder="Seleziona tipo" />
+                  <SelectValue placeholder={t("common.selectType")} />
                 </SelectTrigger>
               </FormControl>
               <SelectContent>
@@ -1709,7 +1711,7 @@ export function AcceptanceWizardDialog({
           
           return (
             <FormItem>
-              <FormLabel>Modello</FormLabel>
+              <FormLabel>{t("common.model")}</FormLabel>
               {selectedTypeId && filteredModels.length > 0 ? (
                 <>
                   <Select 
@@ -1733,7 +1735,7 @@ export function AcceptanceWizardDialog({
                   >
                     <FormControl>
                       <SelectTrigger data-testid="select-device-model">
-                        <SelectValue placeholder="Seleziona modello" />
+                        <SelectValue placeholder={t("common.selectModel")} />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
@@ -1742,7 +1744,7 @@ export function AcceptanceWizardDialog({
                           {selectedBrandId ? model.modelName : `${getBrandName(model.brandId)} - ${model.modelName}`}
                         </SelectItem>
                       ))}
-                      <SelectItem value="__other__">Altro (inserimento manuale)</SelectItem>
+                      <SelectItem value="__other__">{t("common.otherManualEntry")}</SelectItem>
                     </SelectContent>
                   </Select>
                   {isCustomModel && (
@@ -1754,7 +1756,7 @@ export function AcceptanceWizardDialog({
                           setCustomModelInput(newValue);
                           field.onChange(newValue || "__other__");
                         }}
-                        placeholder="Inserisci il nome del modello..."
+                        placeholder={t("products.enterModelName")}
                         data-testid="input-custom-device-model"
                         autoFocus
                       />
@@ -1780,7 +1782,7 @@ export function AcceptanceWizardDialog({
                 </FormControl>
               )}
               <FormDescription>
-                {selectedTypeId && filteredModels.length === 0 && "Nessun modello disponibile, inserisci manualmente"}
+                {selectedTypeId && filteredModels.length === 0 && t("products.noModelsAvailableEnterManually")}
                 {isCustomModel && "Digita il nome del modello nel campo sopra"}
               </FormDescription>
               <FormMessage />
@@ -1797,11 +1799,11 @@ export function AcceptanceWizardDialog({
           name="imei"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>IMEI</FormLabel>
+              <FormLabel>{t("repair.imei")}</FormLabel>
               <FormControl>
                 <Input 
                   {...field} 
-                  placeholder="Codice IMEI" 
+                  placeholder={t("repair.imeiCode")} 
                   disabled={form.watch("imeiNotReadable") || form.watch("imeiNotPresent")}
                   data-testid="input-imei"
                 />
@@ -1852,7 +1854,7 @@ export function AcceptanceWizardDialog({
           name="serial"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Numero di serie</FormLabel>
+              <FormLabel>{t("repair.serialNumber")}</FormLabel>
               <FormControl>
                 <Input {...field} placeholder="Serial number" data-testid="input-serial" />
               </FormControl>
@@ -1982,11 +1984,11 @@ export function AcceptanceWizardDialog({
         name="acceptance.aestheticCondition"
         render={({ field }) => (
           <FormItem>
-            <FormLabel>Condizioni estetiche generali *</FormLabel>
+            <FormLabel>{t("repair.cosmeticCondition")} *</FormLabel>
             <Select onValueChange={field.onChange} value={field.value}>
               <FormControl>
                 <SelectTrigger data-testid="select-aesthetic-condition">
-                  <SelectValue placeholder="Seleziona condizione" />
+                  <SelectValue placeholder={t("common.selectCondition")} />
                 </SelectTrigger>
               </FormControl>
               <SelectContent>
@@ -2172,7 +2174,7 @@ export function AcceptanceWizardDialog({
                 data-testid="button-add-photo"
               >
                 <Camera className="h-4 w-4 mr-2" />
-                Aggiungi foto
+                {t("common.addPhoto")}
               </Button>
               <input
                 id="acceptance-photo-input"
@@ -2186,7 +2188,7 @@ export function AcceptanceWizardDialog({
               <span className="text-xs text-muted-foreground">
                 {acceptancePhotos.length > 0 
                   ? `${acceptancePhotos.length} foto selezionate`
-                  : "Nessuna foto selezionata"}
+                  : t("repair.noPhotosSelected")}
               </span>
             </div>
             
@@ -2232,7 +2234,7 @@ export function AcceptanceWizardDialog({
         name="acceptance.accessories"
         render={({ field }) => (
           <FormItem>
-            <FormLabel>Accessori consegnati</FormLabel>
+            <FormLabel>{t("repair.deliveredAccessories")}</FormLabel>
             <div className="border rounded-md p-3 max-h-48 overflow-y-auto space-y-2">
               {accessoryTypes.length === 0 ? (
                 <p className="text-sm text-muted-foreground">Seleziona prima un tipo di dispositivo</p>
@@ -2388,12 +2390,12 @@ export function AcceptanceWizardDialog({
             name="acceptance.lockCode"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Codice PIN/Password</FormLabel>
+                <FormLabel>{t("repair.pinCode")}</FormLabel>
                 <FormControl>
                   <Input 
                     {...field} 
                     type="password"
-                    placeholder="Codice di sblocco"
+                    placeholder={t("repair.unlockCode")}
                     data-testid="input-lock-code"
                   />
                 </FormControl>
@@ -2566,7 +2568,7 @@ export function AcceptanceWizardDialog({
                   <Label>Tempo Stimato</Label>
                   <Select value={diagnosisEstimatedTimeId} onValueChange={setDiagnosisEstimatedTimeId}>
                     <SelectTrigger data-testid="select-diagnosis-time">
-                      <SelectValue placeholder="Seleziona durata" />
+                      <SelectValue placeholder={t("repair.selectDuration")} />
                     </SelectTrigger>
                     <SelectContent>
                       {estimatedRepairTimes.map((time) => (
@@ -2585,7 +2587,7 @@ export function AcceptanceWizardDialog({
                   <Label>Motivo Irriparabilità</Label>
                   <Select value={diagnosisUnrepairableReasonId} onValueChange={setDiagnosisUnrepairableReasonId}>
                     <SelectTrigger data-testid="select-unrepairable-reason">
-                      <SelectValue placeholder="Seleziona motivo" />
+                      <SelectValue placeholder={t("common.selectReason")} />
                     </SelectTrigger>
                     <SelectContent>
                       {unrepairableReasons.map((reason) => (
@@ -2625,11 +2627,11 @@ export function AcceptanceWizardDialog({
               )}
 
               <div className="space-y-2">
-                <Label>Note Diagnosi</Label>
+                <Label>{t("diagnosis.diagnosisNotes")}</Label>
                 <Textarea
                   value={diagnosisNotes}
                   onChange={(e) => setDiagnosisNotes(e.target.value)}
-                  placeholder="Note aggiuntive sulla diagnosi..."
+                  placeholder={t("diagnosis.additionalNotes")}
                   rows={2}
                   data-testid="textarea-diagnosis-notes"
                 />
@@ -2727,7 +2729,7 @@ export function AcceptanceWizardDialog({
                   <Select value={selectedQuoteWarehouseId} onValueChange={setSelectedQuoteWarehouseId}>
                     <SelectTrigger className="w-full sm:w-[200px]" data-testid="select-quote-warehouse">
                       <Warehouse className="h-4 w-4 mr-2" />
-                      <SelectValue placeholder="Seleziona magazzino" />
+                      <SelectValue placeholder={t("quote.selectWarehouse")} />
                     </SelectTrigger>
                     <SelectContent>
                       {accessibleWarehouses.map((wh) => (
@@ -2787,7 +2789,7 @@ export function AcceptanceWizardDialog({
                     quoteParts.map((part, index) => (
                       <div key={index} className="flex gap-2 items-center">
                         <Input
-                          placeholder="Nome ricambio/servizio"
+                          placeholder={t("quote.partServiceName")}
                           value={part.name}
                           onChange={(e) => {
                             const newParts = [...quoteParts];
@@ -2814,7 +2816,7 @@ export function AcceptanceWizardDialog({
                           type="number"
                           min="0"
                           step="0.01"
-                          placeholder="Prezzo €"
+                          placeholder={t("quote.priceEuro")}
                           value={part.unitPrice / 100}
                           onChange={(e) => {
                             const newParts = [...quoteParts];
@@ -2844,11 +2846,11 @@ export function AcceptanceWizardDialog({
 
               {/* Notes */}
               <div className="space-y-2">
-                <Label>Note Preventivo</Label>
+                <Label>{t("quote.quoteNotes")}</Label>
                 <Textarea
                   value={quoteNotes}
                   onChange={(e) => setQuoteNotes(e.target.value)}
-                  placeholder="Note aggiuntive per il preventivo..."
+                  placeholder={t("quote.additionalQuoteNotes")}
                   data-testid="textarea-quote-notes"
                 />
               </div>
@@ -2917,7 +2919,7 @@ export function AcceptanceWizardDialog({
         {(user?.role === "admin" || user?.role === "repair_center") && (
           <Card>
             <CardHeader>
-              <CardTitle className="text-base">Cliente</CardTitle>
+              <CardTitle className="text-base">{t("common.customer")}</CardTitle>
             </CardHeader>
             <CardContent className="text-sm">
               <div className="font-medium" data-testid="text-review-customer">
@@ -2929,7 +2931,7 @@ export function AcceptanceWizardDialog({
         
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">Centro di Riparazione</CardTitle>
+            <CardTitle className="text-base">{t("repair.repairCenter")}</CardTitle>
           </CardHeader>
           <CardContent className="text-sm">
             <div className="font-medium" data-testid="text-review-repair-center">
@@ -2940,7 +2942,7 @@ export function AcceptanceWizardDialog({
         
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">Informazioni dispositivo</CardTitle>
+            <CardTitle className="text-base">{t("wizard.deviceInfo")}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-2 text-sm">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
@@ -3024,19 +3026,19 @@ export function AcceptanceWizardDialog({
               {!formData.acceptance.aestheticPhotosMandatory && (
                 <div className="flex flex-wrap items-center gap-2 text-xs">
                   <AlertCircle className="w-4 h-4 text-orange-500" />
-                  <span>Foto non caricate (scelta utente)</span>
+                  <span>{t("repair.photosNotUploaded")}</span>
                 </div>
               )}
               {formData.acceptance.accessoriesRemoved && (
                 <div className="flex flex-wrap items-center gap-2 text-xs">
                   <CheckCircle2 className="w-4 h-4 text-green-500" />
-                  <span>Accessori rimossi</span>
+                  <span>{t("repair.accessoriesRemoved")}</span>
                 </div>
               )}
               {formData.acceptance.hasLockCode && (
                 <div className="flex flex-wrap items-center gap-2 text-xs">
                   <AlertCircle className="w-4 h-4 text-blue-500" />
-                  <span>Codice di blocco fornito</span>
+                  <span>{t("repair.lockCodeProvided")}</span>
                 </div>
               )}
             </div>
@@ -3045,7 +3047,7 @@ export function AcceptanceWizardDialog({
               <div className="mt-3 pt-3 border-t">
                 <div className="text-muted-foreground mb-2 flex items-center gap-2">
                   <ImageIcon className="w-4 h-4" />
-                  <span>Foto allegate ({acceptancePhotos.length})</span>
+                  <span>{t("repair.attachedPhotos")} ({acceptancePhotos.length})</span>
                 </div>
                 <div className="grid grid-cols-6 gap-2">
                   {acceptancePhotos.map((photo, index) => (
@@ -3070,7 +3072,7 @@ export function AcceptanceWizardDialog({
         <div className="rounded-md bg-muted p-4 text-sm">
           <p className="font-medium mb-1">Nota importante</p>
           <p className="text-muted-foreground">
-            Dopo la conferma, l'ordine verrà creato con stato "Ingressato" 
+            {t("repair.afterConfirmIntakeStatus")} 
             e sarà pronto per la fase di diagnosi.
           </p>
         </div>
@@ -3087,10 +3089,10 @@ export function AcceptanceWizardDialog({
             Accettazione dispositivo - {step === "device-info" ? "Passo 1/4" : step === "acceptance-checks" ? "Passo 2/4" : step === "quote" ? "Passo 3/4" : "Passo 4/4"}
           </DialogTitle>
           <DialogDescription>
-            {step === "device-info" && "Inserisci le informazioni del dispositivo e i codici identificativi"}
-            {step === "acceptance-checks" && "Verifica le condizioni del dispositivo e gli accessori"}
-            {step === "quote" && "Diagnosi e preventivo (opzionale)"}
-            {step === "review" && "Controlla i dati inseriti prima di confermare"}
+            {step === "device-info" && t("repair.enterDeviceInfoAndCodes")}
+            {step === "acceptance-checks" && t("repair.verifyConditionsAndAccessories")}
+            {step === "quote" && t("repair.diagnosisAndQuoteOptional")}
+            {step === "review" && t("repair.checkDataBeforeConfirm")}
           </DialogDescription>
         </DialogHeader>
 
@@ -3112,7 +3114,7 @@ export function AcceptanceWizardDialog({
                   data-testid="button-back"
                 >
                   <ChevronLeft className="w-4 h-4 mr-2" />
-                  Indietro
+                  {t("common.back")}
                 </Button>
               )}
               
@@ -3123,7 +3125,7 @@ export function AcceptanceWizardDialog({
                   onClick={handleClose}
                   data-testid="button-cancel"
                 >
-                  Annulla
+                  {t("common.cancel")}
                 </Button>
                 
                 {step !== "review" ? (
@@ -3133,7 +3135,7 @@ export function AcceptanceWizardDialog({
                     onClick={handleNext}
                     data-testid="button-next"
                   >
-                    Avanti
+                    {t("common.next")}
                     <ChevronRight className="w-4 h-4 ml-2" />
                   </Button>
                 ) : (
@@ -3152,9 +3154,9 @@ export function AcceptanceWizardDialog({
                     ) : createOrderMutation.isPending ? (
                       <>
                         <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                        Creazione...
+                        {t("common.creating")}
                       </>
-                    ) : "Conferma ingresso"}
+                    ) : t("repair.confirmIntake")}
                   </Button>
                 )}
               </div>

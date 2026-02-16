@@ -13,6 +13,7 @@ import {
   Package, Search, Loader2, Settings, AlertTriangle, Image, ShoppingCart, Plus, Filter, X
 } from "lucide-react";
 import { Link } from "wouter";
+import { useTranslation } from "react-i18next";
 
 type MobilesentrixCategory = {
   id: string;
@@ -39,6 +40,7 @@ type MobilesentrixCredential = {
 };
 
 export default function MobilesentrixCatalogPage() {
+  const { t } = useTranslation();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [searchQuery, setSearchQuery] = useState("");
@@ -89,7 +91,7 @@ export default function MobilesentrixCatalogPage() {
       setAddingToCart(null);
     },
     onError: (error: Error) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
       setAddingToCart(null);
     },
   });
@@ -275,10 +277,10 @@ export default function MobilesentrixCatalogPage() {
             <div className="flex-1 min-w-[200px]">
               <Select value={selectedCategory || "all"} onValueChange={(val) => setSelectedCategory(val === "all" ? "" : val)}>
                 <SelectTrigger data-testid="select-category">
-                  <SelectValue placeholder="Tutte le categorie" />
+                  <SelectValue placeholder={t("products.allCategories")} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">Tutte le categorie</SelectItem>
+                  <SelectItem value="all">{t("products.allCategories")}</SelectItem>
                   {categories?.map((cat) => (
                     <SelectItem key={cat.id} value={cat.id}>
                       {cat.name}
@@ -291,10 +293,10 @@ export default function MobilesentrixCatalogPage() {
             <div className="flex-1 min-w-[200px]">
               <Select value={selectedBrand || "all"} onValueChange={(val) => setSelectedBrand(val === "all" ? "" : val)}>
                 <SelectTrigger data-testid="select-brand">
-                  <SelectValue placeholder="Tutte le marche" />
+                  <SelectValue placeholder={t("products.allBrands")} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">Tutte le marche</SelectItem>
+                  <SelectItem value="all">{t("products.allBrands")}</SelectItem>
                   {brands?.map((brand) => (
                     <SelectItem key={brand} value={brand}>
                       {brand}
@@ -420,9 +422,7 @@ export default function MobilesentrixCatalogPage() {
                           <Loader2 className="h-4 w-4 animate-spin" />
                         ) : (
                           <>
-                            <Plus className="h-4 w-4 mr-1" />
-                            Aggiungi
-                          </>
+                            <Plus className="h-4 w-4 mr-1" />{t("common.add")}</>
                         )}
                       </Button>
                     </div>

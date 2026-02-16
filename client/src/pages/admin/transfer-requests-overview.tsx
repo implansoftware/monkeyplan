@@ -19,6 +19,7 @@ import {
 import type { Product } from "@shared/schema";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
+import { useTranslation } from "react-i18next";
 
 type TransferRequestItem = {
   id: string;
@@ -87,6 +88,7 @@ const requesterTypeLabels: Record<string, { label: string; icon: any }> = {
 };
 
 export default function AdminTransferRequestsOverviewPage() {
+  const { t } = useTranslation();
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState("active");
   const [searchTerm, setSearchTerm] = useState("");
@@ -122,14 +124,14 @@ export default function AdminTransferRequestsOverviewPage() {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/transfer-requests/overview"] });
       queryClient.invalidateQueries({ queryKey: ["/api/admin/transfer-requests"] });
       const action = variables.decision === 'approve' ? 'approvata' : 'rifiutata';
-      toast({ title: "Richiesta " + action, description: `La richiesta è stata ${action} con successo` });
+      toast({ title: t("common.success"), description: t("common.updatedSuccessfully") });
       setShowDecideDialog(false);
       setSelectedRequest(null);
       setApprovedItems([]);
       setRejectionReason("");
     },
     onError: (error: any) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -145,7 +147,7 @@ export default function AdminTransferRequestsOverviewPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/transfer-requests/overview"] });
       queryClient.invalidateQueries({ queryKey: ["/api/admin/transfer-requests"] });
-      toast({ title: "Spedizione registrata", description: "La richiesta è stata contrassegnata come spedita" });
+      toast({ title: t("warehouse.shipmentRegistered"), description: t("warehouse.shipmentRegisteredDesc") });
       setShowShipDialog(false);
       setSelectedRequest(null);
       setShippedItems([]);
@@ -153,7 +155,7 @@ export default function AdminTransferRequestsOverviewPage() {
       setShipTrackingCarrier("");
     },
     onError: (error: any) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -204,7 +206,7 @@ export default function AdminTransferRequestsOverviewPage() {
       a.remove();
       window.URL.revokeObjectURL(url);
     } catch (error: any) {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     }
   };
 
@@ -411,7 +413,7 @@ export default function AdminTransferRequestsOverviewPage() {
         <div className="relative flex-1 min-w-[200px]">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder="Cerca per numero, richiedente o prodotto..."
+            placeholder={t("products.searchProduct")}
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="pl-9"
@@ -420,16 +422,16 @@ export default function AdminTransferRequestsOverviewPage() {
         </div>
         <Select value={statusFilter} onValueChange={setStatusFilter}>
           <SelectTrigger className="w-full sm:w-[180px]" data-testid="select-admin-status-filter">
-            <SelectValue placeholder="Filtra per stato" />
+            <SelectValue placeholder={t("common.filterByStatus")} />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">Tutti gli stati</SelectItem>
-            <SelectItem value="pending">In Attesa</SelectItem>
-            <SelectItem value="approved">Approvate</SelectItem>
-            <SelectItem value="shipped">Spedite</SelectItem>
-            <SelectItem value="received">Ricevute</SelectItem>
-            <SelectItem value="rejected">Rifiutate</SelectItem>
-            <SelectItem value="cancelled">Annullate</SelectItem>
+            <SelectItem value="all">{t("repairs.allStatuses")}</SelectItem>
+            <SelectItem value="pending">{t("common.pending")}</SelectItem>
+            <SelectItem value="approved">{t("common.approved")}</SelectItem>
+            <SelectItem value="shipped">{t("common.shipped")}</SelectItem>
+            <SelectItem value="received">{t("common.received")}</SelectItem>
+            <SelectItem value="rejected">{t("common.rejected")}</SelectItem>
+            <SelectItem value="cancelled">{t("common.cancelled")}</SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -528,7 +530,7 @@ export default function AdminTransferRequestsOverviewPage() {
               )}
 
               <div>
-                <h4 className="font-medium mb-2">Prodotti</h4>
+                <h4 className="font-medium mb-2">{t("sidebar.items.products")}</h4>
                 <div className="border rounded-lg overflow-hidden">
                   <table className="w-full text-sm">
                     <thead className="bg-muted">
@@ -566,7 +568,7 @@ export default function AdminTransferRequestsOverviewPage() {
       <Dialog open={showDecideDialog} onOpenChange={setShowDecideDialog}>
         <DialogContent className="max-w-lg">
           <DialogHeader>
-            <DialogTitle>Gestisci Richiesta</DialogTitle>
+            <DialogTitle>{t("warehouse.manageRequest")}</DialogTitle>
             <DialogDescription>
               Approva o rifiuta la richiesta {selectedRequest?.requestNumber}
             </DialogDescription>
@@ -612,7 +614,7 @@ export default function AdminTransferRequestsOverviewPage() {
                 <Textarea
                   value={rejectionReason}
                   onChange={(e) => setRejectionReason(e.target.value)}
-                  placeholder="Inserisci il motivo del rifiuto..."
+                  placeholder={t("utility.rejectionReason")}
                   className="mt-1"
                 />
               </div>
@@ -650,7 +652,7 @@ export default function AdminTransferRequestsOverviewPage() {
       <Dialog open={showShipDialog} onOpenChange={setShowShipDialog}>
         <DialogContent className="max-w-lg">
           <DialogHeader>
-            <DialogTitle>Registra Spedizione</DialogTitle>
+            <DialogTitle>{t("warehouse.registerShipment")}</DialogTitle>
             <DialogDescription>
               Inserisci i dettagli della spedizione per {selectedRequest?.requestNumber}
             </DialogDescription>
@@ -659,7 +661,7 @@ export default function AdminTransferRequestsOverviewPage() {
             <div className="space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <Label>Corriere</Label>
+                  <Label>{t("shipping.carrier")}</Label>
                   <Input
                     value={shipTrackingCarrier}
                     onChange={(e) => setShipTrackingCarrier(e.target.value)}
@@ -668,11 +670,11 @@ export default function AdminTransferRequestsOverviewPage() {
                   />
                 </div>
                 <div>
-                  <Label>Numero Tracking</Label>
+                  <Label>{t("shipping.trackingNumber")}</Label>
                   <Input
                     value={shipTrackingNumber}
                     onChange={(e) => setShipTrackingNumber(e.target.value)}
-                    placeholder="Numero tracking..."
+                    placeholder={t("shipping.trackingNumberPlaceholder")}
                     className="mt-1"
                   />
                 </div>

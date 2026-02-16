@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import {
@@ -53,10 +54,12 @@ function formatCurrency(amount: number): string {
 
 export function SearchableProductCombobox({
   onSelect,
-  placeholder = "Cerca prodotto...",
+  placeholder,
   warehouseId,
   productType,
 }: SearchableProductComboboxProps) {
+  const { t } = useTranslation();
+  const resolvedPlaceholder = placeholder || t("products.searchProduct");
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebounce(search, 250);
@@ -107,13 +110,13 @@ export function SearchableProductCombobox({
           data-testid="combobox-product-search"
         >
           <Package className="h-4 w-4 mr-2 flex-shrink-0" />
-          <span>Magazzino</span>
+          <span>{t("warehouse.title")}</span>
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-[320px] p-0" align="start">
         <Command shouldFilter={false}>
           <CommandInput
-            placeholder={placeholder}
+            placeholder={resolvedPlaceholder}
             value={search}
             onValueChange={setSearch}
             data-testid="input-product-search"
@@ -130,11 +133,11 @@ export function SearchableProductCombobox({
               )}
               {!isLoading && activeProducts.length === 0 && (
                 <CommandEmpty>
-                  {search ? "Nessun prodotto trovato" : "Digita per cercare..."}
+                  {search ? t("products.noProductFound") : t("form.typeToSearch")}
                 </CommandEmpty>
               )}
               {!isLoading && activeProducts.length > 0 && (
-                <CommandGroup heading="Prodotti">
+                <CommandGroup heading={t("products.title")}>
                   {activeProducts.map((product) => (
                     <CommandItem
                       key={product.id}
@@ -165,7 +168,7 @@ export function SearchableProductCombobox({
                             {product.sku} - {formatCurrency((product.unitPrice || 0) / 100)}
                             {product.availableQuantity !== undefined && (
                               <span className="ml-2 text-green-600 dark:text-green-400">
-                                (Disp: {product.availableQuantity})
+                                ({t("warehouse.available")}: {product.availableQuantity})
                               </span>
                             )}
                           </span>

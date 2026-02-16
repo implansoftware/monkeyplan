@@ -18,6 +18,7 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
+import { useTranslation } from "react-i18next";
 
 interface B2BReturnWithDetails extends B2bReturn {
   items: (B2bReturnItem & { product?: Product })[];
@@ -52,6 +53,7 @@ const reasonLabels: Record<string, string> = {
 };
 
 export default function AdminB2BReturns() {
+  const { t } = useTranslation();
   const [selectedReturn, setSelectedReturn] = useState<B2BReturnWithDetails | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
   const [rejectDialogOpen, setRejectDialogOpen] = useState(false);
@@ -72,12 +74,12 @@ export default function AdminB2BReturns() {
       return res.json();
     },
     onSuccess: () => {
-      toast({ title: "Reso approvato", description: "Il reseller può ora spedire il reso" });
+      toast({ title: t("b2b.returnApproved"), description: t("b2b.returnApprovedDesc") });
       queryClient.invalidateQueries({ queryKey: ['/api/admin/b2b-returns'] });
       setDetailOpen(false);
     },
     onError: (error: any) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -87,7 +89,7 @@ export default function AdminB2BReturns() {
       return res.json();
     },
     onSuccess: () => {
-      toast({ title: "Reso rifiutato", description: "La richiesta di reso è stata rifiutata" });
+      toast({ title: t("b2b.returnRejected"), description: t("b2b.returnRejectedDesc") });
       queryClient.invalidateQueries({ queryKey: ['/api/admin/b2b-returns'] });
       setRejectDialogOpen(false);
       setDetailOpen(false);
@@ -95,7 +97,7 @@ export default function AdminB2BReturns() {
       setAdminNotes("");
     },
     onError: (error: any) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -105,7 +107,7 @@ export default function AdminB2BReturns() {
       return res.json();
     },
     onSuccess: () => {
-      toast({ title: "Reso completato", description: "Lo stock è stato ripristinato nel magazzino" });
+      toast({ title: t("b2b.returnCompleted"), description: t("b2b.returnCompletedDesc") });
       queryClient.invalidateQueries({ queryKey: ['/api/admin/b2b-returns'] });
       setReceiveDialogOpen(false);
       setDetailOpen(false);
@@ -113,7 +115,7 @@ export default function AdminB2BReturns() {
       setCreditAmount("");
     },
     onError: (error: any) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -270,7 +272,7 @@ export default function AdminB2BReturns() {
               <DialogHeader>
                 <div className="flex items-center justify-between">
                   <div>
-                    <DialogTitle>Reso {selectedReturn.returnNumber}</DialogTitle>
+                    <DialogTitle>{t("suppliers.returnNumber")} {selectedReturn.returnNumber}</DialogTitle>
                     <DialogDescription>
                       Richiesto il {selectedReturn.requestedAt && format(new Date(selectedReturn.requestedAt), "d MMMM yyyy 'alle' HH:mm", { locale: it })}
                     </DialogDescription>
@@ -308,9 +310,9 @@ export default function AdminB2BReturns() {
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead>Prodotto</TableHead>
+                        <TableHead>{t("products.product")}</TableHead>
                         <TableHead className="text-right">Qtà</TableHead>
-                        <TableHead className="text-right">Totale</TableHead>
+                        <TableHead className="text-right">{t("common.total")}</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -422,14 +424,14 @@ export default function AdminB2BReturns() {
                             })
                               .then(res => {
                                 if (res.ok) {
-                                  toast({ title: "Documenti rigenerati", description: "I documenti sono stati rigenerati con successo" });
+                                  toast({ title: t("b2b.documentsRegenerated"), description: t("b2b.documentsRegeneratedDesc") });
                                   queryClient.invalidateQueries({ queryKey: ['/api/admin/b2b-returns'] });
                                 } else {
                                   throw new Error("Errore nella rigenerazione");
                                 }
                               })
                               .catch(() => {
-                                toast({ title: "Errore", description: "Impossibile rigenerare i documenti", variant: "destructive" });
+                                toast({ title: t("common.error"), description: "Impossibile rigenerare i documenti", variant: "destructive" });
                               });
                           }}
                           data-testid="button-regenerate-documents"
@@ -483,7 +485,7 @@ export default function AdminB2BReturns() {
       <Dialog open={rejectDialogOpen} onOpenChange={setRejectDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Rifiuta Reso</DialogTitle>
+            <DialogTitle>{t("b2b.rejectReturn")}</DialogTitle>
             <DialogDescription>
               Specifica il motivo del rifiuto
             </DialogDescription>
@@ -495,16 +497,16 @@ export default function AdminB2BReturns() {
               <Textarea
                 value={rejectionReason}
                 onChange={(e) => setRejectionReason(e.target.value)}
-                placeholder="Spiega perché il reso viene rifiutato..."
+                placeholder={t("b2b.rejectReasonPlaceholder")}
                 data-testid="input-rejection-reason"
               />
             </div>
             <div className="space-y-2">
-              <Label>Note interne</Label>
+              <Label>{t("common.internalNotes")}</Label>
               <Textarea
                 value={adminNotes}
                 onChange={(e) => setAdminNotes(e.target.value)}
-                placeholder="Note interne (opzionale)..."
+                placeholder={t("common.internalNotesOptional")}
                 data-testid="input-admin-notes"
               />
             </div>
@@ -530,7 +532,7 @@ export default function AdminB2BReturns() {
       <Dialog open={receiveDialogOpen} onOpenChange={setReceiveDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Conferma Ricezione Reso</DialogTitle>
+            <DialogTitle>{t("b2b.confirmReturnReceipt")}</DialogTitle>
             <DialogDescription>
               Lo stock verrà automaticamente ripristinato nel magazzino
             </DialogDescription>
@@ -538,11 +540,11 @@ export default function AdminB2BReturns() {
 
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label>Note ispezione</Label>
+              <Label>{t("b2b.inspectionNotesLabel")}</Label>
               <Textarea
                 value={inspectionNotes}
                 onChange={(e) => setInspectionNotes(e.target.value)}
-                placeholder="Note sull'ispezione degli articoli..."
+                placeholder={t("b2b.inspectionNotes")}
                 data-testid="input-inspection-notes"
               />
             </div>
@@ -552,7 +554,7 @@ export default function AdminB2BReturns() {
                 type="number"
                 value={creditAmount}
                 onChange={(e) => setCreditAmount(e.target.value)}
-                placeholder="Lascia vuoto per accreditare l'intero importo"
+                placeholder={t("b2b.leaveEmptyFullCredit")}
                 data-testid="input-credit-amount"
               />
               <p className="text-xs text-muted-foreground">

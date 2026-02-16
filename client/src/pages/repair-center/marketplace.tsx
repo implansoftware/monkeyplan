@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useState, useEffect, useMemo } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Product, ShippingMethod } from "@shared/schema";
@@ -45,6 +46,7 @@ function formatPrice(cents: number): string {
 }
 
 export default function RepairCenterMarketplace() {
+  const { t } = useTranslation();
   const [searchQuery, setSearchQuery] = useState("");
   const [cart, setCart] = useState<CartItem[]>([]);
   const [checkoutOpen, setCheckoutOpen] = useState(false);
@@ -132,14 +134,14 @@ export default function RepairCenterMarketplace() {
       return res.json();
     },
     onSuccess: () => {
-      toast({ title: "Ordine creato", description: "Il tuo ordine è stato inviato al rivenditore" });
+      toast({ title: "Ordine creato", description: t("marketplace.ilTuoOrdineStatoInviatoAlRivenditore") });
       setCart([]);
       setCheckoutOpen(false);
       setNotes("");
       queryClient.invalidateQueries({ queryKey: ['/api/repair-center/marketplace/orders'] });
     },
     onError: (error: any) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("auth.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -165,8 +167,8 @@ export default function RepairCenterMarketplace() {
     const cartSellerId = cart[0]?.sellerResellerId;
     if (cartSellerId && cartSellerId !== item.sellerResellerId) {
       toast({ 
-        title: "Attenzione", 
-        description: "Puoi acquistare solo da un rivenditore alla volta. Svuota il carrello per cambiare rivenditore.",
+        title: t("common.warning"), 
+        description: t("marketplace.cannotMixResellers"),
         variant: "destructive"
       });
       return;
@@ -213,7 +215,7 @@ export default function RepairCenterMarketplace() {
 
   const handleCheckout = () => {
     if (cart.length === 0) {
-      toast({ title: "Carrello vuoto", description: "Aggiungi prodotti al carrello", variant: "destructive" });
+      toast({ title: t("pos.emptyCart"), description: "Aggiungi prodotti al carrello", variant: "destructive" });
       return;
     }
     setCheckoutOpen(true);
@@ -223,13 +225,13 @@ export default function RepairCenterMarketplace() {
     // Validate shipping method is selected and belongs to current seller
     const validShippingMethods = shippingMethods?.map(m => m.id) || [];
     if (!selectedShippingMethod || !validShippingMethods.includes(selectedShippingMethod)) {
-      toast({ title: "Errore", description: "Seleziona un metodo di spedizione valido", variant: "destructive" });
+      toast({ title: t("auth.error"), description: "Seleziona un metodo di spedizione valido", variant: "destructive" });
       return;
     }
 
     // Validate payment method is available
     if (!paymentConfig?.hasAnyMethod) {
-      toast({ title: "Errore", description: "Il venditore non ha configurato metodi di pagamento", variant: "destructive" });
+      toast({ title: t("auth.error"), description: "Il venditore non ha configurato metodi di pagamento", variant: "destructive" });
       return;
     }
 
@@ -268,7 +270,7 @@ export default function RepairCenterMarketplace() {
               <Store className="h-5 w-5 sm:h-7 sm:w-7 text-white" />
             </div>
             <div>
-              <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-white tracking-tight">Marketplace</h1>
+              <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-white tracking-tight">{t("sidebar.sections.marketplace")}</h1>
               <p className="text-emerald-100">Acquista prodotti da tutti i rivenditori</p>
             </div>
           </div>
@@ -276,7 +278,7 @@ export default function RepairCenterMarketplace() {
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-white/70" />
               <Input
-                placeholder="Cerca prodotti o rivenditori..."
+                placeholder={t("marketplace.cercaProdottiORivenditori")}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-9 w-full sm:w-72 bg-white/20 backdrop-blur-sm border-white/30 text-white placeholder:text-white/70"
@@ -305,7 +307,7 @@ export default function RepairCenterMarketplace() {
         <Card>
           <CardContent className="py-12 text-center">
             <Store className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-            <h3 className="text-lg font-semibold mb-2">Nessun prodotto disponibile</h3>
+            <h3 className="text-lg font-semibold mb-2">{t("marketplace.nessunProdottoDisponibile")}</h3>
             <p className="text-muted-foreground">
               Al momento non ci sono prodotti disponibili nel marketplace.
             </p>
@@ -352,18 +354,18 @@ export default function RepairCenterMarketplace() {
                     </CardHeader>
                     <CardContent className="space-y-2">
                       <div className="flex items-center justify-between">
-                        <span className="text-sm text-muted-foreground">Prezzo:</span>
+                        <span className="text-sm text-muted-foreground">{t("marketplace.prezzo")}</span>
                         <span className="font-bold text-primary">{formatPrice(item.marketplacePrice)}</span>
                       </div>
                       <div className="flex items-center justify-between">
-                        <span className="text-sm text-muted-foreground">Disponibilità:</span>
+                        <span className="text-sm text-muted-foreground">{t("b2b.disponibilit")}</span>
                         <Badge variant={item.availableStock > 10 ? "default" : "secondary"}>
                           {item.availableStock} pz
                         </Badge>
                       </div>
                       {item.minQuantity > 1 && (
                         <div className="flex items-center justify-between">
-                          <span className="text-sm text-muted-foreground">Quantità min:</span>
+                          <span className="text-sm text-muted-foreground">{t("marketplace.quantitMin")}</span>
                           <span className="text-sm">{item.minQuantity} pz</span>
                         </div>
                       )}
@@ -390,7 +392,7 @@ export default function RepairCenterMarketplace() {
       <Dialog open={checkoutOpen} onOpenChange={setCheckoutOpen}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle>Riepilogo Ordine</DialogTitle>
+            <DialogTitle>{t("shop.orderSummary")}</DialogTitle>
             {cart.length > 0 && (
               <DialogDescription>
                 Ordine da: {cart[0].sellerName}
@@ -477,7 +479,7 @@ export default function RepairCenterMarketplace() {
               )}
               <Separator className="my-1" />
               <div className="flex justify-between text-lg font-bold">
-                <span>Totale:</span>
+                <span>{t("accessories.totale")}</span>
                 <span>{formatPrice(grandTotal)}</span>
               </div>
             </div>
@@ -488,12 +490,12 @@ export default function RepairCenterMarketplace() {
                 <Skeleton className="h-10 w-full" />
               ) : !shippingMethods || shippingMethods.length === 0 ? (
                 <Card className="border-muted bg-muted/10 p-3">
-                  <p className="text-sm text-muted-foreground">Nessun metodo di spedizione disponibile</p>
+                  <p className="text-sm text-muted-foreground">{t("marketplace.nessunMetodoDiSpedizioneDisponibile")}</p>
                 </Card>
               ) : (
                 <Select value={selectedShippingMethod} onValueChange={(val) => { setSelectedShippingMethod(val); setUserSelectedShipping(true); }}>
                   <SelectTrigger data-testid="select-rc-shipping-method">
-                    <SelectValue placeholder="Seleziona metodo di spedizione" />
+                    <SelectValue placeholder={t("b2b.selezionaMetodoDiSpedizione")} />
                   </SelectTrigger>
                   <SelectContent>
                     {shippingMethods.map(method => (
@@ -508,7 +510,7 @@ export default function RepairCenterMarketplace() {
             </div>
 
             <div className="space-y-2">
-              <Label>Metodo di pagamento</Label>
+              <Label>{t("license.paymentMethod")}</Label>
               {paymentConfigLoading ? (
                 <Skeleton className="h-10 w-full" />
               ) : !paymentConfig?.hasAnyMethod ? (
@@ -518,14 +520,14 @@ export default function RepairCenterMarketplace() {
               ) : (
                 <Select value={paymentMethod} onValueChange={setPaymentMethod}>
                   <SelectTrigger data-testid="select-rc-payment-method">
-                    <SelectValue placeholder="Seleziona metodo di pagamento" />
+                    <SelectValue placeholder={t("b2b.selezionaMetodoDiPagamento")} />
                   </SelectTrigger>
                   <SelectContent>
                     {paymentConfig?.bankTransfer?.enabled && (
-                      <SelectItem value="bank_transfer">Bonifico Bancario</SelectItem>
+                      <SelectItem value="bank_transfer">{t("settings.bankTransfer")}</SelectItem>
                     )}
                     {paymentConfig?.stripe?.enabled && (
-                      <SelectItem value="stripe">Carta di Credito</SelectItem>
+                      <SelectItem value="stripe">{t("suppliers.creditCard")}</SelectItem>
                     )}
                     {paymentConfig?.paypal?.enabled && (
                       <SelectItem value="paypal">PayPal</SelectItem>
@@ -563,7 +565,7 @@ export default function RepairCenterMarketplace() {
             <div className="space-y-2">
               <Label>Note per il venditore</Label>
               <Textarea 
-                placeholder="Aggiungi note all'ordine..."
+                placeholder={t("marketplace.addOrderNotes")}
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
                 data-testid="textarea-rc-buyer-notes"
@@ -592,15 +594,15 @@ export default function RepairCenterMarketplace() {
                 }}
                 onError={(error) => {
                   toast({
-                    title: "Errore PayPal",
+                    title: t("b2b.errorePayPal"),
                     description: error,
                     variant: "destructive",
                   });
                 }}
                 onCancel={() => {
                   toast({
-                    title: "Pagamento annullato",
-                    description: "Hai annullato il pagamento PayPal",
+                    title: t("license.paymentCancelled"),
+                    description: t("marketplace.paypalCancelled"),
                   });
                 }}
               />
@@ -622,7 +624,7 @@ export default function RepairCenterMarketplace() {
                   toast({ title: "Ordine completato", description: "Pagamento ricevuto con successo" });
                 }}
                 onError={(error) => {
-                  toast({ title: "Errore", description: error, variant: "destructive" });
+                  toast({ title: t("auth.error"), description: error, variant: "destructive" });
                 }}
               />
             ) : (

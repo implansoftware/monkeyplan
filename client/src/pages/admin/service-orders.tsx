@@ -10,6 +10,7 @@ import { Loader2, Eye, User, Smartphone, Banknote, Building, CreditCard, Search,
 import type { ServiceOrder } from "@shared/schema";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
+import { useTranslation } from "react-i18next";
 
 type ServiceOrderWithDetails = ServiceOrder & {
   customerName: string;
@@ -42,6 +43,7 @@ const paymentMethodLabels: Record<string, { label: string; icon: any }> = {
 };
 
 export default function AdminServiceOrders() {
+  const { t } = useTranslation();
   const [selectedOrder, setSelectedOrder] = useState<ServiceOrderWithDetails | null>(null);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
@@ -87,7 +89,7 @@ export default function AdminServiceOrders() {
         <div className="relative flex-1 max-w-md">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <Input
-            placeholder="Cerca per ordine, cliente, rivenditore..."
+            placeholder={t("customers.searchCustomer")}
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="pl-10"
@@ -102,15 +104,15 @@ export default function AdminServiceOrders() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Ordine</TableHead>
-                <TableHead>Cliente</TableHead>
-                <TableHead>Rivenditore</TableHead>
-                <TableHead>Centro</TableHead>
-                <TableHead>Servizio</TableHead>
-                <TableHead>Importo</TableHead>
-                <TableHead>Stato</TableHead>
-                <TableHead>Pagamento</TableHead>
-                <TableHead>Azioni</TableHead>
+                <TableHead>{t("common.order")}</TableHead>
+                <TableHead>{t("common.customer")}</TableHead>
+                <TableHead>{t("roles.reseller")}</TableHead>
+                <TableHead>{t("admin.repairCenters.center")}</TableHead>
+                <TableHead>{t("utility.service")}</TableHead>
+                <TableHead>{t("common.amount")}</TableHead>
+                <TableHead>{t("common.status")}</TableHead>
+                <TableHead>{t("common.payment")}</TableHead>
+                <TableHead>{t("common.actions")}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -197,21 +199,21 @@ export default function AdminServiceOrders() {
         <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle>Dettaglio Ordine {selectedOrder?.orderNumber}</DialogTitle>
-            <DialogDescription>Informazioni complete sull'ordine di intervento</DialogDescription>
+            <DialogDescription>{t("utility.serviceOrderInfo")}</DialogDescription>
           </DialogHeader>
           {selectedOrder && (
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="text-sm font-medium text-muted-foreground">Cliente</label>
+                  <label className="text-sm font-medium text-muted-foreground">{t("common.customer")}</label>
                   <p>{selectedOrder.customerName}</p>
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-muted-foreground">Rivenditore</label>
+                  <label className="text-sm font-medium text-muted-foreground">{t("roles.reseller")}</label>
                   <p>{selectedOrder.resellerName}</p>
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-muted-foreground">Centro Riparazione</label>
+                  <label className="text-sm font-medium text-muted-foreground">{t("roles.repairCenter")}</label>
                   <p>{selectedOrder.repairCenterName || "-"}</p>
                 </div>
                 <div>
@@ -219,7 +221,7 @@ export default function AdminServiceOrders() {
                   <p>{selectedOrder.serviceName}</p>
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-muted-foreground">Dispositivo</label>
+                  <label className="text-sm font-medium text-muted-foreground">{t("repairs.device")}</label>
                   <p>{selectedOrder.brand} {selectedOrder.model || "-"}</p>
                 </div>
                 <div>
@@ -227,7 +229,7 @@ export default function AdminServiceOrders() {
                   <p>{selectedOrder.imei || selectedOrder.serial || "-"}</p>
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-muted-foreground">Importo</label>
+                  <label className="text-sm font-medium text-muted-foreground">{t("common.amount")}</label>
                   <p className="font-medium">{formatPrice(selectedOrder.priceCents)}</p>
                 </div>
                 <div>
@@ -252,7 +254,7 @@ export default function AdminServiceOrders() {
             </div>
           )}
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsDetailOpen(false)}>Chiudi</Button>
+            <Button variant="outline" onClick={() => setIsDetailOpen(false)}>{t("common.close")}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

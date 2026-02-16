@@ -39,10 +39,12 @@ import { SearchableProductCombobox } from "@/components/SearchableProductCombobo
 import { SearchableServiceCombobox } from "@/components/SearchableServiceCombobox";
 
 import { formatCurrency, VAT_RATES, DEFAULT_VAT_RATE } from "@/lib/utils";
+import { useTranslation } from "react-i18next";
 
 type PriceListWithItems = PriceList & { items: PriceListItem[] };
 
 export default function AdminPriceListDetail() {
+  const { t } = useTranslation();
   const { toast } = useToast();
   const [, params] = useRoute("/admin/price-lists/:id");
   const listId = params?.id;
@@ -93,13 +95,13 @@ export default function AdminPriceListDetail() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/price-lists", listId] });
       toast({
-        title: "Aliquota IVA aggiornata",
-        description: "L'aliquota IVA del listino è stata aggiornata.",
+        title: t("products.vatRateUpdatedTitle"),
+        description: t("products.vatRateUpdated"),
       });
     },
     onError: (error: any) => {
       toast({
-        title: "Errore",
+        title: t("common.error"),
         description: error.message || "Errore durante l'aggiornamento dell'aliquota.",
         variant: "destructive",
       });
@@ -120,13 +122,13 @@ export default function AdminPriceListDetail() {
       setNewItemPrice("");
       setNewItemVatRate(listVatRate);
       toast({
-        title: "Voce aggiunta",
-        description: "La voce è stata aggiunta al listino.",
+        title: t("products.itemAddedTitle"),
+        description: t("products.itemAddedToList"),
       });
     },
     onError: (error: any) => {
       toast({
-        title: "Errore",
+        title: t("common.error"),
         description: error.message || "Errore durante l'aggiunta della voce.",
         variant: "destructive",
       });
@@ -140,13 +142,13 @@ export default function AdminPriceListDetail() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/price-lists", listId] });
       toast({
-        title: "Voce eliminata",
-        description: "La voce è stata rimossa dal listino.",
+        title: t("products.itemDeletedTitle"),
+        description: t("products.itemRemovedFromList"),
       });
     },
     onError: (error: any) => {
       toast({
-        title: "Errore",
+        title: t("common.error"),
         description: error.message || "Errore durante l'eliminazione della voce.",
         variant: "destructive",
       });
@@ -166,8 +168,8 @@ export default function AdminPriceListDetail() {
     const priceCents = Math.round(parseFloat(newItemPrice) * 100);
     if (isNaN(priceCents) || priceCents <= 0) {
       toast({
-        title: "Errore",
-        description: "Inserisci un prezzo valido.",
+        title: t("common.error"),
+        description: t("products.invalidPrice"),
         variant: "destructive",
       });
       return;
@@ -179,8 +181,8 @@ export default function AdminPriceListDetail() {
       addItemMutation.mutate({ serviceItemId: selectedServiceId, priceCents, vatRate: newItemVatRate });
     } else {
       toast({
-        title: "Errore",
-        description: "Seleziona un prodotto o servizio.",
+        title: t("common.error"),
+        description: t("products.selectProductOrService"),
         variant: "destructive",
       });
     }
@@ -252,7 +254,7 @@ export default function AdminPriceListDetail() {
       <div className="container mx-auto py-6 text-center">
         <p className="text-muted-foreground">Listino non trovato</p>
         <Link href="/admin/price-lists">
-          <Button variant="ghost">Torna ai listini</Button>
+          <Button variant="ghost">{t("products.backToPriceLists")}</Button>
         </Link>
       </div>
     );
@@ -369,7 +371,7 @@ export default function AdminPriceListDetail() {
               <div className="relative flex-1 sm:w-64">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
-                  placeholder="Cerca..."
+                  placeholder={t("common.search")}
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                   className="pl-9"
@@ -386,14 +388,14 @@ export default function AdminPriceListDetail() {
                   </DialogTrigger>
                   <DialogContent>
                     <DialogHeader>
-                      <DialogTitle>Aggiungi Voce al Listino</DialogTitle>
+                      <DialogTitle>{t("products.addPriceListItem")}</DialogTitle>
                       <DialogDescription>
                         Seleziona un prodotto o servizio e imposta il prezzo
                       </DialogDescription>
                     </DialogHeader>
                     <div className="space-y-4 py-4">
                       <div className="space-y-2">
-                        <Label>Tipo</Label>
+                        <Label>{t("common.type")}</Label>
                         <Select value={itemType} onValueChange={(v) => {
                           setItemType(v as "product" | "service");
                           setSelectedProductId(null);
@@ -405,32 +407,32 @@ export default function AdminPriceListDetail() {
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="product">Prodotto</SelectItem>
-                            <SelectItem value="service">Servizio</SelectItem>
+                            <SelectItem value="product">{t("warehouse.product")}</SelectItem>
+                            <SelectItem value="service">{t("utility.service")}</SelectItem>
                           </SelectContent>
                         </Select>
                       </div>
 
                       {itemType === "product" ? (
                         <div className="space-y-2">
-                          <Label>Prodotto</Label>
+                          <Label>{t("warehouse.product")}</Label>
                           <SearchableProductCombobox
                             onSelect={(product) => {
                               setSelectedProductId(product.id);
                               setSelectedProduct(product as Product);
                             }}
-                            placeholder="Cerca prodotto..."
+                            placeholder={t("products.searchProduct")}
                           />
                         </div>
                       ) : (
                         <div className="space-y-2">
-                          <Label>Servizio</Label>
+                          <Label>{t("utility.service")}</Label>
                           <SearchableServiceCombobox
                             onSelect={(service) => {
                               setSelectedServiceId(service.id);
                               setSelectedService(service as ServiceItem);
                             }}
-                            placeholder="Cerca servizio..."
+                            placeholder={t("products.searchService")}
                           />
                         </div>
                       )}
@@ -480,7 +482,7 @@ export default function AdminPriceListDetail() {
                       )}
 
                       <div className="space-y-2">
-                        <Label>Prezzo (EUR) - IVA esclusa</Label>
+                        <Label>{t("products.priceExclVat")}</Label>
                         <Input
                           type="number"
                           step="0.01"
@@ -533,7 +535,7 @@ export default function AdminPriceListDetail() {
           {filteredItems.length === 0 ? (
             <div className="text-center py-12 text-muted-foreground">
               <Package className="h-12 w-12 mx-auto mb-4 opacity-50" />
-              <p>Nessuna voce nel listino</p>
+              <p>{t("products.noPriceListItems")}</p>
               {isAdminList && (
                 <p className="text-sm mt-2">Clicca "Aggiungi" per inserire prodotti o servizi</p>
               )}
@@ -543,12 +545,12 @@ export default function AdminPriceListDetail() {
               <TableHeader>
                 <TableRow>
                   <TableHead className="w-[60px]">Foto</TableHead>
-                  <TableHead>Nome</TableHead>
-                  <TableHead>Tipo</TableHead>
+                  <TableHead>{t("common.name")}</TableHead>
+                  <TableHead>{t("common.type")}</TableHead>
                   <TableHead className="text-right">Prezzo Originale</TableHead>
                   <TableHead className="text-right">Prezzo Listino</TableHead>
                   <TableHead className="text-center">IVA</TableHead>
-                  {isAdminList && <TableHead className="w-[80px]">Azioni</TableHead>}
+                  {isAdminList && <TableHead className="w-[80px]">{t("common.actions")}</TableHead>}
                 </TableRow>
               </TableHeader>
               <TableBody>

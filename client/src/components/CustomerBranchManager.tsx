@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/use-auth";
@@ -24,6 +25,7 @@ interface CustomerBranchManagerProps {
 }
 
 export function CustomerBranchManager({ customerId, customerName, readOnly = false }: CustomerBranchManagerProps) {
+  const { t } = useTranslation();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editBranch, setEditBranch] = useState<CustomerBranch | null>(null);
   const [selectedAddress, setSelectedAddress] = useState("");
@@ -52,7 +54,7 @@ export function CustomerBranchManager({ customerId, customerName, readOnly = fal
       toast({ title: "Filiale creata con successo" });
     },
     onError: (error: Error) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -67,7 +69,7 @@ export function CustomerBranchManager({ customerId, customerName, readOnly = fal
       toast({ title: "Filiale aggiornata con successo" });
     },
     onError: (error: Error) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -80,7 +82,7 @@ export function CustomerBranchManager({ customerId, customerName, readOnly = fal
       toast({ title: "Filiale eliminata" });
     },
     onError: (error: Error) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -102,7 +104,7 @@ export function CustomerBranchManager({ customerId, customerName, readOnly = fal
     };
 
     if (!data.branchCode || !data.branchName) {
-      toast({ title: "Errore", description: "Codice e Nome filiale sono obbligatori", variant: "destructive" });
+      toast({ title: t("common.error"), description: "Codice e Nome filiale sono obbligatori", variant: "destructive" });
       return;
     }
 
@@ -139,7 +141,7 @@ export function CustomerBranchManager({ customerId, customerName, readOnly = fal
         <CardHeader>
           <CardTitle className="flex flex-wrap items-center gap-2">
             <Building2 className="h-5 w-5" />
-            Filiali
+            {t("customer.branches")}
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -172,13 +174,13 @@ export function CustomerBranchManager({ customerId, customerName, readOnly = fal
             <DialogContent className="max-w-lg">
               <DialogHeader>
                 <DialogTitle>
-                  {editBranch ? "Modifica Filiale" : "Nuova Filiale"}
+                  {editBranch ? t("customer.editBranch") : t("customer.newBranch")}
                 </DialogTitle>
               </DialogHeader>
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="branchCode">Codice Filiale *</Label>
+                    <Label htmlFor="branchCode">{t("customer.branchCode")} *</Label>
                     <Input
                       id="branchCode"
                       name="branchCode"
@@ -189,7 +191,7 @@ export function CustomerBranchManager({ customerId, customerName, readOnly = fal
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="branchName">Nome Filiale *</Label>
+                    <Label htmlFor="branchName">{t("customer.branchName")} *</Label>
                     <Input
                       id="branchName"
                       name="branchName"
@@ -202,7 +204,7 @@ export function CustomerBranchManager({ customerId, customerName, readOnly = fal
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="address">Indirizzo</Label>
+                  <Label htmlFor="address">{t("common.addressLabel")}</Label>
                   <AddressAutocomplete
                     id="address"
                     name="address"
@@ -221,7 +223,7 @@ export function CustomerBranchManager({ customerId, customerName, readOnly = fal
 
                 <div className="grid grid-cols-3 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="city">Città</Label>
+                    <Label htmlFor="city">{t("common.city")}</Label>
                     <Input
                       id="city"
                       name="city"
@@ -232,7 +234,7 @@ export function CustomerBranchManager({ customerId, customerName, readOnly = fal
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="province">Provincia</Label>
+                    <Label htmlFor="province">{t("common.province")}</Label>
                     <Input
                       id="province"
                       name="province"
@@ -244,7 +246,7 @@ export function CustomerBranchManager({ customerId, customerName, readOnly = fal
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="postalCode">CAP</Label>
+                    <Label htmlFor="postalCode">{t("common.zipCode")}</Label>
                     <Input
                       id="postalCode"
                       name="postalCode"
@@ -259,7 +261,7 @@ export function CustomerBranchManager({ customerId, customerName, readOnly = fal
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="contactName">Referente</Label>
+                    <Label htmlFor="contactName">{t("customer.referent")}</Label>
                     <Input
                       id="contactName"
                       name="contactName"
@@ -269,7 +271,7 @@ export function CustomerBranchManager({ customerId, customerName, readOnly = fal
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="contactPhone">Telefono</Label>
+                    <Label htmlFor="contactPhone">{t("common.phone")}</Label>
                     <Input
                       id="contactPhone"
                       name="contactPhone"
@@ -282,7 +284,7 @@ export function CustomerBranchManager({ customerId, customerName, readOnly = fal
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="contactEmail">Email</Label>
+                  <Label htmlFor="contactEmail">{t("common.email")}</Label>
                   <Input
                     id="contactEmail"
                     name="contactEmail"
@@ -294,11 +296,11 @@ export function CustomerBranchManager({ customerId, customerName, readOnly = fal
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="notes">Note</Label>
+                  <Label htmlFor="notes">{t("common.notes")}</Label>
                   <Textarea
                     id="notes"
                     name="notes"
-                    placeholder="Note aggiuntive sulla filiale..."
+                    placeholder={t("customer.branchAdditionalNotes")}
                     defaultValue={editBranch?.notes || ""}
                     data-testid="input-branch-notes"
                   />
@@ -306,14 +308,14 @@ export function CustomerBranchManager({ customerId, customerName, readOnly = fal
 
                 <div className="flex justify-end gap-2">
                   <Button type="button" variant="outline" onClick={() => handleDialogClose(false)}>
-                    Annulla
+                    {t("common.cancel")}
                   </Button>
                   <Button 
                     type="submit" 
                     disabled={createBranchMutation.isPending || updateBranchMutation.isPending}
                     data-testid="button-save-branch"
                   >
-                    {createBranchMutation.isPending || updateBranchMutation.isPending ? "Salvataggio..." : "Salva"}
+                    {createBranchMutation.isPending || updateBranchMutation.isPending ? t("common.saving") : "Salva"}
                   </Button>
                 </div>
               </form>
@@ -325,7 +327,7 @@ export function CustomerBranchManager({ customerId, customerName, readOnly = fal
         {branches.length === 0 ? (
           <div className="text-center py-8 text-muted-foreground">
             <Building2 className="h-12 w-12 mx-auto mb-2 opacity-50" />
-            <p>Nessuna filiale registrata</p>
+            <p>{t("customer.noBranchRegistered")}</p>
             {!readOnly && (
               <p className="text-sm">Clicca su "Aggiungi Filiale" per creare la prima filiale</p>
             )}
@@ -334,12 +336,12 @@ export function CustomerBranchManager({ customerId, customerName, readOnly = fal
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Codice</TableHead>
-                <TableHead>Nome Filiale</TableHead>
-                <TableHead>Indirizzo</TableHead>
-                <TableHead>Referente</TableHead>
-                <TableHead>Stato</TableHead>
-                {!readOnly && <TableHead>Azioni</TableHead>}
+                <TableHead>{t("common.code")}</TableHead>
+                <TableHead>{t("customer.branchName")}</TableHead>
+                <TableHead>{t("common.addressLabel")}</TableHead>
+                <TableHead>{t("customer.referent")}</TableHead>
+                <TableHead>{t("common.status")}</TableHead>
+                {!readOnly && <TableHead>{t("common.actions")}</TableHead>}
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -416,19 +418,19 @@ export function CustomerBranchManager({ customerId, customerName, readOnly = fal
                           </AlertDialogTrigger>
                           <AlertDialogContent>
                             <AlertDialogHeader>
-                              <AlertDialogTitle>Eliminare la filiale?</AlertDialogTitle>
+                              <AlertDialogTitle>{t("customer.deleteBranch")}</AlertDialogTitle>
                               <AlertDialogDescription>
                                 Stai per eliminare la filiale "{branch.branchName}" ({branch.branchCode}). 
                                 Questa azione non può essere annullata.
                               </AlertDialogDescription>
                             </AlertDialogHeader>
                             <AlertDialogFooter>
-                              <AlertDialogCancel>Annulla</AlertDialogCancel>
+                              <AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>
                               <AlertDialogAction 
                                 onClick={() => deleteBranchMutation.mutate(branch.id)}
                                 className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                               >
-                                Elimina
+                                {t("common.delete")}
                               </AlertDialogAction>
                             </AlertDialogFooter>
                           </AlertDialogContent>

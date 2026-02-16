@@ -36,6 +36,7 @@ import { format } from "date-fns";
 import { it } from "date-fns/locale";
 import { useToast } from "@/hooks/use-toast";
 import { EntityFilterSelector, EntityType, useEntityFilter } from "@/components/hr/entity-filter-selector";
+import { useTranslation } from "react-i18next";
 
 interface ClockEvent {
   id: string;
@@ -56,13 +57,14 @@ interface StaffMember {
 }
 
 const eventTypeLabels: Record<string, { label: string; icon: any; color: string }> = {
-  entrata: { label: "Entrata", icon: LogIn, color: "bg-emerald-500" },
-  uscita: { label: "Uscita", icon: LogOut, color: "bg-red-500" },
-  pausa_inizio: { label: "Inizio Pausa", icon: Coffee, color: "bg-amber-500" },
-  pausa_fine: { label: "Fine Pausa", icon: Utensils, color: "bg-blue-500" },
+  entrata: { label: t("hr.entry"), icon: LogIn, color: "bg-emerald-500" },
+  uscita: { label: t("hr.exit"), icon: LogOut, color: "bg-red-500" },
+  pausa_inizio: { label: t("hr.breakStart"), icon: Coffee, color: "bg-amber-500" },
+  pausa_fine: { label: t("hr.breakEnd"), icon: Utensils, color: "bg-blue-500" },
 };
 
 export default function HrAttendance() {
+  const { t } = useTranslation();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedUser, setSelectedUser] = useState<string>("all");
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -125,10 +127,10 @@ export default function HrAttendance() {
       queryClient.invalidateQueries({ queryKey: ["/api/reseller/hr/clock-events"] });
       setDialogOpen(false);
       setNewEvent({ eventType: "entrata", userId: "", notes: "" });
-      toast({ title: "Timbratura registrata", description: "La timbratura è stata salvata con successo." });
+      toast({ title: "Timbratura registrata", description: t("hr.clockCreatedDesc") });
     },
     onError: (error: any) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     }
   });
 
@@ -143,7 +145,7 @@ export default function HrAttendance() {
       toast({ title: "Timbratura aggiornata", description: "La modifica è stata salvata." });
     },
     onError: (error: any) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     }
   });
 
@@ -209,7 +211,7 @@ export default function HrAttendance() {
                 <Clock className="h-6 w-6 text-white" />
               </div>
               <div>
-                <h1 className="text-2xl font-bold text-white" data-testid="text-attendance-title">Gestione Presenze</h1>
+                <h1 className="text-2xl font-bold text-white" data-testid="text-attendance-title">{t("hr.attendanceManagement")}</h1>
                 <p className="text-white/80">Timbrature e registrazione orari</p>
               </div>
             </div>
@@ -283,7 +285,7 @@ export default function HrAttendance() {
                 <Coffee className="h-5 w-5 text-amber-600" />
               </div>
               <div>
-                <p className="font-medium">Inizio Pausa</p>
+                <p className="font-medium">{t("hr.breakStart")}</p>
                 <p className="text-xs text-muted-foreground">Inizia pausa</p>
               </div>
             </CardContent>
@@ -299,7 +301,7 @@ export default function HrAttendance() {
                 <Utensils className="h-5 w-5 text-blue-600" />
               </div>
               <div>
-                <p className="font-medium">Fine Pausa</p>
+                <p className="font-medium">{t("hr.breakEnd")}</p>
                 <p className="text-xs text-muted-foreground">Termina pausa</p>
               </div>
             </CardContent>
@@ -345,9 +347,7 @@ export default function HrAttendance() {
                   <ChevronRight className="h-4 w-4" />
                 </Button>
                 {!isToday && (
-                  <Button variant="secondary" size="sm" onClick={goToToday} data-testid="button-go-today">
-                    Oggi
-                  </Button>
+                  <Button variant="secondary" size="sm" onClick={goToToday} data-testid="button-go-today">{t("common.today")}</Button>
                 )}
               </div>
             </div>
@@ -366,9 +366,7 @@ export default function HrAttendance() {
               </Select>
               {!readOnly && (
                 <Button variant="outline" onClick={() => setDialogOpen(true)} data-testid="button-add-manual">
-                  <Plus className="h-4 w-4 mr-2" />
-                  Manuale
-                </Button>
+                  <Plus className="h-4 w-4 mr-2" />{t("license.manual")}</Button>
               )}
             </div>
           </div>
@@ -387,12 +385,12 @@ export default function HrAttendance() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Orario</TableHead>
-                  <TableHead>Tipo</TableHead>
-                  <TableHead>Dipendente</TableHead>
-                  <TableHead>Posizione</TableHead>
-                  <TableHead>Note</TableHead>
-                  {!readOnly && <TableHead className="w-[80px]">Azioni</TableHead>}
+                  <TableHead>{t("hr.time")}</TableHead>
+                  <TableHead>{t("common.type")}</TableHead>
+                  <TableHead>{t("hr.employee")}</TableHead>
+                  <TableHead>{t("warehouse.location")}</TableHead>
+                  <TableHead>{t("common.notes")}</TableHead>
+                  {!readOnly && <TableHead className="w-[80px]">{t("common.actions")}</TableHead>}
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -452,15 +450,15 @@ export default function HrAttendance() {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="entrata">Entrata</SelectItem>
-                  <SelectItem value="uscita">Uscita</SelectItem>
-                  <SelectItem value="pausa_inizio">Inizio Pausa</SelectItem>
-                  <SelectItem value="pausa_fine">Fine Pausa</SelectItem>
+                  <SelectItem value="entrata">{t("hr.entry")}</SelectItem>
+                  <SelectItem value="uscita">{t("hr.exit")}</SelectItem>
+                  <SelectItem value="pausa_inizio">{t("hr.breakStart")}</SelectItem>
+                  <SelectItem value="pausa_fine">{t("hr.breakEnd")}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
             <div className="space-y-2">
-              <Label>Dipendente</Label>
+              <Label>{t("hr.employee")}</Label>
               <Select value={newEvent.userId} onValueChange={(v) => setNewEvent({ ...newEvent, userId: v })}>
                 <SelectTrigger data-testid="select-employee">
                   <SelectValue placeholder="Seleziona dipendente" />
@@ -483,13 +481,13 @@ export default function HrAttendance() {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDialogOpen(false)}>Annulla</Button>
+            <Button variant="outline" onClick={() => setDialogOpen(false)}>{t("common.cancel")}</Button>
             <Button 
               onClick={() => createMutation.mutate(newEvent)}
               disabled={!newEvent.userId || createMutation.isPending}
               data-testid="button-save-manual"
             >
-              {createMutation.isPending ? "Salvataggio..." : "Registra"}
+              {createMutation.isPending ? t("profile.saving") : "Registra"}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -498,7 +496,7 @@ export default function HrAttendance() {
       <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Modifica Timbratura</DialogTitle>
+            <DialogTitle>{t("hr.editClock")}</DialogTitle>
             <DialogDescription>Modifica i dettagli della timbratura</DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
@@ -509,15 +507,15 @@ export default function HrAttendance() {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="entrata">Entrata</SelectItem>
-                  <SelectItem value="uscita">Uscita</SelectItem>
-                  <SelectItem value="pausa_inizio">Inizio Pausa</SelectItem>
-                  <SelectItem value="pausa_fine">Fine Pausa</SelectItem>
+                  <SelectItem value="entrata">{t("hr.entry")}</SelectItem>
+                  <SelectItem value="uscita">{t("hr.exit")}</SelectItem>
+                  <SelectItem value="pausa_inizio">{t("hr.breakStart")}</SelectItem>
+                  <SelectItem value="pausa_fine">{t("hr.breakEnd")}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
             <div className="space-y-2">
-              <Label>Orario</Label>
+              <Label>{t("hr.time")}</Label>
               <input
                 type="time"
                 value={editForm.eventTime}
@@ -537,9 +535,9 @@ export default function HrAttendance() {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setEditDialogOpen(false)}>Annulla</Button>
+            <Button variant="outline" onClick={() => setEditDialogOpen(false)}>{t("common.cancel")}</Button>
             <Button onClick={handleEdit} disabled={editMutation.isPending} data-testid="button-save-edit">
-              {editMutation.isPending ? "Salvataggio..." : "Salva Modifiche"}
+              {editMutation.isPending ? t("profile.saving") : t("profile.saveChanges")}
             </Button>
           </DialogFooter>
         </DialogContent>

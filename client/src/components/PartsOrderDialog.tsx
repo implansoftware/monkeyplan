@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -89,6 +90,7 @@ export function PartsOrderDialog({
   repairOrderId,
   onSuccess,
 }: PartsOrderDialogProps) {
+  const { t } = useTranslation();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState<"order" | "existing">("order");
@@ -234,7 +236,7 @@ export function PartsOrderDialog({
   const createPurchaseOrderMutation = useMutation({
     mutationFn: async () => {
       if (cart.length === 0) {
-        throw new Error("Il carrello è vuoto");
+        throw new Error(t("parts.cartEmpty"));
       }
 
       const resolvedSupplierName = destinationType === "external_supplier"
@@ -268,7 +270,7 @@ export function PartsOrderDialog({
     },
     onSuccess: () => {
       toast({
-        title: "Ordine creato",
+        title: t("parts.orderCreated"),
         description: `Ordine con ${cart.length} articoli creato con successo`,
       });
       queryClient.invalidateQueries({ queryKey: ["/api/repair-orders", repairOrderId, "parts"] });
@@ -280,7 +282,7 @@ export function PartsOrderDialog({
     },
     onError: (error: Error) => {
       toast({
-        title: "Errore",
+        title: t("common.error"),
         description: error.message,
         variant: "destructive",
       });
@@ -292,26 +294,26 @@ export function PartsOrderDialog({
       return await apiRequest("PATCH", `/api/parts-orders/${id}/status`, { status });
     },
     onSuccess: () => {
-      toast({ title: "Stato aggiornato" });
+      toast({ title: t("common.statusUpdated") });
       queryClient.invalidateQueries({ queryKey: ["/api/repair-orders", repairOrderId, "parts"] });
       queryClient.invalidateQueries({ queryKey: ["/api/repair-orders", repairOrderId, "purchase-orders"] });
       queryClient.invalidateQueries({ queryKey: ["/api/repair-orders"] });
     },
     onError: (error: Error) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     },
   });
 
   const getStatusBadge = (status: string) => {
     switch (status) {
       case "ordered":
-        return <Badge variant="outline"><Clock className="h-3 w-3 mr-1" />Ordinato</Badge>;
+        return <Badge variant="outline"><Clock className="h-3 w-3 mr-1" />{t("parts.ordered")}</Badge>;
       case "in_transit":
         return <Badge variant="secondary"><Truck className="h-3 w-3 mr-1" />In Transito</Badge>;
       case "received":
-        return <Badge variant="default"><CheckCircle className="h-3 w-3 mr-1" />Ricevuto</Badge>;
+        return <Badge variant="default"><CheckCircle className="h-3 w-3 mr-1" />{t("parts.received")}</Badge>;
       case "cancelled":
-        return <Badge variant="destructive">Annullato</Badge>;
+        return <Badge variant="destructive">{t("common.cancelled")}</Badge>;
       default:
         return <Badge variant="outline">{status}</Badge>;
     }
@@ -410,7 +412,7 @@ export function PartsOrderDialog({
                         data-testid={`button-add-to-cart-${index}`}
                       >
                         <Plus className="h-4 w-4 mr-1" />
-                        Aggiungi
+                        {t("common.add")}
                       </Button>
                     </div>
                   ))}
@@ -425,7 +427,7 @@ export function PartsOrderDialog({
                   <div className="h-12 w-12 rounded-xl bg-slate-500/10 flex items-center justify-center mx-auto mb-4">
                     <Package className="h-6 w-6 text-slate-400" />
                   </div>
-                  <p>Nessun ricambio disponibile dal preventivo.</p>
+                  <p>{t("parts.noPartsFromQuote")}</p>
                   <p className="text-sm mt-2">Tutti i ricambi sono già stati ordinati.</p>
                 </CardContent>
               </Card>
@@ -538,14 +540,14 @@ export function PartsOrderDialog({
                   {destinationType === "external_supplier" && (
                     <div className="space-y-4">
                       <div>
-                        <label className="text-sm font-medium">Fornitore</label>
+                        <label className="text-sm font-medium">{t("common.supplier")}</label>
                         {suppliers.length > 0 ? (
                           <Select value={selectedSupplierId} onValueChange={setSelectedSupplierId}>
                             <SelectTrigger data-testid="select-supplier">
-                              <SelectValue placeholder="Seleziona fornitore" />
+                              <SelectValue placeholder={t("products.selectSupplier")} />
                             </SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="custom">Altro (inserisci nome)</SelectItem>
+                              <SelectItem value="custom">{t("common.otherEnterName")}</SelectItem>
                               {suppliers.map((supplier) => (
                                 <SelectItem key={supplier.id} value={supplier.id}>
                                   {supplier.name}
@@ -555,7 +557,7 @@ export function PartsOrderDialog({
                           </Select>
                         ) : (
                           <Input
-                            placeholder="Nome fornitore"
+                            placeholder={t("parts.supplierName")}
                             value={supplierName}
                             onChange={(e) => setSupplierName(e.target.value)}
                             data-testid="input-supplier-name"
@@ -566,7 +568,7 @@ export function PartsOrderDialog({
                         <div>
                           <label className="text-sm font-medium">Nome Fornitore</label>
                           <Input
-                            placeholder="Inserisci nome fornitore"
+                            placeholder={t("parts.enterSupplierName")}
                             value={supplierName}
                             onChange={(e) => setSupplierName(e.target.value)}
                             data-testid="input-custom-supplier-name"
@@ -581,7 +583,7 @@ export function PartsOrderDialog({
                       <label className="text-sm font-medium">Magazzino Origine</label>
                       <Select value={sourceWarehouseId} onValueChange={setSourceWarehouseId}>
                         <SelectTrigger data-testid="select-warehouse">
-                          <SelectValue placeholder="Seleziona magazzino" />
+                          <SelectValue placeholder={t("quote.selectWarehouse")} />
                         </SelectTrigger>
                         <SelectContent>
                           {warehouses.map((wh) => (
@@ -612,7 +614,7 @@ export function PartsOrderDialog({
                   <div>
                     <label className="text-sm font-medium">Note Ordine</label>
                     <Textarea
-                      placeholder="Note aggiuntive per l'ordine..."
+                      placeholder={t("parts.additionalOrderNotes")}
                       value={orderNotes}
                       onChange={(e) => setOrderNotes(e.target.value)}
                       rows={2}
@@ -636,7 +638,7 @@ export function PartsOrderDialog({
                     {createPurchaseOrderMutation.isPending ? (
                       <>
                         <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                        Creazione...
+                        {t("common.creating")}
                       </>
                     ) : (
                       <>
@@ -669,7 +671,7 @@ export function PartsOrderDialog({
                           ) : (
                             <Badge variant="secondary" className="text-xs">
                               <Building className="h-3 w-3 mr-1" />
-                              {po.supplierName || "Fornitore"}
+                              {po.supplierName || t("common.supplier")}
                             </Badge>
                           )}
                         </div>
@@ -680,10 +682,10 @@ export function PartsOrderDialog({
                           {po.status === "processing" && <Package className="h-3 w-3 mr-1" />}
                           {po.status === "shipped" && <Truck className="h-3 w-3 mr-1" />}
                           {po.status === "received" && <CheckCircle className="h-3 w-3 mr-1" />}
-                          {po.status === "submitted" ? "Inviato" : 
+                          {po.status === "submitted" ? t("common.sent") : 
                            po.status === "processing" ? "In Elaborazione" :
                            po.status === "shipped" ? "Spedito" :
-                           po.status === "received" ? "Ricevuto" : po.status}
+                           po.status === "received" ? t("common.received") : po.status}
                         </Badge>
                       </div>
                       <div className="text-sm text-muted-foreground">
@@ -742,7 +744,7 @@ export function PartsOrderDialog({
               <Card>
                 <CardContent className="py-8 text-center text-muted-foreground">
                   <FileText className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                  <p>Nessun ordine ricambi per questa riparazione.</p>
+                  <p>{t("parts.noPartsOrders")}</p>
                 </CardContent>
               </Card>
             )}
@@ -751,7 +753,7 @@ export function PartsOrderDialog({
 
         <div className="flex justify-end pt-4 border-t">
           <Button variant="outline" onClick={() => onOpenChange(false)} data-testid="button-close">
-            Chiudi
+            {t("common.close")}
           </Button>
         </div>
       </DialogContent>

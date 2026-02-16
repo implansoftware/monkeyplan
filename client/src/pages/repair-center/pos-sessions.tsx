@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -63,6 +64,7 @@ interface PosRegister {
 }
 
 export default function PosSessionsPage() {
+  const { t } = useTranslation();
   const [period, setPeriod] = useState("all");
   const [selectedRegisterId, setSelectedRegisterId] = useState<string>("all");
   const [isExporting, setIsExporting] = useState(false);
@@ -158,14 +160,14 @@ export default function PosSessionsPage() {
       document.body.removeChild(a);
       
       toast({
-        title: "Export completato",
-        description: `Il file ${format.toUpperCase()} è stato scaricato con successo`,
+        title: t("reports.exportCompleted"),
+        description: t("pos.formatDownloaded", { format: format.toUpperCase() }),
       });
     } catch (error) {
       toast({
         variant: "destructive",
-        title: "Errore",
-        description: "Impossibile esportare i dati",
+        title: t("auth.error"),
+        description: t("reports.exportFailed"),
       });
     } finally {
       setIsExporting(false);
@@ -207,7 +209,7 @@ export default function PosSessionsPage() {
               <Clock className="h-5 w-5 sm:h-7 sm:w-7 text-white" />
             </div>
             <div>
-              <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-white tracking-tight">Sessioni POS</h1>
+              <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-white tracking-tight">{t("sidebar.items.posSessions")}</h1>
               <p className="text-emerald-100">Cronologia aperture e chiusure cassa</p>
             </div>
           </div>
@@ -216,10 +218,10 @@ export default function PosSessionsPage() {
               <Select value={selectedRegisterId} onValueChange={setSelectedRegisterId}>
                 <SelectTrigger className="w-full sm:w-48 bg-white/20 backdrop-blur-sm text-white border-white/30" data-testid="select-register-filter">
                   <Store className="w-4 h-4 mr-1" />
-                  <SelectValue placeholder="Tutte le casse" />
+                  <SelectValue placeholder={t("pos.tutteLeCasse")} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">Tutte le casse</SelectItem>
+                  <SelectItem value="all">{t("pos.tutteLeCasse")}</SelectItem>
                   {registers.map(reg => (
                     <SelectItem key={reg.id} value={reg.id}>
                       {reg.name} {reg.isDefault && "(Default)"}
@@ -230,13 +232,13 @@ export default function PosSessionsPage() {
             )}
             <Select value={period} onValueChange={setPeriod}>
               <SelectTrigger className="w-full sm:w-40 bg-white/20 backdrop-blur-sm text-white border-white/30" data-testid="select-period">
-                <SelectValue placeholder="Periodo" />
+                <SelectValue placeholder={t("common.period")} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">Tutte</SelectItem>
-                <SelectItem value="today">Oggi</SelectItem>
-                <SelectItem value="week">Settimana</SelectItem>
-                <SelectItem value="month">Mese</SelectItem>
+                <SelectItem value="all">{t("common.all")}</SelectItem>
+                <SelectItem value="today">{t("common.today")}</SelectItem>
+                <SelectItem value="week">{t("reports.week")}</SelectItem>
+                <SelectItem value="month">{t("reports.month")}</SelectItem>
               </SelectContent>
             </Select>
             
@@ -244,7 +246,7 @@ export default function PosSessionsPage() {
               <DropdownMenuTrigger asChild>
                 <Button variant="outline" className="bg-white/20 backdrop-blur-sm text-white border-white/30 hover:bg-white/30 shadow-lg" disabled={isExporting || filteredSessions.length === 0} data-testid="button-export">
                   <Download className="h-4 w-4 mr-2" />
-                  {isExporting ? "Export..." : "Esporta"}
+                  {isExporting ? "Export..." : t("common.export")}
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
@@ -344,7 +346,7 @@ export default function PosSessionsPage() {
                         {session.status === "open" ? (
                           <Badge variant="default" className="bg-green-500">Aperta</Badge>
                         ) : (
-                          <Badge variant="secondary">Chiusa</Badge>
+                          <Badge variant="secondary">{t("pos.closed")}</Badge>
                         )}
                         <Badge variant="outline" className="flex flex-wrap items-center gap-1">
                           <Store className="w-3 h-3" />
@@ -437,7 +439,7 @@ export default function PosSessionsPage() {
                       <span className="font-medium">Aliquota</span>
                       <span className="font-medium text-right">Imponibile</span>
                       <span className="font-medium text-right">IVA</span>
-                      <span className="font-medium text-right">Totale</span>
+                      <span className="font-medium text-right">{t("common.total")}</span>
                     </div>
                     {Object.entries(session.totalsByVatRate).map(([rate, data]) => (
                       <div key={rate} className="grid grid-cols-4 gap-2 text-xs">

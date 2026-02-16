@@ -14,6 +14,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Package, Search, Store, Eye, EyeOff, DollarSign, Warehouse, ShoppingBag } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { useTranslation } from "react-i18next";
 
 interface CatalogProduct {
   product: Product;
@@ -33,6 +34,7 @@ function formatPrice(cents: number): string {
 }
 
 export default function ResellerShopCatalog() {
+  const { t } = useTranslation();
   const [searchQuery, setSearchQuery] = useState("");
   const [priceDialogOpen, setPriceDialogOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<CatalogProduct | null>(null);
@@ -51,11 +53,11 @@ export default function ResellerShopCatalog() {
       await apiRequest('POST', endpoint);
     },
     onSuccess: () => {
-      toast({ title: "Successo", description: "Stato pubblicazione aggiornato" });
+      toast({ title: t("common.success"), description: "Stato pubblicazione aggiornato" });
       queryClient.invalidateQueries({ queryKey: ['/api/reseller/shop-catalog'] });
     },
     onError: (error: any) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -64,12 +66,12 @@ export default function ResellerShopCatalog() {
       await apiRequest('PATCH', `/api/reseller/catalog/${productId}/price`, { priceCents });
     },
     onSuccess: () => {
-      toast({ title: "Successo", description: "Prezzo aggiornato" });
+      toast({ title: t("common.success"), description: "Prezzo aggiornato" });
       queryClient.invalidateQueries({ queryKey: ['/api/reseller/shop-catalog'] });
       setPriceDialogOpen(false);
     },
     onError: (error: any) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -176,9 +178,7 @@ export default function ResellerShopCatalog() {
           onClick={() => handleOpenPriceDialog(item)}
           data-testid={`button-price-${item.product.id}`}
         >
-          <DollarSign className="h-4 w-4 mr-1" />
-          Prezzo
-        </Button>
+          <DollarSign className="h-4 w-4 mr-1" />{t("common.price")}</Button>
       </TableCell>
     </TableRow>
   );
@@ -194,7 +194,7 @@ export default function ResellerShopCatalog() {
               <Store className="h-6 w-6 text-white" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold text-white" data-testid="text-page-title">Vetrina Prodotti</h1>
+              <h1 className="text-2xl font-bold text-white" data-testid="text-page-title">{t("sidebar.items.shopCatalog")}</h1>
               <p className="text-white/80 text-sm">Prodotti disponibili per la vendita</p>
             </div>
           </div>
@@ -257,13 +257,13 @@ export default function ResellerShopCatalog() {
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Prodotto</TableHead>
-                      <TableHead>SKU</TableHead>
-                      <TableHead>Categoria</TableHead>
-                      <TableHead>Prezzo</TableHead>
+                      <TableHead>{t("common.product")}</TableHead>
+                      <TableHead>{t("products.sku")}</TableHead>
+                      <TableHead>{t("common.category")}</TableHead>
+                      <TableHead>{t("common.price")}</TableHead>
                       <TableHead>Stock</TableHead>
                       <TableHead>Pubblicato</TableHead>
-                      <TableHead className="text-right">Azioni</TableHead>
+                      <TableHead className="text-right">{t("common.actions")}</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -278,13 +278,13 @@ export default function ResellerShopCatalog() {
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Prodotto</TableHead>
-                      <TableHead>SKU</TableHead>
-                      <TableHead>Categoria</TableHead>
-                      <TableHead>Prezzo</TableHead>
+                      <TableHead>{t("common.product")}</TableHead>
+                      <TableHead>{t("products.sku")}</TableHead>
+                      <TableHead>{t("common.category")}</TableHead>
+                      <TableHead>{t("common.price")}</TableHead>
                       <TableHead>Stock</TableHead>
                       <TableHead>Pubblicato</TableHead>
-                      <TableHead className="text-right">Azioni</TableHead>
+                      <TableHead className="text-right">{t("common.actions")}</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -299,13 +299,13 @@ export default function ResellerShopCatalog() {
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Prodotto</TableHead>
-                      <TableHead>SKU</TableHead>
-                      <TableHead>Categoria</TableHead>
-                      <TableHead>Prezzo</TableHead>
+                      <TableHead>{t("common.product")}</TableHead>
+                      <TableHead>{t("products.sku")}</TableHead>
+                      <TableHead>{t("common.category")}</TableHead>
+                      <TableHead>{t("common.price")}</TableHead>
                       <TableHead>Stock</TableHead>
                       <TableHead>Pubblicato</TableHead>
-                      <TableHead className="text-right">Azioni</TableHead>
+                      <TableHead className="text-right">{t("common.actions")}</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -356,9 +356,7 @@ export default function ResellerShopCatalog() {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setPriceDialogOpen(false)}>
-              Annulla
-            </Button>
+            <Button variant="outline" onClick={() => setPriceDialogOpen(false)}>{t("common.cancel")}</Button>
             <Button 
               onClick={handleSavePrice}
               disabled={updatePriceMutation.isPending}

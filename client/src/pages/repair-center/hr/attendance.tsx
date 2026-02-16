@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useQuery, useMutation } from "@tanstack/react-query";
@@ -48,14 +49,15 @@ interface StaffMember {
   fullName: string;
 }
 
-const eventTypeLabels: Record<string, { label: string; icon: any; color: string }> = {
-  entrata: { label: "Entrata", icon: LogIn, color: "bg-emerald-500" },
-  uscita: { label: "Uscita", icon: LogOut, color: "bg-red-500" },
-  pausa_inizio: { label: "Inizio Pausa", icon: Coffee, color: "bg-amber-500" },
-  pausa_fine: { label: "Fine Pausa", icon: Utensils, color: "bg-blue-500" },
-};
 
 export default function RepairCenterHrAttendance() {
+  const { t } = useTranslation();
+  const eventTypeLabels: Record<string, { label: string; icon: any; color: string }> = {
+    entrata: { label: t("warehouse.inbound"), icon: LogIn, color: "bg-emerald-500" },
+    uscita: { label: t("warehouse.outbound"), icon: LogOut, color: "bg-red-500" },
+    pausa_inizio: { label: t("hr.breakStart"), icon: Coffee, color: "bg-amber-500" },
+    pausa_fine: { label: t("hr.breakEnd"), icon: Utensils, color: "bg-blue-500" },
+  };
   const [selectedUser, setSelectedUser] = useState<string>("all");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [newEvent, setNewEvent] = useState({ eventType: "entrata", userId: "", notes: "" });
@@ -93,7 +95,7 @@ export default function RepairCenterHrAttendance() {
     queryKey: ["/api/repair-center/hr/clock-events", selectedDate.toDateString()],
     queryFn: async () => {
       const res = await fetch(clockEventsUrl);
-      if (!res.ok) throw new Error("Errore nel caricamento");
+      if (!res.ok) throw new Error(t("common.loadingError"));
       return res.json();
     },
   });
@@ -110,10 +112,10 @@ export default function RepairCenterHrAttendance() {
       queryClient.invalidateQueries({ queryKey: ["/api/repair-center/hr/clock-events"] });
       setDialogOpen(false);
       setNewEvent({ eventType: "entrata", userId: "", notes: "" });
-      toast({ title: "Timbratura registrata", description: "La timbratura è stata salvata con successo." });
+      toast({ title: "Timbratura registrata", description: t("hr.clockCreatedDesc") });
     },
     onError: (error: any) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("auth.error"), description: error.message, variant: "destructive" });
     }
   });
 
@@ -125,10 +127,10 @@ export default function RepairCenterHrAttendance() {
       queryClient.invalidateQueries({ queryKey: ["/api/repair-center/hr/clock-events"] });
       setEditDialogOpen(false);
       setEditingEvent(null);
-      toast({ title: "Timbratura aggiornata", description: "La modifica è stata salvata." });
+      toast({ title: "Timbratura aggiornata", description: t("hr.laModificaStataSalvata") });
     },
     onError: (error: any) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("auth.error"), description: error.message, variant: "destructive" });
     }
   });
 
@@ -195,7 +197,7 @@ export default function RepairCenterHrAttendance() {
               <Clock className="h-5 w-5 sm:h-7 sm:w-7 text-white" />
             </div>
             <div>
-              <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-white tracking-tight">Presenze</h1>
+              <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-white tracking-tight">{t("sidebar.items.attendance")}</h1>
               <p className="text-emerald-100">Timbrature e registrazione orari</p>
             </div>
           </div>
@@ -239,15 +241,15 @@ export default function RepairCenterHrAttendance() {
           <div className="flex flex-row items-center justify-between gap-2 flex-wrap">
             <CardTitle className="flex flex-wrap items-center gap-2">
               <CalendarIcon className="h-5 w-5 text-muted-foreground" />
-              {isToday ? "Timbrature di Oggi" : "Timbrature del Giorno"}
+              {isToday ? t("hr.todayAttendance") : t("hr.dayAttendance")}
             </CardTitle>
             <div className="flex gap-2 items-center">
               <Select value={selectedUser} onValueChange={setSelectedUser}>
                 <SelectTrigger className="w-full sm:w-[180px]">
-                  <SelectValue placeholder="Tutti gli utenti" />
+                  <SelectValue placeholder={t("hr.tuttiGliUtenti")} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">Tutti gli utenti</SelectItem>
+                  <SelectItem value="all">{t("hr.tuttiGliUtenti")}</SelectItem>
                   {staffMembers.map((member) => (
                     <SelectItem key={member.id} value={member.id}>
                       {member.fullName}
@@ -314,12 +316,12 @@ export default function RepairCenterHrAttendance() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Dipendente</TableHead>
-                  <TableHead>Tipo</TableHead>
-                  <TableHead>Orario</TableHead>
-                  <TableHead className="hidden sm:table-cell">Posizione</TableHead>
-                  <TableHead className="hidden md:table-cell">Note</TableHead>
-                  <TableHead className="w-[80px]">Azioni</TableHead>
+                  <TableHead>{t("hr.employee")}</TableHead>
+                  <TableHead>{t("common.type")}</TableHead>
+                  <TableHead>{t("hr.time")}</TableHead>
+                  <TableHead className="hidden sm:table-cell">{t("warehouse.location")}</TableHead>
+                  <TableHead className="hidden md:table-cell">{t("common.note")}</TableHead>
+                  <TableHead className="w-[80px]">{t("common.actions")}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -365,12 +367,12 @@ export default function RepairCenterHrAttendance() {
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Nuova Timbratura Manuale</DialogTitle>
+            <DialogTitle>{t("hr.nuovaTimbraturaManuale")}</DialogTitle>
             <DialogDescription>Inserisci una timbratura per un membro del team</DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div>
-              <label className="text-sm font-medium">Tipo Evento</label>
+              <label className="text-sm font-medium">{t("hr.eventType")}</label>
               <Select value={newEvent.eventType} onValueChange={(v) => setNewEvent({ ...newEvent, eventType: v })}>
                 <SelectTrigger>
                   <SelectValue />
@@ -383,10 +385,10 @@ export default function RepairCenterHrAttendance() {
               </Select>
             </div>
             <div>
-              <label className="text-sm font-medium">Dipendente</label>
+              <label className="text-sm font-medium">{t("hr.employee")}</label>
               <Select value={newEvent.userId} onValueChange={(v) => setNewEvent({ ...newEvent, userId: v })}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Seleziona dipendente" />
+                  <SelectValue placeholder={t("hr.selezionaDipendente")} />
                 </SelectTrigger>
                 <SelectContent>
                   {staffMembers.map((member) => (
@@ -400,12 +402,12 @@ export default function RepairCenterHrAttendance() {
               <Textarea
                 value={newEvent.notes}
                 onChange={(e) => setNewEvent({ ...newEvent, notes: e.target.value })}
-                placeholder="Note aggiuntive..."
+                placeholder={t("utility.additionalNotes")}
               />
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDialogOpen(false)}>Annulla</Button>
+            <Button variant="outline" onClick={() => setDialogOpen(false)}>{t("profile.cancel")}</Button>
             <Button
               onClick={() => createMutation.mutate({ eventType: newEvent.eventType, userId: newEvent.userId || undefined, notes: newEvent.notes || undefined })}
               disabled={createMutation.isPending}
@@ -419,12 +421,12 @@ export default function RepairCenterHrAttendance() {
       <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Modifica Timbratura</DialogTitle>
-            <DialogDescription>Modifica i dettagli della timbratura</DialogDescription>
+            <DialogTitle>{t("hr.editClock")}</DialogTitle>
+            <DialogDescription>{t("hr.modificaIDettagliDellaTimbratura")}</DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div>
-              <label className="text-sm font-medium">Tipo Evento</label>
+              <label className="text-sm font-medium">{t("hr.eventType")}</label>
               <Select value={editForm.eventType} onValueChange={(v) => setEditForm({ ...editForm, eventType: v })}>
                 <SelectTrigger>
                   <SelectValue />
@@ -437,7 +439,7 @@ export default function RepairCenterHrAttendance() {
               </Select>
             </div>
             <div>
-              <label className="text-sm font-medium">Orario</label>
+              <label className="text-sm font-medium">{t("hr.time")}</label>
               <input
                 type="time"
                 value={editForm.eventTime}
@@ -450,12 +452,12 @@ export default function RepairCenterHrAttendance() {
               <Textarea
                 value={editForm.notes}
                 onChange={(e) => setEditForm({ ...editForm, notes: e.target.value })}
-                placeholder="Note aggiuntive..."
+                placeholder={t("utility.additionalNotes")}
               />
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setEditDialogOpen(false)}>Annulla</Button>
+            <Button variant="outline" onClick={() => setEditDialogOpen(false)}>{t("profile.cancel")}</Button>
             <Button onClick={handleEdit} disabled={editMutation.isPending}>
               Salva Modifiche
             </Button>

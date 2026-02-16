@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useQuery, useMutation } from "@tanstack/react-query";
@@ -36,15 +37,16 @@ interface ExpenseReport {
   receiptFileName?: string | null;
 }
 
-const statusLabels: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
-  draft: { label: "Bozza", variant: "outline" },
-  pending: { label: "In Attesa", variant: "secondary" },
-  approved: { label: "Approvata", variant: "default" },
-  rejected: { label: "Rifiutata", variant: "destructive" },
-  paid: { label: "Pagata", variant: "default" }
-};
 
 export default function RepairCenterHrExpenses() {
+  const { t } = useTranslation();
+  const statusLabels: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
+    draft: { label: t("invoices.draft"), variant: "outline" },
+    pending: { label: t("common.pending"), variant: "secondary" },
+    approved: { label: t("common.approved"), variant: "default" },
+    rejected: { label: t("common.rejected"), variant: "destructive" },
+    paid: { label: t("invoices.paid"), variant: "default" }
+  };
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [editingReport, setEditingReport] = useState<ExpenseReport | null>(null);
@@ -87,10 +89,10 @@ export default function RepairCenterHrExpenses() {
       setDialogOpen(false);
       setNewReport({ title: "", description: "", totalAmount: "", userId: "" });
       setNewReportFile(null);
-      toast({ title: "Nota spese creata", description: "La nota spese è stata creata con successo." });
+      toast({ title: "Nota spese creata", description: t("hr.laNotaSpeseStataCreataConSuccesso") });
     },
     onError: (error: any) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("auth.error"), description: error.message, variant: "destructive" });
     }
   });
 
@@ -100,10 +102,10 @@ export default function RepairCenterHrExpenses() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/repair-center/hr/expense-reports"] });
-      toast({ title: "Stato aggiornato" });
+      toast({ title: t("tickets.statusUpdated") });
     },
     onError: (error: any) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("auth.error"), description: error.message, variant: "destructive" });
     }
   });
 
@@ -118,7 +120,7 @@ export default function RepairCenterHrExpenses() {
       toast({ title: "Nota spese modificata", description: "Le modifiche sono state salvate." });
     },
     onError: (error: any) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("auth.error"), description: error.message, variant: "destructive" });
     }
   });
 
@@ -156,11 +158,11 @@ export default function RepairCenterHrExpenses() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/repair-center/hr/expense-reports"] });
       setUploadingReportId(null);
-      toast({ title: "Allegato caricato" });
+      toast({ title: t("hr.attachmentUploaded") });
     },
     onError: (error: any) => {
       setUploadingReportId(null);
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("auth.error"), description: error.message, variant: "destructive" });
     }
   });
 
@@ -176,7 +178,7 @@ export default function RepairCenterHrExpenses() {
       window.open(data.signedUrl, '_blank');
     },
     onError: (error: any) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("auth.error"), description: error.message, variant: "destructive" });
     }
   });
 
@@ -186,10 +188,10 @@ export default function RepairCenterHrExpenses() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/repair-center/hr/expense-reports"] });
-      toast({ title: "Allegato rimosso" });
+      toast({ title: t("hr.attachmentRemoved") });
     },
     onError: (error: any) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("auth.error"), description: error.message, variant: "destructive" });
     }
   });
 
@@ -215,7 +217,7 @@ export default function RepairCenterHrExpenses() {
               <Receipt className="h-5 w-5 sm:h-7 sm:w-7 text-white" />
             </div>
             <div>
-              <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-white tracking-tight">Note Spese</h1>
+              <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-white tracking-tight">{t("sidebar.items.expenses")}</h1>
               <p className="text-emerald-100">Gestione note spese e trasferte</p>
             </div>
           </div>
@@ -236,7 +238,7 @@ export default function RepairCenterHrExpenses() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Note Spese</CardTitle>
+          <CardTitle>{t("sidebar.items.expenses")}</CardTitle>
         </CardHeader>
         <CardContent>
           {isLoading ? (
@@ -252,13 +254,13 @@ export default function RepairCenterHrExpenses() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Dipendente</TableHead>
-                  <TableHead>Titolo</TableHead>
-                  <TableHead>Importo</TableHead>
-                  <TableHead className="hidden sm:table-cell">Data</TableHead>
-                  <TableHead>Stato</TableHead>
-                  <TableHead className="hidden md:table-cell">Allegato</TableHead>
-                  <TableHead>Azioni</TableHead>
+                  <TableHead>{t("hr.employee")}</TableHead>
+                  <TableHead>{t("common.title")}</TableHead>
+                  <TableHead>{t("common.amount")}</TableHead>
+                  <TableHead className="hidden sm:table-cell">{t("common.date")}</TableHead>
+                  <TableHead>{t("common.status")}</TableHead>
+                  <TableHead className="hidden md:table-cell">{t("hr.attachment")}</TableHead>
+                  <TableHead>{t("common.actions")}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -291,7 +293,7 @@ export default function RepairCenterHrExpenses() {
                                 size="icon"
                                 variant="ghost"
                                 onClick={() => deleteReceiptMutation.mutate(report.id)}
-                                title="Rimuovi allegato"
+                                title={t("hr.removeAttachment")}
                                 data-testid={`button-delete-receipt-${report.id}`}
                               >
                                 <X className="h-4 w-4 text-orange-600" />
@@ -315,7 +317,7 @@ export default function RepairCenterHrExpenses() {
                               variant="ghost"
                               asChild
                               disabled={uploadingReportId === report.id}
-                              title="Carica giustificativo"
+                              title={t("hr.uploadReceipt")}
                             >
                               <span>
                                 {uploadingReportId === report.id ? (
@@ -334,7 +336,7 @@ export default function RepairCenterHrExpenses() {
                     <TableCell>
                       <div className="flex gap-1">
                         {(report.status === "draft" || report.status === "pending") && (
-                          <Button size="sm" variant="ghost" onClick={() => openEditDialog(report)} title="Modifica" data-testid={`button-edit-${report.id}`}>
+                          <Button size="sm" variant="ghost" onClick={() => openEditDialog(report)} title={t("profile.edit")} data-testid={`button-edit-${report.id}`}>
                             <Pencil className="h-4 w-4 text-blue-600" />
                           </Button>
                         )}
@@ -345,10 +347,10 @@ export default function RepairCenterHrExpenses() {
                         )}
                         {report.status === "pending" && (
                           <>
-                            <Button size="sm" variant="ghost" onClick={() => updateStatusMutation.mutate({ id: report.id, status: "approved" })} title="Approva">
+                            <Button size="sm" variant="ghost" onClick={() => updateStatusMutation.mutate({ id: report.id, status: "approved" })} title={t("common.approve")}>
                               <Check className="h-4 w-4 text-emerald-600" />
                             </Button>
-                            <Button size="sm" variant="ghost" onClick={() => updateStatusMutation.mutate({ id: report.id, status: "rejected" })} title="Rifiuta">
+                            <Button size="sm" variant="ghost" onClick={() => updateStatusMutation.mutate({ id: report.id, status: "rejected" })} title={t("common.reject")}>
                               <X className="h-4 w-4 text-red-600" />
                             </Button>
                           </>
@@ -372,15 +374,15 @@ export default function RepairCenterHrExpenses() {
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Nuova Nota Spese</DialogTitle>
-            <DialogDescription>Crea una nuova nota spese</DialogDescription>
+            <DialogTitle>{t("hr.newExpense")}</DialogTitle>
+            <DialogDescription>{t("hr.creaUnaNuovaNotaSpese")}</DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div>
-              <label className="text-sm font-medium">Dipendente</label>
+              <label className="text-sm font-medium">{t("hr.employee")}</label>
               <Select value={newReport.userId} onValueChange={(value) => setNewReport({ ...newReport, userId: value })}>
                 <SelectTrigger data-testid="select-expense-employee">
-                  <SelectValue placeholder="Seleziona dipendente" />
+                  <SelectValue placeholder={t("hr.selezionaDipendente")} />
                 </SelectTrigger>
                 <SelectContent>
                   {teamMembers.map((member) => (
@@ -390,16 +392,16 @@ export default function RepairCenterHrExpenses() {
               </Select>
             </div>
             <div>
-              <label className="text-sm font-medium">Titolo</label>
+              <label className="text-sm font-medium">{t("common.title")}</label>
               <Input value={newReport.title} onChange={(e) => setNewReport({ ...newReport, title: e.target.value })} placeholder="Es. Trasferta Milano" />
             </div>
             <div>
-              <label className="text-sm font-medium">Importo Totale</label>
+              <label className="text-sm font-medium">{t("b2b.importoTotale")}</label>
               <Input type="number" step="0.01" value={newReport.totalAmount} onChange={(e) => setNewReport({ ...newReport, totalAmount: e.target.value })} placeholder="0.00" />
             </div>
             <div>
               <label className="text-sm font-medium">Descrizione (opzionale)</label>
-              <Textarea value={newReport.description} onChange={(e) => setNewReport({ ...newReport, description: e.target.value })} placeholder="Dettagli della spesa..." />
+              <Textarea value={newReport.description} onChange={(e) => setNewReport({ ...newReport, description: e.target.value })} placeholder={t("hr.expenseDetails")} />
             </div>
             <div className="space-y-2">
               <Label>Allegato (opzionale)</Label>
@@ -430,9 +432,9 @@ export default function RepairCenterHrExpenses() {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDialogOpen(false)}>Annulla</Button>
+            <Button variant="outline" onClick={() => setDialogOpen(false)}>{t("profile.cancel")}</Button>
             <Button onClick={() => createMutation.mutate({ ...newReport, totalAmount: parseFloat(newReport.totalAmount) || 0, file: newReportFile })} disabled={createMutation.isPending || !newReport.title || !newReport.userId}>
-              {createMutation.isPending ? "Creazione..." : "Crea Nota Spese"}
+              {createMutation.isPending ? "Creazione..." : t("hr.createExpenseReport")}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -441,12 +443,12 @@ export default function RepairCenterHrExpenses() {
       <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Modifica Nota Spese</DialogTitle>
+            <DialogTitle>{t("hr.editExpense")}</DialogTitle>
             <DialogDescription>Modifica i dati della nota spese di {editingReport?.user?.fullName}</DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div>
-              <label className="text-sm font-medium">Titolo</label>
+              <label className="text-sm font-medium">{t("common.title")}</label>
               <Input 
                 value={editForm.title} 
                 onChange={(e) => setEditForm({ ...editForm, title: e.target.value })} 
@@ -454,7 +456,7 @@ export default function RepairCenterHrExpenses() {
               />
             </div>
             <div>
-              <label className="text-sm font-medium">Importo Totale (EUR)</label>
+              <label className="text-sm font-medium">{t("hr.importoTotaleEUR")}</label>
               <Input 
                 type="number" 
                 step="0.01" 
@@ -468,12 +470,12 @@ export default function RepairCenterHrExpenses() {
               <Textarea 
                 value={editForm.description} 
                 onChange={(e) => setEditForm({ ...editForm, description: e.target.value })} 
-                placeholder="Dettagli della spesa..." 
+                placeholder={t("hr.expenseDetails")} 
               />
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setEditDialogOpen(false)}>Annulla</Button>
+            <Button variant="outline" onClick={() => setEditDialogOpen(false)}>{t("profile.cancel")}</Button>
             <Button 
               onClick={() => editingReport && editMutation.mutate({ 
                 id: editingReport.id, 
@@ -486,7 +488,7 @@ export default function RepairCenterHrExpenses() {
               disabled={editMutation.isPending || !editForm.title}
               data-testid="button-save-expense-edit"
             >
-              {editMutation.isPending ? "Salvataggio..." : "Salva Modifiche"}
+              {editMutation.isPending ? t("settings.saving") : t("team.saveChanges")}
             </Button>
           </DialogFooter>
         </DialogContent>

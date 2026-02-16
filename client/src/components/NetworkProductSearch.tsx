@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import {
@@ -71,8 +72,10 @@ function formatCurrency(amount: number): string {
 
 export function NetworkProductSearch({
   onSelect,
-  placeholder = "Cerca nella rete...",
+  placeholder,
 }: NetworkProductSearchProps) {
+  const { t } = useTranslation();
+  const resolvedPlaceholder = placeholder || t("network.searchNetwork");
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
   const [activeTab, setActiveTab] = useState<"network" | "suppliers">("network");
@@ -120,7 +123,7 @@ export function NetworkProductSearch({
           data-testid="combobox-network-search"
         >
           <Network className="h-4 w-4 mr-2 flex-shrink-0" />
-          <span>Rete</span>
+          <span>{t("network.network")}</span>
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-[400px] p-0" align="start">
@@ -129,7 +132,7 @@ export function NetworkProductSearch({
             <TabsList className="w-full">
               <TabsTrigger value="network" className="flex-1 gap-1" data-testid="tab-network">
                 <Building className="h-3.5 w-3.5" />
-                Rete
+                {t("network.network")}
                 {networkProducts.length > 0 && (
                   <Badge variant="secondary" className="ml-1 h-5 px-1.5 text-xs">
                     {networkProducts.length}
@@ -138,7 +141,7 @@ export function NetworkProductSearch({
               </TabsTrigger>
               <TabsTrigger value="suppliers" className="flex-1 gap-1" data-testid="tab-suppliers">
                 <Truck className="h-3.5 w-3.5" />
-                Fornitori
+                {t("suppliers.title")}
                 {supplierProducts.length > 0 && (
                   <Badge variant="secondary" className="ml-1 h-5 px-1.5 text-xs">
                     {supplierProducts.length}
@@ -150,7 +153,7 @@ export function NetworkProductSearch({
         </div>
         <Command shouldFilter={false}>
           <CommandInput
-            placeholder={placeholder}
+            placeholder={resolvedPlaceholder}
             value={search}
             onValueChange={setSearch}
             data-testid="input-network-search"
@@ -168,15 +171,15 @@ export function NetworkProductSearch({
               {!isLoading && activeProducts.length === 0 && (
                 <CommandEmpty>
                   {search.length < 2 
-                    ? "Digita almeno 2 caratteri..." 
+                    ? t("form.typeAtLeast2Chars") 
                     : activeTab === "network"
-                      ? "Nessun prodotto trovato nella rete"
-                      : "Nessun prodotto trovato nei cataloghi fornitori"
+                      ? t("network.noProductsInNetwork")
+                      : t("network.noProductsInSuppliers")
                   }
                 </CommandEmpty>
               )}
               {!isLoading && activeProducts.length > 0 && (
-                <CommandGroup heading={activeTab === "network" ? "Magazzini Rete" : "Cataloghi Fornitori"}>
+                <CommandGroup heading={activeTab === "network" ? t("network.networkWarehouses") : t("network.supplierCatalogs")}>
                   {activeProducts.map((product, index) => {
                     // Create unique key combining source, id, and warehouse/supplier
                     const uniqueKey = product.source === "network" 
@@ -227,8 +230,8 @@ export function NetworkProductSearch({
                             )}
                             <span className={`text-xs ${product.availableQuantity > 0 ? "text-green-600 dark:text-green-400" : "text-red-500"}`}>
                               {product.availableQuantity > 0 
-                                ? `Disp: ${product.availableQuantity}` 
-                                : "Non disponibile"
+                                ? `${t("warehouse.available")}: ${product.availableQuantity}` 
+                                : t("warehouse.unavailable")
                               }
                             </span>
                           </div>

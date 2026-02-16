@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
 import { usePageTitle } from "@/hooks/use-page-title";
+import { useTranslation } from "react-i18next";
 
 type TicketType = {
   id: string;
@@ -25,7 +26,8 @@ type TicketType = {
 };
 
 export default function AdminTickets() {
-  usePageTitle("Ticket");
+  usePageTitle(t("tickets.title"));
+  const { t } = useTranslation();
   const [, setLocation] = useLocation();
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
@@ -46,18 +48,18 @@ export default function AdminTickets() {
 
   const getStatusBadge = (status: string) => {
     switch (status) {
-      case "open": return <Badge>Aperto</Badge>;
-      case "in_progress": return <Badge variant="secondary">In lavorazione</Badge>;
-      case "closed": return <Badge variant="outline">Chiuso</Badge>;
+      case "open": return <Badge>{t("tickets.open")}</Badge>;
+      case "in_progress": return <Badge variant="secondary">{t("tickets.inProgress")}</Badge>;
+      case "closed": return <Badge variant="outline">{t("tickets.closed")}</Badge>;
       default: return <Badge variant="outline">{status}</Badge>;
     }
   };
 
   const getPriorityBadge = (priority: string) => {
     switch (priority) {
-      case "high": return <Badge variant="destructive">Alta</Badge>;
-      case "medium": return <Badge variant="secondary">Media</Badge>;
-      case "low": return <Badge variant="outline">Bassa</Badge>;
+      case "high": return <Badge variant="destructive">{t("common.priorityHigh")}</Badge>;
+      case "medium": return <Badge variant="secondary">{t("common.priorityMedium")}</Badge>;
+      case "low": return <Badge variant="outline">{t("common.priorityLow")}</Badge>;
       default: return <Badge variant="outline">{priority}</Badge>;
     }
   };
@@ -75,9 +77,9 @@ export default function AdminTickets() {
               <Ticket className="h-5 w-5" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold tracking-tight">Gestione Tickets</h1>
+              <h1 className="text-2xl font-bold tracking-tight">{t("tickets.management")}</h1>
               <p className="text-sm text-muted-foreground">
-                Visualizza e gestisci tutti i ticket di supporto
+                {t("tickets.manageAllTickets")}
               </p>
             </div>
           </div>
@@ -90,7 +92,7 @@ export default function AdminTickets() {
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Cerca per numero o oggetto..."
+                placeholder={t("tickets.searchPlaceholder")}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-9"
@@ -100,25 +102,25 @@ export default function AdminTickets() {
             
             <Select value={statusFilter} onValueChange={setStatusFilter}>
               <SelectTrigger data-testid="select-status-filter">
-                <SelectValue placeholder="Filtra per stato" />
+                <SelectValue placeholder={t("tickets.filterByStatus")} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">Tutti gli stati</SelectItem>
-                <SelectItem value="open">Aperto</SelectItem>
-                <SelectItem value="in_progress">In lavorazione</SelectItem>
-                <SelectItem value="closed">Chiuso</SelectItem>
+                <SelectItem value="all">{t("repairs.allStatuses")}</SelectItem>
+                <SelectItem value="open">{t("tickets.open")}</SelectItem>
+                <SelectItem value="in_progress">{t("tickets.inProgress")}</SelectItem>
+                <SelectItem value="closed">{t("tickets.closed")}</SelectItem>
               </SelectContent>
             </Select>
 
             <Select value={priorityFilter} onValueChange={setPriorityFilter}>
               <SelectTrigger data-testid="select-priority-filter">
-                <SelectValue placeholder="Filtra per priorità" />
+                <SelectValue placeholder={t("tickets.filterByPriority")} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">Tutte le priorità</SelectItem>
-                <SelectItem value="high">Alta</SelectItem>
-                <SelectItem value="medium">Media</SelectItem>
-                <SelectItem value="low">Bassa</SelectItem>
+                <SelectItem value="all">{t("tickets.allPriorities")}</SelectItem>
+                <SelectItem value="high">{t("common.priorityHigh")}</SelectItem>
+                <SelectItem value="medium">{t("common.priorityMedium")}</SelectItem>
+                <SelectItem value="low">{t("common.priorityLow")}</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -144,12 +146,12 @@ export default function AdminTickets() {
               <Ticket className="h-12 w-12 mx-auto mb-4 opacity-50" />
               <p className="text-lg font-medium mb-1">
                 {searchQuery || statusFilter !== "all" || priorityFilter !== "all" 
-                  ? "Nessun ticket trovato" 
-                  : "Nessun ticket presente"
+                  ? t("tickets.noTicketsFound") 
+                  : t("tickets.noTicketsPresent")
                 }
               </p>
               {(searchQuery || statusFilter !== "all" || priorityFilter !== "all") && (
-                <p className="text-sm">Prova a modificare i filtri di ricerca</p>
+                <p className="text-sm">{t("tickets.tryChangingFilters")}</p>
               )}
             </div>
           ) : (
@@ -185,7 +187,7 @@ export default function AdminTickets() {
                   </div>
                   {ticket.assignedTo && (
                     <div className="mt-3 pt-3 border-t text-sm">
-                      <span className="text-muted-foreground">Assegnato a: </span>
+                      <span className="text-muted-foreground">{t("tickets.assignedTo")}: </span>
                       <span className="font-medium">{ticket.assignedTo}</span>
                     </div>
                   )}

@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/use-auth";
@@ -28,20 +29,6 @@ type EnrichedRequest = RemoteRepairRequest & {
   centerPhone?: string | null;
 };
 
-const statusConfig: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline"; icon?: any }> = {
-  pending: { label: "In attesa", variant: "secondary", icon: Clock },
-  assigned: { label: "Assegnata", variant: "outline" },
-  accepted: { label: "Accettata", variant: "default" },
-  rejected: { label: "Rifiutata", variant: "destructive" },
-  awaiting_shipment: { label: "Attesa spedizione", variant: "outline", icon: Package },
-  in_transit: { label: "In transito", variant: "default", icon: Truck },
-  received: { label: "Ricevuto", variant: "default", icon: Check },
-  repair_created: { label: "In riparazione", variant: "default" },
-  cancelled: { label: "Annullata", variant: "destructive" },
-  quoted: { label: "Preventivo ricevuto", variant: "outline", icon: Euro },
-  quote_accepted: { label: "Preventivo accettato", variant: "default" },
-  quote_declined: { label: "Preventivo rifiutato", variant: "destructive" },
-};
 
 function StripePaymentForm({ onSuccess, onError }: { onSuccess: () => void; onError: (msg: string) => void }) {
   const stripe = useStripe();
@@ -108,8 +95,23 @@ function RequestCard({
   acceptQuotePending: boolean;
   declineQuotePending: boolean;
 }) {
+  const { t } = useTranslation();
   const { toast } = useToast();
   const [expanded, setExpanded] = useState(false);
+  const statusConfig: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline"; icon?: any }> = {
+    pending: { label: t("b2b.status.pending"), variant: "secondary", icon: Clock },
+    assigned: { label: t("remoteRequests.assigned"), variant: "outline" },
+    accepted: { label: t("remoteRequests.accepted"), variant: "default" },
+    rejected: { label: t("common.rejected"), variant: "destructive" },
+    awaiting_shipment: { label: t("remoteRequests.awaitingShipment"), variant: "outline", icon: Package },
+    in_transit: { label: t("shipping.inTransit"), variant: "default", icon: Truck },
+    received: { label: t("repairs.status.received"), variant: "default", icon: Check },
+    repair_created: { label: t("repairs.status.inRepair"), variant: "default" },
+    cancelled: { label: t("common.cancelled"), variant: "destructive" },
+    quoted: { label: t("remoteRequests.quoteReceived"), variant: "outline", icon: Euro },
+    quote_accepted: { label: t("remoteRequests.quoteAccepted"), variant: "default" },
+    quote_declined: { label: t("remoteRequests.quoteDeclined"), variant: "destructive" },
+  };
   const sc = statusConfig[request.status] || { label: request.status, variant: "secondary" as const };
   const deviceCount = request.devices?.length || 0;
   const totalQty = request.devices?.reduce((s, d) => s + (d.quantity || 1), 0) || 0;
@@ -144,7 +146,7 @@ function RequestCard({
               <div className="flex items-center gap-2 mt-0.5 text-xs text-muted-foreground">
                 <span>{format(new Date(request.createdAt), "d MMM yyyy", { locale: it })}</span>
                 <span>·</span>
-                <span>{deviceCount} dispositiv{deviceCount === 1 ? "o" : "i"}{totalQty > deviceCount ? ` (${totalQty} unità)` : ""}</span>
+                <span>{deviceCount === 1 ? t("remote.deviceCountLabel", { count: deviceCount }) : t("remote.deviceCountLabelPlural", { count: deviceCount })}{totalQty > deviceCount ? ` (${t("remote.unitsCount", { qty: totalQty })})` : ""}</span>
                 {request.quoteAmount && request.status !== 'quote_declined' && (
                   <>
                     <span>·</span>
@@ -189,7 +191,7 @@ function RequestCard({
               ) : (
                 <div className="flex items-center gap-2 p-3 bg-background rounded-md border">
                   <Clock className="h-4 w-4 text-muted-foreground shrink-0" />
-                  <p className="text-sm text-muted-foreground">Indirizzo di spedizione in fase di assegnazione...</p>
+                  <p className="text-sm text-muted-foreground">{t("customerPages.indirizzoDiSpedizioneInFaseDiAssegnazione")}</p>
                 </div>
               )}
               <div className="flex gap-2 flex-wrap">
@@ -221,7 +223,7 @@ function RequestCard({
                   <Smartphone className="h-4 w-4 text-muted-foreground shrink-0" />
                   <div className="min-w-0">
                     <p className="text-sm font-medium truncate">{device.brand} {device.model}</p>
-                    <p className="text-xs text-muted-foreground">{device.deviceType} · Qtà: {device.quantity}</p>
+                    <p className="text-xs text-muted-foreground">{device.deviceType} · {t("remote.qtyLabel", { qty: device.quantity })}</p>
                   </div>
                 </div>
                 <Badge variant={statusConfig[device.status]?.variant || "secondary"} className="text-xs shrink-0">
@@ -246,7 +248,7 @@ function RequestCard({
               <div className="flex items-center justify-between gap-2 flex-wrap">
                 <div className="flex items-center gap-2">
                   <Euro className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-sm font-medium">Preventivo</span>
+                  <span className="text-sm font-medium">{t("repairs.quote")}</span>
                 </div>
                 <Badge variant={request.paymentStatus === 'paid' ? 'default' : 'outline'}>
                   {request.paymentStatus === 'paid' ? 'Pagato' : request.status === 'quote_accepted' ? 'Da pagare' : request.status === 'quoted' ? 'In attesa' : 'Accettato'}
@@ -354,7 +356,7 @@ function RequestCard({
                 <div className="flex items-center justify-between gap-2 flex-wrap pt-3 border-t">
                   <div className="flex items-center gap-2 text-sm text-emerald-600 dark:text-emerald-400">
                     <Check className="h-4 w-4" />
-                    <span className="font-medium">Pagamento completato</span>
+                    <span className="font-medium">{t("customerPages.pagamentoCompletato")}</span>
                   </div>
                   <Button
                     size="sm"
@@ -370,7 +372,7 @@ function RequestCard({
                         const invoice = await res.json();
                         window.open(`/api/invoices/${invoice.id}/pdf`, "_blank");
                       } catch {
-                        toast({ title: "Errore", description: "Impossibile scaricare la fattura.", variant: "destructive" });
+                        toast({ title: t("auth.error"), description: t("remoteRequests.downloadInvoiceError"), variant: "destructive" });
                       }
                     }}
                     data-testid={`button-download-invoice-${request.id}`}
@@ -389,7 +391,7 @@ function RequestCard({
           {request.status === 'quote_declined' && (
             <div className="flex items-center gap-2 p-3 bg-destructive/10 rounded-md">
               <X className="h-4 w-4 text-destructive shrink-0" />
-              <p className="text-sm text-destructive">Preventivo rifiutato. La richiesta è stata chiusa.</p>
+              <p className="text-sm text-destructive">{t("customerPages.preventivoRifiutatoLaRichiestaStataChiusa")}</p>
             </div>
           )}
 
@@ -443,6 +445,21 @@ function RequestCard({
 }
 
 export default function CustomerRemoteRequests() {
+  const { t } = useTranslation();
+  const statusConfig: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline"; icon?: any }> = {
+    pending: { label: t("b2b.status.pending"), variant: "secondary", icon: Clock },
+    assigned: { label: t("remoteRequests.assigned"), variant: "outline" },
+    accepted: { label: t("remoteRequests.accepted"), variant: "default" },
+    rejected: { label: t("common.rejected"), variant: "destructive" },
+    awaiting_shipment: { label: t("remoteRequests.awaitingShipment"), variant: "outline", icon: Package },
+    in_transit: { label: t("shipping.inTransit"), variant: "default", icon: Truck },
+    received: { label: t("repairs.status.received"), variant: "default", icon: Check },
+    repair_created: { label: t("repairs.status.inRepair"), variant: "default" },
+    cancelled: { label: t("common.cancelled"), variant: "destructive" },
+    quoted: { label: t("remoteRequests.quoteReceived"), variant: "outline", icon: Euro },
+    quote_accepted: { label: t("remoteRequests.quoteAccepted"), variant: "default" },
+    quote_declined: { label: t("remoteRequests.quoteDeclined"), variant: "destructive" },
+  };
   const { user } = useAuth();
   const { toast } = useToast();
   const [isShippingOpen, setIsShippingOpen] = useState(false);
@@ -470,7 +487,7 @@ export default function CustomerRemoteRequests() {
       toast({ title: "Spedizione confermata", description: "I dati della spedizione sono stati salvati" });
     },
     onError: (error: Error) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("auth.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -494,7 +511,7 @@ export default function CustomerRemoteRequests() {
       }
     },
     onError: (error: Error) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("auth.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -505,10 +522,10 @@ export default function CustomerRemoteRequests() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/customer/remote-requests"] });
-      toast({ title: "Preventivo rifiutato", description: "La richiesta è stata chiusa" });
+      toast({ title: "Preventivo rifiutato", description: t("customerPages.laRichiestaStataChiusa") });
     },
     onError: (error: Error) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("auth.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -522,7 +539,7 @@ export default function CustomerRemoteRequests() {
       setStripePromise(loadStripe(data.publishableKey));
       setIsPaymentOpen(true);
     } catch (error: any) {
-      toast({ title: "Errore", description: error.message || "Errore avvio pagamento", variant: "destructive" });
+      toast({ title: t("auth.error"), description: error.message || "Errore avvio pagamento", variant: "destructive" });
     } finally {
       setIsProcessingPayment(false);
     }
@@ -536,7 +553,7 @@ export default function CustomerRemoteRequests() {
       const approveUrl = `https://www.sandbox.paypal.com/checkoutnow?token=${data.orderID}`;
       window.location.href = approveUrl;
     } catch (error: any) {
-      toast({ title: "Errore", description: error.message || "Errore avvio PayPal", variant: "destructive" });
+      toast({ title: t("auth.error"), description: error.message || "Errore avvio PayPal", variant: "destructive" });
     } finally {
       setIsProcessingPayment(false);
     }
@@ -551,7 +568,7 @@ export default function CustomerRemoteRequests() {
       setPaymentRequest(null);
       toast({ title: "Pagamento PayPal completato", description: "Puoi ora procedere con la spedizione del dispositivo" });
     } catch (error: any) {
-      toast({ title: "Errore conferma PayPal", description: error.message, variant: "destructive" });
+      toast({ title: t("customerPages.erroreConfermaPayPal"), description: error.message, variant: "destructive" });
     } finally {
       setIsProcessingPayment(false);
     }
@@ -589,7 +606,7 @@ export default function CustomerRemoteRequests() {
           setPendingPaypalCapture(null);
           toast({ title: "Pagamento PayPal completato", description: "Puoi ora procedere con la spedizione del dispositivo" });
         } catch (error: any) {
-          toast({ title: "Errore conferma PayPal", description: "Riprova cliccando il bottone qui sotto.", variant: "destructive" });
+          toast({ title: t("customerPages.erroreConfermaPayPal"), description: "Riprova cliccando il bottone qui sotto.", variant: "destructive" });
         } finally {
           setIsProcessingPayment(false);
         }
@@ -606,9 +623,9 @@ export default function CustomerRemoteRequests() {
       setStripeClientSecret(null);
       setStripePromise(null);
       setPaymentRequest(null);
-      toast({ title: "Pagamento completato", description: "Puoi ora procedere con la spedizione del dispositivo" });
+      toast({ title: t("customerPages.pagamentoCompletato"), description: "Puoi ora procedere con la spedizione del dispositivo" });
     } catch (error: any) {
-      toast({ title: "Errore conferma", description: error.message, variant: "destructive" });
+      toast({ title: t("customerPages.erroreConferma"), description: error.message, variant: "destructive" });
     }
   };
 
@@ -667,7 +684,7 @@ export default function CustomerRemoteRequests() {
           <div className="h-16 w-16 rounded-full bg-muted flex items-center justify-center mb-4">
             <Send className="h-7 w-7 text-muted-foreground" />
           </div>
-          <h3 className="text-lg font-medium" data-testid="text-empty-title">Nessuna richiesta ancora</h3>
+          <h3 className="text-lg font-medium" data-testid="text-empty-title">{t("customerPages.nessunaRichiestaAncora")}</h3>
           <p className="text-sm text-muted-foreground mt-1 max-w-sm">
             Hai un dispositivo da riparare? Invia una richiesta e riceverai un preventivo dal centro di riparazione.
           </p>
@@ -709,10 +726,10 @@ export default function CustomerRemoteRequests() {
           </DialogHeader>
           <form onSubmit={handleShippingSubmit} className="space-y-4">
             <div className="space-y-1.5">
-              <Label>Corriere</Label>
+              <Label>{t("shipping.carrier")}</Label>
               <Select value={shippingInfo.courierName} onValueChange={(v) => setShippingInfo({ ...shippingInfo, courierName: v })}>
                 <SelectTrigger data-testid="select-courier">
-                  <SelectValue placeholder="Seleziona corriere" />
+                  <SelectValue placeholder={t("customerPages.selezionaCorriere")} />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="BRT">BRT</SelectItem>
@@ -724,7 +741,7 @@ export default function CustomerRemoteRequests() {
                   <SelectItem value="Poste Italiane">Poste Italiane</SelectItem>
                   <SelectItem value="SDA">SDA</SelectItem>
                   <SelectItem value="Nexive">Nexive</SelectItem>
-                  <SelectItem value="Altro">Altro</SelectItem>
+                  <SelectItem value="Altro">{t("common.more")}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -753,7 +770,7 @@ export default function CustomerRemoteRequests() {
       <Dialog open={isPaymentOpen} onOpenChange={setIsPaymentOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Pagamento con Carta</DialogTitle>
+            <DialogTitle>{t("customerPages.pagamentoConCarta")}</DialogTitle>
             <DialogDescription>
               Importo: {paymentRequest?.quoteAmount ? `${(paymentRequest.quoteAmount / 100).toFixed(2)} EUR` : ""}
             </DialogDescription>
@@ -762,7 +779,7 @@ export default function CustomerRemoteRequests() {
             <Elements stripe={stripePromise} options={{ clientSecret: stripeClientSecret }}>
               <StripePaymentForm
                 onSuccess={() => confirmStripePayment(paymentRequest.id)}
-                onError={(msg) => toast({ title: "Errore Pagamento", description: msg, variant: "destructive" })}
+                onError={(msg) => toast({ title: t("customerPages.errorePagamento"), description: msg, variant: "destructive" })}
               />
             </Elements>
           )}

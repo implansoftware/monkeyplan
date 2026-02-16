@@ -11,6 +11,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { Settings, Plus, Trash2, CheckCircle, XCircle, Store, Key, RefreshCcw, Loader2, AlertTriangle } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 interface SifarCredential {
   id: string;
@@ -31,6 +32,7 @@ interface SifarStore {
 }
 
 export default function SifarSettingsPage() {
+  const { t } = useTranslation();
   const { toast } = useToast();
   const [clientKey, setClientKey] = useState("");
   const [environment, setEnvironment] = useState<string>("collaudo");
@@ -63,7 +65,7 @@ export default function SifarSettingsPage() {
       toast({ title: "Credenziali salvate", description: "Le credenziali SIFAR sono state configurate" });
     },
     onError: (error: Error) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -82,7 +84,7 @@ export default function SifarSettingsPage() {
     },
     onError: (error: Error) => {
       setTestResult({ success: false, message: error.message });
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -103,7 +105,7 @@ export default function SifarSettingsPage() {
       toast({ title: "Punto vendita aggiunto", description: "Il punto vendita è stato configurato" });
     },
     onError: (error: Error) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -116,7 +118,7 @@ export default function SifarSettingsPage() {
       toast({ title: "Punto vendita rimosso" });
     },
     onError: (error: Error) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -163,9 +165,7 @@ export default function SifarSettingsPage() {
                     setEnvironment(credential.environment);
                   }}
                   data-testid="button-update-credentials"
-                >
-                  Modifica
-                </Button>
+                >{t("common.edit")}</Button>
               </AlertDescription>
             </Alert>
           ) : (
@@ -276,9 +276,7 @@ export default function SifarSettingsPage() {
                 <Dialog open={showAddStore} onOpenChange={setShowAddStore}>
                   <DialogTrigger asChild>
                     <Button data-testid="button-add-store">
-                      <Plus className="h-4 w-4 mr-2" />
-                      Aggiungi
-                    </Button>
+                      <Plus className="h-4 w-4 mr-2" />{t("common.add")}</Button>
                   </DialogTrigger>
                   <DialogContent>
                     <DialogHeader>
@@ -310,9 +308,7 @@ export default function SifarSettingsPage() {
                       </div>
                     </div>
                     <DialogFooter>
-                      <Button variant="outline" onClick={() => setShowAddStore(false)}>
-                        Annulla
-                      </Button>
+                      <Button variant="outline" onClick={() => setShowAddStore(false)}>{t("common.cancel")}</Button>
                       <Button
                         onClick={() => addStoreMutation.mutate()}
                         disabled={!newStoreCode || addStoreMutation.isPending}

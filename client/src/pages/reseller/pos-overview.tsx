@@ -26,6 +26,7 @@ import {
 import { useState } from "react";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
+import { useTranslation } from "react-i18next";
 
 interface PosStats {
   totalSessions: number;
@@ -112,6 +113,7 @@ interface RegisterStats {
 }
 
 export default function ResellerPosOverview() {
+  const { t } = useTranslation();
   const [period, setPeriod] = useState("today");
   const [repairCenterFilter, setRepairCenterFilter] = useState("all");
   const [selectedTxId, setSelectedTxId] = useState<string | null>(null);
@@ -178,9 +180,9 @@ export default function ResellerPosOverview() {
 
   const getPaymentMethodLabel = (method: string) => {
     const labels: Record<string, string> = {
-      cash: "Contanti",
-      card: "Carta",
-      pos_terminal: "POS",
+      cash: t("pos.cash"),
+      card: t("pos.card"),
+      pos_terminal: t("sidebar.sections.posSection"),
       mixed: "Misto",
     };
     return labels[method] || method;
@@ -227,9 +229,7 @@ export default function ResellerPosOverview() {
               <Store className="h-6 w-6 text-white" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold tracking-tight text-white">
-                Panoramica POS
-              </h1>
+              <h1 className="text-2xl font-bold tracking-tight text-white">{t("sidebar.items.posOverview")}</h1>
               <p className="text-sm text-white/80">
                 Monitoraggio casse dei tuoi centri riparazione
               </p>
@@ -238,10 +238,10 @@ export default function ResellerPosOverview() {
           <div className="flex flex-wrap items-center gap-2 flex-wrap">
             <Select value={repairCenterFilter} onValueChange={setRepairCenterFilter}>
               <SelectTrigger className="w-48 bg-white/20 backdrop-blur-sm border-white/30 text-white" data-testid="select-repair-center">
-                <SelectValue placeholder="Tutti i centri" />
+                <SelectValue placeholder={t("common.allCenters")} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">Tutti i centri</SelectItem>
+                <SelectItem value="all">{t("common.allCenters")}</SelectItem>
                 {repairCenters?.map((rc) => (
                   <SelectItem key={rc.id} value={rc.id}>
                     {rc.name}
@@ -251,12 +251,12 @@ export default function ResellerPosOverview() {
             </Select>
             <Select value={period} onValueChange={setPeriod}>
               <SelectTrigger className="w-40 bg-white/20 backdrop-blur-sm border-white/30 text-white" data-testid="select-period">
-                <SelectValue placeholder="Periodo" />
+                <SelectValue placeholder={t("common.period")} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="today">Oggi</SelectItem>
-                <SelectItem value="week">Settimana</SelectItem>
-                <SelectItem value="month">Mese</SelectItem>
+                <SelectItem value="today">{t("common.today")}</SelectItem>
+                <SelectItem value="week">{t("reports.week")}</SelectItem>
+                <SelectItem value="month">{t("reports.month")}</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -351,9 +351,7 @@ export default function ResellerPosOverview() {
                 </div>
               ))}
               {!stats?.paymentBreakdown && (
-                <p className="text-sm text-muted-foreground text-center py-4">
-                  Nessun dato disponibile
-                </p>
+                <p className="text-sm text-muted-foreground text-center py-4">{t("common.noData")}</p>
               )}
             </div>
           </CardContent>
@@ -385,9 +383,7 @@ export default function ResellerPosOverview() {
                 </div>
               ))}
               {(!stats?.topRepairCenters || stats.topRepairCenters.length === 0) && (
-                <p className="text-sm text-muted-foreground text-center py-4">
-                  Nessun dato disponibile
-                </p>
+                <p className="text-sm text-muted-foreground text-center py-4">{t("common.noData")}</p>
               )}
             </div>
           </CardContent>
@@ -436,7 +432,7 @@ export default function ResellerPosOverview() {
                       <p className="font-medium">{formatCurrency(reg.avgTicket)}</p>
                     </div>
                     <div>
-                      <p className="text-xs text-muted-foreground">Pagamenti</p>
+                      <p className="text-xs text-muted-foreground">{t("sidebar.items.payments")}</p>
                       <div className="flex gap-1 flex-wrap">
                         {reg.paymentBreakdown.cash > 0 && <Badge variant="outline" className="text-xs"><Banknote className="w-3 h-3 mr-1" />{reg.paymentBreakdown.cash}</Badge>}
                         {reg.paymentBreakdown.card > 0 && <Badge variant="outline" className="text-xs"><CreditCard className="w-3 h-3 mr-1" />{reg.paymentBreakdown.card}</Badge>}
@@ -537,7 +533,7 @@ export default function ResellerPosOverview() {
                     {session.status === "open" ? (
                       <Badge variant="default" className="bg-green-500">Aperta</Badge>
                     ) : (
-                      <Badge variant="secondary">Chiusa</Badge>
+                      <Badge variant="secondary">{t("pos.closed")}</Badge>
                     )}
                   </div>
                   <div className="text-xs text-muted-foreground mt-1">
@@ -580,27 +576,26 @@ export default function ResellerPosOverview() {
             <div className="space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <p className="text-xs text-muted-foreground">Numero</p>
+                  <p className="text-xs text-muted-foreground">{t("common.number")}</p>
                   <p className="font-medium">{txDetail.transaction.transactionNumber}</p>
                 </div>
                 <div>
-                  <p className="text-xs text-muted-foreground">Centro</p>
+                  <p className="text-xs text-muted-foreground">{t("admin.common.center")}</p>
                   <p className="font-medium">{txDetail.repairCenterName}</p>
                 </div>
                 <div>
-                  <p className="text-xs text-muted-foreground">Data</p>
+                  <p className="text-xs text-muted-foreground">{t("common.date")}</p>
                   <p className="font-medium">{format(new Date(txDetail.transaction.createdAt), "dd/MM/yyyy HH:mm", { locale: it })}</p>
                 </div>
                 <div>
-                  <p className="text-xs text-muted-foreground">Pagamento</p>
+                  <p className="text-xs text-muted-foreground">{t("common.payment")}</p>
                   <Badge variant="outline">{getPaymentMethodLabel(txDetail.transaction.paymentMethod)}</Badge>
                 </div>
               </div>
               <Separator />
               <div>
                 <p className="text-sm font-medium mb-2 flex items-center gap-2">
-                  <Package className="h-4 w-4" /> Articoli
-                </p>
+                  <Package className="h-4 w-4" />{t("b2b.items")}</p>
                 <div className="space-y-2">
                   {txDetail.items.map((item) => (
                     <div key={item.id} className="flex justify-between text-sm p-2 bg-muted/50 rounded">
@@ -616,17 +611,17 @@ export default function ResellerPosOverview() {
               <Separator />
               <div className="space-y-1">
                 <div className="flex justify-between text-sm">
-                  <span>Subtotale</span>
+                  <span>{t("common.subtotal")}</span>
                   <span>{formatCurrency(txDetail.transaction.subtotal)}</span>
                 </div>
                 {txDetail.transaction.discount > 0 && (
                   <div className="flex justify-between text-sm text-teal-600">
-                    <span>Sconto</span>
+                    <span>{t("common.discount")}</span>
                     <span>-{formatCurrency(txDetail.transaction.discount)}</span>
                   </div>
                 )}
                 <div className="flex justify-between font-bold text-lg pt-2 border-t">
-                  <span>Totale</span>
+                  <span>{t("common.total")}</span>
                   <span>{formatCurrency(txDetail.transaction.total)}</span>
                 </div>
               </div>

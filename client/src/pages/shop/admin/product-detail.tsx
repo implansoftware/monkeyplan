@@ -1,4 +1,5 @@
 import { useParams, Link } from "wouter";
+import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -18,27 +19,36 @@ interface ProductDetailResponse {
   assignments: Array<ResellerProduct & { reseller: { id: string; username: string; fullName: string | null } | null }>;
 }
 
-const productTypeLabels: Record<string, string> = {
-  ricambio: "Ricambio",
-  dispositivo: "Smartphone",
-  accessorio: "Accessorio",
-};
+function useProductTypeLabels() {
+  const { t } = useTranslation();
+  return {
+    ricambio: t("shop.admin.productDetail.types.spare"),
+    dispositivo: t("shop.admin.productDetail.types.smartphone"),
+    accessorio: t("shop.admin.productDetail.types.accessory"),
+  };
+}
 
-const conditionLabels: Record<string, string> = {
-  nuovo: "Nuovo",
-  ricondizionato_A: "Ricondizionato A",
-  ricondizionato_B: "Ricondizionato B",
-  ricondizionato_C: "Ricondizionato C",
-  usato: "Usato",
-  rotto: "Rotto",
-};
+function useConditionLabels() {
+  const { t } = useTranslation();
+  return {
+    nuovo: t("shop.admin.productDetail.conditions.new"),
+    ricondizionato_A: t("shop.admin.productDetail.conditions.refurbishedA"),
+    ricondizionato_B: t("shop.admin.productDetail.conditions.refurbishedB"),
+    ricondizionato_C: t("shop.admin.productDetail.conditions.refurbishedC"),
+    usato: t("shop.admin.productDetail.conditions.used"),
+    rotto: t("shop.admin.productDetail.conditions.broken"),
+  };
+}
 
-const gradeLabels: Record<string, string> = {
-  A: "Grado A - Eccellente",
-  B: "Grado B - Buono",
-  C: "Grado C - Discreto",
-  D: "Grado D - Accettabile",
-};
+function useGradeLabels() {
+  const { t } = useTranslation();
+  return {
+    A: t("shop.admin.productDetail.grades.A"),
+    B: t("shop.admin.productDetail.grades.B"),
+    C: t("shop.admin.productDetail.grades.C"),
+    D: t("shop.admin.productDetail.grades.D"),
+  };
+}
 
 const storageLabels: Record<string, string> = {
   "16GB": "16 GB",
@@ -51,24 +61,36 @@ const storageLabels: Record<string, string> = {
   "2TB": "2 TB",
 };
 
-const networkLockLabels: Record<string, string> = {
-  unlocked: "Sbloccato",
-  locked: "Bloccato operatore",
-  unknown: "Non verificato",
-};
+function useNetworkLockLabels() {
+  const { t } = useTranslation();
+  return {
+    unlocked: t("shop.admin.productDetail.network.unlocked"),
+    locked: t("shop.admin.productDetail.network.locked"),
+    unknown: t("shop.admin.productDetail.network.unknown"),
+  };
+}
 
-const accessoryTypeLabels: Record<string, string> = {
-  cover: "Cover/Custodia",
-  screen_protector: "Pellicola/Vetro",
-  charger: "Caricatore",
-  cable: "Cavo",
-  earphones: "Auricolari",
-  powerbank: "Powerbank",
-  holder: "Supporto",
-  other: "Altro",
-};
+function useAccessoryTypeLabels() {
+  const { t } = useTranslation();
+  return {
+    cover: t("shop.admin.productDetail.accessoryTypes.cover"),
+    screen_protector: t("shop.admin.productDetail.accessoryTypes.screenProtector"),
+    charger: t("shop.admin.productDetail.accessoryTypes.charger"),
+    cable: t("shop.admin.productDetail.accessoryTypes.cable"),
+    earphones: t("shop.admin.productDetail.accessoryTypes.earphones"),
+    powerbank: t("shop.admin.productDetail.accessoryTypes.powerbank"),
+    holder: t("shop.admin.productDetail.accessoryTypes.holder"),
+    other: t("shop.admin.productDetail.accessoryTypes.other"),
+  };
+}
 
 export default function ProductDetail() {
+  const { t } = useTranslation();
+  const productTypeLabels = useProductTypeLabels();
+  const conditionLabels = useConditionLabels();
+  const gradeLabels = useGradeLabels();
+  const networkLockLabels = useNetworkLockLabels();
+  const accessoryTypeLabels = useAccessoryTypeLabels();
   const params = useParams<{ id: string }>();
   const productId = params.id;
 
@@ -94,11 +116,11 @@ export default function ProductDetail() {
         <Card>
           <CardContent className="py-12 text-center">
             <Package className="mx-auto h-12 w-12 mb-4 opacity-50" />
-            <p className="text-muted-foreground">Prodotto non trovato</p>
+            <p className="text-muted-foreground">{t("shop.admin.productDetail.notFound")}</p>
             <Link href="/admin/products">
               <Button variant="outline" className="mt-4" data-testid="button-back-products">
                 <ArrowLeft className="h-4 w-4 mr-2" />
-                Torna ai prodotti
+                {t("shop.admin.productDetail.backToProducts")}
               </Button>
             </Link>
           </CardContent>
@@ -153,11 +175,11 @@ export default function ProductDetail() {
             </Badge>
             {product.isVisibleInShop ? (
               <Badge variant="outline" className="gap-1" data-testid="badge-visible">
-                <Eye className="h-3 w-3" /> Visibile
+                <Eye className="h-3 w-3" /> {t("shop.admin.productDetail.visible")}
               </Badge>
             ) : (
               <Badge variant="secondary" className="gap-1" data-testid="badge-hidden">
-                <EyeOff className="h-3 w-3" /> Nascosto
+                <EyeOff className="h-3 w-3" /> {t("shop.admin.productDetail.hidden")}
               </Badge>
             )}
           </div>
@@ -171,35 +193,35 @@ export default function ProductDetail() {
             <CardHeader>
               <CardTitle className="flex flex-wrap items-center gap-2">
                 <Tag className="h-5 w-5" />
-                Informazioni Base
+                {t("shop.admin.productDetail.basicInfo")}
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
                 <div>
-                  <p className="text-sm text-muted-foreground">Categoria</p>
+                  <p className="text-sm text-muted-foreground">{t("shop.admin.productDetail.category")}</p>
                   <p className="font-medium" data-testid="text-category">{product.category || "N/D"}</p>
                 </div>
                 <div>
-                  <p className="text-sm text-muted-foreground">Marca</p>
+                  <p className="text-sm text-muted-foreground">{t("shop.admin.productDetail.brand")}</p>
                   <p className="font-medium" data-testid="text-brand">{product.brand || "N/D"}</p>
                 </div>
                 <div>
-                  <p className="text-sm text-muted-foreground">Condizione</p>
+                  <p className="text-sm text-muted-foreground">{t("shop.admin.productDetail.condition")}</p>
                   <p className="font-medium" data-testid="text-condition">
                     {conditionLabels[product.condition] || product.condition}
                   </p>
                 </div>
                 <div>
-                  <p className="text-sm text-muted-foreground">Garanzia</p>
-                  <p className="font-medium" data-testid="text-warranty">{product.warrantyMonths || 0} mesi</p>
+                  <p className="text-sm text-muted-foreground">{t("shop.admin.productDetail.warranty")}</p>
+                  <p className="font-medium" data-testid="text-warranty">{t("shop.admin.productDetail.warrantyMonths", { months: product.warrantyMonths || 0 })}</p>
                 </div>
                 <div>
-                  <p className="text-sm text-muted-foreground">Colore</p>
+                  <p className="text-sm text-muted-foreground">{t("shop.admin.productDetail.color")}</p>
                   <p className="font-medium" data-testid="text-color">{product.color || "N/D"}</p>
                 </div>
                 <div>
-                  <p className="text-sm text-muted-foreground">Fornitore</p>
+                  <p className="text-sm text-muted-foreground">{t("shop.admin.productDetail.supplier")}</p>
                   <p className="font-medium" data-testid="text-supplier">{product.supplier || "N/D"}</p>
                 </div>
               </div>
@@ -207,7 +229,7 @@ export default function ProductDetail() {
                 <>
                   <Separator />
                   <div>
-                    <p className="text-sm text-muted-foreground mb-1">Descrizione</p>
+                    <p className="text-sm text-muted-foreground mb-1">{t("shop.admin.productDetail.description")}</p>
                     <p data-testid="text-description">{product.description}</p>
                   </div>
                 </>
@@ -217,9 +239,9 @@ export default function ProductDetail() {
 
           <Tabs defaultValue="specs" className="w-full">
             <TabsList className="grid w-full grid-cols-3">
-              <TabsTrigger value="specs" data-testid="tab-specs">Specifiche</TabsTrigger>
-              <TabsTrigger value="compatibilities" data-testid="tab-compatibilities">Compatibilità</TabsTrigger>
-              <TabsTrigger value="resellers" data-testid="tab-resellers">Rivenditori</TabsTrigger>
+              <TabsTrigger value="specs" data-testid="tab-specs">{t("shop.admin.productDetail.specs")}</TabsTrigger>
+              <TabsTrigger value="compatibilities" data-testid="tab-compatibilities">{t("shop.admin.productDetail.compatibilities")}</TabsTrigger>
+              <TabsTrigger value="resellers" data-testid="tab-resellers">{t("shop.admin.productDetail.resellers")}</TabsTrigger>
             </TabsList>
 
             <TabsContent value="specs">
@@ -227,32 +249,32 @@ export default function ProductDetail() {
                 <CardHeader>
                   <CardTitle className="flex flex-wrap items-center gap-2">
                     <Settings className="h-5 w-5" />
-                    Specifiche Tecniche
+                    {t("shop.admin.productDetail.technicalSpecs")}
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
                   {product.productType === "dispositivo" && specs && "storage" in specs ? (
                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
                       <div>
-                        <p className="text-sm text-muted-foreground">Storage</p>
+                        <p className="text-sm text-muted-foreground">{t("shop.admin.productDetail.storage")}</p>
                         <p className="font-medium" data-testid="text-storage">
                           {storageLabels[specs.storage] || specs.storage}
                         </p>
                       </div>
                       <div>
-                        <p className="text-sm text-muted-foreground">Grado</p>
+                        <p className="text-sm text-muted-foreground">{t("shop.admin.productDetail.grade")}</p>
                         <p className="font-medium" data-testid="text-grade">
                           {specs.grade ? gradeLabels[specs.grade] || specs.grade : "N/D"}
                         </p>
                       </div>
                       <div>
-                        <p className="text-sm text-muted-foreground">Batteria</p>
+                        <p className="text-sm text-muted-foreground">{t("shop.admin.productDetail.battery")}</p>
                         <p className="font-medium" data-testid="text-battery">
                           {specs.batteryHealth ? `${specs.batteryHealth}%` : "N/D"}
                         </p>
                       </div>
                       <div>
-                        <p className="text-sm text-muted-foreground">Rete</p>
+                        <p className="text-sm text-muted-foreground">{t("shop.admin.productDetail.networkLabel")}</p>
                         <p className="font-medium" data-testid="text-network">
                           {networkLockLabels[specs.networkLock] || specs.networkLock}
                         </p>
@@ -264,14 +286,14 @@ export default function ProductDetail() {
                         </p>
                       </div>
                       <div>
-                        <p className="text-sm text-muted-foreground">Scatola Originale</p>
+                        <p className="text-sm text-muted-foreground">{t("shop.admin.productDetail.originalBox")}</p>
                         <p className="font-medium" data-testid="text-box">
-                          {specs.originalBox ? "Sì" : "No"}
+                          {specs.originalBox ? t("shop.admin.productDetail.yes") : t("shop.admin.productDetail.no")}
                         </p>
                       </div>
                       {specs.notes && (
                         <div className="col-span-full">
-                          <p className="text-sm text-muted-foreground">Note</p>
+                          <p className="text-sm text-muted-foreground">{t("shop.admin.productDetail.notes")}</p>
                           <p data-testid="text-specs-notes">{specs.notes}</p>
                         </div>
                       )}
@@ -279,26 +301,26 @@ export default function ProductDetail() {
                   ) : product.productType === "accessorio" && specs && "accessoryType" in specs ? (
                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
                       <div>
-                        <p className="text-sm text-muted-foreground">Tipo</p>
+                        <p className="text-sm text-muted-foreground">{t("shop.admin.productDetail.type")}</p>
                         <p className="font-medium" data-testid="text-accessory-type">
                           {accessoryTypeLabels[specs.accessoryType] || specs.accessoryType}
                         </p>
                       </div>
                       <div>
-                        <p className="text-sm text-muted-foreground">Materiale</p>
+                        <p className="text-sm text-muted-foreground">{t("shop.admin.productDetail.material")}</p>
                         <p className="font-medium" data-testid="text-material">
                           {specs.material || "N/D"}
                         </p>
                       </div>
                       <div>
-                        <p className="text-sm text-muted-foreground">Universale</p>
+                        <p className="text-sm text-muted-foreground">{t("shop.admin.productDetail.universal")}</p>
                         <p className="font-medium" data-testid="text-universal">
-                          {specs.isUniversal ? "Sì" : "No"}
+                          {specs.isUniversal ? t("shop.admin.productDetail.yes") : t("shop.admin.productDetail.no")}
                         </p>
                       </div>
                       {specs.compatibleBrands && specs.compatibleBrands.length > 0 && (
                         <div className="col-span-full">
-                          <p className="text-sm text-muted-foreground mb-1">Marche Compatibili</p>
+                          <p className="text-sm text-muted-foreground mb-1">{t("shop.admin.productDetail.compatibleBrands")}</p>
                           <div className="flex flex-wrap gap-1" data-testid="list-compatible-brands">
                             {specs.compatibleBrands.map((brand, i) => (
                               <Badge key={i} variant="outline">{brand}</Badge>
@@ -308,13 +330,13 @@ export default function ProductDetail() {
                       )}
                       {specs.notes && (
                         <div className="col-span-full">
-                          <p className="text-sm text-muted-foreground">Note</p>
+                          <p className="text-sm text-muted-foreground">{t("shop.admin.productDetail.notes")}</p>
                           <p data-testid="text-accessory-notes">{specs.notes}</p>
                         </div>
                       )}
                     </div>
                   ) : (
-                    <p className="text-muted-foreground">Nessuna specifica tecnica disponibile</p>
+                    <p className="text-muted-foreground">{t("shop.admin.productDetail.noSpecs")}</p>
                   )}
                 </CardContent>
               </Card>
@@ -323,7 +345,7 @@ export default function ProductDetail() {
             <TabsContent value="compatibilities">
               <Card>
                 <CardHeader>
-                  <CardTitle>Dispositivi Compatibili</CardTitle>
+                  <CardTitle>{t("shop.admin.productDetail.compatibleDevices")}</CardTitle>
                 </CardHeader>
                 <CardContent>
                   {compatibilities.length > 0 ? (
@@ -331,8 +353,8 @@ export default function ProductDetail() {
                       <Table>
                         <TableHeader>
                           <TableRow>
-                            <TableHead>Marca</TableHead>
-                            <TableHead>Modello</TableHead>
+                            <TableHead>{t("shop.admin.productDetail.brandCol")}</TableHead>
+                            <TableHead>{t("shop.admin.productDetail.modelCol")}</TableHead>
                           </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -346,7 +368,7 @@ export default function ProductDetail() {
                       </Table>
                     </ScrollArea>
                   ) : (
-                    <p className="text-muted-foreground">Nessuna compatibilità configurata</p>
+                    <p className="text-muted-foreground">{t("shop.admin.productDetail.noCompatibilities")}</p>
                   )}
                 </CardContent>
               </Card>
@@ -357,7 +379,7 @@ export default function ProductDetail() {
                 <CardHeader>
                   <CardTitle className="flex flex-wrap items-center gap-2">
                     <Users className="h-5 w-5" />
-                    Rivenditori Assegnati
+                    {t("shop.admin.productDetail.assignedResellers")}
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
@@ -366,9 +388,9 @@ export default function ProductDetail() {
                       <Table>
                         <TableHeader>
                           <TableRow>
-                            <TableHead>Rivenditore</TableHead>
-                            <TableHead>Prezzo Vendita</TableHead>
-                            <TableHead>Pubblicato</TableHead>
+                            <TableHead>{t("shop.admin.productDetail.resellerCol")}</TableHead>
+                            <TableHead>{t("shop.admin.productDetail.sellingPriceCol")}</TableHead>
+                            <TableHead>{t("shop.admin.productDetail.publishedCol")}</TableHead>
                           </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -394,11 +416,11 @@ export default function ProductDetail() {
                                 <TableCell>
                                   {a.isPublished ? (
                                     <Badge variant="default" className="gap-1">
-                                      <CheckCircle className="h-3 w-3" /> Sì
+                                      <CheckCircle className="h-3 w-3" /> {t("shop.admin.productDetail.yes")}
                                     </Badge>
                                   ) : (
                                     <Badge variant="secondary" className="gap-1">
-                                      <XCircle className="h-3 w-3" /> No
+                                      <XCircle className="h-3 w-3" /> {t("shop.admin.productDetail.no")}
                                     </Badge>
                                   )}
                                 </TableCell>
@@ -409,7 +431,7 @@ export default function ProductDetail() {
                       </Table>
                     </ScrollArea>
                   ) : (
-                    <p className="text-muted-foreground">Nessun rivenditore assegnato</p>
+                    <p className="text-muted-foreground">{t("shop.admin.productDetail.noResellers")}</p>
                   )}
                 </CardContent>
               </Card>
@@ -422,23 +444,23 @@ export default function ProductDetail() {
             <CardHeader>
               <CardTitle className="flex flex-wrap items-center gap-2">
                 <Euro className="h-5 w-5" />
-                Prezzi
+                {t("shop.admin.productDetail.prices")}
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex justify-between items-center">
-                <span className="text-muted-foreground">Prezzo Acquisto</span>
+                <span className="text-muted-foreground">{t("shop.admin.productDetail.costPrice")}</span>
                 <span className="font-medium" data-testid="text-cost-price">{formatPrice(product.costPrice)}</span>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-muted-foreground">Prezzo Vendita</span>
+                <span className="text-muted-foreground">{t("shop.admin.productDetail.sellingPrice")}</span>
                 <span className="font-bold text-lg" data-testid="text-unit-price">{formatPrice(product.unitPrice)}</span>
               </div>
               {product.costPrice && product.unitPrice && (
                 <>
                   <Separator />
                   <div className="flex justify-between items-center">
-                    <span className="text-muted-foreground">Margine</span>
+                    <span className="text-muted-foreground">{t("shop.admin.productDetail.margin")}</span>
                     <span className="font-medium text-green-600" data-testid="text-margin">
                       {formatPrice(product.unitPrice - product.costPrice)}
                     </span>
@@ -450,15 +472,15 @@ export default function ProductDetail() {
 
           <Card>
             <CardHeader>
-              <CardTitle>Magazzino</CardTitle>
+              <CardTitle>{t("shop.admin.productDetail.warehouse")}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex justify-between items-center">
-                <span className="text-muted-foreground">Scorta Minima</span>
+                <span className="text-muted-foreground">{t("shop.admin.productDetail.minStock")}</span>
                 <span className="font-medium" data-testid="text-min-stock">{product.minStock || 0}</span>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-muted-foreground">Posizione</span>
+                <span className="text-muted-foreground">{t("shop.admin.productDetail.location")}</span>
                 <span className="font-medium" data-testid="text-location">{product.location || "N/D"}</span>
               </div>
             </CardContent>
@@ -467,7 +489,7 @@ export default function ProductDetail() {
           {product.imageUrl && (
             <Card>
               <CardHeader>
-                <CardTitle>Immagine</CardTitle>
+                <CardTitle>{t("shop.admin.productDetail.image")}</CardTitle>
               </CardHeader>
               <CardContent>
                 <img

@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -45,14 +46,6 @@ interface UtilitySummary {
   supplierCount: number;
 }
 
-const categoryLabels: Record<string, string> = {
-  fisso: "Fisso",
-  mobile: "Mobile",
-  centralino: "Centralino",
-  luce: "Luce",
-  gas: "Gas",
-  altro: "Altro",
-};
 
 const categoryIcons: Record<string, typeof Phone> = {
   fisso: Phone,
@@ -63,25 +56,34 @@ const categoryIcons: Record<string, typeof Phone> = {
   altro: Zap,
 };
 
-const statusLabels: Record<string, string> = {
-  bozza: "Bozza",
-  inviata: "Inviata",
-  in_lavorazione: "In Lavorazione",
-  completata: "Completata",
-  annullata: "Annullata",
-  rifiutata: "Rifiutata",
-};
 
 const COLORS = ["#0088FE", "#00C49F", "#FFBB28", "#FF8042", "#8884d8", "#82ca9d"];
 
-const formatCurrency = (cents: number) => {
-  return new Intl.NumberFormat("it-IT", {
-    style: "currency",
-    currency: "EUR",
-  }).format(cents / 100);
-};
 
 export default function RepairCenterUtilityReports() {
+  const { t } = useTranslation();
+  const categoryLabels: Record<string, string> = {
+    fisso: t("utility.serviceTypes.fisso"),
+    mobile: t("utility.serviceTypes.mobile"),
+    centralino: t("utility.serviceTypes.centralino"),
+    luce: t("utility.serviceTypes.luce"),
+    gas: t("utility.serviceTypes.gas"),
+    altro: t("utility.serviceTypes.altro"),
+  };
+  const statusLabels: Record<string, string> = {
+    bozza: t("utility.practiceStatus.bozza"),
+    inviata: t("utility.practiceStatus.inviata"),
+    in_lavorazione: t("utility.practiceStatus.inLavorazione"),
+    completata: t("utility.practiceStatus.completata"),
+    annullata: t("utility.practiceStatus.annullata"),
+    rifiutata: t("utility.practiceStatus.rifiutata"),
+  };
+  const formatCurrency = (cents: number) => {
+    return new Intl.NumberFormat("it-IT", {
+      style: "currency",
+      currency: "EUR",
+    }).format(cents / 100);
+  };
   const currentYear = new Date().getFullYear();
   const [selectedYear, setSelectedYear] = useState<number>(currentYear);
   const years = Array.from({ length: 5 }, (_, i) => currentYear - i);
@@ -103,8 +105,8 @@ export default function RepairCenterUtilityReports() {
   }));
 
   const commissionsData = [
-    { name: "Pagate", value: summary?.commissions?.paid || 0, fill: "#22c55e" },
-    { name: "In Attesa", value: summary?.commissions?.pending || 0, fill: "#eab308" },
+    { name: t("utility.reports.paid"), value: summary?.commissions?.paid || 0, fill: "#22c55e" },
+    { name: t("utility.reports.pending"), value: summary?.commissions?.pending || 0, fill: "#eab308" },
   ];
 
   if (isLoading) {
@@ -119,7 +121,7 @@ export default function RepairCenterUtilityReports() {
           <div className="flex flex-wrap items-center gap-3">
             <PieChart className="h-8 w-8 text-primary" />
             <div>
-              <h1 className="text-2xl font-bold">Report Utility</h1>
+              <h1 className="text-2xl font-bold">{t("sidebar.items.utilityReport")}</h1>
               <p className="text-muted-foreground">Analisi e statistiche</p>
             </div>
           </div>
@@ -158,7 +160,7 @@ export default function RepairCenterUtilityReports() {
               <BarChart className="h-5 w-5 sm:h-7 sm:w-7 text-white" />
             </div>
             <div>
-              <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-white tracking-tight">Report</h1>
+              <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-white tracking-tight">{t("sidebar.items.reports")}</h1>
               <p className="text-emerald-100">Analisi e statistiche anno {selectedYear}</p>
             </div>
           </div>
@@ -185,7 +187,7 @@ export default function RepairCenterUtilityReports() {
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card data-testid="card-total-practices">
           <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Totale Pratiche</CardTitle>
+            <CardTitle className="text-sm font-medium">{t("utility.totalePratiche")}</CardTitle>
             <FileCheck className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -198,7 +200,7 @@ export default function RepairCenterUtilityReports() {
 
         <Card data-testid="card-suppliers">
           <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Fornitori</CardTitle>
+            <CardTitle className="text-sm font-medium">{t("sidebar.sections.supply")}</CardTitle>
             <Building2 className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -237,7 +239,7 @@ export default function RepairCenterUtilityReports() {
       <div className="grid gap-6 md:grid-cols-2">
         <Card data-testid="card-chart-categories">
           <CardHeader>
-            <CardTitle className="text-lg">Pratiche per Categoria</CardTitle>
+            <CardTitle className="text-lg">{t("utility.pratichePerCategoria")}</CardTitle>
           </CardHeader>
           <CardContent>
             {categoryData.length > 0 ? (
@@ -277,7 +279,7 @@ export default function RepairCenterUtilityReports() {
 
         <Card data-testid="card-chart-status">
           <CardHeader>
-            <CardTitle className="text-lg">Pratiche per Stato</CardTitle>
+            <CardTitle className="text-lg">{t("utility.pratichePerStato")}</CardTitle>
           </CardHeader>
           <CardContent>
             {statusData.length > 0 ? (
@@ -288,7 +290,7 @@ export default function RepairCenterUtilityReports() {
                     <XAxis type="number" />
                     <YAxis dataKey="name" type="category" width={100} />
                     <Tooltip />
-                    <Bar dataKey="count" fill="#8884d8" name="Pratiche" />
+                    <Bar dataKey="count" fill="#8884d8" name={t("utility.reports.practices")} />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
@@ -302,7 +304,7 @@ export default function RepairCenterUtilityReports() {
 
         <Card data-testid="card-chart-commissions">
           <CardHeader>
-            <CardTitle className="text-lg">Stato Commissioni</CardTitle>
+            <CardTitle className="text-lg">{t("utility.statoCommissioni")}</CardTitle>
           </CardHeader>
           <CardContent>
             {(summary?.commissions?.total || 0) > 0 ? (
@@ -338,7 +340,7 @@ export default function RepairCenterUtilityReports() {
 
         <Card data-testid="card-categories-detail">
           <CardHeader>
-            <CardTitle className="text-lg">Dettaglio per Categoria</CardTitle>
+            <CardTitle className="text-lg">{t("utility.dettaglioPerCategoria")}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">

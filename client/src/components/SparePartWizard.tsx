@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useState, useRef, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -48,16 +49,16 @@ interface SparePartWizardProps {
 }
 
 const wizardSchema = z.object({
-  name: z.string().min(1, "Nome obbligatorio"),
+  name: z.string().min(1, t("common.nameRequired")),
   sku: z.string().optional(),
   partCode: z.string().optional(),
   description: z.string().optional(),
-  partType: z.string().min(1, "Seleziona il tipo"),
-  quality: z.string().min(1, "Seleziona la qualità"),
+  partType: z.string().min(1, t("common.selectType")),
+  quality: z.string().min(1, t("products.selectQuality")),
   compatibleModels: z.string().optional(),
   notes: z.string().optional(),
   warrantyMonths: z.string().default("3"),
-  unitPrice: z.string().min(1, "Prezzo vendita obbligatorio"),
+  unitPrice: z.string().min(1, t("products.sellPriceRequired")),
   costPrice: z.string().optional(),
   supplierId: z.string().optional(),
   initialStock: z.array(z.object({
@@ -71,17 +72,17 @@ type WizardData = z.infer<typeof wizardSchema>;
 
 const STEPS = [
   { id: 1, name: "Info Base", icon: Wrench },
-  { id: 2, name: "Prezzo & Stock", icon: Euro },
-  { id: 3, name: "Conferma", icon: CheckCircle2 },
+  { id: 2, name: t("products.priceAndStock"), icon: Euro },
+  { id: 3, name: t("common.confirm"), icon: CheckCircle2 },
 ];
 
 const PART_TYPES = [
   { value: "display", label: "Display / Schermo" },
-  { value: "batteria", label: "Batteria" },
-  { value: "fotocamera", label: "Fotocamera" },
+  { value: "batteria", label: t("repair.battery") },
+  { value: "fotocamera", label: t("repair.camera") },
   { value: "connettore", label: "Connettore di Ricarica" },
   { value: "altoparlante", label: "Altoparlante / Speaker" },
-  { value: "microfono", label: "Microfono" },
+  { value: "microfono", label: t("repair.microphone") },
   { value: "tasto", label: "Tasto / Pulsante" },
   { value: "flex", label: "Flat / Flex Cable" },
   { value: "scheda_madre", label: "Scheda Madre" },
@@ -89,13 +90,13 @@ const PART_TYPES = [
   { value: "vetro", label: "Vetro Posteriore" },
   { value: "antenna", label: "Antenna" },
   { value: "sensore", label: "Sensore" },
-  { value: "altro", label: "Altro" },
+  { value: "altro", label: t("common.other") },
 ];
 
 const QUALITY_OPTIONS = [
   { value: "originale", label: "Originale (OEM)" },
   { value: "originale_rigenerato", label: "Originale Rigenerato" },
-  { value: "compatibile_alta", label: "Compatibile Alta Qualità" },
+  { value: "compatibile_alta", label: t("products.highQualityCompatible") },
   { value: "compatibile", label: "Compatibile Standard" },
   { value: "aftermarket", label: "Aftermarket" },
 ];
@@ -107,6 +108,7 @@ export function SparePartWizard({
   onSuccess,
   editingProduct 
 }: SparePartWizardProps) {
+  const { t } = useTranslation();
   const [currentStep, setCurrentStep] = useState(1);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
@@ -197,7 +199,7 @@ export function SparePartWizard({
           body: formDataUpload,
           credentials: "include",
         });
-        if (!response.ok) throw new Error("Errore creazione ricambio");
+        if (!response.ok) throw new Error(t("products.sparePartCreationError"));
         createdProduct = await response.json();
       } else {
         const response = await apiRequest("POST", "/api/spare-parts", {
@@ -227,12 +229,12 @@ export function SparePartWizard({
     onSuccess: (newProduct) => {
       queryClient.invalidateQueries({ queryKey: ["/api/spare-parts"] });
       queryClient.invalidateQueries({ queryKey: ["/api/products"] });
-      toast({ title: "Ricambio creato", description: `${form.getValues("name")} aggiunto al catalogo` });
+      toast({ title: t("products.sparePartCreated"), description: `${form.getValues("name")} aggiunto al catalogo` });
       handleClose();
       onSuccess?.(newProduct);
     },
     onError: (error: any) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -298,7 +300,7 @@ export function SparePartWizard({
       <DialogContent ref={dialogContentRef} className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-xl font-semibold">
-            {editingProduct ? "Modifica Ricambio" : "Nuovo Ricambio"}
+            {editingProduct ? t("products.editSparePart") : t("products.newSparePart")}
           </DialogTitle>
         </DialogHeader>
 
@@ -344,7 +346,7 @@ export function SparePartWizard({
               <div className="space-y-6">
                 <div className="text-center mb-4">
                   <Wrench className="h-12 w-12 mx-auto text-primary mb-2" />
-                  <h3 className="text-lg font-medium">Informazioni Base</h3>
+                  <h3 className="text-lg font-medium">{t("products.basicInfo")}</h3>
                   <p className="text-sm text-muted-foreground">Inserisci i dati principali del ricambio</p>
                 </div>
 
@@ -377,7 +379,7 @@ export function SparePartWizard({
                       onClick={() => fileInputRef.current?.click()}
                     >
                       <ImagePlus className="h-8 w-8" />
-                      <span className="text-xs">Aggiungi foto</span>
+                      <span className="text-xs">{t("common.addPhoto")}</span>
                     </Button>
                   )}
                 </div>
@@ -387,7 +389,7 @@ export function SparePartWizard({
                   name="partType"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Tipo Ricambio *</FormLabel>
+                      <FormLabel>{t("products.sparePartType")} *</FormLabel>
                       <div className="grid grid-cols-3 gap-2 max-h-48 overflow-y-auto">
                         {PART_TYPES.map(type => (
                           <Card
@@ -414,7 +416,7 @@ export function SparePartWizard({
                   name="name"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Nome Ricambio *</FormLabel>
+                      <FormLabel>{t("products.sparePartName")} *</FormLabel>
                       <FormControl>
                         <Input placeholder="es. Display iPhone 14 Pro OLED" {...field} data-testid="input-part-name" />
                       </FormControl>
@@ -470,7 +472,7 @@ export function SparePartWizard({
                     name="partCode"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Codice Fornitore</FormLabel>
+                        <FormLabel>{t("products.supplierCode")}</FormLabel>
                         <FormControl>
                           <Input placeholder="Codice originale" {...field} data-testid="input-part-code" />
                         </FormControl>
@@ -486,8 +488,8 @@ export function SparePartWizard({
               <div className="space-y-6">
                 <div className="text-center mb-4">
                   <Euro className="h-12 w-12 mx-auto text-primary mb-2" />
-                  <h3 className="text-lg font-medium">Prezzo & Magazzino</h3>
-                  <p className="text-sm text-muted-foreground">Configura prezzi e disponibilità</p>
+                  <h3 className="text-lg font-medium">{t("products.priceAndWarehouse")}</h3>
+                  <p className="text-sm text-muted-foreground">{t("products.configurePricesAndAvailability")}</p>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -496,7 +498,7 @@ export function SparePartWizard({
                     name="unitPrice"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Prezzo Vendita (€) *</FormLabel>
+                        <FormLabel>{t("products.salePriceEur")}</FormLabel>
                         <FormControl>
                           <Input 
                             type="number" 
@@ -516,7 +518,7 @@ export function SparePartWizard({
                     name="costPrice"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Costo Acquisto (€)</FormLabel>
+                        <FormLabel>{t("products.purchasePriceEur")}</FormLabel>
                         <FormControl>
                           <Input 
                             type="number" 
@@ -537,7 +539,7 @@ export function SparePartWizard({
                   name="warrantyMonths"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Garanzia (mesi)</FormLabel>
+                      <FormLabel>{t("products.warrantyMonths")}</FormLabel>
                       <Select onValueChange={field.onChange} value={field.value}>
                         <FormControl>
                           <SelectTrigger data-testid="select-part-warranty">
@@ -545,7 +547,7 @@ export function SparePartWizard({
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          <SelectItem value="0">Nessuna</SelectItem>
+                          <SelectItem value="0">{t("common.noneFem")}</SelectItem>
                           <SelectItem value="1">1 mese</SelectItem>
                           <SelectItem value="3">3 mesi</SelectItem>
                           <SelectItem value="6">6 mesi</SelectItem>
@@ -562,15 +564,15 @@ export function SparePartWizard({
                   name="supplierId"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Fornitore Preferito</FormLabel>
+                      <FormLabel>{t("products.preferredSupplier")}</FormLabel>
                       <Select onValueChange={(value) => field.onChange(value === "none" ? "" : value)} value={field.value || "none"}>
                         <FormControl>
                           <SelectTrigger data-testid="select-part-supplier">
-                            <SelectValue placeholder="Seleziona fornitore (opzionale)" />
+                            <SelectValue placeholder={t("products.selectSupplierOptional")} />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          <SelectItem value="none">Nessuno</SelectItem>
+                          <SelectItem value="none">{t("common.none")}</SelectItem>
                           {suppliers.map((s) => (
                             <SelectItem key={s.id} value={s.id}>{s.name} ({s.code})</SelectItem>
                           ))}
@@ -583,7 +585,7 @@ export function SparePartWizard({
 
                 <div className="space-y-4">
                   <div className="flex items-center justify-between">
-                    <Label className="text-base font-medium">Stock Iniziale</Label>
+                    <Label className="text-base font-medium">{t("warehouse.initialStock")}</Label>
                     <Button type="button" variant="outline" size="sm" onClick={addWarehouseStock}>
                       <Warehouse className="h-4 w-4 mr-1" />
                       Aggiungi Magazzino
@@ -595,7 +597,7 @@ export function SparePartWizard({
                       <CardContent className="p-4">
                         <div className="flex gap-4 items-end">
                           <div className="flex-1">
-                            <Label className="text-xs">Magazzino</Label>
+                            <Label className="text-xs">{t("warehouse.warehouse")}</Label>
                             <Select
                               value={stock.warehouseId}
                               onValueChange={(value) => {
@@ -605,7 +607,7 @@ export function SparePartWizard({
                               }}
                             >
                               <SelectTrigger>
-                                <SelectValue placeholder="Seleziona" />
+                                <SelectValue placeholder={t("common.select")} />
                               </SelectTrigger>
                               <SelectContent>
                                 {warehouses.map((w: any) => (
@@ -615,7 +617,7 @@ export function SparePartWizard({
                             </Select>
                           </div>
                           <div className="w-24">
-                            <Label className="text-xs">Quantità</Label>
+                            <Label className="text-xs">{t("common.quantity")}</Label>
                             <Input
                               type="number"
                               min="1"
@@ -628,7 +630,7 @@ export function SparePartWizard({
                             />
                           </div>
                           <div className="flex-1">
-                            <Label className="text-xs">Posizione</Label>
+                            <Label className="text-xs">{t("warehouse.position")}</Label>
                             <Input
                               placeholder="es. A-01"
                               value={stock.location}
@@ -659,7 +661,7 @@ export function SparePartWizard({
               <div className="space-y-6">
                 <div className="text-center mb-4">
                   <CheckCircle2 className="h-12 w-12 mx-auto text-green-500 mb-2" />
-                  <h3 className="text-lg font-medium">Riepilogo</h3>
+                  <h3 className="text-lg font-medium">{t("repair.summary")}</h3>
                   <p className="text-sm text-muted-foreground">Verifica i dati prima di salvare</p>
                 </div>
 
@@ -684,7 +686,7 @@ export function SparePartWizard({
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4 border-t">
                       <div>
-                        <Label className="text-xs text-muted-foreground">SKU</Label>
+                        <Label className="text-xs text-muted-foreground">{t("products.sku")}</Label>
                         <p className="font-medium">{values.sku || "-"}</p>
                       </div>
                       <div>
@@ -702,24 +704,24 @@ export function SparePartWizard({
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4 border-t">
                       <div>
-                        <Label className="text-xs text-muted-foreground">Prezzo Vendita</Label>
+                        <Label className="text-xs text-muted-foreground">{t("products.salePrice")}</Label>
                         <p className="font-semibold text-lg text-primary">€{values.unitPrice || "0"}</p>
                       </div>
                       <div>
-                        <Label className="text-xs text-muted-foreground">Costo Acquisto</Label>
+                        <Label className="text-xs text-muted-foreground">{t("products.purchasePrice")}</Label>
                         <p className="font-medium">€{values.costPrice || "-"}</p>
                       </div>
                     </div>
 
                     {values.initialStock.length > 0 && (
                       <div className="pt-4 border-t">
-                        <Label className="text-xs text-muted-foreground">Stock Iniziale</Label>
+                        <Label className="text-xs text-muted-foreground">{t("warehouse.initialStock")}</Label>
                         <div className="mt-2 space-y-1">
                           {values.initialStock.map((stock, i) => {
                             const wh = warehouses.find((w: any) => w.id === stock.warehouseId);
                             return (
                               <div key={i} className="flex justify-between text-sm">
-                                <span>{wh?.name || "Magazzino"}</span>
+                                <span>{wh?.name || t("common.warehouse")}</span>
                                 <span className="font-medium">{stock.quantity} pz</span>
                               </div>
                             );
@@ -740,12 +742,12 @@ export function SparePartWizard({
                 data-testid="button-wizard-back"
               >
                 <ChevronLeft className="h-4 w-4 mr-1" />
-                {currentStep === 1 ? "Annulla" : "Indietro"}
+                {currentStep === 1 ? t("common.cancel") : t("common.back")}
               </Button>
 
               {currentStep < 3 ? (
                 <Button type="button" onClick={handleNext} data-testid="button-wizard-next">
-                  Avanti
+                  {t("common.next")}
                   <ChevronRight className="h-4 w-4 ml-1" />
                 </Button>
               ) : (

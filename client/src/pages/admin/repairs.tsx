@@ -22,6 +22,7 @@ import { RepairIntakeWizard } from "@/components/RepairIntakeWizard";
 import { useLocation } from "wouter";
 import { RepairsKanbanBoard } from "@/components/RepairsKanbanBoard";
 import { usePageTitle } from "@/hooks/use-page-title";
+import { useTranslation } from "react-i18next";
 
 interface RepairOrderWithSLA extends RepairOrder {
   slaSeverity: "in_time" | "late" | "urgent" | null;
@@ -43,7 +44,8 @@ interface PaginatedRepairsResponse {
 }
 
 export default function AdminRepairs() {
-  usePageTitle("Riparazioni");
+  const { t } = useTranslation();
+  usePageTitle(t("repairs.title"));
   const [searchQuery, setSearchQuery] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
@@ -207,13 +209,13 @@ export default function AdminRepairs() {
       document.body.removeChild(a);
       
       toast({
-        title: "Export completato",
-        description: "Il file Excel è stato scaricato con successo",
+        title: t("repairs.exportCompleted"),
+        description: t("repairs.exportCompletedDesc"),
       });
     } catch (error) {
       toast({
-        title: "Errore",
-        description: "Impossibile esportare i dati",
+        title: t("common.error"),
+        description: t("repairs.exportError"),
         variant: "destructive",
       });
     } finally {
@@ -230,7 +232,7 @@ export default function AdminRepairs() {
       // Invalidate both paginated and non-paginated queries
       queryClient.invalidateQueries({ queryKey: ["/api/repair-orders"] });
       queryClient.invalidateQueries({ queryKey: ["/api/admin/repairs/paginated"] });
-      toast({ title: "Stato aggiornato" });
+      toast({ title: t("repairs.statusUpdated") });
     },
   });
 
@@ -238,23 +240,22 @@ export default function AdminRepairs() {
 
   const getStatusBadge = (status: string) => {
     switch (status) {
-      case "ingressato": return <Badge variant="secondary">Ingressato</Badge>;
-      case "in_diagnosi": return <Badge variant="outline">In Diagnosi</Badge>;
-      case "preventivo_emesso": return <Badge variant="outline">Preventivo Emesso</Badge>;
-      case "preventivo_accettato": return <Badge>Preventivo Accettato</Badge>;
-      case "preventivo_rifiutato": return <Badge variant="destructive">Preventivo Rifiutato</Badge>;
-      case "attesa_ricambi": return <Badge variant="outline">Attesa Ricambi</Badge>;
-      case "in_riparazione": return <Badge>In Riparazione</Badge>;
-      case "in_test": return <Badge>In Test</Badge>;
-      case "pronto_ritiro": return <Badge>Pronto Ritiro</Badge>;
-      case "consegnato": return <Badge variant="outline">Consegnato</Badge>;
-      case "cancelled": return <Badge variant="destructive">Annullato</Badge>;
-      // Legacy stati
-      case "pending": return <Badge variant="secondary">In attesa</Badge>;
-      case "in_progress": return <Badge>In lavorazione</Badge>;
-      case "waiting_parts": return <Badge variant="outline">In attesa pezzi</Badge>;
-      case "completed": return <Badge>Completata</Badge>;
-      case "delivered": return <Badge variant="outline">Consegnata</Badge>;
+      case "ingressato": return <Badge variant="secondary">{t("repairs.statusLabels.ingressato")}</Badge>;
+      case "in_diagnosi": return <Badge variant="outline">{t("repairs.statusLabels.in_diagnosi")}</Badge>;
+      case "preventivo_emesso": return <Badge variant="outline">{t("repairs.statusLabels.preventivo_emesso")}</Badge>;
+      case "preventivo_accettato": return <Badge>{t("repairs.statusLabels.preventivo_accettato")}</Badge>;
+      case "preventivo_rifiutato": return <Badge variant="destructive">{t("repairs.statusLabels.preventivo_rifiutato")}</Badge>;
+      case "attesa_ricambi": return <Badge variant="outline">{t("repairs.statusLabels.attesa_ricambi")}</Badge>;
+      case "in_riparazione": return <Badge>{t("repairs.statusLabels.in_riparazione")}</Badge>;
+      case "in_test": return <Badge>{t("repairs.statusLabels.in_test")}</Badge>;
+      case "pronto_ritiro": return <Badge>{t("repairs.statusLabels.pronto_ritiro")}</Badge>;
+      case "consegnato": return <Badge variant="outline">{t("repairs.statusLabels.consegnato")}</Badge>;
+      case "cancelled": return <Badge variant="destructive">{t("repairs.statusLabels.cancelled")}</Badge>;
+      case "pending": return <Badge variant="secondary">{t("repairs.statusLabels.pending")}</Badge>;
+      case "in_progress": return <Badge>{t("repairs.statusLabels.in_progress")}</Badge>;
+      case "waiting_parts": return <Badge variant="outline">{t("repairs.statusLabels.waiting_parts")}</Badge>;
+      case "completed": return <Badge>{t("repairs.statusLabels.completed")}</Badge>;
+      case "delivered": return <Badge variant="outline">{t("repairs.statusLabels.delivered")}</Badge>;
       default: return <Badge variant="outline">{status}</Badge>;
     }
   };
@@ -278,49 +279,49 @@ export default function AdminRepairs() {
 
     actions.push({
       icon: Stethoscope,
-      label: "Diagnosi",
+      label: t("repairs.diagnosis"),
       available: status === "ingressato",
     });
 
     actions.push({
       icon: Receipt,
-      label: "Preventivo",
+      label: t("repairs.quote"),
       available: status === "in_diagnosi",
     });
 
     actions.push({
       icon: ClipboardCheck,
-      label: "Gestisci Preventivo",
+      label: t("repairs.manageQuote"),
       available: status === "preventivo_emesso",
     });
 
     actions.push({
       icon: Package,
-      label: "Ricambi",
+      label: t("repairs.spareParts"),
       available: status === "preventivo_accettato" || status === "attesa_ricambi",
     });
 
     actions.push({
       icon: Play,
-      label: "Riparazione",
+      label: t("repairs.repairAction"),
       available: status === "in_riparazione",
     });
 
     actions.push({
       icon: TestTube,
-      label: "Collaudo",
+      label: t("repairs.testing"),
       available: status === "in_test",
     });
 
     actions.push({
       icon: Truck,
-      label: "Consegna",
+      label: t("repairs.delivery"),
       available: status === "pronto_ritiro",
     });
 
     actions.push({
       icon: Eye,
-      label: "Dettagli",
+      label: t("common.details"),
       available: true,
     });
 
@@ -344,19 +345,19 @@ export default function AdminRepairs() {
               <Wrench className="h-5 w-5" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold tracking-tight">Lavorazioni</h1>
-              <p className="text-sm text-muted-foreground">Monitora tutte le riparazioni in corso</p>
+              <h1 className="text-2xl font-bold tracking-tight">{t("sidebar.sections.jobs")}</h1>
+              <p className="text-sm text-muted-foreground">{t("repairs.monitorAll")}</p>
             </div>
           </div>
           <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as "table" | "kanban")}>
             <TabsList>
               <TabsTrigger value="table" className="gap-2" data-testid="toggle-table-view">
                 <TableIcon className="h-4 w-4" />
-                Tavolo
+                {t("repairs.tableView")}
               </TabsTrigger>
               <TabsTrigger value="kanban" className="gap-2" data-testid="toggle-kanban-view">
                 <LayoutGrid className="h-4 w-4" />
-                Kanban
+                {t("repairs.kanbanView")}
               </TabsTrigger>
             </TabsList>
           </Tabs>
@@ -369,7 +370,7 @@ export default function AdminRepairs() {
             <div className="flex-1 relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Cerca lavorazione..."
+                placeholder={t("repairs.searchRepair")}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-9"
@@ -381,18 +382,18 @@ export default function AdminRepairs() {
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">Tutti gli stati</SelectItem>
-                <SelectItem value="ingressato">Ingressato</SelectItem>
-                <SelectItem value="in_diagnosi">In Diagnosi</SelectItem>
-                <SelectItem value="preventivo_emesso">Preventivo Emesso</SelectItem>
-                <SelectItem value="preventivo_accettato">Preventivo Accettato</SelectItem>
-                <SelectItem value="preventivo_rifiutato">Preventivo Rifiutato</SelectItem>
-                <SelectItem value="attesa_ricambi">Attesa Ricambi</SelectItem>
-                <SelectItem value="in_riparazione">In Riparazione</SelectItem>
-                <SelectItem value="in_test">In Test</SelectItem>
-                <SelectItem value="pronto_ritiro">Pronto Ritiro</SelectItem>
-                <SelectItem value="consegnato">Consegnato</SelectItem>
-                <SelectItem value="cancelled">Annullato</SelectItem>
+                <SelectItem value="all">{t("repairs.allStatuses")}</SelectItem>
+                <SelectItem value="ingressato">{t("repairs.statusLabels.ingressato")}</SelectItem>
+                <SelectItem value="in_diagnosi">{t("repairs.statusLabels.in_diagnosi")}</SelectItem>
+                <SelectItem value="preventivo_emesso">{t("repairs.statusLabels.preventivo_emesso")}</SelectItem>
+                <SelectItem value="preventivo_accettato">{t("repairs.statusLabels.preventivo_accettato")}</SelectItem>
+                <SelectItem value="preventivo_rifiutato">{t("repairs.statusLabels.preventivo_rifiutato")}</SelectItem>
+                <SelectItem value="attesa_ricambi">{t("repairs.statusLabels.attesa_ricambi")}</SelectItem>
+                <SelectItem value="in_riparazione">{t("repairs.statusLabels.in_riparazione")}</SelectItem>
+                <SelectItem value="in_test">{t("repairs.statusLabels.in_test")}</SelectItem>
+                <SelectItem value="pronto_ritiro">{t("repairs.statusLabels.pronto_ritiro")}</SelectItem>
+                <SelectItem value="consegnato">{t("repairs.statusLabels.consegnato")}</SelectItem>
+                <SelectItem value="cancelled">{t("repairs.statusLabels.cancelled")}</SelectItem>
               </SelectContent>
             </Select>
             <Select value={slaFilter} onValueChange={setSlaFilter}>
@@ -403,25 +404,25 @@ export default function AdminRepairs() {
                 <SelectItem value="all">
                   <span className="flex flex-wrap items-center gap-2">
                     <Clock className="h-3 w-3" />
-                    Tutti SLA
+                    {t("repairs.allSLA")}
                   </span>
                 </SelectItem>
                 <SelectItem value="in_time">
                   <span className="flex flex-wrap items-center gap-2">
                     <Clock className="h-3 w-3 text-green-500" />
-                    In Tempo
+                    {t("repairs.slaInTime")}
                   </span>
                 </SelectItem>
                 <SelectItem value="late">
                   <span className="flex flex-wrap items-center gap-2">
                     <AlertTriangle className="h-3 w-3 text-yellow-500" />
-                    In Ritardo
+                    {t("repairs.slaLate")}
                   </span>
                 </SelectItem>
                 <SelectItem value="urgent">
                   <span className="flex flex-wrap items-center gap-2">
                     <AlertCircle className="h-3 w-3 text-red-500" />
-                    Urgente
+                    {t("common.priorityUrgent")}
                   </span>
                 </SelectItem>
               </SelectContent>
@@ -429,10 +430,10 @@ export default function AdminRepairs() {
             <Select value={repairCenterFilter} onValueChange={setRepairCenterFilter}>
               <SelectTrigger className="w-full sm:w-44" data-testid="select-filter-repair-center">
                 <Building className="h-4 w-4 shrink-0" />
-                <SelectValue placeholder="Centro" />
+                <SelectValue placeholder={t("repairs.center")} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">Tutti i centri</SelectItem>
+                <SelectItem value="all">{t("repairs.allCenters")}</SelectItem>
                 {repairCenters.map((center) => (
                   <SelectItem key={center.id} value={center.id}>
                     {center.name}
@@ -443,10 +444,10 @@ export default function AdminRepairs() {
             <Select value={resellerFilter} onValueChange={setResellerFilter}>
               <SelectTrigger className="w-full sm:w-44" data-testid="select-filter-reseller">
                 <Store className="h-4 w-4 shrink-0" />
-                <SelectValue placeholder="Rivenditore" />
+                <SelectValue placeholder={t("common.supplier")} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">Tutti i rivenditori</SelectItem>
+                <SelectItem value="all">{t("repairs.allResellers")}</SelectItem>
                 {resellers.map((reseller) => (
                   <SelectItem key={reseller.id} value={reseller.id}>
                     {reseller.name}
@@ -457,10 +458,10 @@ export default function AdminRepairs() {
             <Select value={deviceTypeFilter} onValueChange={setDeviceTypeFilter}>
               <SelectTrigger className="w-full sm:w-44" data-testid="select-filter-device-type">
                 <Smartphone className="h-4 w-4 shrink-0" />
-                <SelectValue placeholder="Tipo dispositivo" />
+                <SelectValue placeholder={t("repairs.deviceType")} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">Tutti i dispositivi</SelectItem>
+                <SelectItem value="all">{t("repairs.allDevices")}</SelectItem>
                 {deviceTypes.map((type) => (
                   <SelectItem key={type.id} value={type.name}>
                     {type.name}
@@ -479,7 +480,7 @@ export default function AdminRepairs() {
                       format(dateRange.from, "dd MMM yyyy", { locale: it })
                     )
                   ) : (
-                    "Seleziona periodo"
+                    t("repairs.selectPeriod")
                   )}
                 </Button>
               </PopoverTrigger>
@@ -498,7 +499,7 @@ export default function AdminRepairs() {
               data-testid="button-new-acceptance"
             >
               <Plus className="h-4 w-4 mr-2" />
-              Nuovo ingresso
+              {t("repairs.newIntake")}
             </Button>
             <Button
               onClick={handleExport}
@@ -507,7 +508,7 @@ export default function AdminRepairs() {
               data-testid="button-export-repairs"
             >
               <Download className="h-4 w-4 mr-2" />
-              {isExporting ? "Esportazione..." : "Esporta Excel"}
+              {isExporting ? t("repairs.exporting") : t("reports.exportExcel")}
             </Button>
           </div>
         </CardHeader>
@@ -529,21 +530,21 @@ export default function AdminRepairs() {
           ) : repairs.length === 0 ? (
             <div className="text-center py-12 text-muted-foreground">
               <Wrench className="h-12 w-12 mx-auto mb-4 opacity-20" />
-              <p>Nessuna lavorazione trovata</p>
+              <p>{t("repairs.noRepairsFound")}</p>
             </div>
           ) : (
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Ordine</TableHead>
-                  <TableHead>Cliente</TableHead>
-                  <TableHead>Rivenditore</TableHead>
-                  <TableHead>Centro</TableHead>
-                  <TableHead>Dispositivo</TableHead>
-                  <TableHead>Stato</TableHead>
-                  <TableHead>SLA</TableHead>
-                  <TableHead>Data</TableHead>
-                  <TableHead className="text-right">Azioni</TableHead>
+                  <TableHead>{t("common.order")}</TableHead>
+                  <TableHead>{t("common.customer")}</TableHead>
+                  <TableHead>{t("sidebar.items.resellers")}</TableHead>
+                  <TableHead>{t("repairs.center")}</TableHead>
+                  <TableHead>{t("repairs.device")}</TableHead>
+                  <TableHead>{t("common.status")}</TableHead>
+                  <TableHead>{t("settings.tabs.sla")}</TableHead>
+                  <TableHead>{t("common.date")}</TableHead>
+                  <TableHead className="text-right">{t("common.actions")}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -647,7 +648,7 @@ export default function AdminRepairs() {
                               <p>
                                 {repair.slaPhase}: {
                                   repair.slaMinutesInState >= 1440
-                                    ? `${Math.floor(repair.slaMinutesInState / 1440)} giorni ${Math.floor((repair.slaMinutesInState % 1440) / 60)}h`
+                                    ? `${Math.floor(repair.slaMinutesInState / 1440)} ${t("common.days")} ${Math.floor((repair.slaMinutesInState % 1440) / 60)}h`
                                     : repair.slaMinutesInState >= 60
                                     ? `${Math.floor(repair.slaMinutesInState / 60)}h ${repair.slaMinutesInState % 60}m`
                                     : `${repair.slaMinutesInState} min`
@@ -700,7 +701,7 @@ export default function AdminRepairs() {
         {viewMode === "table" && totalPages > 1 && (
           <CardFooter className="flex items-center justify-between border-t pt-4">
             <div className="text-sm text-muted-foreground">
-              Pagina {page} di {totalPages} ({total} risultati)
+              {t("common.page")} {page} {t("common.of")} {totalPages} ({total} {t("common.results")})
             </div>
             <div className="flex flex-wrap items-center gap-1">
               <Button

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useParams, Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
@@ -50,6 +51,7 @@ function formatPrice(cents: number): string {
 }
 
 export default function MarketplaceProductDetail() {
+  const { t } = useTranslation();
   const { productId, resellerId } = useParams<{ productId: string; resellerId?: string }>();
   const [, setLocation] = useLocation();
   const { toast } = useToast();
@@ -75,10 +77,10 @@ export default function MarketplaceProductDetail() {
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['/api/shop', variables.resellerId, 'cart'] });
-      toast({ title: "Prodotto aggiunto al carrello" });
+      toast({ title: t("marketplace.detail.addedToCart") });
     },
     onError: (error: any) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("marketplace.detail.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -109,7 +111,7 @@ export default function MarketplaceProductDetail() {
   }
 
   const backUrl = resellerId ? `/shop/${resellerId}` : "/marketplace";
-  const backLabel = resellerId ? "Torna al Negozio" : "Torna al Marketplace";
+  const backLabel = resellerId ? t("marketplace.detail.backToShop") : t("marketplace.detail.backToMarketplace");
 
   if (error || !data) {
     return (
@@ -122,9 +124,9 @@ export default function MarketplaceProductDetail() {
         </Link>
         <div className="text-center py-16">
           <Package className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
-          <h3 className="text-xl font-semibold mb-2">Prodotto non trovato</h3>
+          <h3 className="text-xl font-semibold mb-2">{t("marketplace.detail.productNotFound")}</h3>
           <p className="text-muted-foreground">
-            Il prodotto richiesto non esiste o non è più disponibile
+            {t("marketplace.detail.productNotFoundDesc")}
           </p>
         </div>
       </div>
@@ -203,7 +205,7 @@ export default function MarketplaceProductDetail() {
             </span>
             {sellerCount > 1 && (
               <span className="text-sm text-muted-foreground ml-3">
-                da {sellerCount} venditor{sellerCount > 1 ? 'i' : 'e'}
+                {t("marketplace.detail.fromSellers", { count: sellerCount })}
               </span>
             )}
           </div>
@@ -219,12 +221,12 @@ export default function MarketplaceProductDetail() {
                 ? 'text-green-700 dark:text-green-400'
                 : 'text-red-700 dark:text-red-400'
               }>
-                {totalStock > 0 ? `${totalStock} disponibili` : 'Non disponibile'}
+                {totalStock > 0 ? t("marketplace.detail.available", { count: totalStock }) : t("marketplace.detail.unavailable")}
               </span>
             </div>
             <div className="flex items-center gap-1.5 text-muted-foreground">
               <Truck className="h-4 w-4" />
-              <span>Spedizione rapida</span>
+              <span>{t("marketplace.detail.fastShipping")}</span>
             </div>
           </div>
 
@@ -232,7 +234,7 @@ export default function MarketplaceProductDetail() {
             <div>
               <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground mb-2 flex items-center gap-2">
                 <Info className="h-4 w-4" />
-                Descrizione
+                {t("marketplace.detail.description")}
               </h3>
               <p className="text-sm leading-relaxed" data-testid="text-product-description">
                 {product.description}
@@ -243,7 +245,7 @@ export default function MarketplaceProductDetail() {
           {hasSpecs && (
             <Card>
               <CardHeader className="pb-3">
-                <CardTitle className="text-base">Specifiche Tecniche</CardTitle>
+                <CardTitle className="text-base">{t("marketplace.detail.technicalSpecs")}</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-2 gap-x-6 gap-y-3 text-sm">
@@ -251,25 +253,25 @@ export default function MarketplaceProductDetail() {
                     <>
                       {specs.storage && (
                         <div>
-                          <p className="text-muted-foreground text-xs mb-0.5">Memoria</p>
+                          <p className="text-muted-foreground text-xs mb-0.5">{t("marketplace.detail.storage")}</p>
                           <p className="font-medium">{specs.storage}</p>
                         </div>
                       )}
                       {specs.color && (
                         <div>
-                          <p className="text-muted-foreground text-xs mb-0.5">Colore</p>
+                          <p className="text-muted-foreground text-xs mb-0.5">{t("marketplace.detail.color")}</p>
                           <p className="font-medium">{specs.color}</p>
                         </div>
                       )}
                       {specs.condition && (
                         <div>
-                          <p className="text-muted-foreground text-xs mb-0.5">Condizione</p>
+                          <p className="text-muted-foreground text-xs mb-0.5">{t("marketplace.detail.condition")}</p>
                           <p className="font-medium">{specs.condition}</p>
                         </div>
                       )}
                       {specs.batteryHealth && (
                         <div>
-                          <p className="text-muted-foreground text-xs mb-0.5">Batteria</p>
+                          <p className="text-muted-foreground text-xs mb-0.5">{t("marketplace.detail.battery")}</p>
                           <p className="font-medium">{specs.batteryHealth}%</p>
                         </div>
                       )}
@@ -279,13 +281,13 @@ export default function MarketplaceProductDetail() {
                     <>
                       {specs.color && (
                         <div>
-                          <p className="text-muted-foreground text-xs mb-0.5">Colore</p>
+                          <p className="text-muted-foreground text-xs mb-0.5">{t("marketplace.detail.color")}</p>
                           <p className="font-medium">{specs.color}</p>
                         </div>
                       )}
                       {specs.material && (
                         <div>
-                          <p className="text-muted-foreground text-xs mb-0.5">Materiale</p>
+                          <p className="text-muted-foreground text-xs mb-0.5">{t("marketplace.detail.material")}</p>
                           <p className="font-medium">{specs.material}</p>
                         </div>
                       )}
@@ -299,7 +301,7 @@ export default function MarketplaceProductDetail() {
           <div>
             <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground mb-4 flex items-center gap-2">
               <Store className="h-4 w-4" />
-              Venditori disponibili ({sellers.length})
+              {t("marketplace.detail.availableSellers", { count: sellers.length })}
             </h3>
             <div className="space-y-2">
               {sellers.map((seller, idx) => (
@@ -324,12 +326,12 @@ export default function MarketplaceProductDetail() {
                             {seller.resellerName}
                           </p>
                           {seller.isAdmin && (
-                            <Badge variant="secondary" className="text-xs">Ufficiale</Badge>
+                            <Badge variant="secondary" className="text-xs">{t("marketplace.detail.official")}</Badge>
                           )}
                         </div>
                         <div className="flex items-center gap-1 text-xs text-muted-foreground mt-0.5">
                           <Check className="h-3 w-3 text-green-600 dark:text-green-400" />
-                          <span>{seller.isAdmin ? 'Negozio ufficiale' : 'Venditore verificato'}</span>
+                          <span>{seller.isAdmin ? t("marketplace.detail.officialStore") : t("marketplace.detail.verifiedSeller")}</span>
                         </div>
                       </div>
                     </div>
@@ -347,7 +349,7 @@ export default function MarketplaceProductDetail() {
                         data-testid={`button-add-cart-${idx}`}
                       >
                         <ShoppingCart className="h-4 w-4 mr-1" />
-                        Aggiungi
+                        {t("marketplace.detail.add")}
                       </Button>
                     </div>
                   </div>

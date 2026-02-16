@@ -21,6 +21,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Link, useLocation } from "wouter";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
+import { useTranslation } from "react-i18next";
 
 type CommissionStatus = "pending" | "accrued" | "invoiced" | "paid" | "cancelled";
 
@@ -56,6 +57,7 @@ const formatCurrency = (cents: number) => {
 };
 
 export default function AdminUtilityCommissions() {
+  const { t } = useTranslation();
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [yearFilter, setYearFilter] = useState<number>(new Date().getFullYear());
@@ -90,10 +92,10 @@ export default function AdminUtilityCommissions() {
       queryClient.invalidateQueries({ queryKey: ["/api/utility/commissions"] });
       setDialogOpen(false);
       setEditingCommission(null);
-      toast({ title: "Commissione creata con successo" });
+      toast({ title: t("utility.commissionCreated") });
     },
     onError: (error: Error) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -106,10 +108,10 @@ export default function AdminUtilityCommissions() {
       queryClient.invalidateQueries({ queryKey: ["/api/utility/commissions"] });
       setDialogOpen(false);
       setEditingCommission(null);
-      toast({ title: "Commissione aggiornata" });
+      toast({ title: t("utility.commissionUpdated") });
     },
     onError: (error: Error) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -119,10 +121,10 @@ export default function AdminUtilityCommissions() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/utility/commissions"] });
-      toast({ title: "Commissione eliminata" });
+      toast({ title: t("utility.commissionDeleted") });
     },
     onError: (error: Error) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -133,10 +135,10 @@ export default function AdminUtilityCommissions() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/utility/commissions"] });
-      toast({ title: "Commissione approvata", description: "La commissione è stata approvata con successo" });
+      toast({ title: t("utility.commissionApproved"), description: t("utility.commissionApprovedDesc") });
     },
     onError: (error: Error) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -150,10 +152,10 @@ export default function AdminUtilityCommissions() {
       setRejectDialogOpen(false);
       setRejectingCommission(null);
       setRejectReason("");
-      toast({ title: "Commissione rifiutata", description: "La commissione è stata rifiutata" });
+      toast({ title: t("utility.commissionRejected"), description: t("utility.commissionRejectedDesc") });
     },
     onError: (error: Error) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -311,7 +313,7 @@ export default function AdminUtilityCommissions() {
             <div className="flex flex-wrap items-center gap-2">
               <Search className="h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Cerca per pratica..."
+                placeholder={t("utility.searchPractice")}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="max-w-xs"
@@ -320,10 +322,10 @@ export default function AdminUtilityCommissions() {
             </div>
             <Select value={statusFilter} onValueChange={setStatusFilter}>
               <SelectTrigger className="w-32" data-testid="select-status-filter">
-                <SelectValue placeholder="Stato" />
+                <SelectValue placeholder={t("common.status")} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">Tutti</SelectItem>
+                <SelectItem value="all">{t("common.allMasc")}</SelectItem>
                 {Object.entries(statusLabels).map(([value, label]) => (
                   <SelectItem key={value} value={value}>{label}</SelectItem>
                 ))}
@@ -364,12 +366,12 @@ export default function AdminUtilityCommissions() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Pratica</TableHead>
-                  <TableHead>Periodo</TableHead>
-                  <TableHead>Importo</TableHead>
-                  <TableHead>Stato</TableHead>
-                  <TableHead>Data Pagamento</TableHead>
-                  <TableHead className="text-right">Azioni</TableHead>
+                  <TableHead>{t("utility.practice")}</TableHead>
+                  <TableHead>{t("utility.period")}</TableHead>
+                  <TableHead>{t("common.amount")}</TableHead>
+                  <TableHead>{t("common.status")}</TableHead>
+                  <TableHead>{t("utility.paymentDate")}</TableHead>
+                  <TableHead className="text-right">{t("common.actions")}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -486,7 +488,7 @@ export default function AdminUtilityCommissions() {
                 required
               >
                 <SelectTrigger data-testid="select-practice">
-                  <SelectValue placeholder="Seleziona pratica" />
+                  <SelectValue placeholder={t("utility.selectPractice")} />
                 </SelectTrigger>
                 <SelectContent>
                   {practices.filter(p => p.status === "completata").map((practice) => (
@@ -553,7 +555,7 @@ export default function AdminUtilityCommissions() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="status">Stato</Label>
+                <Label htmlFor="status">{t("common.status")}</Label>
                 <Select 
                   value={selectedStatus}
                   onValueChange={(v) => setSelectedStatus(v as CommissionStatus)}
@@ -571,7 +573,7 @@ export default function AdminUtilityCommissions() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="notes">Note</Label>
+              <Label htmlFor="notes">{t("common.notes")}</Label>
               <Textarea
                 id="notes"
                 name="notes"
@@ -605,7 +607,7 @@ export default function AdminUtilityCommissions() {
       <Dialog open={rejectDialogOpen} onOpenChange={setRejectDialogOpen}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>Rifiuta Commissione</DialogTitle>
+            <DialogTitle>{t("utility.rejectCommission")}</DialogTitle>
             <DialogDescription>
               Inserisci la motivazione del rifiuto per la commissione di{" "}
               {rejectingCommission && formatCurrency(rejectingCommission.amountCents)}.
@@ -618,7 +620,7 @@ export default function AdminUtilityCommissions() {
                 id="rejectReason"
                 value={rejectReason}
                 onChange={(e) => setRejectReason(e.target.value)}
-                placeholder="Inserisci il motivo del rifiuto..."
+                placeholder={t("utility.rejectionReason")}
                 rows={3}
                 data-testid="input-reject-reason"
               />

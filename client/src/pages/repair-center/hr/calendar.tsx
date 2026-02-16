@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useQuery } from "@tanstack/react-query";
@@ -17,15 +18,16 @@ interface CalendarEvent {
   endDate: string;
 }
 
-const eventTypeConfig: Record<string, { label: string; icon: any; color: string; bgColor: string }> = {
-  vacation: { label: "Ferie", icon: CalendarDays, color: "text-emerald-600", bgColor: "bg-emerald-100 dark:bg-emerald-900/30" },
-  permit: { label: "Permesso", icon: CalendarDays, color: "text-blue-600", bgColor: "bg-blue-100 dark:bg-blue-900/30" },
-  rol: { label: "ROL", icon: CalendarDays, color: "text-cyan-600", bgColor: "bg-cyan-100 dark:bg-cyan-900/30" },
-  sick: { label: "Malattia", icon: Thermometer, color: "text-red-600", bgColor: "bg-red-100 dark:bg-red-900/30" },
-  expense: { label: "Trasferta", icon: Receipt, color: "text-amber-600", bgColor: "bg-amber-100 dark:bg-amber-900/30" },
-};
 
 export default function RepairCenterHrCalendar() {
+  const { t } = useTranslation();
+  const eventTypeConfig: Record<string, { label: string; icon: any; color: string; bgColor: string }> = {
+    vacation: { label: t("hr.vacation"), icon: CalendarDays, color: "text-emerald-600", bgColor: "bg-emerald-100 dark:bg-emerald-900/30" },
+    permit: { label: "Permesso", icon: CalendarDays, color: "text-blue-600", bgColor: "bg-blue-100 dark:bg-blue-900/30" },
+    rol: { label: "ROL", icon: CalendarDays, color: "text-cyan-600", bgColor: "bg-cyan-100 dark:bg-cyan-900/30" },
+    sick: { label: t("hr.sickLeave"), icon: Thermometer, color: "text-red-600", bgColor: "bg-red-100 dark:bg-red-900/30" },
+    expense: { label: "Trasferta", icon: Receipt, color: "text-amber-600", bgColor: "bg-amber-100 dark:bg-amber-900/30" },
+  };
   const [currentMonth, setCurrentMonth] = useState(new Date());
 
   const startDate = startOfMonth(currentMonth);
@@ -68,7 +70,7 @@ export default function RepairCenterHrCalendar() {
               <Calendar className="h-5 w-5 sm:h-7 sm:w-7 text-white" />
             </div>
             <div>
-              <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-white tracking-tight">Calendario</h1>
+              <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-white tracking-tight">{t("hr.calendar")}</h1>
               <p className="text-emerald-100">Visualizzazione assenze e presenze</p>
             </div>
           </div>

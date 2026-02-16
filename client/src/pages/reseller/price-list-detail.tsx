@@ -49,6 +49,7 @@ import {
 import type { PriceList, PriceListItem, Product, ServiceItem } from "@shared/schema";
 import { SearchableProductCombobox } from "@/components/SearchableProductCombobox";
 import { SearchableServiceCombobox } from "@/components/SearchableServiceCombobox";
+import { useTranslation } from "react-i18next";
 
 const formatCurrency = (cents: number) => {
   return new Intl.NumberFormat("it-IT", {
@@ -60,6 +61,7 @@ const formatCurrency = (cents: number) => {
 type PriceListWithItems = PriceList & { items: PriceListItem[] };
 
 export default function PriceListDetail() {
+  const { t } = useTranslation();
   const { toast } = useToast();
   const [, params] = useRoute("/reseller/price-lists/:id");
   const listId = params?.id;
@@ -103,13 +105,13 @@ export default function PriceListDetail() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/price-lists", listId] });
       toast({
-        title: "Aliquota IVA aggiornata",
-        description: "L'aliquota IVA del listino è stata aggiornata.",
+        title: t("products.vatRateUpdatedTitle"),
+        description: t("products.vatRateUpdated"),
       });
     },
     onError: (error: any) => {
       toast({
-        title: "Errore",
+        title: t("common.error"),
         description: error.message || "Errore durante l'aggiornamento dell'aliquota.",
         variant: "destructive",
       });
@@ -122,11 +124,11 @@ export default function PriceListDetail() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/price-lists", listId] });
-      toast({ title: "Voce aggiunta", description: "Il prezzo è stato aggiunto al listino" });
+      toast({ title: t("products.itemAddedTitle"), description: "Il prezzo è stato aggiunto al listino" });
       resetForm();
     },
     onError: (error: any) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -140,7 +142,7 @@ export default function PriceListDetail() {
       setEditingItem(null);
     },
     onError: (error: any) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -150,11 +152,11 @@ export default function PriceListDetail() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/price-lists", listId] });
-      toast({ title: "Voce eliminata", description: "Il prezzo è stato rimosso dal listino" });
+      toast({ title: t("products.itemDeletedTitle"), description: "Il prezzo è stato rimosso dal listino" });
       setDeleteItem(null);
     },
     onError: (error: any) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -170,7 +172,7 @@ export default function PriceListDetail() {
 
   const handleAddSubmit = () => {
     if (!selectedId || !priceCents) {
-      toast({ title: "Errore", description: "Seleziona un elemento e inserisci il prezzo", variant: "destructive" });
+      toast({ title: t("common.error"), description: "Seleziona un elemento e inserisci il prezzo", variant: "destructive" });
       return;
     }
     
@@ -264,7 +266,7 @@ export default function PriceListDetail() {
       <div className="container mx-auto py-6 text-center">
         <p className="text-muted-foreground">Listino non trovato</p>
         <Link href="/reseller/price-lists">
-          <Button variant="ghost">Torna ai listini</Button>
+          <Button variant="ghost">{t("products.backToPriceLists")}</Button>
         </Link>
       </div>
     );
@@ -340,21 +342,21 @@ export default function PriceListDetail() {
           {filteredItems.length === 0 ? (
             <div className="text-center py-12 text-muted-foreground">
               <Package className="h-12 w-12 mx-auto mb-4 opacity-50" />
-              <p>Nessuna voce nel listino</p>
+              <p>{t("products.noPriceListItems")}</p>
               <p className="text-sm">Aggiungi prodotti o servizi per definire i prezzi</p>
             </div>
           ) : (
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="w-[60px]">Foto</TableHead>
-                  <TableHead>Nome</TableHead>
-                  <TableHead>Tipo</TableHead>
+                  <TableHead className="w-[60px]">{t("common.photo")}</TableHead>
+                  <TableHead>{t("common.name")}</TableHead>
+                  <TableHead>{t("common.type")}</TableHead>
                   <TableHead className="text-right">Prezzo Originale</TableHead>
                   <TableHead className="text-right">Prezzo Costo</TableHead>
-                  <TableHead className="text-right">Prezzo Listino</TableHead>
-                  <TableHead className="text-right">IVA</TableHead>
-                  <TableHead className="text-right">Azioni</TableHead>
+                  <TableHead className="text-right">{t("products.listPrice")}</TableHead>
+                  <TableHead className="text-right">{t("common.vat")}</TableHead>
+                  <TableHead className="text-right">{t("common.actions")}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -380,9 +382,9 @@ export default function PriceListDetail() {
                     <TableCell>
                       <Badge variant="outline">
                         {isProduct ? (
-                          <><Package className="h-3 w-3 mr-1" /> Prodotto</>
+                          <><Package className="h-3 w-3 mr-1" />{t("common.product")}</>
                         ) : (
-                          <><Wrench className="h-3 w-3 mr-1" /> Servizio</>
+                          <><Wrench className="h-3 w-3 mr-1" />{t("common.service")}</>
                         )}
                       </Badge>
                     </TableCell>
@@ -436,27 +438,27 @@ export default function PriceListDetail() {
       <Dialog open={showAddDialog} onOpenChange={(open) => !open && resetForm()}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Aggiungi Voce al Listino</DialogTitle>
+            <DialogTitle>{t("products.addPriceListItem")}</DialogTitle>
             <DialogDescription>
               Seleziona un prodotto o servizio e definisci il prezzo
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label>Tipo</Label>
+              <Label>{t("common.type")}</Label>
               <Select value={itemType} onValueChange={(v) => { setItemType(v as "product" | "service"); setSelectedId(""); setSelectedProduct(null); setSelectedService(null); }}>
                 <SelectTrigger data-testid="select-type">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="product">Prodotto</SelectItem>
-                  <SelectItem value="service">Servizio</SelectItem>
+                  <SelectItem value="product">{t("common.product")}</SelectItem>
+                  <SelectItem value="service">{t("common.service")}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
             
             <div className="space-y-2">
-              <Label>{itemType === "product" ? "Prodotto" : "Servizio"}</Label>
+              <Label>{itemType === "product" ? t("common.product") : t("common.service")}</Label>
               {itemType === "product" ? (
                 <SearchableProductCombobox
                   onSelect={(product) => {
@@ -564,13 +566,13 @@ export default function PriceListDetail() {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={resetForm}>Annulla</Button>
+            <Button variant="outline" onClick={resetForm}>{t("common.cancel")}</Button>
             <Button
               onClick={handleAddSubmit}
               disabled={addItemMutation.isPending}
               data-testid="button-submit-add"
             >
-              {addItemMutation.isPending ? "Aggiunta..." : "Aggiungi"}
+              {addItemMutation.isPending ? "Aggiunta..." : t("common.add")}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -598,14 +600,14 @@ export default function PriceListDetail() {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setEditingItem(null)}>Annulla</Button>
+            <Button variant="outline" onClick={() => setEditingItem(null)}>{t("common.cancel")}</Button>
             <Button
               onClick={handleUpdateSubmit}
               disabled={updateItemMutation.isPending}
               data-testid="button-submit-edit"
             >
               <Save className="h-4 w-4 mr-2" />
-              {updateItemMutation.isPending ? "Salvataggio..." : "Salva"}
+              {updateItemMutation.isPending ? t("profile.saving") : t("common.save")}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -614,19 +616,19 @@ export default function PriceListDetail() {
       <AlertDialog open={!!deleteItem} onOpenChange={(open) => !open && setDeleteItem(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Conferma Eliminazione</AlertDialogTitle>
+            <AlertDialogTitle>{t("admin.teams.deleteConfirm")}</AlertDialogTitle>
             <AlertDialogDescription>
               Sei sicuro di voler rimuovere questa voce dal listino?
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Annulla</AlertDialogCancel>
+            <AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>
             <AlertDialogAction
               onClick={() => deleteItem && deleteItemMutation.mutate(deleteItem.id)}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
               data-testid="button-confirm-delete"
             >
-              {deleteItemMutation.isPending ? "Eliminazione..." : "Elimina"}
+              {deleteItemMutation.isPending ? t("pages.deleting") : t("common.delete")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

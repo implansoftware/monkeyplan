@@ -1,27 +1,29 @@
 import { useRoute } from "wouter";
 import { useQuery } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Loader2, Package, Smartphone, Calendar, MapPin, CheckCircle, Clock, Wrench, AlertCircle } from "lucide-react";
 import { usePageTitle } from "@/hooks/use-page-title";
 
-const statusConfig: Record<string, { label: string; color: string; icon: typeof Clock }> = {
-  pending: { label: "In Attesa", color: "bg-yellow-500", icon: Clock },
-  received: { label: "Ricevuto", color: "bg-blue-500", icon: Package },
-  diagnosing: { label: "In Diagnosi", color: "bg-purple-500", icon: Wrench },
-  awaiting_quote: { label: "In Attesa Preventivo", color: "bg-orange-500", icon: AlertCircle },
-  quote_approved: { label: "Preventivo Approvato", color: "bg-green-500", icon: CheckCircle },
-  quote_rejected: { label: "Preventivo Rifiutato", color: "bg-red-500", icon: AlertCircle },
-  repairing: { label: "In Riparazione", color: "bg-indigo-500", icon: Wrench },
-  awaiting_parts: { label: "In Attesa Ricambi", color: "bg-amber-500", icon: Package },
-  completed: { label: "Completato", color: "bg-green-600", icon: CheckCircle },
-  delivered: { label: "Consegnato", color: "bg-emerald-600", icon: CheckCircle },
-};
-
 export default function PublicTrack() {
+  const { t } = useTranslation();
   usePageTitle("Traccia Riparazione");
   const [, params] = useRoute("/track/:orderNumber");
   const orderNumber = params?.orderNumber;
+
+  const statusConfig: Record<string, { label: string; color: string; icon: typeof Clock }> = {
+    pending: { label: t("public.track.statusPending"), color: "bg-yellow-500", icon: Clock },
+    received: { label: t("public.track.statusReceived"), color: "bg-blue-500", icon: Package },
+    diagnosing: { label: t("public.track.statusDiagnosing"), color: "bg-purple-500", icon: Wrench },
+    awaiting_quote: { label: t("public.track.statusAwaitingQuote"), color: "bg-orange-500", icon: AlertCircle },
+    quote_approved: { label: t("public.track.statusQuoteApproved"), color: "bg-green-500", icon: CheckCircle },
+    quote_rejected: { label: t("public.track.statusQuoteRejected"), color: "bg-red-500", icon: AlertCircle },
+    repairing: { label: t("public.track.statusRepairing"), color: "bg-indigo-500", icon: Wrench },
+    awaiting_parts: { label: t("public.track.statusAwaitingParts"), color: "bg-amber-500", icon: Package },
+    completed: { label: t("public.track.statusCompleted"), color: "bg-green-600", icon: CheckCircle },
+    delivered: { label: t("public.track.statusDelivered"), color: "bg-emerald-600", icon: CheckCircle },
+  };
 
   const { data: repair, isLoading, error } = useQuery({
     queryKey: ["/api/public/track", orderNumber],
@@ -33,7 +35,7 @@ export default function PublicTrack() {
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="text-center">
           <Loader2 className="h-12 w-12 animate-spin text-primary mx-auto mb-4" />
-          <p className="text-muted-foreground">Caricamento stato riparazione...</p>
+          <p className="text-muted-foreground">{t("public.track.caricamento")}</p>
         </div>
       </div>
     );
@@ -45,12 +47,12 @@ export default function PublicTrack() {
         <Card className="max-w-md w-full">
           <CardHeader className="text-center">
             <AlertCircle className="h-16 w-16 text-destructive mx-auto mb-4" />
-            <CardTitle>Riparazione Non Trovata</CardTitle>
+            <CardTitle>{t("public.track.nonTrovata")}</CardTitle>
           </CardHeader>
           <CardContent className="text-center text-muted-foreground">
-            <p>Non è stata trovata nessuna riparazione con il numero d'ordine:</p>
+            <p>{t("public.track.nonTrovataDesc")}</p>
             <p className="font-mono font-bold mt-2">{orderNumber}</p>
-            <p className="mt-4 text-sm">Verifica il numero d'ordine e riprova.</p>
+            <p className="mt-4 text-sm">{t("public.track.verificaOrdine")}</p>
           </CardContent>
         </Card>
       </div>
@@ -64,8 +66,8 @@ export default function PublicTrack() {
     <div className="min-h-screen bg-background p-4">
       <div className="max-w-2xl mx-auto">
         <div className="text-center mb-8">
-          <h1 className="text-2xl font-bold text-foreground">Stato Riparazione</h1>
-          <p className="text-muted-foreground mt-1">Numero Ordine: <span className="font-mono font-bold">{orderNumber}</span></p>
+          <h1 className="text-2xl font-bold text-foreground">{t("public.track.title")}</h1>
+          <p className="text-muted-foreground mt-1">{t("public.track.orderNumber")}: <span className="font-mono font-bold">{orderNumber}</span></p>
         </div>
 
         <Card className="mb-6">
@@ -73,7 +75,7 @@ export default function PublicTrack() {
             <div className="flex items-center justify-between gap-4 flex-wrap">
               <CardTitle className="flex flex-wrap items-center gap-2">
                 <StatusIcon className="h-5 w-5" />
-                Stato Attuale
+                {t("public.track.statoAttuale")}
               </CardTitle>
               <Badge className={`${status.color} text-white`}>
                 {status.label}
@@ -85,7 +87,7 @@ export default function PublicTrack() {
               <div className="flex items-start gap-3">
                 <Smartphone className="h-5 w-5 text-muted-foreground mt-0.5" />
                 <div>
-                  <p className="font-medium">Dispositivo</p>
+                  <p className="font-medium">{t("public.track.dispositivo")}</p>
                   <p className="text-muted-foreground">
                     {repair.deviceBrand} {repair.deviceModel}
                     {repair.deviceColor && ` - ${repair.deviceColor}`}
@@ -97,7 +99,7 @@ export default function PublicTrack() {
                 <div className="flex items-start gap-3">
                   <Wrench className="h-5 w-5 text-muted-foreground mt-0.5" />
                   <div>
-                    <p className="font-medium">Problema Segnalato</p>
+                    <p className="font-medium">{t("public.track.problemaSegnalato")}</p>
                     <p className="text-muted-foreground">{repair.problemDescription}</p>
                   </div>
                 </div>
@@ -106,7 +108,7 @@ export default function PublicTrack() {
               <div className="flex items-start gap-3">
                 <Calendar className="h-5 w-5 text-muted-foreground mt-0.5" />
                 <div>
-                  <p className="font-medium">Data Ingresso</p>
+                  <p className="font-medium">{t("public.track.dataIngresso")}</p>
                   <p className="text-muted-foreground">
                     {repair.ingressatoAt 
                       ? new Date(repair.ingressatoAt).toLocaleDateString('it-IT', { 
@@ -124,7 +126,7 @@ export default function PublicTrack() {
                 <div className="flex items-start gap-3">
                   <Clock className="h-5 w-5 text-muted-foreground mt-0.5" />
                   <div>
-                    <p className="font-medium">Data Prevista Completamento</p>
+                    <p className="font-medium">{t("public.track.dataPrevista")}</p>
                     <p className="text-muted-foreground">
                       {new Date(repair.estimatedCompletionDate).toLocaleDateString('it-IT', { 
                         day: '2-digit', month: 'long', year: 'numeric' 
@@ -138,7 +140,7 @@ export default function PublicTrack() {
         </Card>
 
         <div className="text-center text-sm text-muted-foreground">
-          <p>Per maggiori informazioni contatta il centro assistenza.</p>
+          <p>{t("public.track.contattoAssistenza")}</p>
         </div>
       </div>
     </div>

@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { UtilityService, UtilitySupplier } from "@shared/schema";
@@ -20,14 +21,6 @@ import { UtilityServiceDetailSheet } from "@/components/UtilityServiceDetailShee
 
 type ServiceCategory = "fisso" | "mobile" | "centralino" | "luce" | "gas" | "altro";
 
-const categoryLabels: Record<ServiceCategory, string> = {
-  fisso: "Fisso",
-  mobile: "Mobile",
-  centralino: "Centralino",
-  luce: "Luce",
-  gas: "Gas",
-  altro: "Altro",
-};
 
 const categoryColors: Record<ServiceCategory, string> = {
   fisso: "bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300",
@@ -47,13 +40,6 @@ const categoryIcons: Record<ServiceCategory, typeof Phone> = {
   altro: MoreHorizontal,
 };
 
-const formatCurrency = (cents: number | null) => {
-  if (cents === null) return "-";
-  return new Intl.NumberFormat("it-IT", {
-    style: "currency",
-    currency: "EUR",
-  }).format(cents / 100);
-};
 
 const calculateCommission = (service: UtilityService): number => {
   let commission = 0;
@@ -77,6 +63,22 @@ const calculateCommission = (service: UtilityService): number => {
 };
 
 export default function RepairCenterUtilityServices() {
+  const { t } = useTranslation();
+  const categoryLabels: Record<ServiceCategory, string> = {
+    fisso: t("utility.serviceTypes.fisso"),
+    mobile: t("utility.serviceTypes.mobile"),
+    centralino: t("utility.serviceTypes.centralino"),
+    luce: t("utility.serviceTypes.luce"),
+    gas: t("utility.serviceTypes.gas"),
+    altro: t("utility.serviceTypes.altro"),
+  };
+  const formatCurrency = (cents: number | null) => {
+    if (cents === null) return "-";
+    return new Intl.NumberFormat("it-IT", {
+      style: "currency",
+      currency: "EUR",
+    }).format(cents / 100);
+  };
   const [searchQuery, setSearchQuery] = useState("");
   const [supplierFilter, setSupplierFilter] = useState<string>("all");
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
@@ -180,7 +182,7 @@ export default function RepairCenterUtilityServices() {
           <div className="space-y-3">
             <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
               <Building2 className="h-3.5 w-3.5" />
-              {supplier?.name || "Fornitore"}
+              {supplier?.name || t("utility.supplier")}
             </div>
 
             {service.description && (
@@ -192,7 +194,7 @@ export default function RepairCenterUtilityServices() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-xs text-muted-foreground">
-                  {service.monthlyPriceCents ? "Prezzo mensile" : "Costo attivazione"}
+                  {service.monthlyPriceCents ? t("utility.monthlyPrice") : t("utility.activationCost")}
                 </p>
                 <p className="text-lg font-semibold">
                   {formatCurrency(service.monthlyPriceCents || service.activationFeeCents)}
@@ -263,7 +265,7 @@ export default function RepairCenterUtilityServices() {
               <Wrench className="h-5 w-5 sm:h-7 sm:w-7 text-white" />
             </div>
             <div>
-              <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-white tracking-tight">Servizi Utility</h1>
+              <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-white tracking-tight">{t("utility.serviziUtility")}</h1>
               <p className="text-emerald-100">Aumenta i tuoi guadagni con i servizi utility</p>
             </div>
           </div>
@@ -275,7 +277,7 @@ export default function RepairCenterUtilityServices() {
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground">Servizi Disponibili</p>
+                <p className="text-sm text-muted-foreground">{t("utility.serviziDisponibili")}</p>
                 <p className="text-2xl sm:text-3xl font-bold" data-testid="stat-value-total-services">{stats.totalServices}</p>
               </div>
               <div className="p-3 rounded-full bg-primary/20">
@@ -321,7 +323,7 @@ export default function RepairCenterUtilityServices() {
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground">Categorie</p>
+                <p className="text-sm text-muted-foreground">{t("utility.categories")}</p>
                 <p className="text-2xl sm:text-3xl font-bold text-purple-600 dark:text-purple-400" data-testid="stat-value-categories">
                   {stats.categoriesCount}
                 </p>
@@ -338,7 +340,7 @@ export default function RepairCenterUtilityServices() {
         <div className="space-y-4">
           <div className="flex flex-wrap items-center gap-2">
             <Trophy className="h-5 w-5 text-yellow-500" />
-            <h2 className="text-lg font-semibold">I Più Redditizi</h2>
+            <h2 className="text-lg font-semibold">{t("utility.iPiRedditizi")}</h2>
             <Badge variant="secondary" className="ml-2">Top Commissioni</Badge>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -356,7 +358,7 @@ export default function RepairCenterUtilityServices() {
               <div className="flex flex-wrap items-center gap-2">
                 <Search className="h-4 w-4 text-muted-foreground" />
                 <Input
-                  placeholder="Cerca per nome o codice..."
+                  placeholder={t("utility.cercaPerNomeOCodice")}
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="max-w-xs"
@@ -365,10 +367,10 @@ export default function RepairCenterUtilityServices() {
               </div>
               <Select value={supplierFilter} onValueChange={setSupplierFilter}>
                 <SelectTrigger className="w-40" data-testid="select-supplier-filter">
-                  <SelectValue placeholder="Fornitore" />
+                  <SelectValue placeholder={t("common.supplier")} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">Tutti i fornitori</SelectItem>
+                  <SelectItem value="all">{t("suppliers.allSuppliers")}</SelectItem>
                   {suppliers.map((supplier) => (
                     <SelectItem key={supplier.id} value={supplier.id}>{supplier.name}</SelectItem>
                   ))}
@@ -376,10 +378,10 @@ export default function RepairCenterUtilityServices() {
               </Select>
               <Select value={categoryFilter} onValueChange={setCategoryFilter}>
                 <SelectTrigger className="w-32" data-testid="select-category-filter">
-                  <SelectValue placeholder="Categoria" />
+                  <SelectValue placeholder={t("common.category")} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">Tutte</SelectItem>
+                  <SelectItem value="all">{t("common.all")}</SelectItem>
                   {Object.entries(categoryLabels).map(([value, label]) => (
                     <SelectItem key={value} value={value}>{label}</SelectItem>
                   ))}
@@ -410,7 +412,7 @@ export default function RepairCenterUtilityServices() {
           ) : filteredServices.length === 0 ? (
             <div className="text-center py-12">
               <Package className="h-12 w-12 mx-auto text-muted-foreground mb-3" />
-              <p className="text-muted-foreground">Nessun servizio trovato</p>
+              <p className="text-muted-foreground">{t("products.noServicesFound")}</p>
             </div>
           ) : viewMode === "cards" ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -423,14 +425,14 @@ export default function RepairCenterUtilityServices() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Codice</TableHead>
-                  <TableHead>Nome</TableHead>
-                  <TableHead className="hidden md:table-cell">Fornitore</TableHead>
-                  <TableHead className="hidden lg:table-cell">Categoria</TableHead>
-                  <TableHead className="hidden md:table-cell">Prezzo Mensile</TableHead>
+                  <TableHead>{t("common.code")}</TableHead>
+                  <TableHead>{t("common.name")}</TableHead>
+                  <TableHead className="hidden md:table-cell">{t("common.supplier")}</TableHead>
+                  <TableHead className="hidden lg:table-cell">{t("common.category")}</TableHead>
+                  <TableHead className="hidden md:table-cell">{t("utility.monthlyPrice")}</TableHead>
                   <TableHead>Commissione</TableHead>
                   <TableHead className="hidden lg:table-cell">Guadagno 10 Vendite</TableHead>
-                  <TableHead>Azioni</TableHead>
+                  <TableHead>{t("common.actions")}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>

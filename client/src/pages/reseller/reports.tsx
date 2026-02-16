@@ -11,8 +11,10 @@ import { format } from "date-fns";
 import { it } from "date-fns/locale";
 import { useToast } from "@/hooks/use-toast";
 import type { DateRange } from "react-day-picker";
+import { useTranslation } from "react-i18next";
 
 export default function ResellerReports() {
+  const { t } = useTranslation();
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [dateRange, setDateRange] = useState<DateRange | undefined>();
   const [isExporting, setIsExporting] = useState(false);
@@ -62,13 +64,13 @@ export default function ResellerReports() {
       document.body.removeChild(a);
       
       toast({
-        title: "Export completato",
+        title: t("reports.exportCompleted"),
         description: "Il file CSV è stato scaricato con successo",
       });
     } catch (error) {
       toast({
-        title: "Errore",
-        description: "Impossibile esportare i dati",
+        title: t("common.error"),
+        description: t("reports.exportFailed"),
         variant: "destructive",
       });
     } finally {
@@ -82,8 +84,8 @@ export default function ResellerReports() {
   const pendingRepairs = filteredRepairs.filter(r => ['ingressato', 'attesa_ricambi', 'preventivo_emesso', 'pending'].includes(r.status)).length;
 
   const statusOptions = [
-    { value: "all", label: "Tutti gli stati" },
-    { value: "pending", label: "In Attesa" },
+    { value: "all", label: t("common.allStatuses") },
+    { value: "pending", label: t("common.pending") },
     { value: "ingressato", label: "Ingressato" },
     { value: "in_diagnosi", label: "In Diagnosi" },
     { value: "preventivo_emesso", label: "Preventivo Emesso" },
@@ -93,7 +95,7 @@ export default function ResellerReports() {
     { value: "in_riparazione", label: "In Riparazione" },
     { value: "in_test", label: "In Test" },
     { value: "pronto_ritiro", label: "Pronto Ritiro" },
-    { value: "consegnato", label: "Consegnato" },
+    { value: "consegnato", label: t("repairs.status.delivered") },
   ];
 
   return (
@@ -107,7 +109,7 @@ export default function ResellerReports() {
               <BarChart3 className="h-6 w-6 text-white" />
             </div>
             <div>
-              <h1 className="text-2xl font-semibold text-white">Report</h1>
+              <h1 className="text-2xl font-semibold text-white">{t("reports.title")}</h1>
               <p className="text-white/80">
                 Statistiche e analisi del business
               </p>
@@ -124,7 +126,7 @@ export default function ResellerReports() {
                 <BarChart3 className="h-5 w-5 text-primary" />
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">Totale</p>
+                <p className="text-sm text-muted-foreground">{t("common.total")}</p>
                 <p className="text-2xl font-bold" data-testid="text-total-repairs">{totalRepairs}</p>
               </div>
             </div>
@@ -163,7 +165,7 @@ export default function ResellerReports() {
                 <FileSpreadsheet className="h-5 w-5 text-yellow-600" />
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">In Attesa</p>
+                <p className="text-sm text-muted-foreground">{t("common.pending")}</p>
                 <p className="text-2xl font-bold text-yellow-600" data-testid="text-pending-repairs">{pendingRepairs}</p>
               </div>
             </div>
@@ -221,14 +223,12 @@ export default function ResellerReports() {
               data-testid="button-export-repairs"
             >
               <Download className="h-4 w-4 mr-2" />
-              {isExporting ? "Esportazione..." : `Esporta ${filteredRepairs.length} riparazioni`}
+              {isExporting ? t("pages.exporting") : `Esporta ${filteredRepairs.length} riparazioni`}
             </Button>
           </div>
 
           {isLoading ? (
-            <div className="mt-6 text-center text-muted-foreground">
-              Caricamento dati...
-            </div>
+            <div className="mt-6 text-center text-muted-foreground">{t("table.loading")}</div>
           ) : filteredRepairs.length === 0 ? (
             <div className="mt-6 text-center text-muted-foreground py-8">
               <FileSpreadsheet className="h-12 w-12 mx-auto mb-4 opacity-20" />

@@ -1,4 +1,5 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
@@ -23,6 +24,7 @@ function formatCurrency(cents: number): string {
 }
 
 export function InvoiceDetailDialog({ invoice, open, onOpenChange }: InvoiceDetailDialogProps) {
+  const { t } = useTranslation();
   const { data: customer } = useQuery<User>({
     queryKey: ["/api/users", invoice?.customerId],
     enabled: !!invoice?.customerId && open,
@@ -42,23 +44,23 @@ export function InvoiceDetailDialog({ invoice, open, onOpenChange }: InvoiceDeta
 
   const getStatusBadge = (status: string) => {
     switch (status) {
-      case "paid": return <Badge>Pagata</Badge>;
-      case "pending": return <Badge variant="secondary">In sospeso</Badge>;
-      case "overdue": return <Badge variant="destructive">Scaduta</Badge>;
-      case "cancelled": return <Badge variant="outline">Annullata</Badge>;
+      case "paid": return <Badge>{t("invoices.statusPaid")}</Badge>;
+      case "pending": return <Badge variant="secondary">{t("invoices.statusPending")}</Badge>;
+      case "overdue": return <Badge variant="destructive">{t("invoices.statusOverdue")}</Badge>;
+      case "cancelled": return <Badge variant="outline">{t("invoices.statusCancelled")}</Badge>;
       default: return <Badge variant="outline">{status}</Badge>;
     }
   };
 
   const getSourceLabel = (source: string | null) => {
     switch (source) {
-      case "repair": return "Riparazione";
+      case "repair": return t("invoices.sourceRepair");
       case "pos": return "POS";
       case "ecommerce": return "E-commerce";
       case "b2b": return "B2B";
-      case "warranty": return "Garanzia";
-      case "other": return "Altro";
-      default: return source || "N/D";
+      case "warranty": return t("invoices.sourceWarranty");
+      case "other": return t("invoices.sourceOther");
+      default: return source || t("common.na");
     }
   };
 
@@ -79,10 +81,10 @@ export function InvoiceDetailDialog({ invoice, open, onOpenChange }: InvoiceDeta
         <DialogHeader>
           <DialogTitle className="flex flex-wrap items-center gap-2">
             <FileText className="h-5 w-5" />
-            Fattura {invoice.invoiceNumber}
+            {t("invoices.invoice")} {invoice.invoiceNumber}
           </DialogTitle>
           <DialogDescription>
-            Dettagli della fattura emessa
+            {t("invoices.invoiceDetailDesc")}
           </DialogDescription>
         </DialogHeader>
 
@@ -90,7 +92,7 @@ export function InvoiceDetailDialog({ invoice, open, onOpenChange }: InvoiceDeta
           <div className="flex items-center justify-between">
             <div className="flex flex-wrap items-center gap-2">
               <Calendar className="h-4 w-4 text-muted-foreground" />
-              <span className="text-sm">Data emissione:</span>
+              <span className="text-sm">{t("invoices.issueDate")}:</span>
               <span className="font-medium">
                 {format(new Date(invoice.createdAt), "dd MMMM yyyy", { locale: it })}
               </span>
@@ -104,7 +106,7 @@ export function InvoiceDetailDialog({ invoice, open, onOpenChange }: InvoiceDeta
             <div className="space-y-2">
               <h4 className="font-medium flex items-center gap-2">
                 {isRepairCenter ? <Wrench className="h-4 w-4" /> : <Building2 className="h-4 w-4" />}
-                {isRepairCenter ? "Centro Riparazione" : "Cliente"}
+                {isRepairCenter ? t("invoices.repairCenter") : t("customers.customer")}
               </h4>
               <div className="bg-muted/50 p-3 rounded-md text-sm space-y-1">
                 <p className="font-medium">{buyerName}</p>
@@ -115,28 +117,28 @@ export function InvoiceDetailDialog({ invoice, open, onOpenChange }: InvoiceDeta
                     {buyerCity && `, ${buyerCity}`}
                   </p>
                 )}
-                {buyerVat && <p className="text-muted-foreground">P.IVA: {buyerVat}</p>}
+                {buyerVat && <p className="text-muted-foreground">{t("fiscal.vatNumber")}: {buyerVat}</p>}
               </div>
             </div>
           )}
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-1">
-              <p className="text-sm text-muted-foreground">Fonte</p>
+              <p className="text-sm text-muted-foreground">{t("invoices.source")}</p>
               <Badge variant="outline">{getSourceLabel(invoice.source)}</Badge>
             </div>
             <div className="space-y-1">
-              <p className="text-sm text-muted-foreground">Metodo Pagamento</p>
+              <p className="text-sm text-muted-foreground">{t("invoices.paymentMethod")}</p>
               <div className="flex flex-wrap items-center gap-1">
                 <CreditCard className="h-4 w-4 text-muted-foreground" />
-                <span className="capitalize">{invoice.paymentMethod?.replace("_", " ") || "N/D"}</span>
+                <span className="capitalize">{invoice.paymentMethod?.replace("_", " ") || t("common.na")}</span>
               </div>
             </div>
           </div>
 
           {invoice.dueDate && (
             <div className="space-y-1">
-              <p className="text-sm text-muted-foreground">Scadenza</p>
+              <p className="text-sm text-muted-foreground">{t("invoices.dueDate")}</p>
               <p className="font-medium">
                 {format(new Date(invoice.dueDate), "dd MMMM yyyy", { locale: it })}
               </p>
@@ -149,16 +151,16 @@ export function InvoiceDetailDialog({ invoice, open, onOpenChange }: InvoiceDeta
               <div className="space-y-2">
                 <h4 className="font-medium flex items-center gap-2">
                   <Package className="h-4 w-4" />
-                  Prodotti
+                  {t("products.title")}
                 </h4>
                 <div className="border rounded-md">
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead>Prodotto</TableHead>
-                        <TableHead className="text-center">Qtà</TableHead>
-                        <TableHead className="text-right">Prezzo</TableHead>
-                        <TableHead className="text-right">Totale</TableHead>
+                        <TableHead>{t("products.product")}</TableHead>
+                        <TableHead className="text-center">{t("common.qty")}</TableHead>
+                        <TableHead className="text-right">{t("common.price")}</TableHead>
+                        <TableHead className="text-right">{t("common.total")}</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -187,20 +189,20 @@ export function InvoiceDetailDialog({ invoice, open, onOpenChange }: InvoiceDeta
           <div className="space-y-2">
             <h4 className="font-medium flex items-center gap-2">
               <Euro className="h-4 w-4" />
-              Importi
+              {t("invoices.amounts")}
             </h4>
             <div className="bg-muted/50 p-3 rounded-md space-y-2">
               <div className="flex justify-between text-sm">
-                <span>Imponibile</span>
+                <span>{t("invoices.taxableAmount")}</span>
                 <span>{formatCurrency(invoice.amount)}</span>
               </div>
               <div className="flex justify-between text-sm">
-                <span>IVA (22%)</span>
+                <span>{t("common.vat")} (22%)</span>
                 <span>{formatCurrency(invoice.tax)}</span>
               </div>
               <Separator />
               <div className="flex justify-between font-bold">
-                <span>Totale</span>
+                <span>{t("common.total")}</span>
                 <span className="text-primary">{formatCurrency(invoice.total)}</span>
               </div>
             </div>
@@ -208,7 +210,7 @@ export function InvoiceDetailDialog({ invoice, open, onOpenChange }: InvoiceDeta
 
           {invoice.notes && (
             <div className="space-y-2">
-              <h4 className="font-medium">Note</h4>
+              <h4 className="font-medium">{t("common.notes")}</h4>
               <p className="text-sm text-muted-foreground bg-muted/50 p-3 rounded-md">
                 {invoice.notes}
               </p>
@@ -217,11 +219,11 @@ export function InvoiceDetailDialog({ invoice, open, onOpenChange }: InvoiceDeta
 
           <div className="flex justify-end gap-2 pt-4">
             <Button variant="outline" onClick={() => onOpenChange(false)} data-testid="button-close-invoice-detail">
-              Chiudi
+              {t("common.close")}
             </Button>
             <Button onClick={handleDownloadPdf} data-testid="button-download-invoice-pdf">
               <Download className="h-4 w-4 mr-2" />
-              Scarica PDF
+              {t("invoices.downloadPdf")}
             </Button>
           </div>
         </div>

@@ -17,6 +17,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Link } from "wouter";
 import { UtilityPracticeWizard } from "@/components/UtilityPracticeWizard";
 import { UtilityServiceDetailSheet } from "@/components/UtilityServiceDetailSheet";
+import { useTranslation } from "react-i18next";
 
 type ServiceCategory = "fisso" | "mobile" | "centralino" | "luce" | "gas" | "altro";
 
@@ -26,7 +27,7 @@ const categoryLabels: Record<ServiceCategory, string> = {
   centralino: "Centralino",
   luce: "Luce",
   gas: "Gas",
-  altro: "Altro",
+  altro: t("common.other"),
 };
 
 const categoryColors: Record<ServiceCategory, string> = {
@@ -80,6 +81,7 @@ const calculateCommission = (service: UtilityService): number => {
 };
 
 export default function ResellerUtilityServices() {
+  const { t } = useTranslation();
   const [searchQuery, setSearchQuery] = useState("");
   const [supplierFilter, setSupplierFilter] = useState<string>("all");
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
@@ -368,7 +370,7 @@ export default function ResellerUtilityServices() {
               <div className="flex flex-wrap items-center gap-2">
                 <Select value={supplierFilter} onValueChange={setSupplierFilter}>
                   <SelectTrigger className="w-[180px]" data-testid="select-supplier-filter">
-                    <SelectValue placeholder="Fornitore" />
+                    <SelectValue placeholder={t("common.supplier")} />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">Tutti i fornitori</SelectItem>
@@ -379,7 +381,7 @@ export default function ResellerUtilityServices() {
                 </Select>
                 <Select value={categoryFilter} onValueChange={setCategoryFilter}>
                   <SelectTrigger className="w-[160px]" data-testid="select-category-filter">
-                    <SelectValue placeholder="Categoria" />
+                    <SelectValue placeholder={t("common.category")} />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">Tutte le categorie</SelectItem>
@@ -426,14 +428,14 @@ export default function ResellerUtilityServices() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Codice</TableHead>
-                  <TableHead>Nome</TableHead>
-                  <TableHead>Fornitore</TableHead>
-                  <TableHead>Categoria</TableHead>
+                  <TableHead>{t("common.code")}</TableHead>
+                  <TableHead>{t("common.name")}</TableHead>
+                  <TableHead>{t("common.supplier")}</TableHead>
+                  <TableHead>{t("common.category")}</TableHead>
                   <TableHead>Prezzo Mensile</TableHead>
-                  <TableHead>Commissione</TableHead>
+                  <TableHead>{t("utility.commission")}</TableHead>
                   <TableHead>Guadagno 10 Vendite</TableHead>
-                  <TableHead>Azioni</TableHead>
+                  <TableHead>{t("common.actions")}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>

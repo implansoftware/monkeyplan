@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { UtilityCommission, UtilityPractice } from "@shared/schema";
@@ -17,13 +18,6 @@ import { it } from "date-fns/locale";
 
 type CommissionStatus = "pending" | "accrued" | "invoiced" | "paid" | "cancelled";
 
-const statusLabels: Record<CommissionStatus, string> = {
-  pending: "In Attesa",
-  accrued: "Maturata",
-  invoiced: "Fatturata",
-  paid: "Pagata",
-  cancelled: "Annullata",
-};
 
 const statusColors: Record<CommissionStatus, string> = {
   pending: "bg-yellow-100 text-yellow-700 dark:bg-yellow-900 dark:text-yellow-300",
@@ -41,14 +35,22 @@ const statusIcons: Record<CommissionStatus, typeof Clock> = {
   cancelled: XCircle,
 };
 
-const formatCurrency = (cents: number) => {
-  return new Intl.NumberFormat("it-IT", {
-    style: "currency",
-    currency: "EUR",
-  }).format(cents / 100);
-};
 
 export default function RepairCenterUtilityCommissions() {
+  const { t } = useTranslation();
+  const statusLabels: Record<CommissionStatus, string> = {
+    pending: t("utility.commissionStatus.inAttesa"),
+    accrued: t("utility.commissionStatus.maturata"),
+    invoiced: t("utility.commissionStatus.fatturata"),
+    paid: t("utility.commissionStatus.pagata"),
+    cancelled: t("utility.commissionStatus.annullata"),
+  };
+  const formatCurrency = (cents: number) => {
+    return new Intl.NumberFormat("it-IT", {
+      style: "currency",
+      currency: "EUR",
+    }).format(cents / 100);
+  };
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [yearFilter, setYearFilter] = useState<number>(new Date().getFullYear());
@@ -83,18 +85,18 @@ export default function RepairCenterUtilityCommissions() {
   const currentYear = new Date().getFullYear();
   const years = Array.from({ length: 5 }, (_, i) => currentYear - i);
   const months = [
-    { value: 1, label: "Gennaio" },
-    { value: 2, label: "Febbraio" },
-    { value: 3, label: "Marzo" },
-    { value: 4, label: "Aprile" },
-    { value: 5, label: "Maggio" },
-    { value: 6, label: "Giugno" },
-    { value: 7, label: "Luglio" },
-    { value: 8, label: "Agosto" },
-    { value: 9, label: "Settembre" },
-    { value: 10, label: "Ottobre" },
-    { value: 11, label: "Novembre" },
-    { value: 12, label: "Dicembre" },
+    { value: 1, label: t("common.months.january") },
+    { value: 2, label: t("common.months.february") },
+    { value: 3, label: t("common.months.march") },
+    { value: 4, label: t("common.months.april") },
+    { value: 5, label: t("common.months.may") },
+    { value: 6, label: t("common.months.june") },
+    { value: 7, label: t("common.months.july") },
+    { value: 8, label: t("common.months.august") },
+    { value: 9, label: t("common.months.september") },
+    { value: 10, label: t("common.months.october") },
+    { value: 11, label: t("common.months.november") },
+    { value: 12, label: t("common.months.december") },
   ];
 
   return (
@@ -115,7 +117,7 @@ export default function RepairCenterUtilityCommissions() {
               <Euro className="h-5 w-5 sm:h-7 sm:w-7 text-white" />
             </div>
             <div>
-              <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-white tracking-tight">Commissioni</h1>
+              <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-white tracking-tight">{t("utility.commissioni")}</h1>
               <p className="text-emerald-100">Visualizza le tue commissioni</p>
             </div>
           </div>
@@ -125,7 +127,7 @@ export default function RepairCenterUtilityCommissions() {
       <div className="grid gap-4 md:grid-cols-3">
         <Card data-testid="card-total-pending">
           <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">In Attesa</CardTitle>
+            <CardTitle className="text-sm font-medium">{t("common.pending")}</CardTitle>
             <Clock className="h-4 w-4 text-yellow-500" />
           </CardHeader>
           <CardContent>
@@ -151,7 +153,7 @@ export default function RepairCenterUtilityCommissions() {
 
         <Card data-testid="card-total">
           <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Totale Anno</CardTitle>
+            <CardTitle className="text-sm font-medium">{t("utility.totaleAnno")}</CardTitle>
             <Coins className="h-4 w-4 text-primary" />
           </CardHeader>
           <CardContent>
@@ -171,7 +173,7 @@ export default function RepairCenterUtilityCommissions() {
             <div className="flex flex-wrap items-center gap-2">
               <Search className="h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Cerca per pratica..."
+                placeholder={t("utility.cercaPerPratica")}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="max-w-xs"
@@ -180,10 +182,10 @@ export default function RepairCenterUtilityCommissions() {
             </div>
             <Select value={statusFilter} onValueChange={setStatusFilter}>
               <SelectTrigger className="w-32" data-testid="select-status-filter">
-                <SelectValue placeholder="Stato" />
+                <SelectValue placeholder={t("common.status")} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">Tutti</SelectItem>
+                <SelectItem value="all">{t("common.allMasc")}</SelectItem>
                 {Object.entries(statusLabels).map(([value, label]) => (
                   <SelectItem key={value} value={value}>{label}</SelectItem>
                 ))}
@@ -214,18 +216,18 @@ export default function RepairCenterUtilityCommissions() {
           ) : filteredCommissions.length === 0 ? (
             <div className="text-center py-8">
               <Coins className="h-12 w-12 mx-auto text-muted-foreground mb-3" />
-              <p className="text-muted-foreground">Nessuna commissione trovata</p>
+              <p className="text-muted-foreground">{t("utility.nessunaCommissioneTrovata")}</p>
             </div>
           ) : (
             <div className="overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Pratica</TableHead>
-                  <TableHead className="hidden md:table-cell">Periodo</TableHead>
-                  <TableHead>Importo</TableHead>
-                  <TableHead>Stato</TableHead>
-                  <TableHead className="hidden md:table-cell">Data Pagamento</TableHead>
+                  <TableHead>{t("utility.practice")}</TableHead>
+                  <TableHead className="hidden md:table-cell">{t("common.period")}</TableHead>
+                  <TableHead>{t("common.amount")}</TableHead>
+                  <TableHead>{t("common.status")}</TableHead>
+                  <TableHead className="hidden md:table-cell">{t("utility.paymentDate")}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>

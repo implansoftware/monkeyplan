@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/use-auth";
@@ -15,16 +16,17 @@ import type { ServiceOrder } from "@shared/schema";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
 
-const statusLabels: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
-  pending: { label: "In attesa", variant: "secondary" },
-  accepted: { label: "Accettato", variant: "default" },
-  scheduled: { label: "Programmato", variant: "outline" },
-  in_progress: { label: "In lavorazione", variant: "default" },
-  completed: { label: "Completato", variant: "default" },
-  cancelled: { label: "Annullato", variant: "destructive" },
-};
 
 export default function CustomerServiceOrders() {
+  const { t } = useTranslation();
+  const statusLabels: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
+    pending: { label: t("b2b.status.pending"), variant: "secondary" },
+    accepted: { label: t("standalone.accepted"), variant: "default" },
+    scheduled: { label: "Programmato", variant: "outline" },
+    in_progress: { label: t("tickets.status.inProgress"), variant: "default" },
+    completed: { label: t("repairs.status.completed"), variant: "default" },
+    cancelled: { label: t("repairs.status.cancelled"), variant: "destructive" },
+  };
   const { user } = useAuth();
   const { toast } = useToast();
   const [isDeliveryDialogOpen, setIsDeliveryDialogOpen] = useState(false);
@@ -69,7 +71,7 @@ export default function CustomerServiceOrders() {
       toast({ title: "Ordine annullato" });
     },
     onError: (error: Error) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("auth.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -98,7 +100,7 @@ export default function CustomerServiceOrders() {
       }
     },
     onError: (error: Error) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("auth.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -113,7 +115,7 @@ export default function CustomerServiceOrders() {
       }
     },
     onError: (error: Error) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("auth.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -157,8 +159,8 @@ export default function CustomerServiceOrders() {
               <ClipboardList className="h-6 w-6 text-white" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold text-white">I Miei Ordini</h1>
-              <p className="text-white/80 text-sm">Gestisci i tuoi ordini di servizio</p>
+              <h1 className="text-2xl font-bold text-white">{t("sidebar.items.myOrders")}</h1>
+              <p className="text-white/80 text-sm">{t("customerPages.gestisciITuoiOrdiniDiServizio")}</p>
             </div>
           </div>
         </div>
@@ -180,8 +182,8 @@ export default function CustomerServiceOrders() {
             <ClipboardList className="h-6 w-6 text-white" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-white">I Miei Ordini</h1>
-            <p className="text-white/80 text-sm">Gestisci i tuoi ordini di servizio</p>
+            <h1 className="text-2xl font-bold text-white">{t("sidebar.items.myOrders")}</h1>
+            <p className="text-white/80 text-sm">{t("customerPages.gestisciITuoiOrdiniDiServizio")}</p>
           </div>
         </div>
       </div>
@@ -228,7 +230,7 @@ export default function CustomerServiceOrders() {
 
                 {(order as any).paymentMethod === "bank_transfer" && (
                   <div className="p-3 bg-muted rounded-md text-sm" data-testid={`bank-info-${order.id}`}>
-                    <p className="font-medium mb-1">Pagamento con bonifico</p>
+                    <p className="font-medium mb-1">{t("customerPages.pagamentoConBonifico")}</p>
                     {myReseller ? (
                       <>
                         <p><span className="text-muted-foreground">Intestatario:</span> {myReseller.ragioneSociale || myReseller.fullName}</p>
@@ -255,7 +257,7 @@ export default function CustomerServiceOrders() {
                   <div className="pt-2 border-t mt-2">
                     <p className="text-sm font-medium flex items-center gap-2">
                       {order.deliveryMethod === "shipping" ? (
-                        <><Truck className="w-4 h-4" /> Spedizione</>
+                        <><Truck className="w-4 h-4" /> {t("common.shipment")}</>
                       ) : (
                         <><MapPin className="w-4 h-4" /> Consegna di persona</>
                       )}
@@ -384,7 +386,7 @@ export default function CustomerServiceOrders() {
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label>Corriere</Label>
+                    <Label>{t("shipping.carrier")}</Label>
                     <Input
                       value={deliveryForm.courierName}
                       onChange={(e) => setDeliveryForm({ ...deliveryForm, courierName: e.target.value })}

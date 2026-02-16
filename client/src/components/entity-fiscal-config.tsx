@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
@@ -16,6 +17,7 @@ interface EntityFiscalConfigProps {
 }
 
 export function EntityFiscalConfig({ entityType, basePath }: EntityFiscalConfigProps) {
+  const { t } = useTranslation();
   const { toast } = useToast();
   const entityLabel = entityType === "repair_center" ? "Centro Riparazione" : "Rivenditore";
 
@@ -89,10 +91,10 @@ export function EntityFiscalConfig({ entityType, basePath }: EntityFiscalConfigP
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [basePath, "config"] });
-      toast({ title: "Configurazione salvata" });
+      toast({ title: t("fiscal.configSaved") });
     },
     onError: (err: any) => {
-      toast({ title: "Errore", description: err.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: err.message, variant: "destructive" });
     },
   });
 
@@ -145,17 +147,17 @@ export function EntityFiscalConfig({ entityType, basePath }: EntityFiscalConfigP
                 <span className="text-sm font-medium text-blue-800 dark:text-blue-200">Configurazione ereditata dal Rivenditore</span>
               </div>
               <p className="text-sm text-blue-700 dark:text-blue-300">
-                L'RT è attivo tramite la configurazione del rivenditore proprietario. Per usare una configurazione indipendente, abilita l'RT qui sotto.
+                {t("fiscal.rtActiveViaReseller")}
               </p>
             </div>
           )}
 
           <div className="flex items-center justify-between gap-2">
             <div>
-              <Label htmlFor="rt-enabled">Abilita trasmissione RT</Label>
+              <Label htmlFor="rt-enabled">{t("fiscal.enableRtTransmission")}</Label>
               <p className="text-sm text-muted-foreground">
                 {entityConfig?.inherited
-                  ? "Abilita per sovrascrivere la configurazione ereditata dal rivenditore"
+                  ? t("fiscal.overrideResellerConfig")
                   : "Attiva l'invio automatico dei corrispettivi al Registratore Telematico"}
               </p>
             </div>
@@ -191,7 +193,7 @@ export function EntityFiscalConfig({ entityType, basePath }: EntityFiscalConfigP
                     type="password"
                     value={rtApiKey}
                     onChange={(e) => setRtApiKey(e.target.value)}
-                    placeholder="Inserisci API Key"
+                    placeholder={t("fiscal.enterApiKey")}
                     data-testid="input-rt-api-key"
                   />
                 </div>
@@ -202,7 +204,7 @@ export function EntityFiscalConfig({ entityType, basePath }: EntityFiscalConfigP
                     type="password"
                     value={rtApiSecret}
                     onChange={(e) => setRtApiSecret(e.target.value)}
-                    placeholder="Inserisci API Secret"
+                    placeholder={t("fiscal.enterApiSecret")}
                     data-testid="input-rt-api-secret"
                   />
                 </div>
@@ -271,7 +273,7 @@ export function EntityFiscalConfig({ entityType, basePath }: EntityFiscalConfigP
               </div>
               <div className="text-center">
                 <div className="text-2xl font-bold text-yellow-600" data-testid="text-rt-pending">{rtStats.pending ?? 0}</div>
-                <div className="text-sm text-muted-foreground">In attesa</div>
+                <div className="text-sm text-muted-foreground">{t("common.pending")}</div>
               </div>
               <div className="text-center">
                 <div className="text-2xl font-bold text-blue-600" data-testid="text-rt-submitted">{rtStats.submitted ?? 0}</div>
@@ -305,7 +307,7 @@ export function EntityFiscalConfig({ entityType, basePath }: EntityFiscalConfigP
                   <div className="flex-1 min-w-0">
                     <div className="text-sm font-medium">Transazione #{tx.id}</div>
                     <div className="text-xs text-muted-foreground truncate">
-                      {tx.rtErrorMessage || "Errore sconosciuto"}
+                      {tx.rtErrorMessage || t("common.unknownError")}
                     </div>
                   </div>
                   <div className="flex items-center gap-2 flex-shrink-0">

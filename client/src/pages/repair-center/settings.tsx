@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useState, useRef, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -24,17 +25,17 @@ import { SiStripe, SiPaypal } from "react-icons/si";
 import { EntityFiscalConfig } from "@/components/entity-fiscal-config";
 
 const settingsFormSchema = z.object({
-  name: z.string().min(1, "Il nome è obbligatorio"),
+  name: z.string().min(1),
   description: z.string().optional().nullable(),
-  address: z.string().min(1, "L'indirizzo è obbligatorio"),
-  city: z.string().min(1, "La città è obbligatoria"),
+  address: z.string().min(1),
+  city: z.string().min(1),
   cap: z.string().optional().nullable(),
   provincia: z.string().optional().nullable(),
-  phone: z.string().min(1, "Il telefono è obbligatorio"),
-  email: z.string().email("Email non valida"),
+  phone: z.string().min(1),
+  email: z.string().email(),
   publicPhone: z.string().optional().nullable(),
-  publicEmail: z.string().email("Email non valida").optional().nullable().or(z.literal('')),
-  websiteUrl: z.string().url("URL non valido").optional().nullable().or(z.literal('')),
+  publicEmail: z.string().email().optional().nullable().or(z.literal('')),
+  websiteUrl: z.string().url().optional().nullable().or(z.literal('')),
   logoUrl: z.string().optional().nullable(),
   acceptsWalkIns: z.boolean().optional(),
   openingHours: z.record(z.object({
@@ -85,19 +86,11 @@ interface RepairCenterPaymentConfig {
   useParentConfig: boolean;
 }
 
-const DAYS_OF_WEEK = [
-  { key: 'monday', label: 'Lunedì' },
-  { key: 'tuesday', label: 'Martedì' },
-  { key: 'wednesday', label: 'Mercoledì' },
-  { key: 'thursday', label: 'Giovedì' },
-  { key: 'friday', label: 'Venerdì' },
-  { key: 'saturday', label: 'Sabato' },
-  { key: 'sunday', label: 'Domenica' },
-];
+const DAYS_OF_WEEK_KEYS = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
 
-const defaultOpeningHours = DAYS_OF_WEEK.reduce((acc, day) => {
-  acc[day.key] = {
-    isOpen: day.key !== 'sunday',
+const defaultOpeningHours = DAYS_OF_WEEK_KEYS.reduce((acc, key) => {
+  acc[key] = {
+    isOpen: key !== 'sunday',
     start: '09:00',
     end: '18:00',
     breakStart: null,
@@ -107,6 +100,7 @@ const defaultOpeningHours = DAYS_OF_WEEK.reduce((acc, day) => {
 }, {} as Record<string, { isOpen: boolean; start: string; end: string; breakStart: string | null; breakEnd: string | null }>);
 
 export default function RepairCenterSettings() {
+  const { t } = useTranslation();
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [logoFile, setLogoFile] = useState<File | null>(null);
@@ -226,14 +220,14 @@ export default function RepairCenterSettings() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/repair-center/settings'] });
       toast({
-        title: "Impostazioni salvate",
-        description: "Le modifiche sono state salvate con successo.",
+        title: t("settings.saved"),
+        description: t("settings.changesSavedSuccess"),
       });
     },
     onError: (error: Error) => {
       toast({
-        title: "Errore",
-        description: error.message || "Impossibile salvare le impostazioni.",
+        title: t("auth.error"),
+        description: error.message || t("settings.cannotSaveSettings"),
         variant: "destructive",
       });
     },
@@ -260,14 +254,14 @@ export default function RepairCenterSettings() {
       setLogoFile(null);
       setLogoPreview(null);
       toast({
-        title: "Logo caricato",
-        description: "Il logo è stato aggiornato con successo.",
+        title: t("profile.logoUploaded"),
+        description: t("settings.ilLogoStatoAggiornatoConSuccesso"),
       });
     },
     onError: (error: Error) => {
       toast({
-        title: "Errore",
-        description: error.message || "Impossibile caricare il logo.",
+        title: t("auth.error"),
+        description: error.message || t("settings.cannotUploadLogo"),
         variant: "destructive",
       });
     },
@@ -281,14 +275,14 @@ export default function RepairCenterSettings() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/repair-center/settings'] });
       toast({
-        title: "Logo rimosso",
-        description: "Il logo è stato rimosso con successo.",
+        title: t("profile.logoRemoved"),
+        description: t("settings.ilLogoStatoRimossoConSuccesso"),
       });
     },
     onError: (error: Error) => {
       toast({
-        title: "Errore",
-        description: error.message || "Impossibile rimuovere il logo.",
+        title: t("auth.error"),
+        description: error.message || t("settings.cannotRemoveLogo"),
         variant: "destructive",
       });
     },
@@ -334,13 +328,13 @@ export default function RepairCenterSettings() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/repair-center/payment-config'] });
       toast({
-        title: "Configurazione aggiornata",
-        description: "La preferenza di configurazione pagamenti è stata salvata.",
+        title: t("pos.configUpdated"),
+        description: t("settings.laPreferenzaDiConfigurazionePagamentiStata"),
       });
     },
     onError: (error: Error) => {
       toast({
-        title: "Errore",
+        title: t("auth.error"),
         description: error.message,
         variant: "destructive",
       });
@@ -355,13 +349,13 @@ export default function RepairCenterSettings() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/repair-center/payment-config'] });
       toast({
-        title: "Configurazione salvata",
+        title: t("pos.configSaved"),
         description: "I metodi di pagamento sono stati aggiornati.",
       });
     },
     onError: (error: Error) => {
       toast({
-        title: "Errore",
+        title: t("auth.error"),
         description: error.message,
         variant: "destructive",
       });
@@ -379,7 +373,7 @@ export default function RepairCenterSettings() {
     onError: (error: Error) => {
       setIsConnectingStripe(false);
       toast({
-        title: "Errore connessione Stripe",
+        title: t("settings.erroreConnessioneStripe"),
         description: error.message,
         variant: "destructive",
       });
@@ -396,7 +390,7 @@ export default function RepairCenterSettings() {
     },
     onError: (error: Error) => {
       toast({
-        title: "Errore",
+        title: t("auth.error"),
         description: error.message,
         variant: "destructive",
       });
@@ -413,7 +407,7 @@ export default function RepairCenterSettings() {
     },
     onError: (error: Error) => {
       toast({
-        title: "Errore",
+        title: t("auth.error"),
         description: error.message,
         variant: "destructive",
       });
@@ -429,12 +423,12 @@ export default function RepairCenterSettings() {
       queryClient.invalidateQueries({ queryKey: ['/api/repair-center/settings/hourly-rate'] });
       toast({
         title: "Tariffa oraria salvata",
-        description: "La configurazione della tariffa oraria è stata aggiornata.",
+        description: t("settings.laConfigurazioneDellaTariffaOrariaStataAgg"),
       });
     },
     onError: (error: Error) => {
       toast({
-        title: "Errore",
+        title: t("auth.error"),
         description: error.message,
         variant: "destructive",
       });
@@ -450,12 +444,12 @@ export default function RepairCenterSettings() {
       queryClient.invalidateQueries({ queryKey: ['/api/repair-center/settings/sla-thresholds'] });
       toast({
         title: "Soglie SLA salvate",
-        description: "La configurazione delle soglie SLA è stata aggiornata.",
+        description: t("settings.laConfigurazioneDelleSoglieSLAStataAggiorn"),
       });
     },
     onError: (error: Error) => {
       toast({
-        title: "Errore",
+        title: t("auth.error"),
         description: error.message,
         variant: "destructive",
       });
@@ -476,7 +470,7 @@ export default function RepairCenterSettings() {
     if (needsStripeSecret && !paymentConfigData?.useParentConfig) {
       paymentForm.setError("stripeSecretKey", {
         type: "manual",
-        message: "Secret Key è obbligatoria per abilitare Stripe"
+        message: t("settings.stripeSecretRequired")
       });
       return;
     }
@@ -491,7 +485,7 @@ export default function RepairCenterSettings() {
     if (needsSecret && !paymentConfigData?.useParentConfig) {
       paymentForm.setError("paypalClientSecret", {
         type: "manual",
-        message: "Client Secret è obbligatorio per abilitare PayPal"
+        message: t("settings.paypalSecretRequired")
       });
       return;
     }
@@ -505,15 +499,15 @@ export default function RepairCenterSettings() {
     
     switch (stripeStatus.status) {
       case 'active':
-        return <Badge className="bg-green-500/10 text-green-600 dark:text-green-400">Attivo</Badge>;
+        return <Badge className="bg-green-500/10 text-green-600 dark:text-green-400">{t("common.active")}</Badge>;
       case 'onboarding':
         return <Badge className="bg-yellow-500/10 text-yellow-600 dark:text-yellow-400">Onboarding in corso</Badge>;
       case 'restricted':
         return <Badge className="bg-orange-500/10 text-orange-600 dark:text-orange-400">Richiede azioni</Badge>;
       case 'disabled':
-        return <Badge variant="destructive">Disabilitato</Badge>;
+        return <Badge variant="destructive">{t("common.disabled")}</Badge>;
       default:
-        return <Badge variant="secondary">In attesa</Badge>;
+        return <Badge variant="secondary">{t("b2b.status.pending")}</Badge>;
     }
   };
 
@@ -524,8 +518,8 @@ export default function RepairCenterSettings() {
     const validTypes = ['image/jpeg', 'image/png', 'image/webp'];
     if (!validTypes.includes(file.type)) {
       toast({
-        title: "Formato non valido",
-        description: "Il file deve essere in formato JPEG, PNG o WebP.",
+        title: t("common.invalidFormat"),
+        description: t("common.fileMustBeFormat"),
         variant: "destructive",
       });
       return;
@@ -533,8 +527,8 @@ export default function RepairCenterSettings() {
 
     if (file.size > 2 * 1024 * 1024) {
       toast({
-        title: "File troppo grande",
-        description: "Il file non può superare i 2MB.",
+        title: t("profile.fileTooLarge"),
+        description: t("settings.ilFileNonPuSuperareI2MB"),
         variant: "destructive",
       });
       return;
@@ -588,8 +582,8 @@ export default function RepairCenterSettings() {
               <Settings className="h-5 w-5 sm:h-7 sm:w-7 text-white" />
             </div>
             <div>
-              <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-white tracking-tight">Impostazioni</h1>
-              <p className="text-emerald-100">Gestisci le informazioni e le preferenze del tuo centro di riparazione</p>
+              <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-white tracking-tight">{t("sidebar.items.settings")}</h1>
+              <p className="text-emerald-100">{t("settings.gestisciLeInformazioniELePreferenzeDelTuoC")}</p>
             </div>
           </div>
         </div>
@@ -636,7 +630,7 @@ export default function RepairCenterSettings() {
             <TabsContent value="general" className="space-y-6">
               <Card>
                 <CardHeader>
-                  <CardTitle>Informazioni Base</CardTitle>
+                  <CardTitle>{t("admin.resellerDetail.basicInfo")}</CardTitle>
                   <CardDescription>
                     Le informazioni principali del tuo centro di riparazione
                   </CardDescription>
@@ -648,7 +642,7 @@ export default function RepairCenterSettings() {
                       name="name"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Nome Centro</FormLabel>
+                          <FormLabel>{t("admin.repairCenters.centerName")}</FormLabel>
                           <FormControl>
                             <Input {...field} placeholder="Nome del centro" data-testid="input-name" />
                           </FormControl>
@@ -661,7 +655,7 @@ export default function RepairCenterSettings() {
                       name="websiteUrl"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Sito Web</FormLabel>
+                          <FormLabel>{t("common.website")}</FormLabel>
                           <FormControl>
                             <div className="relative">
                               <Globe className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -679,12 +673,12 @@ export default function RepairCenterSettings() {
                     name="description"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Descrizione</FormLabel>
+                        <FormLabel>{t("common.description")}</FormLabel>
                         <FormControl>
                           <Textarea {...field} value={field.value || ''} placeholder="Descrivi il tuo centro di riparazione..." className="min-h-[100px]" data-testid="input-description" />
                         </FormControl>
                         <FormDescription>
-                          Questa descrizione sarà visibile ai clienti
+                          {t("settings.descriptionVisibleToCustomers")}
                         </FormDescription>
                         <FormMessage />
                       </FormItem>
@@ -699,7 +693,7 @@ export default function RepairCenterSettings() {
                       name="address"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Indirizzo</FormLabel>
+                          <FormLabel>{t("profile.indirizzo")}</FormLabel>
                           <FormControl>
                             <div className="relative">
                               <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -715,7 +709,7 @@ export default function RepairCenterSettings() {
                       name="city"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Città</FormLabel>
+                          <FormLabel>{t("profile.citta")}</FormLabel>
                           <FormControl>
                             <Input {...field} placeholder="Milano" data-testid="input-city" />
                           </FormControl>
@@ -744,7 +738,7 @@ export default function RepairCenterSettings() {
                       name="provincia"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Provincia</FormLabel>
+                          <FormLabel>{t("profile.provincia")}</FormLabel>
                           <FormControl>
                             <Input {...field} value={field.value || ''} placeholder="MI" data-testid="input-provincia" />
                           </FormControl>
@@ -759,7 +753,7 @@ export default function RepairCenterSettings() {
                   {/* Logo Aziendale Section */}
                   <div className="space-y-4">
                     <div>
-                      <Label className="text-base font-medium">Logo Aziendale</Label>
+                      <Label className="text-base font-medium">{t("profile.companyLogo")}</Label>
                       <p className="text-sm text-muted-foreground mt-1">
                         Carica il logo del tuo centro di riparazione (JPEG, PNG o WebP, max 2MB)
                       </p>
@@ -770,7 +764,7 @@ export default function RepairCenterSettings() {
                         {(logoPreview || settings?.logoUrl) ? (
                           <AvatarImage 
                             src={logoPreview || settings?.logoUrl || ''} 
-                            alt="Logo centro" 
+                            alt={t("settings.logoCentro")} 
                             className="object-contain"
                           />
                         ) : null}
@@ -875,7 +869,7 @@ export default function RepairCenterSettings() {
                     name="notes"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Note Interne</FormLabel>
+                        <FormLabel>{t("common.internalNotes")}</FormLabel>
                         <FormControl>
                           <Textarea {...field} value={field.value || ''} placeholder="Note visibili solo agli operatori..." className="min-h-[80px]" data-testid="input-notes" />
                         </FormControl>
@@ -905,7 +899,7 @@ export default function RepairCenterSettings() {
                       name="phone"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Telefono Gestionale</FormLabel>
+                          <FormLabel>{t("settings.telefonoGestionale")}</FormLabel>
                           <FormControl>
                             <div className="relative">
                               <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -922,7 +916,7 @@ export default function RepairCenterSettings() {
                       name="publicPhone"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Telefono Pubblico</FormLabel>
+                          <FormLabel>{t("settings.telefonoPubblico")}</FormLabel>
                           <FormControl>
                             <div className="relative">
                               <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -1057,23 +1051,23 @@ export default function RepairCenterSettings() {
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  {DAYS_OF_WEEK.map((day) => {
-                    const isOpen = form.watch(`openingHours.${day.key}.isOpen`);
-                    const hasBreak = form.watch(`openingHours.${day.key}.breakStart`) || form.watch(`openingHours.${day.key}.breakEnd`);
+                  {DAYS_OF_WEEK_KEYS.map((dayKey) => {
+                    const isOpen = form.watch(`openingHours.${dayKey}.isOpen`);
+                    const hasBreak = form.watch(`openingHours.${dayKey}.breakStart`) || form.watch(`openingHours.${dayKey}.breakEnd`);
                     return (
-                      <div key={day.key} className="p-4 rounded-lg border space-y-3">
+                      <div key={dayKey} className="p-4 rounded-lg border space-y-3">
                         <div className="flex flex-wrap items-center gap-4">
-                          <div className="w-28 font-medium">{day.label}</div>
+                          <div className="w-28 font-medium">{t(`settings.${dayKey}`)}</div>
                           <FormField
                             control={form.control}
-                            name={`openingHours.${day.key}.isOpen`}
+                            name={`openingHours.${dayKey}.isOpen`}
                             render={({ field }) => (
                               <FormItem className="flex items-center space-x-2 space-y-0">
                                 <FormControl>
                                   <Switch
                                     checked={field.value}
                                     onCheckedChange={field.onChange}
-                                    data-testid={`switch-day-${day.key}`}
+                                    data-testid={`switch-day-${dayKey}`}
                                   />
                                 </FormControl>
                                 <Label className="text-sm text-muted-foreground">
@@ -1090,11 +1084,11 @@ export default function RepairCenterSettings() {
                                 <span className="text-xs text-muted-foreground font-medium w-16">Mattina</span>
                                 <FormField
                                   control={form.control}
-                                  name={`openingHours.${day.key}.start`}
+                                  name={`openingHours.${dayKey}.start`}
                                   render={({ field }) => (
                                     <FormItem>
                                       <FormControl>
-                                        <Input {...field} type="time" className="w-28 h-8" data-testid={`input-start-${day.key}`} />
+                                        <Input {...field} type="time" className="w-28 h-8" data-testid={`input-start-${dayKey}`} />
                                       </FormControl>
                                     </FormItem>
                                   )}
@@ -1102,7 +1096,7 @@ export default function RepairCenterSettings() {
                                 <span className="text-muted-foreground">-</span>
                                 <FormField
                                   control={form.control}
-                                  name={`openingHours.${day.key}.breakStart`}
+                                  name={`openingHours.${dayKey}.breakStart`}
                                   render={({ field }) => (
                                     <FormItem>
                                       <FormControl>
@@ -1112,7 +1106,7 @@ export default function RepairCenterSettings() {
                                           type="time" 
                                           className="w-28 h-8" 
                                           placeholder="--:--"
-                                          data-testid={`input-break-start-${day.key}`} 
+                                          data-testid={`input-break-start-${dayKey}`} 
                                         />
                                       </FormControl>
                                     </FormItem>
@@ -1123,7 +1117,7 @@ export default function RepairCenterSettings() {
                                 <span className="text-xs text-muted-foreground font-medium w-16">Pomeriggio</span>
                                 <FormField
                                   control={form.control}
-                                  name={`openingHours.${day.key}.breakEnd`}
+                                  name={`openingHours.${dayKey}.breakEnd`}
                                   render={({ field }) => (
                                     <FormItem>
                                       <FormControl>
@@ -1133,7 +1127,7 @@ export default function RepairCenterSettings() {
                                           type="time" 
                                           className="w-28 h-8" 
                                           placeholder="--:--"
-                                          data-testid={`input-break-end-${day.key}`} 
+                                          data-testid={`input-break-end-${dayKey}`} 
                                         />
                                       </FormControl>
                                     </FormItem>
@@ -1142,11 +1136,11 @@ export default function RepairCenterSettings() {
                                 <span className="text-muted-foreground">-</span>
                                 <FormField
                                   control={form.control}
-                                  name={`openingHours.${day.key}.end`}
+                                  name={`openingHours.${dayKey}.end`}
                                   render={({ field }) => (
                                     <FormItem>
                                       <FormControl>
-                                        <Input {...field} type="time" className="w-28 h-8" data-testid={`input-end-${day.key}`} />
+                                        <Input {...field} type="time" className="w-28 h-8" data-testid={`input-end-${dayKey}`} />
                                       </FormControl>
                                     </FormItem>
                                   )}
@@ -1168,7 +1162,7 @@ export default function RepairCenterSettings() {
             <TabsContent value="fiscal" className="space-y-6">
               <Card>
                 <CardHeader>
-                  <CardTitle>Dati Fiscali</CardTitle>
+                  <CardTitle>{t("profile.fiscalInfo")}</CardTitle>
                   <CardDescription>
                     Informazioni fiscali e bancarie del centro
                   </CardDescription>
@@ -1180,7 +1174,7 @@ export default function RepairCenterSettings() {
                       name="ragioneSociale"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Ragione Sociale</FormLabel>
+                          <FormLabel>{t("auth.companyName")}</FormLabel>
                           <FormControl>
                             <Input {...field} value={field.value || ''} placeholder="Centro Riparazioni S.r.l." data-testid="input-ragione-sociale" />
                           </FormControl>
@@ -1193,7 +1187,7 @@ export default function RepairCenterSettings() {
                       name="partitaIva"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Partita IVA</FormLabel>
+                          <FormLabel>{t("auth.vatNumber")}</FormLabel>
                           <FormControl>
                             <Input {...field} value={field.value || ''} placeholder="IT12345678901" data-testid="input-partita-iva" />
                           </FormControl>
@@ -1209,7 +1203,7 @@ export default function RepairCenterSettings() {
                       name="codiceFiscale"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Codice Fiscale</FormLabel>
+                          <FormLabel>{t("profile.codiceFiscale")}</FormLabel>
                           <FormControl>
                             <Input {...field} value={field.value || ''} placeholder="12345678901" data-testid="input-codice-fiscale" />
                           </FormControl>
@@ -1328,14 +1322,14 @@ export default function RepairCenterSettings() {
                               <div className="flex items-center gap-3 p-3 bg-muted rounded-lg">
                                 <Landmark className="h-5 w-5 text-muted-foreground" />
                                 <div>
-                                  <p className="font-medium">Bonifico Bancario</p>
+                                  <p className="font-medium">{t("settings.bankTransfer")}</p>
                                   <p className="text-sm text-muted-foreground">
                                     {paymentConfigData.parentConfig.bankTransferEnabled ? (
                                       <span className="flex items-center gap-1 text-green-600">
                                         <CheckCircle className="h-3 w-3" /> Attivo
                                       </span>
                                     ) : (
-                                      <span className="text-muted-foreground">Non attivo</span>
+                                      <span className="text-muted-foreground">{t("admin.resellerDetail.notActive")}</span>
                                     )}
                                   </p>
                                 </div>
@@ -1350,7 +1344,7 @@ export default function RepairCenterSettings() {
                                         <CheckCircle className="h-3 w-3" /> Attivo
                                       </span>
                                     ) : (
-                                      <span className="text-muted-foreground">Non attivo</span>
+                                      <span className="text-muted-foreground">{t("admin.resellerDetail.notActive")}</span>
                                     )}
                                   </p>
                                 </div>
@@ -1365,7 +1359,7 @@ export default function RepairCenterSettings() {
                                         <CheckCircle className="h-3 w-3" /> Attivo
                                       </span>
                                     ) : (
-                                      <span className="text-muted-foreground">Non attivo</span>
+                                      <span className="text-muted-foreground">{t("admin.resellerDetail.notActive")}</span>
                                     )}
                                   </p>
                                 </div>
@@ -1406,12 +1400,12 @@ export default function RepairCenterSettings() {
                                       <p className="font-mono text-sm">{stripeStatus.accountId}</p>
                                     </div>
                                     <div className="p-3 bg-muted rounded-lg">
-                                      <p className="text-xs text-muted-foreground">Dettagli completati</p>
+                                      <p className="text-xs text-muted-foreground">{t("settings.dettagliCompletati")}</p>
                                       <p className="font-medium flex items-center gap-1">
                                         {stripeStatus.detailsSubmitted ? (
-                                          <><CheckCircle className="h-4 w-4 text-green-500" /> Si</>
+                                          <><CheckCircle className="h-4 w-4 text-green-500" /> {t("license.yes")}</>
                                         ) : (
-                                          <><AlertCircle className="h-4 w-4 text-yellow-500" /> No</>
+                                          <><AlertCircle className="h-4 w-4 text-yellow-500" /> {t("common.no")}</>
                                         )}
                                       </p>
                                     </div>
@@ -1419,9 +1413,9 @@ export default function RepairCenterSettings() {
                                       <p className="text-xs text-muted-foreground">Pagamenti abilitati</p>
                                       <p className="font-medium flex items-center gap-1">
                                         {stripeStatus.chargesEnabled ? (
-                                          <><CheckCircle className="h-4 w-4 text-green-500" /> Si</>
+                                          <><CheckCircle className="h-4 w-4 text-green-500" /> {t("license.yes")}</>
                                         ) : (
-                                          <><AlertCircle className="h-4 w-4 text-yellow-500" /> No</>
+                                          <><AlertCircle className="h-4 w-4 text-yellow-500" /> {t("common.no")}</>
                                         )}
                                       </p>
                                     </div>
@@ -1429,9 +1423,9 @@ export default function RepairCenterSettings() {
                                       <p className="text-xs text-muted-foreground">Bonifici abilitati</p>
                                       <p className="font-medium flex items-center gap-1">
                                         {stripeStatus.payoutsEnabled ? (
-                                          <><CheckCircle className="h-4 w-4 text-green-500" /> Si</>
+                                          <><CheckCircle className="h-4 w-4 text-green-500" /> {t("license.yes")}</>
                                         ) : (
-                                          <><AlertCircle className="h-4 w-4 text-yellow-500" /> No</>
+                                          <><AlertCircle className="h-4 w-4 text-yellow-500" /> {t("common.no")}</>
                                         )}
                                       </p>
                                     </div>
@@ -1501,7 +1495,7 @@ export default function RepairCenterSettings() {
                                       <Landmark className="h-6 w-6 text-blue-600" />
                                     </div>
                                     <div>
-                                      <CardTitle className="text-lg">Bonifico Bancario</CardTitle>
+                                      <CardTitle className="text-lg">{t("settings.bankTransfer")}</CardTitle>
                                       <CardDescription>
                                         Configura i dati bancari per ricevere pagamenti tramite bonifico
                                       </CardDescription>
@@ -1551,7 +1545,7 @@ export default function RepairCenterSettings() {
                                         name="bankName"
                                         render={({ field }) => (
                                           <FormItem>
-                                            <FormLabel>Nome Banca</FormLabel>
+                                            <FormLabel>{t("settings.nomeBanca")}</FormLabel>
                                             <FormControl>
                                               <Input {...field} value={field.value || ''} placeholder="Es. UniCredit" data-testid="input-bank-name" />
                                             </FormControl>
@@ -1724,7 +1718,7 @@ export default function RepairCenterSettings() {
                                       name="paypalEmail"
                                       render={({ field }) => (
                                         <FormItem className="pt-4">
-                                          <FormLabel>Email PayPal</FormLabel>
+                                          <FormLabel>{t("settings.paypalEmail")}</FormLabel>
                                           <FormControl>
                                             <div className="relative">
                                               <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -1785,13 +1779,13 @@ export default function RepairCenterSettings() {
                                       />
                                     </div>
                                     <div className="bg-muted/50 rounded-lg p-4 text-sm text-muted-foreground space-y-2">
-                                      <p className="font-medium text-foreground">Come ottenere Client ID e Client Secret:</p>
+                                      <p className="font-medium text-foreground">{t("settings.paypalInstructions")}</p>
                                       <ol className="list-decimal list-inside space-y-1">
                                         <li>Accedi a <a href="https://developer.paypal.com" target="_blank" rel="noopener noreferrer" className="text-primary underline">developer.paypal.com</a></li>
-                                        <li>Vai su "Apps & Credentials" nel menu</li>
-                                        <li>Seleziona "Live" per le credenziali di produzione</li>
-                                        <li>Crea una nuova app o seleziona un'app esistente</li>
-                                        <li>Copia Client ID e Client Secret dalla pagina dell'app</li>
+                                        <li>{t("settings.paypalStep2")}</li>
+                                        <li>{t("settings.paypalStep3")}</li>
+                                        <li>{t("settings.paypalStep4")}</li>
+                                        <li>{t("settings.paypalStep5")}</li>
                                       </ol>
                                     </div>
                                     </>
@@ -1908,7 +1902,7 @@ export default function RepairCenterSettings() {
                           </div>
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div className="space-y-2">
-                              <Label htmlFor="hourly-rate">Tariffa Oraria (EUR)</Label>
+                              <Label htmlFor="hourly-rate">{t("settings.hourlyRateLabel")}</Label>
                               <div className="relative">
                                 <Euro className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                                 <Input

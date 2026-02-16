@@ -29,8 +29,9 @@ import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { DotLottieReact } from "@lottiefiles/dotlottie-react";
 import { usePageTitle } from "@/hooks/use-page-title";
+import { useTranslation } from "react-i18next";
 
-function LoginLoadingOverlay() {
+function LoginLoadingOverlay({ t }: { t: (key: string) => string }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-500">
       <div className="absolute inset-0 overflow-hidden">
@@ -54,13 +55,13 @@ function LoginLoadingOverlay() {
         </div>
         
         <div className="text-center space-y-3">
-          <h2 className="text-2xl font-bold text-white">Accesso in corso...</h2>
+          <h2 className="text-2xl font-bold text-white">{t("auth.loginLoading")}</h2>
           <div className="flex items-center justify-center gap-2">
             <div className="w-3 h-3 rounded-full bg-white animate-bounce" style={{ animationDelay: '0s' }} />
             <div className="w-3 h-3 rounded-full bg-white animate-bounce" style={{ animationDelay: '0.15s' }} />
             <div className="w-3 h-3 rounded-full bg-white animate-bounce" style={{ animationDelay: '0.3s' }} />
           </div>
-          <p className="text-white/80 text-sm">La scimmia sta verificando le credenziali</p>
+          <p className="text-white/80 text-sm">{t("auth.loginLoadingDesc")}</p>
         </div>
       </div>
       
@@ -74,7 +75,7 @@ function LoginLoadingOverlay() {
   );
 }
 
-function AnimatedMonkeyMascot() {
+function AnimatedMonkeyMascot({ t }: { t: (key: string) => string }) {
   return (
     <div className="relative flex flex-col items-center">
       <div className="relative group">
@@ -121,7 +122,7 @@ function AnimatedMonkeyMascot() {
         </div>
         <div className="flex flex-wrap items-center gap-2 px-4 py-2 rounded-full bg-white/15 backdrop-blur-sm border border-white/25">
           <BarChart3 className="w-4 h-4 text-yellow-300" />
-          <span className="text-sm text-white font-medium">10K+ riparazioni</span>
+          <span className="text-sm text-white font-medium">{t("auth.repairs10k")}</span>
         </div>
       </div>
       
@@ -136,7 +137,8 @@ function AnimatedMonkeyMascot() {
 }
 
 export default function AuthPage() {
-  usePageTitle("Accedi o Registrati");
+  const { t } = useTranslation();
+  usePageTitle(t("auth.pageTitle"));
   const { user, loginMutation, registerMutation } = useAuth();
   const { toast } = useToast();
   const [loginData, setLoginData] = useState({ username: "", password: "" });
@@ -169,14 +171,14 @@ export default function AuthPage() {
       if (data.pending) {
         setResellerPending(true);
         toast({
-          title: "Registrazione completata",
-          description: "Il tuo account è in attesa di approvazione.",
+          title: t("auth.registrationComplete"),
+          description: t("auth.pendingApproval"),
         });
       }
     },
     onError: (error: Error) => {
       toast({
-        title: "Errore",
+        title: t("auth.error"),
         description: error.message,
         variant: "destructive",
       });
@@ -208,7 +210,7 @@ export default function AuthPage() {
 
   return (
     <>
-      {loginMutation.isPending && <LoginLoadingOverlay />}
+      {loginMutation.isPending && <LoginLoadingOverlay t={t} />}
       <div className="min-h-screen flex bg-white dark:bg-slate-950">
       <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-500" />
@@ -245,16 +247,16 @@ export default function AuthPage() {
           </Link>
           
           <div className="flex flex-col items-center space-y-8">
-            <AnimatedMonkeyMascot />
+            <AnimatedMonkeyMascot t={t} />
             
             <div className="text-center space-y-4 max-w-md">
               <h1 className="text-4xl font-bold leading-tight">
-                Gestione 
-                <span className="text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 via-orange-300 to-yellow-200"> riparazioni </span>
-                intelligente
+                {t("auth.heroTitle")}
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 via-orange-300 to-yellow-200">{t("auth.heroTitleHighlight")}</span>
+                {t("auth.heroTitleEnd")}
               </h1>
               <p className="text-lg text-white/80 leading-relaxed">
-                La piattaforma enterprise per gestire riparazioni, magazzino, clienti e fatturazione in un'unica soluzione.
+                {t("auth.heroDesc")}
               </p>
             </div>
           </div>
@@ -265,9 +267,9 @@ export default function AuthPage() {
                 <div className="p-2 rounded-xl bg-yellow-400/30">
                   <Zap className="h-5 w-5 text-yellow-200" />
                 </div>
-                <span className="font-semibold">Real-time</span>
+                <span className="font-semibold">{t("auth.realtime")}</span>
               </div>
-              <p className="text-sm text-white/70">Aggiornamenti istantanei</p>
+              <p className="text-sm text-white/70">{t("auth.realtimeDesc")}</p>
             </div>
             
             <div className="p-4 rounded-2xl bg-white/10 backdrop-blur-sm border border-white/20">
@@ -275,9 +277,9 @@ export default function AuthPage() {
                 <div className="p-2 rounded-xl bg-emerald-400/30">
                   <Shield className="h-5 w-5 text-emerald-200" />
                 </div>
-                <span className="font-semibold">Sicuro</span>
+                <span className="font-semibold">{t("auth.secure")}</span>
               </div>
-              <p className="text-sm text-white/70">Dati sempre protetti</p>
+              <p className="text-sm text-white/70">{t("auth.secureDesc")}</p>
             </div>
             
             <div className="p-4 rounded-2xl bg-white/10 backdrop-blur-sm border border-white/20">
@@ -285,9 +287,9 @@ export default function AuthPage() {
                 <div className="p-2 rounded-xl bg-orange-400/30">
                   <BarChart3 className="h-5 w-5 text-orange-200" />
                 </div>
-                <span className="font-semibold">Analytics</span>
+                <span className="font-semibold">{t("auth.analyticsLabel")}</span>
               </div>
-              <p className="text-sm text-white/70">Dashboard avanzata</p>
+              <p className="text-sm text-white/70">{t("auth.analyticsDesc")}</p>
             </div>
             
             <div className="p-4 rounded-2xl bg-white/10 backdrop-blur-sm border border-white/20">
@@ -295,9 +297,9 @@ export default function AuthPage() {
                 <div className="p-2 rounded-xl bg-cyan-400/30">
                   <Smartphone className="h-5 w-5 text-cyan-200" />
                 </div>
-                <span className="font-semibold">Mobile</span>
+                <span className="font-semibold">{t("auth.mobileLabel")}</span>
               </div>
-              <p className="text-sm text-white/70">Accesso ovunque</p>
+              <p className="text-sm text-white/70">{t("auth.mobileDesc")}</p>
             </div>
           </div>
           
@@ -340,21 +342,21 @@ export default function AuthPage() {
                 data-testid="tab-login" 
                 className="rounded-xl data-[state=active]:bg-white dark:data-[state=active]:bg-slate-700 data-[state=active]:shadow-sm text-sm font-medium transition-all"
               >
-                Accedi
+                {t("auth.loginButton")}
               </TabsTrigger>
               <TabsTrigger 
                 value="customer" 
                 data-testid="tab-customer" 
                 className="rounded-xl data-[state=active]:bg-white dark:data-[state=active]:bg-slate-700 data-[state=active]:shadow-sm text-sm font-medium transition-all"
               >
-                Cliente
+                {t("auth.customerTab")}
               </TabsTrigger>
               <TabsTrigger 
                 value="reseller" 
                 data-testid="tab-reseller" 
                 className="rounded-xl data-[state=active]:bg-white dark:data-[state=active]:bg-slate-700 data-[state=active]:shadow-sm text-sm font-medium transition-all"
               >
-                Business
+                {t("auth.businessTab")}
               </TabsTrigger>
             </TabsList>
 
@@ -364,15 +366,15 @@ export default function AuthPage() {
                   <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-500 mb-2">
                     <Wrench className="w-8 h-8 text-white" />
                   </div>
-                  <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Bentornato</h1>
+                  <h1 className="text-2xl font-bold text-slate-900 dark:text-white">{t("auth.welcomeBack")}</h1>
                   <p className="text-sm text-slate-500 dark:text-slate-400">
-                    Accedi per gestire le tue riparazioni
+                    {t("auth.loginDesc")}
                   </p>
                 </div>
 
                 <form onSubmit={handleLogin} className="space-y-4">
                   <div className="space-y-2">
-                    <Label htmlFor="login-username" className="text-slate-700 dark:text-slate-300">Username o Email</Label>
+                    <Label htmlFor="login-username" className="text-slate-700 dark:text-slate-300">{t("auth.usernameOrEmail")}</Label>
                     <div className="relative">
                       <Mail className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" />
                       <Input
@@ -387,14 +389,14 @@ export default function AuthPage() {
                     </div>
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="login-password" className="text-slate-700 dark:text-slate-300">Password</Label>
+                    <Label htmlFor="login-password" className="text-slate-700 dark:text-slate-300">{t("auth.password")}</Label>
                     <div className="relative">
                       <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" />
                       <Input
                         id="login-password"
                         type="password"
                         data-testid="input-login-password"
-                        placeholder="La tua password"
+                        placeholder={t("auth.yourPassword")}
                         value={loginData.password}
                         onChange={(e) => setLoginData({ ...loginData, password: e.target.value })}
                         className="pl-12 h-12 rounded-xl border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 focus:bg-white dark:focus:bg-slate-800 focus:border-emerald-500 transition-colors"
@@ -411,11 +413,11 @@ export default function AuthPage() {
                     {loginMutation.isPending ? (
                       <span className="flex flex-wrap items-center gap-2">
                         <span className="h-5 w-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                        Accesso in corso...
+                        {t("auth.loggingIn")}
                       </span>
                     ) : (
                       <span className="flex flex-wrap items-center gap-2">
-                        Accedi
+                        {t("auth.loginButton")}
                         <ArrowRight className="h-5 w-5" />
                       </span>
                     )}
@@ -425,11 +427,11 @@ export default function AuthPage() {
                 <div className="flex items-center justify-center gap-8 pt-4 text-sm text-slate-500 dark:text-slate-400">
                   <span className="flex flex-wrap items-center gap-2">
                     <Shield className="h-4 w-4 text-emerald-500" />
-                    Connessione sicura
+                    {t("auth.secureConnection")}
                   </span>
                   <span className="flex flex-wrap items-center gap-2">
                     <Zap className="h-4 w-4 text-orange-500" />
-                    Supporto 24/7
+                    {t("auth.support247")}
                   </span>
                 </div>
               </div>
@@ -441,15 +443,15 @@ export default function AuthPage() {
                   <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-cyan-500 to-teal-500 mb-2">
                     <User className="h-8 w-8 text-white" />
                   </div>
-                  <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Crea Account</h1>
+                  <h1 className="text-2xl font-bold text-slate-900 dark:text-white">{t("auth.createAccount")}</h1>
                   <p className="text-sm text-slate-500 dark:text-slate-400">
-                    Traccia le tue riparazioni in tempo reale
+                    {t("auth.trackRepairs")}
                   </p>
                 </div>
 
                 <form onSubmit={handleCustomerRegister} className="space-y-4">
                   <div className="space-y-2">
-                    <Label htmlFor="customer-fullname" className="text-slate-700 dark:text-slate-300">Nome e Cognome</Label>
+                    <Label htmlFor="customer-fullname" className="text-slate-700 dark:text-slate-300">{t("auth.fullName")}</Label>
                     <div className="relative">
                       <User className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" />
                       <Input
@@ -464,7 +466,7 @@ export default function AuthPage() {
                     </div>
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="customer-email" className="text-slate-700 dark:text-slate-300">Email</Label>
+                    <Label htmlFor="customer-email" className="text-slate-700 dark:text-slate-300">{t("auth.email")}</Label>
                     <div className="relative">
                       <Mail className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" />
                       <Input
@@ -481,7 +483,7 @@ export default function AuthPage() {
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div className="space-y-2">
-                      <Label htmlFor="customer-username" className="text-slate-700 dark:text-slate-300">Username</Label>
+                      <Label htmlFor="customer-username" className="text-slate-700 dark:text-slate-300">{t("auth.username")}</Label>
                       <Input
                         id="customer-username"
                         data-testid="input-customer-username"
@@ -493,12 +495,12 @@ export default function AuthPage() {
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="customer-password" className="text-slate-700 dark:text-slate-300">Password</Label>
+                      <Label htmlFor="customer-password" className="text-slate-700 dark:text-slate-300">{t("auth.password")}</Label>
                       <Input
                         id="customer-password"
                         type="password"
                         data-testid="input-customer-password"
-                        placeholder="Min. 6 caratteri"
+                        placeholder={t("auth.minChars")}
                         value={customerData.password}
                         onChange={(e) => setCustomerData({ ...customerData, password: e.target.value })}
                         className="h-12 rounded-xl border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 focus:bg-white dark:focus:bg-slate-800 focus:border-teal-500 transition-colors"
@@ -515,11 +517,11 @@ export default function AuthPage() {
                     {registerMutation.isPending ? (
                       <span className="flex flex-wrap items-center gap-2">
                         <span className="h-5 w-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                        Registrazione...
+                        {t("auth.registering")}
                       </span>
                     ) : (
                       <span className="flex flex-wrap items-center gap-2">
-                        Crea Account
+                        {t("auth.createAccount")}
                         <ArrowRight className="h-5 w-5" />
                       </span>
                     )}
@@ -536,9 +538,9 @@ export default function AuthPage() {
                       <CheckCircle className="h-10 w-10 text-white" />
                     </div>
                     <div className="space-y-2">
-                      <h3 className="text-2xl font-bold text-slate-900 dark:text-white">Richiesta Inviata</h3>
+                      <h3 className="text-2xl font-bold text-slate-900 dark:text-white">{t("auth.requestSent")}</h3>
                       <p className="text-sm text-slate-500 dark:text-slate-400 max-w-xs mx-auto">
-                        Ti contatteremo entro 24 ore per attivare il tuo account business.
+                        {t("auth.requestSentDesc")}
                       </p>
                     </div>
                     <Button 
@@ -547,7 +549,7 @@ export default function AuthPage() {
                       className="rounded-xl"
                       data-testid="button-reseller-new-request"
                     >
-                      Nuova Richiesta
+                      {t("auth.newRequest")}
                     </Button>
                   </div>
                 ) : (
@@ -556,9 +558,9 @@ export default function AuthPage() {
                       <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-orange-500 to-amber-500 mb-2">
                         <Store className="h-8 w-8 text-white" />
                       </div>
-                      <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Account Business</h1>
+                      <h1 className="text-2xl font-bold text-slate-900 dark:text-white">{t("auth.businessAccount")}</h1>
                       <p className="text-sm text-slate-500 dark:text-slate-400">
-                        Per rivenditori e centri di riparazione
+                        {t("auth.businessDesc")}
                       </p>
                     </div>
 
@@ -567,14 +569,14 @@ export default function AuthPage() {
                         <Shield className="h-5 w-5 text-amber-600 dark:text-amber-400" />
                       </div>
                       <p className="text-sm text-amber-800 dark:text-amber-200">
-                        Registrazione business con verifica entro 24h
+                        {t("auth.businessVerification")}
                       </p>
                     </div>
 
                     <form onSubmit={handleResellerRegister} className="space-y-3">
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <div className="space-y-1.5">
-                          <Label htmlFor="reseller-fullname" className="text-xs text-slate-600 dark:text-slate-400">Referente</Label>
+                          <Label htmlFor="reseller-fullname" className="text-xs text-slate-600 dark:text-slate-400">{t("auth.referent")}</Label>
                           <div className="relative">
                             <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
                             <Input
@@ -589,7 +591,7 @@ export default function AuthPage() {
                           </div>
                         </div>
                         <div className="space-y-1.5">
-                          <Label htmlFor="reseller-phone" className="text-xs text-slate-600 dark:text-slate-400">Telefono</Label>
+                          <Label htmlFor="reseller-phone" className="text-xs text-slate-600 dark:text-slate-400">{t("auth.phone")}</Label>
                           <div className="relative">
                             <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
                             <Input
@@ -605,7 +607,7 @@ export default function AuthPage() {
                       </div>
                       
                       <div className="space-y-1.5">
-                        <Label htmlFor="reseller-ragione-sociale" className="text-xs text-slate-600 dark:text-slate-400">Ragione Sociale</Label>
+                        <Label htmlFor="reseller-ragione-sociale" className="text-xs text-slate-600 dark:text-slate-400">{t("auth.companyName")}</Label>
                         <div className="relative">
                           <Building className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
                           <Input
@@ -621,7 +623,7 @@ export default function AuthPage() {
                       
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <div className="space-y-1.5">
-                          <Label htmlFor="reseller-partita-iva" className="text-xs text-slate-600 dark:text-slate-400">Partita IVA</Label>
+                          <Label htmlFor="reseller-partita-iva" className="text-xs text-slate-600 dark:text-slate-400">{t("auth.vatNumber")}</Label>
                           <div className="relative">
                             <FileText className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
                             <Input
@@ -635,7 +637,7 @@ export default function AuthPage() {
                           </div>
                         </div>
                         <div className="space-y-1.5">
-                          <Label htmlFor="reseller-email" className="text-xs text-slate-600 dark:text-slate-400">Email Aziendale</Label>
+                          <Label htmlFor="reseller-email" className="text-xs text-slate-600 dark:text-slate-400">{t("auth.businessEmail")}</Label>
                           <div className="relative">
                             <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
                             <Input
@@ -654,7 +656,7 @@ export default function AuthPage() {
                       
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <div className="space-y-1.5">
-                          <Label htmlFor="reseller-username" className="text-xs text-slate-600 dark:text-slate-400">Username</Label>
+                          <Label htmlFor="reseller-username" className="text-xs text-slate-600 dark:text-slate-400">{t("auth.username")}</Label>
                           <Input
                             id="reseller-username"
                             data-testid="input-reseller-username"
@@ -666,12 +668,12 @@ export default function AuthPage() {
                           />
                         </div>
                         <div className="space-y-1.5">
-                          <Label htmlFor="reseller-password" className="text-xs text-slate-600 dark:text-slate-400">Password</Label>
+                          <Label htmlFor="reseller-password" className="text-xs text-slate-600 dark:text-slate-400">{t("auth.password")}</Label>
                           <Input
                             id="reseller-password"
                             type="password"
                             data-testid="input-reseller-password"
-                            placeholder="Min. 6 caratteri"
+                            placeholder={t("auth.minChars")}
                             value={resellerData.password}
                             onChange={(e) => setResellerData({ ...resellerData, password: e.target.value })}
                             className="h-11 rounded-xl border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 text-sm focus:border-orange-500"
@@ -689,11 +691,11 @@ export default function AuthPage() {
                         {resellerRegisterMutation.isPending ? (
                           <span className="flex flex-wrap items-center gap-2">
                             <span className="h-5 w-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                            Invio richiesta...
+                            {t("auth.sendingRequest")}
                           </span>
                         ) : (
                           <span className="flex flex-wrap items-center gap-2">
-                            Richiedi Accesso Business
+                            {t("auth.requestAccess")}
                             <ArrowRight className="h-5 w-5" />
                           </span>
                         )}
@@ -707,7 +709,7 @@ export default function AuthPage() {
           
           <div className="mt-8 text-center">
             <p className="text-xs text-slate-400 dark:text-slate-500">
-              2025 MonkeyPlan - Gestione Riparazioni Elettroniche
+              {t("auth.footerText")}
             </p>
           </div>
         </div>

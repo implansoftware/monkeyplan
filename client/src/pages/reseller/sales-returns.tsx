@@ -18,16 +18,17 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import type { SalesOrderReturn } from "@shared/schema";
+import { useTranslation } from "react-i18next";
 
 const statusLabels: Record<string, string> = {
   requested: "Richiesto",
-  approved: "Approvato",
-  rejected: "Rifiutato",
-  shipped: "Spedito",
-  received: "Ricevuto",
+  approved: t("repairs.status.approved"),
+  rejected: t("b2b.status.cancelled"),
+  shipped: t("b2b.status.shipped"),
+  received: t("repairs.status.received"),
   refunded: "Rimborsato",
   partially_refunded: "Rimborsato parzialmente",
-  cancelled: "Annullato"
+  cancelled: t("repairs.status.cancelled")
 };
 
 const statusColors: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
@@ -47,17 +48,18 @@ const reasonLabels: Record<string, string> = {
   not_as_described: "Non conforme alla descrizione",
   changed_mind: "Ripensamento",
   damaged_in_transit: "Danneggiato in trasporto",
-  other: "Altro"
+  other: t("common.other")
 };
 
 const refundMethodLabels: Record<string, string> = {
   original_method: "Metodo originale",
   bank_transfer: "Bonifico",
   store_credit: "Credito negozio",
-  cash: "Contanti"
+  cash: t("pos.cash")
 };
 
 export default function ResellerSalesReturns() {
+  const { t } = useTranslation();
   const { toast } = useToast();
   
   const [search, setSearch] = useState("");
@@ -106,7 +108,7 @@ export default function ResellerSalesReturns() {
       setSelectedReturn(null);
     },
     onError: (error: any) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     }
   });
   
@@ -274,18 +276,18 @@ export default function ResellerSalesReturns() {
             </div>
             <Select value={statusFilter} onValueChange={setStatusFilter}>
               <SelectTrigger className="w-full sm:w-[200px]" data-testid="select-status">
-                <SelectValue placeholder="Filtra per stato" />
+                <SelectValue placeholder={t("common.filterByStatus")} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">Tutti gli stati</SelectItem>
+                <SelectItem value="all">{t("common.allStatuses")}</SelectItem>
                 <SelectItem value="requested">Richiesto</SelectItem>
-                <SelectItem value="approved">Approvato</SelectItem>
-                <SelectItem value="rejected">Rifiutato</SelectItem>
-                <SelectItem value="shipped">Spedito</SelectItem>
-                <SelectItem value="received">Ricevuto</SelectItem>
+                <SelectItem value="approved">{t("repairs.status.approved")}</SelectItem>
+                <SelectItem value="rejected">{t("b2b.status.cancelled")}</SelectItem>
+                <SelectItem value="shipped">{t("b2b.status.shipped")}</SelectItem>
+                <SelectItem value="received">{t("repairs.status.received")}</SelectItem>
                 <SelectItem value="refunded">Rimborsato</SelectItem>
                 <SelectItem value="partially_refunded">Rimborsato parzialmente</SelectItem>
-                <SelectItem value="cancelled">Annullato</SelectItem>
+                <SelectItem value="cancelled">{t("repairs.status.cancelled")}</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -294,20 +296,18 @@ export default function ResellerSalesReturns() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>N. Reso</TableHead>
-                  <TableHead>Data Richiesta</TableHead>
-                  <TableHead>Motivo</TableHead>
-                  <TableHead>Stato</TableHead>
-                  <TableHead>Rimborso</TableHead>
-                  <TableHead className="text-right">Azioni</TableHead>
+                  <TableHead>{t("b2b.returnNumber")}</TableHead>
+                  <TableHead>{t("warehouse.requestDate")}</TableHead>
+                  <TableHead>{t("common.reason")}</TableHead>
+                  <TableHead>{t("common.status")}</TableHead>
+                  <TableHead>{t("hr.reimbursement")}</TableHead>
+                  <TableHead className="text-right">{t("common.actions")}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filteredReturns.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
-                      Nessun reso trovato
-                    </TableCell>
+                    <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">{t("b2b.noReturnsFound")}</TableCell>
                   </TableRow>
                 ) : (
                   filteredReturns.map(ret => (
@@ -361,19 +361,19 @@ export default function ResellerSalesReturns() {
             <div className="space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <Label className="text-muted-foreground text-sm">Stato</Label>
+                  <Label className="text-muted-foreground text-sm">{t("common.status")}</Label>
                   <p className="font-medium">{statusLabels[selectedReturn.status || '']}</p>
                 </div>
                 <div>
-                  <Label className="text-muted-foreground text-sm">Motivo</Label>
+                  <Label className="text-muted-foreground text-sm">{t("common.reason")}</Label>
                   <p className="font-medium">{reasonLabels[selectedReturn.reason || ''] || selectedReturn.reason}</p>
                 </div>
                 <div>
-                  <Label className="text-muted-foreground text-sm">Data Richiesta</Label>
+                  <Label className="text-muted-foreground text-sm">{t("warehouse.requestDate")}</Label>
                   <p className="font-medium">{formatDate(selectedReturn.createdAt)}</p>
                 </div>
                 <div>
-                  <Label className="text-muted-foreground text-sm">Rimborso</Label>
+                  <Label className="text-muted-foreground text-sm">{t("hr.reimbursement")}</Label>
                   <p className="font-medium">{formatPrice(selectedReturn.refundAmount)}</p>
                 </div>
               </div>
@@ -385,16 +385,14 @@ export default function ResellerSalesReturns() {
               )}
               {selectedReturn.internalNotes && (
                 <div>
-                  <Label className="text-muted-foreground text-sm">Note Interne</Label>
+                  <Label className="text-muted-foreground text-sm">{t("common.internalNotes")}</Label>
                   <p className="mt-1 p-2 bg-muted rounded">{selectedReturn.internalNotes}</p>
                 </div>
               )}
             </div>
           )}
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowDetailDialog(false)}>
-              Chiudi
-            </Button>
+            <Button variant="outline" onClick={() => setShowDetailDialog(false)}>{t("common.close")}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -409,20 +407,20 @@ export default function ResellerSalesReturns() {
           </DialogHeader>
           <div className="space-y-4">
             <div>
-              <Label>Stato</Label>
+              <Label>{t("common.status")}</Label>
               <Select value={updateData.status} onValueChange={(v) => setUpdateData(prev => ({ ...prev, status: v }))}>
                 <SelectTrigger data-testid="select-update-status">
-                  <SelectValue placeholder="Seleziona stato" />
+                  <SelectValue placeholder={t("common.selectStatus")} />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="requested">Richiesto</SelectItem>
-                  <SelectItem value="approved">Approvato</SelectItem>
-                  <SelectItem value="rejected">Rifiutato</SelectItem>
-                  <SelectItem value="shipped">Spedito</SelectItem>
-                  <SelectItem value="received">Ricevuto</SelectItem>
+                  <SelectItem value="approved">{t("repairs.status.approved")}</SelectItem>
+                  <SelectItem value="rejected">{t("b2b.status.cancelled")}</SelectItem>
+                  <SelectItem value="shipped">{t("b2b.status.shipped")}</SelectItem>
+                  <SelectItem value="received">{t("repairs.status.received")}</SelectItem>
                   <SelectItem value="refunded">Rimborsato</SelectItem>
                   <SelectItem value="partially_refunded">Rimborsato parzialmente</SelectItem>
-                  <SelectItem value="cancelled">Annullato</SelectItem>
+                  <SelectItem value="cancelled">{t("repairs.status.cancelled")}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -439,7 +437,7 @@ export default function ResellerSalesReturns() {
                       <SelectItem value="original_method">Metodo originale</SelectItem>
                       <SelectItem value="bank_transfer">Bonifico</SelectItem>
                       <SelectItem value="store_credit">Credito negozio</SelectItem>
-                      <SelectItem value="cash">Contanti</SelectItem>
+                      <SelectItem value="cash">{t("pos.cash")}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -458,7 +456,7 @@ export default function ResellerSalesReturns() {
             )}
             
             <div>
-              <Label>Note Interne</Label>
+              <Label>{t("common.internalNotes")}</Label>
               <Textarea 
                 value={updateData.internalNotes}
                 onChange={(e) => setUpdateData(prev => ({ ...prev, internalNotes: e.target.value }))}
@@ -468,15 +466,13 @@ export default function ResellerSalesReturns() {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowUpdateDialog(false)}>
-              Annulla
-            </Button>
+            <Button variant="outline" onClick={() => setShowUpdateDialog(false)}>{t("common.cancel")}</Button>
             <Button 
               onClick={handleUpdate}
               disabled={updateMutation.isPending}
               data-testid="button-confirm-update"
             >
-              {updateMutation.isPending ? "Salvataggio..." : "Salva"}
+              {updateMutation.isPending ? t("profile.saving") : t("common.save")}
             </Button>
           </DialogFooter>
         </DialogContent>

@@ -20,6 +20,7 @@ import type { PaymentConfiguration } from "@shared/schema";
 import { SiStripe, SiPaypal } from "react-icons/si";
 import { EntityFiscalConfig } from "@/components/entity-fiscal-config";
 import { ShippingMethodsTab } from "@/components/shipping-methods-tab";
+import { useTranslation } from "react-i18next";
 
 interface HourlyRateResponse {
   hourlyRateCents: number;
@@ -63,13 +64,13 @@ const phaseLabels: Record<string, string> = {
 };
 
 const phaseDescriptions: Record<string, string> = {
-  ingressato: "Tempo dalla presa in carico all'inizio diagnosi",
-  in_diagnosi: "Tempo per completare la diagnosi del dispositivo",
-  preventivo_emesso: "Tempo di attesa per risposta cliente al preventivo",
-  attesa_ricambi: "Tempo dall'ordine ricambi alla ricezione",
-  in_riparazione: "Tempo per completare la riparazione",
-  in_test: "Tempo per eseguire i test finali",
-  pronto_ritiro: "Tempo dal dispositivo pronto al ritiro effettivo",
+  ingressato: t("settings.phase.ingressato"),
+  in_diagnosi: t("settings.phase.inDiagnosi"),
+  preventivo_emesso: t("settings.phase.preventivo"),
+  attesa_ricambi: t("settings.phase.attesaRicambi"),
+  in_riparazione: t("settings.phase.inRiparazione"),
+  in_test: t("settings.phase.inTest"),
+  pronto_ritiro: t("settings.phase.prontoRitiro"),
 };
 
 const PhaseIcons: Record<string, React.ComponentType<{ className?: string }>> = {
@@ -100,6 +101,7 @@ const paymentFormSchema = z.object({
 type PaymentFormData = z.infer<typeof paymentFormSchema>;
 
 export default function ResellerSettings() {
+  const { t } = useTranslation();
   const { toast } = useToast();
   const [isConnectingStripe, setIsConnectingStripe] = useState(false);
   const [hourlyRateEuros, setHourlyRateEuros] = useState<string>("");
@@ -180,7 +182,7 @@ export default function ResellerSettings() {
     },
     onError: (error: Error) => {
       toast({
-        title: "Errore",
+        title: t("common.error"),
         description: error.message,
         variant: "destructive",
       });
@@ -202,7 +204,7 @@ export default function ResellerSettings() {
     },
     onError: (error: Error) => {
       toast({
-        title: "Errore",
+        title: t("common.error"),
         description: error.message,
         variant: "destructive",
       });
@@ -215,14 +217,14 @@ export default function ResellerSettings() {
     },
     onSuccess: () => {
       toast({
-        title: "Soglie SLA Salvate",
-        description: "Le soglie temporali sono state aggiornate con successo",
+        title: t("settings.slaSaved"),
+        description: t("settings.slaSavedDesc"),
       });
       queryClient.invalidateQueries({ queryKey: ["/api/reseller/settings/sla-thresholds"] });
     },
     onError: (error: Error) => {
       toast({
-        title: "Errore",
+        title: t("common.error"),
         description: error.message,
         variant: "destructive",
       });
@@ -257,7 +259,7 @@ export default function ResellerSettings() {
     },
     onError: (error: Error) => {
       toast({
-        title: "Errore",
+        title: t("common.error"),
         description: error.message,
         variant: "destructive",
       });
@@ -274,7 +276,7 @@ export default function ResellerSettings() {
     },
     onError: (error: Error) => {
       toast({
-        title: "Errore",
+        title: t("common.error"),
         description: error.message,
         variant: "destructive",
       });
@@ -286,7 +288,7 @@ export default function ResellerSettings() {
     if (data.stripeEnabled && !paymentConfig?.hasStripeSecret && (!data.stripeSecretKey || !data.stripeSecretKey.trim())) {
       form.setError("stripeSecretKey", {
         type: "manual",
-        message: "Secret Key è obbligatoria per abilitare Stripe"
+        message: t("settings.stripeSecretRequired")
       });
       return;
     }
@@ -294,7 +296,7 @@ export default function ResellerSettings() {
     if (data.paypalEnabled && !paymentConfig?.hasPaypalSecret && (!data.paypalClientSecret || !data.paypalClientSecret.trim())) {
       form.setError("paypalClientSecret", {
         type: "manual",
-        message: "Client Secret è obbligatorio per abilitare PayPal"
+        message: t("settings.paypalSecretRequired")
       });
       return;
     }
@@ -310,8 +312,8 @@ export default function ResellerSettings() {
     const euros = parseFloat(hourlyRateEuros);
     if (isNaN(euros) || euros < 0) {
       toast({
-        title: "Errore",
-        description: "Inserisci un valore valido per la tariffa oraria",
+        title: t("common.error"),
+        description: t("settings.invalidRate"),
         variant: "destructive",
       });
       return;
@@ -333,15 +335,15 @@ export default function ResellerSettings() {
     
     switch (stripeStatus.status) {
       case 'active':
-        return <Badge className="bg-green-500/10 text-green-600 dark:text-green-400">Attivo</Badge>;
+        return <Badge className="bg-green-500/10 text-green-600 dark:text-green-400">{t("common.active")}</Badge>;
       case 'onboarding':
         return <Badge className="bg-yellow-500/10 text-yellow-600 dark:text-yellow-400">Onboarding in corso</Badge>;
       case 'restricted':
         return <Badge className="bg-orange-500/10 text-orange-600 dark:text-orange-400">Richiede azioni</Badge>;
       case 'disabled':
-        return <Badge variant="destructive">Disabilitato</Badge>;
+        return <Badge variant="destructive">{t("common.disabled")}</Badge>;
       default:
-        return <Badge variant="secondary">In attesa</Badge>;
+        return <Badge variant="secondary">{t("hr.pending")}</Badge>;
     }
   };
 
@@ -359,7 +361,7 @@ export default function ResellerSettings() {
       <div className="flex items-center gap-3">
         <Settings className="h-8 w-8 text-primary" />
         <div>
-          <h1 className="text-2xl font-bold">Impostazioni</h1>
+          <h1 className="text-2xl font-bold">{t("settings.title")}</h1>
           <p className="text-muted-foreground">Configura tariffe, SLA, pagamenti e spedizioni</p>
         </div>
       </div>
@@ -367,21 +369,13 @@ export default function ResellerSettings() {
       <Tabs defaultValue="tariffe" className="space-y-6">
         <TabsList>
           <TabsTrigger value="tariffe" className="gap-2" data-testid="tab-tariffe">
-            <Clock className="h-4 w-4" />
-            Tariffe
-          </TabsTrigger>
+            <Clock className="h-4 w-4" />{t("settings.tabs.rates")}</TabsTrigger>
           <TabsTrigger value="sla" className="gap-2" data-testid="tab-sla">
-            <Timer className="h-4 w-4" />
-            SLA
-          </TabsTrigger>
+            <Timer className="h-4 w-4" />{t("settings.tabs.sla")}</TabsTrigger>
           <TabsTrigger value="pagamenti" className="gap-2" data-testid="tab-pagamenti">
-            <CreditCard className="h-4 w-4" />
-            Pagamenti
-          </TabsTrigger>
+            <CreditCard className="h-4 w-4" />{t("sidebar.items.payments")}</TabsTrigger>
           <TabsTrigger value="shipping" className="gap-2" data-testid="tab-shipping">
-            <Truck className="h-4 w-4" />
-            Consegna
-          </TabsTrigger>
+            <Truck className="h-4 w-4" />{t("suppliers.delivery")}</TabsTrigger>
           <TabsTrigger value="fiscal" className="gap-2" data-testid="tab-fiscal">
             <Shield className="h-4 w-4" />
             RT Fiscale
@@ -393,9 +387,7 @@ export default function ResellerSettings() {
             <Card>
               <CardHeader>
                 <CardTitle className="flex flex-wrap items-center gap-2">
-                  <Clock className="h-5 w-5" />
-                  Tariffa Manodopera
-                </CardTitle>
+                  <Clock className="h-5 w-5" />{t("admin.repairCenters.hourlyRateSection")}</CardTitle>
                 <CardDescription>
                   Imposta la tariffa oraria per il calcolo automatico del costo manodopera nei preventivi
                 </CardDescription>
@@ -409,7 +401,7 @@ export default function ResellerSettings() {
                 ) : (
                   <>
                     <div className="space-y-2">
-                      <Label htmlFor="hourly-rate">Tariffa Oraria (EUR)</Label>
+                      <Label htmlFor="hourly-rate">{t("settings.hourlyRateLabel")}</Label>
                       <div className="flex flex-wrap items-center gap-2">
                         <Euro className="h-4 w-4 text-muted-foreground" />
                         <Input
@@ -449,7 +441,7 @@ export default function ResellerSettings() {
                       data-testid="button-save-hourly-rate"
                     >
                       <Save className="h-4 w-4 mr-2" />
-                      {updateHourlyRateMutation.isPending ? "Salvataggio..." : "Salva Tariffa"}
+                      {updateHourlyRateMutation.isPending ? t("profile.saving") : t("settings.saveRate")}
                     </Button>
 
                     {hourlyRateData?.updatedAt && (
@@ -464,7 +456,7 @@ export default function ResellerSettings() {
 
             <Card>
               <CardHeader>
-                <CardTitle>Esempio di Calcolo</CardTitle>
+                <CardTitle>{t("settings.calculationExample")}</CardTitle>
                 <CardDescription>
                   Simulazione del calcolo manodopera per un preventivo
                 </CardDescription>
@@ -473,17 +465,17 @@ export default function ResellerSettings() {
                 <div className="space-y-4">
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
                     <div>
-                      <p className="text-muted-foreground">Tariffa Oraria</p>
+                      <p className="text-muted-foreground">{t("admin.repairCenterDetail.hourlyRate")}</p>
                       <p className="font-semibold">{displayRate} EUR</p>
                     </div>
                     <div>
-                      <p className="text-muted-foreground">Tempo Stimato</p>
+                      <p className="text-muted-foreground">{t("repairs.estimatedTime")}</p>
                       <p className="font-semibold">2 ore</p>
                     </div>
                   </div>
                   <div className="border-t pt-4">
                     <div className="flex justify-between items-center">
-                      <p className="font-medium">Costo Manodopera</p>
+                      <p className="font-medium">{t("settings.laborCost")}</p>
                       <p className="text-xl font-bold text-primary">
                         {(parseFloat(displayRate || "0") * 2).toFixed(2)} EUR
                       </p>
@@ -499,9 +491,7 @@ export default function ResellerSettings() {
           <Card>
             <CardHeader>
               <CardTitle className="flex flex-wrap items-center gap-2">
-                <Timer className="h-5 w-5" />
-                Soglie SLA (Service Level Agreement)
-              </CardTitle>
+                <Timer className="h-5 w-5" />{t("settings.slaTitle")}</CardTitle>
               <CardDescription>
                 Configura le soglie temporali per il monitoraggio delle riparazioni. 
                 Il sistema cambierà automaticamente il colore di priorità quando vengono superate le soglie.
@@ -511,15 +501,15 @@ export default function ResellerSettings() {
               <div className="flex flex-wrap items-center gap-4 p-4 bg-muted rounded-lg">
                 <div className="flex flex-wrap items-center gap-2">
                   <div className="w-4 h-4 rounded-full bg-green-500" />
-                  <span className="text-sm font-medium">In Tempo</span>
+                  <span className="text-sm font-medium">{t("settings.onTime")}</span>
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
                   <div className="w-4 h-4 rounded-full bg-yellow-500" />
-                  <span className="text-sm font-medium">In Ritardo</span>
+                  <span className="text-sm font-medium">{t("settings.delayed")}</span>
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
                   <div className="w-4 h-4 rounded-full bg-red-500" />
-                  <span className="text-sm font-medium">Urgente</span>
+                  <span className="text-sm font-medium">{t("settings.urgent")}</span>
                 </div>
               </div>
 
@@ -560,9 +550,7 @@ export default function ResellerSettings() {
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                           <div className="space-y-2">
                             <Label className="flex flex-wrap items-center gap-2">
-                              <div className="w-3 h-3 rounded-full bg-yellow-500" />
-                              Soglia Ritardo (ore)
-                            </Label>
+                              <div className="w-3 h-3 rounded-full bg-yellow-500" />{t("settings.delayThreshold")}</Label>
                             <Input
                               type="number"
                               min="1"
@@ -580,15 +568,11 @@ export default function ResellerSettings() {
                               }}
                               data-testid={`input-sla-warning-${phase}`}
                             />
-                            <p className="text-xs text-muted-foreground">
-                              Oltre questa soglia il badge diventa giallo
-                            </p>
+                            <p className="text-xs text-muted-foreground">{t("settings.delayBadgeDesc")}</p>
                           </div>
                           <div className="space-y-2">
                             <Label className="flex flex-wrap items-center gap-2">
-                              <div className="w-3 h-3 rounded-full bg-red-500" />
-                              Soglia Urgente (ore)
-                            </Label>
+                              <div className="w-3 h-3 rounded-full bg-red-500" />{t("settings.urgentThreshold")}</Label>
                             <Input
                               type="number"
                               min="1"
@@ -606,9 +590,7 @@ export default function ResellerSettings() {
                               }}
                               data-testid={`input-sla-critical-${phase}`}
                             />
-                            <p className="text-xs text-muted-foreground">
-                              Oltre questa soglia il badge diventa rosso
-                            </p>
+                            <p className="text-xs text-muted-foreground">{t("settings.urgentBadgeDesc")}</p>
                           </div>
                         </div>
                       </div>
@@ -620,16 +602,14 @@ export default function ResellerSettings() {
                       variant="outline"
                       onClick={() => setSlaThresholds(defaultSLAThresholds)}
                       data-testid="button-reset-sla"
-                    >
-                      Ripristina Predefiniti
-                    </Button>
+                    >{t("settings.resetDefaults")}</Button>
                     <Button
                       onClick={() => updateSLAMutation.mutate(slaThresholds)}
                       disabled={updateSLAMutation.isPending}
                       data-testid="button-save-sla"
                     >
                       <Save className="h-4 w-4 mr-2" />
-                      {updateSLAMutation.isPending ? "Salvataggio..." : "Salva Soglie SLA"}
+                      {updateSLAMutation.isPending ? t("profile.saving") : t("settings.saveSLA")}
                     </Button>
                   </div>
                 </div>
@@ -674,9 +654,9 @@ export default function ResellerSettings() {
                       <p className="text-xs text-muted-foreground">Dettagli completati</p>
                       <p className="font-medium flex items-center gap-1">
                         {stripeStatus.detailsSubmitted ? (
-                          <><CheckCircle className="h-4 w-4 text-green-500" /> Si</>
+                          <><CheckCircle className="h-4 w-4 text-green-500" />{t("license.yes")}</>
                         ) : (
-                          <><AlertCircle className="h-4 w-4 text-yellow-500" /> No</>
+                          <><AlertCircle className="h-4 w-4 text-yellow-500" />{t("common.no")}</>
                         )}
                       </p>
                     </div>
@@ -684,9 +664,9 @@ export default function ResellerSettings() {
                       <p className="text-xs text-muted-foreground">Pagamenti abilitati</p>
                       <p className="font-medium flex items-center gap-1">
                         {stripeStatus.chargesEnabled ? (
-                          <><CheckCircle className="h-4 w-4 text-green-500" /> Si</>
+                          <><CheckCircle className="h-4 w-4 text-green-500" />{t("license.yes")}</>
                         ) : (
-                          <><AlertCircle className="h-4 w-4 text-yellow-500" /> No</>
+                          <><AlertCircle className="h-4 w-4 text-yellow-500" />{t("common.no")}</>
                         )}
                       </p>
                     </div>
@@ -694,9 +674,9 @@ export default function ResellerSettings() {
                       <p className="text-xs text-muted-foreground">Bonifici abilitati</p>
                       <p className="font-medium flex items-center gap-1">
                         {stripeStatus.payoutsEnabled ? (
-                          <><CheckCircle className="h-4 w-4 text-green-500" /> Si</>
+                          <><CheckCircle className="h-4 w-4 text-green-500" />{t("license.yes")}</>
                         ) : (
-                          <><AlertCircle className="h-4 w-4 text-yellow-500" /> No</>
+                          <><AlertCircle className="h-4 w-4 text-yellow-500" />{t("common.no")}</>
                         )}
                       </p>
                     </div>
@@ -735,9 +715,7 @@ export default function ResellerSettings() {
                       size="sm"
                       onClick={() => refetchStripeStatus()}
                       data-testid="button-stripe-refresh"
-                    >
-                      Aggiorna stato
-                    </Button>
+                    >{t("common.updateStatus")}</Button>
                   </div>
                 </div>
               ) : (
@@ -790,7 +768,7 @@ export default function ResellerSettings() {
                   <Landmark className="h-6 w-6 text-blue-600" />
                 </div>
                 <div>
-                  <CardTitle>Bonifico Bancario</CardTitle>
+                  <CardTitle>{t("settings.bankTransfer")}</CardTitle>
                   <CardDescription>
                     Ricevi pagamenti tramite bonifico bancario
                   </CardDescription>
@@ -806,7 +784,7 @@ export default function ResellerSettings() {
                     render={({ field }) => (
                       <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
                         <div className="space-y-0.5">
-                          <FormLabel className="text-base">Abilita bonifico bancario</FormLabel>
+                          <FormLabel className="text-base">{t("settings.enableBankTransfer")}</FormLabel>
                           <FormDescription>
                             Permetti ai clienti di pagare tramite bonifico
                           </FormDescription>
@@ -829,10 +807,10 @@ export default function ResellerSettings() {
                         name="accountHolder"
                         render={({ field }) => (
                           <FormItem className="md:col-span-2">
-                            <FormLabel>Intestatario conto</FormLabel>
+                            <FormLabel>{t("settings.accountHolder")}</FormLabel>
                             <FormControl>
                               <Input 
-                                placeholder="Mario Rossi S.r.l." 
+                                placeholder={t("settings.companyNameExample")} 
                                 {...field} 
                                 value={field.value || ''}
                                 data-testid="input-account-holder"
@@ -848,7 +826,7 @@ export default function ResellerSettings() {
                         name="iban"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>IBAN</FormLabel>
+                            <FormLabel>{t("profile.iban")}</FormLabel>
                             <FormControl>
                               <Input 
                                 placeholder="IT60X0542811101000000123456" 
@@ -886,10 +864,10 @@ export default function ResellerSettings() {
                         name="bankName"
                         render={({ field }) => (
                           <FormItem className="md:col-span-2">
-                            <FormLabel>Nome banca</FormLabel>
+                            <FormLabel>{t("settings.bankName")}</FormLabel>
                             <FormControl>
                               <Input 
-                                placeholder="Intesa Sanpaolo" 
+                                placeholder={t("settings.bankNameExample")} 
                                 {...field}
                                 value={field.value || ''}
                                 data-testid="input-bank-name"
@@ -970,9 +948,7 @@ export default function ResellerSettings() {
                                 data-testid="input-stripe-publishable-key"
                               />
                             </FormControl>
-                            <FormDescription>
-                              Disponibile su dashboard.stripe.com
-                            </FormDescription>
+                            <FormDescription>{t("settings.availableOnDashboard")}</FormDescription>
                             <FormMessage />
                           </FormItem>
                         )}
@@ -994,7 +970,7 @@ export default function ResellerSettings() {
                             </FormControl>
                             <FormDescription>
                               {(paymentConfig as any)?.hasStripeSecret 
-                                ? "Lascia vuoto per mantenere il valore esistente"
+                                ? t("settings.leaveEmptyKeep")
                                 : "Richiesta per abilitare Stripe"
                               }
                             </FormDescription>
@@ -1006,7 +982,7 @@ export default function ResellerSettings() {
                   )}
 
                   <Button type="submit" disabled={updatePaymentMutation.isPending} data-testid="button-save-stripe">
-                    {updatePaymentMutation.isPending ? "Salvataggio..." : "Salva configurazione Stripe"}
+                    {updatePaymentMutation.isPending ? t("profile.saving") : "Salva configurazione Stripe"}
                   </Button>
                 </form>
               </Form>
@@ -1059,7 +1035,7 @@ export default function ResellerSettings() {
                       name="paypalEmail"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Email PayPal</FormLabel>
+                          <FormLabel>{t("settings.paypalEmail")}</FormLabel>
                           <FormControl>
                             <Input 
                               type="email"
@@ -1116,7 +1092,7 @@ export default function ResellerSettings() {
                             </FormControl>
                             <FormDescription>
                               {paymentConfig?.hasPaypalSecret 
-                                ? "Lascia vuoto per mantenere il valore esistente"
+                                ? t("settings.leaveEmptyKeep")
                                 : "Richiesto per abilitare PayPal SDK"
                               }
                             </FormDescription>
@@ -1126,13 +1102,13 @@ export default function ResellerSettings() {
                       />
                     </div>
                     <div className="bg-muted/50 rounded-lg p-4 text-sm text-muted-foreground space-y-2">
-                      <p className="font-medium text-foreground">Come ottenere Client ID e Client Secret:</p>
+                      <p className="font-medium text-foreground">{t("settings.paypalInstructions")}</p>
                       <ol className="list-decimal list-inside space-y-1">
-                        <li>Accedi a <a href="https://developer.paypal.com" target="_blank" rel="noopener noreferrer" className="text-primary underline">developer.paypal.com</a></li>
-                        <li>Vai su "Apps & Credentials" nel menu</li>
-                        <li>Seleziona "Live" per le credenziali di produzione</li>
-                        <li>Crea una nuova app o seleziona un'app esistente</li>
-                        <li>Copia Client ID e Client Secret dalla pagina dell'app</li>
+                        <li>{t("settings.paypalStep1")}<a href="https://developer.paypal.com" target="_blank" rel="noopener noreferrer" className="text-primary underline">developer.paypal.com</a></li>
+                        <li>{t("settings.paypalStep2")}</li>
+                        <li>{t("settings.paypalStep3")}</li>
+                        <li>{t("settings.paypalStep4")}</li>
+                        <li>{t("settings.paypalStep5")}</li>
                       </ol>
                     </div>
                     </>

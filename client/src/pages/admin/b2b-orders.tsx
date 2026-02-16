@@ -21,6 +21,7 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
+import { useTranslation } from "react-i18next";
 
 interface B2BOrderWithDetails extends ResellerPurchaseOrder {
   items: (ResellerPurchaseOrderItem & { product?: Product })[];
@@ -49,6 +50,7 @@ const paymentMethodLabels: Record<string, string> = {
 };
 
 export default function AdminB2BOrders() {
+  const { t } = useTranslation();
   const [selectedOrder, setSelectedOrder] = useState<B2BOrderWithDetails | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
   const [rejectDialogOpen, setRejectDialogOpen] = useState(false);
@@ -78,12 +80,12 @@ export default function AdminB2BOrders() {
       return res.json();
     },
     onSuccess: () => {
-      toast({ title: "Ordine approvato", description: "Lo stock è stato trasferito al magazzino del reseller" });
+      toast({ title: t("b2b.orderApproved"), description: t("b2b.orderApprovedDesc") });
       queryClient.invalidateQueries({ queryKey: ['/api/admin/b2b-orders'] });
       setDetailOpen(false);
     },
     onError: (error: any) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -93,14 +95,14 @@ export default function AdminB2BOrders() {
       return res.json();
     },
     onSuccess: () => {
-      toast({ title: "Ordine rifiutato", description: "Il reseller è stato notificato" });
+      toast({ title: t("b2b.orderRejectedToast"), description: t("b2b.resellerNotified") });
       queryClient.invalidateQueries({ queryKey: ['/api/admin/b2b-orders'] });
       setRejectDialogOpen(false);
       setDetailOpen(false);
       setRejectReason("");
     },
     onError: (error: any) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -110,7 +112,7 @@ export default function AdminB2BOrders() {
       return res.json();
     },
     onSuccess: () => {
-      toast({ title: "Ordine spedito", description: "Il tracking è stato registrato" });
+      toast({ title: t("b2b.orderShipped"), description: t("b2b.trackingRegistered") });
       queryClient.invalidateQueries({ queryKey: ['/api/admin/b2b-orders'] });
       setShipDialogOpen(false);
       setDetailOpen(false);
@@ -118,7 +120,7 @@ export default function AdminB2BOrders() {
       setCarrier("");
     },
     onError: (error: any) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -215,25 +217,25 @@ export default function AdminB2BOrders() {
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card>
           <CardHeader className="pb-2">
-            <CardDescription>In Attesa</CardDescription>
+            <CardDescription>{t("common.pending")}</CardDescription>
             <CardTitle className="text-2xl">{pendingOrders.length}</CardTitle>
           </CardHeader>
         </Card>
         <Card>
           <CardHeader className="pb-2">
-            <CardDescription>Approvati</CardDescription>
+            <CardDescription>{t("common.approved")}</CardDescription>
             <CardTitle className="text-2xl">{approvedOrders.length}</CardTitle>
           </CardHeader>
         </Card>
         <Card>
           <CardHeader className="pb-2">
-            <CardDescription>Spediti</CardDescription>
+            <CardDescription>{t("common.shipped")}</CardDescription>
             <CardTitle className="text-2xl">{shippedOrders.length}</CardTitle>
           </CardHeader>
         </Card>
         <Card>
           <CardHeader className="pb-2">
-            <CardDescription>Completati</CardDescription>
+            <CardDescription>{t("common.completed")}</CardDescription>
             <CardTitle className="text-2xl">{completedOrders.length}</CardTitle>
           </CardHeader>
         </Card>
@@ -266,12 +268,12 @@ export default function AdminB2BOrders() {
                 <TableHeader>
                   <TableRow>
                     <TableHead>N. Ordine</TableHead>
-                    <TableHead>Reseller</TableHead>
-                    <TableHead>Data</TableHead>
+                    <TableHead>{t("admin.resellers.reseller")}</TableHead>
+                    <TableHead>{t("common.date")}</TableHead>
                     <TableHead className="text-right">Articoli</TableHead>
-                    <TableHead className="text-right">Totale</TableHead>
-                    <TableHead>Pagamento</TableHead>
-                    <TableHead>Stato</TableHead>
+                    <TableHead className="text-right">{t("common.total")}</TableHead>
+                    <TableHead>{t("common.payment")}</TableHead>
+                    <TableHead>{t("common.status")}</TableHead>
                     <TableHead></TableHead>
                   </TableRow>
                 </TableHeader>
@@ -306,7 +308,7 @@ export default function AdminB2BOrders() {
               <DialogHeader>
                 <div className="flex items-center justify-between">
                   <div>
-                    <DialogTitle>Ordine {selectedOrder.orderNumber}</DialogTitle>
+                    <DialogTitle>{t("suppliers.orderNumber")} {selectedOrder.orderNumber}</DialogTitle>
                     <DialogDescription>
                       <span className="flex flex-wrap items-center gap-2 mt-1">
                         <UserIcon className="h-4 w-4" />
@@ -324,10 +326,10 @@ export default function AdminB2BOrders() {
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Prodotto</TableHead>
+                      <TableHead>{t("products.product")}</TableHead>
                       <TableHead className="text-right">Prezzo B2B</TableHead>
                       <TableHead className="text-right">Qtà</TableHead>
-                      <TableHead className="text-right">Totale</TableHead>
+                      <TableHead className="text-right">{t("common.total")}</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -383,7 +385,7 @@ export default function AdminB2BOrders() {
                   )}
                   <Separator className="my-1" />
                   <div className="flex justify-between text-sm font-semibold">
-                    <span>Totale:</span>
+                    <span>{t("common.total")}:</span>
                     <span className="text-primary">{formatPrice(selectedOrder.total || 0)}</span>
                   </div>
                 </div>
@@ -463,19 +465,19 @@ export default function AdminB2BOrders() {
       <Dialog open={rejectDialogOpen} onOpenChange={setRejectDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Rifiuta Ordine</DialogTitle>
+            <DialogTitle>{t("b2b.rejectOrder")}</DialogTitle>
             <DialogDescription>
               Inserisci il motivo del rifiuto. Il reseller verrà notificato.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="rejectReason">Motivo del rifiuto</Label>
+              <Label htmlFor="rejectReason">{t("b2b.rejectionReason")}</Label>
               <Textarea
                 id="rejectReason"
                 value={rejectReason}
                 onChange={(e) => setRejectReason(e.target.value)}
-                placeholder="Es: Stock insufficiente, prezzo non aggiornato..."
+                placeholder={t("b2b.rejectExample")}
                 rows={3}
                 data-testid="input-reject-reason"
               />
@@ -500,29 +502,29 @@ export default function AdminB2BOrders() {
       <Dialog open={shipDialogOpen} onOpenChange={setShipDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Segna come Spedito</DialogTitle>
+            <DialogTitle>{t("b2b.markAsShipped")}</DialogTitle>
             <DialogDescription>
               Inserisci i dettagli della spedizione per notificare il reseller.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="carrier">Corriere</Label>
+              <Label htmlFor="carrier">{t("shipping.carrier")}</Label>
               <Input
                 id="carrier"
                 value={carrier}
                 onChange={(e) => setCarrier(e.target.value)}
-                placeholder="Es: BRT, GLS, DHL..."
+                placeholder={t("shipping.carrierExample")}
                 data-testid="input-carrier"
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="trackingNumber">Numero Tracking</Label>
+              <Label htmlFor="trackingNumber">{t("shipping.trackingNumber")}</Label>
               <Input
                 id="trackingNumber"
                 value={trackingNumber}
                 onChange={(e) => setTrackingNumber(e.target.value)}
-                placeholder="Inserisci il numero di tracking"
+                placeholder={t("shipping.enterTracking")}
                 data-testid="input-tracking"
               />
             </div>

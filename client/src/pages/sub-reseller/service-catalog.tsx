@@ -21,6 +21,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import type { ServiceItem } from "@shared/schema";
+import { useTranslation } from "react-i18next";
 
 const SERVICE_CATEGORIES = [
   { value: "display", label: "Display" },
@@ -28,7 +29,7 @@ const SERVICE_CATEGORIES = [
   { value: "software", label: "Software" },
   { value: "hardware", label: "Hardware" },
   { value: "diagnostica", label: "Diagnostica" },
-  { value: "altro", label: "Altro" },
+  { value: "altro", label: t("common.other") },
 ];
 
 const getCategoryLabel = (category: string) => {
@@ -79,6 +80,7 @@ interface ServiceCatalogItem extends ServiceItem {
 }
 
 export default function SubResellerServiceCatalog() {
+  const { t } = useTranslation();
   const [searchQuery, setSearchQuery] = useState("");
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
 
@@ -128,7 +130,7 @@ export default function SubResellerServiceCatalog() {
             <Wrench className="h-6 w-6 text-white" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold">Catalogo Servizi</h1>
+            <h1 className="text-2xl font-bold">{t("sidebar.items.serviceCatalog")}</h1>
             <p className="text-muted-foreground">
               Prezzi dal listino del tuo rivenditore
             </p>
@@ -138,7 +140,7 @@ export default function SubResellerServiceCatalog() {
 
       <Card>
         <CardHeader className="pb-4">
-          <CardTitle className="text-lg">Filtri</CardTitle>
+          <CardTitle className="text-lg">{t("common.filters")}</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="flex flex-wrap gap-4">
@@ -154,7 +156,7 @@ export default function SubResellerServiceCatalog() {
             </div>
             <Select value={categoryFilter} onValueChange={setCategoryFilter}>
               <SelectTrigger className="w-full sm:w-[180px]" data-testid="select-category">
-                <SelectValue placeholder="Categoria" />
+                <SelectValue placeholder={t("common.category")} />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Tutte le categorie</SelectItem>
@@ -172,10 +174,10 @@ export default function SubResellerServiceCatalog() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Codice</TableHead>
-                <TableHead>Nome</TableHead>
-                <TableHead>Categoria</TableHead>
-                <TableHead className="text-right">Prezzo</TableHead>
+                <TableHead>{t("common.code")}</TableHead>
+                <TableHead>{t("common.name")}</TableHead>
+                <TableHead>{t("common.category")}</TableHead>
+                <TableHead className="text-right">{t("common.price")}</TableHead>
                 <TableHead className="text-right">Tempo (min)</TableHead>
                 <TableHead>Fonte Prezzo</TableHead>
               </TableRow>

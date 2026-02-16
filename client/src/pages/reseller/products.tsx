@@ -21,6 +21,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { DeviceBrand, DeviceModel } from "@shared/schema";
+import { useTranslation } from "react-i18next";
 
 interface DeviceCompatibilityEntry {
   deviceBrandId: string;
@@ -99,15 +100,15 @@ type ProductCompatibility = {
 
 const CATEGORIES = [
   { value: "display", label: "Display/Schermo" },
-  { value: "batteria", label: "Batteria" },
+  { value: "batteria", label: t("settings.battery") },
   { value: "scheda_madre", label: "Scheda Madre" },
   { value: "fotocamera", label: "Fotocamera" },
   { value: "altoparlante", label: "Altoparlante/Speaker" },
   { value: "microfono", label: "Microfono" },
   { value: "connettore", label: "Connettore Ricarica" },
   { value: "cover", label: "Cover/Scocca" },
-  { value: "accessorio", label: "Accessorio" },
-  { value: "altro", label: "Altro" },
+  { value: "accessorio", label: t("products.accessory") },
+  { value: "altro", label: t("common.other") },
 ];
 
 const BRANDS = [
@@ -116,6 +117,7 @@ const BRANDS = [
 ];
 
 export default function ResellerProducts() {
+  const { t } = useTranslation();
   const [searchQuery, setSearchQuery] = useState("");
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
   const [brandFilter, setBrandFilter] = useState<string>("all");
@@ -270,10 +272,10 @@ export default function ResellerProducts() {
       queryClient.invalidateQueries({ queryKey: ["/api/reseller/products"] });
       setDialogOpen(false);
       setDeviceCompatibilities([]);
-      toast({ title: "Prodotto creato con successo" });
+      toast({ title: t("products.productCreated") });
     },
     onError: (error: Error) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -294,10 +296,10 @@ export default function ResellerProducts() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/reseller/products"] });
       setEditDeviceCompatibilities([]);
-      toast({ title: "Prodotto aggiornato con successo" });
+      toast({ title: t("products.productUpdated") });
     },
     onError: (error: Error) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -307,10 +309,10 @@ export default function ResellerProducts() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/reseller/products"] });
-      toast({ title: "Prodotto eliminato" });
+      toast({ title: t("warranties.productDeleted") });
     },
     onError: (error: Error) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -324,7 +326,7 @@ export default function ResellerProducts() {
       toast({ title: "Stock aggiornato con successo" });
     },
     onError: (error: Error) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -352,7 +354,7 @@ export default function ResellerProducts() {
       toast({ title: "Immagine caricata con successo" });
     },
     onError: (error: Error) => {
-      toast({ title: "Errore upload", description: error.message, variant: "destructive" });
+      toast({ title: t("tickets.uploadError"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -376,7 +378,7 @@ export default function ResellerProducts() {
       toast({ title: "Immagine eliminata" });
     },
     onError: (error: Error) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -407,7 +409,7 @@ export default function ResellerProducts() {
       toast({ title: "Impostazioni marketplace aggiornate" });
     },
     onError: (error: Error) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -566,11 +568,11 @@ export default function ResellerProducts() {
         });
         setStockValues(initialValues);
       } else {
-        toast({ title: "Errore", description: "Impossibile caricare i dati stock", variant: "destructive" });
+        toast({ title: t("common.error"), description: "Impossibile caricare i dati stock", variant: "destructive" });
         setWarehouseStocks([]);
       }
     } catch (error) {
-      toast({ title: "Errore", description: "Errore di rete", variant: "destructive" });
+      toast({ title: t("common.error"), description: "Errore di rete", variant: "destructive" });
       setWarehouseStocks([]);
     } finally {
       setLoadingStock(false);
@@ -628,11 +630,11 @@ export default function ResellerProducts() {
   const getConditionBadge = (condition: string) => {
     switch (condition) {
       case "nuovo":
-        return <Badge>Nuovo</Badge>;
+        return <Badge>{t("common.new")}</Badge>;
       case "ricondizionato":
-        return <Badge variant="secondary">Ricondizionato</Badge>;
+        return <Badge variant="secondary">{t("products.refurbished")}</Badge>;
       case "usato":
-        return <Badge variant="outline">Usato</Badge>;
+        return <Badge variant="outline">{t("products.used")}</Badge>;
       default:
         return <Badge variant="outline">{condition}</Badge>;
     }
@@ -947,10 +949,10 @@ export default function ResellerProducts() {
         <Select value={categoryFilter} onValueChange={setCategoryFilter}>
           <SelectTrigger className="w-full sm:w-[180px]" data-testid="select-category">
             <Tag className="h-4 w-4 mr-2" />
-            <SelectValue placeholder="Categoria" />
+            <SelectValue placeholder={t("common.category")} />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">Tutte le categorie</SelectItem>
+            <SelectItem value="all">{t("products.allCategories")}</SelectItem>
             {categories.map((cat) => (
               <SelectItem key={cat} value={cat}>
                 {cat}
@@ -960,10 +962,10 @@ export default function ResellerProducts() {
         </Select>
         <Select value={brandFilter} onValueChange={setBrandFilter}>
           <SelectTrigger className="w-full sm:w-[150px]" data-testid="select-brand">
-            <SelectValue placeholder="Marca" />
+            <SelectValue placeholder={t("products.brand")} />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">Tutte le marche</SelectItem>
+            <SelectItem value="all">{t("products.allBrands")}</SelectItem>
             {brands.map((brand) => (
               <SelectItem key={brand} value={brand}>
                 {brand}
@@ -973,10 +975,10 @@ export default function ResellerProducts() {
         </Select>
         <Select value={ownershipFilter} onValueChange={setOwnershipFilter}>
           <SelectTrigger className="w-full sm:w-[150px]" data-testid="select-ownership">
-            <SelectValue placeholder="Tipo" />
+            <SelectValue placeholder={t("common.type")} />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">Tutti</SelectItem>
+            <SelectItem value="all">{t("common.allMasc")}</SelectItem>
             <SelectItem value="own">I miei prodotti</SelectItem>
             <SelectItem value="global">Catalogo globale</SelectItem>
           </SelectContent>
@@ -1007,16 +1009,16 @@ export default function ResellerProducts() {
               <TableHeader>
                 <TableRow>
                   <TableHead className="w-12"></TableHead>
-                  <TableHead>Tipo</TableHead>
-                  <TableHead>Prodotto</TableHead>
-                  <TableHead>Marca</TableHead>
-                  <TableHead>Categoria</TableHead>
-                  <TableHead>Condizione</TableHead>
-                  <TableHead className="text-right">Prezzo</TableHead>
+                  <TableHead>{t("common.type")}</TableHead>
+                  <TableHead>{t("common.product")}</TableHead>
+                  <TableHead>{t("products.brand")}</TableHead>
+                  <TableHead>{t("common.category")}</TableHead>
+                  <TableHead>{t("products.condition")}</TableHead>
+                  <TableHead className="text-right">{t("common.price")}</TableHead>
                   <TableHead className="text-center">Stock</TableHead>
-                  <TableHead>Compatibilità</TableHead>
-                  <TableHead className="text-center">Marketplace</TableHead>
-                  <TableHead className="text-right">Azioni</TableHead>
+                  <TableHead>{t("products.compatibility")}</TableHead>
+                  <TableHead className="text-center">{t("marketplace.title")}</TableHead>
+                  <TableHead className="text-right">{t("common.actions")}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -1179,7 +1181,7 @@ export default function ResellerProducts() {
                             >
                               <Store className="h-3 w-3" />
                               {(product as any).isMarketplaceEnabled ? (
-                                <Badge variant="default" className="text-xs">Attivo</Badge>
+                                <Badge variant="default" className="text-xs">{t("common.active")}</Badge>
                               ) : (
                                 <Badge variant="secondary" className="text-xs">Off</Badge>
                               )}
@@ -1256,7 +1258,7 @@ export default function ResellerProducts() {
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Categorie</CardTitle>
+            <CardTitle className="text-sm font-medium">{t("utility.categories")}</CardTitle>
             <Tag className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -1278,9 +1280,7 @@ export default function ResellerProducts() {
         <DialogContent className="max-w-2xl max-h-[90vh]">
           <DialogHeader>
             <DialogTitle className="flex flex-wrap items-center gap-2">
-              <Plus className="h-5 w-5" />
-              Nuovo Prodotto
-            </DialogTitle>
+              <Plus className="h-5 w-5" />{t("products.newProduct")}</DialogTitle>
             <DialogDescription>
               Crea un nuovo prodotto personalizzato per il tuo catalogo
             </DialogDescription>
@@ -1293,14 +1293,11 @@ export default function ResellerProducts() {
                     <span className="hidden sm:inline">1.</span> Info
                   </TabsTrigger>
                   <TabsTrigger value="pricing" className="gap-1">
-                    <span className="hidden sm:inline">2.</span> Prezzi
-                  </TabsTrigger>
+                    <span className="hidden sm:inline">2.</span>{t("products.prices")}</TabsTrigger>
                   <TabsTrigger value="inventory" className="gap-1">
-                    <span className="hidden sm:inline">3.</span> Magazzino
-                  </TabsTrigger>
+                    <span className="hidden sm:inline">3.</span>{t("warehouse.title")}</TabsTrigger>
                   <TabsTrigger value="compatibility" className="gap-1">
-                    <span className="hidden sm:inline">4.</span> Compatibilità
-                  </TabsTrigger>
+                    <span className="hidden sm:inline">4.</span>{t("products.compatibility")}</TabsTrigger>
                 </TabsList>
 
                 <TabsContent value="info" className="space-y-4 mt-4 data-[state=inactive]:hidden" forceMount>
@@ -1330,10 +1327,10 @@ export default function ResellerProducts() {
                       </Select>
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="brand">Marca</Label>
+                      <Label htmlFor="brand">{t("products.brand")}</Label>
                       <Select name="brand">
                         <SelectTrigger data-testid="select-create-brand">
-                          <SelectValue placeholder="Seleziona marca" />
+                          <SelectValue placeholder={t("products.selectBrand")} />
                         </SelectTrigger>
                         <SelectContent>
                           {BRANDS.map(brand => (
@@ -1352,22 +1349,22 @@ export default function ResellerProducts() {
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="nuovo">Nuovo</SelectItem>
-                          <SelectItem value="ricondizionato">Ricondizionato</SelectItem>
-                          <SelectItem value="usato">Usato</SelectItem>
-                          <SelectItem value="compatibile">Compatibile</SelectItem>
+                          <SelectItem value="nuovo">{t("common.new")}</SelectItem>
+                          <SelectItem value="ricondizionato">{t("products.refurbished")}</SelectItem>
+                          <SelectItem value="usato">{t("products.used")}</SelectItem>
+                          <SelectItem value="compatibile">{t("products.compatible")}</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="description">Descrizione</Label>
+                    <Label htmlFor="description">{t("common.description")}</Label>
                     <Textarea id="description" name="description" rows={3} data-testid="textarea-create-description" />
                   </div>
 
                   <div className="space-y-2">
-                    <Label>Immagine Prodotto</Label>
+                    <Label>{t("products.productImage")}</Label>
                     <div className="flex flex-wrap items-center gap-4">
                       <div className="w-16 h-16 rounded-lg border flex items-center justify-center bg-muted">
                         {pendingImagePreview ? (
@@ -1411,9 +1408,7 @@ export default function ResellerProducts() {
                             className="text-destructive"
                             data-testid="button-create-remove-image"
                           >
-                            <X className="h-4 w-4 mr-2" />
-                            Rimuovi
-                          </Button>
+                            <X className="h-4 w-4 mr-2" />{t("profile.removeLogo")}</Button>
                         )}
                       </div>
                     </div>
@@ -1453,7 +1448,7 @@ export default function ResellerProducts() {
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label htmlFor="warrantyMonths">Garanzia (mesi)</Label>
+                      <Label htmlFor="warrantyMonths">{t("products.warrantyMonths")}</Label>
                       <Input 
                         id="warrantyMonths" 
                         name="warrantyMonths" 
@@ -1465,7 +1460,7 @@ export default function ResellerProducts() {
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="supplier">Fornitore</Label>
+                      <Label htmlFor="supplier">{t("common.supplier")}</Label>
                       <Select 
                         value={selectedSupplierId || "none"}
                         onValueChange={(value) => {
@@ -1476,7 +1471,7 @@ export default function ResellerProducts() {
                           <SelectValue placeholder="Seleziona fornitore..." />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="none">Nessun fornitore</SelectItem>
+                          <SelectItem value="none">{t("suppliers.noSupplier")}</SelectItem>
                           {suppliers.map((s) => (
                             <SelectItem key={s.id} value={s.id}>{s.name} ({s.code})</SelectItem>
                           ))}
@@ -1489,10 +1484,10 @@ export default function ResellerProducts() {
                 <TabsContent value="inventory" className="space-y-4 mt-4 data-[state=inactive]:hidden" forceMount>
                   <div className="space-y-3">
                     <div className="flex items-center justify-between">
-                      <Label>Quantità Iniziali per Magazzino</Label>
+                      <Label>{t("warehouse.initialQuantities")}</Label>
                       <Select onValueChange={addInitialStock}>
                         <SelectTrigger className="w-56" data-testid="select-add-stock-warehouse">
-                          <SelectValue placeholder="Aggiungi magazzino..." />
+                          <SelectValue placeholder={t("warehouse.addWarehouse")} />
                         </SelectTrigger>
                         <SelectContent>
                           {groupedWarehouses.reseller.length > 0 && (
@@ -1508,7 +1503,7 @@ export default function ResellerProducts() {
                           )}
                           {groupedWarehouses.sub_reseller.length > 0 && (
                             <>
-                              <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">Sub-Reseller</div>
+                              <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">{t("roles.subReseller")}</div>
                               {groupedWarehouses.sub_reseller
                                 .filter(w => w.isActive && !initialStock.find(s => s.warehouseId === w.id))
                                 .map(w => (
@@ -1519,7 +1514,7 @@ export default function ResellerProducts() {
                           )}
                           {groupedWarehouses.repair_center.length > 0 && (
                             <>
-                              <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">Centri Riparazione</div>
+                              <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">{t("sidebar.items.repairCentersShort")}</div>
                               {groupedWarehouses.repair_center
                                 .filter(w => w.isActive && !initialStock.find(s => s.warehouseId === w.id))
                                 .map(w => (
@@ -1576,7 +1571,7 @@ export default function ResellerProducts() {
 
                 <TabsContent value="compatibility" className="space-y-4 mt-4 data-[state=inactive]:hidden" forceMount>
                   <div className="space-y-3">
-                    <Label>Dispositivi Compatibili</Label>
+                    <Label>{t("products.compatibleDevices")}</Label>
                     <p className="text-sm text-muted-foreground">
                       Seleziona i brand e modelli di dispositivi con cui questo prodotto è compatibile
                     </p>
@@ -1645,7 +1640,7 @@ export default function ResellerProducts() {
                               <span className="font-medium flex-1">{brand.name}</span>
                               {hasBrandCompat && (
                                 <Badge variant="outline" className="text-xs">
-                                  {hasAllModels ? "Tutti" : deviceCompatibilities.filter(c => c.deviceBrandId === brand.id).length}
+                                  {hasAllModels ? t("common.allMasc") : deviceCompatibilities.filter(c => c.deviceBrandId === brand.id).length}
                                 </Badge>
                               )}
                             </div>
@@ -1689,15 +1684,11 @@ export default function ResellerProducts() {
                         if (currentIndex > 0) setWizardStep(steps[currentIndex - 1]);
                       }}
                       data-testid="button-wizard-back"
-                    >
-                      Indietro
-                    </Button>
+                    >{t("common.back")}</Button>
                   )}
                 </div>
                 <div className="flex gap-2">
-                  <Button type="button" variant="outline" onClick={() => { setDialogOpen(false); setInitialStock([]); setDeviceCompatibilities([]); setDeviceSearchQuery(""); setWizardStep("info"); setSelectedSupplierId(null); }}>
-                    Annulla
-                  </Button>
+                  <Button type="button" variant="outline" onClick={() => { setDialogOpen(false); setInitialStock([]); setDeviceCompatibilities([]); setDeviceSearchQuery(""); setWizardStep("info"); setSelectedSupplierId(null); }}>{t("common.cancel")}</Button>
                   {wizardStep !== "compatibility" ? (
                     <Button 
                       type="button"
@@ -1707,12 +1698,10 @@ export default function ResellerProducts() {
                         if (currentIndex < steps.length - 1) setWizardStep(steps[currentIndex + 1]);
                       }}
                       data-testid="button-wizard-next"
-                    >
-                      Avanti
-                    </Button>
+                    >{t("common.next")}</Button>
                   ) : (
                     <Button type="submit" disabled={createProductMutation.isPending} data-testid="button-submit-create">
-                      {createProductMutation.isPending ? "Creazione..." : "Crea Prodotto"}
+                      {createProductMutation.isPending ? t("pages.creating") : "Crea Prodotto"}
                     </Button>
                   )}
                 </div>
@@ -1748,14 +1737,14 @@ export default function ResellerProducts() {
                 <Tabs defaultValue="info" className="w-full">
                   <TabsList className="grid w-full grid-cols-4">
                     <TabsTrigger value="info">Info</TabsTrigger>
-                    <TabsTrigger value="pricing">Prezzi</TabsTrigger>
-                    <TabsTrigger value="inventory">Magazzino</TabsTrigger>
-                    <TabsTrigger value="compatibility">Compatibilità</TabsTrigger>
+                    <TabsTrigger value="pricing">{t("products.prices")}</TabsTrigger>
+                    <TabsTrigger value="inventory">{t("warehouse.title")}</TabsTrigger>
+                    <TabsTrigger value="compatibility">{t("products.compatibility")}</TabsTrigger>
                   </TabsList>
 
                   <TabsContent value="info" className="space-y-4 mt-4 data-[state=inactive]:hidden" forceMount>
                     <div className="space-y-2">
-                      <Label>Immagine Prodotto</Label>
+                      <Label>{t("products.productImage")}</Label>
                       <div className="flex items-start gap-4">
                         <div className="w-24 h-24 rounded-md border bg-muted flex items-center justify-center overflow-hidden">
                           {editingProduct.imageUrl ? (
@@ -1850,10 +1839,10 @@ export default function ResellerProducts() {
                         </Select>
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="edit-brand">Marca</Label>
+                        <Label htmlFor="edit-brand">{t("products.brand")}</Label>
                         <Select name="brand" defaultValue={editingProduct.brand || undefined}>
                           <SelectTrigger data-testid="select-edit-brand">
-                            <SelectValue placeholder="Seleziona marca" />
+                            <SelectValue placeholder={t("products.selectBrand")} />
                           </SelectTrigger>
                           <SelectContent>
                             {BRANDS.map(brand => (
@@ -1872,17 +1861,17 @@ export default function ResellerProducts() {
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="nuovo">Nuovo</SelectItem>
-                            <SelectItem value="ricondizionato">Ricondizionato</SelectItem>
-                            <SelectItem value="usato">Usato</SelectItem>
-                            <SelectItem value="compatibile">Compatibile</SelectItem>
+                            <SelectItem value="nuovo">{t("common.new")}</SelectItem>
+                            <SelectItem value="ricondizionato">{t("products.refurbished")}</SelectItem>
+                            <SelectItem value="usato">{t("products.used")}</SelectItem>
+                            <SelectItem value="compatibile">{t("products.compatible")}</SelectItem>
                           </SelectContent>
                         </Select>
                       </div>
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="edit-description">Descrizione</Label>
+                      <Label htmlFor="edit-description">{t("common.description")}</Label>
                       <Textarea 
                         id="edit-description" 
                         name="description" 
@@ -1928,7 +1917,7 @@ export default function ResellerProducts() {
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div className="space-y-2">
-                        <Label htmlFor="edit-warrantyMonths">Garanzia (mesi)</Label>
+                        <Label htmlFor="edit-warrantyMonths">{t("products.warrantyMonths")}</Label>
                         <Input 
                           id="edit-warrantyMonths" 
                           name="warrantyMonths" 
@@ -1940,7 +1929,7 @@ export default function ResellerProducts() {
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="edit-supplier">Fornitore</Label>
+                        <Label htmlFor="edit-supplier">{t("common.supplier")}</Label>
                         <Select 
                           value={editSupplierId || "none"}
                           onValueChange={(value) => {
@@ -1951,7 +1940,7 @@ export default function ResellerProducts() {
                             <SelectValue placeholder="Seleziona fornitore..." />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="none">Nessun fornitore</SelectItem>
+                            <SelectItem value="none">{t("suppliers.noSupplier")}</SelectItem>
                             {suppliers.map((s) => (
                               <SelectItem key={s.id} value={s.id}>{s.name} ({s.code})</SelectItem>
                             ))}
@@ -1999,7 +1988,7 @@ export default function ResellerProducts() {
                           <Label>Quantità per Magazzino</Label>
                           <Select onValueChange={addEditStock}>
                             <SelectTrigger className="w-48" data-testid="select-add-edit-stock-center">
-                              <SelectValue placeholder="Aggiungi magazzino..." />
+                              <SelectValue placeholder={t("warehouse.addWarehouse")} />
                             </SelectTrigger>
                             <SelectContent>
                               {accessibleWarehouses
@@ -2087,7 +2076,7 @@ export default function ResellerProducts() {
                       </div>
                     ) : (
                       <div className="space-y-3">
-                        <Label>Dispositivi Compatibili</Label>
+                        <Label>{t("products.compatibleDevices")}</Label>
                         <p className="text-sm text-muted-foreground">
                           Seleziona i brand e modelli di dispositivi con cui questo prodotto è compatibile
                         </p>
@@ -2155,7 +2144,7 @@ export default function ResellerProducts() {
                                   <span className="font-medium flex-1">{brand.name}</span>
                                   {hasBrandCompat && (
                                     <Badge variant="outline" className="text-xs">
-                                      {hasAllModels ? "Tutti" : editDeviceCompatibilities.filter(c => c.deviceBrandId === brand.id).length}
+                                      {hasAllModels ? t("common.allMasc") : editDeviceCompatibilities.filter(c => c.deviceBrandId === brand.id).length}
                                     </Badge>
                                   )}
                                 </div>
@@ -2199,9 +2188,7 @@ export default function ResellerProducts() {
                       setEditDeviceCompatibilities([]);
                       setEditDeviceSearchQuery("");
                     }}
-                  >
-                    Annulla
-                  </Button>
+                  >{t("common.cancel")}</Button>
                   <Button 
                     type="submit" 
                     disabled={updateProductMutation.isPending || updateStockMutation.isPending} 
@@ -2209,14 +2196,10 @@ export default function ResellerProducts() {
                   >
                     {(updateProductMutation.isPending || updateStockMutation.isPending) ? (
                       <>
-                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                        Salvataggio...
-                      </>
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />{t("profile.saving")}</>
                     ) : (
                       <>
-                        <Save className="h-4 w-4 mr-2" />
-                        Salva Modifiche
-                      </>
+                        <Save className="h-4 w-4 mr-2" />{t("profile.saveChanges")}</>
                     )}
                   </Button>
                 </div>
@@ -2252,7 +2235,7 @@ export default function ResellerProducts() {
               {loadingStock ? (
                 <div className="flex items-center justify-center py-8">
                   <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-                  <span className="ml-2 text-muted-foreground">Caricamento...</span>
+                  <span className="ml-2 text-muted-foreground">{t("common.loading")}</span>
                 </div>
               ) : warehouseStocks.length === 0 ? (
                 <div className="text-center py-4 text-muted-foreground">
@@ -2316,9 +2299,7 @@ export default function ResellerProducts() {
                     setStockValues({});
                     setWarehouseStocks([]);
                   }}
-                >
-                  Annulla
-                </Button>
+                >{t("common.cancel")}</Button>
                 <Button 
                   onClick={saveAllStockChanges}
                   disabled={updateStockMutation.isPending || loadingStock || warehouseStocks.length === 0}
@@ -2326,9 +2307,7 @@ export default function ResellerProducts() {
                 >
                   {updateStockMutation.isPending ? (
                     <>
-                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      Salvataggio...
-                    </>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />{t("profile.saving")}</>
                   ) : (
                     <>
                       <Save className="h-4 w-4 mr-2" />
@@ -2421,9 +2400,7 @@ export default function ResellerProducts() {
               variant="outline"
               onClick={() => setMarketplaceDialogOpen(false)}
               data-testid="button-cancel-marketplace"
-            >
-              Annulla
-            </Button>
+            >{t("common.cancel")}</Button>
             <Button
               onClick={saveMarketplaceSettings}
               disabled={updateMarketplaceMutation.isPending}
@@ -2431,14 +2408,10 @@ export default function ResellerProducts() {
             >
               {updateMarketplaceMutation.isPending ? (
                 <>
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Salvataggio...
-                </>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />{t("profile.saving")}</>
               ) : (
                 <>
-                  <Save className="h-4 w-4 mr-2" />
-                  Salva
-                </>
+                  <Save className="h-4 w-4 mr-2" />{t("common.save")}</>
               )}
             </Button>
           </DialogFooter>

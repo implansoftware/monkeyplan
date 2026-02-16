@@ -15,6 +15,7 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
+import { useTranslation } from "react-i18next";
 
 interface MarketplaceOrderItem {
   id: string;
@@ -59,13 +60,13 @@ function formatPrice(cents: number): string {
 
 function getStatusBadge(status: string) {
   const statusConfig: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
-    pending: { label: "In attesa", variant: "secondary" },
-    approved: { label: "Approvato", variant: "default" },
-    rejected: { label: "Rifiutato", variant: "destructive" },
+    pending: { label: t("hr.pending"), variant: "secondary" },
+    approved: { label: t("repairs.status.approved"), variant: "default" },
+    rejected: { label: t("b2b.status.cancelled"), variant: "destructive" },
     processing: { label: "In elaborazione", variant: "secondary" },
-    shipped: { label: "Spedito", variant: "default" },
-    received: { label: "Ricevuto", variant: "default" },
-    cancelled: { label: "Annullato", variant: "destructive" },
+    shipped: { label: t("b2b.status.shipped"), variant: "default" },
+    received: { label: t("repairs.status.received"), variant: "default" },
+    cancelled: { label: t("repairs.status.cancelled"), variant: "destructive" },
   };
   const config = statusConfig[status] || { label: status, variant: "outline" as const };
   return <Badge variant={config.variant}>{config.label}</Badge>;
@@ -83,6 +84,7 @@ function getStatusIcon(status: string) {
 }
 
 export default function ResellerMarketplaceSales() {
+  const { t } = useTranslation();
   const [selectedOrder, setSelectedOrder] = useState<MarketplaceOrder | null>(null);
   const [rejectDialogOpen, setRejectDialogOpen] = useState(false);
   const [shipDialogOpen, setShipDialogOpen] = useState(false);
@@ -101,8 +103,8 @@ export default function ResellerMarketplaceSales() {
   });
 
   const paymentMethodLabels: Record<string, string> = {
-    bank_transfer: "Bonifico Bancario",
-    stripe: "Carta di Credito",
+    bank_transfer: t("settings.bankTransfer"),
+    stripe: t("suppliers.creditCard"),
     paypal: "PayPal",
     credit: "Credito/Fido",
   };
@@ -125,13 +127,13 @@ export default function ResellerMarketplaceSales() {
       return res.json();
     },
     onSuccess: () => {
-      toast({ title: "Ordine approvato", description: "Lo stock è stato trasferito al magazzino dell'acquirente" });
+      toast({ title: t("b2b.orderApproved"), description: "Lo stock è stato trasferito al magazzino dell'acquirente" });
       queryClient.invalidateQueries({ queryKey: ['/api/reseller/marketplace/sales'] });
       setSelectedOrder(null);
       setSellerNotes("");
     },
     onError: (error: any) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -141,7 +143,7 @@ export default function ResellerMarketplaceSales() {
       return res.json();
     },
     onSuccess: () => {
-      toast({ title: "Ordine rifiutato", description: "L'acquirente è stato notificato" });
+      toast({ title: t("b2b.orderRejectedToast"), description: "L'acquirente è stato notificato" });
       queryClient.invalidateQueries({ queryKey: ['/api/reseller/marketplace/sales'] });
       setRejectDialogOpen(false);
       setSelectedOrder(null);
@@ -149,7 +151,7 @@ export default function ResellerMarketplaceSales() {
       setSellerNotes("");
     },
     onError: (error: any) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -167,7 +169,7 @@ export default function ResellerMarketplaceSales() {
       setTrackingCarrier("");
     },
     onError: (error: any) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -248,12 +250,12 @@ export default function ResellerMarketplaceSales() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Ordine</TableHead>
-                <TableHead>Acquirente</TableHead>
-                <TableHead>Data</TableHead>
-                <TableHead>Totale</TableHead>
-                <TableHead>Stato</TableHead>
-                <TableHead className="text-right">Azioni</TableHead>
+                <TableHead>{t("common.order")}</TableHead>
+                <TableHead>{t("marketplace.buyer")}</TableHead>
+                <TableHead>{t("common.date")}</TableHead>
+                <TableHead>{t("common.total")}</TableHead>
+                <TableHead>{t("common.status")}</TableHead>
+                <TableHead className="text-right">{t("common.actions")}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -318,7 +320,7 @@ export default function ResellerMarketplaceSales() {
               <Separator />
 
               <div className="space-y-2">
-                <h4 className="font-medium">Prodotti</h4>
+                <h4 className="font-medium">{t("products.title")}</h4>
                 {selectedOrder.items.map((item) => (
                   <div key={item.id} className="flex flex-wrap items-center gap-3 p-2 bg-muted/50 rounded">
                     <div className="w-10 h-10 rounded overflow-hidden bg-muted flex-shrink-0 flex items-center justify-center">
@@ -377,7 +379,7 @@ export default function ResellerMarketplaceSales() {
               {/* Payment and Shipping Info */}
               <div className="grid grid-cols-2 gap-4 p-3 bg-muted/50 rounded-lg">
                 <div>
-                  <p className="text-sm text-muted-foreground">Metodo di pagamento</p>
+                  <p className="text-sm text-muted-foreground">{t("license.paymentMethod")}</p>
                   <p className="font-medium" data-testid="text-payment-method">{getPaymentMethodName(selectedOrder.paymentMethod)}</p>
                 </div>
                 <div>
@@ -411,9 +413,7 @@ export default function ResellerMarketplaceSales() {
           )}
 
           <DialogFooter className="flex-wrap gap-2">
-            <Button variant="outline" onClick={() => setSelectedOrder(null)}>
-              Chiudi
-            </Button>
+            <Button variant="outline" onClick={() => setSelectedOrder(null)}>{t("common.close")}</Button>
             
             {selectedOrder?.status === 'pending' && selectedOrder.paymentMethod === 'bank_transfer' && (
               <>
@@ -422,16 +422,14 @@ export default function ResellerMarketplaceSales() {
                   onClick={() => setRejectDialogOpen(true)}
                   data-testid="button-reject-order"
                 >
-                  <ThumbsDown className="h-4 w-4 mr-2" />
-                  Rifiuta
-                </Button>
+                  <ThumbsDown className="h-4 w-4 mr-2" />{t("common.reject")}</Button>
                 <Button 
                   onClick={handleApprove}
                   disabled={approveMutation.isPending}
                   data-testid="button-approve-order"
                 >
                   <ThumbsUp className="h-4 w-4 mr-2" />
-                  {approveMutation.isPending ? "Approvo..." : "Approva"}
+                  {approveMutation.isPending ? "Approvo..." : t("common.approve")}
                 </Button>
               </>
             )}
@@ -441,9 +439,7 @@ export default function ResellerMarketplaceSales() {
                 onClick={() => setShipDialogOpen(true)}
                 data-testid="button-ship-order"
               >
-                <Truck className="h-4 w-4 mr-2" />
-                Segna come Spedito
-              </Button>
+                <Truck className="h-4 w-4 mr-2" />{t("b2b.markAsShipped")}</Button>
             )}
           </DialogFooter>
         </DialogContent>
@@ -452,7 +448,7 @@ export default function ResellerMarketplaceSales() {
       <Dialog open={rejectDialogOpen} onOpenChange={setRejectDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Rifiuta Ordine</DialogTitle>
+            <DialogTitle>{t("b2b.rejectOrder")}</DialogTitle>
             <DialogDescription>
               Inserisci il motivo del rifiuto
             </DialogDescription>
@@ -472,7 +468,7 @@ export default function ResellerMarketplaceSales() {
             <div className="space-y-2">
               <Label>Note aggiuntive (opzionale)</Label>
               <Textarea 
-                placeholder="Note aggiuntive..."
+                placeholder={t("utility.additionalNotes")}
                 value={sellerNotes}
                 onChange={(e) => setSellerNotes(e.target.value)}
               />
@@ -480,9 +476,7 @@ export default function ResellerMarketplaceSales() {
           </div>
 
           <DialogFooter>
-            <Button variant="outline" onClick={() => setRejectDialogOpen(false)}>
-              Annulla
-            </Button>
+            <Button variant="outline" onClick={() => setRejectDialogOpen(false)}>{t("common.cancel")}</Button>
             <Button 
               variant="destructive"
               onClick={handleReject}
@@ -506,7 +500,7 @@ export default function ResellerMarketplaceSales() {
           
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label>Corriere</Label>
+              <Label>{t("shipping.carrier")}</Label>
               <Input 
                 placeholder="Es: BRT, GLS, DHL..."
                 value={trackingCarrier}
@@ -527,9 +521,7 @@ export default function ResellerMarketplaceSales() {
           </div>
 
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShipDialogOpen(false)}>
-              Annulla
-            </Button>
+            <Button variant="outline" onClick={() => setShipDialogOpen(false)}>{t("common.cancel")}</Button>
             <Button 
               onClick={handleShip}
               disabled={shipMutation.isPending}

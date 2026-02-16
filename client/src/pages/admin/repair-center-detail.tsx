@@ -36,6 +36,7 @@ import {
   X
 } from "lucide-react";
 import { SiStripe, SiPaypal } from "react-icons/si";
+import { useTranslation } from "react-i18next";
 
 type SafeUser = Omit<User, 'password'>;
 
@@ -140,6 +141,7 @@ const formatCurrency = (cents: number | null | undefined) => {
 };
 
 export default function AdminRepairCenterDetail() {
+  const { t } = useTranslation();
   const params = useParams<{ id: string }>();
   const centerId = params.id;
   const { toast } = useToast();
@@ -166,12 +168,12 @@ export default function AdminRepairCenterDetail() {
       return await res.json();
     },
     onSuccess: () => {
-      toast({ title: "Password aggiornata con successo" });
+      toast({ title: t("admin.resellers.passwordResetSuccess") });
       setResetPasswordDialogOpen(false);
       setNewPassword("");
     },
     onError: (error: Error) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -298,7 +300,7 @@ export default function AdminRepairCenterDetail() {
             </div>
             <div>
               <p className="text-2xl font-bold" data-testid="stat-customers">{stats.totalCustomers}</p>
-              <p className="text-xs text-amber-100">Clienti</p>
+              <p className="text-xs text-amber-100">{t("sidebar.items.customers")}</p>
             </div>
           </div>
         </div>
@@ -329,7 +331,7 @@ export default function AdminRepairCenterDetail() {
           <CardContent className="space-y-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="p-4 bg-slate-50 dark:bg-slate-800/30 rounded-xl">
-                <p className="text-xs text-slate-500 uppercase tracking-wide mb-1">Indirizzo</p>
+                <p className="text-xs text-slate-500 uppercase tracking-wide mb-1">{t("common.address")}</p>
                 <p className="font-semibold text-slate-900 dark:text-white flex items-center gap-2" data-testid="text-center-address">
                   <MapPin className="h-4 w-4 text-slate-400" />
                   {center.address}, {center.city}
@@ -338,14 +340,14 @@ export default function AdminRepairCenterDetail() {
                 </p>
               </div>
               <div className="p-4 bg-slate-50 dark:bg-slate-800/30 rounded-xl">
-                <p className="text-xs text-slate-500 uppercase tracking-wide mb-1">Email</p>
+                <p className="text-xs text-slate-500 uppercase tracking-wide mb-1">{t("common.email")}</p>
                 <p className="font-semibold text-slate-900 dark:text-white flex items-center gap-2" data-testid="text-center-email">
                   <Mail className="h-4 w-4 text-slate-400" />
                   {center.email}
                 </p>
               </div>
               <div className="p-4 bg-slate-50 dark:bg-slate-800/30 rounded-xl">
-                <p className="text-xs text-slate-500 uppercase tracking-wide mb-1">Telefono</p>
+                <p className="text-xs text-slate-500 uppercase tracking-wide mb-1">{t("common.phone")}</p>
                 <p className="font-semibold text-slate-900 dark:text-white flex items-center gap-2" data-testid="text-center-phone">
                   <Phone className="h-4 w-4 text-slate-400" />
                   {center.phone}
@@ -548,7 +550,7 @@ export default function AdminRepairCenterDetail() {
         <TabsContent value="repairs" className="mt-4">
           <Card className="border-0 shadow-lg bg-white dark:bg-slate-800/50">
             <CardHeader>
-              <CardTitle>Storico Lavorazioni</CardTitle>
+              <CardTitle>{t("admin.repairCenters.repairHistory")}</CardTitle>
             </CardHeader>
             <CardContent>
               {repairs.length === 0 ? (
@@ -561,11 +563,11 @@ export default function AdminRepairCenterDetail() {
                   <Table>
                     <TableHeader>
                       <TableRow className="bg-slate-50 dark:bg-slate-800/50">
-                        <TableHead className="text-slate-600 dark:text-slate-400">Cliente</TableHead>
-                        <TableHead className="text-slate-600 dark:text-slate-400">Dispositivo</TableHead>
-                        <TableHead className="text-slate-600 dark:text-slate-400">Stato</TableHead>
+                        <TableHead className="text-slate-600 dark:text-slate-400">{t("common.customer")}</TableHead>
+                        <TableHead className="text-slate-600 dark:text-slate-400">{t("repairs.device")}</TableHead>
+                        <TableHead className="text-slate-600 dark:text-slate-400">{t("common.status")}</TableHead>
                         <TableHead className="text-slate-600 dark:text-slate-400">Data Creazione</TableHead>
-                        <TableHead className="text-slate-600 dark:text-slate-400">Azioni</TableHead>
+                        <TableHead className="text-slate-600 dark:text-slate-400">{t("common.actions")}</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -605,7 +607,7 @@ export default function AdminRepairCenterDetail() {
         <TabsContent value="utility" className="mt-4">
           <Card className="border-0 shadow-lg bg-white dark:bg-slate-800/50">
             <CardHeader>
-              <CardTitle>Pratiche Utility</CardTitle>
+              <CardTitle>{t("admin.repairCenters.utilityPractices")}</CardTitle>
             </CardHeader>
             <CardContent>
               {utilityPractices.length === 0 ? (
@@ -618,13 +620,13 @@ export default function AdminRepairCenterDetail() {
                   <Table>
                     <TableHeader>
                       <TableRow className="bg-slate-50 dark:bg-slate-800/50">
-                        <TableHead className="text-slate-600 dark:text-slate-400">Cliente</TableHead>
+                        <TableHead className="text-slate-600 dark:text-slate-400">{t("common.customer")}</TableHead>
                         <TableHead className="text-slate-600 dark:text-slate-400">Fornitore</TableHead>
                         <TableHead className="text-slate-600 dark:text-slate-400">Servizio</TableHead>
-                        <TableHead className="text-slate-600 dark:text-slate-400">Stato</TableHead>
-                        <TableHead className="text-slate-600 dark:text-slate-400">Importo</TableHead>
-                        <TableHead className="text-slate-600 dark:text-slate-400">Data</TableHead>
-                        <TableHead className="text-slate-600 dark:text-slate-400">Azioni</TableHead>
+                        <TableHead className="text-slate-600 dark:text-slate-400">{t("common.status")}</TableHead>
+                        <TableHead className="text-slate-600 dark:text-slate-400">{t("common.amount")}</TableHead>
+                        <TableHead className="text-slate-600 dark:text-slate-400">{t("common.date")}</TableHead>
+                        <TableHead className="text-slate-600 dark:text-slate-400">{t("common.actions")}</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -673,7 +675,7 @@ export default function AdminRepairCenterDetail() {
         <TabsContent value="orders" className="mt-4">
           <Card className="border-0 shadow-lg bg-white dark:bg-slate-800/50">
             <CardHeader>
-              <CardTitle>Ordini B2B</CardTitle>
+              <CardTitle>{t("b2b.title")}</CardTitle>
             </CardHeader>
             <CardContent>
               {b2bOrders.length === 0 ? (
@@ -687,9 +689,9 @@ export default function AdminRepairCenterDetail() {
                     <TableHeader>
                       <TableRow className="bg-slate-50 dark:bg-slate-800/50">
                         <TableHead className="text-slate-600 dark:text-slate-400">Numero Ordine</TableHead>
-                        <TableHead className="text-slate-600 dark:text-slate-400">Stato</TableHead>
-                        <TableHead className="text-slate-600 dark:text-slate-400">Totale</TableHead>
-                        <TableHead className="text-slate-600 dark:text-slate-400">Data</TableHead>
+                        <TableHead className="text-slate-600 dark:text-slate-400">{t("common.status")}</TableHead>
+                        <TableHead className="text-slate-600 dark:text-slate-400">{t("common.total")}</TableHead>
+                        <TableHead className="text-slate-600 dark:text-slate-400">{t("common.date")}</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -720,7 +722,7 @@ export default function AdminRepairCenterDetail() {
         <TabsContent value="customers" className="mt-4">
           <Card className="border-0 shadow-lg bg-white dark:bg-slate-800/50">
             <CardHeader>
-              <CardTitle>Clienti Associati</CardTitle>
+              <CardTitle>{t("admin.repairCenters.associatedCustomers")}</CardTitle>
             </CardHeader>
             <CardContent>
               {customers.length === 0 ? (
@@ -733,10 +735,10 @@ export default function AdminRepairCenterDetail() {
                   <Table>
                     <TableHeader>
                       <TableRow className="bg-slate-50 dark:bg-slate-800/50">
-                        <TableHead className="text-slate-600 dark:text-slate-400">Nome</TableHead>
-                        <TableHead className="text-slate-600 dark:text-slate-400">Email</TableHead>
-                        <TableHead className="text-slate-600 dark:text-slate-400">Telefono</TableHead>
-                        <TableHead className="text-slate-600 dark:text-slate-400">Stato</TableHead>
+                        <TableHead className="text-slate-600 dark:text-slate-400">{t("common.name")}</TableHead>
+                        <TableHead className="text-slate-600 dark:text-slate-400">{t("common.email")}</TableHead>
+                        <TableHead className="text-slate-600 dark:text-slate-400">{t("common.phone")}</TableHead>
+                        <TableHead className="text-slate-600 dark:text-slate-400">{t("common.status")}</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -763,7 +765,7 @@ export default function AdminRepairCenterDetail() {
         <TabsContent value="staff" className="mt-4">
           <Card className="border-0 shadow-lg bg-white dark:bg-slate-800/50">
             <CardHeader>
-              <CardTitle>Staff Assegnato</CardTitle>
+              <CardTitle>{t("admin.repairCenters.assignedStaff")}</CardTitle>
             </CardHeader>
             <CardContent>
               {staff.length === 0 ? (
@@ -776,10 +778,10 @@ export default function AdminRepairCenterDetail() {
                   <Table>
                     <TableHeader>
                       <TableRow className="bg-slate-50 dark:bg-slate-800/50">
-                        <TableHead className="text-slate-600 dark:text-slate-400">Nome</TableHead>
-                        <TableHead className="text-slate-600 dark:text-slate-400">Email</TableHead>
-                        <TableHead className="text-slate-600 dark:text-slate-400">Ruolo</TableHead>
-                        <TableHead className="text-slate-600 dark:text-slate-400">Stato</TableHead>
+                        <TableHead className="text-slate-600 dark:text-slate-400">{t("common.name")}</TableHead>
+                        <TableHead className="text-slate-600 dark:text-slate-400">{t("common.email")}</TableHead>
+                        <TableHead className="text-slate-600 dark:text-slate-400">{t("common.role")}</TableHead>
+                        <TableHead className="text-slate-600 dark:text-slate-400">{t("common.status")}</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -821,13 +823,13 @@ export default function AdminRepairCenterDetail() {
               Stai per resettare la password del centro <strong className="text-slate-900 dark:text-white">{center.name}</strong>.
             </p>
             <div className="space-y-2">
-              <Label htmlFor="newPassword" className="text-xs text-slate-500 uppercase tracking-wide">Nuova Password</Label>
+              <Label htmlFor="newPassword" className="text-xs text-slate-500 uppercase tracking-wide">{t("admin.common.newPassword")}</Label>
               <Input
                 id="newPassword"
                 type="password"
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
-                placeholder="Inserisci nuova password (min. 4 caratteri)"
+                placeholder={t("admin.repairCenters.newPasswordPlaceholder")}
                 className="h-11 rounded-xl"
                 data-testid="input-new-password"
               />
@@ -847,7 +849,7 @@ export default function AdminRepairCenterDetail() {
                 className="rounded-xl bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600"
                 data-testid="button-confirm-reset-password"
               >
-                {resetPasswordMutation.isPending ? "Aggiornamento..." : "Conferma Reset"}
+                {resetPasswordMutation.isPending ? t("admin.common.updating") : "Conferma Reset"}
               </Button>
             </div>
           </div>

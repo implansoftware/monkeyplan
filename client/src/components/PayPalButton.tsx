@@ -2,6 +2,7 @@
 // Based on Replit PayPal Blueprint
 
 import { useEffect, useState, useRef, useCallback } from "react";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
 
@@ -47,6 +48,7 @@ export default function PayPalButton({
   serviceItemId,
   extraPayload,
 }: PayPalButtonProps) {
+  const { t } = useTranslation();
   const [isLoading, setIsLoading] = useState(true);
   const [isProcessing, setIsProcessing] = useState(false);
   const [sdkReady, setSdkReady] = useState(false);
@@ -77,7 +79,7 @@ export default function PayPalButton({
     });
     if (!response.ok) {
       const error = await response.json();
-      throw new Error(error.error || "Errore creazione ordine PayPal");
+      throw new Error(error.error || t("paypal.createOrderError"));
     }
     const output = await response.json();
     return { orderId: output.orderID || output.id };
@@ -95,7 +97,7 @@ export default function PayPalButton({
     });
     if (!response.ok) {
       const error = await response.json();
-      throw new Error(error.error || "Errore cattura pagamento PayPal");
+      throw new Error(error.error || t("paypal.captureError"));
     }
     const data = await response.json();
     return data;
@@ -107,7 +109,7 @@ export default function PayPalButton({
       const orderData = await captureOrder(data.orderId);
       onSuccess(data.orderId, orderData);
     } catch (error: any) {
-      onError(error.message || "Errore durante il pagamento");
+      onError(error.message || t("paypal.paymentError"));
     } finally {
       setIsProcessing(false);
     }
@@ -118,7 +120,7 @@ export default function PayPalButton({
   }, [onCancel]);
 
   const handleError = useCallback((data: any) => {
-    onError(data?.message || "Errore PayPal");
+    onError(data?.message || t("paypal.error"));
   }, [onError]);
 
   // Initialize PayPal SDK
@@ -132,7 +134,7 @@ export default function PayPalButton({
           script.onload = () => initPayPal();
           script.onerror = () => {
             setIsLoading(false);
-            onError("Impossibile caricare PayPal SDK");
+            onError(t("paypal.sdkLoadError"));
           };
           document.body.appendChild(script);
         } else {
@@ -141,7 +143,7 @@ export default function PayPalButton({
       } catch (e) {
         console.error("Failed to load PayPal SDK", e);
         setIsLoading(false);
-        onError("Errore caricamento PayPal SDK");
+        onError(t("paypal.sdkLoadError"));
       }
     };
 
@@ -149,7 +151,7 @@ export default function PayPalButton({
       try {
         const clientToken: string = await fetch(setupEndpoint, { credentials: "include" })
           .then((res) => {
-            if (!res.ok) throw new Error("PayPal non configurato");
+            if (!res.ok) throw new Error(t("paypal.notConfigured"));
             return res.json();
           })
           .then((data) => {
@@ -175,7 +177,7 @@ export default function PayPalButton({
       } catch (e: any) {
         console.error(e);
         setIsLoading(false);
-        onError(e.message || "Errore inizializzazione PayPal");
+        onError(e.message || t("paypal.initError"));
       }
     };
 
@@ -195,7 +197,7 @@ export default function PayPalButton({
       );
     } catch (e: any) {
       console.error(e);
-      onError(e.message || "Errore checkout PayPal");
+      onError(e.message || t("paypal.checkoutError"));
       setIsProcessing(false);
     }
   }, [createOrder, disabled, isProcessing, onError]);
@@ -204,7 +206,7 @@ export default function PayPalButton({
     return (
       <Button disabled className="w-full">
         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-        Caricamento PayPal...
+        {t("paypal.loading")}
       </Button>
     );
   }
@@ -212,7 +214,7 @@ export default function PayPalButton({
   if (!sdkReady) {
     return (
       <Button disabled variant="destructive" className="w-full">
-        PayPal non disponibile
+        {t("paypal.unavailable")}
       </Button>
     );
   }
@@ -228,14 +230,14 @@ export default function PayPalButton({
       {isProcessing ? (
         <>
           <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-          Elaborazione...
+          {t("paypal.processing")}
         </>
       ) : (
         <>
           <svg className="mr-2 h-5 w-5" viewBox="0 0 24 24" fill="currentColor">
             <path d="M7.076 21.337H2.47a.641.641 0 0 1-.633-.74L4.944 3.72a.641.641 0 0 1 .632-.54h6.012c2.657 0 4.543.548 5.608 1.628.967.981 1.336 2.343 1.097 4.048-.03.216-.067.442-.113.677l-.002.012c-.586 3.308-2.625 4.988-6.065 4.988H9.49a.641.641 0 0 0-.632.541l-.844 5.337a.641.641 0 0 1-.632.54h-.307v.386zm.793-7.506h1.753c2.495 0 3.858-1.212 4.29-3.817.193-1.161-.039-2.017-.688-2.542-.716-.578-1.904-.873-3.533-.873H7.628l-1.27 7.232h1.51z"/>
           </svg>
-          Paga con PayPal ({currency} {amount})
+          {t("paypal.payWith")} ({currency} {amount})
         </>
       )}
     </Button>

@@ -21,6 +21,7 @@ import {
 import type { Product, User as UserType } from "@shared/schema";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
+import { useTranslation } from "react-i18next";
 
 type TransferRequestItem = {
   id: string;
@@ -91,20 +92,21 @@ type ProductWithStock = {
 };
 
 const statusConfig: Record<string, { label: string; color: string; icon: any }> = {
-  pending: { label: "In Attesa", color: "bg-yellow-500/20 text-yellow-700", icon: Clock },
-  approved: { label: "Approvata", color: "bg-blue-500/20 text-blue-700", icon: CheckCircle },
-  rejected: { label: "Rifiutata", color: "bg-red-500/20 text-red-700", icon: XCircle },
-  shipped: { label: "Spedita", color: "bg-purple-500/20 text-purple-700", icon: Truck },
-  received: { label: "Ricevuta", color: "bg-green-500/20 text-green-700", icon: PackageCheck },
-  cancelled: { label: "Annullata", color: "bg-gray-500/20 text-gray-700", icon: Ban },
+  pending: { label: t("common.pending"), color: "bg-yellow-500/20 text-yellow-700", icon: Clock },
+  approved: { label: t("common.approved"), color: "bg-blue-500/20 text-blue-700", icon: CheckCircle },
+  rejected: { label: t("common.rejected"), color: "bg-red-500/20 text-red-700", icon: XCircle },
+  shipped: { label: t("common.shipped"), color: "bg-purple-500/20 text-purple-700", icon: Truck },
+  received: { label: t("common.received"), color: "bg-green-500/20 text-green-700", icon: PackageCheck },
+  cancelled: { label: t("common.cancelled"), color: "bg-gray-500/20 text-gray-700", icon: Ban },
 };
 
 const requesterTypeLabels: Record<string, { label: string; icon: any }> = {
-  repair_center: { label: "Centro Riparazione", icon: Building },
-  sub_reseller: { label: "Sub-Reseller", icon: User },
+  repair_center: { label: t("roles.repairCenter"), icon: Building },
+  sub_reseller: { label: t("roles.subReseller"), icon: User },
 };
 
 export default function TransferRequestsPage() {
+  const { t } = useTranslation();
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState("incoming");
   const [searchTerm, setSearchTerm] = useState("");
@@ -160,7 +162,7 @@ export default function TransferRequestsPage() {
       setRejectionReason("");
     },
     onError: (error: any) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -184,7 +186,7 @@ export default function TransferRequestsPage() {
       setShipTrackingCarrier("");
     },
     onError: (error: any) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -206,7 +208,7 @@ export default function TransferRequestsPage() {
       setReceiveItems([]);
     },
     onError: (error: any) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -253,7 +255,7 @@ export default function TransferRequestsPage() {
       resetWizard();
     },
     onError: (error: any) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -312,7 +314,7 @@ export default function TransferRequestsPage() {
       a.remove();
       window.URL.revokeObjectURL(url);
     } catch (error: any) {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     }
   };
 
@@ -379,9 +381,7 @@ export default function TransferRequestsPage() {
               onClick={() => { setSelectedRequest(request); setShowDetailsDialog(true); }}
               data-testid={`button-view-${request.id}`}
             >
-              <Eye className="h-4 w-4 mr-1" />
-              Dettagli
-            </Button>
+              <Eye className="h-4 w-4 mr-1" />{t("common.details")}</Button>
             
             {type === 'incoming' && request.status === 'pending' && (
               <Button 
@@ -480,9 +480,7 @@ export default function TransferRequestsPage() {
           </div>
           {stats?.isSubReseller && (
             <Button className="bg-white/20 backdrop-blur-sm border border-white/30 text-white shadow-lg" onClick={() => setShowNewRequestDialog(true)} data-testid="button-new-request">
-              <Plus className="h-4 w-4 mr-2" />
-              Nuova Richiesta
-            </Button>
+              <Plus className="h-4 w-4 mr-2" />{t("hr.newLeaveRequest")}</Button>
           )}
         </div>
       </div>
@@ -496,7 +494,7 @@ export default function TransferRequestsPage() {
               </div>
               <div>
                 <p className="text-2xl font-bold">{stats?.incomingPending || 0}</p>
-                <p className="text-sm text-muted-foreground">In Attesa</p>
+                <p className="text-sm text-muted-foreground">{t("common.pending")}</p>
               </div>
             </div>
           </CardContent>
@@ -555,11 +553,11 @@ export default function TransferRequestsPage() {
         </div>
         <Select value={statusFilter} onValueChange={setStatusFilter}>
           <SelectTrigger className="w-full sm:w-[180px]" data-testid="select-status-filter">
-            <SelectValue placeholder="Filtra per stato" />
+            <SelectValue placeholder={t("common.filterByStatus")} />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">Tutti gli stati</SelectItem>
-            <SelectItem value="pending">In Attesa</SelectItem>
+            <SelectItem value="all">{t("common.allStatuses")}</SelectItem>
+            <SelectItem value="pending">{t("common.pending")}</SelectItem>
             <SelectItem value="approved">Approvate</SelectItem>
             <SelectItem value="shipped">Spedite</SelectItem>
             <SelectItem value="received">Ricevute</SelectItem>
@@ -659,7 +657,7 @@ export default function TransferRequestsPage() {
             <div className="space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <Label className="text-muted-foreground">Stato</Label>
+                  <Label className="text-muted-foreground">{t("common.status")}</Label>
                   <div className="mt-1">{renderStatusBadge(selectedRequest.status)}</div>
                 </div>
                 <div>
@@ -694,9 +692,7 @@ export default function TransferRequestsPage() {
                     <div className="flex flex-wrap items-center gap-2 mt-1">
                       <span className="font-mono">{selectedRequest.ddtNumber}</span>
                       <Button size="sm" variant="outline" onClick={() => downloadDDT(selectedRequest.id)}>
-                        <Download className="h-4 w-4 mr-1" />
-                        Scarica
-                      </Button>
+                        <Download className="h-4 w-4 mr-1" />{t("common.download")}</Button>
                     </div>
                   </div>
                 )}
@@ -741,7 +737,7 @@ export default function TransferRequestsPage() {
               
               {selectedRequest.notes && (
                 <div>
-                  <Label className="text-muted-foreground">Note</Label>
+                  <Label className="text-muted-foreground">{t("common.notes")}</Label>
                   <p className="mt-1">{selectedRequest.notes}</p>
                 </div>
               )}
@@ -831,9 +827,7 @@ export default function TransferRequestsPage() {
               disabled={decideMutation.isPending}
               data-testid="button-reject-request"
             >
-              <XCircle className="h-4 w-4 mr-1" />
-              Rifiuta
-            </Button>
+              <XCircle className="h-4 w-4 mr-1" />{t("common.reject")}</Button>
             <Button
               onClick={() => selectedRequest && decideMutation.mutate({
                 requestId: selectedRequest.id,
@@ -843,9 +837,7 @@ export default function TransferRequestsPage() {
               disabled={decideMutation.isPending}
               data-testid="button-approve-request"
             >
-              <CheckCircle className="h-4 w-4 mr-1" />
-              Approva
-            </Button>
+              <CheckCircle className="h-4 w-4 mr-1" />{t("common.approve")}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -1044,7 +1036,7 @@ export default function TransferRequestsPage() {
                   </div>
                   <Select value={productTypeFilter} onValueChange={setProductTypeFilter}>
                     <SelectTrigger className="w-full sm:w-[160px]" data-testid="select-product-type">
-                      <SelectValue placeholder="Tipo" />
+                      <SelectValue placeholder={t("common.type")} />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="all">Tutti i tipi</SelectItem>
@@ -1248,17 +1240,13 @@ export default function TransferRequestsPage() {
           <DialogFooter className="gap-2 sm:gap-0">
             {wizardStep > 1 && (
               <Button variant="outline" onClick={() => setWizardStep(wizardStep - 1)} data-testid="button-wizard-back">
-                <ArrowLeft className="h-4 w-4 mr-2" />
-                Indietro
-              </Button>
+                <ArrowLeft className="h-4 w-4 mr-2" />{t("common.back")}</Button>
             )}
             {wizardStep === 1 && (
               <Button variant="outline" onClick={() => {
                 setShowNewRequestDialog(false);
                 resetWizard();
-              }}>
-                Annulla
-              </Button>
+              }}>{t("common.cancel")}</Button>
             )}
             {wizardStep === 1 && (
               <Button

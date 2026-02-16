@@ -20,6 +20,7 @@ import type { PaymentConfiguration } from "@shared/schema";
 import { ShippingMethodsTab } from "@/components/shipping-methods-tab";
 import { AdminFiscalConfig } from "@/components/admin-fiscal-config";
 import { usePageTitle } from "@/hooks/use-page-title";
+import { useTranslation } from "react-i18next";
 
 interface HourlyRateResponse {
   hourlyRateCents: number;
@@ -63,13 +64,13 @@ const phaseLabels: Record<string, string> = {
 };
 
 const phaseDescriptions: Record<string, string> = {
-  ingressato: "Tempo dalla presa in carico all'inizio diagnosi",
-  in_diagnosi: "Tempo per completare la diagnosi del dispositivo",
-  preventivo_emesso: "Tempo di attesa per risposta cliente al preventivo",
-  attesa_ricambi: "Tempo dall'ordine ricambi alla ricezione",
-  in_riparazione: "Tempo per completare la riparazione",
-  in_test: "Tempo per eseguire i test finali",
-  pronto_ritiro: "Tempo dal dispositivo pronto al ritiro effettivo",
+  ingressato: t("settings.phase.ingressato"),
+  in_diagnosi: t("settings.phase.inDiagnosi"),
+  preventivo_emesso: t("settings.phase.preventivo"),
+  attesa_ricambi: t("settings.phase.attesaRicambi"),
+  in_riparazione: t("settings.phase.inRiparazione"),
+  in_test: t("settings.phase.inTest"),
+  pronto_ritiro: t("settings.phase.prontoRitiro"),
 };
 
 const PhaseIcons: Record<string, React.ComponentType<{ className?: string }>> = {
@@ -109,7 +110,7 @@ const paymentFormSchema = z.object({
   }
   return true;
 }, {
-  message: "Email PayPal è obbligatoria quando PayPal è abilitato",
+  message: t("settings.paypalEmailRequired"),
   path: ["paypalEmail"],
 }).refine((data) => {
   if (data.paypalEnabled) {
@@ -117,7 +118,7 @@ const paymentFormSchema = z.object({
   }
   return true;
 }, {
-  message: "Client ID è obbligatorio quando PayPal è abilitato",
+  message: t("settings.paypalClientIdRequired"),
   path: ["paypalClientId"],
 }).refine((data) => {
   if (data.stripeEnabled) {
@@ -125,7 +126,7 @@ const paymentFormSchema = z.object({
   }
   return true;
 }, {
-  message: "Publishable Key è obbligatoria quando Stripe è abilitato",
+  message: t("settings.stripeKeyRequired"),
   path: ["stripePublishableKey"],
 });
 
@@ -173,17 +174,17 @@ function AiAccessManagement() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/ai-access"] });
-      toast({ title: "Aggiornato", description: "Accesso AI aggiornato con successo" });
+      toast({ title: t("common.updatedSuccessfully"), description: t("settings.aiAccessUpdated") });
     },
     onError: (error: Error) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     },
   });
 
   if (isLoading) {
     return (
       <Card>
-        <CardHeader><CardTitle>Assistente AI</CardTitle></CardHeader>
+        <CardHeader><CardTitle>{t("settings.aiAssistant")}</CardTitle></CardHeader>
         <CardContent className="space-y-4">
           <Skeleton className="h-10 w-full" />
           <Skeleton className="h-10 w-full" />
@@ -209,7 +210,7 @@ function AiAccessManagement() {
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
-              placeholder="Cerca reseller o centro riparazione..."
+              placeholder={t("common.search")}
               value={aiSearch}
               onChange={(e) => setAiSearch(e.target.value)}
               className="pl-9"
@@ -219,7 +220,7 @@ function AiAccessManagement() {
           <div className="space-y-4">
             <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wider">Reseller</h3>
             {filteredResellers.length === 0 ? (
-              <p className="text-sm text-muted-foreground">{aiSearch.trim() ? "Nessun reseller corrisponde alla ricerca" : "Nessun reseller trovato"}</p>
+              <p className="text-sm text-muted-foreground">{aiSearch.trim() ? t("settings.noResellerMatch") : t("settings.noResellerFound")}</p>
             ) : (
               <div className="space-y-3">
                 {filteredResellers.map((r) => (
@@ -259,7 +260,7 @@ function AiAccessManagement() {
           <div className="space-y-4">
             <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wider">Centri Riparazione</h3>
             {filteredRepairCenters.length === 0 ? (
-              <p className="text-sm text-muted-foreground">{aiSearch.trim() ? "Nessun centro corrisponde alla ricerca" : "Nessun centro riparazione trovato"}</p>
+              <p className="text-sm text-muted-foreground">{aiSearch.trim() ? t("settings.noCenterMatch") : t("settings.noCenterFound")}</p>
             ) : (
               <div className="space-y-3">
                 {filteredRepairCenters.map((rc) => (
@@ -289,7 +290,8 @@ function AiAccessManagement() {
 }
 
 export default function AdminSettings() {
-  usePageTitle("Impostazioni");
+  const { t } = useTranslation();
+  usePageTitle(t("settings.title"));
   const { toast } = useToast();
   const [hourlyRateEuros, setHourlyRateEuros] = useState<string>("");
   const [slaThresholds, setSlaThresholds] = useState<SLAThresholdsResponse>(defaultSLAThresholds);
@@ -350,14 +352,14 @@ export default function AdminSettings() {
     },
     onSuccess: () => {
       toast({
-        title: "Configurazione Salvata",
-        description: "I metodi di pagamento sono stati aggiornati",
+        title: t("settings.configSaved"),
+        description: t("settings.paymentMethodsUpdated"),
       });
       queryClient.invalidateQueries({ queryKey: ['/api/admin/payment-config'] });
     },
     onError: (error: Error) => {
       toast({
-        title: "Errore",
+        title: t("common.error"),
         description: error.message,
         variant: "destructive",
       });
@@ -369,7 +371,7 @@ export default function AdminSettings() {
     if (data.stripeEnabled && !paymentConfig?.hasStripeSecret && (!data.stripeSecretKey || !data.stripeSecretKey.trim())) {
       paymentForm.setError("stripeSecretKey", {
         type: "manual",
-        message: "Secret Key è obbligatoria per abilitare Stripe"
+        message: t("settings.stripeSecretRequired")
       });
       return;
     }
@@ -377,7 +379,7 @@ export default function AdminSettings() {
     if (data.paypalEnabled && !paymentConfig?.hasPaypalSecret && (!data.paypalClientSecret || !data.paypalClientSecret.trim())) {
       paymentForm.setError("paypalClientSecret", {
         type: "manual",
-        message: "Client Secret è obbligatorio per abilitare PayPal"
+        message: t("settings.paypalSecretRequired")
       });
       return;
     }
@@ -396,14 +398,14 @@ export default function AdminSettings() {
     },
     onSuccess: () => {
       toast({
-        title: "Soglie SLA Salvate",
-        description: "Le soglie temporali sono state aggiornate con successo",
+        title: t("settings.slaSaved"),
+        description: t("settings.slaSavedDesc"),
       });
       queryClient.invalidateQueries({ queryKey: ["/api/admin/settings/sla-thresholds"] });
     },
     onError: (error: Error) => {
       toast({
-        title: "Errore",
+        title: t("common.error"),
         description: error.message,
         variant: "destructive",
       });
@@ -418,15 +420,15 @@ export default function AdminSettings() {
     },
     onSuccess: () => {
       toast({
-        title: "Impostazioni Salvate",
-        description: "La tariffa oraria è stata aggiornata con successo",
+        title: t("settings.saved"),
+        description: t("settings.rateUpdatedDesc"),
       });
       queryClient.invalidateQueries({ queryKey: ["/api/admin/settings/hourly-rate"] });
       queryClient.invalidateQueries({ queryKey: ["/api/settings/hourly-rate"] });
     },
     onError: (error: Error) => {
       toast({
-        title: "Errore",
+        title: t("common.error"),
         description: error.message,
         variant: "destructive",
       });
@@ -437,8 +439,8 @@ export default function AdminSettings() {
     const euros = parseFloat(hourlyRateEuros);
     if (isNaN(euros) || euros < 0) {
       toast({
-        title: "Errore",
-        description: "Inserisci un valore valido per la tariffa oraria",
+        title: t("common.error"),
+        description: t("settings.invalidRate"),
         variant: "destructive",
       });
       return;
@@ -465,7 +467,7 @@ export default function AdminSettings() {
               <Settings className="h-5 w-5" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold tracking-tight">Impostazioni</h1>
+              <h1 className="text-2xl font-bold tracking-tight">{t("sidebar.items.settings")}</h1>
               <p className="text-sm text-muted-foreground">
                 Configura i parametri globali del sistema
               </p>
@@ -523,7 +525,7 @@ export default function AdminSettings() {
                 ) : (
                   <>
                     <div className="space-y-2">
-                      <Label htmlFor="hourly-rate">Tariffa Oraria (EUR)</Label>
+                      <Label htmlFor="hourly-rate">{t("settings.hourlyRateLabel")}</Label>
                       <div className="flex flex-wrap items-center gap-2">
                         <Euro className="h-4 w-4 text-muted-foreground" />
                         <Input
@@ -563,7 +565,7 @@ export default function AdminSettings() {
                       data-testid="button-save-hourly-rate"
                     >
                       <Save className="h-4 w-4 mr-2" />
-                      {updateHourlyRateMutation.isPending ? "Salvataggio..." : "Salva Tariffa"}
+                      {updateHourlyRateMutation.isPending ? t("settings.savingRate") : t("settings.saveRate")}
                     </Button>
 
                     {hourlyRateData?.updatedAt && (
@@ -578,7 +580,7 @@ export default function AdminSettings() {
 
             <Card>
               <CardHeader>
-                <CardTitle>Esempio di Calcolo</CardTitle>
+                <CardTitle>{t("settings.calculationExample")}</CardTitle>
                 <CardDescription>
                   Simulazione del calcolo manodopera per un preventivo
                 </CardDescription>
@@ -597,7 +599,7 @@ export default function AdminSettings() {
                   </div>
                   <div className="border-t pt-4">
                     <div className="flex justify-between items-center">
-                      <p className="font-medium">Costo Manodopera</p>
+                      <p className="font-medium">{t("settings.laborCost")}</p>
                       <p className="text-xl font-bold text-primary">
                         {(parseFloat(displayRate || "0") * 2).toFixed(2)} EUR
                       </p>
@@ -625,15 +627,15 @@ export default function AdminSettings() {
               <div className="flex flex-wrap items-center gap-4 p-4 bg-muted rounded-lg">
                 <div className="flex flex-wrap items-center gap-2">
                   <div className="w-4 h-4 rounded-full bg-green-500" />
-                  <span className="text-sm font-medium">In Tempo</span>
+                  <span className="text-sm font-medium">{t("settings.onTime")}</span>
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
                   <div className="w-4 h-4 rounded-full bg-yellow-500" />
-                  <span className="text-sm font-medium">In Ritardo</span>
+                  <span className="text-sm font-medium">{t("settings.delayed")}</span>
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
                   <div className="w-4 h-4 rounded-full bg-red-500" />
-                  <span className="text-sm font-medium">Urgente</span>
+                  <span className="text-sm font-medium">{t("settings.urgent")}</span>
                 </div>
               </div>
 
@@ -743,7 +745,7 @@ export default function AdminSettings() {
                       data-testid="button-save-sla"
                     >
                       <Save className="h-4 w-4 mr-2" />
-                      {updateSLAMutation.isPending ? "Salvataggio..." : "Salva Soglie SLA"}
+                      {updateSLAMutation.isPending ? t("settings.savingRate") : t("settings.saveSLA")}
                     </Button>
                   </div>
                 </div>
@@ -779,8 +781,8 @@ export default function AdminSettings() {
                           <Landmark className="h-5 w-5 text-blue-600" />
                         </div>
                         <div>
-                          <h4 className="font-medium">Bonifico Bancario</h4>
-                          <p className="text-sm text-muted-foreground">Ricevi pagamenti tramite bonifico</p>
+                          <h4 className="font-medium">{t("settings.bankTransfer")}</h4>
+                          <p className="text-sm text-muted-foreground">{t("settings.bankTransferDesc")}</p>
                         </div>
                       </div>
 
@@ -790,7 +792,7 @@ export default function AdminSettings() {
                         render={({ field }) => (
                           <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
                             <div className="space-y-0.5">
-                              <FormLabel className="text-base">Abilita bonifico bancario</FormLabel>
+                              <FormLabel className="text-base">{t("settings.enableBankTransfer")}</FormLabel>
                               <FormDescription>
                                 Permetti ai rivenditori di pagare tramite bonifico
                               </FormDescription>
@@ -813,10 +815,10 @@ export default function AdminSettings() {
                             name="accountHolder"
                             render={({ field }) => (
                               <FormItem className="md:col-span-2">
-                                <FormLabel>Intestatario conto *</FormLabel>
+                                <FormLabel>{t("settings.accountHolder")} *</FormLabel>
                                 <FormControl>
                                   <Input 
-                                    placeholder="Mario Rossi S.r.l." 
+                                    placeholder={t("settings.companyNameExample")} 
                                     {...field} 
                                     data-testid="input-admin-account-holder"
                                   />
@@ -834,7 +836,7 @@ export default function AdminSettings() {
                                 <FormLabel>IBAN *</FormLabel>
                                 <FormControl>
                                   <Input 
-                                    placeholder="IT60X0542811101000000123456" 
+                                    placeholder="IT60X054281110100000012345" 
                                     {...field}
                                     data-testid="input-admin-iban"
                                   />
@@ -867,10 +869,10 @@ export default function AdminSettings() {
                             name="bankName"
                             render={({ field }) => (
                               <FormItem className="md:col-span-2">
-                                <FormLabel>Nome banca</FormLabel>
+                                <FormLabel>{t("settings.bankName")}</FormLabel>
                                 <FormControl>
                                   <Input 
-                                    placeholder="Intesa Sanpaolo" 
+                                    placeholder={t("settings.bankNameExample")} 
                                     {...field}
                                     data-testid="input-admin-bank-name"
                                   />
@@ -884,7 +886,7 @@ export default function AdminSettings() {
                     </div>
 
                     <div className="border-t pt-6 space-y-4">
-                      <h4 className="font-medium">Altri metodi di pagamento</h4>
+                      <h4 className="font-medium">{t("settings.otherPaymentMethods")}</h4>
                       
                       <FormField
                         control={paymentForm.control}
@@ -951,8 +953,8 @@ export default function AdminSettings() {
                                 </FormControl>
                                 <FormDescription>
                                   {(paymentConfig as any)?.hasStripeSecret 
-                                    ? "Lascia vuoto per mantenere il valore esistente"
-                                    : "Richiesto per abilitare Stripe"
+                                    ? t("settings.leaveEmptyKeep")
+                                    : t("settings.requiredForStripe")
                                   }
                                 </FormDescription>
                                 <FormMessage />
@@ -997,7 +999,7 @@ export default function AdminSettings() {
                             name="paypalEmail"
                             render={({ field }) => (
                               <FormItem>
-                                <FormLabel>Email PayPal</FormLabel>
+                                <FormLabel>{t("settings.paypalEmail")}</FormLabel>
                                 <FormControl>
                                   <Input 
                                     placeholder="email@paypal.com" 
@@ -1045,8 +1047,8 @@ export default function AdminSettings() {
                                 </FormControl>
                                 <FormDescription>
                                   {paymentConfig?.hasPaypalSecret 
-                                    ? "Lascia vuoto per mantenere il valore esistente"
-                                    : "Richiesto per abilitare PayPal"
+                                    ? t("settings.leaveEmptyKeep")
+                                    : t("settings.requiredForPaypal")
                                   }
                                 </FormDescription>
                                 <FormMessage />
@@ -1055,13 +1057,13 @@ export default function AdminSettings() {
                           />
                         </div>
                         <div className="ml-12 bg-muted/50 rounded-lg p-4 text-sm text-muted-foreground space-y-2">
-                          <p className="font-medium text-foreground">Come ottenere Client ID e Client Secret:</p>
+                          <p className="font-medium text-foreground">{t("settings.paypalInstructions")}</p>
                           <ol className="list-decimal list-inside space-y-1">
-                            <li>Accedi a <a href="https://developer.paypal.com" target="_blank" rel="noopener noreferrer" className="text-primary underline">developer.paypal.com</a></li>
-                            <li>Vai su "Apps & Credentials" nel menu</li>
-                            <li>Seleziona "Live" per le credenziali di produzione</li>
-                            <li>Crea una nuova app o seleziona un'app esistente</li>
-                            <li>Copia Client ID e Client Secret dalla pagina dell'app</li>
+                            <li>{t("settings.paypalStep1")} <a href="https://developer.paypal.com" target="_blank" rel="noopener noreferrer" className="text-primary underline">developer.paypal.com</a></li>
+                            <li>{t("settings.paypalStep2")}</li>
+                            <li>{t("settings.paypalStep3")}</li>
+                            <li>{t("settings.paypalStep4")}</li>
+                            <li>{t("settings.paypalStep5")}</li>
                           </ol>
                         </div>
                         </>

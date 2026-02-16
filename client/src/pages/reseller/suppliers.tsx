@@ -16,6 +16,7 @@ import { Link } from "wouter";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { ExternalIntegration } from "@shared/schema";
 import { ActionGuard } from "@/components/permission-guard";
+import { useTranslation } from "react-i18next";
 
 type Supplier = {
   id: string;
@@ -87,6 +88,7 @@ const initialFormData: SupplierFormData = {
 };
 
 export default function ResellerSuppliers() {
+  const { t } = useTranslation();
   const [searchQuery, setSearchQuery] = useState("");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingSupplier, setEditingSupplier] = useState<Supplier | null>(null);
@@ -167,7 +169,7 @@ export default function ResellerSuppliers() {
       handleCloseDialog();
     },
     onError: (error: any) => {
-      toast({ title: "Errore", description: error.message || "Errore durante la creazione", variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message || "Errore durante la creazione", variant: "destructive" });
     },
   });
 
@@ -192,7 +194,7 @@ export default function ResellerSuppliers() {
       handleCloseDialog();
     },
     onError: (error: any) => {
-      toast({ title: "Errore", description: error.message || "Errore durante l'aggiornamento", variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message || "Errore durante l'aggiornamento", variant: "destructive" });
     },
   });
 
@@ -206,7 +208,7 @@ export default function ResellerSuppliers() {
       setDeleteConfirmId(null);
     },
     onError: (error: any) => {
-      toast({ title: "Errore", description: error.message || "Errore durante l'eliminazione", variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message || "Errore durante l'eliminazione", variant: "destructive" });
     },
   });
 
@@ -243,7 +245,7 @@ export default function ResellerSuppliers() {
 
   const handleSubmit = () => {
     if (!formData.name.trim()) {
-      toast({ title: "Errore", description: "Il nome del fornitore è obbligatorio", variant: "destructive" });
+      toast({ title: t("common.error"), description: "Il nome del fornitore è obbligatorio", variant: "destructive" });
       return;
     }
 
@@ -294,7 +296,7 @@ export default function ResellerSuppliers() {
               <Truck className="h-6 w-6 text-white" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold tracking-tight text-white" data-testid="text-page-title">Fornitori</h1>
+              <h1 className="text-2xl font-bold tracking-tight text-white" data-testid="text-page-title">{t("suppliers.title")}</h1>
               <p className="text-sm text-white/80">Gestisci fornitori manuali e integrazioni API</p>
             </div>
           </div>
@@ -309,9 +311,7 @@ export default function ResellerSuppliers() {
             </Badge>
             <ActionGuard module="suppliers" action="create">
               <Button onClick={handleOpenCreate} variant="secondary" className="shadow-lg" data-testid="button-add-supplier">
-                <Plus className="h-4 w-4 mr-2" />
-                Nuovo Fornitore
-              </Button>
+                <Plus className="h-4 w-4 mr-2" />{t("suppliers.newSupplier")}</Button>
             </ActionGuard>
           </div>
         </div>
@@ -350,9 +350,7 @@ export default function ResellerSuppliers() {
                 >
                   {isConfigured && (
                     <div className="absolute top-0 right-0 w-16 h-16 overflow-hidden">
-                      <div className="absolute top-2 right-[-20px] w-[80px] bg-green-500 text-white text-[10px] font-medium py-0.5 text-center rotate-45 shadow-sm">
-                        Attivo
-                      </div>
+                      <div className="absolute top-2 right-[-20px] w-[80px] bg-green-500 text-white text-[10px] font-medium py-0.5 text-center rotate-45 shadow-sm">{t("common.active")}</div>
                     </div>
                   )}
                   <CardHeader className="pb-3">
@@ -605,7 +603,7 @@ export default function ResellerSuppliers() {
           <div className="relative w-64">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
-              placeholder="Cerca fornitore..."
+              placeholder={t("suppliers.searchSupplier")}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-9"
@@ -617,21 +615,21 @@ export default function ResellerSuppliers() {
           {filteredSuppliers.length === 0 ? (
             <div className="text-center py-12 text-muted-foreground">
               <Truck className="h-12 w-12 mx-auto mb-4 opacity-50" />
-              <p>Nessun fornitore trovato</p>
+              <p>{t("suppliers.noSuppliersFound")}</p>
               <p className="text-sm mt-1">Clicca su "Nuovo Fornitore" per aggiungere il tuo primo fornitore</p>
             </div>
           ) : (
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Tipo</TableHead>
-                  <TableHead>Codice</TableHead>
-                  <TableHead>Nome</TableHead>
-                  <TableHead>Contatti</TableHead>
+                  <TableHead>{t("common.type")}</TableHead>
+                  <TableHead>{t("common.code")}</TableHead>
+                  <TableHead>{t("common.name")}</TableHead>
+                  <TableHead>{t("common.contacts")}</TableHead>
                   <TableHead>Città</TableHead>
                   <TableHead>Tempi Consegna</TableHead>
-                  <TableHead>Stato</TableHead>
-                  <TableHead className="w-[100px]">Azioni</TableHead>
+                  <TableHead>{t("common.status")}</TableHead>
+                  <TableHead className="w-[100px]">{t("common.actions")}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -685,7 +683,7 @@ export default function ResellerSuppliers() {
                     </TableCell>
                     <TableCell>
                       <Badge variant={supplier.isActive ? "default" : "secondary"} data-testid={`badge-supplier-status-${supplier.id}`}>
-                        {supplier.isActive ? "Attivo" : "Inattivo"}
+                        {supplier.isActive ? t("common.active") : t("common.inactive")}
                       </Badge>
                     </TableCell>
                     <TableCell>
@@ -721,7 +719,7 @@ export default function ResellerSuppliers() {
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle>{editingSupplier ? "Modifica Fornitore" : "Nuovo Fornitore"}</DialogTitle>
+            <DialogTitle>{editingSupplier ? "Modifica Fornitore" : t("suppliers.newSupplier")}</DialogTitle>
           </DialogHeader>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 py-4">
             <div className="space-y-2">
@@ -735,7 +733,7 @@ export default function ResellerSuppliers() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="email">{t("common.email")}</Label>
               <Input
                 id="email"
                 type="email"
@@ -746,7 +744,7 @@ export default function ResellerSuppliers() {
               />
             </div>
             <div className="col-span-2 space-y-2">
-              <Label htmlFor="phone">Telefono</Label>
+              <Label htmlFor="phone">{t("common.phone")}</Label>
               <Input
                 id="phone"
                 value={formData.phone}
@@ -825,15 +823,13 @@ export default function ResellerSuppliers() {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={handleCloseDialog} data-testid="button-cancel">
-              Annulla
-            </Button>
+            <Button variant="outline" onClick={handleCloseDialog} data-testid="button-cancel">{t("common.cancel")}</Button>
             <Button 
               onClick={handleSubmit} 
               disabled={createMutation.isPending || updateMutation.isPending}
               data-testid="button-submit"
             >
-              {createMutation.isPending || updateMutation.isPending ? "Salvataggio..." : "Salva"}
+              {createMutation.isPending || updateMutation.isPending ? t("profile.saving") : t("common.save")}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -848,16 +844,14 @@ export default function ResellerSuppliers() {
             Sei sicuro di voler eliminare questo fornitore? L'operazione non può essere annullata.
           </p>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDeleteConfirmId(null)} data-testid="button-cancel-delete">
-              Annulla
-            </Button>
+            <Button variant="outline" onClick={() => setDeleteConfirmId(null)} data-testid="button-cancel-delete">{t("common.cancel")}</Button>
             <Button 
               variant="destructive" 
               onClick={() => deleteConfirmId && deleteMutation.mutate(deleteConfirmId)}
               disabled={deleteMutation.isPending}
               data-testid="button-confirm-delete"
             >
-              {deleteMutation.isPending ? "Eliminazione..." : "Elimina"}
+              {deleteMutation.isPending ? t("pages.deleting") : t("common.delete")}
             </Button>
           </DialogFooter>
         </DialogContent>

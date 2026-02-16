@@ -18,6 +18,7 @@ import {
   ArrowLeft, Shield, Calendar, User, Smartphone, Mail, Phone,
   Pencil, Trash2, Save, X, AlertTriangle, CheckCircle2, Clock, Hash,
 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 type WarrantyDetail = {
   id: string;
@@ -46,10 +47,10 @@ type WarrantyDetail = {
 };
 
 const statusConfig: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
-  offered: { label: "In Attesa", variant: "secondary" },
+  offered: { label: t("common.pending"), variant: "secondary" },
   accepted: { label: "Attiva", variant: "default" },
-  declined: { label: "Rifiutata", variant: "destructive" },
-  expired: { label: "Scaduta", variant: "outline" },
+  declined: { label: t("common.rejected"), variant: "destructive" },
+  expired: { label: t("invoices.overdue"), variant: "outline" },
 };
 
 const coverageLabels: Record<string, string> = {
@@ -59,6 +60,7 @@ const coverageLabels: Record<string, string> = {
 };
 
 export default function ResellerWarrantyDetail() {
+  const { t } = useTranslation();
   const { id } = useParams<{ id: string }>();
   const [, navigate] = useLocation();
   const { toast } = useToast();
@@ -95,7 +97,7 @@ export default function ResellerWarrantyDetail() {
       toast({ title: "Garanzia aggiornata", description: "Le modifiche sono state salvate con successo." });
     },
     onError: (error: any) => {
-      toast({ title: "Errore", description: error.message || "Impossibile aggiornare la garanzia", variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message || "Impossibile aggiornare la garanzia", variant: "destructive" });
     },
   });
 
@@ -109,7 +111,7 @@ export default function ResellerWarrantyDetail() {
       navigate("/reseller/warranties");
     },
     onError: (error: any) => {
-      toast({ title: "Errore", description: error.message || "Impossibile cancellare la garanzia", variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message || "Impossibile cancellare la garanzia", variant: "destructive" });
     },
   });
 
@@ -185,19 +187,15 @@ export default function ResellerWarrantyDetail() {
         <div className="flex flex-wrap items-center gap-2">
           {canEdit && !isEditing && (
             <Button variant="outline" onClick={startEditing} data-testid="button-edit-warranty">
-              <Pencil className="h-4 w-4 mr-2" />
-              Modifica
-            </Button>
+              <Pencil className="h-4 w-4 mr-2" />{t("common.edit")}</Button>
           )}
           {isEditing && (
             <>
               <Button variant="outline" onClick={() => setIsEditing(false)} data-testid="button-cancel-edit">
-                <X className="h-4 w-4 mr-2" />
-                Annulla
-              </Button>
+                <X className="h-4 w-4 mr-2" />{t("common.cancel")}</Button>
               <Button onClick={handleSave} disabled={updateMutation.isPending} data-testid="button-save-warranty">
                 <Save className="h-4 w-4 mr-2" />
-                {updateMutation.isPending ? "Salvataggio..." : "Salva"}
+                {updateMutation.isPending ? t("profile.saving") : t("common.save")}
               </Button>
             </>
           )}
@@ -234,7 +232,7 @@ export default function ResellerWarrantyDetail() {
                     : "text-emerald-200"
               }`}>
                 {warranty.daysRemaining <= 0 ? (
-                  <><AlertTriangle className="h-3 w-3" />Scaduta</>
+                  <><AlertTriangle className="h-3 w-3" />{t("invoices.overdue")}</>
                 ) : (
                   <><CheckCircle2 className="h-3 w-3" />{warranty.daysRemaining}g rimasti</>
                 )}
@@ -256,18 +254,18 @@ export default function ResellerWarrantyDetail() {
           <CardContent className="space-y-3">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
               <div>
-                <p className="text-muted-foreground mb-1">Nome</p>
+                <p className="text-muted-foreground mb-1">{t("common.name")}</p>
                 <p className="font-medium" data-testid="text-customer-name">{warranty.customerName}</p>
               </div>
               <div>
-                <p className="text-muted-foreground mb-1">Email</p>
+                <p className="text-muted-foreground mb-1">{t("common.email")}</p>
                 <div className="flex items-center gap-1.5">
                   <Mail className="h-3.5 w-3.5 text-muted-foreground" />
                   <p className="font-medium" data-testid="text-customer-email">{warranty.customerEmail || "N/A"}</p>
                 </div>
               </div>
               <div>
-                <p className="text-muted-foreground mb-1">Telefono</p>
+                <p className="text-muted-foreground mb-1">{t("common.phone")}</p>
                 <div className="flex items-center gap-1.5">
                   <Phone className="h-3.5 w-3.5 text-muted-foreground" />
                   <p className="font-medium" data-testid="text-customer-phone">{warranty.customerPhone || "N/A"}</p>
@@ -287,7 +285,7 @@ export default function ResellerWarrantyDetail() {
           <CardContent className="space-y-3">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
               <div>
-                <p className="text-muted-foreground mb-1">Tipo</p>
+                <p className="text-muted-foreground mb-1">{t("common.type")}</p>
                 <p className="font-medium" data-testid="text-device-type">{warranty.deviceType || "N/A"}</p>
               </div>
               <div>
@@ -377,7 +375,7 @@ export default function ResellerWarrantyDetail() {
                 )}
               </div>
               <div className="space-y-2">
-                <Label htmlFor="notes">Note</Label>
+                <Label htmlFor="notes">{t("common.notes")}</Label>
                 <Textarea
                   id="notes"
                   value={editForm.notes}
@@ -392,7 +390,7 @@ export default function ResellerWarrantyDetail() {
             <div className="space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-sm">
                 <div>
-                  <p className="text-muted-foreground mb-1">Prodotto</p>
+                  <p className="text-muted-foreground mb-1">{t("common.product")}</p>
                   <p className="font-medium" data-testid="text-product-name">{warranty.productName}</p>
                 </div>
                 <div>
@@ -404,7 +402,7 @@ export default function ResellerWarrantyDetail() {
                   <p className="font-medium" data-testid="text-duration">{warranty.durationMonths} mesi</p>
                 </div>
                 <div>
-                  <p className="text-muted-foreground mb-1">Prezzo</p>
+                  <p className="text-muted-foreground mb-1">{t("common.price")}</p>
                   <p className="font-medium" data-testid="text-price">
                     {(warranty.price / 100).toLocaleString("it-IT", { style: "currency", currency: "EUR" })}
                   </p>
@@ -413,7 +411,7 @@ export default function ResellerWarrantyDetail() {
 
               {warranty.notes && (
                 <div className="text-sm">
-                  <p className="text-muted-foreground mb-1">Note</p>
+                  <p className="text-muted-foreground mb-1">{t("common.notes")}</p>
                   <p className="font-medium whitespace-pre-wrap" data-testid="text-notes">{warranty.notes}</p>
                 </div>
               )}
@@ -500,9 +498,7 @@ export default function ResellerWarrantyDetail() {
             <p className="text-muted-foreground">Ordine: #{warranty.orderNumber}</p>
           </div>
           <DialogFooter className="gap-2">
-            <Button variant="outline" onClick={() => setShowDeleteDialog(false)} data-testid="button-cancel-delete">
-              Annulla
-            </Button>
+            <Button variant="outline" onClick={() => setShowDeleteDialog(false)} data-testid="button-cancel-delete">{t("common.cancel")}</Button>
             <Button
               variant="destructive"
               onClick={() => deleteMutation.mutate()}

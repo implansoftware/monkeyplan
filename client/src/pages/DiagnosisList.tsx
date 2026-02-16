@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -11,6 +12,7 @@ import { it } from "date-fns/locale";
 import { RepairOrderDetailDrawer } from "@/components/RepairOrderDetailDrawer";
 
 export default function DiagnosisList() {
+  const { t } = useTranslation();
   const [selectedRepairId, setSelectedRepairId] = useState<string | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
   
@@ -52,7 +54,7 @@ export default function DiagnosisList() {
       <div className="p-6 space-y-4">
         <div className="flex flex-wrap items-center gap-2 mb-6">
           <Stethoscope className="h-6 w-6" />
-          <h1 className="text-2xl font-bold">Diagnosi</h1>
+          <h1 className="text-2xl font-bold">{t("repairs.diagnosis")}</h1>
         </div>
         <div className="grid gap-4">
           {[1, 2, 3].map((i) => (
@@ -68,7 +70,7 @@ export default function DiagnosisList() {
       <div className="flex items-center justify-between gap-4 flex-wrap mb-4">
         <div className="flex flex-wrap items-center gap-2">
           <Stethoscope className="h-6 w-6" />
-          <h1 className="text-2xl font-bold">Diagnosi</h1>
+          <h1 className="text-2xl font-bold">{t("repairs.diagnosis")}</h1>
         </div>
         <Button
           variant={showFilters ? "default" : "outline"}
@@ -91,7 +93,7 @@ export default function DiagnosisList() {
           <CardContent className="pt-4 space-y-4">
             <div className="grid gap-4 md:grid-cols-3">
               <div className="space-y-2">
-                <label className="text-sm font-medium">Cerca</label>
+                <label className="text-sm font-medium">{t("common.search")}</label>
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input
@@ -105,7 +107,7 @@ export default function DiagnosisList() {
               </div>
 
               <div className="space-y-2">
-                <label className="text-sm font-medium">Data da</label>
+                <label className="text-sm font-medium">{t("common.dateFrom")}</label>
                 <div className="relative">
                   <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input
@@ -119,7 +121,7 @@ export default function DiagnosisList() {
               </div>
 
               <div className="space-y-2">
-                <label className="text-sm font-medium">Data a</label>
+                <label className="text-sm font-medium">{t("common.dateTo")}</label>
                 <div className="relative">
                   <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input

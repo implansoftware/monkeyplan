@@ -14,6 +14,7 @@ import { Settings, Key, CheckCircle, XCircle, Loader2, TestTube, Trash2, Save, E
 import { Link } from "wouter";
 
 import sibillLogo from "@/assets/logos/sibill.png";
+import { useTranslation } from "react-i18next";
 
 type SibillCredential = {
   id: string;
@@ -46,6 +47,7 @@ type SibillCompany = {
 };
 
 export default function SibillSettingsPage() {
+  const { t } = useTranslation();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [apiToken, setApiToken] = useState("");
@@ -77,7 +79,7 @@ export default function SibillSettingsPage() {
       setApiToken("");
     },
     onError: (error: Error) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -95,7 +97,7 @@ export default function SibillSettingsPage() {
       }
     },
     onError: (error: Error) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -109,7 +111,7 @@ export default function SibillSettingsPage() {
       toast({ title: "Sincronizzazione completata", description: `${data.count || 0} aziende sincronizzate` });
     },
     onError: (error: Error) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -120,16 +122,16 @@ export default function SibillSettingsPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/sibill/credentials"] });
       queryClient.invalidateQueries({ queryKey: ["/api/reseller/integrations/summary"] });
-      toast({ title: "Eliminato", description: "Credenziali Sibill eliminate" });
+      toast({ title: t("pages.deleted"), description: "Credenziali Sibill eliminate" });
     },
     onError: (error: Error) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     },
   });
 
   const handleSave = () => {
     if (!apiToken.trim()) {
-      toast({ title: "Errore", description: "Inserisci il token API", variant: "destructive" });
+      toast({ title: t("common.error"), description: "Inserisci il token API", variant: "destructive" });
       return;
     }
     saveMutation.mutate();
@@ -188,7 +190,7 @@ export default function SibillSettingsPage() {
                     {credential.environment === "production" ? "Produzione" : "Sviluppo"}
                   </Badge>
                   <Badge variant={credential.isActive ? "default" : "secondary"}>
-                    {credential.isActive ? "Attivo" : "Disattivato"}
+                    {credential.isActive ? t("common.active") : "Disattivato"}
                   </Badge>
                 </div>
               </div>

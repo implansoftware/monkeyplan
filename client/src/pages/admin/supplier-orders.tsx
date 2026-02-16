@@ -101,6 +101,7 @@ import {
   Wrench,
   Warehouse as WarehouseIcon,
 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 interface SupplierOrderWithDetails extends SupplierOrder {
   supplier?: Supplier;
@@ -142,6 +143,7 @@ function formatDate(date: Date | string | null | undefined): string {
 }
 
 export default function SupplierOrdersPage() {
+  const { t } = useTranslation();
   const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState("");
   const [filterStatus, setFilterStatus] = useState<string>("all");
@@ -219,10 +221,10 @@ export default function SupplierOrdersPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/supplier-orders"] });
       setCreateDialogOpen(false);
-      toast({ title: "Ordine creato", description: "Nuovo ordine fornitore creato con successo" });
+      toast({ title: t("suppliers.orderCreated"), description: t("suppliers.orderCreatedDesc") });
     },
     onError: (error: Error) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -232,10 +234,10 @@ export default function SupplierOrdersPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/supplier-orders"] });
-      toast({ title: "Ordine aggiornato", description: "Modifiche salvate con successo" });
+      toast({ title: t("suppliers.orderUpdated"), description: t("common.savedSuccessfully") });
     },
     onError: (error: Error) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -247,10 +249,10 @@ export default function SupplierOrdersPage() {
       queryClient.invalidateQueries({ queryKey: ["/api/supplier-orders"] });
       setDetailsDialogOpen(false);
       setSelectedOrder(null);
-      toast({ title: "Ordine eliminato" });
+      toast({ title: t("suppliers.orderDeleted") });
     },
     onError: (error: Error) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -263,10 +265,10 @@ export default function SupplierOrdersPage() {
       queryClient.invalidateQueries({ queryKey: ["/api/supplier-orders"] });
       setItemDialogOpen(false);
       setEditingItem(null);
-      toast({ title: "Articolo aggiunto" });
+      toast({ title: t("suppliers.itemAdded") });
     },
     onError: (error: Error) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -279,10 +281,10 @@ export default function SupplierOrdersPage() {
       queryClient.invalidateQueries({ queryKey: ["/api/supplier-orders"] });
       setItemDialogOpen(false);
       setEditingItem(null);
-      toast({ title: "Articolo aggiornato" });
+      toast({ title: t("suppliers.itemUpdated") });
     },
     onError: (error: Error) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -293,10 +295,10 @@ export default function SupplierOrdersPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/supplier-orders", selectedOrder?.id, "items"] });
       queryClient.invalidateQueries({ queryKey: ["/api/supplier-orders"] });
-      toast({ title: "Articolo rimosso" });
+      toast({ title: t("suppliers.itemRemoved") });
     },
     onError: (error: Error) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -309,12 +311,12 @@ export default function SupplierOrdersPage() {
     const notes = formData.get("notes") as string;
     
     if (!supplierId) {
-      toast({ title: "Errore", description: "Seleziona un fornitore", variant: "destructive" });
+      toast({ title: t("common.error"), description: "Seleziona un fornitore", variant: "destructive" });
       return;
     }
     
     if (newOrderOwnerType !== "admin" && !newOrderOwnerId) {
-      toast({ title: "Errore", description: "Seleziona il destinatario dell'ordine", variant: "destructive" });
+      toast({ title: t("common.error"), description: "Seleziona il destinatario dell'ordine", variant: "destructive" });
       return;
     }
     
@@ -354,7 +356,7 @@ export default function SupplierOrdersPage() {
     const unitPrice = Math.round(parseFloat(itemFormData.unitPrice || "0") * 100);
     
     if (!itemFormData.description) {
-      toast({ title: "Errore", description: "La descrizione è obbligatoria", variant: "destructive" });
+      toast({ title: t("common.error"), description: "La descrizione è obbligatoria", variant: "destructive" });
       return;
     }
     
@@ -500,7 +502,7 @@ export default function SupplierOrdersPage() {
         <div className="relative flex-1 min-w-[200px] max-w-md">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder="Cerca ordine..."
+            placeholder={t("common.search")}
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="pl-9"
@@ -510,10 +512,10 @@ export default function SupplierOrdersPage() {
         
         <Select value={filterStatus} onValueChange={setFilterStatus}>
           <SelectTrigger className="w-full sm:w-[180px]" data-testid="select-filter-status">
-            <SelectValue placeholder="Stato" />
+            <SelectValue placeholder={t("common.status")} />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">Tutti gli stati</SelectItem>
+            <SelectItem value="all">{t("repairs.allStatuses")}</SelectItem>
             {Object.entries(STATUS_CONFIG).map(([key, config]) => (
               <SelectItem key={key} value={key}>{config.label}</SelectItem>
             ))}
@@ -522,10 +524,10 @@ export default function SupplierOrdersPage() {
         
         <Select value={filterSupplier} onValueChange={setFilterSupplier}>
           <SelectTrigger className="w-full sm:w-[200px]" data-testid="select-filter-supplier">
-            <SelectValue placeholder="Fornitore" />
+            <SelectValue placeholder={t("suppliers.supplier")} />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">Tutti i fornitori</SelectItem>
+            <SelectItem value="all">{t("suppliers.allSuppliers")}</SelectItem>
             {suppliers.map(s => (
               <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
             ))}
@@ -534,10 +536,10 @@ export default function SupplierOrdersPage() {
         
         <Select value={filterOwnerType} onValueChange={setFilterOwnerType}>
           <SelectTrigger className="w-full sm:w-[180px]" data-testid="select-filter-owner-type">
-            <SelectValue placeholder="Tipo Proprietario" />
+            <SelectValue placeholder={t("warehouse.ownerType")} />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">Tutti i tipi</SelectItem>
+            <SelectItem value="all">{t("common.allTypes")}</SelectItem>
             {Object.entries(OWNER_TYPE_CONFIG).map(([key, config]) => {
               const OwnerIcon = config.icon;
               return (
@@ -580,13 +582,13 @@ export default function SupplierOrdersPage() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Numero</TableHead>
-                  <TableHead>Fornitore</TableHead>
-                  <TableHead>Destinatario</TableHead>
-                  <TableHead>Stato</TableHead>
-                  <TableHead className="text-right">Totale</TableHead>
-                  <TableHead>Consegna Prevista</TableHead>
-                  <TableHead>Data</TableHead>
+                  <TableHead>{t("common.number")}</TableHead>
+                  <TableHead>{t("suppliers.supplier")}</TableHead>
+                  <TableHead>{t("suppliers.recipient")}</TableHead>
+                  <TableHead>{t("common.status")}</TableHead>
+                  <TableHead className="text-right">{t("common.total")}</TableHead>
+                  <TableHead>{t("suppliers.expectedDelivery")}</TableHead>
+                  <TableHead>{t("common.date")}</TableHead>
                   <TableHead className="w-[60px]"></TableHead>
                 </TableRow>
               </TableHeader>
@@ -717,14 +719,14 @@ export default function SupplierOrdersPage() {
       <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Nuovo Ordine Fornitore</DialogTitle>
+            <DialogTitle>{t("suppliers.newOrder")}</DialogTitle>
           </DialogHeader>
           <form onSubmit={handleCreateOrder} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="supplierId">Fornitore *</Label>
+              <Label htmlFor="supplierId">{t("suppliers.supplier")} *</Label>
               <Select name="supplierId">
                 <SelectTrigger data-testid="select-new-supplier">
-                  <SelectValue placeholder="Seleziona fornitore..." />
+                  <SelectValue placeholder={t("suppliers.selectSupplier")} />
                 </SelectTrigger>
                 <SelectContent>
                   {suppliers.filter(s => s.isActive).map(s => (
@@ -737,7 +739,7 @@ export default function SupplierOrdersPage() {
             </div>
             
             <div className="space-y-2">
-              <Label>Tipo Destinatario *</Label>
+              <Label>{t("suppliers.recipientType")} *</Label>
               <Select 
                 value={newOrderOwnerType} 
                 onValueChange={(value) => {
@@ -746,13 +748,13 @@ export default function SupplierOrdersPage() {
                 }}
               >
                 <SelectTrigger data-testid="select-owner-type">
-                  <SelectValue placeholder="Seleziona tipo..." />
+                  <SelectValue placeholder={t("utility.selectType")} />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="admin">
                     <div className="flex flex-wrap items-center gap-2">
                       <Shield className="h-4 w-4" />
-                      <span>Admin (Piattaforma)</span>
+                      <span>Admin ({t("common.platform")})</span>
                     </div>
                   </SelectItem>
                   <SelectItem value="reseller">
@@ -770,7 +772,7 @@ export default function SupplierOrdersPage() {
                   <SelectItem value="repair_center">
                     <div className="flex flex-wrap items-center gap-2">
                       <Wrench className="h-4 w-4" />
-                      <span>Centro Riparazione</span>
+                      <span>{t("roles.repairCenter")}</span>
                     </div>
                   </SelectItem>
                 </SelectContent>
@@ -778,7 +780,7 @@ export default function SupplierOrdersPage() {
             </div>
 
             <div className="space-y-2">
-              <Label>Destinatario *</Label>
+              <Label>{t("suppliers.recipient")} *</Label>
               <Select 
                 value={newOrderOwnerId} 
                 onValueChange={setNewOrderOwnerId}
@@ -817,13 +819,13 @@ export default function SupplierOrdersPage() {
             </div>
 
             <div className="space-y-2">
-              <Label>Magazzino Destinazione</Label>
+              <Label>{t("warehouse.selectDestWarehouse")}</Label>
               <Select 
                 value={newOrderWarehouseId} 
                 onValueChange={setNewOrderWarehouseId}
               >
                 <SelectTrigger data-testid="select-target-warehouse">
-                  <SelectValue placeholder="Seleziona magazzino (opzionale)..." />
+                  <SelectValue placeholder={t("warehouse.selectWarehouseOptional")} />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="__auto__">
@@ -842,11 +844,11 @@ export default function SupplierOrdersPage() {
             </div>
             
             <div className="space-y-2">
-              <Label htmlFor="notes">Note</Label>
+              <Label htmlFor="notes">{t("common.notes")}</Label>
               <Textarea
                 id="notes"
                 name="notes"
-                placeholder="Note per il fornitore..."
+                placeholder={t("suppliers.notesForSupplier")}
                 className="resize-none"
                 data-testid="textarea-notes"
               />
@@ -865,7 +867,7 @@ export default function SupplierOrdersPage() {
                 disabled={createOrderMutation.isPending}
                 data-testid="button-submit-order"
               >
-                {createOrderMutation.isPending ? "Creazione..." : "Crea Ordine"}
+                {createOrderMutation.isPending ? t("admin.repairCenters.creating") : "Crea Ordine"}
               </Button>
             </div>
           </form>
@@ -879,7 +881,7 @@ export default function SupplierOrdersPage() {
             <>
               <DialogHeader>
                 <DialogTitle className="flex flex-wrap items-center gap-3">
-                  <span>Ordine {selectedOrder.orderNumber}</span>
+                  <span>{t("suppliers.orderNumber")} {selectedOrder.orderNumber}</span>
                   <Badge className={STATUS_CONFIG[selectedOrder.status]?.color}>
                     {STATUS_CONFIG[selectedOrder.status]?.label}
                   </Badge>
@@ -889,8 +891,8 @@ export default function SupplierOrdersPage() {
               <ScrollArea className="max-h-[calc(90vh-120px)]">
                 <Tabs defaultValue="items" className="space-y-4">
                   <TabsList>
-                    <TabsTrigger value="items">Articoli</TabsTrigger>
-                    <TabsTrigger value="info">Informazioni</TabsTrigger>
+                    <TabsTrigger value="items">{t("suppliers.items")}</TabsTrigger>
+                    <TabsTrigger value="info">{t("common.information")}</TabsTrigger>
                     <TabsTrigger value="tracking">Tracking</TabsTrigger>
                   </TabsList>
                   
@@ -927,11 +929,11 @@ export default function SupplierOrdersPage() {
                       <Table>
                         <TableHeader>
                           <TableRow>
-                            <TableHead>Codice</TableHead>
-                            <TableHead>Descrizione</TableHead>
+                            <TableHead>{t("common.code")}</TableHead>
+                            <TableHead>{t("common.description")}</TableHead>
                             <TableHead className="text-right">Qtà</TableHead>
-                            <TableHead className="text-right">Prezzo</TableHead>
-                            <TableHead className="text-right">Totale</TableHead>
+                            <TableHead className="text-right">{t("common.price")}</TableHead>
+                            <TableHead className="text-right">{t("common.total")}</TableHead>
                             <TableHead className="text-right">Ricevuti</TableHead>
                             <TableHead className="w-[80px]"></TableHead>
                           </TableRow>
@@ -992,12 +994,12 @@ export default function SupplierOrdersPage() {
                     <div className="flex justify-end">
                       <div className="w-64 space-y-2">
                         <div className="flex justify-between text-sm">
-                          <span>Subtotale:</span>
+                          <span>{t("common.subtotal")}:</span>
                           <span>{formatCurrency(selectedOrder.subtotal)}</span>
                         </div>
                         {(selectedOrder.shippingCost ?? 0) > 0 && (
                           <div className="flex justify-between text-sm">
-                            <span>Spedizione:</span>
+                            <span>{t("shipping.shipping")}:</span>
                             <span>{formatCurrency(selectedOrder.shippingCost ?? 0)}</span>
                           </div>
                         )}
@@ -1009,7 +1011,7 @@ export default function SupplierOrdersPage() {
                         )}
                         <Separator />
                         <div className="flex justify-between font-bold">
-                          <span>Totale:</span>
+                          <span>{t("common.total")}:</span>
                           <span>{formatCurrency(selectedOrder.totalAmount)}</span>
                         </div>
                       </div>
@@ -1019,13 +1021,13 @@ export default function SupplierOrdersPage() {
                   <TabsContent value="info" className="space-y-4">
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div className="space-y-2">
-                        <Label>Fornitore</Label>
+                        <Label>{t("suppliers.supplier")}</Label>
                         <div className="p-3 bg-muted rounded-md">
                           {suppliers.find(s => s.id === selectedOrder.supplierId)?.name || "-"}
                         </div>
                       </div>
                       <div className="space-y-2">
-                        <Label>Centro Riparazione</Label>
+                        <Label>{t("roles.repairCenter")}</Label>
                         <div className="p-3 bg-muted rounded-md">
                           {repairCenters.find(c => c.id === selectedOrder.repairCenterId)?.name || "-"}
                         </div>
@@ -1033,7 +1035,7 @@ export default function SupplierOrdersPage() {
                     </div>
                     
                     <div className="space-y-2">
-                      <Label>Note</Label>
+                      <Label>{t("common.notes")}</Label>
                       <div className="p-3 bg-muted rounded-md min-h-[80px]">
                         {selectedOrder.notes || <span className="text-muted-foreground">Nessuna nota</span>}
                       </div>
@@ -1043,24 +1045,24 @@ export default function SupplierOrdersPage() {
                     
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div className="space-y-2">
-                        <Label>Creato il</Label>
+                        <Label>{t("common.createdAt")}</Label>
                         <div className="text-sm">{formatDate(selectedOrder.createdAt)}</div>
                       </div>
                       {selectedOrder.sentAt && (
                         <div className="space-y-2">
-                          <Label>Inviato il</Label>
+                          <Label>{t("suppliers.sentAt")}</Label>
                           <div className="text-sm">{formatDate(selectedOrder.sentAt)}</div>
                         </div>
                       )}
                       {selectedOrder.confirmedAt && (
                         <div className="space-y-2">
-                          <Label>Confermato il</Label>
+                          <Label>{t("suppliers.confirmedAt")}</Label>
                           <div className="text-sm">{formatDate(selectedOrder.confirmedAt)}</div>
                         </div>
                       )}
                       {selectedOrder.receivedAt && (
                         <div className="space-y-2">
-                          <Label>Ricevuto il</Label>
+                          <Label>{t("suppliers.receivedAt")}</Label>
                           <div className="text-sm">{formatDate(selectedOrder.receivedAt)}</div>
                         </div>
                       )}
@@ -1070,7 +1072,7 @@ export default function SupplierOrdersPage() {
                   <TabsContent value="tracking" className="space-y-4">
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div className="space-y-2">
-                        <Label htmlFor="expectedDelivery">Consegna Prevista</Label>
+                        <Label htmlFor="expectedDelivery">{t("suppliers.expectedDelivery")}</Label>
                         <Input
                           id="expectedDelivery"
                           type="date"
@@ -1087,11 +1089,11 @@ export default function SupplierOrdersPage() {
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="trackingCarrier">Corriere</Label>
+                        <Label htmlFor="trackingCarrier">{t("shipping.carrier")}</Label>
                         <Input
                           id="trackingCarrier"
                           defaultValue={selectedOrder.trackingCarrier || ""}
-                          placeholder="Es: DHL, BRT, SDA..."
+                          placeholder={t("shipping.carrierExample")}
                           onBlur={(e) => {
                             updateOrderMutation.mutate({
                               id: selectedOrder.id,
@@ -1104,11 +1106,11 @@ export default function SupplierOrdersPage() {
                     </div>
                     
                     <div className="space-y-2">
-                      <Label htmlFor="trackingNumber">Numero Tracking</Label>
+                      <Label htmlFor="trackingNumber">{t("shipping.trackingNumber")}</Label>
                       <Input
                         id="trackingNumber"
                         defaultValue={selectedOrder.trackingNumber || ""}
-                        placeholder="Inserisci numero di tracking..."
+                        placeholder={t("shipping.enterTracking")}
                         onBlur={(e) => {
                           updateOrderMutation.mutate({
                             id: selectedOrder.id,
@@ -1154,12 +1156,12 @@ export default function SupplierOrdersPage() {
                             <span className="truncate">{selectedProduct.name} ({selectedProduct.sku})</span>
                           </>
                         ) : (
-                          <SelectValue placeholder="Seleziona prodotto..." />
+                          <SelectValue placeholder={t("warehouse.selectProduct")} />
                         );
                       })()}
                     </div>
                   ) : (
-                    <SelectValue placeholder="Seleziona prodotto..." />
+                    <SelectValue placeholder={t("warehouse.selectProduct")} />
                   )}
                 </SelectTrigger>
                 <SelectContent>
@@ -1168,7 +1170,7 @@ export default function SupplierOrdersPage() {
                       <div className="h-8 w-8 rounded-full bg-muted flex items-center justify-center">
                         <XCircle className="h-4 w-4 text-muted-foreground" />
                       </div>
-                      <span>Nessun prodotto collegato</span>
+                      <span>{t("suppliers.noLinkedProduct")}</span>
                     </div>
                   </SelectItem>
                   {products.map(p => (
@@ -1201,19 +1203,19 @@ export default function SupplierOrdersPage() {
                 required
                 value={itemFormData.description}
                 onChange={(e) => setItemFormData(prev => ({ ...prev, description: e.target.value }))}
-                placeholder="Descrizione articolo"
+                placeholder={t("suppliers.itemDescription")}
                 data-testid="input-item-description"
               />
             </div>
             
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="supplierCode">Codice Fornitore</Label>
+                <Label htmlFor="supplierCode">{t("suppliers.supplierCode")}</Label>
                 <Input
                   id="supplierCode"
                   value={itemFormData.supplierCode}
                   onChange={(e) => setItemFormData(prev => ({ ...prev, supplierCode: e.target.value }))}
-                  placeholder="Codice articolo"
+                  placeholder={t("suppliers.itemCode")}
                   data-testid="input-item-code"
                 />
               </div>
@@ -1246,12 +1248,12 @@ export default function SupplierOrdersPage() {
             </div>
             
             <div className="space-y-2">
-              <Label htmlFor="notes">Note</Label>
+              <Label htmlFor="notes">{t("common.notes")}</Label>
               <Textarea
                 id="notes"
                 value={itemFormData.notes}
                 onChange={(e) => setItemFormData(prev => ({ ...prev, notes: e.target.value }))}
-                placeholder="Note articolo..."
+                placeholder={t("suppliers.itemNotes")}
                 className="resize-none"
                 data-testid="textarea-item-notes"
               />
@@ -1271,7 +1273,7 @@ export default function SupplierOrdersPage() {
                 data-testid="button-submit-item"
               >
                 {(createItemMutation.isPending || updateItemMutation.isPending)
-                  ? "Salvataggio..."
+                  ? t("settings.savingRate")
                   : editingItem ? "Aggiorna" : "Aggiungi"}
               </Button>
             </div>

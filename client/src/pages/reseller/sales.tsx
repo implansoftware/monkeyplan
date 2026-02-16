@@ -27,6 +27,7 @@ import { it } from "date-fns/locale";
 import { useToast } from "@/hooks/use-toast";
 import type { DateRange } from "react-day-picker";
 import { queryClient } from "@/lib/queryClient";
+import { useTranslation } from "react-i18next";
 
 interface UnifiedSale {
   id: string;
@@ -79,6 +80,7 @@ interface SalesResponse {
 }
 
 export default function ResellerSales() {
+  const { t } = useTranslation();
   const [searchQuery, setSearchQuery] = useState("");
   const [sourceFilter, setSourceFilter] = useState<string>("all");
   const [repairCenterFilter, setRepairCenterFilter] = useState<string>("all");
@@ -151,8 +153,8 @@ export default function ResellerSales() {
 
   const getEntityBadge = (entityType: string) => {
     switch (entityType) {
-      case "reseller": return <Badge variant="secondary">Reseller</Badge>;
-      case "sub_reseller": return <Badge variant="outline">Sub-Reseller</Badge>;
+      case "reseller": return <Badge variant="secondary">{t("roles.reseller")}</Badge>;
+      case "sub_reseller": return <Badge variant="outline">{t("roles.subReseller")}</Badge>;
       case "repair_center": return <Badge variant="outline">Centro Rip.</Badge>;
       default: return <Badge variant="outline">{entityType}</Badge>;
     }
@@ -193,13 +195,13 @@ export default function ResellerSales() {
       document.body.removeChild(a);
       
       toast({
-        title: "Export completato",
+        title: t("reports.exportCompleted"),
         description: "Il file CSV è stato scaricato con successo",
       });
     } catch (error) {
       toast({
-        title: "Errore",
-        description: "Impossibile esportare i dati",
+        title: t("common.error"),
+        description: t("reports.exportFailed"),
         variant: "destructive",
       });
     } finally {
@@ -240,7 +242,7 @@ export default function ResellerSales() {
               <TrendingUp className="h-6 w-6 text-white" />
             </div>
             <div>
-              <h1 className="text-2xl font-semibold text-white">Panoramica Vendite</h1>
+              <h1 className="text-2xl font-semibold text-white">{t("sidebar.items.salesOverview")}</h1>
               <p className="text-white/80">
                 Tutte le vendite dalla tua rete: e-commerce, POS, utility e B2B
               </p>
@@ -253,9 +255,7 @@ export default function ResellerSales() {
               onClick={handleRefresh}
               data-testid="button-refresh-sales"
             >
-              <RefreshCw className="h-4 w-4 mr-2" />
-              Aggiorna
-            </Button>
+              <RefreshCw className="h-4 w-4 mr-2" />{t("common.update")}</Button>
             <Button 
               variant="outline" 
               size="sm" 
@@ -278,7 +278,7 @@ export default function ResellerSales() {
                 <Euro className="h-5 w-5 text-primary" />
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">Totale Vendite</p>
+                <p className="text-sm text-muted-foreground">{t("pos.salesTotal")}</p>
                 <p className="text-xl font-bold" data-testid="text-total-amount">
                   {formatCurrency(summary?.totalAmount || 0)}
                 </p>
@@ -295,7 +295,7 @@ export default function ResellerSales() {
                 <ShoppingCart className="h-5 w-5 text-blue-600" />
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">E-commerce</p>
+                <p className="text-sm text-muted-foreground">{t("sidebar.sections.ecommerce")}</p>
                 <p className="text-xl font-bold text-blue-600" data-testid="text-ecommerce-amount">
                   {formatCurrency(summary?.bySource.ecommerce || 0)}
                 </p>
@@ -312,7 +312,7 @@ export default function ResellerSales() {
                 <Store className="h-5 w-5 text-green-600" />
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">POS</p>
+                <p className="text-sm text-muted-foreground">{t("sidebar.sections.posSection")}</p>
                 <p className="text-xl font-bold text-green-600" data-testid="text-pos-amount">
                   {formatCurrency(summary?.bySource.pos || 0)}
                 </p>
@@ -329,7 +329,7 @@ export default function ResellerSales() {
                 <Zap className="h-5 w-5 text-yellow-600" />
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">Utility</p>
+                <p className="text-sm text-muted-foreground">{t("utility.title")}</p>
                 <p className="text-xl font-bold text-yellow-600" data-testid="text-utility-amount">
                   {formatCurrency(summary?.bySource.utility || 0)}
                 </p>
@@ -346,7 +346,7 @@ export default function ResellerSales() {
                 <Briefcase className="h-5 w-5 text-purple-600" />
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">B2B</p>
+                <p className="text-sm text-muted-foreground">{t("sidebar.sections.b2b")}</p>
                 <p className="text-xl font-bold text-purple-600" data-testid="text-b2b-amount">
                   {formatCurrency(summary?.bySource.b2b || 0)}
                 </p>
@@ -382,20 +382,20 @@ export default function ResellerSales() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Tutte le fonti</SelectItem>
-                <SelectItem value="ecommerce">E-commerce</SelectItem>
-                <SelectItem value="pos">POS</SelectItem>
-                <SelectItem value="utility">Utility</SelectItem>
-                <SelectItem value="b2b">B2B</SelectItem>
+                <SelectItem value="ecommerce">{t("sidebar.sections.ecommerce")}</SelectItem>
+                <SelectItem value="pos">{t("sidebar.sections.posSection")}</SelectItem>
+                <SelectItem value="utility">{t("utility.title")}</SelectItem>
+                <SelectItem value="b2b">{t("sidebar.sections.b2b")}</SelectItem>
               </SelectContent>
             </Select>
             
             {repairCenters.length > 0 && (
               <Select value={repairCenterFilter} onValueChange={setRepairCenterFilter}>
                 <SelectTrigger className="w-full sm:w-[180px]" data-testid="select-repair-center-filter">
-                  <SelectValue placeholder="Centro Riparazione" />
+                  <SelectValue placeholder={t("roles.repairCenter")} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">Tutti i centri</SelectItem>
+                  <SelectItem value="all">{t("common.allCenters")}</SelectItem>
                   {repairCenters.map((rc) => (
                     <SelectItem key={rc.id} value={rc.id}>{rc.name}</SelectItem>
                   ))}
@@ -406,7 +406,7 @@ export default function ResellerSales() {
             {subResellers.length > 0 && (
               <Select value={subResellerFilter} onValueChange={setSubResellerFilter}>
                 <SelectTrigger className="w-full sm:w-[180px]" data-testid="select-sub-reseller-filter">
-                  <SelectValue placeholder="Sub-Reseller" />
+                  <SelectValue placeholder={t("roles.subReseller")} />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">Tutti i sub-reseller</SelectItem>
@@ -425,7 +425,7 @@ export default function ResellerSales() {
                     dateRange.to ? (
                       `${format(dateRange.from, "dd/MM", { locale: it })} - ${format(dateRange.to, "dd/MM", { locale: it })}`
                     ) : format(dateRange.from, "dd/MM/yyyy", { locale: it })
-                  ) : "Periodo"}
+                  ) : t("common.period")}
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-auto p-0" align="end">
@@ -463,13 +463,13 @@ export default function ResellerSales() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Riferimento</TableHead>
-                    <TableHead>Data</TableHead>
+                    <TableHead>{t("common.reference")}</TableHead>
+                    <TableHead>{t("common.date")}</TableHead>
                     <TableHead>Fonte</TableHead>
-                    <TableHead>Entità</TableHead>
-                    <TableHead>Cliente</TableHead>
-                    <TableHead className="text-right">Importo</TableHead>
-                    <TableHead>Stato</TableHead>
+                    <TableHead>{t("common.entity")}</TableHead>
+                    <TableHead>{t("common.customer")}</TableHead>
+                    <TableHead className="text-right">{t("common.amount")}</TableHead>
+                    <TableHead>{t("common.status")}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>

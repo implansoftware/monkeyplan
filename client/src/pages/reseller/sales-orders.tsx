@@ -20,16 +20,17 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import type { SalesOrder, SalesOrderItem, SalesOrderPayment, SalesOrderShipment } from "@shared/schema";
+import { useTranslation } from "react-i18next";
 
 const statusLabels: Record<string, string> = {
-  pending: "In attesa",
+  pending: t("hr.pending"),
   confirmed: "Confermato",
   processing: "In elaborazione",
   ready_to_ship: "Pronto per spedizione",
-  shipped: "Spedito",
-  delivered: "Consegnato",
-  completed: "Completato",
-  cancelled: "Annullato",
+  shipped: t("b2b.status.shipped"),
+  delivered: t("repairs.status.delivered"),
+  completed: t("common.completed"),
+  cancelled: t("repairs.status.cancelled"),
   refunded: "Rimborsato"
 };
 
@@ -65,6 +66,7 @@ interface OrderDetailResponse {
 }
 
 export default function ResellerSalesOrders() {
+  const { t } = useTranslation();
   const [, setLocation] = useLocation();
   const [, params] = useRoute("/reseller/sales-orders/:id");
   const orderId = params?.id;
@@ -121,7 +123,7 @@ export default function ResellerSalesOrders() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/sales-orders'] });
-      toast({ title: "Stato ordine aggiornato" });
+      toast({ title: t("b2b.orderStatusUpdated") });
       setShowStatusDialog(false);
       setSelectedOrder(null);
       setNewStatus("");
@@ -131,7 +133,7 @@ export default function ResellerSalesOrders() {
       setShippingTrackingNumber("");
     },
     onError: (error: any) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     }
   });
   
@@ -177,11 +179,11 @@ export default function ResellerSalesOrders() {
     
     // Validate shipping fields if status is shipped
     if (newStatus === 'shipped' && !shippingCarrier) {
-      toast({ title: "Errore", description: "Seleziona un corriere", variant: "destructive" });
+      toast({ title: t("common.error"), description: "Seleziona un corriere", variant: "destructive" });
       return;
     }
     if (newStatus === 'shipped' && shippingCarrier === 'other' && !shippingCarrierName) {
-      toast({ title: "Errore", description: "Inserisci il nome del corriere", variant: "destructive" });
+      toast({ title: t("common.error"), description: "Inserisci il nome del corriere", variant: "destructive" });
       return;
     }
     
@@ -294,22 +296,22 @@ export default function ResellerSalesOrders() {
             </CardHeader>
             <CardContent className="space-y-3">
               <div className="flex justify-between">
-                <span className="text-muted-foreground">Subtotale</span>
+                <span className="text-muted-foreground">{t("common.subtotal")}</span>
                 <span>{formatPrice(order.subtotal)}</span>
               </div>
               {order.discountAmount > 0 && (
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">Sconto</span>
+                  <span className="text-muted-foreground">{t("common.discount")}</span>
                   <span className="text-green-600">-{formatPrice(order.discountAmount)}</span>
                 </div>
               )}
               <div className="flex justify-between">
-                <span className="text-muted-foreground">Spedizione</span>
+                <span className="text-muted-foreground">{t("common.shipment")}</span>
                 <span>{order.shippingCost > 0 ? formatPrice(order.shippingCost) : 'Gratuita'}</span>
               </div>
               <Separator />
               <div className="flex justify-between font-bold text-lg">
-                <span>Totale</span>
+                <span>{t("common.total")}</span>
                 <span>{formatPrice(order.total)}</span>
               </div>
             </CardContent>
@@ -329,10 +331,10 @@ export default function ResellerSalesOrders() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Prodotto</TableHead>
-                    <TableHead className="text-center">Quantità</TableHead>
+                    <TableHead>{t("common.product")}</TableHead>
+                    <TableHead className="text-center">{t("common.quantity")}</TableHead>
                     <TableHead className="text-right">Prezzo unit.</TableHead>
-                    <TableHead className="text-right">Totale</TableHead>
+                    <TableHead className="text-right">{t("common.total")}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -374,17 +376,16 @@ export default function ResellerSalesOrders() {
           <Card className="rounded-2xl">
             <CardHeader>
               <CardTitle className="flex flex-wrap items-center gap-2">
-                <CreditCard className="h-5 w-5" /> Pagamenti
-              </CardTitle>
+                <CreditCard className="h-5 w-5" />{t("sidebar.items.payments")}</CardTitle>
             </CardHeader>
             <CardContent>
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Metodo</TableHead>
-                    <TableHead>Stato</TableHead>
-                    <TableHead className="text-right">Importo</TableHead>
-                    <TableHead>Data</TableHead>
+                    <TableHead>{t("common.method")}</TableHead>
+                    <TableHead>{t("common.status")}</TableHead>
+                    <TableHead className="text-right">{t("common.amount")}</TableHead>
+                    <TableHead>{t("common.date")}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -411,16 +412,15 @@ export default function ResellerSalesOrders() {
           <Card className="rounded-2xl">
             <CardHeader>
               <CardTitle className="flex flex-wrap items-center gap-2">
-                <Truck className="h-5 w-5" /> Spedizioni
-              </CardTitle>
+                <Truck className="h-5 w-5" />{t("shipping.title")}</CardTitle>
             </CardHeader>
             <CardContent>
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Corriere</TableHead>
+                    <TableHead>{t("shipping.carrier")}</TableHead>
                     <TableHead>Tracking</TableHead>
-                    <TableHead>Stato</TableHead>
+                    <TableHead>{t("common.status")}</TableHead>
                     <TableHead>Data spedizione</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -468,16 +468,14 @@ export default function ResellerSalesOrders() {
         
         {statusTransitions[order.status]?.length > 0 && (
           <div className="flex justify-end">
-            <Button onClick={() => openStatusDialog(order)} data-testid="button-change-status">
-              Aggiorna stato ordine
-            </Button>
+            <Button onClick={() => openStatusDialog(order)} data-testid="button-change-status">{t("b2b.updateOrderStatus")}</Button>
           </div>
         )}
         
         <Dialog open={showStatusDialog} onOpenChange={setShowStatusDialog}>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>Aggiorna stato ordine</DialogTitle>
+              <DialogTitle>{t("b2b.updateOrderStatus")}</DialogTitle>
             </DialogHeader>
             {selectedOrder && (
               <div className="space-y-4">
@@ -492,7 +490,7 @@ export default function ResellerSalesOrders() {
                   <Label>Nuovo stato</Label>
                   <Select value={newStatus} onValueChange={setNewStatus}>
                     <SelectTrigger>
-                      <SelectValue placeholder="Seleziona nuovo stato" />
+                      <SelectValue placeholder={t("common.selectNewStatus")} />
                     </SelectTrigger>
                     <SelectContent>
                       {statusTransitions[selectedOrder.status]?.map((status) => (
@@ -537,7 +535,7 @@ export default function ResellerSalesOrders() {
                           <SelectItem value="brt">BRT</SelectItem>
                           <SelectItem value="sda">SDA</SelectItem>
                           <SelectItem value="poste_italiane">Poste Italiane</SelectItem>
-                          <SelectItem value="other">Altro</SelectItem>
+                          <SelectItem value="other">{t("common.other")}</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
@@ -568,15 +566,11 @@ export default function ResellerSalesOrders() {
               </div>
             )}
             <DialogFooter>
-              <Button variant="outline" onClick={() => setShowStatusDialog(false)}>
-                Annulla
-              </Button>
+              <Button variant="outline" onClick={() => setShowStatusDialog(false)}>{t("common.cancel")}</Button>
               <Button 
                 onClick={handleStatusChange}
                 disabled={!newStatus || updateStatus.isPending}
-              >
-                Conferma
-              </Button>
+              >{t("common.confirm")}</Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
@@ -638,10 +632,10 @@ export default function ResellerSalesOrders() {
         
         <Select value={statusFilter} onValueChange={setStatusFilter}>
           <SelectTrigger className="w-full sm:w-[180px]" data-testid="select-status-filter">
-            <SelectValue placeholder="Tutti gli stati" />
+            <SelectValue placeholder={t("common.allStatuses")} />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">Tutti gli stati</SelectItem>
+            <SelectItem value="all">{t("common.allStatuses")}</SelectItem>
             {Object.entries(statusLabels).map(([value, label]) => (
               <SelectItem key={value} value={value}>{label}</SelectItem>
             ))}
@@ -654,18 +648,18 @@ export default function ResellerSalesOrders() {
           {filteredOrders.length === 0 ? (
             <div className="p-12 text-center">
               <Package className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-              <p className="text-muted-foreground">Nessun ordine trovato</p>
+              <p className="text-muted-foreground">{t("b2b.noOrdersFound")}</p>
             </div>
           ) : (
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Ordine</TableHead>
-                  <TableHead>Data</TableHead>
-                  <TableHead>Cliente</TableHead>
-                  <TableHead>Totale</TableHead>
-                  <TableHead>Stato</TableHead>
-                  <TableHead className="text-right">Azioni</TableHead>
+                  <TableHead>{t("common.order")}</TableHead>
+                  <TableHead>{t("common.date")}</TableHead>
+                  <TableHead>{t("common.customer")}</TableHead>
+                  <TableHead>{t("common.total")}</TableHead>
+                  <TableHead>{t("common.status")}</TableHead>
+                  <TableHead className="text-right">{t("common.actions")}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -709,9 +703,7 @@ export default function ResellerSalesOrders() {
                             size="sm"
                             onClick={() => openStatusDialog(order)}
                             data-testid={`button-change-status-${order.id}`}
-                          >
-                            Aggiorna stato
-                          </Button>
+                          >{t("common.updateStatus")}</Button>
                         )}
                       </div>
                     </TableCell>
@@ -726,7 +718,7 @@ export default function ResellerSalesOrders() {
       <Dialog open={showStatusDialog} onOpenChange={setShowStatusDialog}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Aggiorna stato ordine</DialogTitle>
+            <DialogTitle>{t("b2b.updateOrderStatus")}</DialogTitle>
           </DialogHeader>
           {selectedOrder && (
             <div className="space-y-4">
@@ -741,7 +733,7 @@ export default function ResellerSalesOrders() {
                 <Label>Nuovo stato</Label>
                 <Select value={newStatus} onValueChange={setNewStatus}>
                   <SelectTrigger>
-                    <SelectValue placeholder="Seleziona nuovo stato" />
+                    <SelectValue placeholder={t("common.selectNewStatus")} />
                   </SelectTrigger>
                   <SelectContent>
                     {statusTransitions[selectedOrder.status]?.map((status) => (
@@ -786,7 +778,7 @@ export default function ResellerSalesOrders() {
                         <SelectItem value="brt">BRT</SelectItem>
                         <SelectItem value="sda">SDA</SelectItem>
                         <SelectItem value="poste_italiane">Poste Italiane</SelectItem>
-                        <SelectItem value="other">Altro</SelectItem>
+                        <SelectItem value="other">{t("common.other")}</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -817,15 +809,11 @@ export default function ResellerSalesOrders() {
             </div>
           )}
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowStatusDialog(false)}>
-              Annulla
-            </Button>
+            <Button variant="outline" onClick={() => setShowStatusDialog(false)}>{t("common.cancel")}</Button>
             <Button 
               onClick={handleStatusChange}
               disabled={!newStatus || updateStatus.isPending}
-            >
-              Conferma
-            </Button>
+            >{t("common.confirm")}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

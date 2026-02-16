@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useState, useRef, useCallback, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -58,6 +59,7 @@ export function AttachmentUploader({
   canUpload = true,
   canDelete = false,
 }: AttachmentUploaderProps) {
+  const { t } = useTranslation();
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isDragging, setIsDragging] = useState(false);
@@ -75,9 +77,9 @@ export function AttachmentUploader({
         credentials: "include",
       });
       if (!response.ok) {
-        if (response.status === 404) throw new Error("Riparazione non trovata");
-        if (response.status === 403) throw new Error("Accesso negato");
-        throw new Error("Errore nel caricamento allegati");
+        if (response.status === 404) throw new Error(t("repair.notFound"));
+        if (response.status === 403) throw new Error(t("permissions.accessDenied"));
+        throw new Error(t("attachment.loadError"));
       }
       return response.json();
     },
@@ -142,15 +144,15 @@ export function AttachmentUploader({
           } else {
             try {
               const error = JSON.parse(xhr.responseText);
-              reject(new Error(error.message || 'Errore durante il caricamento'));
+              reject(new Error(error.message || t("attachment.uploadError")));
             } catch {
-              reject(new Error('Errore durante il caricamento'));
+              reject(new Error(t("attachment.uploadError")));
             }
           }
         });
 
         xhr.addEventListener('error', () => {
-          reject(new Error('Errore di rete durante il caricamento'));
+          reject(new Error(t("attachment.networkUploadError")));
         });
 
         xhr.open('POST', `/api/repair-orders/${repairOrderId}/attachments`);
@@ -164,15 +166,15 @@ export function AttachmentUploader({
       });
       toast({
         title: "File caricato",
-        description: "L'allegato è stato caricato con successo",
+        description: t("attachment.uploadedSuccessfully"),
       });
       setUploadProgress(null);
       setSelectedFiles([]);
     },
     onError: (error: Error) => {
       toast({
-        title: "Errore caricamento",
-        description: error.message || "Impossibile caricare il file",
+        title: t("common.uploadError"),
+        description: error.message || t("attachment.cannotUploadFile"),
         variant: "destructive",
       });
       setUploadProgress(null);
@@ -189,15 +191,15 @@ export function AttachmentUploader({
       });
       toast({
         title: "File eliminato",
-        description: "L'allegato è stato eliminato con successo",
+        description: t("attachment.deletedSuccessfully"),
       });
       setDeleteDialogOpen(false);
       setAttachmentToDelete(null);
     },
     onError: (error: any) => {
       toast({
-        title: "Errore",
-        description: error.message || "Impossibile eliminare l'allegato",
+        title: t("common.error"),
+        description: error.message || t("attachment.cannotDeleteAttachment"),
         variant: "destructive",
       });
     },
@@ -208,7 +210,7 @@ export function AttachmentUploader({
       return `Tipo file non supportato: ${file.type}. Sono ammessi solo immagini, PDF e documenti Word.`;
     }
     if (file.size > MAX_FILE_SIZE) {
-      return `Il file è troppo grande (${formatFileSize(file.size)}). Dimensione massima: 10MB`;
+      return t("attachment.fileTooLarge", { size: formatFileSize(file.size) });
     }
     return null;
   };
@@ -408,7 +410,7 @@ export function AttachmentUploader({
                   data-testid="button-upload-files"
                 >
                   <Upload className="h-4 w-4 mr-2" />
-                  {uploadMutation.isPending ? 'Caricamento...' : 'Carica file'}
+                  {uploadMutation.isPending ? t("attachment.uploading") : t("attachment.uploadFile")}
                 </Button>
               </div>
             )}
@@ -481,7 +483,7 @@ export function AttachmentUploader({
                               </Badge>
                               {isImage(attachment.fileType) && (
                                 <Badge variant="outline" className="text-xs">
-                                  Immagine
+                                  {t("common.image")}
                                 </Badge>
                               )}
                               {attachment.fileType === "application/pdf" && (
@@ -519,8 +521,8 @@ export function AttachmentUploader({
                                   window.URL.revokeObjectURL(url);
                                 } catch (error: any) {
                                   toast({
-                                    title: "Errore download",
-                                    description: error.message || "Impossibile scaricare il file",
+                                    title: t("common.downloadError"),
+                                    description: error.message || t("attachment.cannotDownloadFile"),
                                     variant: "destructive",
                                   });
                                 }
@@ -556,21 +558,21 @@ export function AttachmentUploader({
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Conferma Eliminazione</AlertDialogTitle>
+            <AlertDialogTitle>{t("common.confirmDeletion")}</AlertDialogTitle>
             <AlertDialogDescription>
               Sei sicuro di voler eliminare "{attachmentToDelete?.fileName}"? Questa azione non può essere annullata.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel data-testid="button-cancel-delete">
-              Annulla
+              {t("common.cancel")}
             </AlertDialogCancel>
             <AlertDialogAction
               onClick={handleConfirmDelete}
               className="bg-destructive text-destructive-foreground hover-elevate"
               data-testid="button-confirm-delete"
             >
-              Elimina
+              {t("common.delete")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

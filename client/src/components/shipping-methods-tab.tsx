@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { ShippingMethod } from "@shared/schema";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -56,6 +57,7 @@ export function ShippingMethodsTab({
   inheritedMethodsFilter,
   ownMethodsFilter,
 }: ShippingMethodsTabProps) {
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const [search, setSearch] = useState("");
@@ -79,7 +81,7 @@ export function ShippingMethodsTab({
       resetForm();
     },
     onError: (error: any) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -94,7 +96,7 @@ export function ShippingMethodsTab({
       resetForm();
     },
     onError: (error: any) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -108,7 +110,7 @@ export function ShippingMethodsTab({
       setDeleteConfirmId(null);
     },
     onError: (error: any) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -140,7 +142,7 @@ export function ShippingMethodsTab({
 
   const handleSubmit = () => {
     if (!formData.name.trim()) {
-      toast({ title: "Nome obbligatorio", variant: "destructive" });
+      toast({ title: t("common.nameRequired"), variant: "destructive" });
       return;
     }
 
@@ -183,7 +185,7 @@ export function ShippingMethodsTab({
         <div className="relative flex-1 max-w-sm">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder="Cerca metodi..."
+            placeholder={t("shipping.searchMethods")}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="pl-10"
@@ -223,13 +225,13 @@ export function ShippingMethodsTab({
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Nome</TableHead>
-                      <TableHead>Codice</TableHead>
-                      <TableHead>Prezzo</TableHead>
+                      <TableHead>{t("common.name")}</TableHead>
+                      <TableHead>{t("common.code")}</TableHead>
+                      <TableHead>{t("common.price")}</TableHead>
                       <TableHead>Giorni</TableHead>
-                      <TableHead>Tipo</TableHead>
-                      <TableHead>Stato</TableHead>
-                      <TableHead className="text-right">Azioni</TableHead>
+                      <TableHead>{t("common.type")}</TableHead>
+                      <TableHead>{t("common.status")}</TableHead>
+                      <TableHead className="text-right">{t("common.actions")}</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -252,18 +254,18 @@ export function ShippingMethodsTab({
                           {method.isPickup ? (
                             <Badge variant="secondary" className="flex items-center gap-1 w-fit">
                               <MapPin className="h-3 w-3" />
-                              Ritiro
+                              {t("delivery.pickup")}
                             </Badge>
                           ) : (
                             <Badge variant="outline" className="flex items-center gap-1 w-fit">
                               <Package className="h-3 w-3" />
-                              Spedizione
+                              {t("shipping.shipping")}
                             </Badge>
                           )}
                         </TableCell>
                         <TableCell>
                           <Badge variant={method.isActive ? "default" : "secondary"}>
-                            {method.isActive ? "Attivo" : "Inattivo"}
+                            {method.isActive ? t("common.active") : "Inattivo"}
                           </Badge>
                         </TableCell>
                         <TableCell className="text-right">
@@ -309,12 +311,12 @@ export function ShippingMethodsTab({
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Nome</TableHead>
-                      <TableHead>Codice</TableHead>
-                      <TableHead>Prezzo</TableHead>
+                      <TableHead>{t("common.name")}</TableHead>
+                      <TableHead>{t("common.code")}</TableHead>
+                      <TableHead>{t("common.price")}</TableHead>
                       <TableHead>Giorni</TableHead>
-                      <TableHead>Tipo</TableHead>
-                      <TableHead>Stato</TableHead>
+                      <TableHead>{t("common.type")}</TableHead>
+                      <TableHead>{t("common.status")}</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -337,18 +339,18 @@ export function ShippingMethodsTab({
                           {method.isPickup ? (
                             <Badge variant="secondary" className="flex items-center gap-1 w-fit">
                               <MapPin className="h-3 w-3" />
-                              Ritiro
+                              {t("delivery.pickup")}
                             </Badge>
                           ) : (
                             <Badge variant="outline" className="flex items-center gap-1 w-fit">
                               <Package className="h-3 w-3" />
-                              Spedizione
+                              {t("shipping.shipping")}
                             </Badge>
                           )}
                         </TableCell>
                         <TableCell>
                           <Badge variant={method.isActive ? "default" : "secondary"}>
-                            {method.isActive ? "Attivo" : "Inattivo"}
+                            {method.isActive ? t("common.active") : "Inattivo"}
                           </Badge>
                         </TableCell>
                       </TableRow>
@@ -375,7 +377,7 @@ export function ShippingMethodsTab({
               {ownMethods.length === 0 ? (
                 <div className="text-center py-8 text-muted-foreground">
                   <Truck className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                  <p>Nessun metodo di consegna configurato</p>
+                  <p>{t("shipping.noDeliveryMethodsConfigured")}</p>
                   <p className="text-sm mt-2">
                     {role === "repair_center" 
                       ? "Puoi aggiungere metodi specifici per il tuo centro oltre a quelli ereditati dal reseller"
@@ -390,13 +392,13 @@ export function ShippingMethodsTab({
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Nome</TableHead>
-                      <TableHead>Codice</TableHead>
-                      <TableHead>Prezzo</TableHead>
+                      <TableHead>{t("common.name")}</TableHead>
+                      <TableHead>{t("common.code")}</TableHead>
+                      <TableHead>{t("common.price")}</TableHead>
                       <TableHead>Giorni</TableHead>
-                      <TableHead>Tipo</TableHead>
-                      <TableHead>Stato</TableHead>
-                      <TableHead className="text-right">Azioni</TableHead>
+                      <TableHead>{t("common.type")}</TableHead>
+                      <TableHead>{t("common.status")}</TableHead>
+                      <TableHead className="text-right">{t("common.actions")}</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -419,18 +421,18 @@ export function ShippingMethodsTab({
                           {method.isPickup ? (
                             <Badge variant="secondary" className="flex items-center gap-1 w-fit">
                               <MapPin className="h-3 w-3" />
-                              Ritiro
+                              {t("delivery.pickup")}
                             </Badge>
                           ) : (
                             <Badge variant="outline" className="flex items-center gap-1 w-fit">
                               <Package className="h-3 w-3" />
-                              Spedizione
+                              {t("shipping.shipping")}
                             </Badge>
                           )}
                         </TableCell>
                         <TableCell>
                           <Badge variant={method.isActive ? "default" : "secondary"}>
-                            {method.isActive ? "Attivo" : "Inattivo"}
+                            {method.isActive ? t("common.active") : "Inattivo"}
                           </Badge>
                         </TableCell>
                         <TableCell className="text-right">
@@ -467,7 +469,7 @@ export function ShippingMethodsTab({
         <DialogContent className="max-w-lg">
           <DialogHeader>
             <DialogTitle>
-              {editingMethod ? "Modifica Metodo" : "Nuovo Metodo di Consegna"}
+              {editingMethod ? t("shipping.editMethod") : "Nuovo Metodo di Consegna"}
             </DialogTitle>
             <DialogDescription>
               Configura i dettagli del metodo di spedizione o ritiro
@@ -477,7 +479,7 @@ export function ShippingMethodsTab({
           <div className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="name">Nome *</Label>
+                <Label htmlFor="name">{t("common.name")} *</Label>
                 <Input
                   id="name"
                   value={formData.name}
@@ -487,7 +489,7 @@ export function ShippingMethodsTab({
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="code">Codice</Label>
+                <Label htmlFor="code">{t("common.code")}</Label>
                 <Input
                   id="code"
                   value={formData.code}
@@ -499,12 +501,12 @@ export function ShippingMethodsTab({
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="description">Descrizione</Label>
+              <Label htmlFor="description">{t("common.description")}</Label>
               <Textarea
                 id="description"
                 value={formData.description}
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                placeholder="Descrizione opzionale del metodo..."
+                placeholder={t("shipping.optionalDescription")}
                 rows={2}
                 data-testid="input-shipping-description"
               />
@@ -512,7 +514,7 @@ export function ShippingMethodsTab({
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="price">Prezzo (EUR)</Label>
+                <Label htmlFor="price">{t("common.price")} (EUR)</Label>
                 <Input
                   id="price"
                   type="number"
@@ -538,7 +540,7 @@ export function ShippingMethodsTab({
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="sortOrder">Ordine di Visualizzazione</Label>
+              <Label htmlFor="sortOrder">{t("shipping.displayOrder")}</Label>
               <Input
                 id="sortOrder"
                 type="number"
@@ -552,7 +554,7 @@ export function ShippingMethodsTab({
             <div className="space-y-4 pt-2">
               <div className="flex items-center justify-between">
                 <div>
-                  <Label htmlFor="isPickup">Ritiro in sede</Label>
+                  <Label htmlFor="isPickup">{t("delivery.pickupAtOffice")}</Label>
                   <p className="text-sm text-muted-foreground">Il cliente ritira presso un punto fisico</p>
                 </div>
                 <Switch
@@ -580,7 +582,7 @@ export function ShippingMethodsTab({
 
               <div className="flex items-center justify-between">
                 <div>
-                  <Label htmlFor="isActive">Attivo</Label>
+                  <Label htmlFor="isActive">{t("common.active")}</Label>
                   <p className="text-sm text-muted-foreground">Visibile durante il checkout</p>
                 </div>
                 <Switch
@@ -595,14 +597,14 @@ export function ShippingMethodsTab({
 
           <DialogFooter>
             <Button variant="outline" onClick={() => setDialogOpen(false)} data-testid="button-cancel-shipping">
-              Annulla
+              {t("common.cancel")}
             </Button>
             <Button
               onClick={handleSubmit}
               disabled={createMutation.isPending || updateMutation.isPending}
               data-testid="button-save-shipping"
             >
-              {createMutation.isPending || updateMutation.isPending ? "Salvataggio..." : "Salva"}
+              {createMutation.isPending || updateMutation.isPending ? t("common.saving") : "Salva"}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -611,14 +613,14 @@ export function ShippingMethodsTab({
       <Dialog open={!!deleteConfirmId} onOpenChange={() => setDeleteConfirmId(null)}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Conferma Eliminazione</DialogTitle>
+            <DialogTitle>{t("common.confirmDeletion")}</DialogTitle>
             <DialogDescription>
               Sei sicuro di voler eliminare questo metodo di consegna? L'azione non può essere annullata.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDeleteConfirmId(null)}>
-              Annulla
+              {t("common.cancel")}
             </Button>
             <Button
               variant="destructive"
@@ -626,7 +628,7 @@ export function ShippingMethodsTab({
               disabled={deleteMutation.isPending}
               data-testid="button-confirm-delete"
             >
-              {deleteMutation.isPending ? "Eliminazione..." : "Elimina"}
+              {deleteMutation.isPending ? t("common.deleting") : t("common.delete")}
             </Button>
           </DialogFooter>
         </DialogContent>

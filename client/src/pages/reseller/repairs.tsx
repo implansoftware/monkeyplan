@@ -23,6 +23,7 @@ import { RepairIntakeWizard } from "@/components/RepairIntakeWizard";
 import { useLocation } from "wouter";
 import { RepairsKanbanBoard } from "@/components/RepairsKanbanBoard";
 import { ActionGuard } from "@/components/permission-guard";
+import { useTranslation } from "react-i18next";
 
 interface RepairOrderWithSLA extends RepairOrder {
   slaSeverity: "in_time" | "late" | "urgent" | null;
@@ -43,6 +44,7 @@ interface PaginatedRepairsResponse {
 }
 
 export default function ResellerRepairs() {
+  const { t } = useTranslation();
   const [searchQuery, setSearchQuery] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
@@ -169,8 +171,8 @@ export default function ResellerRepairs() {
       case "in_riparazione": return <Badge>In Riparazione</Badge>;
       case "in_test": return <Badge>In Test</Badge>;
       case "pronto_ritiro": return <Badge>Pronto Ritiro</Badge>;
-      case "consegnato": return <Badge variant="outline">Consegnato</Badge>;
-      case "cancelled": return <Badge variant="destructive">Annullato</Badge>;
+      case "consegnato": return <Badge variant="outline">{t("repairs.status.delivered")}</Badge>;
+      case "cancelled": return <Badge variant="destructive">{t("repairs.status.cancelled")}</Badge>;
       default: return <Badge variant="outline">{status}</Badge>;
     }
   };
@@ -200,13 +202,13 @@ export default function ResellerRepairs() {
       document.body.removeChild(a);
       
       toast({
-        title: "Export completato",
+        title: t("reports.exportCompleted"),
         description: "Il file Excel è stato scaricato con successo",
       });
     } catch (error) {
       toast({
-        title: "Errore",
-        description: "Impossibile esportare i dati",
+        title: t("common.error"),
+        description: t("reports.exportFailed"),
         variant: "destructive",
       });
     } finally {
@@ -248,7 +250,7 @@ export default function ResellerRepairs() {
               <Wrench className="h-6 w-6 text-white" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold tracking-tight text-white">Lavorazioni</h1>
+              <h1 className="text-2xl font-bold tracking-tight text-white">{t("sidebar.items.jobs")}</h1>
               <p className="text-sm text-white/80">
                 Monitora e gestisci tutte le riparazioni
               </p>
@@ -306,7 +308,7 @@ export default function ResellerRepairs() {
           <CardContent className="relative pt-5 pb-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1">In Lavorazione</p>
+                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1">{t("repairs.inProgress")}</p>
                 <p className="text-3xl font-bold tabular-nums text-teal-600 dark:text-teal-400">{inProgressRepairs}</p>
                 <p className="text-xs text-muted-foreground mt-1">
                   Diagnosi, riparazione, test
@@ -374,7 +376,7 @@ export default function ResellerRepairs() {
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">Tutti gli stati</SelectItem>
+                <SelectItem value="all">{t("common.allStatuses")}</SelectItem>
                 <SelectItem value="ingressato">Ingressato</SelectItem>
                 <SelectItem value="in_diagnosi">In Diagnosi</SelectItem>
                 <SelectItem value="preventivo_emesso">Preventivo Emesso</SelectItem>
@@ -384,8 +386,8 @@ export default function ResellerRepairs() {
                 <SelectItem value="in_riparazione">In Riparazione</SelectItem>
                 <SelectItem value="in_test">In Test</SelectItem>
                 <SelectItem value="pronto_ritiro">Pronto Ritiro</SelectItem>
-                <SelectItem value="consegnato">Consegnato</SelectItem>
-                <SelectItem value="cancelled">Annullato</SelectItem>
+                <SelectItem value="consegnato">{t("repairs.status.delivered")}</SelectItem>
+                <SelectItem value="cancelled">{t("repairs.status.cancelled")}</SelectItem>
               </SelectContent>
             </Select>
             <Select value={slaFilter} onValueChange={setSlaFilter}>
@@ -401,21 +403,15 @@ export default function ResellerRepairs() {
                 </SelectItem>
                 <SelectItem value="in_time">
                   <span className="flex flex-wrap items-center gap-2">
-                    <Clock className="h-3 w-3 text-green-500" />
-                    In Tempo
-                  </span>
+                    <Clock className="h-3 w-3 text-green-500" />{t("settings.onTime")}</span>
                 </SelectItem>
                 <SelectItem value="late">
                   <span className="flex flex-wrap items-center gap-2">
-                    <AlertTriangle className="h-3 w-3 text-yellow-500" />
-                    In Ritardo
-                  </span>
+                    <AlertTriangle className="h-3 w-3 text-yellow-500" />{t("settings.delayed")}</span>
                 </SelectItem>
                 <SelectItem value="urgent">
                   <span className="flex flex-wrap items-center gap-2">
-                    <AlertCircle className="h-3 w-3 text-red-500" />
-                    Urgente
-                  </span>
+                    <AlertCircle className="h-3 w-3 text-red-500" />{t("settings.urgent")}</span>
                 </SelectItem>
               </SelectContent>
             </Select>
@@ -426,9 +422,7 @@ export default function ResellerRepairs() {
               <SelectContent>
                 <SelectItem value="all">
                   <span className="flex flex-wrap items-center gap-2">
-                    <Building className="h-3 w-3" />
-                    Tutti i centri
-                  </span>
+                    <Building className="h-3 w-3" />{t("common.allCenters")}</span>
                 </SelectItem>
                 {repairCenters.map((center) => (
                   <SelectItem key={center.id} value={center.id}>
@@ -446,7 +440,7 @@ export default function ResellerRepairs() {
                 <SelectValue placeholder="Tipo dispositivo" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">Tutti i dispositivi</SelectItem>
+                <SelectItem value="all">{t("products.allDevices")}</SelectItem>
                 {deviceTypes.map((type) => (
                   <SelectItem key={type.id} value={type.name}>
                     {type.name}
@@ -486,7 +480,7 @@ export default function ResellerRepairs() {
               data-testid="button-export-repairs"
             >
               <Download className="h-4 w-4 mr-2" />
-              {isExporting ? "Esportazione..." : "Esporta Excel"}
+              {isExporting ? t("pages.exporting") : t("reports.exportExcel")}
             </Button>
           </div>
         </CardHeader>
@@ -508,20 +502,20 @@ export default function ResellerRepairs() {
           ) : repairs.length === 0 ? (
             <div className="text-center py-12 text-muted-foreground">
               <Wrench className="h-12 w-12 mx-auto mb-4 opacity-20" />
-              <p>Nessuna lavorazione trovata</p>
+              <p>{t("admin.resellerDetail.noRepairsFound")}</p>
             </div>
           ) : (
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Ordine</TableHead>
-                  <TableHead>Cliente</TableHead>
-                  <TableHead>Centro</TableHead>
-                  <TableHead>Dispositivo</TableHead>
-                  <TableHead>Stato</TableHead>
-                  <TableHead>SLA</TableHead>
-                  <TableHead>Data</TableHead>
-                  <TableHead className="text-right">Azioni</TableHead>
+                  <TableHead>{t("common.order")}</TableHead>
+                  <TableHead>{t("common.customer")}</TableHead>
+                  <TableHead>{t("admin.common.center")}</TableHead>
+                  <TableHead>{t("repairs.device")}</TableHead>
+                  <TableHead>{t("common.status")}</TableHead>
+                  <TableHead>{t("settings.tabs.sla")}</TableHead>
+                  <TableHead>{t("common.date")}</TableHead>
+                  <TableHead className="text-right">{t("common.actions")}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -615,7 +609,7 @@ export default function ResellerRepairs() {
                             </Button>
                           </TooltipTrigger>
                           <TooltipContent>
-                            <p>Dettagli</p>
+                            <p>{t("common.details")}</p>
                           </TooltipContent>
                         </Tooltip>
                       </div>

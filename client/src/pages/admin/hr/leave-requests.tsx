@@ -22,6 +22,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { useTranslation } from "react-i18next";
 
 interface LeaveRequest {
   id: string;
@@ -72,6 +73,7 @@ const statusLabels: Record<string, string> = {
 };
 
 export default function AdminLeaveRequestsPage() {
+  const { t } = useTranslation();
   const [entityType, setEntityType] = useState<AdminEntityType>("all");
   const [selectedEntityId, setSelectedEntityId] = useState("");
   const [editDialogOpen, setEditDialogOpen] = useState(false);
@@ -116,10 +118,10 @@ export default function AdminLeaveRequestsPage() {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/hr/leave-requests", queryString] });
       setEditDialogOpen(false);
       setEditingRequest(null);
-      toast({ title: "Richiesta aggiornata con successo" });
+      toast({ title: t("hr.leaveUpdated") });
     },
     onError: () => {
-      toast({ title: "Errore durante l'aggiornamento", variant: "destructive" });
+      toast({ title: t("hr.updateError"), variant: "destructive" });
     }
   });
 
@@ -180,18 +182,18 @@ export default function AdminLeaveRequestsPage() {
           ) : requests.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">
               <Calendar className="h-12 w-12 mx-auto mb-4 opacity-50" />
-              <p>Nessuna richiesta trovata</p>
+              <p>{t("hr.noRequestsFound")}</p>
             </div>
           ) : (
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Dipendente</TableHead>
-                  <TableHead>Tipo</TableHead>
-                  <TableHead>Date</TableHead>
-                  <TableHead>Stato</TableHead>
-                  <TableHead>Note</TableHead>
-                  <TableHead>Azioni</TableHead>
+                  <TableHead>{t("hr.employee")}</TableHead>
+                  <TableHead>{t("common.type")}</TableHead>
+                  <TableHead>{t("common.dates")}</TableHead>
+                  <TableHead>{t("common.status")}</TableHead>
+                  <TableHead>{t("common.notes")}</TableHead>
+                  <TableHead>{t("common.actions")}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -252,35 +254,35 @@ export default function AdminLeaveRequestsPage() {
       <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Modifica Richiesta Ferie/Permesso</DialogTitle>
+            <DialogTitle>{t("hr.editLeaveRequest")}</DialogTitle>
             <DialogDescription>
               Modifica i dettagli della richiesta
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label>Tipo</Label>
+              <Label>{t("common.type")}</Label>
               <Select
                 value={editForm.leaveType}
                 onValueChange={(value) => setEditForm({ ...editForm, leaveType: value })}
               >
                 <SelectTrigger data-testid="select-edit-leave-type">
-                  <SelectValue placeholder="Seleziona tipo" />
+                  <SelectValue placeholder={t("utility.selectType")} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="ferie">Ferie</SelectItem>
+                  <SelectItem value="ferie">{t("hr.vacation")}</SelectItem>
                   <SelectItem value="permesso_rol">Permesso ROL</SelectItem>
-                  <SelectItem value="permesso_studio">Permesso Studio</SelectItem>
-                  <SelectItem value="permesso_medico">Permesso Medico</SelectItem>
-                  <SelectItem value="permesso_lutto">Permesso Lutto</SelectItem>
-                  <SelectItem value="permesso_matrimonio">Permesso Matrimonio</SelectItem>
-                  <SelectItem value="congedo_parentale">Congedo Parentale</SelectItem>
-                  <SelectItem value="altro">Altro</SelectItem>
+                  <SelectItem value="permesso_studio">{t("hr.studyLeave")}</SelectItem>
+                  <SelectItem value="permesso_medico">{t("hr.medicalLeave")}</SelectItem>
+                  <SelectItem value="permesso_lutto">{t("hr.bereavementLeave")}</SelectItem>
+                  <SelectItem value="permesso_matrimonio">{t("hr.weddingLeave")}</SelectItem>
+                  <SelectItem value="congedo_parentale">{t("hr.parentalLeave")}</SelectItem>
+                  <SelectItem value="altro">{t("common.other")}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
             <div className="space-y-2">
-              <Label>Data Inizio</Label>
+              <Label>{t("common.startDate")}</Label>
               <Input
                 type="date"
                 value={editForm.startDate}
@@ -289,7 +291,7 @@ export default function AdminLeaveRequestsPage() {
               />
             </div>
             <div className="space-y-2">
-              <Label>Data Fine</Label>
+              <Label>{t("common.endDate")}</Label>
               <Input
                 type="date"
                 value={editForm.endDate}
@@ -298,11 +300,11 @@ export default function AdminLeaveRequestsPage() {
               />
             </div>
             <div className="space-y-2">
-              <Label>Note</Label>
+              <Label>{t("common.notes")}</Label>
               <Textarea
                 value={editForm.reason}
                 onChange={(e) => setEditForm({ ...editForm, reason: e.target.value })}
-                placeholder="Note aggiuntive..."
+                placeholder={t("utility.additionalNotes")}
                 data-testid="textarea-edit-notes"
               />
             </div>
@@ -312,7 +314,7 @@ export default function AdminLeaveRequestsPage() {
               Annulla
             </Button>
             <Button onClick={handleEdit} disabled={editMutation.isPending} data-testid="button-save-edit">
-              {editMutation.isPending ? "Salvataggio..." : "Salva"}
+              {editMutation.isPending ? t("settings.savingRate") : "Salva"}
             </Button>
           </DialogFooter>
         </DialogContent>

@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Card, CardContent } from "@/components/ui/card";
@@ -18,13 +19,13 @@ import type { SalesOrderReturn, SalesOrder } from "@shared/schema";
 
 const statusLabels: Record<string, string> = {
   requested: "Richiesto",
-  approved: "Approvato",
+  approved: t("common.approved"),
   rejected: "Rifiutato",
   shipped: "Spedito",
   received: "Ricevuto",
   refunded: "Rimborsato",
   partially_refunded: "Rimborsato parzialmente",
-  cancelled: "Annullato",
+  cancelled: t("common.cancelled"),
   awaiting_shipment: "In attesa di spedizione",
   inspecting: "In ispezione"
 };
@@ -47,7 +48,7 @@ const reasonLabels: Record<string, string> = {
   wrong_item: "Articolo errato",
   not_as_described: "Non conforme alla descrizione",
   changed_mind: "Ripensamento",
-  damaged_in_transit: "Danneggiato durante il trasporto",
+  damaged_in_transit: t("common.damagedInTransport"),
   other: "Altro motivo"
 };
 
@@ -69,6 +70,7 @@ const StatusIcon = ({ status }: { status: string }) => {
 };
 
 export default function CustomerSalesReturns() {
+  const { t } = useTranslation();
   const { toast } = useToast();
   
   const [selectedReturn, setSelectedReturn] = useState<SalesOrderReturn | null>(null);
@@ -106,7 +108,7 @@ export default function CustomerSalesReturns() {
       setNewReturnData({ orderId: "", reason: "", customerNotes: "" });
     },
     onError: (error: any) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("auth.error"), description: error.message, variant: "destructive" });
     }
   });
   
@@ -121,7 +123,7 @@ export default function CustomerSalesReturns() {
       setShowDetailDialog(false);
     },
     onError: (error: any) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("auth.error"), description: error.message, variant: "destructive" });
     }
   });
   
@@ -186,7 +188,7 @@ export default function CustomerSalesReturns() {
             </div>
             <div>
               <h1 className="text-2xl font-bold text-white" data-testid="text-returns-title">I miei resi</h1>
-              <p className="text-white/80 text-sm">Gestisci le tue richieste di reso</p>
+              <p className="text-white/80 text-sm">{t("customerPages.gestisciLeTueRichiesteDiReso")}</p>
             </div>
           </div>
           <Button onClick={() => setShowNewReturnDialog(true)} data-testid="button-new-return">
@@ -204,7 +206,7 @@ export default function CustomerSalesReturns() {
                 <RotateCcw className="h-5 w-5 text-blue-600" />
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">Totale</p>
+                <p className="text-sm text-muted-foreground">{t("common.total")}</p>
                 <p className="text-2xl font-bold" data-testid="stat-total">{stats.total}</p>
               </div>
             </div>
@@ -217,7 +219,7 @@ export default function CustomerSalesReturns() {
                 <Clock className="h-5 w-5 text-yellow-600" />
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">In corso</p>
+                <p className="text-sm text-muted-foreground">{t("customerPages.inCorso")}</p>
                 <p className="text-2xl font-bold" data-testid="stat-pending">{stats.pending}</p>
               </div>
             </div>
@@ -243,7 +245,7 @@ export default function CustomerSalesReturns() {
                 <DollarSign className="h-5 w-5 text-emerald-600" />
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">Completati</p>
+                <p className="text-sm text-muted-foreground">{t("common.completed")}</p>
                 <p className="text-2xl font-bold" data-testid="stat-completed">{stats.completed}</p>
               </div>
             </div>
@@ -255,7 +257,7 @@ export default function CustomerSalesReturns() {
         <Card>
           <CardContent className="p-12 text-center">
             <RotateCcw className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-            <h3 className="text-lg font-semibold mb-2">Nessun reso</h3>
+            <h3 className="text-lg font-semibold mb-2">{t("customerPages.nessunReso")}</h3>
             <p className="text-muted-foreground mb-4">Non hai ancora richiesto resi</p>
             {eligibleOrders.length > 0 && (
               <Button onClick={() => setShowNewReturnDialog(true)}>
@@ -312,7 +314,7 @@ export default function CustomerSalesReturns() {
       <Dialog open={showDetailDialog} onOpenChange={setShowDetailDialog}>
         <DialogContent className="max-w-lg">
           <DialogHeader>
-            <DialogTitle>Dettagli Reso</DialogTitle>
+            <DialogTitle>{t("customerPages.dettagliReso")}</DialogTitle>
             <DialogDescription>
               {selectedReturn?.returnNumber}
             </DialogDescription>
@@ -321,7 +323,7 @@ export default function CustomerSalesReturns() {
             <div className="space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <Label className="text-muted-foreground text-sm">Stato</Label>
+                  <Label className="text-muted-foreground text-sm">{t("common.status")}</Label>
                   <div className="flex flex-wrap items-center gap-2 mt-1">
                     <Badge variant={statusColors[selectedReturn.status || 'requested']}>
                       {statusLabels[selectedReturn.status || '']}
@@ -329,16 +331,16 @@ export default function CustomerSalesReturns() {
                   </div>
                 </div>
                 <div>
-                  <Label className="text-muted-foreground text-sm">Motivo</Label>
+                  <Label className="text-muted-foreground text-sm">{t("common.reason")}</Label>
                   <p className="font-medium">{reasonLabels[selectedReturn.reason || ''] || selectedReturn.reason}</p>
                 </div>
                 <div>
-                  <Label className="text-muted-foreground text-sm">Data Richiesta</Label>
+                  <Label className="text-muted-foreground text-sm">{t("warehouse.requestDate")}</Label>
                   <p className="font-medium">{formatDate(selectedReturn.createdAt)}</p>
                 </div>
                 {selectedReturn.refundAmount && (
                   <div>
-                    <Label className="text-muted-foreground text-sm">Rimborso</Label>
+                    <Label className="text-muted-foreground text-sm">{t("hr.reimbursement")}</Label>
                     <p className="font-medium text-green-600">{formatPrice(selectedReturn.refundAmount)}</p>
                   </div>
                 )}
@@ -357,7 +359,7 @@ export default function CustomerSalesReturns() {
                   <div className="flex items-start gap-3">
                     <AlertTriangle className="h-5 w-5 text-blue-600 mt-0.5" />
                     <div>
-                      <p className="font-medium text-blue-900 dark:text-blue-100">Reso approvato</p>
+                      <p className="font-medium text-blue-900 dark:text-blue-100">{t("b2b.returnApproved")}</p>
                       <p className="text-sm text-blue-700 dark:text-blue-300">
                         Spedisci il prodotto all'indirizzo indicato dal venditore.
                       </p>
@@ -373,7 +375,7 @@ export default function CustomerSalesReturns() {
                     <div>
                       <p className="font-medium text-green-900 dark:text-green-100">Rimborso completato</p>
                       <p className="text-sm text-green-700 dark:text-green-300">
-                        Il rimborso di {formatPrice(selectedReturn.refundAmount)} è stato effettuato.
+                        {t("returns.refundProcessedAmount", { amount: formatPrice(selectedReturn.refundAmount) })}
                       </p>
                     </div>
                   </div>
@@ -389,7 +391,7 @@ export default function CustomerSalesReturns() {
                 disabled={cancelMutation.isPending}
                 data-testid="button-cancel-return"
               >
-                {cancelMutation.isPending ? "Annullamento..." : "Annulla richiesta"}
+                {cancelMutation.isPending ? "Annullamento..." : t("transfers.cancelRequest")}
               </Button>
             )}
             <Button variant="outline" onClick={() => setShowDetailDialog(false)}>
@@ -409,7 +411,7 @@ export default function CustomerSalesReturns() {
           </DialogHeader>
           <div className="space-y-4">
             <div>
-              <Label>Ordine *</Label>
+              <Label>{t("customerPages.ordine")}</Label>
               {eligibleOrders.length === 0 ? (
                 <div className="p-4 bg-muted rounded-lg text-center text-sm text-muted-foreground">
                   Non hai ordini idonei per il reso
@@ -420,7 +422,7 @@ export default function CustomerSalesReturns() {
                   onValueChange={(v) => setNewReturnData(prev => ({ ...prev, orderId: v }))}
                 >
                   <SelectTrigger data-testid="select-order">
-                    <SelectValue placeholder="Seleziona un ordine" />
+                    <SelectValue placeholder={t("customerPages.selezionaUnOrdine")} />
                   </SelectTrigger>
                   <SelectContent>
                     {eligibleOrders.map(order => (
@@ -440,7 +442,7 @@ export default function CustomerSalesReturns() {
                 onValueChange={(v) => setNewReturnData(prev => ({ ...prev, reason: v }))}
               >
                 <SelectTrigger data-testid="select-reason">
-                  <SelectValue placeholder="Seleziona un motivo" />
+                  <SelectValue placeholder={t("customerPages.selezionaUnMotivo")} />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="defective">Prodotto difettoso</SelectItem>

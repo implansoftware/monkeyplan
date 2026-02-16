@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { WarrantyProduct } from "@shared/schema";
@@ -10,7 +11,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 const coverageLabels: Record<string, string> = {
   basic: "Base",
-  extended: "Estesa",
+  extended: t("warranties.extended"),
   full: "Completa",
 };
 
@@ -21,6 +22,7 @@ const coverageVariants: Record<string, "default" | "secondary" | "outline"> = {
 };
 
 export default function RepairCenterWarrantyProducts() {
+  const { t } = useTranslation();
   const [searchQuery, setSearchQuery] = useState("");
 
   const { data: products = [], isLoading } = useQuery<WarrantyProduct[]>({
@@ -37,7 +39,7 @@ export default function RepairCenterWarrantyProducts() {
       <div className="flex items-center gap-3 flex-wrap">
         <Shield className="h-6 w-6 text-muted-foreground" />
         <div>
-          <h1 className="text-xl sm:text-2xl font-bold" data-testid="text-page-title">Catalogo Garanzie</h1>
+          <h1 className="text-xl sm:text-2xl font-bold" data-testid="text-page-title">{t("sidebar.items.warrantyCatalog")}</h1>
           <p className="text-sm text-muted-foreground">
             Garanzie disponibili dal tuo rivenditore
           </p>
@@ -46,11 +48,11 @@ export default function RepairCenterWarrantyProducts() {
 
       <Card>
         <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 space-y-0 pb-4">
-          <CardTitle className="text-lg">Prodotti Garanzia</CardTitle>
+          <CardTitle className="text-lg">{t("sidebar.items.warrantyProducts")}</CardTitle>
           <div className="relative w-full sm:w-64">
             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
             <Input
-              placeholder="Cerca garanzie..."
+              placeholder={t("warranties.cercaGaranzie")}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-9"
@@ -68,22 +70,22 @@ export default function RepairCenterWarrantyProducts() {
           ) : filtered.length === 0 ? (
             <div className="text-center py-12 text-muted-foreground" data-testid="text-empty-state">
               {searchQuery
-                ? "Nessuna garanzia trovata per la ricerca"
-                : "Nessuna garanzia disponibile dal rivenditore"}
+                ? t("warranties.noWarrantiesFound")
+                : t("warranties.noWarrantiesAvailable")}
             </div>
           ) : (
             <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Nome</TableHead>
-                    <TableHead className="hidden sm:table-cell">Descrizione</TableHead>
-                    <TableHead>Durata</TableHead>
-                    <TableHead>Copertura</TableHead>
-                    <TableHead className="text-right">Prezzo</TableHead>
-                    <TableHead className="hidden md:table-cell">Franchigia</TableHead>
-                    <TableHead className="hidden md:table-cell">Importo Max</TableHead>
-                    <TableHead>Stato</TableHead>
+                    <TableHead>{t("common.name")}</TableHead>
+                    <TableHead className="hidden sm:table-cell">{t("common.description")}</TableHead>
+                    <TableHead>{t("common.duration")}</TableHead>
+                    <TableHead>{t("warranties.coverage")}</TableHead>
+                    <TableHead className="text-right">{t("common.price")}</TableHead>
+                    <TableHead className="hidden md:table-cell">{t("warranties.deductibleAmount")}</TableHead>
+                    <TableHead className="hidden md:table-cell">{t("warranties.importoMax")}</TableHead>
+                    <TableHead>{t("common.status")}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -114,7 +116,7 @@ export default function RepairCenterWarrantyProducts() {
                       </TableCell>
                       <TableCell>
                         <Badge variant={product.isActive ? "default" : "secondary"}>
-                          {product.isActive ? "Attivo" : "Inattivo"}
+                          {product.isActive ? t("common.active") : t("common.inactive")}
                         </Badge>
                       </TableCell>
                     </TableRow>

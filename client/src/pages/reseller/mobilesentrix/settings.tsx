@@ -12,6 +12,7 @@ import { apiRequest } from "@/lib/queryClient";
 import { Settings, Key, CheckCircle, XCircle, Loader2, TestTube, Trash2, Save, ExternalLink, Package, Shield, LogIn } from "lucide-react";
 import { Link } from "wouter";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useTranslation } from "react-i18next";
 
 type MobilesentrixCredential = {
   id: string;
@@ -32,6 +33,7 @@ type MobilesentrixCredential = {
 };
 
 export default function MobilesentrixSettingsPage() {
+  const { t } = useTranslation();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [consumerName, setConsumerName] = useState("");
@@ -84,7 +86,7 @@ export default function MobilesentrixSettingsPage() {
             }
           } catch (error: any) {
             toast({
-              title: "Errore",
+              title: t("common.error"),
               description: error.message || "Errore durante lo scambio dei token",
               variant: "destructive",
             });
@@ -112,7 +114,7 @@ export default function MobilesentrixSettingsPage() {
       setEnvironment("production");
     },
     onError: (error: Error) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -180,7 +182,7 @@ export default function MobilesentrixSettingsPage() {
       }
     },
     onError: (error: Error) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
       setIsAuthorizing(false);
     },
   });
@@ -199,7 +201,7 @@ export default function MobilesentrixSettingsPage() {
       }
     },
     onError: (error: Error) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -209,16 +211,16 @@ export default function MobilesentrixSettingsPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/mobilesentrix/credentials"] });
-      toast({ title: "Eliminato", description: "Credenziali MobileSentrix eliminate" });
+      toast({ title: t("pages.deleted"), description: "Credenziali MobileSentrix eliminate" });
     },
     onError: (error: Error) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     },
   });
 
   const handleSave = () => {
     if (!consumerName.trim() || !consumerKey.trim() || !consumerSecret.trim()) {
-      toast({ title: "Errore", description: "Compila tutti i campi obbligatori", variant: "destructive" });
+      toast({ title: t("common.error"), description: "Compila tutti i campi obbligatori", variant: "destructive" });
       return;
     }
     saveMutation.mutate();
@@ -281,7 +283,7 @@ export default function MobilesentrixSettingsPage() {
                   </Badge>
                 )}
                 <Badge variant={credential.isActive ? "default" : "secondary"}>
-                  {credential.isActive ? "Attivo" : "Disattivato"}
+                  {credential.isActive ? t("common.active") : "Disattivato"}
                 </Badge>
               </div>
             </div>
@@ -360,7 +362,7 @@ export default function MobilesentrixSettingsPage() {
                   {credential.accessToken ? (
                     <>
                       <CheckCircle className="h-4 w-4 text-green-500" />
-                      <span className="text-sm text-green-600 font-medium">Configurato</span>
+                      <span className="text-sm text-green-600 font-medium">{t("admin.resellerDetail.configured")}</span>
                     </>
                   ) : (
                     <>

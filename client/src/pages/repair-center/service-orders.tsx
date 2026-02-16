@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/use-auth";
@@ -20,29 +21,30 @@ type ServiceOrderWithDetails = ServiceOrder & {
   serviceCode: string;
 };
 
-const statusLabels: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
-  pending: { label: "In attesa", variant: "secondary" },
-  accepted: { label: "Accettato", variant: "default" },
-  scheduled: { label: "Programmato", variant: "outline" },
-  in_progress: { label: "In lavorazione", variant: "default" },
-  completed: { label: "Completato", variant: "default" },
-  cancelled: { label: "Annullato", variant: "destructive" },
-};
 
-const paymentStatusLabels: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
-  pending: { label: "Da pagare", variant: "secondary" },
-  paid: { label: "Pagato", variant: "default" },
-  cancelled: { label: "Annullato", variant: "destructive" },
-};
 
-const paymentMethodLabels: Record<string, { label: string; icon: any }> = {
-  in_person: { label: "In negozio", icon: Banknote },
-  bank_transfer: { label: "Bonifico", icon: Building },
-  card: { label: "Carta", icon: CreditCard },
-  paypal: { label: "PayPal", icon: CreditCard },
-};
 
 export default function RepairCenterServiceOrders() {
+  const { t } = useTranslation();
+  const statusLabels: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
+    pending: { label: t("b2b.status.pending"), variant: "secondary" },
+    accepted: { label: t("standalone.accepted"), variant: "default" },
+    scheduled: { label: "Programmato", variant: "outline" },
+    in_progress: { label: t("tickets.status.inProgress"), variant: "default" },
+    completed: { label: t("repairs.status.completed"), variant: "default" },
+    cancelled: { label: t("repairs.status.cancelled"), variant: "destructive" },
+  };
+  const paymentStatusLabels: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
+    pending: { label: t("serviceOrders.toPay"), variant: "secondary" },
+    paid: { label: "Pagato", variant: "default" },
+    cancelled: { label: t("repairs.status.cancelled"), variant: "destructive" },
+  };
+  const paymentMethodLabels: Record<string, { label: string; icon: any }> = {
+    in_person: { label: t("services.inNegozio"), icon: Banknote },
+    bank_transfer: { label: "Bonifico", icon: Building },
+    card: { label: t("pos.card"), icon: CreditCard },
+    paypal: { label: "PayPal", icon: CreditCard },
+  };
   const { user } = useAuth();
   const { toast } = useToast();
   const [selectedOrder, setSelectedOrder] = useState<ServiceOrderWithDetails | null>(null);
@@ -63,7 +65,7 @@ export default function RepairCenterServiceOrders() {
       toast({ title: "Lavorazione avviata" });
     },
     onError: (error: Error) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("auth.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -79,7 +81,7 @@ export default function RepairCenterServiceOrders() {
       toast({ title: "Intervento completato" });
     },
     onError: (error: Error) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("auth.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -106,8 +108,8 @@ export default function RepairCenterServiceOrders() {
     <div className="container mx-auto p-4 sm:p-6 space-y-4 sm:space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold" data-testid="text-page-title">Ordini Intervento</h1>
-          <p className="text-muted-foreground">Gestisci gli interventi assegnati al tuo centro</p>
+          <h1 className="text-2xl font-bold" data-testid="text-page-title">{t("services.ordiniIntervento")}</h1>
+          <p className="text-muted-foreground">{t("services.gestisciGliInterventiAssegnatiAlTuoCentro")}</p>
         </div>
       </div>
 
@@ -131,14 +133,14 @@ export default function RepairCenterServiceOrders() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Ordine</TableHead>
-                    <TableHead>Cliente</TableHead>
-                    <TableHead>Servizio</TableHead>
-                    <TableHead className="hidden md:table-cell">Dispositivo</TableHead>
-                    <TableHead>Importo</TableHead>
-                    <TableHead>Stato</TableHead>
-                    <TableHead className="hidden sm:table-cell">Pagamento</TableHead>
-                    <TableHead>Azioni</TableHead>
+                    <TableHead>{t("common.order")}</TableHead>
+                    <TableHead>{t("auth.customerTab")}</TableHead>
+                    <TableHead>{t("common.service")}</TableHead>
+                    <TableHead className="hidden md:table-cell">{t("repairs.device")}</TableHead>
+                    <TableHead>{t("common.amount")}</TableHead>
+                    <TableHead>{t("common.status")}</TableHead>
+                    <TableHead className="hidden sm:table-cell">{t("common.payment")}</TableHead>
+                    <TableHead>{t("common.actions")}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -246,21 +248,21 @@ export default function RepairCenterServiceOrders() {
         <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle>Dettaglio Ordine {selectedOrder?.orderNumber}</DialogTitle>
-            <DialogDescription>Informazioni complete sull'ordine di intervento</DialogDescription>
+            <DialogDescription>{t("utility.serviceOrderInfo")}</DialogDescription>
           </DialogHeader>
           {selectedOrder && (
             <div className="space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="text-sm font-medium text-muted-foreground">Cliente</label>
+                  <label className="text-sm font-medium text-muted-foreground">{t("auth.customerTab")}</label>
                   <p>{selectedOrder.customerName}</p>
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-muted-foreground">Servizio</label>
+                  <label className="text-sm font-medium text-muted-foreground">{t("common.service")}</label>
                   <p>{selectedOrder.serviceName}</p>
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-muted-foreground">Dispositivo</label>
+                  <label className="text-sm font-medium text-muted-foreground">{t("repairs.device")}</label>
                   <p>{selectedOrder.brand} {selectedOrder.model || "-"}</p>
                 </div>
                 <div>
@@ -268,11 +270,11 @@ export default function RepairCenterServiceOrders() {
                   <p>{selectedOrder.imei || selectedOrder.serial || "-"}</p>
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-muted-foreground">Importo</label>
+                  <label className="text-sm font-medium text-muted-foreground">{t("common.amount")}</label>
                   <p className="font-medium">{formatPrice(selectedOrder.priceCents)}</p>
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-muted-foreground">Stato Pagamento</label>
+                  <label className="text-sm font-medium text-muted-foreground">{t("services.statoPagamento")}</label>
                   <Badge variant={paymentStatusLabels[selectedOrder.paymentStatus]?.variant || "secondary"}>
                     {paymentStatusLabels[selectedOrder.paymentStatus]?.label}
                   </Badge>
@@ -293,7 +295,7 @@ export default function RepairCenterServiceOrders() {
             </div>
           )}
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsDetailOpen(false)}>Chiudi</Button>
+            <Button variant="outline" onClick={() => setIsDetailOpen(false)}>{t("common.close")}</Button>
             {selectedOrder?.status === "in_progress" && (
               <Button onClick={() => completeMutation.mutate(selectedOrder.id)} disabled={completeMutation.isPending}>
                 <Check className="w-4 h-4 mr-1" />

@@ -36,6 +36,7 @@ import { useState } from "react";
 import { Link } from "wouter";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { useTranslation } from "react-i18next";
 
 interface PriceList {
   id: string;
@@ -52,6 +53,7 @@ interface PriceList {
 }
 
 export default function AdminPriceLists() {
+  const { t } = useTranslation();
   const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState("");
   const [ownerTypeFilter, setOwnerTypeFilter] = useState<string>("all");
@@ -76,13 +78,13 @@ export default function AdminPriceLists() {
       setNewListDescription("");
       setNewListTargetAudience("reseller");
       toast({
-        title: "Listino creato",
-        description: "Il nuovo listino prezzi è stato creato con successo.",
+        title: t("products.priceListCreatedTitle"),
+        description: t("products.priceListCreated"),
       });
     },
     onError: (error: any) => {
       toast({
-        title: "Errore",
+        title: t("common.error"),
         description: error.message || "Errore durante la creazione del listino.",
         variant: "destructive",
       });
@@ -92,8 +94,8 @@ export default function AdminPriceLists() {
   const handleCreateList = () => {
     if (!newListName.trim()) {
       toast({
-        title: "Errore",
-        description: "Il nome del listino è obbligatorio.",
+        title: t("common.error"),
+        description: t("products.priceListNameRequired"),
         variant: "destructive",
       });
       return;
@@ -146,7 +148,7 @@ export default function AdminPriceLists() {
       case "sub_reseller":
         return <Badge variant="secondary">Sub-Reseller</Badge>;
       case "repair_center":
-        return <Badge variant="secondary">Centro Riparazione</Badge>;
+        return <Badge variant="secondary">{t("roles.repairCenter")}</Badge>;
       default:
         return <Badge variant="outline">{ownerType}</Badge>;
     }
@@ -161,9 +163,9 @@ export default function AdminPriceLists() {
       case "repair_center":
         return <Badge variant="outline" className="border-green-500 text-green-600">Centri Riparazione</Badge>;
       case "customer":
-        return <Badge variant="outline" className="border-purple-500 text-purple-600">Clienti</Badge>;
+        return <Badge variant="outline" className="border-purple-500 text-purple-600">{t("sidebar.items.customers")}</Badge>;
       case "all":
-        return <Badge variant="outline" className="border-gray-500">Tutti</Badge>;
+        return <Badge variant="outline" className="border-gray-500">{t("common.allMasc")}</Badge>;
       default:
         return <Badge variant="outline">{target}</Badge>;
     }
@@ -200,14 +202,14 @@ export default function AdminPriceLists() {
           </DialogTrigger>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>Crea Nuovo Listino</DialogTitle>
+              <DialogTitle>{t("products.createPriceList")}</DialogTitle>
               <DialogDescription>
                 Crea un listino prezzi per i reseller che acquistano da te
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-4 py-4">
               <div className="space-y-2">
-                <Label htmlFor="name">Nome Listino</Label>
+                <Label htmlFor="name">{t("products.priceListName")}</Label>
                 <Input
                   id="name"
                   placeholder="es. Listino Reseller 2026"
@@ -217,27 +219,27 @@ export default function AdminPriceLists() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="description">Descrizione</Label>
+                <Label htmlFor="description">{t("common.description")}</Label>
                 <Textarea
                   id="description"
-                  placeholder="Descrizione opzionale..."
+                  placeholder={t("utility.optionalDescription")}
                   value={newListDescription}
                   onChange={(e) => setNewListDescription(e.target.value)}
                   data-testid="input-new-list-description"
                 />
               </div>
               <div className="space-y-2">
-                <Label>Target Audience</Label>
+                <Label>Target</Label>
                 <Select value={newListTargetAudience} onValueChange={setNewListTargetAudience}>
                   <SelectTrigger data-testid="select-new-list-target">
-                    <SelectValue placeholder="Seleziona target" />
+                    <SelectValue placeholder={t("products.selectTarget")} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="reseller">Reseller (acquisti B2B)</SelectItem>
+                    <SelectItem value="reseller">Reseller ({t("b2b.purchases")})</SelectItem>
                     <SelectItem value="sub_reseller">Sub-Reseller</SelectItem>
-                    <SelectItem value="repair_center">Centri Riparazione</SelectItem>
-                    <SelectItem value="customer">Clienti</SelectItem>
-                    <SelectItem value="all">Tutti</SelectItem>
+                    <SelectItem value="repair_center">{t("admin.repairCenters.repairCenters")}</SelectItem>
+                    <SelectItem value="customer">{t("sidebar.items.customers")}</SelectItem>
+                    <SelectItem value="all">{t("common.allMasc")}</SelectItem>
                   </SelectContent>
                 </Select>
                 <p className="text-xs text-muted-foreground">
@@ -274,11 +276,11 @@ export default function AdminPriceLists() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Nome Listino</TableHead>
+                  <TableHead>{t("products.priceListName")}</TableHead>
                   <TableHead>Target</TableHead>
-                  <TableHead>Stato</TableHead>
-                  <TableHead>Creato</TableHead>
-                  <TableHead className="text-right">Azioni</TableHead>
+                  <TableHead>{t("common.status")}</TableHead>
+                  <TableHead>{t("common.created")}</TableHead>
+                  <TableHead className="text-right">{t("common.actions")}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -300,9 +302,9 @@ export default function AdminPriceLists() {
                     <TableCell>{getTargetAudienceBadge(list.targetAudience)}</TableCell>
                     <TableCell>
                       {list.isActive ? (
-                        <Badge variant="default" className="bg-green-500">Attivo</Badge>
+                        <Badge variant="default" className="bg-green-500">{t("common.active")}</Badge>
                       ) : (
-                        <Badge variant="secondary">Inattivo</Badge>
+                        <Badge variant="secondary">{t("common.inactive")}</Badge>
                       )}
                     </TableCell>
                     <TableCell className="text-muted-foreground">
@@ -338,7 +340,7 @@ export default function AdminPriceLists() {
             <div className="relative flex-1 min-w-[200px]">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Cerca per nome, proprietario..."
+                placeholder={t("common.search")}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="pl-10"
@@ -347,25 +349,25 @@ export default function AdminPriceLists() {
             </div>
             <Select value={ownerTypeFilter} onValueChange={setOwnerTypeFilter}>
               <SelectTrigger className="w-full sm:w-[180px]" data-testid="select-owner-type">
-                <SelectValue placeholder="Tipo Proprietario" />
+                <SelectValue placeholder={t("warehouse.ownerType")} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">Tutti i tipi</SelectItem>
+                <SelectItem value="all">{t("common.allTypes")}</SelectItem>
                 <SelectItem value="reseller">Reseller</SelectItem>
                 <SelectItem value="sub_reseller">Sub-Reseller</SelectItem>
-                <SelectItem value="repair_center">Centro Riparazione</SelectItem>
+                <SelectItem value="repair_center">{t("roles.repairCenter")}</SelectItem>
               </SelectContent>
             </Select>
             <Select value={targetAudienceFilter} onValueChange={setTargetAudienceFilter}>
               <SelectTrigger className="w-full sm:w-[180px]" data-testid="select-target-audience">
-                <SelectValue placeholder="Target Audience" />
+                <SelectValue placeholder="Target" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">Tutti i target</SelectItem>
+                <SelectItem value="all">{t("common.all")}</SelectItem>
                 <SelectItem value="reseller">Reseller</SelectItem>
                 <SelectItem value="sub_reseller">Sub-Reseller</SelectItem>
-                <SelectItem value="repair_center">Centri Riparazione</SelectItem>
-                <SelectItem value="customer">Clienti</SelectItem>
+                <SelectItem value="repair_center">{t("admin.repairCenters.repairCenters")}</SelectItem>
+                <SelectItem value="customer">{t("sidebar.items.customers")}</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -373,13 +375,13 @@ export default function AdminPriceLists() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Nome Listino</TableHead>
-                <TableHead>Proprietario</TableHead>
-                <TableHead>Tipo</TableHead>
+                <TableHead>{t("products.priceListName")}</TableHead>
+                <TableHead>{t("warehouse.owner")}</TableHead>
+                <TableHead>{t("common.type")}</TableHead>
                 <TableHead>Target</TableHead>
-                <TableHead>Stato</TableHead>
-                <TableHead>Creato</TableHead>
-                <TableHead className="text-right">Azioni</TableHead>
+                <TableHead>{t("common.status")}</TableHead>
+                <TableHead>{t("common.created")}</TableHead>
+                <TableHead className="text-right">{t("common.actions")}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -415,9 +417,9 @@ export default function AdminPriceLists() {
                     <TableCell>{getTargetAudienceBadge(list.targetAudience)}</TableCell>
                     <TableCell>
                       {list.isActive ? (
-                        <Badge variant="default" className="bg-green-500">Attivo</Badge>
+                        <Badge variant="default" className="bg-green-500">{t("common.active")}</Badge>
                       ) : (
-                        <Badge variant="secondary">Inattivo</Badge>
+                        <Badge variant="secondary">{t("common.inactive")}</Badge>
                       )}
                     </TableCell>
                     <TableCell className="text-muted-foreground">

@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useQuery } from "@tanstack/react-query";
@@ -28,13 +29,13 @@ type SupplierOrderWithDetails = {
 };
 
 const statusLabels: Record<string, string> = {
-  draft: "Bozza",
+  draft: t("common.draft"),
   sent: "Inviato",
-  confirmed: "Confermato",
+  confirmed: t("common.confirmed"),
   shipped: "Spedito",
   partially_received: "Parziale",
   received: "Ricevuto",
-  cancelled: "Annullato",
+  cancelled: t("common.cancelled"),
 };
 
 const statusVariants: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
@@ -48,6 +49,7 @@ const statusVariants: Record<string, "default" | "secondary" | "destructive" | "
 };
 
 export default function RepairCenterSupplierOrders() {
+  const { t } = useTranslation();
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
 
@@ -93,7 +95,7 @@ export default function RepairCenterSupplierOrders() {
               <ClipboardList className="h-5 w-5 sm:h-7 sm:w-7 text-white" />
             </div>
             <div>
-              <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-white tracking-tight" data-testid="text-page-title">Ordini Fornitori</h1>
+              <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-white tracking-tight" data-testid="text-page-title">{t("admin.permissions.supplierOrders")}</h1>
               <p className="text-emerald-100">Gestione ordini a fornitori</p>
             </div>
           </div>
@@ -115,7 +117,7 @@ export default function RepairCenterSupplierOrders() {
             <div className="relative w-full sm:w-64">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
-                placeholder="Cerca ordine..."
+                placeholder={t("common.searchSalesOrder")}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-9"
@@ -124,10 +126,10 @@ export default function RepairCenterSupplierOrders() {
             </div>
             <Select value={statusFilter} onValueChange={setStatusFilter}>
               <SelectTrigger className="w-40" data-testid="select-status-filter">
-                <SelectValue placeholder="Stato" />
+                <SelectValue placeholder={t("common.status")} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">Tutti gli stati</SelectItem>
+                <SelectItem value="all">{t("common.allStatuses")}</SelectItem>
                 {Object.entries(statusLabels).map(([value, label]) => (
                   <SelectItem key={value} value={value}>
                     {label}
@@ -141,7 +143,7 @@ export default function RepairCenterSupplierOrders() {
           {filteredOrders.length === 0 ? (
             <div className="text-center py-12 text-muted-foreground">
               <ShoppingCart className="h-12 w-12 mx-auto mb-4 opacity-50" />
-              <p>Nessun ordine trovato</p>
+              <p>{t("common.noSalesOrdersFound")}</p>
               <p className="text-sm mt-1">Gli ordini ricambi ai fornitori appariranno qui</p>
             </div>
           ) : (
@@ -149,12 +151,12 @@ export default function RepairCenterSupplierOrders() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Numero Ordine</TableHead>
-                  <TableHead>Fornitore</TableHead>
-                  <TableHead>Stato</TableHead>
-                  <TableHead>Totale</TableHead>
-                  <TableHead className="hidden md:table-cell">Data Ordine</TableHead>
-                  <TableHead className="hidden lg:table-cell">Consegna Prevista</TableHead>
+                  <TableHead>{t("repairs.orderNumber")}</TableHead>
+                  <TableHead>{t("common.supplier")}</TableHead>
+                  <TableHead>{t("common.status")}</TableHead>
+                  <TableHead>{t("common.total")}</TableHead>
+                  <TableHead className="hidden md:table-cell">{t("b2b.orderDate")}</TableHead>
+                  <TableHead className="hidden lg:table-cell">{t("suppliers.expectedDelivery")}</TableHead>
                   <TableHead className="hidden lg:table-cell">Tracking</TableHead>
                 </TableRow>
               </TableHeader>

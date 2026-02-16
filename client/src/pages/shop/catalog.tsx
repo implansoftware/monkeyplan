@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useParams, useLocation } from "wouter";
+import { useTranslation } from "react-i18next";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,6 +14,7 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import type { Product } from "@shared/schema";
 
 export default function ShopCatalog() {
+  const { t } = useTranslation();
   const { resellerId } = useParams<{ resellerId: string }>();
   const [, setLocation] = useLocation();
   const { toast } = useToast();
@@ -28,7 +30,7 @@ export default function ShopCatalog() {
       if (search) params.set('search', search);
       if (typeFilter && typeFilter !== 'all') params.set('type', typeFilter);
       const res = await fetch(`/api/shop/${resellerId}/products?${params}`);
-      if (!res.ok) throw new Error('Errore nel caricamento prodotti');
+      if (!res.ok) throw new Error(t("shop.catalog.errorLoading"));
       return res.json();
     }
   });
@@ -47,10 +49,10 @@ export default function ShopCatalog() {
   const addToCart = async (productId: string) => {
     try {
       await apiRequest('POST', `/api/shop/${resellerId}/cart/items`, { productId, quantity: 1 });
-      toast({ title: "Prodotto aggiunto al carrello" });
+      toast({ title: t("shop.catalog.addedToCart") });
       queryClient.invalidateQueries({ queryKey: ['/api/shop', resellerId, 'cart'] });
     } catch (error: any) {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("shop.catalog.error"), description: error.message, variant: "destructive" });
     }
   };
 
@@ -62,8 +64,8 @@ export default function ShopCatalog() {
     <div className="space-y-6 p-4 md:p-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between flex-wrap">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight" data-testid="text-shop-title">Shop</h1>
-          <p className="text-sm text-muted-foreground">Scopri i nostri prodotti</p>
+          <h1 className="text-2xl font-bold tracking-tight" data-testid="text-shop-title">{t("shop.catalog.title")}</h1>
+          <p className="text-sm text-muted-foreground">{t("shop.catalog.subtitle")}</p>
         </div>
 
         <Button
@@ -73,7 +75,7 @@ export default function ShopCatalog() {
           data-testid="button-go-to-cart"
         >
           <ShoppingCart className="mr-2 h-4 w-4" />
-          Carrello
+          {t("shop.catalog.cart")}
           {cartItemCount > 0 && (
             <Badge variant="default" className="ml-2 no-default-hover-elevate no-default-active-elevate" data-testid="badge-cart-count">
               {cartItemCount}
@@ -86,7 +88,7 @@ export default function ShopCatalog() {
         <div className="relative flex-1 min-w-[200px]">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder="Cerca prodotti..."
+            placeholder={t("shop.catalog.searchPlaceholder")}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="pl-10"
@@ -97,13 +99,13 @@ export default function ShopCatalog() {
         <Select value={typeFilter} onValueChange={setTypeFilter}>
           <SelectTrigger className="w-full sm:w-[180px]" data-testid="select-type-filter">
             <Filter className="mr-2 h-4 w-4" />
-            <SelectValue placeholder="Tipo prodotto" />
+            <SelectValue placeholder={t("shop.catalog.productType")} />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">Tutti</SelectItem>
-            <SelectItem value="dispositivo">Dispositivi</SelectItem>
-            <SelectItem value="accessorio">Accessori</SelectItem>
-            <SelectItem value="ricambio">Ricambi</SelectItem>
+            <SelectItem value="all">{t("shop.catalog.filterAll")}</SelectItem>
+            <SelectItem value="dispositivo">{t("shop.catalog.filterDevices")}</SelectItem>
+            <SelectItem value="accessorio">{t("shop.catalog.filterAccessories")}</SelectItem>
+            <SelectItem value="ricambio">{t("shop.catalog.filterParts")}</SelectItem>
           </SelectContent>
         </Select>
 
@@ -164,8 +166,8 @@ export default function ShopCatalog() {
           <div className="rounded-full bg-muted p-6 mb-4">
             <Package className="h-10 w-10 text-muted-foreground" />
           </div>
-          <p className="text-lg font-medium mb-1">Nessun prodotto trovato</p>
-          <p className="text-sm text-muted-foreground">Prova a modificare i filtri di ricerca</p>
+          <p className="text-lg font-medium mb-1">{t("shop.catalog.noProducts")}</p>
+          <p className="text-sm text-muted-foreground">{t("shop.catalog.noProductsHint")}</p>
         </div>
       ) : (
         <div className={`grid gap-4 ${viewMode === 'grid' ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4' : 'grid-cols-1'}`}>
@@ -217,7 +219,7 @@ export default function ShopCatalog() {
                     data-testid={`button-add-to-cart-${product.id}`}
                   >
                     <ShoppingCart className="mr-2 h-4 w-4" />
-                    Aggiungi al carrello
+                    {t("shop.catalog.addToCart")}
                   </Button>
                 </CardFooter>
               </Card>
@@ -270,7 +272,7 @@ export default function ShopCatalog() {
                       data-testid={`button-add-to-cart-${product.id}`}
                     >
                       <ShoppingCart className="mr-2 h-4 w-4" />
-                      Aggiungi
+                      {t("shop.catalog.addShort")}
                     </Button>
                   </div>
                 </CardContent>
@@ -282,7 +284,7 @@ export default function ShopCatalog() {
 
       {data?.total && data.total > 0 && (
         <p className="text-center text-sm text-muted-foreground">
-          {data.products.length} di {data.total} prodotti
+          {t("shop.catalog.showingProducts", { shown: data.products.length, total: data.total })}
         </p>
       )}
     </div>

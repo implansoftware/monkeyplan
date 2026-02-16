@@ -22,6 +22,7 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import type { AccessorySpecs, Product, DeviceModel, DeviceBrand } from "@shared/schema";
 import { AccessoryWizard } from "@/components/AccessoryWizard";
+import { useTranslation } from "react-i18next";
 
 type DeviceCompatibilityEntry = {
   deviceBrandId: string;
@@ -76,19 +77,20 @@ const ACCESSORY_TYPES = [
   { value: "supporto", label: "Supporti", icon: Package },
   { value: "adattatore", label: "Adattatori", icon: Cable },
   { value: "memoria", label: "Schede Memoria", icon: Package },
-  { value: "altro", label: "Altro", icon: Package },
+  { value: "altro", label: t("common.other"), icon: Package },
 ];
 
 const CONDITION_OPTIONS = [
-  { value: "nuovo", label: "Nuovo" },
-  { value: "ricondizionato", label: "Ricondizionato" },
-  { value: "usato", label: "Usato" },
+  { value: "nuovo", label: t("common.new") },
+  { value: "ricondizionato", label: t("products.refurbished") },
+  { value: "usato", label: t("products.used") },
   { value: "difettoso", label: "Difettoso" },
 ];
 
 const BRANDS = ["Apple", "Samsung", "Xiaomi", "Huawei", "OPPO", "OnePlus", "Google", "Universale", "Altro"];
 
 export default function AccessoryCatalog() {
+  const { t } = useTranslation();
   const [searchQuery, setSearchQuery] = useState("");
   const [typeFilter, setTypeFilter] = useState<string>("all");
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -185,10 +187,10 @@ export default function AccessoryCatalog() {
       queryClient.invalidateQueries({ queryKey: ["/api/device-brands"] });
       setNewBrandDialogOpen(false);
       setNewBrandName("");
-      toast({ title: "Brand creato", description: `"${newBrand.name}" aggiunto con successo` });
+      toast({ title: t("products.brandCreated"), description: `"${newBrand.name}" aggiunto con successo` });
     },
     onError: (error: Error) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -209,10 +211,10 @@ export default function AccessoryCatalog() {
           return newSet;
         });
       }
-      toast({ title: "Modello creato", description: `"${newModel.modelName}" aggiunto con successo` });
+      toast({ title: t("products.modelCreated"), description: `"${newModel.modelName}" aggiunto con successo` });
     },
     onError: (error: Error) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -328,10 +330,10 @@ export default function AccessoryCatalog() {
       queryClient.invalidateQueries({ queryKey: ["/api/accessories"] });
       setDialogOpen(false);
       resetForm();
-      toast({ title: "Accessorio aggiunto", description: "L'accessorio è stato aggiunto al catalogo." });
+      toast({ title: t("products.accessoryAdded"), description: t("products.accessoryAddedDesc") });
     },
     onError: (error: any) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -352,7 +354,7 @@ export default function AccessoryCatalog() {
       toast({ title: "Accessorio aggiornato", description: "Le modifiche sono state salvate." });
     },
     onError: (error: any) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -371,10 +373,10 @@ export default function AccessoryCatalog() {
       queryClient.invalidateQueries({ queryKey: ["/api/accessories"] });
       setDeleteDialogOpen(false);
       setAccessoryToDelete(null);
-      toast({ title: "Eliminato", description: "L'accessorio è stato rimosso dal catalogo." });
+      toast({ title: t("pages.deleted"), description: "L'accessorio è stato rimosso dal catalogo." });
     },
     onError: (error: any) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -390,7 +392,7 @@ export default function AccessoryCatalog() {
       toast({ title: "Salvato", description: "Impostazioni Marketplace aggiornate." });
     },
     onError: (error: any) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -416,11 +418,11 @@ export default function AccessoryCatalog() {
     const file = e.target.files?.[0];
     if (file) {
       if (!["image/jpeg", "image/png", "image/webp", "image/gif"].includes(file.type)) {
-        toast({ title: "Errore", description: "Formato non supportato. Usa JPEG, PNG, WebP o GIF.", variant: "destructive" });
+        toast({ title: t("common.error"), description: "Formato non supportato. Usa JPEG, PNG, WebP o GIF.", variant: "destructive" });
         return;
       }
       if (file.size > 10 * 1024 * 1024) {
-        toast({ title: "Errore", description: "Immagine troppo grande. Max 10MB.", variant: "destructive" });
+        toast({ title: t("common.error"), description: "Immagine troppo grande. Max 10MB.", variant: "destructive" });
         return;
       }
       setImageFile(file);
@@ -441,9 +443,9 @@ export default function AccessoryCatalog() {
       });
       if (!response.ok) throw new Error(await response.text());
       queryClient.invalidateQueries({ queryKey: ["/api/accessories"] });
-      toast({ title: "Immagine caricata", description: "L'immagine è stata salvata." });
+      toast({ title: t("products.imageUploaded"), description: t("products.imageSaved") });
     } catch (error: any) {
-      toast({ title: "Errore upload", description: error.message, variant: "destructive" });
+      toast({ title: t("tickets.uploadError"), description: error.message, variant: "destructive" });
     } finally {
       setUploadingImage(false);
       setImageFile(null);
@@ -459,9 +461,9 @@ export default function AccessoryCatalog() {
       });
       if (!response.ok) throw new Error(await response.text());
       queryClient.invalidateQueries({ queryKey: ["/api/accessories"] });
-      toast({ title: "Immagine rimossa" });
+      toast({ title: t("products.imageRemoved") });
     } catch (error: any) {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     }
   };
 
@@ -554,7 +556,7 @@ export default function AccessoryCatalog() {
   const addEditStock = (warehouseId: string) => {
     const warehouse = accessibleWarehouses.find(w => w.id === warehouseId);
     if (!warehouse) {
-      toast({ title: "Errore", description: "Magazzino non trovato", variant: "destructive" });
+      toast({ title: t("common.error"), description: "Magazzino non trovato", variant: "destructive" });
       return;
     }
     setEditStock(prev => {
@@ -664,7 +666,7 @@ export default function AccessoryCatalog() {
             ));
           } catch (stockError: any) {
             toast({ 
-              title: "Attenzione", 
+              title: t("common.warning"), 
               description: "Accessorio salvato ma alcune giacenze non sono state aggiornate", 
               variant: "destructive" 
             });
@@ -711,7 +713,7 @@ export default function AccessoryCatalog() {
               <Package className="h-6 w-6 text-white" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold tracking-tight text-white">Catalogo Accessori</h1>
+              <h1 className="text-2xl font-bold tracking-tight text-white">{t("products.accessoryCatalog")}</h1>
               <p className="text-sm text-white/80">Gestisci cover, caricatori, cavi, auricolari e altri accessori</p>
             </div>
           </div>
@@ -738,10 +740,10 @@ export default function AccessoryCatalog() {
             </div>
             <Select value={typeFilter} onValueChange={setTypeFilter}>
               <SelectTrigger className="w-44" data-testid="select-type-filter">
-                <SelectValue placeholder="Tipo" />
+                <SelectValue placeholder={t("common.type")} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">Tutti i tipi</SelectItem>
+                <SelectItem value="all">{t("common.allTypes")}</SelectItem>
                 {ACCESSORY_TYPES.map((t) => (
                   <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>
                 ))}
@@ -759,7 +761,7 @@ export default function AccessoryCatalog() {
           ) : filteredAccessories.length === 0 ? (
             <div className="text-center py-12 text-muted-foreground">
               <Package className="mx-auto h-12 w-12 mb-4 opacity-50" />
-              <p>Nessun accessorio nel catalogo</p>
+              <p>{t("products.noAccessories")}</p>
               <p className="text-sm">Clicca "Aggiungi Accessorio" per iniziare</p>
             </div>
           ) : (
@@ -768,16 +770,16 @@ export default function AccessoryCatalog() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="w-16">Foto</TableHead>
-                    <TableHead>Accessorio</TableHead>
+                    <TableHead className="w-16">{t("common.photo")}</TableHead>
+                    <TableHead>{t("products.accessory")}</TableHead>
                     <TableHead>Barcode</TableHead>
-                    <TableHead>Tipo</TableHead>
-                    <TableHead>Compatibilità</TableHead>
-                    <TableHead>Materiale</TableHead>
-                    <TableHead>Fornitore</TableHead>
-                    <TableHead className="text-right">Prezzo</TableHead>
-                    <TableHead className="text-center">Marketplace</TableHead>
-                    <TableHead className="w-24">Azioni</TableHead>
+                    <TableHead>{t("common.type")}</TableHead>
+                    <TableHead>{t("products.compatibility")}</TableHead>
+                    <TableHead>{t("products.material")}</TableHead>
+                    <TableHead>{t("common.supplier")}</TableHead>
+                    <TableHead className="text-right">{t("common.price")}</TableHead>
+                    <TableHead className="text-center">{t("marketplace.title")}</TableHead>
+                    <TableHead className="w-24">{t("common.actions")}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -820,7 +822,7 @@ export default function AccessoryCatalog() {
                         </TableCell>
                         <TableCell>
                           {accessory.specs?.isUniversal ? (
-                            <Badge variant="secondary">Universale</Badge>
+                            <Badge variant="secondary">{t("products.universal")}</Badge>
                           ) : accessory.deviceCompatibilities && accessory.deviceCompatibilities.length > 0 ? (
                             <div className="flex flex-wrap gap-1">
                               {accessory.deviceCompatibilities.slice(0, 3).map((dc, i) => (
@@ -871,7 +873,7 @@ export default function AccessoryCatalog() {
                                 >
                                   <Store className="h-3 w-3" />
                                   {(accessory as any).isMarketplaceEnabled ? (
-                                    <Badge variant="default" className="text-xs">Attivo</Badge>
+                                    <Badge variant="default" className="text-xs">{t("common.active")}</Badge>
                                   ) : (
                                     <Badge variant="secondary" className="text-xs">Off</Badge>
                                   )}
@@ -962,10 +964,10 @@ export default function AccessoryCatalog() {
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="brand">Marca</Label>
+                <Label htmlFor="brand">{t("products.brand")}</Label>
                 <Select value={formData.brand} onValueChange={(v) => setFormData({ ...formData, brand: v })}>
                   <SelectTrigger data-testid="select-accessory-brand">
-                    <SelectValue placeholder="Seleziona marca" />
+                    <SelectValue placeholder={t("products.selectBrand")} />
                   </SelectTrigger>
                   <SelectContent>
                     {BRANDS.map((b) => (
@@ -975,7 +977,7 @@ export default function AccessoryCatalog() {
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="condition">Condizione</Label>
+                <Label htmlFor="condition">{t("products.condition")}</Label>
                 <Select value={formData.condition} onValueChange={(v) => setFormData({ ...formData, condition: v })}>
                   <SelectTrigger data-testid="select-accessory-condition">
                     <SelectValue />
@@ -991,10 +993,10 @@ export default function AccessoryCatalog() {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="color">Colore</Label>
+                <Label htmlFor="color">{t("products.color")}</Label>
                 <Select value={formData.color} onValueChange={(v) => setFormData({ ...formData, color: v })}>
                   <SelectTrigger data-testid="select-accessory-color">
-                    <SelectValue placeholder="Seleziona colore" />
+                    <SelectValue placeholder={t("products.selectColor")} />
                   </SelectTrigger>
                   <SelectContent>
                     {COLOR_OPTIONS.map((c) => (
@@ -1004,10 +1006,10 @@ export default function AccessoryCatalog() {
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="material">Materiale</Label>
+                <Label htmlFor="material">{t("products.material")}</Label>
                 <Select value={formData.material} onValueChange={(v) => setFormData({ ...formData, material: v })}>
                   <SelectTrigger data-testid="select-accessory-material">
-                    <SelectValue placeholder="Seleziona materiale" />
+                    <SelectValue placeholder={t("products.selectMaterial")} />
                   </SelectTrigger>
                   <SelectContent>
                     {MATERIAL_OPTIONS.map((m) => (
@@ -1035,7 +1037,7 @@ export default function AccessoryCatalog() {
             {!formData.isUniversal && (
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <Label>Dispositivi Compatibili</Label>
+                  <Label>{t("products.compatibleDevices")}</Label>
                   <div className="flex gap-1">
                     <Button
                       type="button"
@@ -1054,9 +1056,7 @@ export default function AccessoryCatalog() {
                       onClick={() => setNewModelDialogOpen(true)}
                       data-testid="button-new-model"
                     >
-                      <Plus className="h-3 w-3 mr-1" />
-                      Modello
-                    </Button>
+                      <Plus className="h-3 w-3 mr-1" />{t("products.model")}</Button>
                   </div>
                 </div>
                 <p className="text-xs text-muted-foreground mb-2">
@@ -1168,7 +1168,7 @@ export default function AccessoryCatalog() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="warrantyMonths">Garanzia (mesi)</Label>
+                <Label htmlFor="warrantyMonths">{t("products.warrantyMonths")}</Label>
                 <Input
                   id="warrantyMonths"
                   type="number"
@@ -1181,13 +1181,13 @@ export default function AccessoryCatalog() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="supplierId">Fornitore Preferito</Label>
+              <Label htmlFor="supplierId">{t("products.preferredSupplier")}</Label>
               <Select value={formData.supplierId || "none"} onValueChange={(v) => setFormData({ ...formData, supplierId: v === "none" ? "" : v })}>
                 <SelectTrigger data-testid="select-accessory-supplier">
                   <SelectValue placeholder="Seleziona fornitore (opzionale)" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="none">Nessuno</SelectItem>
+                  <SelectItem value="none">{t("common.none")}</SelectItem>
                   {suppliers.map((s) => (
                     <SelectItem key={s.id} value={s.id}>{s.name} ({s.code})</SelectItem>
                   ))}
@@ -1196,12 +1196,12 @@ export default function AccessoryCatalog() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="description">Descrizione</Label>
+              <Label htmlFor="description">{t("common.description")}</Label>
               <Textarea
                 id="description"
                 value={formData.description}
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                placeholder="Descrizione del prodotto..."
+                placeholder={t("products.productDescription")}
                 rows={2}
                 data-testid="textarea-accessory-description"
               />
@@ -1213,7 +1213,7 @@ export default function AccessoryCatalog() {
                 id="notes"
                 value={formData.notes}
                 onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                placeholder="Note per uso interno..."
+                placeholder={t("products.internalNotes")}
                 rows={2}
                 data-testid="textarea-accessory-notes"
               />
@@ -1315,7 +1315,7 @@ export default function AccessoryCatalog() {
                     onValueChange={(val) => addEditStock(val)}
                   >
                     <SelectTrigger className="w-full sm:w-[200px]" data-testid="select-add-warehouse">
-                      <SelectValue placeholder="Aggiungi magazzino..." />
+                      <SelectValue placeholder={t("warehouse.addWarehouse")} />
                     </SelectTrigger>
                     <SelectContent>
                       {accessibleWarehouses
@@ -1414,16 +1414,14 @@ export default function AccessoryCatalog() {
           </div>
 
           <DialogFooter>
-            <Button variant="outline" onClick={() => { setDialogOpen(false); setEditingAccessory(null); }}>
-              Annulla
-            </Button>
+            <Button variant="outline" onClick={() => { setDialogOpen(false); setEditingAccessory(null); }}>{t("common.cancel")}</Button>
             <Button
               onClick={handleSubmit}
               disabled={!formData.name || !formData.sku || !formData.unitPrice || createMutation.isPending || updateMutation.isPending}
               data-testid="button-save-accessory"
             >
               {(createMutation.isPending || updateMutation.isPending) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              {editingAccessory ? "Salva Modifiche" : "Aggiungi"}
+              {editingAccessory ? t("profile.saveChanges") : t("common.add")}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -1432,15 +1430,13 @@ export default function AccessoryCatalog() {
       <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Conferma Eliminazione</DialogTitle>
+            <DialogTitle>{t("admin.teams.deleteConfirm")}</DialogTitle>
             <DialogDescription>
               Sei sicuro di voler eliminare "{accessoryToDelete?.name}"? Questa azione non può essere annullata.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>
-              Annulla
-            </Button>
+            <Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>{t("common.cancel")}</Button>
             <Button
               variant="destructive"
               onClick={() => accessoryToDelete && deleteMutation.mutate(accessoryToDelete.id)}
@@ -1457,14 +1453,14 @@ export default function AccessoryCatalog() {
       <Dialog open={newBrandDialogOpen} onOpenChange={setNewBrandDialogOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Nuovo Brand Dispositivo</DialogTitle>
+            <DialogTitle>{t("products.newDeviceBrand")}</DialogTitle>
             <DialogDescription>
               Crea un nuovo brand di dispositivo per le compatibilità accessori
             </DialogDescription>
           </DialogHeader>
           <form onSubmit={handleCreateBrand} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="newBrandName">Nome Brand</Label>
+              <Label htmlFor="newBrandName">{t("products.brandName")}</Label>
               <Input
                 id="newBrandName"
                 value={newBrandName}
@@ -1474,9 +1470,7 @@ export default function AccessoryCatalog() {
               />
             </div>
             <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => setNewBrandDialogOpen(false)}>
-                Annulla
-              </Button>
+              <Button type="button" variant="outline" onClick={() => setNewBrandDialogOpen(false)}>{t("common.cancel")}</Button>
               <Button type="submit" disabled={!newBrandName.trim() || createBrandMutation.isPending} data-testid="button-create-brand">
                 {createBrandMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 Crea Brand
@@ -1489,10 +1483,8 @@ export default function AccessoryCatalog() {
       <Dialog open={newModelDialogOpen} onOpenChange={setNewModelDialogOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Nuovo Modello Dispositivo</DialogTitle>
-            <DialogDescription>
-              Aggiungi un nuovo modello di dispositivo
-            </DialogDescription>
+            <DialogTitle>{t("products.newDeviceModel")}</DialogTitle>
+            <DialogDescription>{t("products.addNewDeviceModel")}</DialogDescription>
           </DialogHeader>
           <form onSubmit={handleCreateModel} className="space-y-4">
             <div className="space-y-2">
@@ -1509,7 +1501,7 @@ export default function AccessoryCatalog() {
               </Select>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="newModelName">Nome Modello</Label>
+              <Label htmlFor="newModelName">{t("products.modelName")}</Label>
               <Input
                 id="newModelName"
                 value={newModelName}
@@ -1519,9 +1511,7 @@ export default function AccessoryCatalog() {
               />
             </div>
             <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => setNewModelDialogOpen(false)}>
-                Annulla
-              </Button>
+              <Button type="button" variant="outline" onClick={() => setNewModelDialogOpen(false)}>{t("common.cancel")}</Button>
               <Button 
                 type="submit" 
                 disabled={!newModelName.trim() || !newModelBrandId || createModelMutation.isPending}
@@ -1614,9 +1604,7 @@ export default function AccessoryCatalog() {
               variant="outline"
               onClick={() => setMarketplaceDialogOpen(false)}
               data-testid="button-cancel-marketplace-accessory"
-            >
-              Annulla
-            </Button>
+            >{t("common.cancel")}</Button>
             <Button
               onClick={saveMarketplaceSettings}
               disabled={updateMarketplaceMutation.isPending}
@@ -1624,14 +1612,10 @@ export default function AccessoryCatalog() {
             >
               {updateMarketplaceMutation.isPending ? (
                 <>
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Salvataggio...
-                </>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />{t("profile.saving")}</>
               ) : (
                 <>
-                  <Save className="h-4 w-4 mr-2" />
-                  Salva
-                </>
+                  <Save className="h-4 w-4 mr-2" />{t("common.save")}</>
               )}
             </Button>
           </DialogFooter>

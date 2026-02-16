@@ -1,4 +1,5 @@
 import { useState, useRef, useCallback, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { RotateCcw } from "lucide-react";
@@ -29,6 +30,7 @@ export function PatternLock({
   minNodes = 4,
   className 
 }: PatternLockProps) {
+  const { t } = useTranslation();
   const [selectedNodes, setSelectedNodes] = useState<number[]>([]);
   const [isDrawing, setIsDrawing] = useState(false);
   const [currentPoint, setCurrentPoint] = useState<Point | null>(null);
@@ -279,12 +281,12 @@ export function PatternLock({
               data-testid="button-pattern-reset"
             >
               <RotateCcw className="h-4 w-4 mr-1" />
-              Cancella
+              {t("common.clear")}
             </Button>
           )}
           {selectedNodes.length > 0 && selectedNodes.length < minNodes && (
             <span className="text-xs text-muted-foreground">
-              Minimo {minNodes} punti (selezionati: {selectedNodes.length})
+              {t("patternLock.minPoints", { min: minNodes, selected: selectedNodes.length })}
             </span>
           )}
         </div>
@@ -292,13 +294,13 @@ export function PatternLock({
 
       {readOnly && selectedNodes.length === 0 && (
         <span className="text-sm text-muted-foreground italic">
-          Nessuna sequenza impostata
+          {t("patternLock.noSequence")}
         </span>
       )}
 
       {selectedNodes.length >= minNodes && (
         <span className="text-xs text-muted-foreground">
-          Sequenza: {selectedNodes.join(" → ")}
+          {t("patternLock.sequence")}: {selectedNodes.join(" → ")}
         </span>
       )}
     </div>

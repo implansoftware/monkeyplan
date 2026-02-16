@@ -27,15 +27,16 @@ import {
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
 import type { StandaloneQuote, StandaloneQuoteItem } from "@shared/schema";
+import { useTranslation } from "react-i18next";
 
 type QuoteWithItems = StandaloneQuote & { items: StandaloneQuoteItem[] };
 
 const statusLabels: Record<string, string> = {
-  draft: "Bozza",
+  draft: t("invoices.draft"),
   sent: "Inviato",
-  accepted: "Accettato",
-  rejected: "Rifiutato",
-  expired: "Scaduto",
+  accepted: t("standalone.accepted"),
+  rejected: t("b2b.status.cancelled"),
+  expired: t("standalone.expired"),
 };
 
 const statusVariants: Record<string, string> = {
@@ -54,6 +55,7 @@ function formatCurrency(cents: number): string {
 }
 
 export default function StandaloneQuoteDetail() {
+  const { t } = useTranslation();
   const [, navigate] = useLocation();
   const { toast } = useToast();
   const { user } = useAuth();
@@ -76,10 +78,10 @@ export default function StandaloneQuoteDetail() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/standalone-quotes", quoteId] });
       queryClient.invalidateQueries({ queryKey: ["/api/standalone-quotes"] });
-      toast({ title: "Stato aggiornato" });
+      toast({ title: t("tickets.statusUpdated") });
     },
     onError: (error: any) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -98,7 +100,7 @@ export default function StandaloneQuoteDetail() {
       URL.revokeObjectURL(url);
       toast({ title: "PDF scaricato" });
     } catch (error: any) {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     }
   };
 
@@ -144,9 +146,7 @@ export default function StandaloneQuoteDetail() {
         </div>
         <div className="flex items-center gap-2 flex-wrap">
           <Button variant="outline" onClick={downloadPdf} data-testid="button-download-pdf">
-            <Download className="h-4 w-4 mr-1.5" />
-            Scarica PDF
-          </Button>
+            <Download className="h-4 w-4 mr-1.5" />{t("invoices.downloadPdf")}</Button>
           {quote.status === "draft" && (
             <Button
               onClick={() => updateStatusMutation.mutate("sent")}
@@ -174,9 +174,7 @@ export default function StandaloneQuoteDetail() {
                 disabled={updateStatusMutation.isPending}
                 data-testid="button-reject-quote"
               >
-                <XCircle className="h-4 w-4 mr-1.5" />
-                Rifiuta
-              </Button>
+                <XCircle className="h-4 w-4 mr-1.5" />{t("common.reject")}</Button>
             </>
           )}
           {quote.status === "sent" && (
@@ -186,9 +184,7 @@ export default function StandaloneQuoteDetail() {
               disabled={updateStatusMutation.isPending}
               data-testid="button-expire-quote"
             >
-              <Clock className="h-4 w-4 mr-1.5" />
-              Scaduto
-            </Button>
+              <Clock className="h-4 w-4 mr-1.5" />{t("standalone.expired")}</Button>
           )}
         </div>
       </div>
@@ -196,7 +192,7 @@ export default function StandaloneQuoteDetail() {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <Card>
           <CardHeader>
-            <CardTitle className="text-base flex items-center gap-2"><Calendar className="h-4 w-4" /> Informazioni</CardTitle>
+            <CardTitle className="text-base flex items-center gap-2"><Calendar className="h-4 w-4" />{t("common.information")}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-2 text-sm">
             <div className="flex justify-between gap-2">
@@ -205,7 +201,7 @@ export default function StandaloneQuoteDetail() {
             </div>
             {quote.validUntil && (
               <div className="flex justify-between gap-2">
-                <span className="text-muted-foreground">Valido fino al</span>
+                <span className="text-muted-foreground">{t("standalone.validUntil")}</span>
                 <span data-testid="text-valid-until">{format(new Date(quote.validUntil), "dd MMM yyyy", { locale: it })}</span>
               </div>
             )}
@@ -218,30 +214,30 @@ export default function StandaloneQuoteDetail() {
 
         <Card>
           <CardHeader>
-            <CardTitle className="text-base flex items-center gap-2"><User className="h-4 w-4" /> Cliente</CardTitle>
+            <CardTitle className="text-base flex items-center gap-2"><User className="h-4 w-4" />{t("common.customer")}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-2 text-sm">
             {quote.customerName ? (
               <>
                 <div className="flex justify-between gap-2">
-                  <span className="text-muted-foreground">Nome</span>
+                  <span className="text-muted-foreground">{t("common.name")}</span>
                   <span data-testid="text-customer-name">{quote.customerName}</span>
                 </div>
                 {quote.customerEmail && (
                   <div className="flex justify-between gap-2">
-                    <span className="text-muted-foreground">Email</span>
+                    <span className="text-muted-foreground">{t("common.email")}</span>
                     <span data-testid="text-customer-email">{quote.customerEmail}</span>
                   </div>
                 )}
                 {quote.customerPhone && (
                   <div className="flex justify-between gap-2">
-                    <span className="text-muted-foreground">Telefono</span>
+                    <span className="text-muted-foreground">{t("common.phone")}</span>
                     <span data-testid="text-customer-phone">{quote.customerPhone}</span>
                   </div>
                 )}
               </>
             ) : (
-              <p className="text-muted-foreground">Nessun cliente associato</p>
+              <p className="text-muted-foreground">{t("admin.resellerDetail.noCustomersFound")}</p>
             )}
           </CardContent>
         </Card>
@@ -250,7 +246,7 @@ export default function StandaloneQuoteDetail() {
       {quote.deviceDescription && (
         <Card>
           <CardHeader>
-            <CardTitle className="text-base flex items-center gap-2"><Smartphone className="h-4 w-4" /> Dispositivo</CardTitle>
+            <CardTitle className="text-base flex items-center gap-2"><Smartphone className="h-4 w-4" />{t("repairs.device")}</CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-sm" data-testid="text-device-description">{quote.deviceDescription}</p>
@@ -270,11 +266,11 @@ export default function StandaloneQuoteDetail() {
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="bg-muted/50">
-                      <th className="text-left p-2.5 font-medium">Descrizione</th>
-                      <th className="text-center p-2.5 font-medium w-16">Qtà</th>
-                      <th className="text-right p-2.5 font-medium w-28">Prezzo Unit.</th>
-                      <th className="text-right p-2.5 font-medium w-24">IVA</th>
-                      <th className="text-right p-2.5 font-medium w-28">Totale</th>
+                      <th className="text-left p-2.5 font-medium">{t("common.description")}</th>
+                      <th className="text-center p-2.5 font-medium w-16">{t("common.qty")}</th>
+                      <th className="text-right p-2.5 font-medium w-28">{t("products.unitPrice")}</th>
+                      <th className="text-right p-2.5 font-medium w-24">{t("common.vat")}</th>
+                      <th className="text-right p-2.5 font-medium w-28">{t("common.total")}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -303,11 +299,11 @@ export default function StandaloneQuoteDetail() {
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="bg-muted/50">
-                      <th className="text-left p-2.5 font-medium">Descrizione</th>
-                      <th className="text-center p-2.5 font-medium w-16">Qtà</th>
-                      <th className="text-right p-2.5 font-medium w-28">Prezzo Unit.</th>
-                      <th className="text-right p-2.5 font-medium w-24">IVA</th>
-                      <th className="text-right p-2.5 font-medium w-28">Totale</th>
+                      <th className="text-left p-2.5 font-medium">{t("common.description")}</th>
+                      <th className="text-center p-2.5 font-medium w-16">{t("common.qty")}</th>
+                      <th className="text-right p-2.5 font-medium w-28">{t("products.unitPrice")}</th>
+                      <th className="text-right p-2.5 font-medium w-24">{t("common.vat")}</th>
+                      <th className="text-right p-2.5 font-medium w-28">{t("common.total")}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -336,11 +332,11 @@ export default function StandaloneQuoteDetail() {
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="bg-muted/50">
-                      <th className="text-left p-2.5 font-medium">Descrizione</th>
-                      <th className="text-center p-2.5 font-medium w-16">Qtà</th>
-                      <th className="text-right p-2.5 font-medium w-28">Prezzo Unit.</th>
-                      <th className="text-right p-2.5 font-medium w-24">IVA</th>
-                      <th className="text-right p-2.5 font-medium w-28">Totale</th>
+                      <th className="text-left p-2.5 font-medium">{t("common.description")}</th>
+                      <th className="text-center p-2.5 font-medium w-16">{t("common.qty")}</th>
+                      <th className="text-right p-2.5 font-medium w-28">{t("products.unitPrice")}</th>
+                      <th className="text-right p-2.5 font-medium w-24">{t("common.vat")}</th>
+                      <th className="text-right p-2.5 font-medium w-28">{t("common.total")}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -371,12 +367,12 @@ export default function StandaloneQuoteDetail() {
                 <span className="font-medium" data-testid="text-subtotal">{formatCurrency(quote.subtotalCents)}</span>
               </div>
               <div className="flex justify-between gap-8 text-sm">
-                <span className="text-muted-foreground">IVA</span>
+                <span className="text-muted-foreground">{t("common.vat")}</span>
                 <span className="font-medium" data-testid="text-vat">{formatCurrency(quote.vatAmountCents)}</span>
               </div>
               <Separator />
               <div className="flex justify-between gap-8 items-center">
-                <span className="font-semibold">Totale</span>
+                <span className="font-semibold">{t("common.total")}</span>
                 <span className="text-xl font-bold flex items-center gap-1" data-testid="text-total">
                   <Euro className="h-5 w-5" />
                   {formatCurrency(quote.totalAmountCents)}
@@ -390,7 +386,7 @@ export default function StandaloneQuoteDetail() {
       {quote.notes && (
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">Note</CardTitle>
+            <CardTitle className="text-base">{t("common.notes")}</CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-sm text-muted-foreground whitespace-pre-wrap" data-testid="text-notes">{quote.notes}</p>

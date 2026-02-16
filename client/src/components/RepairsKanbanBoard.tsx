@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useMemo } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -31,6 +32,7 @@ export function RepairsKanbanBoard({
   isLoading,
   onCardClick,
 }: RepairsKanbanBoardProps) {
+  const { t } = useTranslation();
   const groupedRepairs = useMemo(() => {
     const groups: Record<string, RepairOrderWithSLA[]> = {};
     KANBAN_COLUMNS.forEach((col) => {
@@ -154,7 +156,7 @@ function KanbanCard({ repair, onClick, formatCurrency }: KanbanCardProps) {
             variant={repair.slaSeverity === "urgent" ? "destructive" : "outline"}
             className="text-xs"
           >
-            {repair.slaSeverity === "urgent" ? "Urgente" : "In ritardo"}
+            {repair.slaSeverity === "urgent" ? t("sla.urgent") : "In ritardo"}
           </Badge>
         )}
 

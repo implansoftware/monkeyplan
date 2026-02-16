@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useTranslation } from "react-i18next";
 import { Skeleton } from "@/components/ui/skeleton";
 import { 
   Receipt, 
@@ -74,6 +75,7 @@ interface PosSession {
 }
 
 export default function AdminPosOverview() {
+  const { t } = useTranslation();
   const [period, setPeriod] = useState("today");
 
   const { data: stats, isLoading } = useQuery<PosStats>({
@@ -154,12 +156,12 @@ export default function AdminPosOverview() {
         </div>
         <Select value={period} onValueChange={setPeriod}>
           <SelectTrigger className="w-40" data-testid="select-period">
-            <SelectValue placeholder="Periodo" />
+            <SelectValue placeholder={t("common.period")} />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="today">Oggi</SelectItem>
-            <SelectItem value="week">Settimana</SelectItem>
-            <SelectItem value="month">Mese</SelectItem>
+            <SelectItem value="today">{t("reports.today")}</SelectItem>
+            <SelectItem value="week">{t("reports.week")}</SelectItem>
+            <SelectItem value="month">{t("reports.month")}</SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -417,7 +419,7 @@ export default function AdminPosOverview() {
                     {session.status === "open" ? (
                       <Badge variant="default" className="bg-green-500">Aperta</Badge>
                     ) : (
-                      <Badge variant="secondary">Chiusa</Badge>
+                      <Badge variant="secondary">{t("pos.closed")}</Badge>
                     )}
                   </div>
                   <div className="text-xs text-muted-foreground mt-1">

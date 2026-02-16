@@ -13,6 +13,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { Settings, Plus, Trash2, CheckCircle, XCircle, Store, Key, RefreshCcw, Loader2, AlertTriangle, ExternalLink, ShoppingBag, Tag } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 interface TrovausatiCredential {
   id: string;
@@ -44,6 +45,7 @@ interface TrovausatiShop {
 }
 
 export default function TrovausatiSettingsPage() {
+  const { t } = useTranslation();
   const { toast } = useToast();
   const [, navigate] = useLocation();
   const [marketplaceApiKey, setMarketplaceApiKey] = useState("");
@@ -85,7 +87,7 @@ export default function TrovausatiSettingsPage() {
       toast({ title: "Credenziali salvate", description: "Le credenziali TrovaUsati sono state configurate" });
     },
     onError: (error: Error) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -109,7 +111,7 @@ export default function TrovausatiSettingsPage() {
       toast({ title: "Credenziali aggiornate", description: "Le credenziali TrovaUsati sono state aggiornate" });
     },
     onError: (error: Error) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -126,7 +128,7 @@ export default function TrovausatiSettingsPage() {
       queryClient.invalidateQueries({ queryKey: ["/api/trovausati/credentials"] });
     },
     onError: (error: Error) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -146,7 +148,7 @@ export default function TrovausatiSettingsPage() {
     },
     onError: (error: Error) => {
       setMarketplaceTestResult({ success: false, message: error.message });
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -166,7 +168,7 @@ export default function TrovausatiSettingsPage() {
     },
     onError: (error: Error) => {
       setStoresTestResult({ success: false, message: error.message });
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -186,7 +188,7 @@ export default function TrovausatiSettingsPage() {
       toast({ title: "Negozio aggiunto", description: "Il negozio TrovaUsati è stato configurato" });
     },
     onError: (error: Error) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -199,7 +201,7 @@ export default function TrovausatiSettingsPage() {
       toast({ title: "Negozio rimosso" });
     },
     onError: (error: Error) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -345,7 +347,7 @@ export default function TrovausatiSettingsPage() {
                   </div>
                   {hasMarketplaceKey && (
                     <div className="flex flex-wrap items-center gap-2">
-                      <span className="text-sm text-muted-foreground">Attivo</span>
+                      <span className="text-sm text-muted-foreground">{t("common.active")}</span>
                       <Switch
                         checked={credential.isActive}
                         onCheckedChange={(checked) => toggleApiMutation.mutate({ apiType: "marketplace", isActive: checked })}
@@ -368,7 +370,7 @@ export default function TrovausatiSettingsPage() {
                           Token Marketplace configurato
                           {credential.lastTestResult && (
                             <Badge variant={credential.lastTestResult === "success" ? "default" : "destructive"} className="ml-2">
-                              {credential.lastTestResult === "success" ? "Funzionante" : "Errore"}
+                              {credential.lastTestResult === "success" ? "Funzionante" : t("common.error")}
                             </Badge>
                           )}
                         </span>
@@ -445,7 +447,7 @@ export default function TrovausatiSettingsPage() {
                   </div>
                   {hasStoresKey && (
                     <div className="flex flex-wrap items-center gap-2">
-                      <span className="text-sm text-muted-foreground">Attivo</span>
+                      <span className="text-sm text-muted-foreground">{t("common.active")}</span>
                       <Switch
                         checked={credential.storesIsActive}
                         onCheckedChange={(checked) => toggleApiMutation.mutate({ apiType: "stores", isActive: checked })}
@@ -468,7 +470,7 @@ export default function TrovausatiSettingsPage() {
                           Token Valutatore configurato
                           {credential.storesLastTestResult && (
                             <Badge variant={credential.storesLastTestResult === "success" ? "default" : "destructive"} className="ml-2">
-                              {credential.storesLastTestResult === "success" ? "Funzionante" : "Errore"}
+                              {credential.storesLastTestResult === "success" ? "Funzionante" : t("common.error")}
                             </Badge>
                           )}
                         </span>
@@ -550,9 +552,7 @@ export default function TrovausatiSettingsPage() {
                     <Dialog open={showAddShop} onOpenChange={setShowAddShop}>
                       <DialogTrigger asChild>
                         <Button data-testid="button-add-shop">
-                          <Plus className="h-4 w-4 mr-2" />
-                          Aggiungi
-                        </Button>
+                          <Plus className="h-4 w-4 mr-2" />{t("common.add")}</Button>
                       </DialogTrigger>
                       <DialogContent>
                         <DialogHeader>
@@ -584,9 +584,7 @@ export default function TrovausatiSettingsPage() {
                           </div>
                         </div>
                         <DialogFooter>
-                          <Button variant="outline" onClick={() => setShowAddShop(false)}>
-                            Annulla
-                          </Button>
+                          <Button variant="outline" onClick={() => setShowAddShop(false)}>{t("common.cancel")}</Button>
                           <Button
                             onClick={() => addShopMutation.mutate()}
                             disabled={!newShopId || addShopMutation.isPending}
@@ -630,7 +628,7 @@ export default function TrovausatiSettingsPage() {
                               </div>
                             </div>
                             {shop.isActive ? (
-                              <Badge variant="default">Attivo</Badge>
+                              <Badge variant="default">{t("common.active")}</Badge>
                             ) : (
                               <Badge variant="secondary">Disattivo</Badge>
                             )}
@@ -760,9 +758,7 @@ export default function TrovausatiSettingsPage() {
               setMarketplaceApiKey("");
               setStoresApiKey("");
               setMarketplaceId("");
-            }}>
-              Annulla
-            </Button>
+            }}>{t("common.cancel")}</Button>
             <Button
               onClick={() => updateCredentialsMutation.mutate()}
               disabled={updateCredentialsMutation.isPending}

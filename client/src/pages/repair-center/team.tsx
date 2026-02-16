@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { useQuery, useMutation } from "@tanstack/react-query";
@@ -30,11 +31,11 @@ interface StaffMember {
 }
 
 const staffFormSchema = z.object({
-  username: z.string().min(3, "Username deve essere almeno 3 caratteri"),
-  email: z.string().email("Email non valida"),
-  fullName: z.string().min(2, "Nome completo richiesto"),
+  username: z.string().min(3),
+  email: z.string().email(),
+  fullName: z.string().min(2),
   phone: z.string().optional(),
-  password: z.string().min(6, "Password deve essere almeno 6 caratteri").optional(),
+  password: z.string().min(6).optional(),
 });
 
 type StaffFormValues = z.infer<typeof staffFormSchema>;
@@ -42,6 +43,7 @@ type StaffFormValues = z.infer<typeof staffFormSchema>;
 type FilterType = "all" | "active" | "inactive";
 
 export default function RepairCenterTeam() {
+  const { t } = useTranslation();
   const [searchQuery, setSearchQuery] = useState("");
   const [activeFilter, setActiveFilter] = useState<FilterType>("all");
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -73,12 +75,12 @@ export default function RepairCenterTeam() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/repair-center/team"] });
-      toast({ title: "Membro creato", description: "Il membro del team è stato creato con successo" });
+      toast({ title: "Membro creato", description: t("team.ilMembroDelTeamStatoCreatoConSuccesso") });
       setDialogOpen(false);
       form.reset();
     },
     onError: (error: any) => {
-      toast({ title: "Errore", description: error.message || "Errore nella creazione", variant: "destructive" });
+      toast({ title: t("auth.error"), description: error.message || "Errore nella creazione", variant: "destructive" });
     },
   });
 
@@ -95,7 +97,7 @@ export default function RepairCenterTeam() {
       setIsEditing(false);
     },
     onError: (error: any) => {
-      toast({ title: "Errore", description: error.message || "Errore nell'aggiornamento", variant: "destructive" });
+      toast({ title: t("auth.error"), description: error.message || "Errore nell'aggiornamento", variant: "destructive" });
     },
   });
 
@@ -105,12 +107,12 @@ export default function RepairCenterTeam() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/repair-center/team"] });
-      toast({ title: "Membro eliminato", description: "Il membro è stato rimosso dal team" });
+      toast({ title: "Membro eliminato", description: t("team.ilMembroStatoRimossoDalTeam") });
       setDeleteDialogOpen(false);
       setSelectedMember(null);
     },
     onError: (error: any) => {
-      toast({ title: "Errore", description: error.message || "Errore nell'eliminazione", variant: "destructive" });
+      toast({ title: t("auth.error"), description: error.message || "Errore nell'eliminazione", variant: "destructive" });
     },
   });
 
@@ -119,13 +121,13 @@ export default function RepairCenterTeam() {
       return await apiRequest("POST", `/api/repair-center/team/${id}/reset-password`, { newPassword });
     },
     onSuccess: () => {
-      toast({ title: "Password reimpostata", description: "La nuova password è stata impostata" });
+      toast({ title: "Password reimpostata", description: t("team.laNuovaPasswordStataImpostata") });
       setResetPasswordDialogOpen(false);
       setNewPassword("");
       setSelectedMember(null);
     },
     onError: (error: any) => {
-      toast({ title: "Errore", description: error.message || "Errore nel reset password", variant: "destructive" });
+      toast({ title: t("auth.error"), description: error.message || "Errore nel reset password", variant: "destructive" });
     },
   });
 
@@ -197,8 +199,8 @@ export default function RepairCenterTeam() {
               <Users className="h-5 w-5 sm:h-7 sm:w-7 text-white" />
             </div>
             <div>
-              <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-white tracking-tight" data-testid="text-page-title">Team</h1>
-              <p className="text-emerald-100">Gestisci i membri del tuo team</p>
+              <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-white tracking-tight" data-testid="text-page-title">{t("sidebar.sections.team")}</h1>
+              <p className="text-emerald-100">{t("team.gestisciIMembriDelTuoTeam")}</p>
             </div>
           </div>
           <div className="flex flex-wrap items-center gap-2">
@@ -219,7 +221,7 @@ export default function RepairCenterTeam() {
               </div>
               <div>
                 <p className="text-2xl font-bold">{stats.total}</p>
-                <p className="text-sm text-muted-foreground">Totale Membri</p>
+                <p className="text-sm text-muted-foreground">{t("team.totaleMembri")}</p>
               </div>
             </div>
           </CardContent>
@@ -256,15 +258,15 @@ export default function RepairCenterTeam() {
         <CardHeader>
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div>
-              <CardTitle>Membri del Team</CardTitle>
+              <CardTitle>{t("admin.teams.teamMembers")}</CardTitle>
               <CardDescription>
-                {activeFilter === "all" ? "Tutti i membri" : activeFilter === "active" ? "Solo attivi" : "Solo inattivi"}
+                {activeFilter === "all" ? t("team.allMembers") : activeFilter === "active" ? t("team.activeOnly") : t("team.inactiveOnly")}
               </CardDescription>
             </div>
             <div className="relative w-full sm:w-72">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Cerca membri..."
+                placeholder={t("team.cercaMembri")}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-9"
@@ -283,20 +285,20 @@ export default function RepairCenterTeam() {
           ) : filteredMembers.length === 0 ? (
             <div className="text-center py-12">
               <Users className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-              <p className="text-muted-foreground">Nessun membro trovato</p>
+              <p className="text-muted-foreground">{t("team.nessunMembroTrovato")}</p>
             </div>
           ) : (
             <div className="overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Nome</TableHead>
-                  <TableHead>Username</TableHead>
-                  <TableHead className="hidden md:table-cell">Email</TableHead>
-                  <TableHead className="hidden lg:table-cell">Telefono</TableHead>
-                  <TableHead>Stato</TableHead>
-                  <TableHead className="hidden md:table-cell">Data Creazione</TableHead>
-                  <TableHead className="text-right">Azioni</TableHead>
+                  <TableHead>{t("common.name")}</TableHead>
+                  <TableHead>{t("admin.common.usernameLabel")}</TableHead>
+                  <TableHead className="hidden md:table-cell">{t("auth.email")}</TableHead>
+                  <TableHead className="hidden lg:table-cell">{t("auth.phone")}</TableHead>
+                  <TableHead>{t("common.status")}</TableHead>
+                  <TableHead className="hidden md:table-cell">{t("common.creationDate")}</TableHead>
+                  <TableHead className="text-right">{t("common.actions")}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -328,7 +330,7 @@ export default function RepairCenterTeam() {
                             data-testid={`switch-active-${member.id}`}
                           />
                           <Badge variant={member.isActive ? "default" : "secondary"}>
-                            {member.isActive ? "Attivo" : "Inattivo"}
+                            {member.isActive ? t("common.active") : t("common.inactive")}
                           </Badge>
                         </div>
                       </TableCell>
@@ -384,11 +386,11 @@ export default function RepairCenterTeam() {
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>{isEditing ? "Modifica Membro" : "Nuovo Membro del Team"}</DialogTitle>
+            <DialogTitle>{isEditing ? t("team.editMember") : "Nuovo Membro del Team"}</DialogTitle>
             <DialogDescription>
               {isEditing
-                ? "Modifica i dati del membro del team"
-                : "Inserisci i dati per creare un nuovo membro del team"}
+                ? t("team.editMemberData")
+                : t("team.enterNewMemberData")}
             </DialogDescription>
           </DialogHeader>
           <Form {...form}>
@@ -398,7 +400,7 @@ export default function RepairCenterTeam() {
                 name="fullName"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Nome Completo</FormLabel>
+                    <FormLabel>{t("profile.fullName")}</FormLabel>
                     <FormControl>
                       <Input {...field} placeholder="Mario Rossi" data-testid="input-fullname" />
                     </FormControl>
@@ -411,7 +413,7 @@ export default function RepairCenterTeam() {
                 name="username"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Username</FormLabel>
+                    <FormLabel>{t("admin.common.usernameLabel")}</FormLabel>
                     <FormControl>
                       <Input {...field} placeholder="mario.rossi" data-testid="input-username" />
                     </FormControl>
@@ -424,7 +426,7 @@ export default function RepairCenterTeam() {
                 name="email"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Email</FormLabel>
+                    <FormLabel>{t("auth.email")}</FormLabel>
                     <FormControl>
                       <Input {...field} type="email" placeholder="mario@esempio.it" data-testid="input-email" />
                     </FormControl>
@@ -437,7 +439,7 @@ export default function RepairCenterTeam() {
                 name="phone"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Telefono</FormLabel>
+                    <FormLabel>{t("auth.phone")}</FormLabel>
                     <FormControl>
                       <Input {...field} placeholder="+39 123 456 7890" data-testid="input-phone" />
                     </FormControl>
@@ -451,7 +453,7 @@ export default function RepairCenterTeam() {
                   name="password"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Password</FormLabel>
+                      <FormLabel>{t("auth.password")}</FormLabel>
                       <FormControl>
                         <Input {...field} type="password" placeholder="••••••••" data-testid="input-password" />
                       </FormControl>
@@ -470,10 +472,10 @@ export default function RepairCenterTeam() {
                   data-testid="button-submit"
                 >
                   {createMutation.isPending || updateMutation.isPending
-                    ? "Salvataggio..."
+                    ? t("settings.saving")
                     : isEditing
-                    ? "Salva Modifiche"
-                    : "Crea Membro"}
+                    ? t("team.saveChanges")
+                    : t("team.createMember")}
                 </Button>
               </DialogFooter>
             </form>
@@ -484,9 +486,9 @@ export default function RepairCenterTeam() {
       <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Conferma Eliminazione</DialogTitle>
+            <DialogTitle>{t("admin.teams.confirmDeleteTitle")}</DialogTitle>
             <DialogDescription>
-              Sei sicuro di voler eliminare {selectedMember?.fullName}? Questa azione non può essere annullata.
+              {t("team.confirmDeleteMember", { name: selectedMember?.fullName })}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
@@ -499,7 +501,7 @@ export default function RepairCenterTeam() {
               disabled={deleteMutation.isPending}
               data-testid="button-confirm-delete"
             >
-              {deleteMutation.isPending ? "Eliminazione..." : "Elimina"}
+              {deleteMutation.isPending ? "Eliminazione..." : t("common.delete")}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -515,7 +517,7 @@ export default function RepairCenterTeam() {
           </DialogHeader>
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="new-password">Nuova Password</Label>
+              <Label htmlFor="new-password">{t("profile.newPassword")}</Label>
               <Input
                 id="new-password"
                 type="password"
@@ -537,7 +539,7 @@ export default function RepairCenterTeam() {
               disabled={resetPasswordMutation.isPending || newPassword.length < 6}
               data-testid="button-confirm-reset"
             >
-              {resetPasswordMutation.isPending ? "Salvataggio..." : "Reimposta Password"}
+              {resetPasswordMutation.isPending ? t("settings.saving") : "Reimposta Password"}
             </Button>
           </DialogFooter>
         </DialogContent>

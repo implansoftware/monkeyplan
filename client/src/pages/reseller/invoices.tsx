@@ -20,8 +20,10 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import type { DateRange } from "react-day-picker";
 import { InvoiceDetailDialog } from "@/components/InvoiceDetailDialog";
+import { useTranslation } from "react-i18next";
 
 export default function ResellerInvoices() {
+  const { t } = useTranslation();
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [sourceFilter, setSourceFilter] = useState<string>("all");
@@ -96,21 +98,21 @@ export default function ResellerInvoices() {
 
   const getStatusBadge = (status: string) => {
     switch (status) {
-      case "paid": return <Badge>Pagata</Badge>;
+      case "paid": return <Badge>{t("invoices.paid")}</Badge>;
       case "pending": return <Badge variant="secondary">In sospeso</Badge>;
-      case "overdue": return <Badge variant="destructive">Scaduta</Badge>;
-      case "cancelled": return <Badge variant="outline">Annullata</Badge>;
+      case "overdue": return <Badge variant="destructive">{t("invoices.overdue")}</Badge>;
+      case "cancelled": return <Badge variant="outline">{t("common.cancelled")}</Badge>;
       default: return <Badge variant="outline">{status}</Badge>;
     }
   };
 
   const getSourceBadge = (source: string | null) => {
     switch (source) {
-      case "repair": return <Badge variant="outline" className="gap-1"><Wrench className="h-3 w-3" />Riparazione</Badge>;
-      case "pos": return <Badge variant="outline" className="gap-1"><ShoppingCart className="h-3 w-3" />POS</Badge>;
-      case "marketplace": return <Badge variant="outline" className="gap-1"><Store className="h-3 w-3" />Marketplace</Badge>;
-      case "b2b": return <Badge variant="outline" className="gap-1">B2B</Badge>;
-      default: return <Badge variant="outline">Altro</Badge>;
+      case "repair": return <Badge variant="outline" className="gap-1"><Wrench className="h-3 w-3" />{t("common.repair")}</Badge>;
+      case "pos": return <Badge variant="outline" className="gap-1"><ShoppingCart className="h-3 w-3" />{t("sidebar.sections.posSection")}</Badge>;
+      case "marketplace": return <Badge variant="outline" className="gap-1"><Store className="h-3 w-3" />{t("marketplace.title")}</Badge>;
+      case "b2b": return <Badge variant="outline" className="gap-1">{t("sidebar.sections.b2b")}</Badge>;
+      default: return <Badge variant="outline">{t("common.other")}</Badge>;
     }
   };
 
@@ -152,13 +154,13 @@ export default function ResellerInvoices() {
       document.body.removeChild(a);
       
       toast({
-        title: "Export completato",
+        title: t("reports.exportCompleted"),
         description: "Il file CSV è stato scaricato con successo",
       });
     } catch (error) {
       toast({
-        title: "Errore",
-        description: "Impossibile esportare i dati",
+        title: t("common.error"),
+        description: t("reports.exportFailed"),
         variant: "destructive",
       });
     } finally {
@@ -207,7 +209,7 @@ export default function ResellerInvoices() {
                 <Euro className="h-5 w-5 text-primary" />
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">Totale</p>
+                <p className="text-sm text-muted-foreground">{t("common.total")}</p>
                 <p className="text-xl font-bold" data-testid="text-total-amount">{formatCurrency(totalAmount)}</p>
               </div>
             </div>
@@ -233,7 +235,7 @@ export default function ResellerInvoices() {
                 <Euro className="h-5 w-5 text-yellow-600" />
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">In Sospeso</p>
+                <p className="text-sm text-muted-foreground">{t("common.pendingPayments")}</p>
                 <p className="text-xl font-bold text-yellow-600" data-testid="text-pending-amount">{formatCurrency(pendingAmount)}</p>
               </div>
             </div>
@@ -272,10 +274,10 @@ export default function ResellerInvoices() {
                   </div>
                   <Select value={statusFilter} onValueChange={setStatusFilter}>
                     <SelectTrigger className="w-full sm:w-[180px]" data-testid="select-status-filter">
-                      <SelectValue placeholder="Stato" />
+                      <SelectValue placeholder={t("common.status")} />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="all">Tutti gli stati</SelectItem>
+                      <SelectItem value="all">{t("common.allStatuses")}</SelectItem>
                       <SelectItem value="paid">Pagate</SelectItem>
                       <SelectItem value="pending">In sospeso</SelectItem>
                       <SelectItem value="overdue">Scadute</SelectItem>
@@ -288,11 +290,11 @@ export default function ResellerInvoices() {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="all">Tutte le fonti</SelectItem>
-                      <SelectItem value="repair">Riparazione</SelectItem>
-                      <SelectItem value="pos">POS</SelectItem>
-                      <SelectItem value="marketplace">Marketplace</SelectItem>
-                      <SelectItem value="b2b">B2B</SelectItem>
-                      <SelectItem value="other">Altro</SelectItem>
+                      <SelectItem value="repair">{t("common.repair")}</SelectItem>
+                      <SelectItem value="pos">{t("sidebar.sections.posSection")}</SelectItem>
+                      <SelectItem value="marketplace">{t("marketplace.title")}</SelectItem>
+                      <SelectItem value="b2b">{t("sidebar.sections.b2b")}</SelectItem>
+                      <SelectItem value="other">{t("common.other")}</SelectItem>
                     </SelectContent>
                   </Select>
                   <Popover>
@@ -326,7 +328,7 @@ export default function ResellerInvoices() {
                   </Popover>
                   <Button variant="outline" onClick={handleExport} disabled={isExporting} data-testid="button-export-csv">
                     <Download className="h-4 w-4 mr-2" />
-                    {isExporting ? "Esportazione..." : "Esporta CSV"}
+                    {isExporting ? t("pages.exporting") : "Esporta CSV"}
                   </Button>
                 </div>
               </div>
@@ -347,17 +349,17 @@ export default function ResellerInvoices() {
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Numero</TableHead>
-                      <TableHead>Data</TableHead>
+                      <TableHead>{t("common.number")}</TableHead>
+                      <TableHead>{t("common.date")}</TableHead>
                       <TableHead>Fonte</TableHead>
                       <TableHead className="text-right">Imponibile</TableHead>
                       <TableHead className="text-right">IVA%</TableHead>
-                      <TableHead className="text-right">IVA</TableHead>
-                      <TableHead className="text-right">Totale</TableHead>
-                      <TableHead>Metodo</TableHead>
-                      <TableHead>Scadenza</TableHead>
-                      <TableHead>Stato</TableHead>
-                      <TableHead className="text-right">Azioni</TableHead>
+                      <TableHead className="text-right">{t("common.vat")}</TableHead>
+                      <TableHead className="text-right">{t("common.total")}</TableHead>
+                      <TableHead>{t("common.method")}</TableHead>
+                      <TableHead>{t("license.expiry")}</TableHead>
+                      <TableHead>{t("common.status")}</TableHead>
+                      <TableHead className="text-right">{t("common.actions")}</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -434,12 +436,12 @@ export default function ResellerInvoices() {
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead>Numero</TableHead>
-                        <TableHead>Tipo</TableHead>
-                        <TableHead>Data</TableHead>
+                        <TableHead>{t("common.number")}</TableHead>
+                        <TableHead>{t("common.type")}</TableHead>
+                        <TableHead>{t("common.date")}</TableHead>
                         <TableHead>Controparte</TableHead>
-                        <TableHead>Importo</TableHead>
-                        <TableHead>Stato</TableHead>
+                        <TableHead>{t("common.amount")}</TableHead>
+                        <TableHead>{t("common.status")}</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -513,7 +515,7 @@ export default function ResellerInvoices() {
                   <p className="font-mono font-medium">{selectedSibillDoc.documentNumber || "-"}</p>
                 </div>
                 <div>
-                  <p className="text-sm text-muted-foreground">Tipo</p>
+                  <p className="text-sm text-muted-foreground">{t("common.type")}</p>
                   <Badge variant="outline">{selectedSibillDoc.documentType || "N/D"}</Badge>
                 </div>
                 <div>
@@ -544,7 +546,7 @@ export default function ResellerInvoices() {
                     <p className="font-medium">{selectedSibillDoc.counterpartyName || "-"}</p>
                   </div>
                   <div>
-                    <p className="text-sm text-muted-foreground">Partita IVA</p>
+                    <p className="text-sm text-muted-foreground">{t("auth.vatNumber")}</p>
                     <p className="font-mono">{selectedSibillDoc.counterpartyVat || "-"}</p>
                   </div>
                 </div>
@@ -564,7 +566,7 @@ export default function ResellerInvoices() {
                   <p className="font-medium">{selectedSibillDoc.currency || "EUR"}</p>
                 </div>
                 <div>
-                  <p className="text-sm text-muted-foreground">Stato</p>
+                  <p className="text-sm text-muted-foreground">{t("common.status")}</p>
                   <Badge variant={selectedSibillDoc.status === "paid" ? "default" : "secondary"}>
                     {selectedSibillDoc.status || "N/D"}
                   </Badge>

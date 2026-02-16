@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useState, useEffect } from "react";
 import { loadStripe, Stripe } from "@stripe/stripe-js";
 import { Elements, PaymentElement, useStripe, useElements } from "@stripe/react-stripe-js";
@@ -74,7 +75,7 @@ function CheckoutForm({
       });
 
       if (error) {
-        onError(error.message || "Errore nel pagamento");
+        onError(error.message || t("payment.paymentError"));
         setIsProcessing(false);
         return;
       }
@@ -108,14 +109,14 @@ function CheckoutForm({
 
         if (!response.ok) {
           const errorText = await response.text();
-          throw new Error(errorText || "Errore nella creazione dell'ordine");
+          throw new Error(errorText || t("payment.orderCreationError"));
         }
 
         const order = await response.json();
         onSuccess(order);
       }
     } catch (err: any) {
-      onError(err.message || "Errore nel pagamento");
+      onError(err.message || t("payment.paymentError"));
     } finally {
       setIsProcessing(false);
     }
@@ -143,7 +144,7 @@ function CheckoutForm({
       
       <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground py-2">
         <ShieldCheck className="h-3.5 w-3.5" />
-        <span>Pagamento sicuro con crittografia SSL</span>
+        <span>{t("payment.securePayment")}</span>
       </div>
       
       <div className="flex gap-3 pt-2">
@@ -155,7 +156,7 @@ function CheckoutForm({
           className="flex-1"
           data-testid="button-stripe-cancel"
         >
-          Annulla
+          {t("common.cancel")}
         </Button>
         <Button 
           type="submit" 
@@ -194,6 +195,7 @@ export function StripeB2BCheckout({
   returnUrl = "/reseller/b2b-orders",
   sellerResellerId
 }: StripeB2BCheckoutProps) {
+  const { t } = useTranslation();
   const [isOpen, setIsOpen] = useState(false);
   const [stripePromise, setStripePromise] = useState<Promise<Stripe | null> | null>(null);
   const [clientSecret, setClientSecret] = useState<string | null>(null);
@@ -223,7 +225,7 @@ export function StripeB2BCheckout({
 
       if (!response.ok) {
         const errorText = await response.text();
-        throw new Error(errorText || "Errore inizializzazione pagamento");
+        throw new Error(errorText || t("payment.paymentInitError"));
       }
 
       const data: PaymentIntentResponse = await response.json();
@@ -232,8 +234,8 @@ export function StripeB2BCheckout({
       setClientSecret(data.clientSecret);
       setIsOpen(true);
     } catch (err: any) {
-      setInitError(err.message || "Errore caricamento Stripe");
-      onError(err.message || "Errore caricamento Stripe");
+      setInitError(err.message || t("payment.stripeLoadError"));
+      onError(err.message || t("payment.stripeLoadError"));
     } finally {
       setIsLoading(false);
     }
@@ -357,7 +359,7 @@ export function StripeB2BCheckout({
           ) : (
             <div className="flex flex-col items-center justify-center py-8 gap-3">
               <Loader2 className="h-8 w-8 animate-spin text-primary" />
-              <span className="text-sm text-muted-foreground">Caricamento...</span>
+              <span className="text-sm text-muted-foreground">{t("common.loading")}</span>
             </div>
           )}
         </DialogContent>

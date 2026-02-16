@@ -21,6 +21,7 @@ import { CustomerBranchManager } from "@/components/CustomerBranchManager";
 import { CustomerWizardDialog } from "@/components/CustomerWizardDialog";
 import { useToast } from "@/hooks/use-toast";
 import { ActionGuard } from "@/components/permission-guard";
+import { useTranslation } from "react-i18next";
 
 type CustomerWithRepairCenters = User & {
   assignedRepairCenters?: RepairCenter[];
@@ -29,6 +30,7 @@ type CustomerWithRepairCenters = User & {
 type FilterType = "all" | "active" | "inactive";
 
 export default function ResellerCustomers() {
+  const { t } = useTranslation();
   const [searchQuery, setSearchQuery] = useState("");
   const [activeFilter, setActiveFilter] = useState<FilterType>("all");
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -80,7 +82,7 @@ export default function ResellerCustomers() {
       setSelectedCustomer(null);
     },
     onError: (error: any) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -112,7 +114,7 @@ export default function ResellerCustomers() {
         } catch {
         }
       }
-      toast({ title: "Errore", description: errorMsg, variant: "destructive" });
+      toast({ title: t("common.error"), description: errorMsg, variant: "destructive" });
     },
   });
 
@@ -173,11 +175,11 @@ export default function ResellerCustomers() {
 
   const getStatusBadge = (status: string) => {
     switch (status) {
-      case "pending": return <Badge variant="secondary">In attesa</Badge>;
-      case "in_progress": return <Badge>In lavorazione</Badge>;
+      case "pending": return <Badge variant="secondary">{t("hr.pending")}</Badge>;
+      case "in_progress": return <Badge>{t("tickets.status.inProgress")}</Badge>;
       case "completed": return <Badge variant="outline">Completata</Badge>;
-      case "delivered": return <Badge variant="outline">Consegnata</Badge>;
-      case "cancelled": return <Badge variant="destructive">Annullata</Badge>;
+      case "delivered": return <Badge variant="outline">{t("shipping.delivered")}</Badge>;
+      case "cancelled": return <Badge variant="destructive">{t("common.cancelled")}</Badge>;
       default: return <Badge variant="outline">{status}</Badge>;
     }
   };
@@ -223,7 +225,7 @@ export default function ResellerCustomers() {
                 <Users className="h-6 w-6 text-white" />
               </div>
               <div>
-                <h1 className="text-2xl font-bold tracking-tight text-white">Clienti</h1>
+                <h1 className="text-2xl font-bold tracking-tight text-white">{t("customers.title")}</h1>
                 <p className="text-sm text-white/80">
                   Gestisci la tua base clienti
                 </p>
@@ -232,9 +234,7 @@ export default function ResellerCustomers() {
           </div>
           <ActionGuard module="customers" action="create">
             <Button onClick={() => setDialogOpen(true)} className="bg-white/20 backdrop-blur-sm border border-white/30 text-white shadow-lg" data-testid="button-new-customer">
-              <Plus className="h-4 w-4 mr-2" />
-              Nuovo Cliente
-            </Button>
+              <Plus className="h-4 w-4 mr-2" />{t("customers.newCustomer")}</Button>
             <CustomerWizardDialog 
               open={dialogOpen} 
               onOpenChange={setDialogOpen}
@@ -288,7 +288,7 @@ export default function ResellerCustomers() {
           <CardContent className="relative pt-5 pb-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1">Riparazioni Totali</p>
+                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1">{t("dashboard.totalRepairs")}</p>
                 <p className="text-3xl font-bold tabular-nums text-blue-600 dark:text-blue-400">{totalRepairs}</p>
                 <p className="text-xs text-muted-foreground mt-1">
                   Media {customers.length > 0 ? (totalRepairs / customers.length).toFixed(1) : 0} per cliente
@@ -320,9 +320,7 @@ export default function ResellerCustomers() {
                   size="sm"
                   className="h-7 text-xs px-3"
                   onClick={() => setActiveFilter("all")}
-                >
-                  Tutti
-                  <Badge variant="secondary" className="ml-1.5 h-4 px-1 text-[10px]">{customers.length}</Badge>
+                >{t("common.allMasc")}<Badge variant="secondary" className="ml-1.5 h-4 px-1 text-[10px]">{customers.length}</Badge>
                 </Button>
                 <Button
                   variant={activeFilter === "active" ? "default" : "ghost"}
@@ -384,13 +382,13 @@ export default function ResellerCustomers() {
               <Table>
                 <TableHeader>
                   <TableRow className="hover:bg-transparent bg-muted/50">
-                    <TableHead className="pl-6 w-[250px]">Cliente</TableHead>
-                    <TableHead>Contatti</TableHead>
-                    {hasSubResellers && <TableHead>Sub-Reseller</TableHead>}
-                    <TableHead className="text-center">Stato</TableHead>
-                    <TableHead className="text-center">Centro Riparazione</TableHead>
-                    <TableHead className="text-center">Riparazioni</TableHead>
-                    <TableHead className="pr-6 text-right">Azioni</TableHead>
+                    <TableHead className="pl-6 w-[250px]">{t("common.customer")}</TableHead>
+                    <TableHead>{t("common.contacts")}</TableHead>
+                    {hasSubResellers && <TableHead>{t("roles.subReseller")}</TableHead>}
+                    <TableHead className="text-center">{t("common.status")}</TableHead>
+                    <TableHead className="text-center">{t("roles.repairCenter")}</TableHead>
+                    <TableHead className="text-center">{t("repairs.title")}</TableHead>
+                    <TableHead className="pr-6 text-right">{t("common.actions")}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -441,11 +439,9 @@ export default function ResellerCustomers() {
                         )}
                         <TableCell className="text-center">
                           {customer.isActive ? (
-                            <Badge className="bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-0 font-normal">
-                              Attivo
-                            </Badge>
+                            <Badge className="bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-0 font-normal">{t("common.active")}</Badge>
                           ) : (
-                            <Badge variant="secondary" className="font-normal">Inattivo</Badge>
+                            <Badge variant="secondary" className="font-normal">{t("common.inactive")}</Badge>
                           )}
                         </TableCell>
                         <TableCell className="text-center">
@@ -459,9 +455,7 @@ export default function ResellerCustomers() {
                               ))}
                             </div>
                           ) : (
-                            <Badge variant="secondary" className="font-normal text-xs" data-testid={`badge-rc-none-${customer.id}`}>
-                              Non assegnato
-                            </Badge>
+                            <Badge variant="secondary" className="font-normal text-xs" data-testid={`badge-rc-none-${customer.id}`}>{t("tickets.unassigned")}</Badge>
                           )}
                         </TableCell>
                         <TableCell className="text-center">
@@ -477,9 +471,7 @@ export default function ResellerCustomers() {
                                 size="sm"
                                 className="h-8"
                                 data-testid={`button-view-${customer.id}`}
-                              >
-                                Dettagli
-                                <ChevronRight className="h-4 w-4 ml-1" />
+                              >{t("common.details")}<ChevronRight className="h-4 w-4 ml-1" />
                               </Button>
                             </Link>
                             <ActionGuard module="customers" action="delete">
@@ -516,9 +508,7 @@ export default function ResellerCustomers() {
                 {!isEditing && (
                   <ActionGuard module="customers" action="update">
                     <Button variant="outline" size="sm" onClick={() => startEditing(selectedCustomer)} data-testid="button-edit-customer">
-                      <Pencil className="h-4 w-4 mr-1" />
-                      Modifica
-                    </Button>
+                      <Pencil className="h-4 w-4 mr-1" />{t("common.edit")}</Button>
                   </ActionGuard>
                 )}
               </div>
@@ -528,7 +518,7 @@ export default function ResellerCustomers() {
               <div className="space-y-4">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="edit-fullName">Nome Completo</Label>
+                    <Label htmlFor="edit-fullName">{t("profile.fullName")}</Label>
                     <Input
                       id="edit-fullName"
                       value={editForm.fullName}
@@ -537,7 +527,7 @@ export default function ResellerCustomers() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="edit-email">Email</Label>
+                    <Label htmlFor="edit-email">{t("common.email")}</Label>
                     <Input
                       id="edit-email"
                       type="email"
@@ -547,7 +537,7 @@ export default function ResellerCustomers() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="edit-phone">Telefono</Label>
+                    <Label htmlFor="edit-phone">{t("common.phone")}</Label>
                     <Input
                       id="edit-phone"
                       value={editForm.phone}
@@ -556,14 +546,14 @@ export default function ResellerCustomers() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label>Stato</Label>
+                    <Label>{t("common.status")}</Label>
                     <div className="flex flex-wrap items-center gap-2 pt-2">
                       <Switch
                         checked={editForm.isActive}
                         onCheckedChange={(checked) => setEditForm(prev => ({ ...prev, isActive: checked }))}
                         data-testid="switch-edit-isActive"
                       />
-                      <span className="text-sm">{editForm.isActive ? "Attivo" : "Inattivo"}</span>
+                      <span className="text-sm">{editForm.isActive ? t("common.active") : t("common.inactive")}</span>
                     </div>
                   </div>
                 </div>
@@ -596,43 +586,41 @@ export default function ResellerCustomers() {
                 </div>
                 
                 <DialogFooter className="gap-2">
-                  <Button variant="outline" onClick={cancelEditing} data-testid="button-cancel-edit">
-                    Annulla
-                  </Button>
+                  <Button variant="outline" onClick={cancelEditing} data-testid="button-cancel-edit">{t("common.cancel")}</Button>
                   <Button onClick={saveEditing} disabled={updateCustomerMutation.isPending} data-testid="button-save-edit">
-                    {updateCustomerMutation.isPending ? "Salvataggio..." : "Salva Modifiche"}
+                    {updateCustomerMutation.isPending ? t("profile.saving") : t("profile.saveChanges")}
                   </Button>
                 </DialogFooter>
               </div>
             ) : (
               <Tabs defaultValue="info" className="w-full">
                 <TabsList className="grid w-full grid-cols-4">
-                  <TabsTrigger value="info" data-testid="tab-customer-info">Informazioni</TabsTrigger>
+                  <TabsTrigger value="info" data-testid="tab-customer-info">{t("common.information")}</TabsTrigger>
                   <TabsTrigger value="branches" data-testid="tab-customer-branches">Filiali</TabsTrigger>
-                  <TabsTrigger value="repairs" data-testid="tab-customer-repairs">Riparazioni</TabsTrigger>
+                  <TabsTrigger value="repairs" data-testid="tab-customer-repairs">{t("repairs.title")}</TabsTrigger>
                   <TabsTrigger value="relationships" data-testid="tab-customer-relationships">Parentele</TabsTrigger>
                 </TabsList>
                 
                 <TabsContent value="info" className="space-y-4 mt-4">
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                      <Label className="text-xs text-muted-foreground">Email</Label>
+                      <Label className="text-xs text-muted-foreground">{t("common.email")}</Label>
                       <p className="text-sm">{selectedCustomer.email}</p>
                     </div>
                     <div>
-                      <Label className="text-xs text-muted-foreground">Username</Label>
+                      <Label className="text-xs text-muted-foreground">{t("admin.common.usernameLabel")}</Label>
                       <p className="text-sm font-mono">@{selectedCustomer.username}</p>
                     </div>
                     <div>
-                      <Label className="text-xs text-muted-foreground">Telefono</Label>
+                      <Label className="text-xs text-muted-foreground">{t("common.phone")}</Label>
                       <p className="text-sm">
                         {selectedCustomer.phone || <span className="text-muted-foreground">-</span>}
                       </p>
                     </div>
                     <div>
-                      <Label className="text-xs text-muted-foreground">Stato</Label>
+                      <Label className="text-xs text-muted-foreground">{t("common.status")}</Label>
                       <p className="text-sm">
-                        {selectedCustomer.isActive ? "Attivo" : "Inattivo"}
+                        {selectedCustomer.isActive ? t("common.active") : t("common.inactive")}
                       </p>
                     </div>
                     <div>
@@ -643,7 +631,7 @@ export default function ResellerCustomers() {
                     </div>
                     {hasSubResellers && (
                       <div>
-                        <Label className="text-xs text-muted-foreground">Sub-Reseller</Label>
+                        <Label className="text-xs text-muted-foreground">{t("roles.subReseller")}</Label>
                         <p className="text-sm">
                           {getSubResellerName(selectedCustomer.subResellerId) || <span className="text-muted-foreground">-</span>}
                         </p>
@@ -653,7 +641,7 @@ export default function ResellerCustomers() {
 
                   {selectedCustomer.assignedRepairCenters && selectedCustomer.assignedRepairCenters.length > 0 && (
                     <div className="pt-4 border-t">
-                      <Label className="text-xs text-muted-foreground mb-2 block">Centri Riparazione</Label>
+                      <Label className="text-xs text-muted-foreground mb-2 block">{t("sidebar.items.repairCentersShort")}</Label>
                       <div className="flex flex-wrap gap-2">
                         {selectedCustomer.assignedRepairCenters.map((rc) => (
                           <Badge key={rc.id} variant="secondary" data-testid={`badge-detail-repair-center-${rc.id}`}>
@@ -682,10 +670,10 @@ export default function ResellerCustomers() {
                     <Table>
                       <TableHeader>
                         <TableRow>
-                          <TableHead>Ordine</TableHead>
-                          <TableHead>Dispositivo</TableHead>
-                          <TableHead>Stato</TableHead>
-                          <TableHead>Data</TableHead>
+                          <TableHead>{t("common.order")}</TableHead>
+                          <TableHead>{t("repairs.device")}</TableHead>
+                          <TableHead>{t("common.status")}</TableHead>
+                          <TableHead>{t("common.date")}</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
@@ -726,13 +714,13 @@ export default function ResellerCustomers() {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Annulla</AlertDialogCancel>
+            <AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>
             <AlertDialogAction
               onClick={confirmDelete}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
               disabled={deleteCustomerMutation.isPending}
             >
-              {deleteCustomerMutation.isPending ? "Eliminazione..." : "Elimina"}
+              {deleteCustomerMutation.isPending ? t("pages.deleting") : t("common.delete")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

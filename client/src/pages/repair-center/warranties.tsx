@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useLocation } from "wouter";
@@ -36,31 +37,34 @@ type WarrantyItem = {
   daysRemaining: number | null;
 };
 
-const statusConfig: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
-  offered: { label: "In Attesa", variant: "secondary" },
-  accepted: { label: "Attiva", variant: "default" },
-  declined: { label: "Rifiutata", variant: "destructive" },
-  expired: { label: "Scaduta", variant: "outline" },
-};
+function getCoverageLabels(t: (key: string, opts?: any) => string): Record<string, string> {
+  return {
+    basic: "Base",
+    extended: t("warranties.extended"),
+    full: "Completa",
+  };
+}
 
-const coverageLabels: Record<string, string> = {
-  basic: "Base",
-  extended: "Estesa",
-  full: "Completa",
-};
-
-function getDaysRemainingBadge(daysRemaining: number | null, status: string) {
+function getDaysRemainingBadge(daysRemaining: number | null, status: string, t: (key: string, opts?: any) => string) {
   if (status !== "accepted" || daysRemaining === null) return null;
   if (daysRemaining <= 0) {
-    return <Badge variant="destructive" className="gap-1 text-xs"><AlertTriangle className="h-3 w-3" />Scaduta</Badge>;
+    return <Badge variant="destructive" className="gap-1 text-xs"><AlertTriangle className="h-3 w-3" />{t("invoices.overdue")}</Badge>;
   }
   if (daysRemaining <= 30) {
-    return <Badge variant="outline" className="gap-1 text-xs border-amber-300 text-amber-700 dark:text-amber-400"><AlertTriangle className="h-3 w-3" />{daysRemaining}g rimasti</Badge>;
+    return <Badge variant="outline" className="gap-1 text-xs border-amber-300 text-amber-700 dark:text-amber-400"><AlertTriangle className="h-3 w-3" />{t("warranties.daysRemaining", { days: daysRemaining })}</Badge>;
   }
-  return <Badge variant="outline" className="gap-1 text-xs border-emerald-300 text-emerald-700 dark:text-emerald-400"><CheckCircle2 className="h-3 w-3" />{daysRemaining}g rimasti</Badge>;
+  return <Badge variant="outline" className="gap-1 text-xs border-emerald-300 text-emerald-700 dark:text-emerald-400"><CheckCircle2 className="h-3 w-3" />{t("warranties.daysRemaining", { days: daysRemaining })}</Badge>;
 }
 
 export default function RepairCenterWarranties() {
+  const { t } = useTranslation();
+  const coverageLabels = getCoverageLabels(t);
+  const statusConfig: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
+    offered: { label: t("common.pending"), variant: "secondary" },
+    accepted: { label: t("license.active"), variant: "default" },
+    declined: { label: t("common.rejected"), variant: "destructive" },
+    expired: { label: t("invoices.overdue"), variant: "outline" },
+  };
   const [, navigate] = useLocation();
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
@@ -88,20 +92,20 @@ export default function RepairCenterWarranties() {
       apiRequest("POST", "/api/repair-center/warranties", data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/repair-center/warranties"] });
-      toast({ title: "Garanzia creata", description: "La garanzia è stata assegnata al cliente con successo" });
+      toast({ title: "Garanzia creata", description: t("warranties.laGaranziaStataAssegnataAlClienteConSucce") });
       setIsCreateOpen(false);
       setSelectedCustomerId("");
       setSelectedProductId("");
       setNotes("");
     },
     onError: (error: any) => {
-      toast({ title: "Errore", description: error.message || "Impossibile creare la garanzia", variant: "destructive" });
+      toast({ title: t("auth.error"), description: error.message || "Impossibile creare la garanzia", variant: "destructive" });
     },
   });
 
   const handleCreate = () => {
     if (!selectedCustomerId || !selectedProductId) {
-      toast({ title: "Errore", description: "Seleziona un cliente e un prodotto garanzia", variant: "destructive" });
+      toast({ title: t("auth.error"), description: "Seleziona un cliente e un prodotto garanzia", variant: "destructive" });
       return;
     }
     createMutation.mutate({ customerId: selectedCustomerId, warrantyProductId: selectedProductId, notes: notes || undefined });
@@ -149,8 +153,8 @@ export default function RepairCenterWarranties() {
               <Shield className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
             </div>
             <div>
-              <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-white">Garanzie Clienti</h1>
-              <p className="text-sm text-white/80">Gestisci le garanzie attive e monitora le scadenze</p>
+              <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-white">{t("sidebar.items.customerWarranties")}</h1>
+              <p className="text-sm text-white/80">{t("warranties.gestisciLeGaranzieAttiveEMonitoraLeScadenze")}</p>
             </div>
           </div>
           <Button onClick={() => setIsCreateOpen(true)} className="bg-white/20 backdrop-blur-sm border border-white/30 text-white" data-testid="button-new-warranty">
@@ -201,7 +205,7 @@ export default function RepairCenterWarranties() {
             </div>
             <div>
               <p className="text-2xl font-bold">{pendingCount}</p>
-              <p className="text-xs text-muted-foreground">In Attesa</p>
+              <p className="text-xs text-muted-foreground">{t("common.pending")}</p>
             </div>
           </CardContent>
         </Card>
@@ -211,7 +215,7 @@ export default function RepairCenterWarranties() {
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder="Cerca per cliente, ordine, prodotto, dispositivo..."
+            placeholder={t("warranties.cercaPerClienteOrdineProdottoDispositivo")}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="pl-9"
@@ -220,14 +224,14 @@ export default function RepairCenterWarranties() {
         </div>
         <Select value={statusFilter} onValueChange={setStatusFilter}>
           <SelectTrigger className="w-full sm:w-[180px]" data-testid="select-status-filter">
-            <SelectValue placeholder="Filtra per stato" />
+            <SelectValue placeholder={t("common.filterByStatus")} />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">Tutti gli stati</SelectItem>
-            <SelectItem value="offered">In Attesa</SelectItem>
-            <SelectItem value="accepted">Attiva</SelectItem>
-            <SelectItem value="declined">Rifiutata</SelectItem>
-            <SelectItem value="expired">Scaduta</SelectItem>
+            <SelectItem value="all">{t("common.allStatuses")}</SelectItem>
+            <SelectItem value="offered">{t("common.pending")}</SelectItem>
+            <SelectItem value="accepted">{t("license.active")}</SelectItem>
+            <SelectItem value="declined">{t("common.rejected")}</SelectItem>
+            <SelectItem value="expired">{t("invoices.overdue")}</SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -236,7 +240,7 @@ export default function RepairCenterWarranties() {
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-12 text-center">
             <Shield className="h-12 w-12 text-muted-foreground mb-4" />
-            <p className="text-lg font-medium">Nessuna garanzia trovata</p>
+            <p className="text-lg font-medium">{t("warranties.noWarrantiesFound")}</p>
             <p className="text-sm text-muted-foreground">
               {search || statusFilter !== "all"
                 ? "Prova a modificare i filtri di ricerca"
@@ -264,12 +268,12 @@ export default function RepairCenterWarranties() {
                         <div>
                           <p className="font-semibold text-sm">{w.productName}</p>
                           <p className="text-xs text-muted-foreground">
-                            {isStandalone ? "Garanzia Diretta" : `Ordine #${w.orderNumber}`}
+                            {isStandalone ? t("warranties.directWarranty") : `Ordine #${w.orderNumber}`}
                           </p>
                         </div>
                         <div className="flex flex-wrap items-center gap-2">
                           {isStandalone && <Badge variant="outline" className="text-xs">Diretta</Badge>}
-                          {getDaysRemainingBadge(w.daysRemaining, w.status)}
+                          {getDaysRemainingBadge(w.daysRemaining, w.status, t)}
                           <Badge variant={status.variant}>{status.label}</Badge>
                         </div>
                       </div>
@@ -278,7 +282,7 @@ export default function RepairCenterWarranties() {
                         <div className="flex items-center gap-2">
                           <UserIcon className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
                           <div className="min-w-0">
-                            <p className="text-muted-foreground">Cliente</p>
+                            <p className="text-muted-foreground">{t("auth.customerTab")}</p>
                             <p className="font-medium truncate">{w.customerName}</p>
                           </div>
                         </div>
@@ -286,7 +290,7 @@ export default function RepairCenterWarranties() {
                           <div className="flex items-center gap-2">
                             <Smartphone className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
                             <div className="min-w-0">
-                              <p className="text-muted-foreground">Dispositivo</p>
+                              <p className="text-muted-foreground">{t("repairs.device")}</p>
                               <p className="font-medium truncate">{[w.brand, w.deviceModel].filter(Boolean).join(" ") || w.deviceType || "N/A"}</p>
                             </div>
                           </div>
@@ -294,14 +298,14 @@ export default function RepairCenterWarranties() {
                         <div className="flex items-center gap-2">
                           <Shield className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
                           <div>
-                            <p className="text-muted-foreground">Copertura</p>
+                            <p className="text-muted-foreground">{t("warranties.coverage")}</p>
                             <p className="font-medium">{coverageLabels[w.coverageType] || w.coverageType} - {w.durationMonths} mesi</p>
                           </div>
                         </div>
                         <div className="flex items-center gap-2">
                           <Calendar className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
                           <div>
-                            <p className="text-muted-foreground">Prezzo</p>
+                            <p className="text-muted-foreground">{t("common.price")}</p>
                             <p className="font-medium">{(w.price / 100).toLocaleString('it-IT', { style: 'currency', currency: 'EUR' })}</p>
                           </div>
                         </div>
@@ -340,17 +344,17 @@ export default function RepairCenterWarranties() {
       <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Nuova Garanzia Diretta</DialogTitle>
+            <DialogTitle>{t("warranties.nuovaGaranziaDiretta")}</DialogTitle>
             <DialogDescription>
               Assegna una garanzia a un cliente senza passare dalla riparazione
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-2">
             <div className="space-y-2">
-              <Label htmlFor="customer">Cliente</Label>
+              <Label htmlFor="customer">{t("auth.customerTab")}</Label>
               <Select value={selectedCustomerId} onValueChange={setSelectedCustomerId}>
                 <SelectTrigger data-testid="select-warranty-customer">
-                  <SelectValue placeholder="Seleziona un cliente" />
+                  <SelectValue placeholder={t("warranties.selezionaUnCliente")} />
                 </SelectTrigger>
                 <SelectContent>
                   {customers.filter((c: any) => c.role === 'customer').map((c: any) => (
@@ -362,10 +366,10 @@ export default function RepairCenterWarranties() {
               </Select>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="product">Prodotto Garanzia</Label>
+              <Label htmlFor="product">{t("warranties.warrantyProduct")}</Label>
               <Select value={selectedProductId} onValueChange={setSelectedProductId}>
                 <SelectTrigger data-testid="select-warranty-product">
-                  <SelectValue placeholder="Seleziona un prodotto" />
+                  <SelectValue placeholder={t("warranties.selezionaUnProdotto")} />
                 </SelectTrigger>
                 <SelectContent>
                   {activeProducts.map((p: any) => (
@@ -387,7 +391,7 @@ export default function RepairCenterWarranties() {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsCreateOpen(false)} data-testid="button-cancel-warranty">Annulla</Button>
+            <Button variant="outline" onClick={() => setIsCreateOpen(false)} data-testid="button-cancel-warranty">{t("profile.cancel")}</Button>
             <Button onClick={handleCreate} disabled={createMutation.isPending || !selectedCustomerId || !selectedProductId} data-testid="button-confirm-warranty">
               {createMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Shield className="h-4 w-4 mr-2" />}
               Crea Garanzia

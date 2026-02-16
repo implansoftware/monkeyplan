@@ -14,6 +14,7 @@ import { Link2, Search, Plus, Trash2, Package, Smartphone, Check, X, Filter } fr
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import type { Product, DeviceBrand, DeviceModel, DeviceType } from "@shared/schema";
+import { useTranslation } from "react-i18next";
 
 interface ProductCompatibility {
   productId: string;
@@ -33,6 +34,7 @@ interface CompatibilityEntry {
 }
 
 export default function DeviceCompatibilities() {
+  const { t } = useTranslation();
   const { toast } = useToast();
   const [searchQuery, setSearchQuery] = useState("");
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
@@ -86,11 +88,11 @@ export default function DeviceCompatibilities() {
       queryClient.invalidateQueries({ queryKey: ["/api/products"] });
       queryClient.invalidateQueries({ queryKey: ["/api/products/compatibilities-count"] });
       queryClient.invalidateQueries({ queryKey: ["/api/products", selectedProduct?.id, "compatibilities"] });
-      toast({ title: "Compatibilità aggiornate", description: "Le compatibilità sono state salvate con successo." });
+      toast({ title: t("products.compatibilitiesUpdated"), description: t("common.savedSuccessfully") });
       setEditDialogOpen(false);
     },
     onError: (error: any) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -192,7 +194,7 @@ export default function DeviceCompatibilities() {
         <CardHeader>
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <div>
-              <CardTitle>Prodotti e Compatibilità</CardTitle>
+              <CardTitle>{t("products.productsAndCompatibility")}</CardTitle>
               <CardDescription>
                 Seleziona un prodotto per gestire i dispositivi compatibili
               </CardDescription>
@@ -204,7 +206,7 @@ export default function DeviceCompatibilities() {
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Cerca prodotto per nome o SKU..."
+                placeholder={t("products.searchProduct")}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-9"
@@ -214,10 +216,10 @@ export default function DeviceCompatibilities() {
             <Select value={categoryFilter} onValueChange={setCategoryFilter}>
               <SelectTrigger className="w-full sm:w-[180px]" data-testid="select-category-filter">
                 <Filter className="h-4 w-4 mr-2" />
-                <SelectValue placeholder="Categoria" />
+                <SelectValue placeholder={t("utility.category")} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">Tutte le categorie</SelectItem>
+                <SelectItem value="all">{t("products.allCategories")}</SelectItem>
                 {categories.map((cat) => (
                   <SelectItem key={cat} value={cat!}>
                     {getCategoryLabel(cat!)}
@@ -236,17 +238,17 @@ export default function DeviceCompatibilities() {
           ) : filteredProducts.length === 0 ? (
             <div className="text-center py-12 text-muted-foreground">
               <Package className="h-12 w-12 mx-auto mb-4 opacity-50" />
-              <p>Nessun prodotto trovato</p>
+              <p>{t("products.noProductsFound")}</p>
             </div>
           ) : (
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Prodotto</TableHead>
-                  <TableHead>SKU</TableHead>
-                  <TableHead>Categoria</TableHead>
-                  <TableHead>Compatibilità</TableHead>
-                  <TableHead className="text-right">Azioni</TableHead>
+                  <TableHead>{t("products.product")}</TableHead>
+                  <TableHead>{t("products.sku")}</TableHead>
+                  <TableHead>{t("common.category")}</TableHead>
+                  <TableHead>{t("products.compatibility")}</TableHead>
+                  <TableHead className="text-right">{t("common.actions")}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -392,7 +394,7 @@ export default function DeviceCompatibilities() {
                 onClick={handleSaveCompatibilities}
                 disabled={updateCompatibilities.isPending}
               >
-                {updateCompatibilities.isPending ? "Salvataggio..." : "Salva compatibilità"}
+                {updateCompatibilities.isPending ? t("settings.savingRate") : "Salva compatibilità"}
               </Button>
             </div>
           </DialogFooter>

@@ -42,6 +42,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import type { PriceList } from "@shared/schema";
+import { useTranslation } from "react-i18next";
 
 const formatDate = (date: Date | string) => {
   return new Date(date).toLocaleDateString("it-IT", {
@@ -52,6 +53,7 @@ const formatDate = (date: Date | string) => {
 };
 
 export default function ResellerPriceLists() {
+  const { t } = useTranslation();
   const { toast } = useToast();
   const [search, setSearch] = useState("");
   const [showCreateDialog, setShowCreateDialog] = useState(false);
@@ -72,11 +74,11 @@ export default function ResellerPriceLists() {
   ];
 
   const targetAudienceOptions = [
-    { value: "all", label: "Tutti" },
-    { value: "sub_reseller", label: "Sub-Rivenditori" },
-    { value: "repair_center", label: "Centri Riparazione" },
-    { value: "customer", label: "Clienti" },
-    { value: "reseller", label: "Rivenditori" },
+    { value: "all", label: t("common.allMasc") },
+    { value: "sub_reseller", label: t("admin.resellers.subResellers") },
+    { value: "repair_center", label: t("sidebar.items.repairCentersShort") },
+    { value: "customer", label: t("customers.title") },
+    { value: "reseller", label: t("sidebar.items.resellers") },
   ];
 
   const { data: priceLists, isLoading } = useQuery<PriceList[]>({
@@ -89,12 +91,12 @@ export default function ResellerPriceLists() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/price-lists"] });
-      toast({ title: "Listino creato", description: "Il listino prezzi è stato creato con successo" });
+      toast({ title: t("products.priceListCreatedTitle"), description: "Il listino prezzi è stato creato con successo" });
       setShowCreateDialog(false);
       setFormData({ name: "", description: "", targetAudience: "all", targetCustomerType: null, defaultVatRate: 22 });
     },
     onError: (error: any) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -108,7 +110,7 @@ export default function ResellerPriceLists() {
       setEditingList(null);
     },
     onError: (error: any) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -122,7 +124,7 @@ export default function ResellerPriceLists() {
       setDeleteList(null);
     },
     onError: (error: any) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -135,7 +137,7 @@ export default function ResellerPriceLists() {
       toast({ title: "Listino predefinito", description: "Il listino è ora il predefinito" });
     },
     onError: (error: any) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -146,7 +148,7 @@ export default function ResellerPriceLists() {
 
   const handleCreateSubmit = () => {
     if (!formData.name.trim()) {
-      toast({ title: "Errore", description: "Il nome è obbligatorio", variant: "destructive" });
+      toast({ title: t("common.error"), description: "Il nome è obbligatorio", variant: "destructive" });
       return;
     }
     createMutation.mutate({
@@ -177,17 +179,13 @@ export default function ResellerPriceLists() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold flex items-center gap-2" data-testid="text-page-title">
-            <ListOrdered className="h-6 w-6 text-emerald-500" />
-            Listini Prezzi
-          </h1>
+            <ListOrdered className="h-6 w-6 text-emerald-500" />{t("sidebar.items.priceLists")}</h1>
           <p className="text-muted-foreground mt-1">
             Gestisci i tuoi listini prezzi personalizzati per prodotti e servizi
           </p>
         </div>
         <Button onClick={() => setShowCreateDialog(true)} data-testid="button-create-list">
-          <Plus className="h-4 w-4 mr-2" />
-          Nuovo Listino
-        </Button>
+          <Plus className="h-4 w-4 mr-2" />{t("products.newPriceList")}</Button>
       </div>
 
       <Card>
@@ -205,7 +203,7 @@ export default function ResellerPriceLists() {
             <div className="relative w-full sm:w-64">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Cerca listino..."
+                placeholder={t("products.searchPriceList")}
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 className="pl-9"
@@ -224,19 +222,19 @@ export default function ResellerPriceLists() {
           ) : filteredLists.length === 0 ? (
             <div className="text-center py-12 text-muted-foreground">
               <ListOrdered className="h-12 w-12 mx-auto mb-4 opacity-50" />
-              <p>Nessun listino trovato</p>
+              <p>{t("products.noPriceListsFound")}</p>
               <p className="text-sm">Crea il tuo primo listino prezzi per iniziare</p>
             </div>
           ) : (
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Nome</TableHead>
-                  <TableHead>Descrizione</TableHead>
+                  <TableHead>{t("common.name")}</TableHead>
+                  <TableHead>{t("common.description")}</TableHead>
                   <TableHead>Destinatari</TableHead>
-                  <TableHead>Stato</TableHead>
-                  <TableHead>Data Creazione</TableHead>
-                  <TableHead className="text-right">Azioni</TableHead>
+                  <TableHead>{t("common.status")}</TableHead>
+                  <TableHead>{t("common.creationDate")}</TableHead>
+                  <TableHead className="text-right">{t("common.actions")}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -275,7 +273,7 @@ export default function ResellerPriceLists() {
                     </TableCell>
                     <TableCell>
                       <Badge variant={list.isActive ? "default" : "secondary"}>
-                        {list.isActive ? "Attivo" : "Disattivato"}
+                        {list.isActive ? t("common.active") : "Disattivato"}
                       </Badge>
                     </TableCell>
                     <TableCell className="text-muted-foreground">
@@ -355,7 +353,7 @@ export default function ResellerPriceLists() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="description">Descrizione</Label>
+              <Label htmlFor="description">{t("common.description")}</Label>
               <Textarea
                 id="description"
                 placeholder="Descrizione opzionale del listino..."
@@ -445,15 +443,13 @@ export default function ResellerPriceLists() {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowCreateDialog(false)}>
-              Annulla
-            </Button>
+            <Button variant="outline" onClick={() => setShowCreateDialog(false)}>{t("common.cancel")}</Button>
             <Button
               onClick={handleCreateSubmit}
               disabled={createMutation.isPending}
               data-testid="button-submit-create"
             >
-              {createMutation.isPending ? "Creazione..." : "Crea Listino"}
+              {createMutation.isPending ? t("pages.creating") : "Crea Listino"}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -478,7 +474,7 @@ export default function ResellerPriceLists() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="edit-description">Descrizione</Label>
+              <Label htmlFor="edit-description">{t("common.description")}</Label>
               <Textarea
                 id="edit-description"
                 value={formData.description}
@@ -567,15 +563,13 @@ export default function ResellerPriceLists() {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setEditingList(null)}>
-              Annulla
-            </Button>
+            <Button variant="outline" onClick={() => setEditingList(null)}>{t("common.cancel")}</Button>
             <Button
               onClick={handleUpdateSubmit}
               disabled={updateMutation.isPending}
               data-testid="button-submit-edit"
             >
-              {updateMutation.isPending ? "Salvataggio..." : "Salva Modifiche"}
+              {updateMutation.isPending ? t("profile.saving") : t("profile.saveChanges")}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -584,20 +578,20 @@ export default function ResellerPriceLists() {
       <AlertDialog open={!!deleteList} onOpenChange={(open) => !open && setDeleteList(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Conferma Eliminazione</AlertDialogTitle>
+            <AlertDialogTitle>{t("admin.teams.deleteConfirm")}</AlertDialogTitle>
             <AlertDialogDescription>
               Sei sicuro di voler eliminare il listino "{deleteList?.name}"? 
               Questa azione non può essere annullata.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Annulla</AlertDialogCancel>
+            <AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>
             <AlertDialogAction
               onClick={() => deleteList && deleteMutation.mutate(deleteList.id)}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
               data-testid="button-confirm-delete"
             >
-              {deleteMutation.isPending ? "Eliminazione..." : "Elimina"}
+              {deleteMutation.isPending ? t("pages.deleting") : t("common.delete")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

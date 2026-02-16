@@ -32,6 +32,7 @@ import {
   Tooltip,
   Legend,
 } from "recharts";
+import { useTranslation } from "react-i18next";
 
 interface UtilitySummary {
   year: number;
@@ -84,6 +85,7 @@ const formatCurrency = (cents: number) => {
 };
 
 export default function AdminUtilityReports() {
+  const { t } = useTranslation();
   const currentYear = new Date().getFullYear();
   const [selectedYear, setSelectedYear] = useState<number>(currentYear);
   const years = Array.from({ length: 5 }, (_, i) => currentYear - i);
@@ -194,7 +196,7 @@ export default function AdminUtilityReports() {
 
         <Card data-testid="card-suppliers">
           <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Fornitori</CardTitle>
+            <CardTitle className="text-sm font-medium">{t("sidebar.items.suppliers")}</CardTitle>
             <Building2 className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>

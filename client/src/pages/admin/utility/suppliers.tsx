@@ -19,6 +19,7 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Link } from "wouter";
+import { useTranslation } from "react-i18next";
 
 const categoryLabels: Record<string, string> = {
   fisso: "Fisso",
@@ -30,6 +31,7 @@ const categoryLabels: Record<string, string> = {
 };
 
 export default function AdminUtilitySuppliers() {
+  const { t } = useTranslation();
   const [searchQuery, setSearchQuery] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingSupplier, setEditingSupplier] = useState<UtilitySupplier | null>(null);
@@ -49,10 +51,10 @@ export default function AdminUtilitySuppliers() {
       queryClient.invalidateQueries({ queryKey: ["/api/utility/suppliers"] });
       setDialogOpen(false);
       setEditingSupplier(null);
-      toast({ title: "Fornitore utility creato con successo" });
+      toast({ title: t("utility.supplierCreated") });
     },
     onError: (error: Error) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -65,10 +67,10 @@ export default function AdminUtilitySuppliers() {
       queryClient.invalidateQueries({ queryKey: ["/api/utility/suppliers"] });
       setDialogOpen(false);
       setEditingSupplier(null);
-      toast({ title: "Fornitore utility aggiornato" });
+      toast({ title: t("utility.supplierUpdated") });
     },
     onError: (error: Error) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -78,10 +80,10 @@ export default function AdminUtilitySuppliers() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/utility/suppliers"] });
-      toast({ title: "Fornitore utility eliminato" });
+      toast({ title: t("utility.supplierDeleted") });
     },
     onError: (error: Error) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -151,7 +153,7 @@ export default function AdminUtilitySuppliers() {
           <div className="flex-1 flex items-center gap-2">
             <Search className="h-4 w-4 text-muted-foreground" />
             <Input
-              placeholder="Cerca fornitore..."
+              placeholder={t("suppliers.searchSupplier")}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="max-w-xs"
@@ -173,18 +175,18 @@ export default function AdminUtilitySuppliers() {
           ) : filteredSuppliers.length === 0 ? (
             <div className="text-center py-8">
               <Building2 className="h-12 w-12 mx-auto text-muted-foreground mb-3" />
-              <p className="text-muted-foreground">Nessun fornitore trovato</p>
+              <p className="text-muted-foreground">{t("suppliers.noSuppliers")}</p>
             </div>
           ) : (
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Nome</TableHead>
-                  <TableHead>Codice</TableHead>
-                  <TableHead>Categoria</TableHead>
-                  <TableHead>Contatto</TableHead>
-                  <TableHead>Stato</TableHead>
-                  <TableHead className="text-right">Azioni</TableHead>
+                  <TableHead>{t("common.name")}</TableHead>
+                  <TableHead>{t("common.code")}</TableHead>
+                  <TableHead>{t("common.category")}</TableHead>
+                  <TableHead>{t("common.contact")}</TableHead>
+                  <TableHead>{t("common.status")}</TableHead>
+                  <TableHead className="text-right">{t("common.actions")}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -285,7 +287,7 @@ export default function AdminUtilitySuppliers() {
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="name">Nome *</Label>
+                <Label htmlFor="name">{t("common.name")} *</Label>
                 <Input
                   id="name"
                   name="name"
@@ -295,7 +297,7 @@ export default function AdminUtilitySuppliers() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="code">Codice *</Label>
+                <Label htmlFor="code">{t("common.code")} *</Label>
                 <Input
                   id="code"
                   name="code"
@@ -308,7 +310,7 @@ export default function AdminUtilitySuppliers() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="category">Categoria *</Label>
+              <Label htmlFor="category">{t("utility.category")} *</Label>
               <Select 
                 value={selectedCategory}
                 onValueChange={setSelectedCategory}
@@ -326,7 +328,7 @@ export default function AdminUtilitySuppliers() {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
+                <Label htmlFor="email">{t("common.email")}</Label>
                 <Input
                   id="email"
                   name="email"
@@ -336,7 +338,7 @@ export default function AdminUtilitySuppliers() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="phone">Telefono</Label>
+                <Label htmlFor="phone">{t("common.phone")}</Label>
                 <Input
                   id="phone"
                   name="phone"
@@ -360,7 +362,7 @@ export default function AdminUtilitySuppliers() {
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="referentName">Referente</Label>
+                <Label htmlFor="referentName">{t("suppliers.referent")}</Label>
                 <Input
                   id="referentName"
                   name="referentName"
@@ -369,7 +371,7 @@ export default function AdminUtilitySuppliers() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="referentPhone">Tel. Referente</Label>
+                <Label htmlFor="referentPhone">{t("suppliers.referentPhone")}</Label>
                 <Input
                   id="referentPhone"
                   name="referentPhone"
@@ -378,7 +380,7 @@ export default function AdminUtilitySuppliers() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="referentEmail">Email Referente</Label>
+                <Label htmlFor="referentEmail">{t("suppliers.referentEmail")}</Label>
                 <Input
                   id="referentEmail"
                   name="referentEmail"
@@ -390,7 +392,7 @@ export default function AdminUtilitySuppliers() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="notes">Note</Label>
+              <Label htmlFor="notes">{t("common.notes")}</Label>
               <Textarea
                 id="notes"
                 name="notes"
@@ -407,7 +409,7 @@ export default function AdminUtilitySuppliers() {
                 defaultChecked={editingSupplier?.isActive ?? true}
                 data-testid="switch-active"
               />
-              <Label htmlFor="isActive">Fornitore attivo</Label>
+              <Label htmlFor="isActive">{t("suppliers.activeSupplier")}</Label>
             </div>
 
             <div className="flex justify-end gap-2 pt-4">

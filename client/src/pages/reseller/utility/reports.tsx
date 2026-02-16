@@ -30,6 +30,7 @@ import {
   Tooltip,
   Legend,
 } from "recharts";
+import { useTranslation } from "react-i18next";
 
 interface UtilitySummary {
   year: number;
@@ -51,7 +52,7 @@ const categoryLabels: Record<string, string> = {
   centralino: "Centralino",
   luce: "Luce",
   gas: "Gas",
-  altro: "Altro",
+  altro: t("common.other"),
 };
 
 const categoryIcons: Record<string, typeof Phone> = {
@@ -64,12 +65,12 @@ const categoryIcons: Record<string, typeof Phone> = {
 };
 
 const statusLabels: Record<string, string> = {
-  bozza: "Bozza",
-  inviata: "Inviata",
-  in_lavorazione: "In Lavorazione",
+  bozza: t("invoices.draft"),
+  inviata: t("invoices.sent"),
+  in_lavorazione: t("repairs.inProgress"),
   completata: "Completata",
-  annullata: "Annullata",
-  rifiutata: "Rifiutata",
+  annullata: t("common.cancelled"),
+  rifiutata: t("common.rejected"),
 };
 
 const COLORS = ["#0088FE", "#00C49F", "#FFBB28", "#FF8042", "#8884d8", "#82ca9d"];
@@ -82,6 +83,7 @@ const formatCurrency = (cents: number) => {
 };
 
 export default function ResellerUtilityReports() {
+  const { t } = useTranslation();
   const currentYear = new Date().getFullYear();
   const [selectedYear, setSelectedYear] = useState<number>(currentYear);
   const years = Array.from({ length: 5 }, (_, i) => currentYear - i);
@@ -104,7 +106,7 @@ export default function ResellerUtilityReports() {
 
   const commissionsData = [
     { name: "Pagate", value: summary?.commissions?.paid || 0, fill: "#22c55e" },
-    { name: "In Attesa", value: summary?.commissions?.pending || 0, fill: "#eab308" },
+    { name: t("common.pending"), value: summary?.commissions?.pending || 0, fill: "#eab308" },
   ];
 
   if (isLoading) {
@@ -124,7 +126,7 @@ export default function ResellerUtilityReports() {
                 <BarChart3 className="h-6 w-6 text-white" />
               </div>
               <div>
-                <h1 className="text-2xl font-bold text-white">Report Utility</h1>
+                <h1 className="text-2xl font-bold text-white">{t("utility.reportTitle")}</h1>
                 <p className="text-white/80">Statistiche e report</p>
               </div>
             </div>
@@ -162,7 +164,7 @@ export default function ResellerUtilityReports() {
               <BarChart3 className="h-6 w-6 text-white" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold text-white">Report Utility</h1>
+              <h1 className="text-2xl font-bold text-white">{t("utility.reportTitle")}</h1>
               <p className="text-white/80">Statistiche e report</p>
             </div>
           </div>
@@ -200,7 +202,7 @@ export default function ResellerUtilityReports() {
 
         <Card className="rounded-2xl" data-testid="card-suppliers">
           <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Fornitori</CardTitle>
+            <CardTitle className="text-sm font-medium">{t("suppliers.title")}</CardTitle>
             <Building2 className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -270,9 +272,7 @@ export default function ResellerUtilityReports() {
                 </ResponsiveContainer>
               </div>
             ) : (
-              <div className="h-64 flex items-center justify-center text-muted-foreground">
-                Nessun dato disponibile
-              </div>
+              <div className="h-64 flex items-center justify-center text-muted-foreground">{t("common.noData")}</div>
             )}
           </CardContent>
         </Card>
@@ -295,9 +295,7 @@ export default function ResellerUtilityReports() {
                 </ResponsiveContainer>
               </div>
             ) : (
-              <div className="h-64 flex items-center justify-center text-muted-foreground">
-                Nessun dato disponibile
-              </div>
+              <div className="h-64 flex items-center justify-center text-muted-foreground">{t("common.noData")}</div>
             )}
           </CardContent>
         </Card>
@@ -331,9 +329,7 @@ export default function ResellerUtilityReports() {
                 </ResponsiveContainer>
               </div>
             ) : (
-              <div className="h-64 flex items-center justify-center text-muted-foreground">
-                Nessun dato disponibile
-              </div>
+              <div className="h-64 flex items-center justify-center text-muted-foreground">{t("common.noData")}</div>
             )}
           </CardContent>
         </Card>
@@ -374,9 +370,7 @@ export default function ResellerUtilityReports() {
                   );
                 })
               ) : (
-                <p className="text-center text-muted-foreground py-8">
-                  Nessun dato disponibile
-                </p>
+                <p className="text-center text-muted-foreground py-8">{t("common.noData")}</p>
               )}
             </div>
           </CardContent>

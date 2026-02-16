@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
+import { useTranslation } from "react-i18next";
 
 interface RCB2BOrderWithDetails extends RepairCenterPurchaseOrder {
   items: (RepairCenterPurchaseOrderItem & { product?: Product })[];
@@ -44,6 +45,7 @@ const paymentMethodLabels: Record<string, string> = {
 };
 
 export default function AdminRCB2BOrders() {
+  const { t } = useTranslation();
   const [selectedOrder, setSelectedOrder] = useState<RCB2BOrderWithDetails | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
 
@@ -66,7 +68,7 @@ export default function AdminRCB2BOrders() {
       return (
         <div className="text-center py-12 text-muted-foreground">
           <Package className="h-12 w-12 mx-auto mb-4 opacity-50" />
-          <p>Nessun ordine in questa categoria</p>
+          <p>{t("b2b.noOrdersInCategory")}</p>
         </div>
       );
     }
@@ -77,14 +79,14 @@ export default function AdminRCB2BOrders() {
           <TableHeader>
             <TableRow>
               <TableHead>N. Ordine</TableHead>
-              <TableHead>Centro Riparazione</TableHead>
-              <TableHead>Reseller</TableHead>
-              <TableHead>Data</TableHead>
+              <TableHead>{t("roles.repairCenter")}</TableHead>
+              <TableHead>{t("admin.resellers.reseller")}</TableHead>
+              <TableHead>{t("common.date")}</TableHead>
               <TableHead className="text-center">Articoli</TableHead>
-              <TableHead className="text-right">Totale</TableHead>
+              <TableHead className="text-right">{t("common.total")}</TableHead>
               <TableHead className="text-center">Pagamento</TableHead>
-              <TableHead className="text-center">Stato</TableHead>
-              <TableHead className="text-right">Azioni</TableHead>
+              <TableHead className="text-center">{t("common.status")}</TableHead>
+              <TableHead className="text-right">{t("common.actions")}</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -223,7 +225,7 @@ export default function AdminRCB2BOrders() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Elenco Ordini</CardTitle>
+          <CardTitle>{t("b2b.orderList")}</CardTitle>
         </CardHeader>
         <CardContent>
           {isLoading ? (
@@ -275,7 +277,7 @@ export default function AdminRCB2BOrders() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                 <div className="space-y-4">
                   <div>
-                    <Label className="text-muted-foreground">Centro Riparazione</Label>
+                    <Label className="text-muted-foreground">{t("roles.repairCenter")}</Label>
                     <div className="flex flex-wrap items-center gap-2 mt-1">
                       <Building className="h-4 w-4" />
                       <span className="font-medium">{selectedOrder.repairCenter?.name}</span>
@@ -299,7 +301,7 @@ export default function AdminRCB2BOrders() {
                     </p>
                   </div>
                   <div>
-                    <Label className="text-muted-foreground">Stato</Label>
+                    <Label className="text-muted-foreground">{t("common.status")}</Label>
                     <div className="mt-1">
                       <Badge variant={statusConfig[selectedOrder.status]?.variant || "outline"}>
                         {statusConfig[selectedOrder.status]?.label || selectedOrder.status}
@@ -326,10 +328,10 @@ export default function AdminRCB2BOrders() {
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead>Prodotto</TableHead>
-                        <TableHead className="text-center">Quantità</TableHead>
+                        <TableHead>{t("products.product")}</TableHead>
+                        <TableHead className="text-center">{t("common.quantity")}</TableHead>
                         <TableHead className="text-right">Prezzo Unit.</TableHead>
-                        <TableHead className="text-right">Totale</TableHead>
+                        <TableHead className="text-right">{t("common.total")}</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -356,7 +358,7 @@ export default function AdminRCB2BOrders() {
                       </TableRow>
                       {(selectedOrder.shippingCost || 0) > 0 && (
                         <TableRow>
-                          <TableCell colSpan={3} className="text-right text-muted-foreground">Spedizione</TableCell>
+                          <TableCell colSpan={3} className="text-right text-muted-foreground">{t("settings.tabs.shipping")}</TableCell>
                           <TableCell className="text-right">{formatPrice(selectedOrder.shippingCost || 0)}</TableCell>
                         </TableRow>
                       )}
@@ -378,7 +380,7 @@ export default function AdminRCB2BOrders() {
             </div>
           )}
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDetailOpen(false)}>Chiudi</Button>
+            <Button variant="outline" onClick={() => setDetailOpen(false)}>{t("common.close")}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

@@ -27,6 +27,7 @@ import {
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
+import { useTranslation } from "react-i18next";
 
 interface WorkProfile {
   id: string;
@@ -56,6 +57,7 @@ interface RepairCenter {
 const dayLabels = ["Dom", "Lun", "Mar", "Mer", "Gio", "Ven", "Sab"];
 
 export default function HrWorkProfiles() {
+  const { t } = useTranslation();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [syncDialogOpen, setSyncDialogOpen] = useState(false);
@@ -130,7 +132,7 @@ export default function HrWorkProfiles() {
       toast({ title: "Profilo creato", description: "Il profilo orario è stato creato con successo." });
     },
     onError: (error: any) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     }
   });
 
@@ -142,10 +144,10 @@ export default function HrWorkProfiles() {
       queryClient.invalidateQueries({ queryKey: ["/api/reseller/hr/work-profiles"] });
       setDialogOpen(false);
       resetForm();
-      toast({ title: "Profilo aggiornato", description: "Il profilo orario è stato aggiornato." });
+      toast({ title: t("profile.profileUpdatedTitle"), description: "Il profilo orario è stato aggiornato." });
     },
     onError: (error: any) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     }
   });
 
@@ -163,7 +165,7 @@ export default function HrWorkProfiles() {
       });
     },
     onError: (error: any) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     }
   });
 
@@ -178,7 +180,7 @@ export default function HrWorkProfiles() {
       toast({ title: "Profilo eliminato", description: "Il profilo orario è stato eliminato." });
     },
     onError: (error: any) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     }
   });
 
@@ -240,7 +242,7 @@ export default function HrWorkProfiles() {
                 <Briefcase className="h-6 w-6 text-white" />
               </div>
               <div>
-                <h1 className="text-2xl font-bold text-white" data-testid="text-profiles-title">Profili Orario</h1>
+                <h1 className="text-2xl font-bold text-white" data-testid="text-profiles-title">{t("sidebar.items.workProfiles")}</h1>
                 <p className="text-white/80">Configurazione orari di lavoro del personale</p>
               </div>
             </div>
@@ -312,13 +314,13 @@ export default function HrWorkProfiles() {
               <TableHeader>
                 <TableRow>
                   <TableHead>Nome Profilo</TableHead>
-                  <TableHead>Origine</TableHead>
+                  <TableHead>{t("shipping.origin")}</TableHead>
                   <TableHead>Ore Settimanali</TableHead>
                   <TableHead>Ore Giornaliere</TableHead>
                   <TableHead>Giorni Lavorativi</TableHead>
-                  <TableHead>Orario</TableHead>
+                  <TableHead>{t("hr.time")}</TableHead>
                   <TableHead>Pausa</TableHead>
-                  <TableHead>Azioni</TableHead>
+                  <TableHead>{t("common.actions")}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -504,13 +506,13 @@ export default function HrWorkProfiles() {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDialogOpen(false)}>Annulla</Button>
+            <Button variant="outline" onClick={() => setDialogOpen(false)}>{t("common.cancel")}</Button>
             <Button 
               onClick={handleSubmit}
               disabled={!formData.name || createMutation.isPending || updateMutation.isPending}
               data-testid="button-save-profile"
             >
-              {createMutation.isPending || updateMutation.isPending ? "Salvataggio..." : "Salva"}
+              {createMutation.isPending || updateMutation.isPending ? t("profile.saving") : t("common.save")}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -519,20 +521,20 @@ export default function HrWorkProfiles() {
       <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Conferma Eliminazione</DialogTitle>
+            <DialogTitle>{t("admin.teams.deleteConfirm")}</DialogTitle>
             <DialogDescription>
               Sei sicuro di voler eliminare il profilo "{selectedProfile?.name}"? Questa azione non può essere annullata.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>Annulla</Button>
+            <Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>{t("common.cancel")}</Button>
             <Button 
               variant="destructive"
               onClick={() => selectedProfile && deleteMutation.mutate(selectedProfile.id)}
               disabled={deleteMutation.isPending}
               data-testid="button-confirm-delete"
             >
-              {deleteMutation.isPending ? "Eliminazione..." : "Elimina"}
+              {deleteMutation.isPending ? t("pages.deleting") : t("common.delete")}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -560,7 +562,7 @@ export default function HrWorkProfiles() {
               </p>
             </div>
             <div className="space-y-2">
-              <Label>Centro Riparazione</Label>
+              <Label>{t("roles.repairCenter")}</Label>
               <Select value={selectedRepairCenterId} onValueChange={setSelectedRepairCenterId}>
                 <SelectTrigger data-testid="select-repair-center">
                   <SelectValue placeholder="Seleziona centro riparazione..." />
@@ -581,9 +583,7 @@ export default function HrWorkProfiles() {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => { setSyncDialogOpen(false); setSelectedRepairCenterId(""); }}>
-              Annulla
-            </Button>
+            <Button variant="outline" onClick={() => { setSyncDialogOpen(false); setSelectedRepairCenterId(""); }}>{t("common.cancel")}</Button>
             <Button 
               onClick={() => syncMutation.mutate({ entityType: 'repair_center', entityId: selectedRepairCenterId })}
               disabled={!selectedRepairCenterId || syncMutation.isPending}
@@ -591,9 +591,7 @@ export default function HrWorkProfiles() {
             >
               {syncMutation.isPending ? (
                 <>
-                  <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                  Creazione...
-                </>
+                  <RefreshCw className="h-4 w-4 mr-2 animate-spin" />{t("pages.creating")}</>
               ) : (
                 <>
                   <RefreshCw className="h-4 w-4 mr-2" />

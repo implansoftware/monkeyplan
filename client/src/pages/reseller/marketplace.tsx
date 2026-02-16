@@ -20,6 +20,7 @@ import { ProductDetailDialog } from "@/components/product-detail-dialog";
 import { formatCurrency, addVat, calculateVatSummary, DEFAULT_VAT_RATE } from "@/lib/utils";
 import PayPalButton from "@/components/PayPalButton";
 import { StripeB2BCheckout } from "@/components/StripeB2BCheckout";
+import { useTranslation } from "react-i18next";
 
 interface MarketplaceCatalogItem {
   product: Product;
@@ -47,6 +48,7 @@ function formatPrice(cents: number): string {
 }
 
 export default function ResellerMarketplace() {
+  const { t } = useTranslation();
   const [searchQuery, setSearchQuery] = useState("");
   const [cart, setCart] = useState<CartItem[]>([]);
   const [checkoutOpen, setCheckoutOpen] = useState(false);
@@ -82,7 +84,7 @@ export default function ResellerMarketplace() {
       queryClient.invalidateQueries({ queryKey: ['/api/reseller/marketplace/orders'] });
     },
     onError: (error: any) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -108,7 +110,7 @@ export default function ResellerMarketplace() {
     const cartSellerId = cart[0]?.sellerResellerId;
     if (cartSellerId && cartSellerId !== item.sellerResellerId) {
       toast({ 
-        title: "Attenzione", 
+        title: t("common.warning"), 
         description: "Puoi acquistare solo da un rivenditore alla volta. Svuota il carrello per cambiare rivenditore.",
         variant: "destructive"
       });
@@ -223,7 +225,7 @@ export default function ResellerMarketplace() {
 
   const handleCheckout = () => {
     if (cart.length === 0) {
-      toast({ title: "Carrello vuoto", description: "Aggiungi prodotti al carrello", variant: "destructive" });
+      toast({ title: t("pos.emptyCart"), description: "Aggiungi prodotti al carrello", variant: "destructive" });
       return;
     }
     setCheckoutOpen(true);
@@ -233,7 +235,7 @@ export default function ResellerMarketplace() {
     // Validate shipping method is selected and belongs to current seller
     const validShippingMethods = shippingMethods?.map(m => m.id) || [];
     if (!selectedShippingMethod || !validShippingMethods.includes(selectedShippingMethod)) {
-      toast({ title: "Errore", description: "Seleziona un metodo di spedizione valido", variant: "destructive" });
+      toast({ title: t("common.error"), description: "Seleziona un metodo di spedizione valido", variant: "destructive" });
       return;
     }
 
@@ -412,9 +414,7 @@ export default function ResellerMarketplace() {
                         disabled={item.availableStock < item.minQuantity}
                         data-testid={`button-add-to-cart-${item.product.id}`}
                       >
-                        <Plus className="h-4 w-4 mr-2" />
-                        Aggiungi
-                      </Button>
+                        <Plus className="h-4 w-4 mr-2" />{t("common.add")}</Button>
                     </CardFooter>
                   </Card>
                 ))}
@@ -427,7 +427,7 @@ export default function ResellerMarketplace() {
       <Dialog open={checkoutOpen} onOpenChange={setCheckoutOpen}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle>Riepilogo Ordine</DialogTitle>
+            <DialogTitle>{t("shop.orderSummary")}</DialogTitle>
             {cart.length > 0 && (
               <DialogDescription>
                 Ordine da: {cart[0].sellerName}
@@ -543,7 +543,7 @@ export default function ResellerMarketplace() {
             </div>
 
             <div className="space-y-2">
-              <Label>Metodo di pagamento</Label>
+              <Label>{t("license.paymentMethod")}</Label>
               {paymentConfigLoading ? (
                 <Skeleton className="h-10 w-full" />
               ) : !paymentConfig?.hasAnyMethod ? (
@@ -557,10 +557,10 @@ export default function ResellerMarketplace() {
                   </SelectTrigger>
                   <SelectContent>
                     {paymentConfig?.bankTransfer?.enabled && (
-                      <SelectItem value="bank_transfer">Bonifico Bancario</SelectItem>
+                      <SelectItem value="bank_transfer">{t("settings.bankTransfer")}</SelectItem>
                     )}
                     {paymentConfig?.stripe?.enabled && (
-                      <SelectItem value="stripe">Carta di Credito</SelectItem>
+                      <SelectItem value="stripe">{t("suppliers.creditCard")}</SelectItem>
                     )}
                     {paymentConfig?.paypal?.enabled && (
                       <SelectItem value="paypal">PayPal</SelectItem>
@@ -606,9 +606,7 @@ export default function ResellerMarketplace() {
           </div>
 
           <DialogFooter className="flex-col sm:flex-row gap-2">
-            <Button variant="outline" onClick={() => setCheckoutOpen(false)}>
-              Annulla
-            </Button>
+            <Button variant="outline" onClick={() => setCheckoutOpen(false)}>{t("common.cancel")}</Button>
             {paymentMethod === "paypal" && paymentConfig?.paypal?.enabled ? (
               <PayPalButton
                 amount={(grandTotal / 100).toFixed(2)}
@@ -633,7 +631,7 @@ export default function ResellerMarketplace() {
                 }}
                 onCancel={() => {
                   toast({
-                    title: "Pagamento annullato",
+                    title: t("license.paymentCancelled"),
                     description: "Hai annullato il pagamento PayPal",
                   });
                 }}
@@ -655,7 +653,7 @@ export default function ResellerMarketplace() {
                   toast({ title: "Ordine completato", description: "Pagamento ricevuto con successo" });
                 }}
                 onError={(error) => {
-                  toast({ title: "Errore", description: error, variant: "destructive" });
+                  toast({ title: t("common.error"), description: error, variant: "destructive" });
                 }}
               />
             ) : (
@@ -665,7 +663,7 @@ export default function ResellerMarketplace() {
                 data-testid="button-submit-marketplace-order"
               >
                 <Send className="h-4 w-4 mr-2" />
-                {createOrderMutation.isPending ? "Invio..." : "Invia Ordine"}
+                {createOrderMutation.isPending ? t("pages.sending") : "Invia Ordine"}
               </Button>
             )}
           </DialogFooter>

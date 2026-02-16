@@ -36,6 +36,7 @@ import {
 import { getStatusConfig } from "@/lib/repair-status-config";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { useTranslation } from "react-i18next";
 
 type EnrichedUtilityPractice = UtilityPractice & { 
   supplierName: string | null; 
@@ -53,6 +54,7 @@ interface CustomerDetailResponse {
 }
 
 export default function ResellerCustomerDetail() {
+  const { t } = useTranslation();
   const params = useParams<{ id: string }>();
   const customerId = params.id;
   const [, setLocation] = useLocation();
@@ -84,7 +86,7 @@ export default function ResellerCustomerDetail() {
     },
     onError: (error: Error) => {
       toast({
-        title: "Errore",
+        title: t("common.error"),
         description: error.message || "Impossibile aggiornare il cliente",
         variant: "destructive",
       });
@@ -110,9 +112,7 @@ export default function ResellerCustomerDetail() {
       <div className="space-y-6" data-testid="page-customer-detail-error">
         <Link href="/reseller/customers">
           <Button variant="ghost" size="sm" data-testid="button-back-to-customers">
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Clienti
-          </Button>
+            <ArrowLeft className="h-4 w-4 mr-2" />{t("customers.title")}</Button>
         </Link>
         <Card>
           <CardContent className="py-12 text-center text-muted-foreground">
@@ -132,9 +132,7 @@ export default function ResellerCustomerDetail() {
       <div className="flex flex-col sm:flex-row sm:items-center gap-4">
         <Link href="/reseller/customers">
           <Button variant="ghost" size="sm" className="w-fit" data-testid="button-back-to-customers">
-            <ArrowLeft className="h-4 w-4 mr-1" />
-            Clienti
-          </Button>
+            <ArrowLeft className="h-4 w-4 mr-1" />{t("customers.title")}</Button>
         </Link>
         <div className="flex-1">
           <div className="flex flex-wrap items-center gap-3">
@@ -142,15 +140,13 @@ export default function ResellerCustomerDetail() {
               {customer.fullName}
             </h1>
             <Badge variant={customer.isActive ? "outline" : "secondary"} className="font-normal" data-testid="badge-customer-status">
-              {customer.isActive ? "Attivo" : "Inattivo"}
+              {customer.isActive ? t("common.active") : t("common.inactive")}
             </Badge>
           </div>
           <p className="text-sm text-muted-foreground mt-0.5 font-mono">@{customer.username}</p>
         </div>
         <Button variant="outline" size="sm" onClick={() => setEditDialogOpen(true)} data-testid="button-edit-customer">
-          <Pencil className="h-4 w-4 mr-2" />
-          Modifica
-        </Button>
+          <Pencil className="h-4 w-4 mr-2" />{t("common.edit")}</Button>
       </div>
 
       {/* Stats Row */}
@@ -163,7 +159,7 @@ export default function ResellerCustomerDetail() {
               </div>
               <div>
                 <p className="text-2xl font-semibold tabular-nums">{repairOrders.length}</p>
-                <p className="text-xs text-muted-foreground">Riparazioni</p>
+                <p className="text-xs text-muted-foreground">{t("repairs.title")}</p>
               </div>
             </div>
           </CardContent>
@@ -176,7 +172,7 @@ export default function ResellerCustomerDetail() {
               </div>
               <div>
                 <p className="text-2xl font-semibold tabular-nums">{salesOrders.length}</p>
-                <p className="text-xs text-muted-foreground">Ordini</p>
+                <p className="text-xs text-muted-foreground">{t("common.orders")}</p>
               </div>
             </div>
           </CardContent>
@@ -189,7 +185,7 @@ export default function ResellerCustomerDetail() {
               </div>
               <div>
                 <p className="text-2xl font-semibold tabular-nums">{utilityPractices.length}</p>
-                <p className="text-xs text-muted-foreground">Pratiche Utility</p>
+                <p className="text-xs text-muted-foreground">{t("admin.repairCenters.utilityPractices")}</p>
               </div>
             </div>
           </CardContent>
@@ -215,7 +211,7 @@ export default function ResellerCustomerDetail() {
       <div className="grid gap-4 md:grid-cols-2">
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium">Contatti</CardTitle>
+            <CardTitle className="text-sm font-medium">{t("common.contacts")}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
             <div className="flex flex-wrap items-center gap-3">
@@ -232,13 +228,13 @@ export default function ResellerCustomerDetail() {
               <div className="flex flex-wrap items-center gap-3 pt-2 border-t">
                 <UserCheck className="h-4 w-4 text-muted-foreground shrink-0" />
                 <div>
-                  <p className="text-xs text-muted-foreground">Sub-Reseller</p>
+                  <p className="text-xs text-muted-foreground">{t("roles.subReseller")}</p>
                   <p className="text-sm" data-testid="text-customer-sub-reseller">{subReseller.fullName}</p>
                 </div>
               </div>
             )}
             <div className="pt-2 border-t">
-              <p className="text-xs text-muted-foreground">Registrato il</p>
+              <p className="text-xs text-muted-foreground">{t("admin.common.registeredOn")}</p>
               <p className="text-sm" data-testid="text-customer-created">
                 {format(new Date(customer.createdAt), "dd MMMM yyyy", { locale: it })}
               </p>
@@ -249,12 +245,12 @@ export default function ResellerCustomerDetail() {
         {billingData && (
           <Card>
             <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-medium">Fatturazione</CardTitle>
+              <CardTitle className="text-sm font-medium">{t("settings.billing")}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-2 text-sm">
               {billingData.companyName && (
                 <div>
-                  <p className="text-xs text-muted-foreground">Ragione Sociale</p>
+                  <p className="text-xs text-muted-foreground">{t("auth.companyName")}</p>
                   <p data-testid="text-billing-company">{billingData.companyName}</p>
                 </div>
               )}
@@ -274,7 +270,7 @@ export default function ResellerCustomerDetail() {
               </div>
               {billingData.address && (
                 <div className="pt-2 border-t">
-                  <p className="text-xs text-muted-foreground">Indirizzo</p>
+                  <p className="text-xs text-muted-foreground">{t("common.address")}</p>
                   <p data-testid="text-billing-address">
                     {billingData.address}
                     {billingData.zipCode && `, ${billingData.zipCode}`}
@@ -286,7 +282,7 @@ export default function ResellerCustomerDetail() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 border-t">
                   {billingData.pec && (
                     <div>
-                      <p className="text-xs text-muted-foreground">PEC</p>
+                      <p className="text-xs text-muted-foreground">{t("common.pec")}</p>
                       <p className="truncate" data-testid="text-billing-pec">{billingData.pec}</p>
                     </div>
                   )}
@@ -307,19 +303,13 @@ export default function ResellerCustomerDetail() {
       <Tabs defaultValue="repairs" className="w-full">
         <TabsList className="h-9">
           <TabsTrigger value="repairs" className="text-xs gap-1.5" data-testid="tab-repairs">
-            <Wrench className="h-3.5 w-3.5" />
-            Riparazioni
-            <Badge variant="secondary" className="ml-1 h-5 px-1.5 text-xs">{repairOrders.length}</Badge>
+            <Wrench className="h-3.5 w-3.5" />{t("repairs.title")}<Badge variant="secondary" className="ml-1 h-5 px-1.5 text-xs">{repairOrders.length}</Badge>
           </TabsTrigger>
           <TabsTrigger value="orders" className="text-xs gap-1.5" data-testid="tab-orders">
-            <ShoppingCart className="h-3.5 w-3.5" />
-            Ordini
-            <Badge variant="secondary" className="ml-1 h-5 px-1.5 text-xs">{salesOrders.length}</Badge>
+            <ShoppingCart className="h-3.5 w-3.5" />{t("common.orders")}<Badge variant="secondary" className="ml-1 h-5 px-1.5 text-xs">{salesOrders.length}</Badge>
           </TabsTrigger>
           <TabsTrigger value="utility" className="text-xs gap-1.5" data-testid="tab-utility">
-            <Zap className="h-3.5 w-3.5" />
-            Utility
-            <Badge variant="secondary" className="ml-1 h-5 px-1.5 text-xs">{utilityPractices.length}</Badge>
+            <Zap className="h-3.5 w-3.5" />{t("utility.title")}<Badge variant="secondary" className="ml-1 h-5 px-1.5 text-xs">{utilityPractices.length}</Badge>
           </TabsTrigger>
           <TabsTrigger value="relationships" className="text-xs gap-1.5" data-testid="tab-relationships">
             <UserCheck className="h-3.5 w-3.5" />
@@ -341,11 +331,11 @@ export default function ResellerCustomerDetail() {
                     <TableHeader>
                       <TableRow className="hover:bg-transparent">
                         <TableHead className="pl-6">ID</TableHead>
-                        <TableHead>Dispositivo</TableHead>
+                        <TableHead>{t("repairs.device")}</TableHead>
                         <TableHead>Problema</TableHead>
-                        <TableHead>Stato</TableHead>
-                        <TableHead>Data</TableHead>
-                        <TableHead className="pr-6 text-right">Azioni</TableHead>
+                        <TableHead>{t("common.status")}</TableHead>
+                        <TableHead>{t("common.date")}</TableHead>
+                        <TableHead className="pr-6 text-right">{t("common.actions")}</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -380,9 +370,7 @@ export default function ResellerCustomerDetail() {
                             </TableCell>
                             <TableCell className="pr-6 text-right">
                               <Link href={`/reseller/repairs/${order.id}`}>
-                                <Button variant="ghost" size="sm" className="h-8" data-testid={`button-view-repair-${order.id}`}>
-                                  Dettagli
-                                  <ChevronRight className="h-4 w-4 ml-1" />
+                                <Button variant="ghost" size="sm" className="h-8" data-testid={`button-view-repair-${order.id}`}>{t("common.details")}<ChevronRight className="h-4 w-4 ml-1" />
                                 </Button>
                               </Link>
                             </TableCell>
@@ -410,11 +398,11 @@ export default function ResellerCustomerDetail() {
                   <Table>
                     <TableHeader>
                       <TableRow className="hover:bg-transparent">
-                        <TableHead className="pl-6">Ordine</TableHead>
-                        <TableHead>Stato</TableHead>
-                        <TableHead>Totale</TableHead>
-                        <TableHead>Data</TableHead>
-                        <TableHead className="pr-6 text-right">Azioni</TableHead>
+                        <TableHead className="pl-6">{t("common.order")}</TableHead>
+                        <TableHead>{t("common.status")}</TableHead>
+                        <TableHead>{t("common.total")}</TableHead>
+                        <TableHead>{t("common.date")}</TableHead>
+                        <TableHead className="pr-6 text-right">{t("common.actions")}</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -432,9 +420,7 @@ export default function ResellerCustomerDetail() {
                           </TableCell>
                           <TableCell className="pr-6 text-right">
                             <Link href={`/reseller/sales-orders/${order.id}`}>
-                              <Button variant="ghost" size="sm" className="h-8" data-testid={`button-view-order-${order.id}`}>
-                                Dettagli
-                                <ChevronRight className="h-4 w-4 ml-1" />
+                              <Button variant="ghost" size="sm" className="h-8" data-testid={`button-view-order-${order.id}`}>{t("common.details")}<ChevronRight className="h-4 w-4 ml-1" />
                               </Button>
                             </Link>
                           </TableCell>
@@ -461,12 +447,12 @@ export default function ResellerCustomerDetail() {
                   <Table>
                     <TableHeader>
                       <TableRow className="hover:bg-transparent">
-                        <TableHead className="pl-6">Pratica</TableHead>
-                        <TableHead>Fornitore</TableHead>
-                        <TableHead>Servizio</TableHead>
-                        <TableHead>Stato</TableHead>
-                        <TableHead>Data</TableHead>
-                        <TableHead className="pr-6 text-right">Azioni</TableHead>
+                        <TableHead className="pl-6">{t("utility.practice")}</TableHead>
+                        <TableHead>{t("common.supplier")}</TableHead>
+                        <TableHead>{t("common.service")}</TableHead>
+                        <TableHead>{t("common.status")}</TableHead>
+                        <TableHead>{t("common.date")}</TableHead>
+                        <TableHead className="pr-6 text-right">{t("common.actions")}</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -483,9 +469,7 @@ export default function ResellerCustomerDetail() {
                           </TableCell>
                           <TableCell className="pr-6 text-right">
                             <Link href={`/reseller/utility/practices/${practice.id}`}>
-                              <Button variant="ghost" size="sm" className="h-8" data-testid={`button-view-utility-${practice.id}`}>
-                                Dettagli
-                                <ChevronRight className="h-4 w-4 ml-1" />
+                              <Button variant="ghost" size="sm" className="h-8" data-testid={`button-view-utility-${practice.id}`}>{t("common.details")}<ChevronRight className="h-4 w-4 ml-1" />
                               </Button>
                             </Link>
                           </TableCell>
@@ -637,7 +621,7 @@ function CustomerEditForm({
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="phone">Telefono</Label>
+            <Label htmlFor="phone">{t("common.phone")}</Label>
             <Input
               id="phone"
               type="tel"
@@ -686,9 +670,7 @@ function CustomerEditForm({
               checked={!isCompany}
               onChange={() => updateBilling("customerType", "private")}
               data-testid="radio-private"
-            />
-            Privato
-          </Label>
+            />{t("customers.individual")}</Label>
           <Label className="flex flex-wrap items-center gap-2 cursor-pointer">
             <input
               type="radio"
@@ -696,15 +678,13 @@ function CustomerEditForm({
               checked={isCompany}
               onChange={() => updateBilling("customerType", "company")}
               data-testid="radio-company"
-            />
-            Azienda
-          </Label>
+            />{t("common.company")}</Label>
         </div>
 
         {isCompany && (
           <>
             <div className="space-y-2">
-              <Label htmlFor="companyName">Ragione Sociale</Label>
+              <Label htmlFor="companyName">{t("auth.companyName")}</Label>
               <Input
                 id="companyName"
                 value={formData.billingData.companyName}
@@ -723,7 +703,7 @@ function CustomerEditForm({
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="fiscalCode">Codice Fiscale</Label>
+                <Label htmlFor="fiscalCode">{t("common.taxCode")}</Label>
                 <Input
                   id="fiscalCode"
                   value={formData.billingData.fiscalCode}
@@ -734,7 +714,7 @@ function CustomerEditForm({
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="pec">PEC</Label>
+                <Label htmlFor="pec">{t("common.pec")}</Label>
                 <Input
                   id="pec"
                   type="email"
@@ -758,7 +738,7 @@ function CustomerEditForm({
         )}
 
         <div className="space-y-2">
-          <Label htmlFor="iban">IBAN</Label>
+          <Label htmlFor="iban">{t("profile.iban")}</Label>
           <Input
             id="iban"
             value={formData.billingData.iban}
@@ -771,9 +751,7 @@ function CustomerEditForm({
       {/* Address Section */}
       <div className="space-y-4 pt-4 border-t">
         <div className="flex flex-wrap items-center gap-2 text-sm font-medium text-muted-foreground">
-          <MapPin className="h-4 w-4" />
-          Indirizzo
-        </div>
+          <MapPin className="h-4 w-4" />{t("common.address")}</div>
         <div className="space-y-2">
           <Label htmlFor="address">Via/Piazza</Label>
           <Input
@@ -785,7 +763,7 @@ function CustomerEditForm({
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div className="space-y-2">
-            <Label htmlFor="city">Città</Label>
+            <Label htmlFor="city">{t("common.city")}</Label>
             <Input
               id="city"
               value={formData.billingData.city}
@@ -794,7 +772,7 @@ function CustomerEditForm({
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="zipCode">CAP</Label>
+            <Label htmlFor="zipCode">{t("common.zip")}</Label>
             <Input
               id="zipCode"
               value={formData.billingData.zipCode}
@@ -803,7 +781,7 @@ function CustomerEditForm({
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="country">Paese</Label>
+            <Label htmlFor="country">{t("common.country")}</Label>
             <Input
               id="country"
               value={formData.billingData.country}
@@ -817,7 +795,7 @@ function CustomerEditForm({
       {/* Repair Centers */}
       {repairCenters.length > 0 && (
         <div className="space-y-2 pt-4 border-t">
-          <Label>Centri Riparazione</Label>
+          <Label>{t("sidebar.items.repairCentersShort")}</Label>
           <div className="flex flex-wrap gap-2">
             {repairCenters.map((rc) => {
               const isSelected = formData.repairCenterIds.includes(rc.id);
@@ -839,11 +817,9 @@ function CustomerEditForm({
       )}
 
       <DialogFooter className="gap-2 pt-4">
-        <Button type="button" variant="outline" onClick={onCancel}>
-          Annulla
-        </Button>
+        <Button type="button" variant="outline" onClick={onCancel}>{t("common.cancel")}</Button>
         <Button type="submit" disabled={isPending}>
-          {isPending ? "Salvataggio..." : "Salva Modifiche"}
+          {isPending ? t("profile.saving") : t("profile.saveChanges")}
         </Button>
       </DialogFooter>
     </form>

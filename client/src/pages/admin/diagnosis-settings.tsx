@@ -19,6 +19,7 @@ import { AlertCircle, Plus, Pencil, Trash2, Settings, AlertTriangle, Wrench } fr
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import type { DiagnosticFinding, DamagedComponentType, DeviceType } from "@shared/schema";
+import { useTranslation } from "react-i18next";
 
 const formSchema = z.object({
   id: z.string().optional(),
@@ -33,6 +34,7 @@ const formSchema = z.object({
 type FormData = z.infer<typeof formSchema>;
 
 export default function DiagnosisSettings() {
+  const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState("findings");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -69,13 +71,13 @@ export default function DiagnosisSettings() {
       return res.json();
     },
     onSuccess: () => {
-      toast({ title: "Successo", description: "Problema diagnostico creato" });
+      toast({ title: t("common.success"), description: "Problema diagnostico creato" });
       queryClient.invalidateQueries({ queryKey: ['/api/admin/diagnostic-findings'] });
       setDialogOpen(false);
       form.reset();
     },
     onError: (error: any) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -85,13 +87,13 @@ export default function DiagnosisSettings() {
       return res.json();
     },
     onSuccess: () => {
-      toast({ title: "Successo", description: "Problema diagnostico aggiornato" });
+      toast({ title: t("common.success"), description: "Problema diagnostico aggiornato" });
       queryClient.invalidateQueries({ queryKey: ['/api/admin/diagnostic-findings'] });
       setDialogOpen(false);
       form.reset();
     },
     onError: (error: any) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -100,13 +102,13 @@ export default function DiagnosisSettings() {
       await apiRequest('DELETE', `/api/admin/diagnostic-findings/${id}`);
     },
     onSuccess: () => {
-      toast({ title: "Successo", description: "Problema diagnostico eliminato" });
+      toast({ title: t("common.success"), description: "Problema diagnostico eliminato" });
       queryClient.invalidateQueries({ queryKey: ['/api/admin/diagnostic-findings'] });
       setDeleteDialogOpen(false);
       setItemToDelete(null);
     },
     onError: (error: any) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -116,13 +118,13 @@ export default function DiagnosisSettings() {
       return res.json();
     },
     onSuccess: () => {
-      toast({ title: "Successo", description: "Componente creato" });
+      toast({ title: t("common.success"), description: "Componente creato" });
       queryClient.invalidateQueries({ queryKey: ['/api/admin/damaged-component-types'] });
       setDialogOpen(false);
       form.reset();
     },
     onError: (error: any) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -132,13 +134,13 @@ export default function DiagnosisSettings() {
       return res.json();
     },
     onSuccess: () => {
-      toast({ title: "Successo", description: "Componente aggiornato" });
+      toast({ title: t("common.success"), description: "Componente aggiornato" });
       queryClient.invalidateQueries({ queryKey: ['/api/admin/damaged-component-types'] });
       setDialogOpen(false);
       form.reset();
     },
     onError: (error: any) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -147,13 +149,13 @@ export default function DiagnosisSettings() {
       await apiRequest('DELETE', `/api/admin/damaged-component-types/${id}`);
     },
     onSuccess: () => {
-      toast({ title: "Successo", description: "Componente eliminato" });
+      toast({ title: t("common.success"), description: "Componente eliminato" });
       queryClient.invalidateQueries({ queryKey: ['/api/admin/damaged-component-types'] });
       setDeleteDialogOpen(false);
       setItemToDelete(null);
     },
     onError: (error: any) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -277,25 +279,25 @@ export default function DiagnosisSettings() {
         <TabsContent value="findings" className="mt-4">
           <Card>
             <CardHeader>
-              <CardTitle>Problemi Diagnostici</CardTitle>
-              <CardDescription>Risultati predefiniti delle diagnosi, raggruppati per categoria</CardDescription>
+              <CardTitle>{t("settings.diagnosticProblems")}</CardTitle>
+              <CardDescription>{t("settings.diagnosticProblemsDesc")}</CardDescription>
             </CardHeader>
             <CardContent>
               {!findings?.length ? (
                 <div className="text-center py-8 text-muted-foreground">
                   <AlertCircle className="h-8 w-8 mx-auto mb-2" />
-                  <p>Nessun problema diagnostico configurato</p>
+                  <p>{t("settings.noDiagnosticProblems")}</p>
                 </div>
               ) : (
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Nome</TableHead>
-                      <TableHead>Categoria</TableHead>
-                      <TableHead>Tipo Dispositivo</TableHead>
-                      <TableHead>Ordine</TableHead>
-                      <TableHead>Stato</TableHead>
-                      <TableHead className="text-right">Azioni</TableHead>
+                      <TableHead>{t("common.name")}</TableHead>
+                      <TableHead>{t("common.category")}</TableHead>
+                      <TableHead>{t("products.deviceType")}</TableHead>
+                      <TableHead>{t("common.order")}</TableHead>
+                      <TableHead>{t("common.status")}</TableHead>
+                      <TableHead className="text-right">{t("common.actions")}</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -345,24 +347,24 @@ export default function DiagnosisSettings() {
         <TabsContent value="components" className="mt-4">
           <Card>
             <CardHeader>
-              <CardTitle>Componenti Danneggiabili</CardTitle>
-              <CardDescription>Lista dei componenti che possono risultare danneggiati durante la diagnosi</CardDescription>
+              <CardTitle>{t("settings.damageableComponents")}</CardTitle>
+              <CardDescription>{t("settings.damageableComponentsList")}</CardDescription>
             </CardHeader>
             <CardContent>
               {!components?.length ? (
                 <div className="text-center py-8 text-muted-foreground">
                   <Wrench className="h-8 w-8 mx-auto mb-2" />
-                  <p>Nessun componente configurato</p>
+                  <p>{t("settings.noComponents")}</p>
                 </div>
               ) : (
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Nome</TableHead>
-                      <TableHead>Tipo Dispositivo</TableHead>
-                      <TableHead>Ordine</TableHead>
-                      <TableHead>Stato</TableHead>
-                      <TableHead className="text-right">Azioni</TableHead>
+                      <TableHead>{t("common.name")}</TableHead>
+                      <TableHead>{t("products.deviceType")}</TableHead>
+                      <TableHead>{t("common.order")}</TableHead>
+                      <TableHead>{t("common.status")}</TableHead>
+                      <TableHead className="text-right">{t("common.actions")}</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -440,11 +442,11 @@ export default function DiagnosisSettings() {
                 name="description"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Descrizione</FormLabel>
+                    <FormLabel>{t("common.description")}</FormLabel>
                     <FormControl>
                       <Textarea 
                         {...field} 
-                        placeholder="Descrizione opzionale"
+                        placeholder={t("utility.optionalDescription")}
                         data-testid="input-description"
                       />
                     </FormControl>
@@ -458,19 +460,19 @@ export default function DiagnosisSettings() {
                   name="category"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Categoria</FormLabel>
+                      <FormLabel>{t("common.category")}</FormLabel>
                       <Select value={field.value} onValueChange={field.onChange}>
                         <FormControl>
                           <SelectTrigger data-testid="select-category">
-                            <SelectValue placeholder="Seleziona categoria" />
+                            <SelectValue placeholder={t("utility.selectCategory")} />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
                           <SelectItem value="Hardware">Hardware</SelectItem>
                           <SelectItem value="Software">Software</SelectItem>
-                          <SelectItem value="Connettività">Connettività</SelectItem>
-                          <SelectItem value="Batteria">Batteria</SelectItem>
-                          <SelectItem value="Altro">Altro</SelectItem>
+                          <SelectItem value="Connettività">{t("settings.connectivity")}</SelectItem>
+                          <SelectItem value="Batteria">{t("settings.battery")}</SelectItem>
+                          <SelectItem value="Altro">{t("common.other")}</SelectItem>
                         </SelectContent>
                       </Select>
                       <FormMessage />
@@ -483,15 +485,15 @@ export default function DiagnosisSettings() {
                 name="deviceTypeId"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Tipo Dispositivo</FormLabel>
+                    <FormLabel>{t("products.deviceType")}</FormLabel>
                     <Select value={field.value} onValueChange={field.onChange}>
                       <FormControl>
                         <SelectTrigger data-testid="select-device-type">
-                          <SelectValue placeholder="Tutti i dispositivi" />
+                          <SelectValue placeholder={t("products.allDevices")} />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="__all__">Tutti i dispositivi</SelectItem>
+                        <SelectItem value="__all__">{t("settings.allDevices")}</SelectItem>
                         {deviceTypes?.map((dt) => (
                           <SelectItem key={dt.id} value={dt.id}>{dt.name}</SelectItem>
                         ))}
@@ -506,7 +508,7 @@ export default function DiagnosisSettings() {
                 name="sortOrder"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Ordine di visualizzazione</FormLabel>
+                    <FormLabel>{t("settings.displayOrder")}</FormLabel>
                     <FormControl>
                       <Input 
                         type="number"
@@ -532,16 +534,16 @@ export default function DiagnosisSettings() {
                           data-testid="switch-active"
                         />
                       </FormControl>
-                      <FormLabel className="!mt-0">Attivo</FormLabel>
+                      <FormLabel className="!mt-0">{t("common.active")}</FormLabel>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
               )}
               <DialogFooter>
-                <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>Annulla</Button>
+                <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>{t("common.cancel")}</Button>
                 <Button type="submit" disabled={isSaving} data-testid="button-save">
-                  {isSaving ? "Salvataggio..." : "Salva"}
+                  {isSaving ? t("settings.savingRate") : "Salva"}
                 </Button>
               </DialogFooter>
             </form>
@@ -552,15 +554,15 @@ export default function DiagnosisSettings() {
       <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Conferma eliminazione</DialogTitle>
+            <DialogTitle>{t("common.confirmDelete")}</DialogTitle>
             <DialogDescription>
               Sei sicuro di voler eliminare "{itemToDelete?.name}"? Questa azione non può essere annullata.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>Annulla</Button>
+            <Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>{t("common.cancel")}</Button>
             <Button variant="destructive" onClick={handleDelete} disabled={isDeleting} data-testid="button-confirm-delete">
-              {isDeleting ? "Eliminazione..." : "Elimina"}
+              {isDeleting ? t("admin.resellers.deleting") : "Elimina"}
             </Button>
           </DialogFooter>
         </DialogContent>

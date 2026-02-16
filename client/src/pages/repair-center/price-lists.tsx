@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -26,6 +27,7 @@ const formatDate = (date: Date | string) => {
 };
 
 export default function RepairCenterPriceLists() {
+  const { t } = useTranslation();
   const [search, setSearch] = useState("");
 
   const { data: inheritedLists, isLoading } = useQuery<PriceList[]>({
@@ -63,7 +65,7 @@ export default function RepairCenterPriceLists() {
             <div className="relative w-full sm:w-64">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Cerca listino..."
+                placeholder={t("products.searchPriceList")}
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 className="pl-9"
@@ -80,18 +82,18 @@ export default function RepairCenterPriceLists() {
           ) : filteredLists.length === 0 ? (
             <div className="text-center py-12 text-muted-foreground">
               <Users className="h-12 w-12 mx-auto mb-4 opacity-50" />
-              <p>Nessun listino disponibile dal reseller</p>
+              <p>{t("priceLists.nessunListinoDisponibileDalReseller")}</p>
             </div>
           ) : (
             <div className="overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Nome</TableHead>
-                  <TableHead className="hidden md:table-cell">Descrizione</TableHead>
-                  <TableHead>Stato</TableHead>
-                  <TableHead className="hidden md:table-cell">Data</TableHead>
-                  <TableHead className="text-right">Azioni</TableHead>
+                  <TableHead>{t("common.name")}</TableHead>
+                  <TableHead className="hidden md:table-cell">{t("common.description")}</TableHead>
+                  <TableHead>{t("common.status")}</TableHead>
+                  <TableHead className="hidden md:table-cell">{t("common.date")}</TableHead>
+                  <TableHead className="text-right">{t("common.actions")}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -103,7 +105,7 @@ export default function RepairCenterPriceLists() {
                     </TableCell>
                     <TableCell>
                       <Badge variant={list.isActive ? "default" : "secondary"}>
-                        {list.isActive ? "Attivo" : "Disattivato"}
+                        {list.isActive ? t("common.active") : t("common.disabled")}
                       </Badge>
                     </TableCell>
                     <TableCell className="hidden md:table-cell text-muted-foreground">

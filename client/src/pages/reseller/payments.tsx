@@ -18,11 +18,12 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import type { SalesOrderPayment } from "@shared/schema";
+import { useTranslation } from "react-i18next";
 
 const statusLabels: Record<string, string> = {
-  pending: "In attesa",
+  pending: t("hr.pending"),
   processing: "In elaborazione",
-  completed: "Completato",
+  completed: t("common.completed"),
   failed: "Fallito",
   refunded: "Rimborsato",
   partially_refunded: "Rimborsato parzialmente"
@@ -38,12 +39,12 @@ const statusColors: Record<string, string> = {
 };
 
 const methodLabels: Record<string, string> = {
-  cash: "Contanti",
-  card: "Carta",
+  cash: t("pos.cash"),
+  card: t("pos.card"),
   bank_transfer: "Bonifico",
   paypal: "PayPal",
   stripe: "Stripe",
-  pos: "POS",
+  pos: t("sidebar.sections.posSection"),
   credit: "Credito"
 };
 
@@ -58,6 +59,7 @@ const methodIcons: Record<string, any> = {
 };
 
 export default function ResellerPayments() {
+  const { t } = useTranslation();
   const { toast } = useToast();
   
   const [search, setSearch] = useState("");
@@ -89,13 +91,13 @@ export default function ResellerPayments() {
       return res.json();
     },
     onSuccess: () => {
-      toast({ title: "Pagamento confermato", description: "Il pagamento è stato confermato con successo" });
+      toast({ title: t("license.paymentConfirmed"), description: "Il pagamento è stato confermato con successo" });
       queryClient.invalidateQueries({ queryKey: ['/api/reseller/payments'] });
       setShowDetailDialog(false);
       setSelectedPayment(null);
     },
     onError: (error: any) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     }
   });
   
@@ -163,7 +165,7 @@ export default function ResellerPayments() {
               <CreditCard className="h-6 w-6 text-white" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold text-white" data-testid="page-title">Pagamenti</h1>
+              <h1 className="text-2xl font-bold text-white" data-testid="page-title">{t("sidebar.items.payments")}</h1>
               <p className="text-white/80 text-sm">Gestione pagamenti e transazioni</p>
             </div>
           </div>
@@ -178,7 +180,7 @@ export default function ResellerPayments() {
                 <CreditCard className="h-5 w-5 text-blue-600" />
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">Totale</p>
+                <p className="text-sm text-muted-foreground">{t("common.total")}</p>
                 <p className="text-2xl font-bold" data-testid="stat-total">{stats.total}</p>
               </div>
             </div>
@@ -191,7 +193,7 @@ export default function ResellerPayments() {
                 <Clock className="h-5 w-5 text-yellow-600" />
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">In Attesa</p>
+                <p className="text-sm text-muted-foreground">{t("common.pending")}</p>
                 <p className="text-2xl font-bold" data-testid="stat-pending">{stats.pending}</p>
               </div>
             </div>
@@ -204,7 +206,7 @@ export default function ResellerPayments() {
                 <CheckCircle className="h-5 w-5 text-green-600" />
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">Completati</p>
+                <p className="text-sm text-muted-foreground">{t("common.completed")}</p>
                 <p className="text-2xl font-bold" data-testid="stat-completed">{stats.completed}</p>
               </div>
             </div>
@@ -240,10 +242,10 @@ export default function ResellerPayments() {
         <Select value={methodFilter} onValueChange={setMethodFilter}>
           <SelectTrigger className="w-full sm:w-[180px]" data-testid="select-method-filter">
             <CreditCard className="mr-2 h-4 w-4" />
-            <SelectValue placeholder="Tutti i metodi" />
+            <SelectValue placeholder={t("common.allMethods")} />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">Tutti i metodi</SelectItem>
+            <SelectItem value="all">{t("common.allMethods")}</SelectItem>
             {Object.entries(methodLabels).map(([value, label]) => (
               <SelectItem key={value} value={value}>{label}</SelectItem>
             ))}
@@ -252,10 +254,10 @@ export default function ResellerPayments() {
         
         <Select value={statusFilter} onValueChange={setStatusFilter}>
           <SelectTrigger className="w-full sm:w-[180px]" data-testid="select-status-filter">
-            <SelectValue placeholder="Tutti gli stati" />
+            <SelectValue placeholder={t("common.allStatuses")} />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">Tutti gli stati</SelectItem>
+            <SelectItem value="all">{t("common.allStatuses")}</SelectItem>
             {Object.entries(statusLabels).map(([value, label]) => (
               <SelectItem key={value} value={value}>{label}</SelectItem>
             ))}
@@ -268,18 +270,18 @@ export default function ResellerPayments() {
           {filteredPayments.length === 0 ? (
             <div className="p-12 text-center">
               <CreditCard className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-              <p className="text-muted-foreground">Nessun pagamento trovato</p>
+              <p className="text-muted-foreground">{t("common.noPaymentsFound")}</p>
             </div>
           ) : (
             <Table>
               <TableHeader>
                 <TableRow>
                   <TableHead>ID Transazione</TableHead>
-                  <TableHead>Data</TableHead>
-                  <TableHead>Metodo</TableHead>
-                  <TableHead>Importo</TableHead>
-                  <TableHead>Stato</TableHead>
-                  <TableHead className="text-right">Azioni</TableHead>
+                  <TableHead>{t("common.date")}</TableHead>
+                  <TableHead>{t("common.method")}</TableHead>
+                  <TableHead>{t("common.amount")}</TableHead>
+                  <TableHead>{t("common.status")}</TableHead>
+                  <TableHead className="text-right">{t("common.actions")}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -339,11 +341,11 @@ export default function ResellerPayments() {
             <div className="space-y-4 p-1">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <Label className="text-muted-foreground">Importo</Label>
+                  <Label className="text-muted-foreground">{t("common.amount")}</Label>
                   <p className="text-2xl font-bold">{formatPrice(selectedPayment?.amount || 0)}</p>
                 </div>
                 <div>
-                  <Label className="text-muted-foreground">Stato</Label>
+                  <Label className="text-muted-foreground">{t("common.status")}</Label>
                   <Badge variant={statusColors[selectedPayment?.status || ''] as any} className="mt-1">
                     {statusLabels[selectedPayment?.status || ''] || selectedPayment?.status}
                   </Badge>
@@ -352,20 +354,20 @@ export default function ResellerPayments() {
               
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <Label className="text-muted-foreground">Metodo</Label>
+                  <Label className="text-muted-foreground">{t("common.method")}</Label>
                   <p className="font-medium">
                     {methodLabels[selectedPayment?.method || ''] || selectedPayment?.method}
                   </p>
                 </div>
                 <div>
-                  <Label className="text-muted-foreground">Stato Ordine</Label>
+                  <Label className="text-muted-foreground">{t("b2b.orderStatus")}</Label>
                   <p className="font-medium">{(selectedPayment as any)?.orderStatus || '-'}</p>
                 </div>
               </div>
               
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <Label className="text-muted-foreground">Ordine</Label>
+                  <Label className="text-muted-foreground">{t("common.order")}</Label>
                   <p>
                     <Link 
                       href={`/reseller/sales-orders/${selectedPayment?.orderId}`}
@@ -378,14 +380,14 @@ export default function ResellerPayments() {
                   </p>
                 </div>
                 <div>
-                  <Label className="text-muted-foreground">Totale Ordine</Label>
+                  <Label className="text-muted-foreground">{t("b2b.orderTotal")}</Label>
                   <p className="font-medium">{formatPrice((selectedPayment as any)?.orderTotal || 0)}</p>
                 </div>
               </div>
               
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <Label className="text-muted-foreground">Cliente</Label>
+                  <Label className="text-muted-foreground">{t("common.customer")}</Label>
                   <p className="font-medium">{(selectedPayment as any)?.customerName || '-'}</p>
                 </div>
                 <div>
@@ -396,27 +398,25 @@ export default function ResellerPayments() {
               
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <Label className="text-muted-foreground">Creato il</Label>
+                  <Label className="text-muted-foreground">{t("common.createdAt")}</Label>
                   <p className="font-medium">{formatDate(selectedPayment?.createdAt || null)}</p>
                 </div>
                 <div>
-                  <Label className="text-muted-foreground">Data Pagamento</Label>
+                  <Label className="text-muted-foreground">{t("utility.paymentDate")}</Label>
                   <p className="font-medium">{formatDate(selectedPayment?.paidAt || null)}</p>
                 </div>
               </div>
               
               {selectedPayment?.notes && (
                 <div>
-                  <Label className="text-muted-foreground">Note</Label>
+                  <Label className="text-muted-foreground">{t("common.notes")}</Label>
                   <p className="mt-1">{selectedPayment.notes}</p>
                 </div>
               )}
             </div>
           </ScrollArea>
           <DialogFooter className="flex-wrap gap-2">
-            <Button variant="outline" onClick={() => setShowDetailDialog(false)}>
-              Chiudi
-            </Button>
+            <Button variant="outline" onClick={() => setShowDetailDialog(false)}>{t("common.close")}</Button>
             {selectedPayment?.status === 'pending' && (
               <Button 
                 onClick={handleConfirmPayment}

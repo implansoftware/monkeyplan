@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useQuery } from "@tanstack/react-query";
@@ -67,20 +68,21 @@ type CustomerStats = {
   }>;
 };
 
-const REMOTE_STATUS_CONFIG: Record<string, { label: string; variant: "default" | "secondary" | "outline" | "destructive" }> = {
-  pending: { label: "In attesa", variant: "secondary" },
-  accepted: { label: "Accettata", variant: "default" },
-  quoted: { label: "Preventivo inviato", variant: "outline" },
-  quote_accepted: { label: "Preventivo accettato", variant: "default" },
-  quote_declined: { label: "Preventivo rifiutato", variant: "destructive" },
-  awaiting_shipment: { label: "In attesa spedizione", variant: "secondary" },
-  in_transit: { label: "In transito", variant: "outline" },
-  received: { label: "Ricevuto", variant: "default" },
-  in_repair: { label: "In riparazione", variant: "default" },
-};
 
 export default function CustomerDashboard() {
-  usePageTitle("Dashboard Cliente");
+  const { t } = useTranslation();
+  const REMOTE_STATUS_CONFIG: Record<string, { label: string; variant: "default" | "secondary" | "outline" | "destructive" }> = {
+    pending: { label: t("b2b.status.pending"), variant: "secondary" },
+    accepted: { label: t("remoteRequests.accepted"), variant: "default" },
+    quoted: { label: t("remote.preventivoInviato"), variant: "outline" },
+    quote_accepted: { label: "Preventivo accettato", variant: "default" },
+    quote_declined: { label: "Preventivo rifiutato", variant: "destructive" },
+    awaiting_shipment: { label: t("b2b.inAttesaSpedizione"), variant: "secondary" },
+    in_transit: { label: t("shipping.inTransit"), variant: "outline" },
+    received: { label: t("repairs.status.received"), variant: "default" },
+    in_repair: { label: t("repairs.status.inRepair"), variant: "default" },
+  };
+  usePageTitle(t("customerPages.dashboardCliente"));
   const { user } = useAuth();
   const { data: stats, isLoading } = useQuery<CustomerStats>({
     queryKey: ["/api/stats"],
@@ -89,10 +91,10 @@ export default function CustomerDashboard() {
   const firstName = user?.fullName?.split(" ")[0] || user?.username || "Cliente";
 
   const quickActions = [
-    { label: "Acquista Servizio", icon: ShoppingBag, href: "/customer/service-catalog", color: "bg-blue-500/10 text-blue-600 dark:text-blue-400" },
-    { label: "Le Mie Riparazioni", icon: Wrench, href: "/customer/repairs", color: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400" },
-    { label: "Richiedi Riparazione", icon: Send, href: "/customer/remote-requests", color: "bg-violet-500/10 text-violet-600 dark:text-violet-400" },
-    { label: "Le Mie Garanzie", icon: Shield, href: "/customer/warranties", color: "bg-amber-500/10 text-amber-600 dark:text-amber-400" },
+    { label: t("customerPages.acquistaServizio"), icon: ShoppingBag, href: "/customer/service-catalog", color: "bg-blue-500/10 text-blue-600 dark:text-blue-400" },
+    { label: t("customerPages.leMieRiparazioni"), icon: Wrench, href: "/customer/repairs", color: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400" },
+    { label: t("customerPages.richiediRiparazione"), icon: Send, href: "/customer/remote-requests", color: "bg-violet-500/10 text-violet-600 dark:text-violet-400" },
+    { label: t("sidebar.items.myWarranties"), icon: Shield, href: "/customer/warranties", color: "bg-amber-500/10 text-amber-600 dark:text-amber-400" },
   ];
 
   return (
@@ -145,7 +147,7 @@ export default function CustomerDashboard() {
                   </div>
                   <div>
                     <p className="text-2xl font-bold" data-testid="text-stat-repairs">{stats?.overview.activeRepairs ?? 0}</p>
-                    <p className="text-xs text-muted-foreground">Riparazioni attive</p>
+                    <p className="text-xs text-muted-foreground">{t("customerPages.riparazioniAttive")}</p>
                   </div>
                 </div>
               )}
@@ -162,7 +164,7 @@ export default function CustomerDashboard() {
                   </div>
                   <div>
                     <p className="text-2xl font-bold" data-testid="text-stat-tickets">{stats?.overview.openTickets ?? 0}</p>
-                    <p className="text-xs text-muted-foreground">Ticket aperti</p>
+                    <p className="text-xs text-muted-foreground">{t("customerPages.ticketAperti")}</p>
                   </div>
                 </div>
               )}
@@ -179,7 +181,7 @@ export default function CustomerDashboard() {
                   </div>
                   <div>
                     <p className="text-2xl font-bold" data-testid="text-stat-remote">{stats?.remoteRequests?.active ?? 0}</p>
-                    <p className="text-xs text-muted-foreground">Richieste remote</p>
+                    <p className="text-xs text-muted-foreground">{t("customerPages.richiesteRemote")}</p>
                   </div>
                 </div>
               )}
@@ -213,7 +215,7 @@ export default function CustomerDashboard() {
           {stats?.activeRemoteRequests && stats.activeRemoteRequests.length > 0 && (
             <Card data-testid="card-active-remote-requests">
               <CardHeader className="flex flex-row items-center justify-between gap-1 pb-3">
-                <CardTitle className="text-base">Richieste Remote Attive</CardTitle>
+                <CardTitle className="text-base">{t("customerPages.richiesteRemoteAttive")}</CardTitle>
                 <Link href="/customer/remote-requests">
                   <Button variant="ghost" size="sm" data-testid="button-view-all-remote">
                     Vedi tutte
@@ -268,7 +270,7 @@ export default function CustomerDashboard() {
           {(stats?.overview.totalRepairs ?? 0) > 0 && (
             <Card data-testid="card-repair-summary">
               <CardHeader className="flex flex-row items-center justify-between gap-1 pb-3">
-                <CardTitle className="text-base">Stato Riparazioni</CardTitle>
+                <CardTitle className="text-base">{t("customerPages.statoRiparazioni")}</CardTitle>
                 <Link href="/customer/repairs">
                   <Button variant="ghost" size="sm" data-testid="button-view-all-repairs">
                     Vedi tutte
@@ -279,10 +281,10 @@ export default function CustomerDashboard() {
               <CardContent className="pt-0">
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                   {[
-                    { label: "In attesa", value: stats?.repairsByStatus.pending ?? 0, color: "bg-amber-500" },
-                    { label: "In corso", value: stats?.repairsByStatus.in_progress ?? 0, color: "bg-blue-500" },
-                    { label: "Completate", value: stats?.repairsByStatus.completed ?? 0, color: "bg-emerald-500" },
-                    { label: "Annullate", value: stats?.repairsByStatus.cancelled ?? 0, color: "bg-muted-foreground" },
+                    { label: t("b2b.status.pending"), value: stats?.repairsByStatus.pending ?? 0, color: "bg-amber-500" },
+                    { label: t("customerPages.inCorso"), value: stats?.repairsByStatus.in_progress ?? 0, color: "bg-blue-500" },
+                    { label: t("customerPages.completate"), value: stats?.repairsByStatus.completed ?? 0, color: "bg-emerald-500" },
+                    { label: t("invoices.annullate"), value: stats?.repairsByStatus.cancelled ?? 0, color: "bg-muted-foreground" },
                   ].map((item) => (
                     <div key={item.label} className="flex items-center gap-2.5 p-2.5 rounded-md bg-muted/50">
                       <div className={`h-2.5 w-2.5 rounded-full ${item.color} shrink-0`} />
@@ -300,15 +302,15 @@ export default function CustomerDashboard() {
           {/* Navigation Shortcuts */}
           <Card data-testid="card-navigation">
             <CardHeader className="pb-3">
-              <CardTitle className="text-base">Servizi</CardTitle>
+              <CardTitle className="text-base">{t("sidebar.sections.services")}</CardTitle>
             </CardHeader>
             <CardContent className="pt-0">
               <div className="space-y-1">
                 {[
-                  { label: "Catalogo Servizi", desc: "Scopri i servizi disponibili", icon: Wrench, href: "/customer/service-catalog", color: "text-emerald-600 dark:text-emerald-400 bg-emerald-500/10" },
-                  { label: "I Miei Ordini", desc: "Ordini di servizio e interventi", icon: FileText, href: "/customer/service-orders", color: "text-blue-600 dark:text-blue-400 bg-blue-500/10" },
-                  { label: "Ordini Shop", desc: "Acquisti online e spedizioni", icon: ShoppingBag, href: "/customer/orders", color: "text-violet-600 dark:text-violet-400 bg-violet-500/10" },
-                  { label: "Resi", desc: "Gestisci resi e rimborsi", icon: RotateCcw, href: "/customer/sales-returns", color: "text-amber-600 dark:text-amber-400 bg-amber-500/10" },
+                  { label: t("sidebar.items.serviceCatalog"), desc: t("customerPages.scopriIServiziDisponibili"), icon: Wrench, href: "/customer/service-catalog", color: "text-emerald-600 dark:text-emerald-400 bg-emerald-500/10" },
+                  { label: t("sidebar.items.myOrders"), desc: t("customerPages.ordiniDiServizioEInterventi"), icon: FileText, href: "/customer/service-orders", color: "text-blue-600 dark:text-blue-400 bg-blue-500/10" },
+                  { label: t("sidebar.items.salesOrders"), desc: t("customerPages.acquistiOnlineESpedizioni"), icon: ShoppingBag, href: "/customer/orders", color: "text-violet-600 dark:text-violet-400 bg-violet-500/10" },
+                  { label: t("sidebar.items.returns"), desc: t("customerPages.gestisciResiERimborsi"), icon: RotateCcw, href: "/customer/sales-returns", color: "text-amber-600 dark:text-amber-400 bg-amber-500/10" },
                 ].map((item) => (
                   <Link key={item.href} href={item.href}>
                     <div className="flex items-center gap-3 p-3 rounded-md cursor-pointer transition-colors hover:bg-muted/50" data-testid={`link-nav-${item.label.toLowerCase().replace(/\s+/g, "-")}`}>
@@ -337,7 +339,7 @@ export default function CustomerDashboard() {
                 <div className="flex items-start gap-3">
                   {stats.assignedReseller.logoUrl ? (
                     <Avatar className="h-11 w-11">
-                      <AvatarImage src={stats.assignedReseller.logoUrl} alt="Logo rivenditore" />
+                      <AvatarImage src={stats.assignedReseller.logoUrl} alt={t("customerPages.logoRivenditore")} />
                       <AvatarFallback><Store className="h-5 w-5" /></AvatarFallback>
                     </Avatar>
                   ) : (
@@ -346,7 +348,7 @@ export default function CustomerDashboard() {
                     </div>
                   )}
                   <div className="min-w-0 flex-1">
-                    <p className="text-xs text-muted-foreground uppercase tracking-wide">Rivenditore</p>
+                    <p className="text-xs text-muted-foreground uppercase tracking-wide">{t("roles.reseller")}</p>
                     <p className="font-semibold text-sm truncate" data-testid="text-assigned-reseller">
                       {stats.assignedReseller.businessName || stats.assignedReseller.name}
                     </p>
@@ -375,7 +377,7 @@ export default function CustomerDashboard() {
                 <div className="flex items-start gap-3">
                   {stats.assignedCenter.logoUrl ? (
                     <Avatar className="h-11 w-11">
-                      <AvatarImage src={stats.assignedCenter.logoUrl} alt="Logo centro" />
+                      <AvatarImage src={stats.assignedCenter.logoUrl} alt={t("settings.logoCentro")} />
                       <AvatarFallback><Building2 className="h-5 w-5" /></AvatarFallback>
                     </Avatar>
                   ) : (
@@ -422,8 +424,8 @@ export default function CustomerDashboard() {
               <CardContent className="pt-0">
                 <div className="space-y-2">
                   {[
-                    { label: "Aperti", value: stats?.ticketsByStatus.open ?? 0, dot: "bg-amber-500" },
-                    { label: "In corso", value: stats?.ticketsByStatus.in_progress ?? 0, dot: "bg-blue-500" },
+                    { label: t("customerPages.aperti"), value: stats?.ticketsByStatus.open ?? 0, dot: "bg-amber-500" },
+                    { label: t("customerPages.inCorso"), value: stats?.ticketsByStatus.in_progress ?? 0, dot: "bg-blue-500" },
                     { label: "Risolti", value: stats?.ticketsByStatus.resolved ?? 0, dot: "bg-emerald-500" },
                   ].filter(i => i.value > 0).map((item) => (
                     <div key={item.label} className="flex items-center justify-between text-sm">
@@ -435,7 +437,7 @@ export default function CustomerDashboard() {
                     </div>
                   ))}
                   {[stats?.ticketsByStatus.open, stats?.ticketsByStatus.in_progress, stats?.ticketsByStatus.resolved].every(v => (v ?? 0) === 0) && (
-                    <p className="text-xs text-muted-foreground">Nessun ticket attivo</p>
+                    <p className="text-xs text-muted-foreground">{t("customerPages.nessunTicketAttivo")}</p>
                   )}
                 </div>
               </CardContent>

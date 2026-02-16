@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/use-auth";
@@ -38,6 +39,7 @@ type PaymentMethod = {
 };
 
 export default function CustomerServiceCatalog() {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const { toast } = useToast();
   const [searchQuery, setSearchQuery] = useState("");
@@ -120,10 +122,10 @@ export default function CustomerServiceCatalog() {
         customerNotes: "",
         paymentMethod: "in_person",
       });
-      toast({ title: "Ordine creato", description: "La tua richiesta è stata inviata. Vai a 'I Miei Ordini' per seguirla." });
+      toast({ title: "Ordine creato", description: t("customerPages.laTuaRichiestaStataInviataVaiAIMieiOr") });
     },
     onError: (error: Error) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("auth.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -174,7 +176,7 @@ export default function CustomerServiceCatalog() {
             <Wrench className="h-6 w-6 text-white" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-white">Catalogo Servizi</h1>
+            <h1 className="text-2xl font-bold text-white">{t("sidebar.items.serviceCatalog")}</h1>
             <p className="text-white/80 text-sm">Richiedi interventi di riparazione al tuo rivenditore</p>
           </div>
         </div>
@@ -183,7 +185,7 @@ export default function CustomerServiceCatalog() {
       <div className="relative">
         <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
         <Input
-          placeholder="Cerca servizi..."
+          placeholder={t("customerPages.cercaServizi")}
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           className="pl-10"
@@ -256,13 +258,13 @@ export default function CustomerServiceCatalog() {
 
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label>Tipo Dispositivo</Label>
+              <Label>{t("repairs.deviceType")}</Label>
               <Select
                 value={orderForm.deviceType}
                 onValueChange={(value) => setOrderForm({ ...orderForm, deviceType: value })}
               >
                 <SelectTrigger data-testid="select-device-type">
-                  <SelectValue placeholder="Seleziona tipo..." />
+                  <SelectValue placeholder={t("customerPages.selezionaTipo")} />
                 </SelectTrigger>
                 <SelectContent>
                   {deviceTypes?.map((type) => (
@@ -275,13 +277,13 @@ export default function CustomerServiceCatalog() {
             </div>
 
             <div className="space-y-2">
-              <Label>Marca</Label>
+              <Label>{t("repairs.deviceBrand")}</Label>
               <Select
                 value={orderForm.brandId}
                 onValueChange={(value) => setOrderForm({ ...orderForm, brandId: value, model: "" })}
               >
                 <SelectTrigger data-testid="select-brand">
-                  <SelectValue placeholder="Seleziona marca..." />
+                  <SelectValue placeholder={t("customerPages.selezionaMarca")} />
                 </SelectTrigger>
                 <SelectContent>
                   {deviceBrands?.map((brand) => (
@@ -294,14 +296,14 @@ export default function CustomerServiceCatalog() {
             </div>
 
             <div className="space-y-2">
-              <Label>Modello</Label>
+              <Label>{t("repairs.deviceModel")}</Label>
               <Select
                 value={orderForm.model}
                 onValueChange={(value) => setOrderForm({ ...orderForm, model: value })}
                 disabled={!orderForm.brandId}
               >
                 <SelectTrigger data-testid="select-model">
-                  <SelectValue placeholder="Seleziona modello..." />
+                  <SelectValue placeholder={t("products.selectModel")} />
                 </SelectTrigger>
                 <SelectContent>
                   {filteredModels?.map((model) => (
@@ -319,7 +321,7 @@ export default function CustomerServiceCatalog() {
                 <Input
                   value={orderForm.imei}
                   onChange={(e) => setOrderForm({ ...orderForm, imei: e.target.value })}
-                  placeholder="IMEI"
+                  placeholder={t("repairs.imei")}
                   data-testid="input-imei"
                 />
               </div>
@@ -355,7 +357,7 @@ export default function CustomerServiceCatalog() {
             </div>
 
             <div className="space-y-2">
-              <Label>Metodo di pagamento</Label>
+              <Label>{t("license.paymentMethod")}</Label>
               {paymentMethods?.methods && paymentMethods.methods.length > 0 ? (
                 <RadioGroup
                   value={orderForm.paymentMethod}
@@ -383,7 +385,7 @@ export default function CustomerServiceCatalog() {
                   })}
                 </RadioGroup>
               ) : (
-                <p className="text-sm text-muted-foreground">Caricamento metodi di pagamento...</p>
+                <p className="text-sm text-muted-foreground">{t("customerPages.caricamentoMetodiDiPagamento")}</p>
               )}
               {orderForm.paymentMethod === "bank_transfer" && paymentMethods?.methods && (
                 (() => {
@@ -442,7 +444,7 @@ export default function CustomerServiceCatalog() {
                   setSelectedService(null);
                 }}
                 onError={(error) => {
-                  toast({ title: "Errore pagamento", description: error, variant: "destructive" });
+                  toast({ title: t("customerPages.errorePagamento"), description: error, variant: "destructive" });
                 }}
                 paymentIntentEndpoint="/api/customer/service-orders/stripe-payment-intent"
                 createOrderEndpoint="/api/customer/service-orders"
@@ -475,11 +477,11 @@ export default function CustomerServiceCatalog() {
                       setSelectedService(null);
                     })
                     .catch((err: Error) => {
-                      toast({ title: "Errore", description: err.message, variant: "destructive" });
+                      toast({ title: t("auth.error"), description: err.message, variant: "destructive" });
                     });
                 }}
                 onError={(error) => {
-                  toast({ title: "Errore PayPal", description: error, variant: "destructive" });
+                  toast({ title: t("b2b.errorePayPal"), description: error, variant: "destructive" });
                 }}
                 createOrderEndpoint="/api/customer/service-orders/paypal-create"
                 captureOrderEndpoint="/api/customer/service-orders/paypal-capture"

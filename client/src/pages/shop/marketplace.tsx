@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
@@ -35,6 +36,7 @@ function formatPrice(cents: number): string {
 }
 
 export default function Marketplace() {
+  const { t } = useTranslation();
   const [searchQuery, setSearchQuery] = useState("");
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
   const [sortBy, setSortBy] = useState<string>("price-asc");
@@ -84,7 +86,7 @@ export default function Marketplace() {
                 Marketplace
               </h1>
               <p className="text-muted-foreground">
-                Esplora i prodotti di tutti i venditori e trova le migliori offerte
+                {t("marketplace.subtitle")}
               </p>
             </div>
           </div>
@@ -93,11 +95,11 @@ export default function Marketplace() {
             <div className="flex items-center gap-3 flex-wrap">
               <Badge variant="secondary" className="no-default-active-elevate" data-testid="text-product-count-badge">
                 <Package className="h-3 w-3 mr-1.5" />
-                {products.length} prodotti
+                {t("marketplace.productCount", { count: products.length })}
               </Badge>
               <Badge variant="secondary" className="no-default-active-elevate" data-testid="text-seller-count-badge">
                 <Store className="h-3 w-3 mr-1.5" />
-                {uniqueSellerCount} venditori
+                {t("marketplace.sellerCount", { count: uniqueSellerCount })}
               </Badge>
             </div>
           )}
@@ -107,7 +109,7 @@ export default function Marketplace() {
           <div className="relative w-full sm:w-80 lg:w-96">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
-              placeholder="Cerca prodotti..."
+              placeholder={t("marketplace.searchPlaceholder")}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-10"
@@ -118,10 +120,10 @@ export default function Marketplace() {
             <Select value={categoryFilter} onValueChange={setCategoryFilter}>
               <SelectTrigger className="w-40" data-testid="select-category">
                 <Filter className="h-4 w-4 mr-2" />
-                <SelectValue placeholder="Categoria" />
+                <SelectValue placeholder={t("marketplace.category")} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">Tutte</SelectItem>
+                <SelectItem value="all">{t("marketplace.allCategories")}</SelectItem>
                 {categories.map(cat => (
                   <SelectItem key={cat} value={cat}>{cat}</SelectItem>
                 ))}
@@ -129,13 +131,13 @@ export default function Marketplace() {
             </Select>
             <Select value={sortBy} onValueChange={setSortBy}>
               <SelectTrigger className="w-44" data-testid="select-sort">
-                <SelectValue placeholder="Ordina per" />
+                <SelectValue placeholder={t("marketplace.sortBy")} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="price-asc">Prezzo: basso-alto</SelectItem>
-                <SelectItem value="price-desc">Prezzo: alto-basso</SelectItem>
-                <SelectItem value="name-asc">Nome A-Z</SelectItem>
-                <SelectItem value="sellers">Venditori</SelectItem>
+                <SelectItem value="price-asc">{t("marketplace.priceLowHigh")}</SelectItem>
+                <SelectItem value="price-desc">{t("marketplace.priceHighLow")}</SelectItem>
+                <SelectItem value="name-asc">{t("marketplace.nameAZ")}</SelectItem>
+                <SelectItem value="sellers">{t("marketplace.sellers")}</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -164,9 +166,9 @@ export default function Marketplace() {
             <div className="flex items-center justify-center w-20 h-20 rounded-full bg-muted mb-6">
               <Package className="h-10 w-10 text-muted-foreground" />
             </div>
-            <h3 className="text-xl font-semibold mb-2">Nessun prodotto trovato</h3>
+            <h3 className="text-xl font-semibold mb-2">{t("marketplace.noProductsFound")}</h3>
             <p className="text-muted-foreground text-center max-w-sm">
-              Prova a modificare i filtri di ricerca o cambia categoria per trovare quello che cerchi
+              {t("marketplace.noProductsHint")}
             </p>
           </div>
         ) : (
@@ -193,7 +195,7 @@ export default function Marketplace() {
                     {item.sellerCount > 1 && (
                       <Badge className="absolute top-2.5 right-2.5 no-default-active-elevate" data-testid={`badge-sellers-${item.product.id}`}>
                         <Store className="h-3 w-3 mr-1" />
-                        {item.sellerCount} venditori
+                        {t("marketplace.sellerCount", { count: item.sellerCount })}
                       </Badge>
                     )}
                   </div>
@@ -212,7 +214,7 @@ export default function Marketplace() {
                   <CardFooter className="p-4 pt-0 gap-2">
                     <Link href={`/marketplace/${item.product.id}`} className="flex-1">
                       <Button variant="outline" className="w-full" data-testid={`button-view-${item.product.id}`}>
-                        Dettagli
+                        {t("marketplace.details")}
                       </Button>
                     </Link>
                     <Button size="icon" data-testid={`button-cart-${item.product.id}`}>
@@ -224,7 +226,7 @@ export default function Marketplace() {
             </div>
 
             <p className="text-sm text-muted-foreground text-center pt-2" data-testid="text-products-found">
-              {filteredProducts.length} prodotti trovati
+              {t("marketplace.productsFound", { count: filteredProducts.length })}
             </p>
           </>
         )}

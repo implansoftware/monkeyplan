@@ -18,6 +18,7 @@ import {
   TrendingUp, TrendingDown, RotateCcw, ArrowLeftRight, MapPin, User, Building2
 } from "lucide-react";
 import type { Warehouse as WarehouseType, WarehouseStock, WarehouseMovement, Product } from "@shared/schema";
+import { useTranslation } from "react-i18next";
 
 type EnrichedWarehouse = WarehouseType & {
   owner: { id: string; username: string; fullName: string | null; role: string } | null;
@@ -53,6 +54,7 @@ const ROLE_LABELS: Record<string, string> = {
 };
 
 export default function AllWarehousesPage() {
+  const { t } = useTranslation();
   const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState("");
   const [ownerTypeFilter, setOwnerTypeFilter] = useState<string>("all");
@@ -111,12 +113,12 @@ export default function AllWarehousesPage() {
       });
     },
     onSuccess: () => {
-      toast({ title: "Magazzino aggiornato con successo" });
+      toast({ title: t("warehouse.warehouseUpdated") });
       queryClient.invalidateQueries({ queryKey: ["/api/admin/all-warehouses"] });
       setEditDialogOpen(false);
     },
     onError: (error: any) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -137,7 +139,7 @@ export default function AllWarehousesPage() {
       return apiRequest("POST", "/api/warehouses/transfer-immediate", data);
     },
     onSuccess: (result: any) => {
-      toast({ title: "Trasferimento completato", description: result.message });
+      toast({ title: t("warehouse.transferCompleted"), description: result.message });
       queryClient.invalidateQueries({ queryKey: ["/api/warehouses", selectedWarehouse?.id, "stock"] });
       queryClient.invalidateQueries({ queryKey: ["/api/warehouses", transferDestWarehouseId, "stock"] });
       queryClient.invalidateQueries({ queryKey: ["/api/admin/all-warehouses"] });
@@ -147,7 +149,7 @@ export default function AllWarehousesPage() {
       setTransferQuantity(1);
     },
     onError: (error: any) => {
-      toast({ title: "Errore trasferimento", description: error.message, variant: "destructive" });
+      toast({ title: t("warehouse.transferError"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -296,7 +298,7 @@ export default function AllWarehousesPage() {
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
-                  placeholder="Cerca magazzino..."
+                  placeholder={t("warehouse.searchWarehouse")}
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="pl-10 w-64"
@@ -305,14 +307,14 @@ export default function AllWarehousesPage() {
               </div>
               <Select value={ownerTypeFilter} onValueChange={setOwnerTypeFilter}>
                 <SelectTrigger className="w-48" data-testid="select-owner-type-filter">
-                  <SelectValue placeholder="Tipo proprietario" />
+                  <SelectValue placeholder={t("warehouse.ownerType")} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">Tutti i tipi</SelectItem>
+                  <SelectItem value="all">{t("common.allTypes")}</SelectItem>
                   <SelectItem value="admin">Admin</SelectItem>
-                  <SelectItem value="reseller">Rivenditori</SelectItem>
-                  <SelectItem value="sub_reseller">Sub-Rivenditori</SelectItem>
-                  <SelectItem value="repair_center">Centri Riparazione</SelectItem>
+                  <SelectItem value="reseller">{t("sidebar.items.resellers")}</SelectItem>
+                  <SelectItem value="sub_reseller">{t("admin.resellers.subResellers")}</SelectItem>
+                  <SelectItem value="repair_center">{t("admin.repairCenters.repairCenters")}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -331,14 +333,14 @@ export default function AllWarehousesPage() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Nome Magazzino</TableHead>
-                  <TableHead>Tipo</TableHead>
-                  <TableHead>Proprietario</TableHead>
-                  <TableHead>Indirizzo</TableHead>
+                  <TableHead>{t("warehouse.warehouseName")}</TableHead>
+                  <TableHead>{t("common.type")}</TableHead>
+                  <TableHead>{t("warehouse.owner")}</TableHead>
+                  <TableHead>{t("common.address")}</TableHead>
                   <TableHead className="text-right">Articoli</TableHead>
-                  <TableHead className="text-right">Quantità</TableHead>
-                  <TableHead>Stato</TableHead>
-                  <TableHead className="text-right">Azioni</TableHead>
+                  <TableHead className="text-right">{t("common.quantity")}</TableHead>
+                  <TableHead>{t("common.status")}</TableHead>
+                  <TableHead className="text-right">{t("common.actions")}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -452,7 +454,7 @@ export default function AllWarehousesPage() {
                     <div className="relative">
                       <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                       <Input
-                        placeholder="Cerca prodotto per nome, SKU o categoria..."
+                        placeholder={t("products.searchProduct")}
                         value={stockSearchTerm}
                         onChange={(e) => setStockSearchTerm(e.target.value)}
                         className="pl-9"
@@ -489,13 +491,13 @@ export default function AllWarehousesPage() {
                           <Table>
                             <TableHeader>
                               <TableRow>
-                                <TableHead>SKU</TableHead>
-                                <TableHead>Prodotto</TableHead>
-                                <TableHead>Categoria</TableHead>
-                                <TableHead className="text-right">Quantità</TableHead>
+                                <TableHead>{t("products.sku")}</TableHead>
+                                <TableHead>{t("products.product")}</TableHead>
+                                <TableHead>{t("common.category")}</TableHead>
+                                <TableHead className="text-right">{t("common.quantity")}</TableHead>
                                 <TableHead className="text-right">Min. Stock</TableHead>
-                                <TableHead>Posizione</TableHead>
-                                <TableHead className="text-right">Azioni</TableHead>
+                                <TableHead>{t("warehouse.location")}</TableHead>
+                                <TableHead className="text-right">{t("common.actions")}</TableHead>
                               </TableRow>
                             </TableHeader>
                             <TableBody>
@@ -553,13 +555,13 @@ export default function AllWarehousesPage() {
                       <Table>
                         <TableHeader>
                           <TableRow>
-                            <TableHead>Data</TableHead>
-                            <TableHead>Tipo</TableHead>
-                            <TableHead>Da/Verso</TableHead>
-                            <TableHead>Prodotto</TableHead>
-                            <TableHead className="text-right">Quantità</TableHead>
-                            <TableHead>Operatore</TableHead>
-                            <TableHead>Note</TableHead>
+                            <TableHead>{t("common.date")}</TableHead>
+                            <TableHead>{t("common.type")}</TableHead>
+                            <TableHead>{t("warehouse.fromTo")}</TableHead>
+                            <TableHead>{t("products.product")}</TableHead>
+                            <TableHead className="text-right">{t("common.quantity")}</TableHead>
+                            <TableHead>{t("warehouse.operator")}</TableHead>
+                            <TableHead>{t("common.notes")}</TableHead>
                           </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -626,7 +628,7 @@ export default function AllWarehousesPage() {
           </DialogHeader>
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label>Nome Magazzino</Label>
+              <Label>{t("warehouse.warehouseName")}</Label>
               <Input
                 value={editData.name}
                 onChange={(e) => setEditData(prev => ({ ...prev, name: e.target.value }))}
@@ -634,20 +636,20 @@ export default function AllWarehousesPage() {
               />
             </div>
             <div className="space-y-2">
-              <Label>Indirizzo</Label>
+              <Label>{t("common.address")}</Label>
               <Input
                 value={editData.address}
                 onChange={(e) => setEditData(prev => ({ ...prev, address: e.target.value }))}
-                placeholder="Via, Città, CAP"
+                placeholder={t("warehouse.addressPlaceholder")}
                 data-testid="input-edit-warehouse-address"
               />
             </div>
             <div className="space-y-2">
-              <Label>Note</Label>
+              <Label>{t("common.notes")}</Label>
               <Textarea
                 value={editData.notes}
                 onChange={(e) => setEditData(prev => ({ ...prev, notes: e.target.value }))}
-                placeholder="Note aggiuntive..."
+                placeholder={t("utility.additionalNotes")}
                 data-testid="input-edit-warehouse-notes"
               />
             </div>
@@ -668,7 +670,7 @@ export default function AllWarehousesPage() {
               disabled={updateWarehouseMutation.isPending || !editData.name.trim()}
               data-testid="button-save-warehouse"
             >
-              {updateWarehouseMutation.isPending ? "Salvataggio..." : "Salva"}
+              {updateWarehouseMutation.isPending ? t("settings.savingRate") : "Salva"}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -692,7 +694,7 @@ export default function AllWarehousesPage() {
               </div>
               
               <div className="space-y-2">
-                <Label>Da Magazzino</Label>
+                <Label>{t("warehouse.fromWarehouse")}</Label>
                 <Input value={selectedWarehouse?.name || ""} disabled data-testid="input-source-warehouse" />
               </div>
 
@@ -700,7 +702,7 @@ export default function AllWarehousesPage() {
                 <Label>A Magazzino</Label>
                 <Select value={transferDestWarehouseId} onValueChange={setTransferDestWarehouseId}>
                   <SelectTrigger data-testid="select-dest-warehouse">
-                    <SelectValue placeholder="Seleziona magazzino destinazione" />
+                    <SelectValue placeholder={t("warehouse.selectDestWarehouse")} />
                   </SelectTrigger>
                   <SelectContent>
                     {accessibleWarehouses
@@ -715,7 +717,7 @@ export default function AllWarehousesPage() {
               </div>
 
               <div className="space-y-2">
-                <Label>Quantità da trasferire</Label>
+                <Label>{t("warehouse.transferQuantity")}</Label>
                 <Input
                   type="number"
                   min={1}

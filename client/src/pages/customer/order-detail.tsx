@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
 import { useLocation, useRoute } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -26,14 +27,14 @@ interface OrderDetailResponse {
 }
 
 const statusLabels: Record<string, string> = {
-  pending: "In attesa",
-  confirmed: "Confermato",
+  pending: t("common.waiting"),
+  confirmed: t("common.confirmed"),
   processing: "In elaborazione",
   ready_to_ship: "Pronto per spedizione",
   shipped: "Spedito",
-  delivered: "Consegnato",
-  completed: "Completato",
-  cancelled: "Annullato",
+  delivered: t("common.delivered"),
+  completed: t("common.completed"),
+  cancelled: t("common.cancelled"),
   refunded: "Rimborsato"
 };
 
@@ -50,13 +51,14 @@ const statusColors: Record<string, string> = {
 };
 
 const paymentStatusLabels: Record<string, string> = {
-  pending: "In attesa",
+  pending: t("common.waiting"),
   partial: "Parziale",
   paid: "Pagato",
   refunded: "Rimborsato"
 };
 
 export default function CustomerOrderDetail() {
+  const { t } = useTranslation();
   const [, setLocation] = useLocation();
   const [, params] = useRoute("/customer/orders/:id");
   const orderId = params?.id;
@@ -113,7 +115,7 @@ export default function CustomerOrderDetail() {
         <Card>
           <CardContent className="p-12 text-center">
             <AlertCircle className="h-12 w-12 mx-auto mb-4 text-destructive" />
-            <h3 className="text-lg font-semibold mb-2">Ordine non trovato</h3>
+            <h3 className="text-lg font-semibold mb-2">{t("customerPages.ordineNonTrovato")}</h3>
             <p className="text-muted-foreground">L'ordine richiesto non esiste o non hai accesso</p>
           </CardContent>
         </Card>
@@ -170,18 +172,18 @@ export default function CustomerOrderDetail() {
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="flex justify-between">
-              <span className="text-muted-foreground">Subtotale</span>
+              <span className="text-muted-foreground">{t("common.subtotal")}</span>
               <span data-testid="text-subtotal">{formatPrice(order.subtotal)}</span>
             </div>
             {order.discountAmount > 0 && (
               <div className="flex justify-between text-green-600">
-                <span>Sconto</span>
+                <span>{t("common.discount")}</span>
                 <span>-{formatPrice(order.discountAmount)}</span>
               </div>
             )}
             {order.shippingCost > 0 && (
               <div className="flex justify-between">
-                <span className="text-muted-foreground">Spedizione</span>
+                <span className="text-muted-foreground">{t("common.shipment")}</span>
                 <span>{formatPrice(order.shippingCost)}</span>
               </div>
             )}
@@ -191,7 +193,7 @@ export default function CustomerOrderDetail() {
             </div>
             <Separator />
             <div className="flex justify-between font-semibold text-lg">
-              <span>Totale</span>
+              <span>{t("common.total")}</span>
               <span data-testid="text-total">{formatPrice(order.total)}</span>
             </div>
             
@@ -200,14 +202,14 @@ export default function CustomerOrderDetail() {
             {payments.length > 0 && (
               <>
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">Stato pagamento</span>
+                  <span className="text-muted-foreground">{t("customerPages.statoPagamento")}</span>
                   <Badge variant={payments.some(p => p.status === "completed") ? "default" : "secondary"}>
-                    {payments.some(p => p.status === "completed") ? "Pagato" : "In attesa"}
+                    {payments.some(p => p.status === "completed") ? "Pagato" : t("common.waiting")}
                   </Badge>
                 </div>
                 {payments[0]?.method && (
                   <div className="flex justify-between">
-                    <span className="text-muted-foreground">Metodo</span>
+                    <span className="text-muted-foreground">{t("common.method")}</span>
                     <span className="capitalize">{payments[0].method.replace(/_/g, ' ')}</span>
                   </div>
                 )}
@@ -273,7 +275,7 @@ export default function CustomerOrderDetail() {
                   </div>
                 </div>
                 <div className="flex flex-wrap items-center gap-4 text-sm">
-                  <span className="text-muted-foreground">Qtà: {item.quantity}</span>
+                  <span className="text-muted-foreground">{t("common.qty")}: {item.quantity}</span>
                   <span className="text-muted-foreground">{formatPrice(item.unitPrice)} cad.</span>
                   <span className="font-medium">{formatPrice(item.totalPrice)}</span>
                 </div>
@@ -364,7 +366,7 @@ export default function CustomerOrderDetail() {
       {order.customerNotes && (
         <Card>
           <CardHeader>
-            <CardTitle>Note</CardTitle>
+            <CardTitle>{t("common.note")}</CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-muted-foreground">{order.customerNotes}</p>

@@ -16,23 +16,25 @@ type RepairCenterWithUserId = RepairCenter & { userId: string | null };
 type EnrichedRemoteRequest = RemoteRepairRequest & { devices: RemoteRepairRequestDevice[] };
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
+import { useTranslation } from "react-i18next";
 
 const statusLabels: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
-  pending: { label: "In attesa", variant: "secondary" },
+  pending: { label: t("hr.pending"), variant: "secondary" },
   assigned: { label: "Assegnata", variant: "outline" },
-  accepted: { label: "Accettata", variant: "default" },
-  rejected: { label: "Rifiutata", variant: "destructive" },
+  accepted: { label: t("remoteRequests.accepted"), variant: "default" },
+  rejected: { label: t("common.rejected"), variant: "destructive" },
   awaiting_shipment: { label: "Attesa spedizione", variant: "outline" },
-  in_transit: { label: "In transito", variant: "default" },
-  received: { label: "Ricevuto", variant: "default" },
+  in_transit: { label: t("shipping.inTransit"), variant: "default" },
+  received: { label: t("repairs.status.received"), variant: "default" },
   repair_created: { label: "Riparazione creata", variant: "default" },
-  cancelled: { label: "Annullata", variant: "destructive" },
+  cancelled: { label: t("common.cancelled"), variant: "destructive" },
   quoted: { label: "Preventivo inviato", variant: "outline" },
   quote_accepted: { label: "Preventivo accettato", variant: "default" },
   quote_declined: { label: "Preventivo rifiutato", variant: "destructive" },
 };
 
 export default function ResellerRemoteRequests() {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const { toast } = useToast();
   const [isAssignOpen, setIsAssignOpen] = useState(false);
@@ -65,7 +67,7 @@ export default function ResellerRemoteRequests() {
     },
     onError: (error: Error) => {
       toast({
-        title: "Errore",
+        title: t("common.error"),
         description: error.message,
         variant: "destructive",
       });
@@ -123,7 +125,7 @@ export default function ResellerRemoteRequests() {
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
         <Card className="rounded-2xl">
           <CardHeader className="pb-2">
-            <CardDescription>In Attesa</CardDescription>
+            <CardDescription>{t("common.pending")}</CardDescription>
             <CardTitle className="text-3xl">{pendingRequests.length}</CardTitle>
           </CardHeader>
         </Card>
@@ -135,7 +137,7 @@ export default function ResellerRemoteRequests() {
         </Card>
         <Card className="rounded-2xl">
           <CardHeader className="pb-2">
-            <CardDescription>In Lavorazione</CardDescription>
+            <CardDescription>{t("repairs.inProgress")}</CardDescription>
             <CardTitle className="text-3xl">{activeRequests.length}</CardTitle>
           </CardHeader>
         </Card>
@@ -199,7 +201,7 @@ export default function ResellerRemoteRequests() {
                           <div key={device.id} className="p-3 border rounded-md space-y-2" data-testid={`device-${device.id}`}>
                             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                               <div>
-                                <p className="text-xs text-muted-foreground">Dispositivo</p>
+                                <p className="text-xs text-muted-foreground">{t("repairs.device")}</p>
                                 <p className="text-sm font-medium">{device.deviceType}</p>
                               </div>
                               <div>
@@ -207,11 +209,11 @@ export default function ResellerRemoteRequests() {
                                 <p className="text-sm font-medium">{device.brand} {device.model}</p>
                               </div>
                               <div>
-                                <p className="text-xs text-muted-foreground">Quantità</p>
+                                <p className="text-xs text-muted-foreground">{t("common.quantity")}</p>
                                 <p className="text-sm font-medium">{device.quantity}</p>
                               </div>
                               <div>
-                                <p className="text-xs text-muted-foreground">Stato</p>
+                                <p className="text-xs text-muted-foreground">{t("common.status")}</p>
                                 <Badge variant={statusLabels[device.status]?.variant || "secondary"} className="text-xs">
                                   {statusLabels[device.status]?.label || device.status}
                                 </Badge>
@@ -224,8 +226,7 @@ export default function ResellerRemoteRequests() {
                             {device.photos && device.photos.length > 0 && (
                               <div>
                                 <p className="text-xs text-muted-foreground flex items-center gap-1 mb-1">
-                                  <Image className="h-3 w-3" /> Foto
-                                </p>
+                                  <Image className="h-3 w-3" />{t("common.photo")}</p>
                                 <div className="flex flex-wrap gap-1">
                                   {device.photos.map((photo: string, pi: number) => (
                                     <a key={pi} href={photo} target="_blank" rel="noopener noreferrer">
@@ -390,9 +391,7 @@ export default function ResellerRemoteRequests() {
               </Select>
             </div>
             <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => setIsAssignOpen(false)}>
-                Annulla
-              </Button>
+              <Button type="button" variant="outline" onClick={() => setIsAssignOpen(false)}>{t("common.cancel")}</Button>
               <Button type="submit" disabled={assignMutation.isPending || !selectedCenterId} data-testid="button-confirm-assign">
                 {assignMutation.isPending ? (
                   <Loader2 className="h-4 w-4 animate-spin" />

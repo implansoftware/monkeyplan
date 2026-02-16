@@ -52,6 +52,7 @@ import {
   ListOrdered,
   Calculator,
 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { useState, Fragment, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
@@ -76,7 +77,6 @@ import { Link, useLocation } from "wouter";
 import { ContextSwitcher } from "@/components/ContextSwitcher";
 import { Badge } from "@/components/ui/badge";
 
-// Type for context response
 interface ActingAs {
   type: 'reseller' | 'repair_center';
   id: string;
@@ -89,293 +89,285 @@ interface ContextResponse {
 
 const menuItems = {
   admin: [
-    { title: "Dashboard", url: "/admin", icon: LayoutDashboard, group: "Dashboard" },
-    { title: "Panoramica POS", url: "/admin/pos", icon: Receipt, group: "POS" },
-    { title: "Clienti", url: "/admin/customers", icon: Users, group: "Clienti & Rivenditori" },
-    { title: "Rivenditori", url: "/admin/resellers", icon: Store, group: "Clienti & Rivenditori" },
-    { title: "Team Rivenditori", url: "/admin/reseller-teams", icon: UsersRound, group: "Clienti & Rivenditori" },
-    { title: "Centri di Riparazione", url: "/admin/repair-centers", icon: Building, group: "Centri & Riparazioni" },
-    { title: "Lavorazioni", url: "/admin/repairs", icon: Wrench, group: "Centri & Riparazioni" },
-    { title: "Utility", url: "/admin/utility", icon: Zap, group: "Utility" },
-    { title: "Fornitori Utility", url: "/admin/utility/suppliers", icon: Phone, group: "Utility" },
-    { title: "Listino Servizi", url: "/admin/utility/services", icon: Package, group: "Utility" },
-    { title: "Pratiche", url: "/admin/utility/practices", icon: FileCheck, group: "Utility" },
-    { title: "Compensi", url: "/admin/utility/commissions", icon: Coins, group: "Utility" },
-    { title: "Report Utility", url: "/admin/utility/reports", icon: PieChart, group: "Utility" },
-    { title: "Il Mio Magazzino", url: "/admin/warehouses", icon: Warehouse, group: "Magazzino" },
-    { title: "Tutti i Magazzini", url: "/admin/all-warehouses", icon: Building2, group: "Magazzino" },
-    { title: "Ricambi", url: "/admin/products", icon: Package, group: "Magazzino" },
-    { title: "Dispositivi", url: "/admin/dispositivi", icon: Smartphone, group: "Magazzino" },
-    { title: "Accessori", url: "/admin/accessory-catalog", icon: ShoppingCart, group: "Magazzino" },
-    { title: "Panoramica", url: "/admin/transfer-requests/overview", icon: ArrowRightLeft, group: "Interscambio" },
-    { title: "Tutte le Richieste", url: "/admin/transfer-requests", icon: Inbox, group: "Interscambio" },
-    { title: "Anagrafica Fornitori", url: "/admin/suppliers", icon: Truck, group: "Fornitori" },
-    { title: "Ordini a Fornitori", url: "/admin/supplier-orders", icon: ShoppingCart, group: "Fornitori" },
-    { title: "Resi a Fornitori", url: "/admin/supplier-returns", icon: Undo2, group: "Fornitori" },
-    { title: "Fatture", url: "/admin/invoices", icon: FileText, group: "Fatturazione" },
-    // E-commerce - Catalogo
-    { title: "Assegnazione Reseller", url: "/admin/product-assignments", icon: Store, group: "E-commerce" },
-    // E-commerce - Ordini
-    { title: "Ordini Clienti", url: "/admin/sales-orders", icon: ShoppingCart, group: "E-commerce" },
-    { title: "Ordini Reseller", url: "/admin/b2b-orders", icon: Network, group: "E-commerce" },
-    { title: "Ordini Centri Rip.", url: "/admin/rc-b2b-orders", icon: Building, group: "E-commerce" },
-    // E-commerce - Resi
-    { title: "Resi Clienti", url: "/admin/sales-returns", icon: RotateCcw, group: "E-commerce" },
-    { title: "Resi B2B", url: "/admin/b2b-returns", icon: Undo2, group: "E-commerce" },
-    // E-commerce - Operazioni
-    { title: "Spedizioni", url: "/admin/shipments", icon: Truck, group: "E-commerce" },
-    { title: "Pagamenti", url: "/admin/payments", icon: CreditCard, group: "E-commerce" },
-    { title: "Ferie/Permessi", url: "/admin/hr/leave-requests", icon: Calendar, group: "Risorse Umane" },
-    { title: "Malattie", url: "/admin/hr/sick-leave", icon: Stethoscope, group: "Risorse Umane" },
-    { title: "Note Spese", url: "/admin/hr/expenses", icon: Receipt, group: "Risorse Umane" },
-    { title: "Presenze", url: "/admin/hr/attendance", icon: Clock, group: "Risorse Umane" },
-    { title: "Calendario HR", url: "/admin/hr/calendar", icon: Calendar, group: "Risorse Umane" },
-    { title: "Catalogo Dispositivi", url: "/admin/device-catalog", icon: Package, group: "Cataloghi" },
-    { title: "Compatibilità Dispositivi", url: "/admin/device-compatibilities", icon: Link2, group: "Cataloghi" },
-    { title: "Listino Prezzi", url: "/admin/service-catalog", icon: Receipt, group: "Cataloghi" },
-    { title: "Ordini Interventi", url: "/admin/service-orders", icon: FileText, group: "Cataloghi" },
-    { title: "Categorie Utility", url: "/admin/utility-categories", icon: FolderOpen, group: "Cataloghi" },
-    { title: "Piani Licenza", url: "/admin/license-plans", icon: CreditCard, group: "Licenze" },
-    { title: "Licenze Attive", url: "/admin/licenses", icon: Shield, group: "Licenze" },
-    { title: "Listini Network", url: "/admin/price-lists", icon: ListOrdered, group: "Configurazione" },
-    { title: "Garanzie Clienti", url: "/admin/warranties", icon: Shield, group: "Garanzie" },
-    { title: "Prodotti Garanzia", url: "/admin/warranty-products", icon: Shield, group: "Garanzie" },
-    { title: "Analytics Garanzie", url: "/admin/warranty-analytics", icon: BarChart3, group: "Garanzie" },
-    { title: "Integrazioni API", url: "/admin/external-integrations", icon: Plug, group: "Configurazione" },
-    { title: "Activity Logs", url: "/admin/activity-logs", icon: FileText, group: "Configurazione" },
-    { title: "Motivi Irriparabilità", url: "/admin/unrepairable-reasons", icon: AlertTriangle, group: "Configurazione" },
-    { title: "Impostazioni Diagnosi", url: "/admin/diagnosis-settings", icon: Settings, group: "Configurazione" },
-    { title: "Impostazioni", url: "/admin/settings", icon: Settings, group: "Configurazione" },
-    { title: "Team Admin", url: "/admin/team", icon: UsersRound, group: "Team" },
-    { title: "Ticket", url: "/admin/tickets", icon: Ticket, group: "Assistenza" },
-    { title: "Live Chat", url: "/admin/chat", icon: MessageSquare, group: "Assistenza" },
-    { title: "Richieste Remote", url: "/admin/remote-requests", icon: Send, group: "Centri & Riparazioni" },
+    { title: "sidebar.items.dashboard", url: "/admin", icon: LayoutDashboard, group: "Dashboard" },
+    { title: "sidebar.items.posOverview", url: "/admin/pos", icon: Receipt, group: "POS" },
+    { title: "sidebar.items.customers", url: "/admin/customers", icon: Users, group: "Clienti & Rivenditori" },
+    { title: "sidebar.items.resellers", url: "/admin/resellers", icon: Store, group: "Clienti & Rivenditori" },
+    { title: "sidebar.items.resellerTeams", url: "/admin/reseller-teams", icon: UsersRound, group: "Clienti & Rivenditori" },
+    { title: "sidebar.items.repairCenters", url: "/admin/repair-centers", icon: Building, group: "Centri & Riparazioni" },
+    { title: "sidebar.items.jobs", url: "/admin/repairs", icon: Wrench, group: "Centri & Riparazioni" },
+    { title: "sidebar.items.utility", url: "/admin/utility", icon: Zap, group: "Utility" },
+    { title: "sidebar.items.utilitySuppliers", url: "/admin/utility/suppliers", icon: Phone, group: "Utility" },
+    { title: "sidebar.items.serviceList", url: "/admin/utility/services", icon: Package, group: "Utility" },
+    { title: "sidebar.items.practices", url: "/admin/utility/practices", icon: FileCheck, group: "Utility" },
+    { title: "sidebar.items.commissions", url: "/admin/utility/commissions", icon: Coins, group: "Utility" },
+    { title: "sidebar.items.utilityReport", url: "/admin/utility/reports", icon: PieChart, group: "Utility" },
+    { title: "sidebar.items.myWarehouse", url: "/admin/warehouses", icon: Warehouse, group: t("common.warehouse") },
+    { title: "sidebar.items.allWarehouses", url: "/admin/all-warehouses", icon: Building2, group: t("common.warehouse") },
+    { title: "sidebar.items.spareParts", url: "/admin/products", icon: Package, group: t("common.warehouse") },
+    { title: "sidebar.items.devices", url: "/admin/dispositivi", icon: Smartphone, group: t("common.warehouse") },
+    { title: "sidebar.items.accessories", url: "/admin/accessory-catalog", icon: ShoppingCart, group: t("common.warehouse") },
+    { title: "sidebar.items.overview", url: "/admin/transfer-requests/overview", icon: ArrowRightLeft, group: "Interscambio" },
+    { title: "sidebar.items.allTransferRequests", url: "/admin/transfer-requests", icon: Inbox, group: "Interscambio" },
+    { title: "sidebar.items.utilitySuppliers", url: "/admin/suppliers", icon: Truck, group: "Fornitori" },
+    { title: "sidebar.items.supplierOrders", url: "/admin/supplier-orders", icon: ShoppingCart, group: "Fornitori" },
+    { title: "sidebar.items.supplierReturns", url: "/admin/supplier-returns", icon: Undo2, group: "Fornitori" },
+    { title: "sidebar.items.invoices", url: "/admin/invoices", icon: FileText, group: "Fatturazione" },
+    { title: "sidebar.items.productAssignment", url: "/admin/product-assignments", icon: Store, group: "E-commerce" },
+    { title: "sidebar.items.orders", url: "/admin/sales-orders", icon: ShoppingCart, group: "E-commerce" },
+    { title: "sidebar.items.resellerOrders", url: "/admin/b2b-orders", icon: Network, group: "E-commerce" },
+    { title: "sidebar.items.rcB2BOrders", url: "/admin/rc-b2b-orders", icon: Building, group: "E-commerce" },
+    { title: "sidebar.items.customerReturns", url: "/admin/sales-returns", icon: RotateCcw, group: "E-commerce" },
+    { title: "sidebar.items.b2bReturns", url: "/admin/b2b-returns", icon: Undo2, group: "E-commerce" },
+    { title: "sidebar.items.shipments", url: "/admin/shipments", icon: Truck, group: "E-commerce" },
+    { title: "sidebar.items.payments", url: "/admin/payments", icon: CreditCard, group: "E-commerce" },
+    { title: "sidebar.items.leaveRequestsAlt", url: "/admin/hr/leave-requests", icon: Calendar, group: "Risorse Umane" },
+    { title: "sidebar.items.sickLeave", url: "/admin/hr/sick-leave", icon: Stethoscope, group: "Risorse Umane" },
+    { title: "sidebar.items.expenses", url: "/admin/hr/expenses", icon: Receipt, group: "Risorse Umane" },
+    { title: "sidebar.items.attendance", url: "/admin/hr/attendance", icon: Clock, group: "Risorse Umane" },
+    { title: "sidebar.items.hrCalendar", url: "/admin/hr/calendar", icon: Calendar, group: "Risorse Umane" },
+    { title: "sidebar.items.deviceCatalog", url: "/admin/device-catalog", icon: Package, group: "Cataloghi" },
+    { title: "sidebar.items.deviceCompatibilities", url: "/admin/device-compatibilities", icon: Link2, group: "Cataloghi" },
+    { title: "sidebar.items.priceList", url: "/admin/service-catalog", icon: Receipt, group: "Cataloghi" },
+    { title: "sidebar.items.interventionOrders", url: "/admin/service-orders", icon: FileText, group: "Cataloghi" },
+    { title: "sidebar.items.utilityCategories", url: "/admin/utility-categories", icon: FolderOpen, group: "Cataloghi" },
+    { title: "sidebar.items.licensePlans", url: "/admin/license-plans", icon: CreditCard, group: "Licenze" },
+    { title: "sidebar.items.activeLicenses", url: "/admin/licenses", icon: Shield, group: "Licenze" },
+    { title: "sidebar.items.networkPriceLists", url: "/admin/price-lists", icon: ListOrdered, group: "Configurazione" },
+    { title: "sidebar.items.customerWarranties", url: "/admin/warranties", icon: Shield, group: "Garanzie" },
+    { title: "sidebar.items.warrantyProducts", url: "/admin/warranty-products", icon: Shield, group: "Garanzie" },
+    { title: "sidebar.items.warrantyAnalytics", url: "/admin/warranty-analytics", icon: BarChart3, group: "Garanzie" },
+    { title: "sidebar.items.externalIntegrations", url: "/admin/external-integrations", icon: Plug, group: "Configurazione" },
+    { title: "sidebar.items.activityLogs", url: "/admin/activity-logs", icon: FileText, group: "Configurazione" },
+    { title: "sidebar.items.unreparableReasons", url: "/admin/unrepairable-reasons", icon: AlertTriangle, group: "Configurazione" },
+    { title: "sidebar.items.diagnosisSettings", url: "/admin/diagnosis-settings", icon: Settings, group: "Configurazione" },
+    { title: "sidebar.items.settings", url: "/admin/settings", icon: Settings, group: "Configurazione" },
+    { title: "sidebar.items.teamAdmin", url: "/admin/team", icon: UsersRound, group: "Team" },
+    { title: "sidebar.items.tickets", url: "/admin/tickets", icon: Ticket, group: "Assistenza" },
+    { title: "sidebar.items.liveChat", url: "/admin/chat", icon: MessageSquare, group: "Assistenza" },
+    { title: "sidebar.items.remoteRequests", url: "/admin/remote-requests", icon: Send, group: "Centri & Riparazioni" },
   ],
   admin_staff: [
-    { title: "Dashboard", url: "/admin", icon: LayoutDashboard, group: "Dashboard" },
-    { title: "Clienti", url: "/admin/customers", icon: Users, group: "Clienti & Rivenditori" },
-    { title: "Rivenditori", url: "/admin/resellers", icon: Store, group: "Clienti & Rivenditori" },
-    { title: "Team Rivenditori", url: "/admin/reseller-teams", icon: UsersRound, group: "Clienti & Rivenditori" },
-    { title: "Centri di Riparazione", url: "/admin/repair-centers", icon: Building, group: "Centri & Riparazioni" },
-    { title: "Lavorazioni", url: "/admin/repairs", icon: Wrench, group: "Centri & Riparazioni" },
-    { title: "Utility", url: "/admin/utility", icon: Zap, group: "Utility" },
-    { title: "Fornitori Utility", url: "/admin/utility/suppliers", icon: Phone, group: "Utility" },
-    { title: "Listino Servizi", url: "/admin/utility/services", icon: Package, group: "Utility" },
-    { title: "Pratiche", url: "/admin/utility/practices", icon: FileCheck, group: "Utility" },
-    { title: "Compensi", url: "/admin/utility/commissions", icon: Coins, group: "Utility" },
-    { title: "Report Utility", url: "/admin/utility/reports", icon: PieChart, group: "Utility" },
-    { title: "Il Mio Magazzino", url: "/admin/warehouses", icon: Warehouse, group: "Magazzino" },
-    { title: "Tutti i Magazzini", url: "/admin/all-warehouses", icon: Building2, group: "Magazzino" },
-    { title: "Ricambi", url: "/admin/products", icon: Package, group: "Magazzino" },
-    { title: "Dispositivi", url: "/admin/dispositivi", icon: Smartphone, group: "Magazzino" },
-    { title: "Accessori", url: "/admin/accessory-catalog", icon: ShoppingCart, group: "Magazzino" },
-    { title: "Panoramica", url: "/admin/transfer-requests/overview", icon: ArrowRightLeft, group: "Interscambio" },
-    { title: "Tutte le Richieste", url: "/admin/transfer-requests", icon: Inbox, group: "Interscambio" },
-    { title: "Anagrafica Fornitori", url: "/admin/suppliers", icon: Truck, group: "Fornitori" },
-    { title: "Ordini a Fornitori", url: "/admin/supplier-orders", icon: ShoppingCart, group: "Fornitori" },
-    { title: "Resi a Fornitori", url: "/admin/supplier-returns", icon: Undo2, group: "Fornitori" },
-    { title: "Fatture", url: "/admin/invoices", icon: FileText, group: "Fatturazione" },
-    // E-commerce - Catalogo
-    { title: "Assegnazione Reseller", url: "/admin/product-assignments", icon: Store, group: "E-commerce" },
-    // E-commerce - Ordini
-    { title: "Ordini Clienti", url: "/admin/sales-orders", icon: ShoppingCart, group: "E-commerce" },
-    // E-commerce - Resi
-    { title: "Resi Clienti", url: "/admin/sales-returns", icon: RotateCcw, group: "E-commerce" },
-    // E-commerce - Operazioni
-    { title: "Spedizioni", url: "/admin/shipments", icon: Truck, group: "E-commerce" },
-    { title: "Pagamenti", url: "/admin/payments", icon: CreditCard, group: "E-commerce" },
-    { title: "Catalogo Dispositivi", url: "/admin/device-catalog", icon: Package, group: "Sistema" },
-    { title: "Compatibilità Dispositivi", url: "/admin/device-compatibilities", icon: Link2, group: "Sistema" },
-    { title: "Listino Prezzi", url: "/admin/service-catalog", icon: Receipt, group: "Sistema" },
-    { title: "Listini Network", url: "/admin/price-lists", icon: ListOrdered, group: "Sistema" },
-    { title: "Piani Licenza", url: "/admin/license-plans", icon: CreditCard, group: "Licenze" },
-    { title: "Licenze Attive", url: "/admin/licenses", icon: Shield, group: "Licenze" },
-    { title: "Ticket", url: "/admin/tickets", icon: Ticket, group: "Assistenza" },
-    { title: "Live Chat", url: "/admin/chat", icon: MessageSquare, group: "Assistenza" },
+    { title: "sidebar.items.dashboard", url: "/admin", icon: LayoutDashboard, group: "Dashboard" },
+    { title: "sidebar.items.customers", url: "/admin/customers", icon: Users, group: "Clienti & Rivenditori" },
+    { title: "sidebar.items.resellers", url: "/admin/resellers", icon: Store, group: "Clienti & Rivenditori" },
+    { title: "sidebar.items.resellerTeams", url: "/admin/reseller-teams", icon: UsersRound, group: "Clienti & Rivenditori" },
+    { title: "sidebar.items.repairCenters", url: "/admin/repair-centers", icon: Building, group: "Centri & Riparazioni" },
+    { title: "sidebar.items.jobs", url: "/admin/repairs", icon: Wrench, group: "Centri & Riparazioni" },
+    { title: "sidebar.items.utility", url: "/admin/utility", icon: Zap, group: "Utility" },
+    { title: "sidebar.items.utilitySuppliers", url: "/admin/utility/suppliers", icon: Phone, group: "Utility" },
+    { title: "sidebar.items.serviceList", url: "/admin/utility/services", icon: Package, group: "Utility" },
+    { title: "sidebar.items.practices", url: "/admin/utility/practices", icon: FileCheck, group: "Utility" },
+    { title: "sidebar.items.commissions", url: "/admin/utility/commissions", icon: Coins, group: "Utility" },
+    { title: "sidebar.items.utilityReport", url: "/admin/utility/reports", icon: PieChart, group: "Utility" },
+    { title: "sidebar.items.myWarehouse", url: "/admin/warehouses", icon: Warehouse, group: t("common.warehouse") },
+    { title: "sidebar.items.allWarehouses", url: "/admin/all-warehouses", icon: Building2, group: t("common.warehouse") },
+    { title: "sidebar.items.spareParts", url: "/admin/products", icon: Package, group: t("common.warehouse") },
+    { title: "sidebar.items.devices", url: "/admin/dispositivi", icon: Smartphone, group: t("common.warehouse") },
+    { title: "sidebar.items.accessories", url: "/admin/accessory-catalog", icon: ShoppingCart, group: t("common.warehouse") },
+    { title: "sidebar.items.overview", url: "/admin/transfer-requests/overview", icon: ArrowRightLeft, group: "Interscambio" },
+    { title: "sidebar.items.allTransferRequests", url: "/admin/transfer-requests", icon: Inbox, group: "Interscambio" },
+    { title: "sidebar.items.utilitySuppliers", url: "/admin/suppliers", icon: Truck, group: "Fornitori" },
+    { title: "sidebar.items.supplierOrders", url: "/admin/supplier-orders", icon: ShoppingCart, group: "Fornitori" },
+    { title: "sidebar.items.supplierReturns", url: "/admin/supplier-returns", icon: Undo2, group: "Fornitori" },
+    { title: "sidebar.items.invoices", url: "/admin/invoices", icon: FileText, group: "Fatturazione" },
+    { title: "sidebar.items.productAssignment", url: "/admin/product-assignments", icon: Store, group: "E-commerce" },
+    { title: "sidebar.items.orders", url: "/admin/sales-orders", icon: ShoppingCart, group: "E-commerce" },
+    { title: "sidebar.items.customerReturns", url: "/admin/sales-returns", icon: RotateCcw, group: "E-commerce" },
+    { title: "sidebar.items.shipments", url: "/admin/shipments", icon: Truck, group: "E-commerce" },
+    { title: "sidebar.items.payments", url: "/admin/payments", icon: CreditCard, group: "E-commerce" },
+    { title: "sidebar.items.deviceCatalog", url: "/admin/device-catalog", icon: Package, group: "Sistema" },
+    { title: "sidebar.items.deviceCompatibilities", url: "/admin/device-compatibilities", icon: Link2, group: "Sistema" },
+    { title: "sidebar.items.priceList", url: "/admin/service-catalog", icon: Receipt, group: "Sistema" },
+    { title: "sidebar.items.networkPriceLists", url: "/admin/price-lists", icon: ListOrdered, group: "Sistema" },
+    { title: "sidebar.items.licensePlans", url: "/admin/license-plans", icon: CreditCard, group: "Licenze" },
+    { title: "sidebar.items.activeLicenses", url: "/admin/licenses", icon: Shield, group: "Licenze" },
+    { title: "sidebar.items.tickets", url: "/admin/tickets", icon: Ticket, group: "Assistenza" },
+    { title: "sidebar.items.liveChat", url: "/admin/chat", icon: MessageSquare, group: "Assistenza" },
   ],
   reseller: [
-    { title: "Dashboard", url: "/reseller", icon: LayoutDashboard, group: "Dashboard" },
-    { title: "Clienti", url: "/reseller/customers", icon: Users, group: "Clienti" },
-    { title: "Centri Riparazione", url: "/reseller/repair-centers", icon: Building, group: "Riparazioni" },
-    { title: "Lavorazioni", url: "/reseller/repairs", icon: Wrench, group: "Riparazioni" },
-    { title: "Appuntamenti", url: "/reseller/appointments", icon: CalendarCheck, group: "Riparazioni" },
-    { title: "Richieste Remote", url: "/reseller/remote-requests", icon: Send, group: "Riparazioni" },
-    { title: "I Miei Servizi", url: "/reseller/service-catalog", icon: Receipt, group: "Riparazioni" },
-    { title: "Catalogo Dispositivi", url: "/reseller/device-catalog", icon: Smartphone, group: "Riparazioni" },
-    { title: "Ordini Interventi", url: "/reseller/service-orders", icon: ClipboardList, group: "Riparazioni" },
-    { title: "Preventivi", url: "/reseller/standalone-quotes", icon: FileText, group: "Riparazioni" },
-    { title: "Panoramica POS", url: "/reseller/pos", icon: Receipt, group: "Cassa e Vendite" },
-    { title: "Storico Vendite", url: "/reseller/pos/sales-history", icon: ShoppingCart, group: "Cassa e Vendite" },
-    { title: "Storico Sessioni", url: "/reseller/pos/sessions", icon: Clock, group: "Cassa e Vendite" },
-    { title: "Gestione Casse", url: "/reseller/pos/registers", icon: Store, group: "Cassa e Vendite" },
-    { title: "Panoramica Vendite", url: "/reseller/sales", icon: TrendingUp, group: "Cassa e Vendite" },
-    { title: "Fatture", url: "/reseller/invoices", icon: FileText, group: "Cassa e Vendite" },
-    { title: "Report", url: "/reseller/reports", icon: BarChart3, group: "Cassa e Vendite" },
-    { title: "Magazzino", url: "/reseller/warehouses", icon: Warehouse, group: "Magazzino e Fornitori", section: "Magazzino" },
-    { title: "Magazzini Rete", url: "/reseller/network-warehouses", icon: Building2, group: "Magazzino e Fornitori", section: "Magazzino" },
-    { title: "Ricambi", url: "/reseller/products", icon: Package, group: "Magazzino e Fornitori", section: "Magazzino" },
-    { title: "Dispositivi", url: "/reseller/dispositivi", icon: Smartphone, group: "Magazzino e Fornitori", section: "Magazzino" },
-    { title: "Accessori", url: "/reseller/accessory-catalog", icon: ShoppingCart, group: "Magazzino e Fornitori", section: "Magazzino" },
-    { title: "Listini Prezzi", url: "/reseller/price-lists", icon: ListOrdered, group: "Magazzino e Fornitori", section: "Magazzino" },
-    { title: "Panoramica Trasferimenti", url: "/reseller/transfer-requests", icon: ArrowRightLeft, group: "Magazzino e Fornitori", section: "Trasferimenti" },
-    { title: "Richieste Ricevute", url: "/reseller/incoming-transfer-requests", icon: Inbox, group: "Magazzino e Fornitori", section: "Trasferimenti" },
-    { title: "Richieste Inviate", url: "/reseller/sub-transfer-requests", icon: Send, group: "Magazzino e Fornitori", section: "Trasferimenti" },
-    { title: "Anagrafica Fornitori", url: "/reseller/suppliers", icon: Truck, group: "Magazzino e Fornitori", section: "Fornitori" },
-    { title: "Ordini a Fornitori", url: "/reseller/supplier-orders", icon: ShoppingCart, group: "Magazzino e Fornitori", section: "Fornitori" },
-    { title: "Resi a Fornitori", url: "/reseller/supplier-returns", icon: RotateCcw, group: "Magazzino e Fornitori", section: "Fornitori" },
-    { title: "Vetrina Prodotti", url: "/reseller/shop-catalog", icon: Store, group: "Vendite Online", section: "E-commerce" },
-    { title: "Ordini Clienti", url: "/reseller/sales-orders", icon: ShoppingCart, group: "Vendite Online", section: "E-commerce" },
-    { title: "Resi Clienti", url: "/reseller/sales-returns", icon: RotateCcw, group: "Vendite Online", section: "E-commerce" },
-    { title: "Spedizioni", url: "/reseller/shipments", icon: Truck, group: "Vendite Online", section: "E-commerce" },
-    { title: "Pagamenti", url: "/reseller/payments", icon: CreditCard, group: "Vendite Online", section: "E-commerce" },
-    { title: "Catalogo B2B", url: "/reseller/b2b-catalog", icon: Package, group: "Vendite Online", section: "Acquisti B2B" },
-    { title: "I Miei Ordini B2B", url: "/reseller/b2b-orders", icon: ShoppingCart, group: "Vendite Online", section: "Acquisti B2B" },
-    { title: "I Miei Resi B2B", url: "/reseller/b2b-returns", icon: RotateCcw, group: "Vendite Online", section: "Acquisti B2B" },
-    { title: "Catalogo Marketplace", url: "/reseller/marketplace", icon: Store, group: "Vendite Online", section: "Marketplace" },
-    { title: "I Miei Acquisti", url: "/reseller/marketplace-orders", icon: ShoppingCart, group: "Vendite Online", section: "Marketplace" },
-    { title: "Vendite Rivenditori", url: "/reseller/marketplace-sales", icon: TrendingUp, group: "Vendite Online", section: "Vendite" },
-    { title: "Vendite Centri Rip.", url: "/reseller/rc-b2b-orders", icon: Building2, group: "Vendite Online", section: "Vendite" },
-    { title: "Utility", url: "/reseller/utility", icon: Zap, group: "Utility" },
-    { title: "Fornitori Utility", url: "/reseller/utility/suppliers", icon: Phone, group: "Utility" },
-    { title: "Servizi Fornitori", url: "/reseller/utility/services", icon: Package, group: "Utility" },
-    { title: "Pratiche", url: "/reseller/utility/practices", icon: FileCheck, group: "Utility" },
-    { title: "Compensi", url: "/reseller/utility/commissions", icon: Coins, group: "Utility" },
-    { title: "Report Utility", url: "/reseller/utility/reports", icon: PieChart, group: "Utility" },
-    { title: "Garanzie Clienti", url: "/reseller/warranties", icon: Shield, group: "Garanzie" },
-    { title: "Prodotti Garanzia", url: "/reseller/warranty-products", icon: Shield, group: "Garanzie" },
-    { title: "Analytics Garanzie", url: "/reseller/warranty-analytics", icon: BarChart3, group: "Garanzie" },
-    { title: "Dashboard HR", url: "/reseller/hr", icon: Briefcase, group: "Gestione HR" },
-    { title: "Team", url: "/reseller/team", icon: UsersRound, group: "Gestione HR" },
-    { title: "Presenze", url: "/reseller/hr/attendance", icon: Clock, group: "Gestione HR" },
-    { title: "Ferie e Permessi", url: "/reseller/hr/leave-requests", icon: Calendar, group: "Gestione HR" },
-    { title: "Profili Orario", url: "/reseller/hr/work-profiles", icon: Settings, group: "Gestione HR" },
-    { title: "Rimborsi Spese", url: "/reseller/hr/expenses", icon: ReceiptText, group: "Gestione HR" },
-    { title: "Malattie", url: "/reseller/hr/sick-leave", icon: Stethoscope, group: "Gestione HR" },
-    { title: "Calendario Team", url: "/reseller/hr/calendar", icon: CalendarCheck, group: "Gestione HR" },
-    { title: "Ticket", url: "/reseller/tickets", icon: Ticket, group: "Assistenza" },
-    { title: "Guide", url: "/reseller/guide", icon: FileText, group: "Assistenza" },
-    { title: "Notifiche", url: "/reseller/notifications", icon: Bell, group: "Account" },
-    { title: "La Mia Licenza", url: "/reseller/my-license", icon: Shield, group: "Account" },
-    { title: "Integrazioni", url: "/reseller/integrations", icon: Plug, group: "Account" },
-    { title: "Impostazioni", url: "/reseller/settings", icon: Settings, group: "Account" },
-    { title: "Profilo", url: "/profile", icon: UserCircle, group: "Account" },
+    { title: "sidebar.items.dashboard", url: "/reseller", icon: LayoutDashboard, group: "Dashboard" },
+    { title: "sidebar.items.customers", url: "/reseller/customers", icon: Users, group: "Clienti" },
+    { title: "sidebar.items.repairCentersShort", url: "/reseller/repair-centers", icon: Building, group: "Riparazioni" },
+    { title: "sidebar.items.jobs", url: "/reseller/repairs", icon: Wrench, group: "Riparazioni" },
+    { title: "sidebar.items.appointments", url: "/reseller/appointments", icon: CalendarCheck, group: "Riparazioni" },
+    { title: "sidebar.items.remoteRequests", url: "/reseller/remote-requests", icon: Send, group: "Riparazioni" },
+    { title: "sidebar.items.myServices", url: "/reseller/service-catalog", icon: Receipt, group: "Riparazioni" },
+    { title: "sidebar.items.deviceCatalog", url: "/reseller/device-catalog", icon: Smartphone, group: "Riparazioni" },
+    { title: "sidebar.items.interventionOrders", url: "/reseller/service-orders", icon: ClipboardList, group: "Riparazioni" },
+    { title: "sidebar.items.quotes", url: "/reseller/standalone-quotes", icon: FileText, group: "Riparazioni" },
+    { title: "sidebar.items.posOverview", url: "/reseller/pos", icon: Receipt, group: "Cassa e Vendite" },
+    { title: "sidebar.items.salesHistory", url: "/reseller/pos/sales-history", icon: ShoppingCart, group: "Cassa e Vendite" },
+    { title: "sidebar.items.historySessions", url: "/reseller/pos/sessions", icon: Clock, group: "Cassa e Vendite" },
+    { title: "sidebar.items.posRegisters", url: "/reseller/pos/registers", icon: Store, group: "Cassa e Vendite" },
+    { title: "sidebar.items.salesOverview", url: "/reseller/sales", icon: TrendingUp, group: "Cassa e Vendite" },
+    { title: "sidebar.items.invoices", url: "/reseller/invoices", icon: FileText, group: "Cassa e Vendite" },
+    { title: "sidebar.items.reports", url: "/reseller/reports", icon: BarChart3, group: "Cassa e Vendite" },
+    { title: "sidebar.items.warehouse", url: "/reseller/warehouses", icon: Warehouse, group: "Magazzino e Fornitori", section: "sidebar.sections.warehouse" },
+    { title: "sidebar.items.networkWarehouses", url: "/reseller/network-warehouses", icon: Building2, group: "Magazzino e Fornitori", section: "sidebar.sections.warehouse" },
+    { title: "sidebar.items.spareParts", url: "/reseller/products", icon: Package, group: "Magazzino e Fornitori", section: "sidebar.sections.warehouse" },
+    { title: "sidebar.items.devices", url: "/reseller/dispositivi", icon: Smartphone, group: "Magazzino e Fornitori", section: "sidebar.sections.warehouse" },
+    { title: "sidebar.items.accessories", url: "/reseller/accessory-catalog", icon: ShoppingCart, group: "Magazzino e Fornitori", section: "sidebar.sections.warehouse" },
+    { title: "sidebar.items.priceLists", url: "/reseller/price-lists", icon: ListOrdered, group: "Magazzino e Fornitori", section: "sidebar.sections.warehouse" },
+    { title: "sidebar.items.transferOverview", url: "/reseller/transfer-requests", icon: ArrowRightLeft, group: "Magazzino e Fornitori", section: "sidebar.sections.transfersSection" },
+    { title: "sidebar.items.transferRequestsReceived", url: "/reseller/incoming-transfer-requests", icon: Inbox, group: "Magazzino e Fornitori", section: "sidebar.sections.transfersSection" },
+    { title: "sidebar.items.transferRequests", url: "/reseller/sub-transfer-requests", icon: Send, group: "Magazzino e Fornitori", section: "sidebar.sections.transfersSection" },
+    { title: "sidebar.items.utilitySuppliers", url: "/reseller/suppliers", icon: Truck, group: "Magazzino e Fornitori", section: "sidebar.sections.supply" },
+    { title: "sidebar.items.supplierOrders", url: "/reseller/supplier-orders", icon: ShoppingCart, group: "Magazzino e Fornitori", section: "sidebar.sections.supply" },
+    { title: "sidebar.items.supplierReturns", url: "/reseller/supplier-returns", icon: RotateCcw, group: "Magazzino e Fornitori", section: "sidebar.sections.supply" },
+    { title: "sidebar.items.shopCatalog", url: "/reseller/shop-catalog", icon: Store, group: "Vendite Online", section: "sidebar.sections.ecommerce" },
+    { title: "sidebar.items.orders", url: "/reseller/sales-orders", icon: ShoppingCart, group: "Vendite Online", section: "sidebar.sections.ecommerce" },
+    { title: "sidebar.items.customerReturns", url: "/reseller/sales-returns", icon: RotateCcw, group: "Vendite Online", section: "sidebar.sections.ecommerce" },
+    { title: "sidebar.items.shipments", url: "/reseller/shipments", icon: Truck, group: "Vendite Online", section: "sidebar.sections.ecommerce" },
+    { title: "sidebar.items.payments", url: "/reseller/payments", icon: CreditCard, group: "Vendite Online", section: "sidebar.sections.ecommerce" },
+    { title: "sidebar.items.b2bCatalog", url: "/reseller/b2b-catalog", icon: Package, group: "Vendite Online", section: "sidebar.sections.purchasesB2B" },
+    { title: "sidebar.items.myB2BOrders", url: "/reseller/b2b-orders", icon: ShoppingCart, group: "Vendite Online", section: "sidebar.sections.purchasesB2B" },
+    { title: "sidebar.items.myB2BReturns", url: "/reseller/b2b-returns", icon: RotateCcw, group: "Vendite Online", section: "sidebar.sections.purchasesB2B" },
+    { title: "sidebar.items.marketplaceCatalog", url: "/reseller/marketplace", icon: Store, group: "Vendite Online", section: "sidebar.sections.marketplace" },
+    { title: "sidebar.items.myPurchases", url: "/reseller/marketplace-orders", icon: ShoppingCart, group: "Vendite Online", section: "sidebar.sections.marketplace" },
+    { title: "sidebar.items.resellerSales", url: "/reseller/marketplace-sales", icon: TrendingUp, group: "Vendite Online", section: "sidebar.sections.sales" },
+    { title: "sidebar.items.rcSales", url: "/reseller/rc-b2b-orders", icon: Building2, group: "Vendite Online", section: "sidebar.sections.sales" },
+    { title: "sidebar.items.utility", url: "/reseller/utility", icon: Zap, group: "Utility" },
+    { title: "sidebar.items.utilitySuppliers", url: "/reseller/utility/suppliers", icon: Phone, group: "Utility" },
+    { title: "sidebar.items.utilityServices", url: "/reseller/utility/services", icon: Package, group: "Utility" },
+    { title: "sidebar.items.practices", url: "/reseller/utility/practices", icon: FileCheck, group: "Utility" },
+    { title: "sidebar.items.commissions", url: "/reseller/utility/commissions", icon: Coins, group: "Utility" },
+    { title: "sidebar.items.utilityReport", url: "/reseller/utility/reports", icon: PieChart, group: "Utility" },
+    { title: "sidebar.items.customerWarranties", url: "/reseller/warranties", icon: Shield, group: "Garanzie" },
+    { title: "sidebar.items.warrantyProducts", url: "/reseller/warranty-products", icon: Shield, group: "Garanzie" },
+    { title: "sidebar.items.warrantyAnalytics", url: "/reseller/warranty-analytics", icon: BarChart3, group: "Garanzie" },
+    { title: "sidebar.items.dashboardHR", url: "/reseller/hr", icon: Briefcase, group: "Gestione HR" },
+    { title: "sidebar.items.team", url: "/reseller/team", icon: UsersRound, group: "Gestione HR" },
+    { title: "sidebar.items.attendance", url: "/reseller/hr/attendance", icon: Clock, group: "Gestione HR" },
+    { title: "sidebar.items.leaveRequests", url: "/reseller/hr/leave-requests", icon: Calendar, group: "Gestione HR" },
+    { title: "sidebar.items.workProfiles", url: "/reseller/hr/work-profiles", icon: Settings, group: "Gestione HR" },
+    { title: "sidebar.items.expenseReimbursement", url: "/reseller/hr/expenses", icon: ReceiptText, group: "Gestione HR" },
+    { title: "sidebar.items.sickLeave", url: "/reseller/hr/sick-leave", icon: Stethoscope, group: "Gestione HR" },
+    { title: "sidebar.items.teamCalendar", url: "/reseller/hr/calendar", icon: CalendarCheck, group: "Gestione HR" },
+    { title: "sidebar.items.tickets", url: "/reseller/tickets", icon: Ticket, group: "Assistenza" },
+    { title: "sidebar.items.guide", url: "/reseller/guide", icon: FileText, group: "Assistenza" },
+    { title: "sidebar.items.notifications", url: "/reseller/notifications", icon: Bell, group: "Account" },
+    { title: "sidebar.items.myLicense", url: "/reseller/my-license", icon: Shield, group: "Account" },
+    { title: "sidebar.items.integrations", url: "/reseller/integrations", icon: Plug, group: "Account" },
+    { title: "sidebar.items.settings", url: "/reseller/settings", icon: Settings, group: "Account" },
+    { title: "sidebar.items.profile", url: "/profile", icon: UserCircle, group: "Account" },
   ],
   sub_reseller: [
-    { title: "Dashboard", url: "/reseller", icon: LayoutDashboard, group: "Dashboard" },
-    { title: "Catalogo Servizi", url: "/sub-reseller/service-catalog", icon: Wrench, group: "Servizi" },
-    { title: "Panoramica POS", url: "/reseller/pos", icon: Receipt, group: "POS" },
-    { title: "Storico Vendite POS", url: "/reseller/pos/sales-history", icon: Clock, group: "POS" },
-    { title: "Sessioni POS", url: "/reseller/pos/sessions", icon: FileText, group: "POS" },
-    { title: "Registratori", url: "/reseller/pos/registers", icon: Calculator, group: "POS" },
-    { title: "Lavorazioni", url: "/reseller/repairs", icon: Wrench, group: "Centri & Riparazioni" },
-    { title: "Centri Riparazione", url: "/reseller/repair-centers", icon: Building, group: "Centri & Riparazioni" },
-    { title: "Richieste Remote", url: "/reseller/remote-requests", icon: Send, group: "Centri & Riparazioni" },
-    { title: "Preventivi", url: "/reseller/standalone-quotes", icon: FileText, group: "Centri & Riparazioni" },
-    { title: "Il Mio Magazzino", url: "/reseller/warehouses", icon: Warehouse, group: "Magazzino" },
-    { title: "Garanzie Clienti", url: "/reseller/warranties", icon: Shield, group: "Garanzie" },
-    { title: "Analytics Garanzie", url: "/reseller/warranty-analytics", icon: BarChart3, group: "Garanzie" },
-    { title: "Fatture", url: "/reseller/invoices", icon: FileText, group: "Fatturazione" },
-    { title: "Profilo", url: "/profile", icon: UserCircle, group: "Account" },
+    { title: "sidebar.items.dashboard", url: "/reseller", icon: LayoutDashboard, group: "Dashboard" },
+    { title: "sidebar.items.serviceCatalog", url: "/sub-reseller/service-catalog", icon: Wrench, group: "Servizi" },
+    { title: "sidebar.items.posOverview", url: "/reseller/pos", icon: Receipt, group: "POS" },
+    { title: "sidebar.items.posSalesHistory", url: "/reseller/pos/sales-history", icon: Clock, group: "POS" },
+    { title: "sidebar.items.posSessions", url: "/reseller/pos/sessions", icon: FileText, group: "POS" },
+    { title: "sidebar.items.registers", url: "/reseller/pos/registers", icon: Calculator, group: "POS" },
+    { title: "sidebar.items.jobs", url: "/reseller/repairs", icon: Wrench, group: "Centri & Riparazioni" },
+    { title: "sidebar.items.repairCentersShort", url: "/reseller/repair-centers", icon: Building, group: "Centri & Riparazioni" },
+    { title: "sidebar.items.remoteRequests", url: "/reseller/remote-requests", icon: Send, group: "Centri & Riparazioni" },
+    { title: "sidebar.items.quotes", url: "/reseller/standalone-quotes", icon: FileText, group: "Centri & Riparazioni" },
+    { title: "sidebar.items.myWarehouse", url: "/reseller/warehouses", icon: Warehouse, group: t("common.warehouse") },
+    { title: "sidebar.items.customerWarranties", url: "/reseller/warranties", icon: Shield, group: "Garanzie" },
+    { title: "sidebar.items.warrantyAnalytics", url: "/reseller/warranty-analytics", icon: BarChart3, group: "Garanzie" },
+    { title: "sidebar.items.invoices", url: "/reseller/invoices", icon: FileText, group: "Fatturazione" },
+    { title: "sidebar.items.profile", url: "/profile", icon: UserCircle, group: "Account" },
   ],
   repair_center: [
-    { title: "Dashboard", url: "/repair-center", icon: LayoutDashboard, group: "Dashboard" },
-    { title: "Cassa POS", url: "/repair-center/pos", icon: Receipt, group: "Cassa e Vendite" },
-    { title: "Storico Vendite", url: "/repair-center/pos/sales-history", icon: ShoppingCart, group: "Cassa e Vendite" },
-    { title: "Storico Sessioni", url: "/repair-center/pos/sessions", icon: Clock, group: "Cassa e Vendite" },
-    { title: "Gestione Casse", url: "/repair-center/pos/registers", icon: Store, group: "Cassa e Vendite" },
-    { title: "Lavorazioni", url: "/repair-center/repairs", icon: Wrench, group: "Lavorazioni" },
-    { title: "Appuntamenti", url: "/repair-center/appointments", icon: CalendarCheck, group: "Lavorazioni" },
-    { title: "Listino Interventi", url: "/repair-center/service-catalog", icon: Receipt, group: "Lavorazioni" },
-    { title: "Ordini Interventi", url: "/repair-center/service-orders", icon: FileText, group: "Lavorazioni" },
-    { title: "Richieste Remote", url: "/repair-center/remote-requests", icon: Send, group: "Lavorazioni" },
-    { title: "Preventivi", url: "/repair-center/standalone-quotes", icon: FileText, group: "Lavorazioni" },
-    { title: "Magazzino", url: "/repair-center/warehouses", icon: Warehouse, group: "Magazzino e Fornitori" },
-    { title: "Prodotti", url: "/repair-center/products", icon: Package, group: "Magazzino e Fornitori" },
-    { title: "Listini Prezzi", url: "/repair-center/price-lists", icon: ListOrdered, group: "Magazzino e Fornitori" },
-    { title: "Anagrafica Fornitori", url: "/repair-center/suppliers", icon: Truck, group: "Magazzino e Fornitori" },
-    { title: "Ordini a Fornitori", url: "/repair-center/supplier-orders", icon: ShoppingCart, group: "Magazzino e Fornitori" },
-    { title: "Interscambio", url: "/repair-center/transfer-requests/overview", icon: ArrowRightLeft, group: "Magazzino e Fornitori" },
-    { title: "Nuova Richiesta", url: "/repair-center/transfer-requests", icon: Send, group: "Magazzino e Fornitori" },
-    { title: "Dispositivi", url: "/repair-center/dispositivi", icon: Smartphone, group: "Cataloghi e Acquisti" },
-    { title: "Accessori", url: "/repair-center/accessory-catalog", icon: ShoppingCart, group: "Cataloghi e Acquisti" },
-    { title: "Ricambi", url: "/repair-center/spare-parts-catalog", icon: Wrench, group: "Cataloghi e Acquisti" },
-    { title: "Carrello", url: "/repair-center/cart", icon: ShoppingCart, group: "Cataloghi e Acquisti" },
-    { title: "Catalogo Rivenditore", url: "/repair-center/b2b-catalog", icon: Store, group: "Cataloghi e Acquisti" },
-    { title: "Marketplace Rivenditori", url: "/repair-center/marketplace", icon: Store, group: "Cataloghi e Acquisti" },
-    { title: "Ordini B2B", url: "/repair-center/b2b-orders", icon: FileText, group: "Cataloghi e Acquisti" },
-    { title: "Resi B2B", url: "/repair-center/b2b-returns", icon: RotateCcw, group: "Cataloghi e Acquisti" },
-    { title: "Utility", url: "/repair-center/utility", icon: Zap, group: "Utility" },
-    { title: "Fornitori Utility", url: "/repair-center/utility/suppliers", icon: Phone, group: "Utility" },
-    { title: "Listino Servizi", url: "/repair-center/utility/services", icon: Package, group: "Utility" },
-    { title: "Pratiche", url: "/repair-center/utility/practices", icon: FileCheck, group: "Utility" },
-    { title: "Compensi", url: "/repair-center/utility/commissions", icon: Coins, group: "Utility" },
-    { title: "Report Utility", url: "/repair-center/utility/reports", icon: PieChart, group: "Utility" },
-    { title: "Dashboard HR", url: "/repair-center/hr", icon: Briefcase, group: "Gestione HR" },
-    { title: "Team", url: "/repair-center/team", icon: UsersRound, group: "Gestione HR" },
-    { title: "Presenze", url: "/repair-center/hr/attendance", icon: Clock, group: "Gestione HR" },
-    { title: "Ferie e Permessi", url: "/repair-center/hr/leave-requests", icon: Calendar, group: "Gestione HR" },
-    { title: "Profili Orario", url: "/repair-center/hr/work-profiles", icon: Settings, group: "Gestione HR" },
-    { title: "Rimborsi Spese", url: "/repair-center/hr/expenses", icon: ReceiptText, group: "Gestione HR" },
-    { title: "Malattie", url: "/repair-center/hr/sick-leave", icon: Stethoscope, group: "Gestione HR" },
-    { title: "Calendario Team", url: "/repair-center/hr/calendar", icon: CalendarCheck, group: "Gestione HR" },
-    { title: "Clienti", url: "/repair-center/customers", icon: Users, group: "Gestione" },
-    { title: "Fatture", url: "/repair-center/invoices", icon: FileText, group: "Gestione" },
-    { title: "Impostazioni", url: "/repair-center/settings", icon: Settings, group: "Gestione" },
-    { title: "Catalogo Garanzie", url: "/repair-center/warranty-products", icon: Shield, group: "Garanzie" },
-    { title: "Garanzie Clienti", url: "/repair-center/warranties", icon: Shield, group: "Garanzie" },
-    { title: "Analytics Garanzie", url: "/repair-center/warranty-analytics", icon: BarChart3, group: "Garanzie" },
-    { title: "Ticket", url: "/repair-center/tickets", icon: Ticket, group: "Assistenza" },
+    { title: "sidebar.items.dashboard", url: "/repair-center", icon: LayoutDashboard, group: "Dashboard" },
+    { title: "sidebar.items.pos", url: "/repair-center/pos", icon: Receipt, group: "Cassa e Vendite" },
+    { title: "sidebar.items.salesHistory", url: "/repair-center/pos/sales-history", icon: ShoppingCart, group: "Cassa e Vendite" },
+    { title: "sidebar.items.historySessions", url: "/repair-center/pos/sessions", icon: Clock, group: "Cassa e Vendite" },
+    { title: "sidebar.items.posRegisters", url: "/repair-center/pos/registers", icon: Store, group: "Cassa e Vendite" },
+    { title: "sidebar.items.jobs", url: "/repair-center/repairs", icon: Wrench, group: "Lavorazioni" },
+    { title: "sidebar.items.appointments", url: "/repair-center/appointments", icon: CalendarCheck, group: "Lavorazioni" },
+    { title: "sidebar.items.serviceListAlt", url: "/repair-center/service-catalog", icon: Receipt, group: "Lavorazioni" },
+    { title: "sidebar.items.interventionOrders", url: "/repair-center/service-orders", icon: FileText, group: "Lavorazioni" },
+    { title: "sidebar.items.remoteRequests", url: "/repair-center/remote-requests", icon: Send, group: "Lavorazioni" },
+    { title: "sidebar.items.quotes", url: "/repair-center/standalone-quotes", icon: FileText, group: "Lavorazioni" },
+    { title: "sidebar.items.warehouse", url: "/repair-center/warehouses", icon: Warehouse, group: "Magazzino e Fornitori" },
+    { title: "sidebar.items.products", url: "/repair-center/products", icon: Package, group: "Magazzino e Fornitori" },
+    { title: "sidebar.items.priceLists", url: "/repair-center/price-lists", icon: ListOrdered, group: "Magazzino e Fornitori" },
+    { title: "sidebar.items.utilitySuppliers", url: "/repair-center/suppliers", icon: Truck, group: "Magazzino e Fornitori" },
+    { title: "sidebar.items.supplierOrders", url: "/repair-center/supplier-orders", icon: ShoppingCart, group: "Magazzino e Fornitori" },
+    { title: "sidebar.sections.transfers", url: "/repair-center/transfer-requests/overview", icon: ArrowRightLeft, group: "Magazzino e Fornitori" },
+    { title: "sidebar.items.newRequest", url: "/repair-center/transfer-requests", icon: Send, group: "Magazzino e Fornitori" },
+    { title: "sidebar.items.devices", url: "/repair-center/dispositivi", icon: Smartphone, group: "Cataloghi e Acquisti" },
+    { title: "sidebar.items.accessories", url: "/repair-center/accessory-catalog", icon: ShoppingCart, group: "Cataloghi e Acquisti" },
+    { title: "sidebar.items.spareParts", url: "/repair-center/spare-parts-catalog", icon: Wrench, group: "Cataloghi e Acquisti" },
+    { title: "sidebar.items.cart", url: "/repair-center/cart", icon: ShoppingCart, group: "Cataloghi e Acquisti" },
+    { title: "sidebar.items.catalogResellerAlt", url: "/repair-center/b2b-catalog", icon: Store, group: "Cataloghi e Acquisti" },
+    { title: "sidebar.items.resellerMarketplace", url: "/repair-center/marketplace", icon: Store, group: "Cataloghi e Acquisti" },
+    { title: "sidebar.items.b2bOrders", url: "/repair-center/b2b-orders", icon: FileText, group: "Cataloghi e Acquisti" },
+    { title: "sidebar.items.b2bReturns", url: "/repair-center/b2b-returns", icon: RotateCcw, group: "Cataloghi e Acquisti" },
+    { title: "sidebar.items.utility", url: "/repair-center/utility", icon: Zap, group: "Utility" },
+    { title: "sidebar.items.utilitySuppliers", url: "/repair-center/utility/suppliers", icon: Phone, group: "Utility" },
+    { title: "sidebar.items.serviceList", url: "/repair-center/utility/services", icon: Package, group: "Utility" },
+    { title: "sidebar.items.practices", url: "/repair-center/utility/practices", icon: FileCheck, group: "Utility" },
+    { title: "sidebar.items.commissions", url: "/repair-center/utility/commissions", icon: Coins, group: "Utility" },
+    { title: "sidebar.items.utilityReport", url: "/repair-center/utility/reports", icon: PieChart, group: "Utility" },
+    { title: "sidebar.items.dashboardHR", url: "/repair-center/hr", icon: Briefcase, group: "Gestione HR" },
+    { title: "sidebar.items.team", url: "/repair-center/team", icon: UsersRound, group: "Gestione HR" },
+    { title: "sidebar.items.attendance", url: "/repair-center/hr/attendance", icon: Clock, group: "Gestione HR" },
+    { title: "sidebar.items.leaveRequests", url: "/repair-center/hr/leave-requests", icon: Calendar, group: "Gestione HR" },
+    { title: "sidebar.items.workProfiles", url: "/repair-center/hr/work-profiles", icon: Settings, group: "Gestione HR" },
+    { title: "sidebar.items.expenseReimbursement", url: "/repair-center/hr/expenses", icon: ReceiptText, group: "Gestione HR" },
+    { title: "sidebar.items.sickLeave", url: "/repair-center/hr/sick-leave", icon: Stethoscope, group: "Gestione HR" },
+    { title: "sidebar.items.teamCalendar", url: "/repair-center/hr/calendar", icon: CalendarCheck, group: "Gestione HR" },
+    { title: "sidebar.items.customers", url: "/repair-center/customers", icon: Users, group: "Gestione" },
+    { title: "sidebar.items.invoices", url: "/repair-center/invoices", icon: FileText, group: "Gestione" },
+    { title: "sidebar.items.settings", url: "/repair-center/settings", icon: Settings, group: "Gestione" },
+    { title: "sidebar.items.warrantyCatalog", url: "/repair-center/warranty-products", icon: Shield, group: "Garanzie" },
+    { title: "sidebar.items.customerWarranties", url: "/repair-center/warranties", icon: Shield, group: "Garanzie" },
+    { title: "sidebar.items.warrantyAnalytics", url: "/repair-center/warranty-analytics", icon: BarChart3, group: "Garanzie" },
+    { title: "sidebar.items.tickets", url: "/repair-center/tickets", icon: Ticket, group: "Assistenza" },
   ],
   customer: [
-    { title: "Dashboard", url: "/customer", icon: LayoutDashboard, group: "Dashboard" },
-    { title: "Riparazioni", url: "/customer/repairs", icon: Wrench, group: "Riparazioni" },
-    { title: "Richieste Remote", url: "/customer/remote-requests", icon: Send, group: "Riparazioni" },
-    { title: "Le Mie Garanzie", url: "/customer/warranties", icon: Shield, group: "Servizi" },
-    { title: "Catalogo Servizi", url: "/customer/service-catalog", icon: Package, group: "Servizi" },
-    { title: "Ordini Servizi", url: "/customer/service-orders", icon: ClipboardList, group: "Servizi" },
-    { title: "Ordini Shop", url: "/customer/orders", icon: ShoppingCart, group: "Acquisti" },
-    { title: "Resi", url: "/customer/sales-returns", icon: RotateCcw, group: "Acquisti" },
-    { title: "Ticket", url: "/customer/tickets", icon: Ticket, group: "Assistenza" },
-    { title: "Profilo", url: "/customer/profile", icon: UserCircle, group: "Account" },
+    { title: "sidebar.items.dashboard", url: "/customer", icon: LayoutDashboard, group: "Dashboard" },
+    { title: "sidebar.items.repairs", url: "/customer/repairs", icon: Wrench, group: "Riparazioni" },
+    { title: "sidebar.items.remoteRequests", url: "/customer/remote-requests", icon: Send, group: "Riparazioni" },
+    { title: "sidebar.items.myWarranties", url: "/customer/warranties", icon: Shield, group: "Servizi" },
+    { title: "sidebar.items.serviceCatalog", url: "/customer/service-catalog", icon: Package, group: "Servizi" },
+    { title: "sidebar.items.serviceOrders", url: "/customer/service-orders", icon: ClipboardList, group: "Servizi" },
+    { title: "sidebar.items.salesOrders", url: "/customer/orders", icon: ShoppingCart, group: "Acquisti" },
+    { title: "sidebar.items.returns", url: "/customer/sales-returns", icon: RotateCcw, group: "Acquisti" },
+    { title: "sidebar.items.tickets", url: "/customer/tickets", icon: Ticket, group: "Assistenza" },
+    { title: "sidebar.items.profile", url: "/customer/profile", icon: UserCircle, group: "Account" },
   ],
 };
 
 const integratedSuppliersConfig = [
   {
     key: "sifar",
-    label: "SIFAR",
+    label: "sidebar.items.sifar",
     routes: [
-      { title: "Catalogo", path: "/catalog", icon: Package },
-      { title: "Carrello", path: "/cart", icon: ShoppingCart },
-      { title: "Configurazione", path: "/settings", icon: Settings },
+      { title: "sidebar.items.catalog", path: "/catalog", icon: Package },
+      { title: "sidebar.items.cart", path: "/cart", icon: ShoppingCart },
+      { title: "sidebar.items.configuration", path: "/settings", icon: Settings },
     ],
   },
   {
     key: "foneday",
-    label: "Foneday EU",
+    label: "sidebar.items.foneday",
     routes: [
-      { title: "Catalogo", path: "/catalog", icon: Package },
-      { title: "Carrello", path: "/cart", icon: ShoppingCart },
-      { title: "Configurazione", path: "/settings", icon: Settings },
+      { title: "sidebar.items.catalog", path: "/catalog", icon: Package },
+      { title: "sidebar.items.cart", path: "/cart", icon: ShoppingCart },
+      { title: "sidebar.items.configuration", path: "/settings", icon: Settings },
     ],
   },
   {
     key: "mobilesentrix",
-    label: "MobileSentrix",
+    label: "sidebar.items.mobileSentrix",
     routes: [
-      { title: "Catalogo", path: "/catalog", icon: Package },
-      { title: "Carrello", path: "/cart", icon: ShoppingCart },
-      { title: "I Miei Ordini", path: "/orders", icon: ClipboardList },
-      { title: "Configurazione", path: "/settings", icon: Settings },
+      { title: "sidebar.items.catalog", path: "/catalog", icon: Package },
+      { title: "sidebar.items.cart", path: "/cart", icon: ShoppingCart },
+      { title: "sidebar.items.myOrders", path: "/orders", icon: ClipboardList },
+      { title: "sidebar.items.configuration", path: "/settings", icon: Settings },
     ],
   },
   {
     key: "trovausati",
-    label: "TrovaUsati",
+    label: "sidebar.items.trovaUsati",
     routes: [
-      { title: "Marketplace B2B", path: "/marketplace", icon: ShoppingCart },
-      { title: "Valutatore", path: "/valutatore", icon: Tag },
-      { title: "Configurazione", path: "/settings", icon: Settings },
+      { title: "sidebar.items.b2bMarketplace", path: "/marketplace", icon: ShoppingCart },
+      { title: "sidebar.items.evaluator", path: "/valutatore", icon: Tag },
+      { title: "sidebar.items.configuration", path: "/settings", icon: Settings },
     ],
   },
 ];
@@ -458,7 +450,44 @@ const SIDEBAR_URL_TO_FEATURES: Record<string, string[]> = {
   "/reseller/pos/registers": ["pos"],
 };
 
+const groupTranslationKeys: Record<string, string> = {
+  "Dashboard": "sidebar.sections.dashboard",
+  "POS": "sidebar.sections.posSection",
+  "Clienti & Rivenditori": "sidebar.sections.customersAndResellers",
+  "Clienti & Team": "sidebar.sections.customersAndResellers",
+  "Centri & Riparazioni": "sidebar.sections.centersAndRepairs",
+  "Utility": "sidebar.sections.utility",
+  "Magazzino": "sidebar.sections.warehouse",
+  "Interscambio": "sidebar.sections.transfers",
+  "Fornitori": "sidebar.sections.supply",
+  "Fatturazione": "sidebar.sections.billing",
+  "E-commerce": "sidebar.sections.ecommerce",
+  "Risorse Umane": "sidebar.sections.humanResources",
+  "Cataloghi": "sidebar.sections.catalog",
+  "Cataloghi e Acquisti": "sidebar.sections.catalogAndPurchases",
+  "Licenze": "sidebar.sections.licenses",
+  "Configurazione": "sidebar.sections.configuration",
+  "Garanzie": "sidebar.sections.warranties",
+  "Team": "sidebar.sections.team",
+  "Assistenza": "sidebar.sections.support",
+  "Riparazioni": "sidebar.sections.repairs",
+  "Cassa e Vendite": "sidebar.sections.pos",
+  "Magazzino e Fornitori": "sidebar.sections.warehouseAndSuppliers",
+  "Vendite Online": "sidebar.sections.onlineSales",
+  "Gestione HR": "sidebar.sections.hrManagement",
+  "Account": "sidebar.sections.account",
+  "Lavorazioni": "sidebar.sections.jobs",
+  "Gestione": "sidebar.sections.management",
+  "Sub-Reseller": "sidebar.sections.subReseller",
+  "Servizi": "sidebar.sections.services",
+  "Acquisti": "sidebar.sections.purchases",
+  "Sistema": "sidebar.sections.system",
+  "Principale": "sidebar.sections.main",
+  "Clienti": "sidebar.sections.customers",
+};
+
 export function AppSidebar() {
+  const { t } = useTranslation();
   const { user, logoutMutation } = useAuth();
   const [location] = useLocation();
   const { setOpenMobile, isMobile } = useSidebar();
@@ -472,29 +501,21 @@ export function AppSidebar() {
   const isRepairCenter = user?.role === "repair_center";
   const isFranchisingOrGdo = user?.resellerCategory === "franchising" || user?.resellerCategory === "gdo";
   const hasParentReseller = !!(user as any)?.parentResellerId;
-  // Repair centers and reseller staff should also see their reseller's logo
   const shouldShowResellerLogo = hasParentReseller || isResellerStaff || isRepairCenter;
 
-  // Query parent reseller info for sub-resellers, staff, and repair centers (to show their logo)
   const { data: parentReseller } = useQuery<{ id: string; fullName: string; logoUrl: string | null; ragioneSociale: string | null }>({
     queryKey: ["/api/my-parent-reseller"],
     enabled: shouldShowResellerLogo,
   });
 
-  // Query repair center settings for logo (only for repair centers)
   const { data: repairCenterData } = useQuery<{ id: number; name: string; logoUrl: string | null }>({
     queryKey: ["/api/repair-center/settings"],
     enabled: isRepairCenter,
     select: (data: any) => ({ id: data.id, name: data.name, logoUrl: data.logoUrl }),
   });
 
-  // Determine if current user is a sub-reseller (reseller with parentResellerId)
   const isSubReseller = isReseller && hasParentReseller;
 
-  // Determine which logo to show with priority:
-  // 1. Repair center's own logo (if repair_center role)
-  // 2. Sub-reseller's own logo (if sub-reseller with logoUrl)
-  // 3. Parent reseller's logo (fallback)
   const sidebarLogoUrl = isRepairCenter && repairCenterData?.logoUrl 
     ? repairCenterData.logoUrl 
     : isSubReseller && user?.logoUrl
@@ -506,7 +527,6 @@ export function AppSidebar() {
       ? ((user as any).ragioneSociale || user?.fullName)
       : (parentReseller?.ragioneSociale || parentReseller?.fullName);
 
-  // Query sub-resellers for franchising/gdo resellers
   const { data: subResellers = [] } = useQuery<any[]>({
     queryKey: ["/api/reseller/sub-resellers"],
     enabled: isReseller && isFranchisingOrGdo,
@@ -514,52 +534,41 @@ export function AppSidebar() {
 
   const hasSubResellers = subResellers.length > 0;
 
-  // Query current context (acting as sub-reseller or repair center)
   const { data: contextData } = useQuery<ContextResponse>({
     queryKey: ['/api/reseller/context'],
     enabled: isReseller || isResellerStaff,
   });
   const actingAs = contextData?.actingAs;
 
-  // Query configured integrations (only those with reseller credentials)
   const { data: configuredIntegrationCodes = [] } = useQuery<string[]>({
     queryKey: ["/api/reseller/configured-integrations"],
     enabled: isReseller || isResellerStaff,
   });
   
-  // Query configured integrations for repair center (uses parent reseller's credentials)
   const { data: rcConfiguredIntegrationCodes = [] } = useQuery<string[]>({
     queryKey: ["/api/repair-center/configured-integrations"],
     enabled: isRepairCenter,
   });
   
-  // Get integrated suppliers with correct base path based on role
   const rolePrefix = isRepairCenter ? "repair-center" : "reseller";
   const activeIntegrationCodes = isRepairCenter ? rcConfiguredIntegrationCodes : configuredIntegrationCodes;
   const integratedSuppliers = getIntegratedSuppliers(rolePrefix);
   
-  // Filter integrated suppliers based on configured integrations
   const filteredIntegratedSuppliers = integratedSuppliers.filter(
     supplier => activeIntegrationCodes.includes(supplier.key)
   );
 
-  // Build menu items dynamically based on sub-resellers, permissions, and context
   const items = useMemo(() => {
     let baseItems: typeof menuItems.admin = [];
     
-    // Check if reseller is acting as a different entity
     if ((isReseller || isResellerStaff) && actingAs) {
       if (actingAs.type === 'repair_center') {
-        // When acting as a repair center, show repair center menu items
         baseItems = [...menuItems.repair_center];
       } else if (actingAs.type === 'reseller') {
-        // When acting as a sub-reseller, show reseller items but without sub-reseller management
         baseItems = [...menuItems.reseller];
-        // Sub-resellers cannot manage other sub-resellers (only main reseller can)
         baseItems = baseItems.filter(item => item.url !== "/reseller/sub-resellers");
       }
     } else {
-      // Normal mode: use role-based menu items
       if (user?.role === "reseller_staff") {
         baseItems = [...menuItems.reseller];
       } else if (user) {
@@ -567,25 +576,19 @@ export function AppSidebar() {
       }
     }
     
-    // For reseller_staff, filter items based on permissions (only when not acting as another entity)
     if (isResellerStaff && !hasFullAccess && !actingAs) {
       baseItems = baseItems.filter(item => {
-        // Dashboard is always accessible
         if (item.url === "/reseller") return true;
-        // Guide is always accessible
         if (item.url === "/reseller/guide") return true;
         
-        // Check if the item requires a specific module permission
         const requiredModule = getRequiredModuleForUrl(item.url);
         if (requiredModule) {
           return canAccessModule(requiredModule);
         }
         
-        // Default: show item (for items not mapped to modules)
         return true;
       });
       
-      // Remove Team and Sub-Resellers for staff
       baseItems = baseItems.filter(item => 
         item.url !== "/reseller/team" && 
         item.url !== "/reseller/sub-resellers"
@@ -608,12 +611,11 @@ export function AppSidebar() {
       });
     }
 
-    // Add Sub-Reseller management item for franchising/gdo resellers (only when NOT acting as another entity)
     if (isReseller && isFranchisingOrGdo && !actingAs) {
       const dashboardIndex = baseItems.findIndex(item => item.url === "/reseller");
       if (dashboardIndex !== -1) {
         const subResellerItem = { 
-          title: "Gestione Sub-Reseller", 
+          title: "sidebar.items.subResellers", 
           url: "/reseller/sub-resellers", 
           icon: Network, 
           group: "Sub-Reseller" 
@@ -626,17 +628,15 @@ export function AppSidebar() {
       }
     }
     
-    // Add dynamic Shop Online link for customers with a reseller
     if (user?.role === "customer" && user?.resellerId) {
       const ordiniIndex = baseItems.findIndex(item => item.url === "/customer/orders");
       if (ordiniIndex !== -1) {
         const shopItem = { 
-          title: "Shop Online", 
+          title: "sidebar.items.shopOnline", 
           url: `/shop/${user.resellerId}`, 
           icon: Store, 
           group: "Acquisti" 
         };
-        // Insert Shop Online before "Ordini"
         return [
           ...baseItems.slice(0, ordiniIndex),
           shopItem,
@@ -700,6 +700,11 @@ export function AppSidebar() {
 
   const isGroupOpen = (group: string) => {
     return openGroups[group] === true;
+  };
+
+  const translateGroup = (group: string) => {
+    const key = groupTranslationKeys[group];
+    return key ? t(key) : group;
   };
 
   if (!user) return null;
@@ -770,7 +775,6 @@ export function AppSidebar() {
               <SidebarGroup key={group} className="px-3 py-2">
                 <SidebarMenu>
                   {groupItems.map((item) => {
-                    // Exact match for Dashboard items to prevent sub-routes from highlighting parent
                     const isActive = location === item.url;
                     return (
                       <SidebarMenuItem key={item.title}>
@@ -785,7 +789,7 @@ export function AppSidebar() {
                             data-testid={`link-${item.title.toLowerCase().replace(/\s+/g, "-")}`}
                           >
                             <item.icon className={`h-4 w-4 ${isActive ? "text-white" : ""}`} />
-                            <span className={`font-semibold ${isActive ? "text-white" : ""}`}>{item.title}</span>
+                            <span className={`font-semibold ${isActive ? "text-white" : ""}`}>{t(item.title)}</span>
                           </Link>
                         </SidebarMenuButton>
                       </SidebarMenuItem>
@@ -808,7 +812,7 @@ export function AppSidebar() {
                       <GroupIcon className={`h-3.5 w-3.5 ${hasActiveItem ? "text-emerald-600 dark:text-emerald-400" : "text-muted-foreground"}`} />
                     </div>
                     <span className={`flex-1 text-left font-medium ${hasActiveItem ? "text-foreground" : "text-muted-foreground"}`}>
-                      {group}
+                      {translateGroup(group)}
                     </span>
                     <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform duration-200 ${isOpen ? "" : "-rotate-90"}`} />
                   </SidebarMenuButton>
@@ -825,7 +829,7 @@ export function AppSidebar() {
                           <div key={item.title}>
                             {showSectionLabel && (
                               <div className={`px-3 py-1 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/70 ${idx > 0 ? "mt-2 pt-2 mx-1 border-t border-sidebar-border/30" : ""}`}>
-                                {currentSection}
+                                {t(currentSection)}
                               </div>
                             )}
                             <SidebarMenuItem>
@@ -840,7 +844,7 @@ export function AppSidebar() {
                                   data-testid={`link-${item.title.toLowerCase().replace(/\s+/g, "-")}`}
                                 >
                                   <item.icon className={`h-3.5 w-3.5 ${isActive ? "text-primary" : ""}`} />
-                                  <span className="flex-1 text-[13px]">{item.title}</span>
+                                  <span className="flex-1 text-[13px]">{t(item.title)}</span>
                                 </Link>
                               </SidebarMenuButton>
                             </SidebarMenuItem>
@@ -853,7 +857,7 @@ export function AppSidebar() {
                           <div className="my-2 mx-2 border-t border-sidebar-border" />
                           <div className="px-4 py-1 text-xs font-medium text-muted-foreground flex items-center gap-1">
                             <ExternalLink className="h-3 w-3" />
-                            Fornitori Integrati
+                            {t("sidebar.sections.integratedSuppliers")}
                           </div>
                           {filteredIntegratedSuppliers.map((supplier) => {
                             const isSupplierActive = location.startsWith(supplier.basePath);
@@ -871,7 +875,7 @@ export function AppSidebar() {
                                       className="w-full justify-between pl-4"
                                       data-testid={`button-supplier-${supplier.key}`}
                                     >
-                                      <span className="font-medium">{supplier.label}</span>
+                                      <span className="font-medium">{t(supplier.label)}</span>
                                       <ChevronDown 
                                         className={`h-4 w-4 transition-transform duration-200 ${isSupplierOpen ? "rotate-180" : ""}`} 
                                       />
@@ -891,7 +895,7 @@ export function AppSidebar() {
                                                 data-testid={`link-${supplier.key}-${route.title.toLowerCase()}`}
                                               >
                                                 <route.icon className="h-4 w-4" />
-                                                <span>{route.title}</span>
+                                                <span>{t(route.title)}</span>
                                               </Link>
                                             </SidebarMenuButton>
                                           </SidebarMenuItem>

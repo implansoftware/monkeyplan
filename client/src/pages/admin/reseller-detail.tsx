@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useParams, Link } from "wouter";
+import { useTranslation } from "react-i18next";
 import { User, RepairCenter, PaymentConfiguration } from "@shared/schema";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -48,6 +49,7 @@ interface ResellerOverviewResponse {
 }
 
 export default function AdminResellerDetail() {
+  const { t } = useTranslation();
   const params = useParams<{ id: string }>();
   const resellerId = params.id;
   const { toast } = useToast();
@@ -74,12 +76,12 @@ export default function AdminResellerDetail() {
       return await res.json();
     },
     onSuccess: () => {
-      toast({ title: "Password aggiornata con successo" });
+      toast({ title: t("admin.resellers.passwordResetSuccess") });
       setResetPasswordDialogOpen(false);
       setNewPassword("");
     },
     onError: (error: Error) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -206,7 +208,7 @@ export default function AdminResellerDetail() {
           <CardContent className="space-y-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="p-4 bg-slate-50 dark:bg-slate-800/30 rounded-xl">
-                <p className="text-xs text-slate-500 uppercase tracking-wide mb-1">Username</p>
+                <p className="text-xs text-slate-500 uppercase tracking-wide mb-1">{t("auth.username")}</p>
                 <p className="font-semibold text-slate-900 dark:text-white font-mono" data-testid="text-reseller-username">{reseller.username}</p>
               </div>
               <div className="p-4 bg-slate-50 dark:bg-slate-800/30 rounded-xl">
@@ -220,7 +222,7 @@ export default function AdminResellerDetail() {
             
             {reseller.phone && (
               <div className="p-4 bg-slate-50 dark:bg-slate-800/30 rounded-xl">
-                <p className="text-xs text-slate-500 uppercase tracking-wide mb-1">Telefono</p>
+                <p className="text-xs text-slate-500 uppercase tracking-wide mb-1">{t("common.phone")}</p>
                 <p className="font-semibold text-slate-900 dark:text-white flex items-center gap-2" data-testid="text-reseller-phone">
                   <Phone className="h-4 w-4 text-emerald-500" />
                   {reseller.phone}
@@ -264,7 +266,7 @@ export default function AdminResellerDetail() {
             
             {reseller.indirizzo && (
               <div className="p-3 bg-slate-50 dark:bg-slate-800/30 rounded-xl">
-                <p className="text-xs text-slate-500 uppercase tracking-wide mb-1">Indirizzo</p>
+                <p className="text-xs text-slate-500 uppercase tracking-wide mb-1">{t("common.address")}</p>
                 <p className="font-semibold text-slate-900 dark:text-white flex items-center gap-2" data-testid="text-reseller-address">
                   <MapPin className="h-4 w-4 text-rose-500" />
                   {reseller.indirizzo}, {reseller.cap} {reseller.citta} ({reseller.provincia})
@@ -381,7 +383,7 @@ export default function AdminResellerDetail() {
             </div>
             <div>
               <p className="text-3xl font-bold" data-testid="stat-customers">{customers.length}</p>
-              <p className="text-sm text-violet-100">Clienti</p>
+              <p className="text-sm text-violet-100">{t("sidebar.items.customers")}</p>
             </div>
           </div>
         </div>
@@ -434,11 +436,11 @@ export default function AdminResellerDetail() {
                   <Table>
                     <TableHeader>
                       <TableRow className="bg-slate-50 dark:bg-slate-800/50">
-                        <TableHead className="text-slate-600 dark:text-slate-400">Nome</TableHead>
-                        <TableHead className="text-slate-600 dark:text-slate-400">Email</TableHead>
-                        <TableHead className="text-slate-600 dark:text-slate-400">Telefono</TableHead>
-                        <TableHead className="text-slate-600 dark:text-slate-400">Stato</TableHead>
-                        <TableHead className="text-right text-slate-600 dark:text-slate-400">Azioni</TableHead>
+                        <TableHead className="text-slate-600 dark:text-slate-400">{t("common.name")}</TableHead>
+                        <TableHead className="text-slate-600 dark:text-slate-400">{t("common.email")}</TableHead>
+                        <TableHead className="text-slate-600 dark:text-slate-400">{t("common.phone")}</TableHead>
+                        <TableHead className="text-slate-600 dark:text-slate-400">{t("common.status")}</TableHead>
+                        <TableHead className="text-right text-slate-600 dark:text-slate-400">{t("common.actions")}</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -479,11 +481,11 @@ export default function AdminResellerDetail() {
                 <Table>
                   <TableHeader>
                     <TableRow className="bg-slate-50 dark:bg-slate-800/50">
-                      <TableHead className="text-slate-600 dark:text-slate-400">Nome</TableHead>
+                      <TableHead className="text-slate-600 dark:text-slate-400">{t("common.name")}</TableHead>
                       <TableHead className="text-slate-600 dark:text-slate-400">Citta</TableHead>
-                      <TableHead className="text-slate-600 dark:text-slate-400">Telefono</TableHead>
-                      <TableHead className="text-slate-600 dark:text-slate-400">Email</TableHead>
-                      <TableHead className="text-slate-600 dark:text-slate-400">Stato</TableHead>
+                      <TableHead className="text-slate-600 dark:text-slate-400">{t("common.phone")}</TableHead>
+                      <TableHead className="text-slate-600 dark:text-slate-400">{t("common.email")}</TableHead>
+                      <TableHead className="text-slate-600 dark:text-slate-400">{t("common.status")}</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -517,11 +519,11 @@ export default function AdminResellerDetail() {
                 <Table>
                   <TableHeader>
                     <TableRow className="bg-slate-50 dark:bg-slate-800/50">
-                      <TableHead className="text-slate-600 dark:text-slate-400">Nome</TableHead>
-                      <TableHead className="text-slate-600 dark:text-slate-400">Email</TableHead>
-                      <TableHead className="text-slate-600 dark:text-slate-400">Telefono</TableHead>
-                      <TableHead className="text-slate-600 dark:text-slate-400">Stato</TableHead>
-                      <TableHead className="text-right text-slate-600 dark:text-slate-400">Azioni</TableHead>
+                      <TableHead className="text-slate-600 dark:text-slate-400">{t("common.name")}</TableHead>
+                      <TableHead className="text-slate-600 dark:text-slate-400">{t("common.email")}</TableHead>
+                      <TableHead className="text-slate-600 dark:text-slate-400">{t("common.phone")}</TableHead>
+                      <TableHead className="text-slate-600 dark:text-slate-400">{t("common.status")}</TableHead>
+                      <TableHead className="text-right text-slate-600 dark:text-slate-400">{t("common.actions")}</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -570,10 +572,10 @@ export default function AdminResellerDetail() {
                 <Table>
                   <TableHeader>
                     <TableRow className="bg-slate-50 dark:bg-slate-800/50">
-                      <TableHead className="text-slate-600 dark:text-slate-400">Nome</TableHead>
-                      <TableHead className="text-slate-600 dark:text-slate-400">Email</TableHead>
-                      <TableHead className="text-slate-600 dark:text-slate-400">Telefono</TableHead>
-                      <TableHead className="text-slate-600 dark:text-slate-400">Stato</TableHead>
+                      <TableHead className="text-slate-600 dark:text-slate-400">{t("common.name")}</TableHead>
+                      <TableHead className="text-slate-600 dark:text-slate-400">{t("common.email")}</TableHead>
+                      <TableHead className="text-slate-600 dark:text-slate-400">{t("common.phone")}</TableHead>
+                      <TableHead className="text-slate-600 dark:text-slate-400">{t("common.status")}</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -605,7 +607,7 @@ export default function AdminResellerDetail() {
               <div className="p-2 rounded-xl bg-gradient-to-br from-amber-500 to-orange-600">
                 <KeyRound className="h-5 w-5 text-white" />
               </div>
-              <DialogTitle className="text-lg">Reset Password</DialogTitle>
+              <DialogTitle className="text-lg">{t("admin.common.resetPassword")}</DialogTitle>
             </div>
           </DialogHeader>
           <div className="space-y-4">
@@ -613,13 +615,13 @@ export default function AdminResellerDetail() {
               Stai per resettare la password di <strong className="text-slate-900 dark:text-white">{reseller.fullName}</strong>.
             </p>
             <div className="space-y-2">
-              <Label htmlFor="newPassword" className="text-slate-700 dark:text-slate-300">Nuova Password</Label>
+              <Label htmlFor="newPassword" className="text-slate-700 dark:text-slate-300">{t("admin.common.newPassword")}</Label>
               <Input
                 id="newPassword"
                 type="password"
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
-                placeholder="Inserisci nuova password (min. 4 caratteri)"
+                placeholder={t("admin.repairCenters.newPasswordPlaceholder")}
                 className="h-11 rounded-xl"
                 data-testid="input-new-password"
               />

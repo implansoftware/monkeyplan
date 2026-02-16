@@ -75,6 +75,7 @@ import {
   Calendar,
   Ban,
 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 interface SupplierReturnWithDetails extends SupplierReturn {
   supplier?: Supplier;
@@ -111,6 +112,7 @@ function formatDate(date: Date | string | null | undefined): string {
 }
 
 export default function SupplierReturnsPage() {
+  const { t } = useTranslation();
   const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState("");
   const [filterStatus, setFilterStatus] = useState<string>("all");
@@ -154,10 +156,10 @@ export default function SupplierReturnsPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/supplier-returns"] });
       setCreateDialogOpen(false);
-      toast({ title: "Reso creato", description: "Nuova richiesta reso creata con successo" });
+      toast({ title: t("suppliers.returnCreated"), description: t("suppliers.returnCreatedDesc") });
     },
     onError: (error: Error) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -167,10 +169,10 @@ export default function SupplierReturnsPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/supplier-returns"] });
-      toast({ title: "Reso aggiornato", description: "Modifiche salvate con successo" });
+      toast({ title: t("suppliers.returnUpdated"), description: t("common.savedSuccessfully") });
     },
     onError: (error: Error) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -182,10 +184,10 @@ export default function SupplierReturnsPage() {
       queryClient.invalidateQueries({ queryKey: ["/api/supplier-returns"] });
       setDetailsDialogOpen(false);
       setSelectedReturn(null);
-      toast({ title: "Reso eliminato" });
+      toast({ title: t("suppliers.returnDeleted") });
     },
     onError: (error: Error) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -238,7 +240,7 @@ export default function SupplierReturnsPage() {
     const totalAmount = Math.round(parseFloat(formTotalAmount || "0") * 100);
     
     if (!formSupplierId || !formRepairCenterId || !formReason) {
-      toast({ title: "Errore", description: "Compila tutti i campi obbligatori", variant: "destructive" });
+      toast({ title: t("common.error"), description: "Compila tutti i campi obbligatori", variant: "destructive" });
       return;
     }
     
@@ -258,9 +260,9 @@ export default function SupplierReturnsPage() {
       await apiRequest("POST", `/api/supplier-returns/${returnId}/status`, { status: newStatus });
       queryClient.invalidateQueries({ queryKey: ["/api/supplier-returns"] });
       const statusLabel = STATUS_CONFIG[newStatus]?.label || newStatus;
-      toast({ title: "Stato aggiornato", description: `Reso aggiornato a: ${statusLabel}` });
+      toast({ title: t("admin.resellers.statusUpdated"), description: `Reso aggiornato a: ${statusLabel}` });
     } catch (error: any) {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     }
   };
 
@@ -301,7 +303,7 @@ export default function SupplierReturnsPage() {
         <div className="relative flex-1 min-w-[200px] max-w-md">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder="Cerca reso..."
+            placeholder={t("common.search")}
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="pl-9"
@@ -311,10 +313,10 @@ export default function SupplierReturnsPage() {
         
         <Select value={filterStatus} onValueChange={setFilterStatus}>
           <SelectTrigger className="w-full sm:w-[180px]" data-testid="select-filter-status">
-            <SelectValue placeholder="Stato" />
+            <SelectValue placeholder={t("common.status")} />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">Tutti gli stati</SelectItem>
+            <SelectItem value="all">{t("repairs.allStatuses")}</SelectItem>
             {Object.entries(STATUS_CONFIG).map(([key, config]) => (
               <SelectItem key={key} value={key}>{config.label}</SelectItem>
             ))}
@@ -323,10 +325,10 @@ export default function SupplierReturnsPage() {
         
         <Select value={filterSupplier} onValueChange={setFilterSupplier}>
           <SelectTrigger className="w-full sm:w-[200px]" data-testid="select-filter-supplier">
-            <SelectValue placeholder="Fornitore" />
+            <SelectValue placeholder={t("suppliers.supplier")} />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">Tutti i fornitori</SelectItem>
+            <SelectItem value="all">{t("suppliers.allSuppliers")}</SelectItem>
             {suppliers.map(s => (
               <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
             ))}
@@ -361,14 +363,14 @@ export default function SupplierReturnsPage() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Numero</TableHead>
-                  <TableHead>Fornitore</TableHead>
-                  <TableHead>Centro</TableHead>
-                  <TableHead>Motivo</TableHead>
-                  <TableHead>Stato</TableHead>
+                  <TableHead>{t("common.number")}</TableHead>
+                  <TableHead>{t("suppliers.supplier")}</TableHead>
+                  <TableHead>{t("admin.repairCenters.center")}</TableHead>
+                  <TableHead>{t("common.reason")}</TableHead>
+                  <TableHead>{t("common.status")}</TableHead>
                   <TableHead className="text-right">Valore</TableHead>
                   <TableHead>RMA</TableHead>
-                  <TableHead>Data</TableHead>
+                  <TableHead>{t("common.date")}</TableHead>
                   <TableHead className="w-[60px]"></TableHead>
                 </TableRow>
               </TableHeader>
@@ -503,14 +505,14 @@ export default function SupplierReturnsPage() {
       <Dialog open={createDialogOpen} onOpenChange={handleCreateDialogChange}>
         <DialogContent className="max-w-lg">
           <DialogHeader>
-            <DialogTitle>Nuova Richiesta Reso</DialogTitle>
+            <DialogTitle>{t("suppliers.newReturnRequest")}</DialogTitle>
           </DialogHeader>
           <form onSubmit={handleCreateReturn} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="supplierId">Fornitore *</Label>
+              <Label htmlFor="supplierId">{t("suppliers.supplier")} *</Label>
               <Select value={formSupplierId} onValueChange={handleSupplierChange}>
                 <SelectTrigger data-testid="select-new-supplier">
-                  <SelectValue placeholder="Seleziona fornitore..." />
+                  <SelectValue placeholder={t("suppliers.selectSupplier")} />
                 </SelectTrigger>
                 <SelectContent>
                   {suppliers.filter(s => s.isActive).map(s => (
@@ -523,10 +525,10 @@ export default function SupplierReturnsPage() {
             </div>
             
             <div className="space-y-2">
-              <Label htmlFor="repairCenterId">Centro Riparazione *</Label>
+              <Label htmlFor="repairCenterId">{t("admin.repairCenters.repairCenters")} *</Label>
               <Select value={formRepairCenterId} onValueChange={setFormRepairCenterId}>
                 <SelectTrigger data-testid="select-new-center">
-                  <SelectValue placeholder="Seleziona centro..." />
+                  <SelectValue placeholder={t("utility.selectRepairCenter")} />
                 </SelectTrigger>
                 <SelectContent>
                   {repairCenters.map(c => (
@@ -539,7 +541,7 @@ export default function SupplierReturnsPage() {
             </div>
             
             <div className="space-y-2">
-              <Label htmlFor="supplierOrderId">Ordine Originale (opzionale)</Label>
+              <Label htmlFor="supplierOrderId">{t("suppliers.originalOrder")}</Label>
               <Select 
                 value={formOrderId} 
                 onValueChange={handleOrderSelect}
@@ -549,7 +551,7 @@ export default function SupplierReturnsPage() {
                   <SelectValue placeholder={formSupplierId ? "Collega a un ordine..." : "Prima seleziona un fornitore"} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="__none__">Nessun ordine collegato</SelectItem>
+                  <SelectItem value="__none__">{t("suppliers.noLinkedOrder")}</SelectItem>
                   {filteredOrders.map(o => (
                     <SelectItem key={o.id} value={o.id}>
                       {o.orderNumber} - {formatCurrency(o.totalAmount || 0)}
@@ -565,10 +567,10 @@ export default function SupplierReturnsPage() {
             </div>
             
             <div className="space-y-2">
-              <Label htmlFor="reason">Motivo Reso *</Label>
+              <Label htmlFor="reason">{t("suppliers.returnReason")} *</Label>
               <Select value={formReason} onValueChange={setFormReason}>
                 <SelectTrigger data-testid="select-reason">
-                  <SelectValue placeholder="Seleziona motivo..." />
+                  <SelectValue placeholder={t("suppliers.selectReason")} />
                 </SelectTrigger>
                 <SelectContent>
                   {Object.entries(REASON_LABELS).map(([key, label]) => (
@@ -581,12 +583,12 @@ export default function SupplierReturnsPage() {
             </div>
             
             <div className="space-y-2">
-              <Label htmlFor="reasonDetails">Dettagli Motivo</Label>
+              <Label htmlFor="reasonDetails">{t("suppliers.reasonDetails")}</Label>
               <Textarea
                 id="reasonDetails"
                 value={formReasonDetails}
                 onChange={(e) => setFormReasonDetails(e.target.value)}
-                placeholder="Descrivi il problema in dettaglio..."
+                placeholder={t("suppliers.describeIssue")}
                 className="resize-none"
                 rows={3}
                 data-testid="textarea-reason"
@@ -594,7 +596,7 @@ export default function SupplierReturnsPage() {
             </div>
             
             <div className="space-y-2">
-              <Label htmlFor="totalAmount">Valore Reso (€)</Label>
+              <Label htmlFor="totalAmount">{t("suppliers.returnValue")} (€)</Label>
               <Input
                 id="totalAmount"
                 type="number"
@@ -620,7 +622,7 @@ export default function SupplierReturnsPage() {
                 disabled={createReturnMutation.isPending}
                 data-testid="button-submit-return"
               >
-                {createReturnMutation.isPending ? "Creazione..." : "Crea Reso"}
+                {createReturnMutation.isPending ? t("admin.repairCenters.creating") : "Crea Reso"}
               </Button>
             </div>
           </form>
@@ -634,7 +636,7 @@ export default function SupplierReturnsPage() {
             <>
               <DialogHeader>
                 <DialogTitle className="flex flex-wrap items-center gap-3">
-                  <span>Reso {selectedReturn.returnNumber}</span>
+                  <span>{t("suppliers.returnNumber")} {selectedReturn.returnNumber}</span>
                   <Badge className={STATUS_CONFIG[selectedReturn.status]?.color}>
                     {STATUS_CONFIG[selectedReturn.status]?.label}
                   </Badge>
@@ -644,20 +646,20 @@ export default function SupplierReturnsPage() {
               <ScrollArea className="max-h-[calc(90vh-120px)]">
                 <Tabs defaultValue="info" className="space-y-4">
                   <TabsList>
-                    <TabsTrigger value="info">Informazioni</TabsTrigger>
+                    <TabsTrigger value="info">{t("common.information")}</TabsTrigger>
                     <TabsTrigger value="tracking">Tracking</TabsTrigger>
                   </TabsList>
                   
                   <TabsContent value="info" className="space-y-4">
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div className="space-y-2">
-                        <Label>Fornitore</Label>
+                        <Label>{t("suppliers.supplier")}</Label>
                         <div className="p-3 bg-muted rounded-md">
                           {suppliers.find(s => s.id === selectedReturn.supplierId)?.name || "-"}
                         </div>
                       </div>
                       <div className="space-y-2">
-                        <Label>Centro Riparazione</Label>
+                        <Label>{t("roles.repairCenter")}</Label>
                         <div className="p-3 bg-muted rounded-md">
                           {repairCenters.find(c => c.id === selectedReturn.repairCenterId)?.name || "-"}
                         </div>
@@ -666,14 +668,14 @@ export default function SupplierReturnsPage() {
                     
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div className="space-y-2">
-                        <Label>Motivo Reso</Label>
+                        <Label>{t("suppliers.returnReason")}</Label>
                         <div className="p-3 bg-muted rounded-md flex items-center gap-2">
                           <AlertTriangle className="h-4 w-4 text-yellow-600" />
                           {REASON_LABELS[selectedReturn.reason] || selectedReturn.reason}
                         </div>
                       </div>
                       <div className="space-y-2">
-                        <Label>Ordine Originale</Label>
+                        <Label>{t("suppliers.originalOrder")}</Label>
                         <div className="p-3 bg-muted rounded-md">
                           {selectedReturn.supplierOrderId 
                             ? supplierOrders.find(o => o.id === selectedReturn.supplierOrderId)?.orderNumber
@@ -684,7 +686,7 @@ export default function SupplierReturnsPage() {
                     
                     {selectedReturn.reasonDetails && (
                       <div className="space-y-2">
-                        <Label>Dettagli Motivo</Label>
+                        <Label>{t("suppliers.reasonDetails")}</Label>
                         <div className="p-3 bg-muted rounded-md">
                           {selectedReturn.reasonDetails}
                         </div>
@@ -695,13 +697,13 @@ export default function SupplierReturnsPage() {
                     
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div className="space-y-2">
-                        <Label>Valore Reso</Label>
+                        <Label>{t("suppliers.returnValue")}</Label>
                         <div className="p-3 bg-muted rounded-md text-lg font-bold">
                           {formatCurrency(selectedReturn.totalAmount)}
                         </div>
                       </div>
                       <div className="space-y-2">
-                        <Label>Importo Rimborsato</Label>
+                        <Label>{t("suppliers.refundedAmount")}</Label>
                         <div className="p-3 bg-muted rounded-md text-lg font-bold text-green-600">
                           {selectedReturn.refundAmount != null 
                             ? formatCurrency(selectedReturn.refundAmount) 
@@ -712,7 +714,7 @@ export default function SupplierReturnsPage() {
 
                     {selectedReturn.status === "received" && (
                       <div className="space-y-2">
-                        <Label htmlFor="refundAmount">Importo Rimborso (€)</Label>
+                        <Label htmlFor="refundAmount">{t("suppliers.refundAmount")} (€)</Label>
                         <div className="flex gap-2">
                           <Input
                             id="refundAmount"
@@ -743,36 +745,36 @@ export default function SupplierReturnsPage() {
                     
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
                       <div className="space-y-2">
-                        <Label>Creato il</Label>
+                        <Label>{t("common.createdAt")}</Label>
                         <div>{formatDate(selectedReturn.createdAt)}</div>
                       </div>
                       {selectedReturn.requestedAt && (
                         <div className="space-y-2">
-                          <Label>Richiesta il</Label>
+                          <Label>{t("suppliers.requestedAt")}</Label>
                           <div>{formatDate(selectedReturn.requestedAt)}</div>
                         </div>
                       )}
                       {selectedReturn.approvedAt && (
                         <div className="space-y-2">
-                          <Label>Approvato il</Label>
+                          <Label>{t("suppliers.approvedAt")}</Label>
                           <div>{formatDate(selectedReturn.approvedAt)}</div>
                         </div>
                       )}
                       {selectedReturn.shippedAt && (
                         <div className="space-y-2">
-                          <Label>Spedito il</Label>
+                          <Label>{t("suppliers.shippedAt")}</Label>
                           <div>{formatDate(selectedReturn.shippedAt)}</div>
                         </div>
                       )}
                       {selectedReturn.receivedAt && (
                         <div className="space-y-2">
-                          <Label>Ricevuto il</Label>
+                          <Label>{t("suppliers.receivedAt")}</Label>
                           <div>{formatDate(selectedReturn.receivedAt)}</div>
                         </div>
                       )}
                       {selectedReturn.refundedAt && (
                         <div className="space-y-2">
-                          <Label>Rimborsato il</Label>
+                          <Label>{t("suppliers.refundedAt")}</Label>
                           <div>{formatDate(selectedReturn.refundedAt)}</div>
                         </div>
                       )}
@@ -785,7 +787,7 @@ export default function SupplierReturnsPage() {
                       <Input
                         id="rmaNumber"
                         defaultValue={selectedReturn.rmaNumber || ""}
-                        placeholder="Numero autorizzazione reso fornitore"
+                        placeholder={t("suppliers.returnAuthNumber")}
                         onBlur={(e) => {
                           updateReturnMutation.mutate({
                             id: selectedReturn.id,
@@ -803,11 +805,11 @@ export default function SupplierReturnsPage() {
                     
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div className="space-y-2">
-                        <Label htmlFor="trackingCarrier">Corriere</Label>
+                        <Label htmlFor="trackingCarrier">{t("shipping.carrier")}</Label>
                         <Input
                           id="trackingCarrier"
                           defaultValue={selectedReturn.trackingCarrier || ""}
-                          placeholder="Es: DHL, BRT, SDA..."
+                          placeholder={t("shipping.carrierExample")}
                           onBlur={(e) => {
                             updateReturnMutation.mutate({
                               id: selectedReturn.id,
@@ -818,11 +820,11 @@ export default function SupplierReturnsPage() {
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="trackingNumber">Numero Tracking</Label>
+                        <Label htmlFor="trackingNumber">{t("shipping.trackingNumber")}</Label>
                         <Input
                           id="trackingNumber"
                           defaultValue={selectedReturn.trackingNumber || ""}
-                          placeholder="Inserisci numero di tracking..."
+                          placeholder={t("shipping.enterTracking")}
                           onBlur={(e) => {
                             updateReturnMutation.mutate({
                               id: selectedReturn.id,

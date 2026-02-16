@@ -15,6 +15,7 @@ import {
   Building2,
   Package,
 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 interface UtilitySummary {
   year: number;
@@ -56,6 +57,7 @@ const formatCurrency = (cents: number) => {
 };
 
 export default function AdminUtility() {
+  const { t } = useTranslation();
   const { data: summary, isLoading } = useQuery<UtilitySummary>({
     queryKey: ["/api/utility/reports/summary"],
   });
@@ -115,7 +117,7 @@ export default function AdminUtility() {
 
         <Card data-testid="card-suppliers">
           <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Fornitori</CardTitle>
+            <CardTitle className="text-sm font-medium">{t("sidebar.items.suppliers")}</CardTitle>
             <Building2 className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -209,7 +211,7 @@ export default function AdminUtility() {
           <Link href="/admin/utility/suppliers">
             <CardContent className="p-6 flex flex-col items-center text-center cursor-pointer">
               <Phone className="h-10 w-10 text-primary mb-3" />
-              <h3 className="font-semibold mb-1">Fornitori</h3>
+              <h3 className="font-semibold mb-1">{t("sidebar.items.suppliers")}</h3>
               <p className="text-xs text-muted-foreground mb-3">
                 Provider di servizi
               </p>
@@ -235,7 +237,7 @@ export default function AdminUtility() {
           <Link href="/admin/utility/practices">
             <CardContent className="p-6 flex flex-col items-center text-center cursor-pointer">
               <FileCheck className="h-10 w-10 text-primary mb-3" />
-              <h3 className="font-semibold mb-1">Pratiche</h3>
+              <h3 className="font-semibold mb-1">{t("sidebar.items.practices")}</h3>
               <p className="text-xs text-muted-foreground mb-3">
                 Contratti attivi
               </p>
@@ -248,7 +250,7 @@ export default function AdminUtility() {
           <Link href="/admin/utility/commissions">
             <CardContent className="p-6 flex flex-col items-center text-center cursor-pointer">
               <Coins className="h-10 w-10 text-primary mb-3" />
-              <h3 className="font-semibold mb-1">Compensi</h3>
+              <h3 className="font-semibold mb-1">{t("sidebar.items.commissions")}</h3>
               <p className="text-xs text-muted-foreground mb-3">
                 Commissioni e pagamenti
               </p>
@@ -261,7 +263,7 @@ export default function AdminUtility() {
           <Link href="/admin/utility/reports">
             <CardContent className="p-6 flex flex-col items-center text-center cursor-pointer">
               <PieChart className="h-10 w-10 text-primary mb-3" />
-              <h3 className="font-semibold mb-1">Report</h3>
+              <h3 className="font-semibold mb-1">{t("sidebar.items.reports")}</h3>
               <p className="text-xs text-muted-foreground mb-3">
                 Analisi e statistiche
               </p>

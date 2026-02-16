@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { Card, CardContent } from "@/components/ui/card";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
@@ -22,54 +23,55 @@ interface HrDashboardStats {
 }
 
 export default function RepairCenterHrDashboard() {
+  const { t } = useTranslation();
   const { data: stats, isLoading } = useQuery<HrDashboardStats>({
     queryKey: ["/api/repair-center/hr/dashboard"],
   });
 
   const quickActions = [
     {
-      title: "Presenze",
-      description: "Gestione timbrature e orari",
+      title: t("sidebar.items.attendance"),
+      description: t("hr.manageAttendance"),
       icon: Clock,
       href: "/repair-center/hr/attendance",
       color: "from-blue-500/10 to-blue-600/5",
       iconColor: "text-blue-600 dark:text-blue-400"
     },
     {
-      title: "Ferie e Permessi",
-      description: "Richieste ferie, permessi, ROL",
+      title: t("sidebar.items.leaveRequests"),
+      description: t("hr.richiesteFeriePermessiROL"),
       icon: CalendarDays,
       href: "/repair-center/hr/leave-requests",
       color: "from-emerald-500/10 to-emerald-600/5",
       iconColor: "text-emerald-600 dark:text-emerald-400"
     },
     {
-      title: "Malattie",
-      description: "Certificati e assenze malattia",
+      title: t("sidebar.items.sickLeave"),
+      description: t("hr.certificatiEAssenzeMalattia"),
       icon: Thermometer,
       href: "/repair-center/hr/sick-leave",
       color: "from-red-500/10 to-red-600/5",
       iconColor: "text-red-600 dark:text-red-400"
     },
     {
-      title: "Rimborsi Spese",
-      description: "Note spese e trasferte",
+      title: t("sidebar.items.expenseReimbursement"),
+      description: t("hr.noteSpeseETrasferte"),
       icon: Receipt,
       href: "/repair-center/hr/expenses",
       color: "from-amber-500/10 to-amber-600/5",
       iconColor: "text-amber-600 dark:text-amber-400"
     },
     {
-      title: "Profili Orario",
-      description: "Configurazione orari lavoro",
+      title: t("sidebar.items.workProfiles"),
+      description: t("hr.configurazioneOrariLavoro"),
       icon: Briefcase,
       href: "/repair-center/hr/work-profiles",
       color: "from-purple-500/10 to-purple-600/5",
       iconColor: "text-purple-600 dark:text-purple-400"
     },
     {
-      title: "Calendario Team",
-      description: "Visualizzazione assenze team",
+      title: t("sidebar.items.teamCalendar"),
+      description: t("hr.visualizzazioneAssenzeTeam"),
       icon: Calendar,
       href: "/repair-center/hr/calendar",
       color: "from-cyan-500/10 to-cyan-600/5",
@@ -90,8 +92,8 @@ export default function RepairCenterHrDashboard() {
               <Users className="h-5 w-5 sm:h-7 sm:w-7 text-white" />
             </div>
             <div>
-              <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-white tracking-tight" data-testid="text-hr-title">Risorse Umane</h1>
-              <p className="text-emerald-100">Presenze, ferie, permessi e amministrazione personale</p>
+              <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-white tracking-tight" data-testid="text-hr-title">{t("sidebar.sections.humanResources")}</h1>
+              <p className="text-emerald-100">{t("hr.presenzeFeriePermessiEAmministrazionePerson")}</p>
             </div>
           </div>
           <div className="flex flex-wrap items-center gap-2">
@@ -111,7 +113,7 @@ export default function RepairCenterHrDashboard() {
           <CardContent className="relative pt-5 pb-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1">Ferie in Attesa</p>
+                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1">{t("hr.ferieInAttesa")}</p>
                 {isLoading ? (
                   <Skeleton className="h-8 w-16" />
                 ) : (
@@ -130,7 +132,7 @@ export default function RepairCenterHrDashboard() {
           <CardContent className="relative pt-5 pb-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1">Rimborsi in Attesa</p>
+                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1">{t("hr.rimborsiInAttesa")}</p>
                 {isLoading ? (
                   <Skeleton className="h-8 w-16" />
                 ) : (

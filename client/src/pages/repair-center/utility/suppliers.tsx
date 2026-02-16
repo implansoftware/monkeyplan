@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { UtilitySupplier, InsertUtilitySupplier } from "@shared/schema";
@@ -20,16 +21,17 @@ import { Link } from "wouter";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 
-const categoryLabels: Record<string, string> = {
-  fisso: "Fisso",
-  mobile: "Mobile",
-  centralino: "Centralino",
-  luce: "Luce",
-  gas: "Gas",
-  altro: "Altro",
-};
 
 export default function RepairCenterUtilitySuppliers() {
+  const { t } = useTranslation();
+  const categoryLabels: Record<string, string> = {
+    fisso: t("utility.serviceTypes.fisso"),
+    mobile: t("utility.serviceTypes.mobile"),
+    centralino: t("utility.serviceTypes.centralino"),
+    luce: t("utility.serviceTypes.luce"),
+    gas: t("utility.serviceTypes.gas"),
+    altro: t("utility.serviceTypes.altro"),
+  };
   const [searchQuery, setSearchQuery] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingSupplier, setEditingSupplier] = useState<UtilitySupplier | null>(null);
@@ -49,10 +51,10 @@ export default function RepairCenterUtilitySuppliers() {
       queryClient.invalidateQueries({ queryKey: ["/api/utility/suppliers"] });
       setDialogOpen(false);
       setEditingSupplier(null);
-      toast({ title: "Fornitore creato con successo" });
+      toast({ title: t("suppliers.supplierCreated") });
     },
     onError: (error: Error) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("auth.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -68,7 +70,7 @@ export default function RepairCenterUtilitySuppliers() {
       toast({ title: "Fornitore aggiornato" });
     },
     onError: (error: Error) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("auth.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -81,7 +83,7 @@ export default function RepairCenterUtilitySuppliers() {
       toast({ title: "Fornitore eliminato" });
     },
     onError: (error: Error) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("auth.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -149,7 +151,7 @@ export default function RepairCenterUtilitySuppliers() {
               <Truck className="h-5 w-5 sm:h-7 sm:w-7 text-white" />
             </div>
             <div>
-              <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-white tracking-tight">Fornitori Utility</h1>
+              <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-white tracking-tight">{t("sidebar.items.utilitySuppliers")}</h1>
               <p className="text-emerald-100">Provider di servizi telefonici ed energetici</p>
             </div>
           </div>
@@ -167,7 +169,7 @@ export default function RepairCenterUtilitySuppliers() {
           <div className="flex-1 flex items-center gap-2">
             <Search className="h-4 w-4 text-muted-foreground" />
             <Input
-              placeholder="Cerca fornitore..."
+              placeholder={t("suppliers.searchSupplier")}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="max-w-xs"
@@ -185,20 +187,20 @@ export default function RepairCenterUtilitySuppliers() {
           ) : filteredSuppliers.length === 0 ? (
             <div className="text-center py-8">
               <Building2 className="h-12 w-12 mx-auto text-muted-foreground mb-3" />
-              <p className="text-muted-foreground">Nessun fornitore trovato</p>
+              <p className="text-muted-foreground">{t("suppliers.noSuppliersFound")}</p>
             </div>
           ) : (
             <div className="overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Nome</TableHead>
-                  <TableHead className="hidden md:table-cell">Codice</TableHead>
-                  <TableHead className="hidden lg:table-cell">Tipo</TableHead>
-                  <TableHead className="hidden md:table-cell">Categoria</TableHead>
-                  <TableHead className="hidden lg:table-cell">Contatto</TableHead>
-                  <TableHead>Stato</TableHead>
-                  <TableHead className="text-right">Azioni</TableHead>
+                  <TableHead>{t("common.name")}</TableHead>
+                  <TableHead className="hidden md:table-cell">{t("common.code")}</TableHead>
+                  <TableHead className="hidden lg:table-cell">{t("common.type")}</TableHead>
+                  <TableHead className="hidden md:table-cell">{t("common.category")}</TableHead>
+                  <TableHead className="hidden lg:table-cell">{t("common.contact")}</TableHead>
+                  <TableHead>{t("common.status")}</TableHead>
+                  <TableHead className="text-right">{t("common.actions")}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -281,7 +283,7 @@ export default function RepairCenterUtilitySuppliers() {
                               variant="ghost" 
                               size="icon"
                               onClick={() => {
-                                if (confirm("Sei sicuro di voler eliminare questo fornitore?")) {
+                                if (confirm(t("utility.confirmDeleteSupplier"))) {
                                   deleteMutation.mutate(supplier.id);
                                 }
                               }}
@@ -306,18 +308,18 @@ export default function RepairCenterUtilitySuppliers() {
         <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
-              {editingSupplier ? "Modifica Fornitore" : "Nuovo Fornitore Personale"}
+              {editingSupplier ? t("utility.editSupplier") : t("utility.newPersonalSupplier")}
             </DialogTitle>
             <DialogDescription>
               {editingSupplier 
-                ? "Modifica i dati del fornitore."
-                : "Aggiungi un nuovo fornitore personale per i tuoi servizi."}
+                ? t("utility.editSupplierData")
+                : t("utility.addNewPersonalSupplier")}
             </DialogDescription>
           </DialogHeader>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="name">Nome *</Label>
+                <Label htmlFor="name">{t("services.nome")}</Label>
                 <Input
                   id="name"
                   name="name"
@@ -340,7 +342,7 @@ export default function RepairCenterUtilitySuppliers() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="category">Categoria *</Label>
+              <Label htmlFor="category">{t("services.categoria")}</Label>
               <Select 
                 value={selectedCategory}
                 onValueChange={setSelectedCategory}
@@ -358,7 +360,7 @@ export default function RepairCenterUtilitySuppliers() {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
+                <Label htmlFor="email">{t("auth.email")}</Label>
                 <Input
                   id="email"
                   name="email"
@@ -368,7 +370,7 @@ export default function RepairCenterUtilitySuppliers() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="phone">Telefono</Label>
+                <Label htmlFor="phone">{t("auth.phone")}</Label>
                 <Input
                   id="phone"
                   name="phone"
@@ -392,7 +394,7 @@ export default function RepairCenterUtilitySuppliers() {
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="referentName">Referente</Label>
+                <Label htmlFor="referentName">{t("auth.referent")}</Label>
                 <Input
                   id="referentName"
                   name="referentName"
@@ -401,7 +403,7 @@ export default function RepairCenterUtilitySuppliers() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="referentPhone">Tel. Referente</Label>
+                <Label htmlFor="referentPhone">{t("suppliers.referentPhone")}</Label>
                 <Input
                   id="referentPhone"
                   name="referentPhone"
@@ -410,7 +412,7 @@ export default function RepairCenterUtilitySuppliers() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="referentEmail">Email Referente</Label>
+                <Label htmlFor="referentEmail">{t("suppliers.referentEmail")}</Label>
                 <Input
                   id="referentEmail"
                   name="referentEmail"
@@ -422,7 +424,7 @@ export default function RepairCenterUtilitySuppliers() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="notes">Note</Label>
+              <Label htmlFor="notes">{t("common.note")}</Label>
               <Textarea
                 id="notes"
                 name="notes"
@@ -439,7 +441,7 @@ export default function RepairCenterUtilitySuppliers() {
                 defaultChecked={editingSupplier?.isActive ?? true}
                 data-testid="switch-active"
               />
-              <Label htmlFor="isActive">Fornitore attivo</Label>
+              <Label htmlFor="isActive">{t("suppliers.activeSupplier")}</Label>
             </div>
 
             <div className="flex justify-end gap-2 pt-4">
@@ -456,7 +458,7 @@ export default function RepairCenterUtilitySuppliers() {
                 disabled={createMutation.isPending || updateMutation.isPending}
                 data-testid="button-save"
               >
-                {editingSupplier ? "Salva Modifiche" : "Crea Fornitore"}
+                {editingSupplier ? t("utility.saveChanges") : t("utility.createSupplier")}
               </Button>
             </div>
           </form>

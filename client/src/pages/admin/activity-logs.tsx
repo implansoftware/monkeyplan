@@ -8,8 +8,10 @@ import { useState } from "react";
 import { ActivityLog, User as UserType } from "@shared/schema";
 import { format } from "date-fns";
 import { Shield, User, FileEdit, Trash2, Plus } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 export default function AdminActivityLogs() {
+  const { t } = useTranslation();
   const [actionFilter, setActionFilter] = useState<string>("all");
   const [entityTypeFilter, setEntityTypeFilter] = useState<string>("");
   const [userIdFilter, setUserIdFilter] = useState<string>("all");
@@ -74,16 +76,16 @@ export default function AdminActivityLogs() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Filtri</CardTitle>
+          <CardTitle>{t("common.filters")}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex gap-4 flex-wrap">
             <Select value={actionFilter} onValueChange={setActionFilter}>
               <SelectTrigger className="w-full sm:w-[180px]" data-testid="select-action-filter">
-                <SelectValue placeholder="Azione" />
+                <SelectValue placeholder={t("common.action")} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">Tutte</SelectItem>
+                <SelectItem value="all">{t("common.all")}</SelectItem>
                 <SelectItem value="CREATE">CREATE</SelectItem>
                 <SelectItem value="UPDATE">UPDATE</SelectItem>
                 <SelectItem value="DELETE">DELETE</SelectItem>
@@ -102,10 +104,10 @@ export default function AdminActivityLogs() {
 
             <Select value={userIdFilter} onValueChange={setUserIdFilter}>
               <SelectTrigger className="w-full sm:w-[200px]" data-testid="select-user-filter">
-                <SelectValue placeholder="Utente" />
+                <SelectValue placeholder={t("common.user")} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">Tutti</SelectItem>
+                <SelectItem value="all">{t("common.all")}</SelectItem>
                 {users?.map((user) => (
                   <SelectItem key={user.id} value={user.id}>
                     {user.username}
@@ -143,20 +145,20 @@ export default function AdminActivityLogs() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Registro Attività</CardTitle>
+          <CardTitle>{t("common.activityLog")}</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="rounded-md border">
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Data/Ora</TableHead>
-                  <TableHead>Azione</TableHead>
+                  <TableHead>{t("common.dateTime")}</TableHead>
+                  <TableHead>{t("common.action")}</TableHead>
                   <TableHead>Entity Type</TableHead>
                   <TableHead>Entity ID</TableHead>
                   <TableHead>User ID</TableHead>
                   <TableHead>IP Address</TableHead>
-                  <TableHead>Dettagli</TableHead>
+                  <TableHead>{t("common.details")}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>

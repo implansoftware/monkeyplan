@@ -15,6 +15,7 @@ import {
   Truck, Ban, Eye, PackageCheck, User, Building, FileText, Download
 } from "lucide-react";
 import type { Product, User as UserType } from "@shared/schema";
+import { useTranslation } from "react-i18next";
 
 type TransferRequestItem = {
   id: string;
@@ -57,20 +58,21 @@ type TransferRequest = {
 };
 
 const statusConfig: Record<string, { label: string; color: string; icon: any }> = {
-  pending: { label: "In Attesa", color: "bg-yellow-500/20 text-yellow-700", icon: Clock },
-  approved: { label: "Approvata", color: "bg-blue-500/20 text-blue-700", icon: CheckCircle },
-  rejected: { label: "Rifiutata", color: "bg-red-500/20 text-red-700", icon: XCircle },
-  shipped: { label: "Spedita", color: "bg-purple-500/20 text-purple-700", icon: Truck },
-  received: { label: "Ricevuta", color: "bg-green-500/20 text-green-700", icon: PackageCheck },
-  cancelled: { label: "Annullata", color: "bg-gray-500/20 text-gray-700", icon: Ban },
+  pending: { label: t("common.pending"), color: "bg-yellow-500/20 text-yellow-700", icon: Clock },
+  approved: { label: t("common.approved"), color: "bg-blue-500/20 text-blue-700", icon: CheckCircle },
+  rejected: { label: t("common.rejected"), color: "bg-red-500/20 text-red-700", icon: XCircle },
+  shipped: { label: t("common.shipped"), color: "bg-purple-500/20 text-purple-700", icon: Truck },
+  received: { label: t("common.received"), color: "bg-green-500/20 text-green-700", icon: PackageCheck },
+  cancelled: { label: t("common.cancelled"), color: "bg-gray-500/20 text-gray-700", icon: Ban },
 };
 
 const requesterTypeLabels: Record<string, { label: string; icon: any }> = {
-  repair_center: { label: "Centro Riparazione", icon: Building },
-  sub_reseller: { label: "Sub-Reseller", icon: User },
+  repair_center: { label: t("roles.repairCenter"), icon: Building },
+  sub_reseller: { label: t("roles.subReseller"), icon: User },
 };
 
 export default function IncomingTransferRequestsPage() {
+  const { t } = useTranslation();
   const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
@@ -113,7 +115,7 @@ export default function IncomingTransferRequestsPage() {
       setRejectionReason("");
     },
     onError: (error: any) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -134,7 +136,7 @@ export default function IncomingTransferRequestsPage() {
       queryClient.invalidateQueries({ queryKey: ["/api/reseller/incoming-transfer-requests"] });
       queryClient.invalidateQueries({ queryKey: ["/api/reseller/incoming-transfer-requests/summary"] });
       queryClient.invalidateQueries({ queryKey: ["/api/warehouses"] });
-      toast({ title: "Spedizione Confermata", description: "Gli articoli sono stati spediti e il DDT è stato generato automaticamente" });
+      toast({ title: t("warehouse.shipmentConfirmed"), description: "Gli articoli sono stati spediti e il DDT è stato generato automaticamente" });
       setShowShipDialog(false);
       setSelectedRequest(null);
       setShippedItems([]);
@@ -142,7 +144,7 @@ export default function IncomingTransferRequestsPage() {
       setShipTrackingCarrier("");
     },
     onError: (error: any) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -247,10 +249,10 @@ export default function IncomingTransferRequestsPage() {
         </div>
         <Select value={statusFilter} onValueChange={setStatusFilter}>
           <SelectTrigger className="w-full sm:w-[180px]" data-testid="select-status-filter">
-            <SelectValue placeholder="Filtra per stato" />
+            <SelectValue placeholder={t("common.filterByStatus")} />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">Tutti gli stati</SelectItem>
+            <SelectItem value="all">{t("common.allStatuses")}</SelectItem>
             {Object.entries(statusConfig).map(([key, { label }]) => (
               <SelectItem key={key} value={key}>{label}</SelectItem>
             ))}
@@ -258,12 +260,12 @@ export default function IncomingTransferRequestsPage() {
         </Select>
         <Select value={typeFilter} onValueChange={setTypeFilter}>
           <SelectTrigger className="w-full sm:w-[180px]" data-testid="select-type-filter">
-            <SelectValue placeholder="Filtra per tipo" />
+            <SelectValue placeholder={t("common.filterByType")} />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">Tutti i tipi</SelectItem>
-            <SelectItem value="repair_center">Centri Riparazione</SelectItem>
-            <SelectItem value="sub_reseller">Sub-Reseller</SelectItem>
+            <SelectItem value="all">{t("common.allTypes")}</SelectItem>
+            <SelectItem value="repair_center">{t("sidebar.items.repairCentersShort")}</SelectItem>
+            <SelectItem value="sub_reseller">{t("roles.subReseller")}</SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -272,7 +274,7 @@ export default function IncomingTransferRequestsPage() {
         <Card className="rounded-2xl">
           <CardContent className="flex flex-col items-center justify-center py-12">
             <Inbox className="h-12 w-12 text-muted-foreground mb-4" />
-            <p className="text-muted-foreground">Nessuna richiesta trovata</p>
+            <p className="text-muted-foreground">{t("hr.noLeaveFound")}</p>
           </CardContent>
         </Card>
       ) : (
@@ -410,11 +412,11 @@ export default function IncomingTransferRequestsPage() {
                   <table className="w-full text-sm">
                     <thead className="bg-muted">
                       <tr>
-                        <th className="text-left p-2">Prodotto</th>
+                        <th className="text-left p-2">{t("common.product")}</th>
                         <th className="text-center p-2">Richiesto</th>
-                        <th className="text-center p-2">Approvato</th>
-                        <th className="text-center p-2">Spedito</th>
-                        <th className="text-center p-2">Ricevuto</th>
+                        <th className="text-center p-2">{t("repairs.status.approved")}</th>
+                        <th className="text-center p-2">{t("b2b.status.shipped")}</th>
+                        <th className="text-center p-2">{t("repairs.status.received")}</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -515,16 +517,14 @@ export default function IncomingTransferRequestsPage() {
                 <Textarea
                   value={rejectionReason}
                   onChange={(e) => setRejectionReason(e.target.value)}
-                  placeholder="Inserisci il motivo del rifiuto..."
+                  placeholder={t("utility.rejectionReason")}
                   data-testid="input-rejection-reason"
                 />
               </div>
             </div>
           )}
           <DialogFooter className="gap-2">
-            <Button variant="outline" onClick={() => setShowDecideDialog(false)}>
-              Annulla
-            </Button>
+            <Button variant="outline" onClick={() => setShowDecideDialog(false)}>{t("common.cancel")}</Button>
             <Button
               variant="destructive"
               onClick={() => {
@@ -539,9 +539,7 @@ export default function IncomingTransferRequestsPage() {
               disabled={decideMutation.isPending}
               data-testid="button-reject"
             >
-              <XCircle className="h-4 w-4 mr-1" />
-              Rifiuta
-            </Button>
+              <XCircle className="h-4 w-4 mr-1" />{t("common.reject")}</Button>
             <Button
               onClick={() => {
                 if (selectedRequest) {
@@ -555,9 +553,7 @@ export default function IncomingTransferRequestsPage() {
               disabled={decideMutation.isPending}
               data-testid="button-approve"
             >
-              <CheckCircle className="h-4 w-4 mr-1" />
-              Approva
-            </Button>
+              <CheckCircle className="h-4 w-4 mr-1" />{t("common.approve")}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -585,7 +581,7 @@ export default function IncomingTransferRequestsPage() {
                       <SelectItem value="poste_italiane">Poste Italiane</SelectItem>
                       <SelectItem value="sda">SDA</SelectItem>
                       <SelectItem value="tnt">TNT</SelectItem>
-                      <SelectItem value="other">Altro</SelectItem>
+                      <SelectItem value="other">{t("common.other")}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -651,17 +647,15 @@ export default function IncomingTransferRequestsPage() {
             </div>
           )}
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowShipDialog(false)}>
-              Annulla
-            </Button>
+            <Button variant="outline" onClick={() => setShowShipDialog(false)}>{t("common.cancel")}</Button>
             <Button
               onClick={() => {
                 if (!shipTrackingCarrier) {
-                  toast({ title: "Errore", description: "Seleziona un corriere", variant: "destructive" });
+                  toast({ title: t("common.error"), description: "Seleziona un corriere", variant: "destructive" });
                   return;
                 }
                 if (!shipTrackingNumber.trim()) {
-                  toast({ title: "Errore", description: "Inserisci il numero di tracking", variant: "destructive" });
+                  toast({ title: t("common.error"), description: "Inserisci il numero di tracking", variant: "destructive" });
                   return;
                 }
                 if (selectedRequest) {

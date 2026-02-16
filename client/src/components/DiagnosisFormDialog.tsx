@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useState, useMemo, useCallback, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -129,11 +130,11 @@ interface DiagnosisFormDialogProps {
 }
 
 const diagnosisSchema = z.object({
-  selectedFindingIds: z.array(z.string()).min(1, "Seleziona almeno un risultato della diagnosi"),
+  selectedFindingIds: z.array(z.string()).min(1, t("diagnosis.selectAtLeastOneResult")),
   otherFindingDescription: z.string().optional(),
   selectedComponentIds: z.array(z.string()).default([]),
   otherComponentDescription: z.string().optional(),
-  estimatedRepairTimeId: z.string().min(1, "Seleziona un tempo stimato di riparazione"),
+  estimatedRepairTimeId: z.string().min(1, t("diagnosis.selectEstimatedTime")),
   requiresExternalParts: z.boolean().default(false),
   skipPhotos: z.boolean().default(false),
   diagnosisNotes: z.string().optional(),
@@ -151,7 +152,7 @@ const diagnosisSchema = z.object({
   }
   return true;
 }, {
-  message: "Descrivi il problema 'Altro' selezionato",
+  message: t("diagnosis.describeOtherProblem"),
   path: ["otherFindingDescription"],
 }).refine((data) => {
   const hasOtherComponent = data.selectedComponentIds.some(id => id.includes("-other"));
@@ -160,7 +161,7 @@ const diagnosisSchema = z.object({
   }
   return true;
 }, {
-  message: "Descrivi il componente 'Altro' selezionato",
+  message: t("diagnosis.describeOtherComponent"),
   path: ["otherComponentDescription"],
 }).refine((data) => {
   if (data.diagnosisOutcome === "irriparabile" && !data.unrepairableReasonId && !data.unrepairableReasonOther?.trim()) {
@@ -168,7 +169,7 @@ const diagnosisSchema = z.object({
   }
   return true;
 }, {
-  message: "Seleziona un motivo di irriparabilità o descrivi 'Altro'",
+  message: t("diagnosis.selectIrrepairableReason"),
   path: ["unrepairableReasonId"],
 }).refine((data) => {
   if (data.diagnosisOutcome === "non_conveniente" && data.suggestedPromotionIds.length === 0) {
@@ -176,7 +177,7 @@ const diagnosisSchema = z.object({
   }
   return true;
 }, {
-  message: "Seleziona almeno una promozione da proporre al cliente",
+  message: t("diagnosis.selectAtLeastOnePromotion"),
   path: ["suggestedPromotionIds"],
 });
 
@@ -251,6 +252,7 @@ export function DiagnosisFormDialog({
   deviceTypeId: standaloneDeviceTypeId,
   onDataCollected,
 }: DiagnosisFormDialogProps) {
+  const { t } = useTranslation();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [uploadedPhotos, setUploadedPhotos] = useState<string[]>([]);
@@ -274,7 +276,7 @@ export function DiagnosisFormDialog({
     queryFn: async () => {
       const url = buildQueryUrl("/api/diagnostic-findings", { deviceTypeId: deviceTypeId ?? undefined });
       const res = await fetch(url, { credentials: "include" });
-      if (!res.ok) throw new Error("Errore nel caricamento diagnosi");
+      if (!res.ok) throw new Error(t("diagnosis.loadError"));
       return res.json();
     },
     enabled: open,
@@ -285,7 +287,7 @@ export function DiagnosisFormDialog({
     queryFn: async () => {
       const url = buildQueryUrl("/api/damaged-component-types", { deviceTypeId: deviceTypeId ?? undefined });
       const res = await fetch(url, { credentials: "include" });
-      if (!res.ok) throw new Error("Errore nel caricamento componenti");
+      if (!res.ok) throw new Error(t("diagnosis.componentsLoadError"));
       return res.json();
     },
     enabled: open,
@@ -296,7 +298,7 @@ export function DiagnosisFormDialog({
     queryFn: async () => {
       const url = buildQueryUrl("/api/estimated-repair-times", { deviceTypeId: deviceTypeId ?? undefined });
       const res = await fetch(url, { credentials: "include" });
-      if (!res.ok) throw new Error("Errore nel caricamento tempi");
+      if (!res.ok) throw new Error(t("diagnosis.timesLoadError"));
       return res.json();
     },
     enabled: open,
@@ -306,7 +308,7 @@ export function DiagnosisFormDialog({
     queryKey: ["/api/promotions"],
     queryFn: async () => {
       const res = await fetch("/api/promotions", { credentials: "include" });
-      if (!res.ok) throw new Error("Errore nel caricamento promozioni");
+      if (!res.ok) throw new Error(t("diagnosis.promotionsLoadError"));
       return res.json();
     },
     enabled: open,
@@ -317,7 +319,7 @@ export function DiagnosisFormDialog({
     queryFn: async () => {
       const url = buildQueryUrl("/api/unrepairable-reasons", { deviceTypeId: deviceTypeId ?? undefined });
       const res = await fetch(url, { credentials: "include" });
-      if (!res.ok) throw new Error("Errore nel caricamento motivi irriparabilità");
+      if (!res.ok) throw new Error(t("diagnosis.irrepairableReasonsLoadError"));
       return res.json();
     },
     enabled: open,
@@ -338,8 +340,8 @@ export function DiagnosisFormDialog({
   const categoryLabels: Record<string, string> = {
     hardware: "Hardware",
     software: "Software",
-    connectivity: "Connettività",
-    altro: "Altro",
+    connectivity: t("diagnosis.connectivity"),
+    altro: t("common.other"),
   };
 
   const form = useForm<DiagnosisFormData>({
@@ -497,8 +499,8 @@ export function DiagnosisFormDialog({
     },
     onSuccess: (_data, variables) => {
       toast({
-        title: "Diagnosi creata",
-        description: "La diagnosi tecnica è stata registrata con successo",
+        title: t("diagnosis.diagnosisCreated"),
+        description: t("diagnosis.diagnosisRegisteredSuccess"),
       });
       queryClient.invalidateQueries({ queryKey: ["/api/repair-orders"] });
       queryClient.invalidateQueries({
@@ -510,7 +512,7 @@ export function DiagnosisFormDialog({
     },
     onError: (error: Error) => {
       toast({
-        title: "Errore",
+        title: t("common.error"),
         description: error.message,
         variant: "destructive",
       });
@@ -528,8 +530,8 @@ export function DiagnosisFormDialog({
     },
     onSuccess: (_data, variables) => {
       toast({
-        title: "Diagnosi aggiornata",
-        description: "La diagnosi tecnica è stata aggiornata con successo",
+        title: t("diagnosis.diagnosisUpdated"),
+        description: t("diagnosis.diagnosisUpdatedSuccess"),
       });
       queryClient.invalidateQueries({ queryKey: ["/api/repair-orders"] });
       queryClient.invalidateQueries({
@@ -541,7 +543,7 @@ export function DiagnosisFormDialog({
     },
     onError: (error: Error) => {
       toast({
-        title: "Errore",
+        title: t("common.error"),
         description: error.message,
         variant: "destructive",
       });
@@ -605,8 +607,8 @@ export function DiagnosisFormDialog({
               <span className="text-lg font-semibold">{isEditMode ? "Modifica Diagnosi Tecnica" : "Diagnosi Tecnica"}</span>
               <DialogDescription className="mt-0.5">
                 {isEditMode 
-                  ? "Modifica i risultati della diagnosi tecnica per questa lavorazione"
-                  : "Registra i risultati della diagnosi tecnica per questa lavorazione"}
+                  ? t("diagnosis.editDiagnosisResults")
+                  : t("diagnosis.registerDiagnosisResults")}
               </DialogDescription>
             </div>
           </DialogTitle>
@@ -683,7 +685,7 @@ export function DiagnosisFormDialog({
                         </ScrollArea>
                         {selectedIds.length > 0 && (
                           <div className="text-xs text-muted-foreground mt-1 p-2 bg-muted rounded">
-                            <strong>Selezionati ({selectedIds.length}):</strong>{" "}
+                            <strong>{t("common.selected")} ({selectedIds.length}):</strong>{" "}
                             {selectedIds.map(id => diagnosticFindings.find(f => f.id === id)?.name).filter(Boolean).join(", ")}
                           </div>
                         )}
@@ -768,7 +770,7 @@ export function DiagnosisFormDialog({
                         </ScrollArea>
                         {selectedIds.length > 0 && (
                           <div className="text-xs text-muted-foreground mt-1 p-2 bg-muted rounded">
-                            <strong>Selezionati ({selectedIds.length}):</strong>{" "}
+                            <strong>{t("common.selected")} ({selectedIds.length}):</strong>{" "}
                             {selectedIds.map(id => damagedComponentTypes.find(c => c.id === id)?.name).filter(Boolean).join(", ")}
                           </div>
                         )}
@@ -829,7 +831,7 @@ export function DiagnosisFormDialog({
                       >
                         <FormControl>
                           <SelectTrigger data-testid="select-estimated-time">
-                            <SelectValue placeholder="Seleziona tempo stimato" />
+                            <SelectValue placeholder={t("diagnosis.selectEstimatedTime")} />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
@@ -914,7 +916,7 @@ export function DiagnosisFormDialog({
                   name="diagnosisOutcome"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Seleziona l'esito della diagnosi *</FormLabel>
+                      <FormLabel>{t("diagnosis.selectOutcome")} *</FormLabel>
                       <FormDescription>
                         Indica se il dispositivo è riparabile o meno
                       </FormDescription>
@@ -1172,7 +1174,7 @@ export function DiagnosisFormDialog({
                             <FormControl>
                               <Textarea
                                 {...field}
-                                placeholder="Descrivi il motivo tecnico per cui il dispositivo non può essere riparato..."
+                                placeholder={t("diagnosis.describeTechnicalReason")}
                                 className="min-h-[80px]"
                                 data-testid="input-unrepairable-reason-other"
                               />
@@ -1339,8 +1341,8 @@ export function DiagnosisFormDialog({
                 data-testid="button-submit-diagnosis"
               >
                 {isPending
-                  ? (isEditMode ? "Salvataggio..." : "Creazione...")
-                  : (isEditMode ? "Salva Modifiche" : "Crea Diagnosi")}
+                  ? (isEditMode ? t("common.saving") : t("common.creating"))
+                  : (isEditMode ? t("common.saveChanges") : t("diagnosis.createDiagnosis"))}
               </Button>
             </div>
           </form>

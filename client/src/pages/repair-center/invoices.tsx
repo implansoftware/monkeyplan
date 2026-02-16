@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Invoice } from "@shared/schema";
@@ -17,6 +18,7 @@ import { useToast } from "@/hooks/use-toast";
 import type { DateRange } from "react-day-picker";
 
 export default function RepairCenterInvoices() {
+  const { t } = useTranslation();
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [sourceFilter, setSourceFilter] = useState<string>("all");
@@ -53,21 +55,21 @@ export default function RepairCenterInvoices() {
 
   const getStatusBadge = (status: string) => {
     switch (status) {
-      case "paid": return <Badge>Pagata</Badge>;
+      case "paid": return <Badge>{t("invoices.paid")}</Badge>;
       case "pending": return <Badge variant="secondary">In sospeso</Badge>;
-      case "overdue": return <Badge variant="destructive">Scaduta</Badge>;
-      case "cancelled": return <Badge variant="outline">Annullata</Badge>;
+      case "overdue": return <Badge variant="destructive">{t("invoices.overdue")}</Badge>;
+      case "cancelled": return <Badge variant="outline">{t("common.cancelled")}</Badge>;
       default: return <Badge variant="outline">{status}</Badge>;
     }
   };
 
   const getSourceBadge = (source: string | null) => {
     switch (source) {
-      case "repair": return <Badge variant="outline" className="gap-1"><Wrench className="h-3 w-3" />Riparazione</Badge>;
+      case "repair": return <Badge variant="outline" className="gap-1"><Wrench className="h-3 w-3" />{t("common.repair")}</Badge>;
       case "pos": return <Badge variant="outline" className="gap-1"><ShoppingCart className="h-3 w-3" />POS</Badge>;
-      case "marketplace": return <Badge variant="outline" className="gap-1"><Store className="h-3 w-3" />Marketplace</Badge>;
-      case "b2b": return <Badge variant="outline" className="gap-1">B2B</Badge>;
-      default: return <Badge variant="outline">Altro</Badge>;
+      case "marketplace": return <Badge variant="outline" className="gap-1"><Store className="h-3 w-3" />{t("sidebar.sections.marketplace")}</Badge>;
+      case "b2b": return <Badge variant="outline" className="gap-1">{t("sidebar.sections.b2b")}</Badge>;
+      default: return <Badge variant="outline">{t("common.more")}</Badge>;
     }
   };
 
@@ -110,13 +112,13 @@ export default function RepairCenterInvoices() {
       document.body.removeChild(a);
       
       toast({
-        title: "Export completato",
-        description: "Il file CSV è stato scaricato con successo",
+        title: t("reports.exportCompleted"),
+        description: t("invoices.ilFileCSVStatoScaricatoConSuccesso"),
       });
     } catch (error) {
       toast({
-        title: "Errore",
-        description: "Impossibile esportare i dati",
+        title: t("auth.error"),
+        description: t("reports.exportFailed"),
         variant: "destructive",
       });
     } finally {
@@ -137,7 +139,7 @@ export default function RepairCenterInvoices() {
               <FileText className="h-5 w-5 sm:h-7 sm:w-7 text-white" />
             </div>
             <div>
-              <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-white tracking-tight">Fatture</h1>
+              <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-white tracking-tight">{t("sidebar.items.invoices")}</h1>
               <p className="text-emerald-100">
                 Visualizza le fatture da riparazioni, POS e marketplace
               </p>
@@ -154,7 +156,7 @@ export default function RepairCenterInvoices() {
                 <Euro className="h-5 w-5 text-primary" />
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">Totale</p>
+                <p className="text-sm text-muted-foreground">{t("common.total")}</p>
                 <p className="text-xl font-bold" data-testid="text-total-amount">{formatCurrency(totalAmount)}</p>
               </div>
             </div>
@@ -180,7 +182,7 @@ export default function RepairCenterInvoices() {
                 <Euro className="h-5 w-5 text-yellow-600" />
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">In Sospeso</p>
+                <p className="text-sm text-muted-foreground">{t("common.pendingPayments")}</p>
                 <p className="text-xl font-bold text-yellow-600" data-testid="text-pending-amount">{formatCurrency(pendingAmount)}</p>
               </div>
             </div>
@@ -195,7 +197,7 @@ export default function RepairCenterInvoices() {
               <div className="flex-1 relative min-w-[200px]">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
-                  placeholder="Cerca fattura..."
+                  placeholder={t("invoices.cercaFattura")}
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="pl-9"
@@ -207,11 +209,11 @@ export default function RepairCenterInvoices() {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">Tutte le fonti</SelectItem>
-                  <SelectItem value="repair">Riparazioni</SelectItem>
+                  <SelectItem value="all">{t("invoices.tutteLeFonti")}</SelectItem>
+                  <SelectItem value="repair">{t("sidebar.sections.repairs")}</SelectItem>
                   <SelectItem value="pos">POS</SelectItem>
-                  <SelectItem value="marketplace">Marketplace</SelectItem>
-                  <SelectItem value="b2b">B2B</SelectItem>
+                  <SelectItem value="marketplace">{t("sidebar.sections.marketplace")}</SelectItem>
+                  <SelectItem value="b2b">{t("sidebar.sections.b2b")}</SelectItem>
                 </SelectContent>
               </Select>
               <Select value={statusFilter} onValueChange={setStatusFilter}>
@@ -219,11 +221,11 @@ export default function RepairCenterInvoices() {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">Tutti gli stati</SelectItem>
+                  <SelectItem value="all">{t("common.allStatuses")}</SelectItem>
                   <SelectItem value="paid">Pagate</SelectItem>
                   <SelectItem value="pending">In sospeso</SelectItem>
                   <SelectItem value="overdue">Scadute</SelectItem>
-                  <SelectItem value="cancelled">Annullate</SelectItem>
+                  <SelectItem value="cancelled">{t("invoices.annullate")}</SelectItem>
                 </SelectContent>
               </Select>
               <Popover>
@@ -237,7 +239,7 @@ export default function RepairCenterInvoices() {
                         format(dateRange.from, "dd MMM yyyy", { locale: it })
                       )
                     ) : (
-                      "Seleziona periodo"
+                      t("common.selectPeriod")
                     )}
                   </Button>
                 </PopoverTrigger>
@@ -258,7 +260,7 @@ export default function RepairCenterInvoices() {
                 data-testid="button-export-invoices"
               >
                 <Download className="h-4 w-4 mr-2" />
-                {isExporting ? "Esportazione..." : "Esporta CSV"}
+                {isExporting ? "Esportazione..." : t("common.exportCsv")}
               </Button>
             </div>
           </div>
@@ -273,23 +275,23 @@ export default function RepairCenterInvoices() {
           ) : filteredInvoices.length === 0 ? (
             <div className="text-center py-12 text-muted-foreground">
               <FileText className="h-12 w-12 mx-auto mb-4 opacity-20" />
-              <p>Nessuna fattura trovata</p>
+              <p>{t("invoices.nessunaFatturaTrovata")}</p>
             </div>
           ) : (
             <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Numero</TableHead>
-                    <TableHead>Data</TableHead>
+                    <TableHead>{t("common.number")}</TableHead>
+                    <TableHead>{t("common.date")}</TableHead>
                     <TableHead className="hidden md:table-cell">Fonte</TableHead>
                     <TableHead className="text-right">Imponibile</TableHead>
                     <TableHead className="hidden lg:table-cell text-right">IVA%</TableHead>
                     <TableHead className="hidden lg:table-cell text-right">IVA</TableHead>
-                    <TableHead className="text-right">Totale</TableHead>
-                    <TableHead className="hidden md:table-cell">Metodo</TableHead>
-                    <TableHead className="hidden lg:table-cell">Scadenza</TableHead>
-                    <TableHead>Stato</TableHead>
+                    <TableHead className="text-right">{t("common.total")}</TableHead>
+                    <TableHead className="hidden md:table-cell">{t("common.method")}</TableHead>
+                    <TableHead className="hidden lg:table-cell">{t("invoices.dueDate")}</TableHead>
+                    <TableHead>{t("common.status")}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>

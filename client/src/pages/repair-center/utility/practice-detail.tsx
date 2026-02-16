@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useState, useRef } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useParams, useLocation } from "wouter";
@@ -34,15 +35,6 @@ type PracticeStatus = "bozza" | "inviata" | "in_lavorazione" | "attesa_documenti
 type TaskStatus = "da_fare" | "in_corso" | "completato" | "annullato";
 type Priority = "bassa" | "normale" | "alta" | "urgente";
 
-const statusLabels: Record<PracticeStatus, string> = {
-  bozza: "Bozza",
-  inviata: "Inviata",
-  in_lavorazione: "In Lavorazione",
-  attesa_documenti: "Attesa Documenti",
-  completata: "Completata",
-  annullata: "Annullata",
-  rifiutata: "Rifiutata",
-};
 
 const statusColors: Record<PracticeStatus, string> = {
   bozza: "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300",
@@ -54,12 +46,6 @@ const statusColors: Record<PracticeStatus, string> = {
   rifiutata: "bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300",
 };
 
-const taskStatusLabels: Record<TaskStatus, string> = {
-  da_fare: "Da fare",
-  in_corso: "In corso",
-  completato: "Completato",
-  annullato: "Annullato",
-};
 
 const taskStatusIcons: Record<TaskStatus, typeof Circle> = {
   da_fare: Circle,
@@ -82,23 +68,7 @@ const priorityColors: Record<Priority, string> = {
   urgente: "bg-red-100 text-red-700",
 };
 
-const documentCategoryLabels: Record<string, string> = {
-  contratto: "Contratto",
-  documento_identita: "Documento Identità",
-  codice_fiscale: "Codice Fiscale",
-  bolletta: "Bolletta",
-  conferma_fornitore: "Conferma Fornitore",
-  fattura: "Fattura",
-  altro: "Altro",
-};
 
-const formatCurrency = (cents: number | null | undefined) => {
-  if (cents == null) return "-";
-  return new Intl.NumberFormat("it-IT", {
-    style: "currency",
-    currency: "EUR",
-  }).format(cents / 100);
-};
 
 const formatDate = (date: string | Date | null | undefined) => {
   if (!date) return "-";
@@ -128,6 +98,38 @@ interface EnrichedPractice extends UtilityPractice {
 }
 
 export default function RepairCenterUtilityPracticeDetail() {
+  const { t } = useTranslation();
+  const statusLabels: Record<PracticeStatus, string> = {
+    bozza: t("utility.practiceStatus.bozza"),
+    inviata: t("utility.practiceStatus.inviata"),
+    in_lavorazione: t("utility.practiceStatus.inLavorazione"),
+    attesa_documenti: t("utility.practiceStatus.attesaDocumenti"),
+    completata: t("utility.practiceStatus.completata"),
+    annullata: t("utility.practiceStatus.annullata"),
+    rifiutata: t("utility.practiceStatus.rifiutata"),
+  };
+  const taskStatusLabels: Record<TaskStatus, string> = {
+    da_fare: t("utility.todo"),
+    in_corso: t("utility.inProgress"),
+    completato: t("common.completed"),
+    annullato: t("common.cancelled"),
+  };
+  const documentCategoryLabels: Record<string, string> = {
+    contratto: t("utility.documentTypes.contratto"),
+    documento_identita: t("utility.documentTypes.documentoIdentita"),
+    codice_fiscale: t("utility.documentTypes.codiceFiscale"),
+    bolletta: t("utility.documentTypes.bolletta"),
+    conferma_fornitore: "Conferma Fornitore",
+    fattura: t("common.invoice"),
+    altro: t("utility.serviceTypes.altro"),
+  };
+  const formatCurrency = (cents: number | null | undefined) => {
+    if (cents == null) return "-";
+    return new Intl.NumberFormat("it-IT", {
+      style: "currency",
+      currency: "EUR",
+    }).format(cents / 100);
+  };
   const params = useParams<{ id: string }>();
   const [, setLocation] = useLocation();
   const { toast } = useToast();
@@ -207,7 +209,7 @@ export default function RepairCenterUtilityPracticeDetail() {
       setTaskDialogOpen(false);
       setNewTaskTitle("");
       setNewTaskDescription("");
-      toast({ title: "Attività creata" });
+      toast({ title: t("utility.activityCreated") });
     },
   });
 
@@ -219,7 +221,7 @@ export default function RepairCenterUtilityPracticeDetail() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/utility/practices", params.id, "tasks"] });
       queryClient.invalidateQueries({ queryKey: ["/api/utility/practices", params.id, "timeline"] });
-      toast({ title: "Attività aggiornata" });
+      toast({ title: t("utility.activityUpdated") });
     },
   });
 
@@ -229,7 +231,7 @@ export default function RepairCenterUtilityPracticeDetail() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/utility/practices", params.id, "tasks"] });
-      toast({ title: "Attività eliminata" });
+      toast({ title: t("utility.activityDeleted") });
     },
   });
 
@@ -244,7 +246,7 @@ export default function RepairCenterUtilityPracticeDetail() {
       setNoteDialogOpen(false);
       setNewNoteBody("");
       setNewNoteVisibility("internal");
-      toast({ title: "Nota aggiunta" });
+      toast({ title: t("utility.noteAdded") });
     },
   });
 
@@ -254,7 +256,7 @@ export default function RepairCenterUtilityPracticeDetail() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/utility/practices", params.id, "notes"] });
-      toast({ title: "Nota eliminata" });
+      toast({ title: t("utility.noteDeleted") });
     },
   });
 
@@ -285,7 +287,7 @@ export default function RepairCenterUtilityPracticeDetail() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/utility/practices", params.id, "documents"] });
       queryClient.invalidateQueries({ queryKey: ["/api/utility/practices", params.id, "timeline"] });
-      toast({ title: "Documento eliminato" });
+      toast({ title: t("utility.documentDeleted") });
     },
   });
 
@@ -312,11 +314,11 @@ export default function RepairCenterUtilityPracticeDetail() {
       
       queryClient.invalidateQueries({ queryKey: ["/api/utility/practices", params.id, "documents"] });
       queryClient.invalidateQueries({ queryKey: ["/api/utility/practices", params.id, "timeline"] });
-      toast({ title: "Documento caricato con successo" });
+      toast({ title: t("utility.documentUploaded") });
     } catch (error: any) {
       toast({ 
-        title: "Errore", 
-        description: error.message || "Impossibile caricare il documento",
+        title: t("auth.error"), 
+        description: error.message || t("utility.cannotLoadDocument"),
         variant: "destructive" 
       });
     } finally {
@@ -343,7 +345,7 @@ export default function RepairCenterUtilityPracticeDetail() {
           <AlertCircle className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
           <h2 className="text-xl font-semibold mb-2">Pratica non trovata</h2>
           <Link href="/repair-center/utility/practices">
-            <Button variant="outline">Torna alle pratiche</Button>
+            <Button variant="outline">{t("utility.backToPractices")}</Button>
           </Link>
         </div>
       </div>
@@ -397,7 +399,7 @@ export default function RepairCenterUtilityPracticeDetail() {
           </TabsTrigger>
           <TabsTrigger value="attivita" className="flex flex-wrap items-center gap-2" data-testid="tab-attivita">
             <CheckSquare className="h-4 w-4" />
-            Attività ({completedTasks}/{totalTasks})
+            {t("utility.activitiesWithCount", { completed: completedTasks, total: totalTasks })}
           </TabsTrigger>
           <TabsTrigger value="documenti" className="flex flex-wrap items-center gap-2" data-testid="tab-documenti">
             <Upload className="h-4 w-4" />
@@ -417,7 +419,7 @@ export default function RepairCenterUtilityPracticeDetail() {
           <div className="grid gap-4 md:grid-cols-2">
             <Card>
               <CardHeader>
-                <CardTitle className="text-lg">Informazioni Cliente</CardTitle>
+                <CardTitle className="text-lg">{t("tickets.customerInfo")}</CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
                 <div className="flex flex-wrap items-center gap-2">
@@ -436,20 +438,20 @@ export default function RepairCenterUtilityPracticeDetail() {
                 <CardTitle className="text-lg">
                   {practice.itemType === "product" ? "Dettagli Prodotti" : 
                    practice.itemType === "service_with_products" ? "Dettagli Servizio + Prodotti" : 
-                   "Dettagli Servizio"}
+                   t("serviceCatalog.serviceDetails")}
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
                 {/* Tipo Badge */}
                 <div>
-                  <p className="text-sm text-muted-foreground">Tipo</p>
+                  <p className="text-sm text-muted-foreground">{t("common.type")}</p>
                   <Badge variant="outline" className="mt-1">
                     {practice.itemType === "product" ? (
-                      <><Package className="h-3 w-3 mr-1" />Prodotto</>
+                      <><Package className="h-3 w-3 mr-1" />{t("common.product")}</>
                     ) : practice.itemType === "service_with_products" ? (
-                      <><FileText className="h-3 w-3 mr-1" /><Package className="h-3 w-3 mr-1" />Servizio + Prodotti</>
+                      <><FileText className="h-3 w-3 mr-1" /><Package className="h-3 w-3 mr-1" />{t("utility.servizioProdotti")}</>
                     ) : (
-                      <>Servizio Utility</>
+                      <>{t("utility.utilityService")}</>
                     )}
                   </Badge>
                 </div>
@@ -458,11 +460,11 @@ export default function RepairCenterUtilityPracticeDetail() {
                 {(practice.itemType === "service" || practice.itemType === "service_with_products") && (
                   <>
                     <div>
-                      <p className="text-sm text-muted-foreground">Fornitore</p>
+                      <p className="text-sm text-muted-foreground">{t("common.supplier")}</p>
                       <p className="font-medium" data-testid="text-supplier-name">{supplier?.name || "-"}</p>
                     </div>
                     <div>
-                      <p className="text-sm text-muted-foreground">Servizio</p>
+                      <p className="text-sm text-muted-foreground">{t("common.service")}</p>
                       <div className="flex flex-wrap items-center gap-2">
                         <p className="font-medium" data-testid="text-service-name">
                           {(practice as any).customServiceName || service?.name || "-"}
@@ -485,10 +487,10 @@ export default function RepairCenterUtilityPracticeDetail() {
                           <table className="w-full text-sm">
                             <thead className="bg-muted/50">
                               <tr>
-                                <th className="text-left p-2 font-medium">Prodotto</th>
-                                <th className="text-right p-2 font-medium">Qtà</th>
-                                <th className="text-right p-2 font-medium">Prezzo Unit.</th>
-                                <th className="text-right p-2 font-medium">Totale</th>
+                                <th className="text-left p-2 font-medium">{t("common.product")}</th>
+                                <th className="text-right p-2 font-medium">{t("common.qty")}</th>
+                                <th className="text-right p-2 font-medium">{t("products.unitPrice")}</th>
+                                <th className="text-right p-2 font-medium">{t("common.total")}</th>
                               </tr>
                             </thead>
                             <tbody>
@@ -508,7 +510,7 @@ export default function RepairCenterUtilityPracticeDetail() {
                             </tbody>
                             <tfoot className="bg-muted/50 border-t">
                               <tr>
-                                <td colSpan={3} className="p-2 text-right font-medium">Totale Prodotti:</td>
+                                <td colSpan={3} className="p-2 text-right font-medium">{t("utility.totaleProdotti")}</td>
                                 <td className="p-2 text-right font-bold" data-testid="text-products-total">
                                   {formatCurrency(practiceProducts.reduce((sum, pp) => sum + (pp.quantity * pp.unitPriceCents), 0))}
                                 </td>
@@ -519,7 +521,7 @@ export default function RepairCenterUtilityPracticeDetail() {
                       </div>
                     ) : practice.itemType === "product" && product ? (
                       <div>
-                        <p className="text-sm text-muted-foreground">Prodotto</p>
+                        <p className="text-sm text-muted-foreground">{t("common.product")}</p>
                         <p className="font-medium" data-testid="text-product-name">{product?.name || "-"}</p>
                         {product?.sku && (
                           <p className="text-xs text-muted-foreground">SKU: {product.sku}</p>
@@ -531,7 +533,7 @@ export default function RepairCenterUtilityPracticeDetail() {
 
                 <div>
                   <p className="text-sm text-muted-foreground">
-                    {practice.priceType === "forfait" ? "Prezzo Forfait" : "Canone Mensile"}
+                    {practice.priceType === "forfait" ? "Prezzo Forfait" : t("pos.monthlyFee")}
                   </p>
                   <p className="font-medium" data-testid="text-price">
                     {practice.priceType === "forfait" 
@@ -549,11 +551,11 @@ export default function RepairCenterUtilityPracticeDetail() {
               <CardContent className="space-y-3">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <p className="text-sm text-muted-foreground">Creata il</p>
+                    <p className="text-sm text-muted-foreground">{t("pos.creataIl")}</p>
                     <p className="font-medium">{formatDateShort(practice.createdAt)}</p>
                   </div>
                   <div>
-                    <p className="text-sm text-muted-foreground">Inviata il</p>
+                    <p className="text-sm text-muted-foreground">{t("utility.inviataIl")}</p>
                     <p className="font-medium">{formatDateShort(practice.submittedAt)}</p>
                   </div>
                   <div>
@@ -578,7 +580,7 @@ export default function RepairCenterUtilityPracticeDetail() {
                   <p className="font-medium">{practice.supplierReference || "-"}</p>
                 </div>
                 <div>
-                  <p className="text-sm text-muted-foreground">Priorità</p>
+                  <p className="text-sm text-muted-foreground">{t("common.priority")}</p>
                   <Badge className={priorityColors[(practice.priority as Priority) || "normale"]}>
                     {priorityLabels[(practice.priority as Priority) || "normale"]}
                   </Badge>
@@ -606,14 +608,14 @@ export default function RepairCenterUtilityPracticeDetail() {
         <TabsContent value="attivita" className="space-y-4">
           <div className="flex justify-between items-center">
             <div>
-              <h3 className="text-lg font-semibold">Attività da completare</h3>
+              <h3 className="text-lg font-semibold">{t("utility.attivitDaCompletare")}</h3>
               <p className="text-sm text-muted-foreground">
                 {completedTasks} di {totalTasks} completate
               </p>
             </div>
             <Button onClick={() => setTaskDialogOpen(true)} data-testid="button-add-task">
               <Plus className="h-4 w-4 mr-2" />
-              Nuova Attività
+              {t("common.newActivity")}
             </Button>
           </div>
 
@@ -621,7 +623,7 @@ export default function RepairCenterUtilityPracticeDetail() {
             <CardContent className="p-0">
               {tasks.length === 0 ? (
                 <div className="text-center py-8 text-muted-foreground">
-                  Nessuna attività. Aggiungi la prima attività per iniziare.
+                  {t("common.noActivitiesYet")}
                 </div>
               ) : (
                 <div className="divide-y">
@@ -691,7 +693,7 @@ export default function RepairCenterUtilityPracticeDetail() {
           />
           <div className="flex justify-between items-center">
             <div>
-              <h3 className="text-lg font-semibold">Documenti allegati</h3>
+              <h3 className="text-lg font-semibold">{t("utility.documentiAllegati")}</h3>
               <p className="text-sm text-muted-foreground">{documents.length} documenti</p>
             </div>
             <Button 
@@ -701,7 +703,7 @@ export default function RepairCenterUtilityPracticeDetail() {
               data-testid="button-upload-document"
             >
               <Upload className="h-4 w-4 mr-2" />
-              {isUploading ? "Caricamento..." : "Carica Documento"}
+              {isUploading ? t("common.loading") : t("common.uploadDocument")}
             </Button>
           </div>
 
@@ -902,8 +904,8 @@ export default function RepairCenterUtilityPracticeDetail() {
       <Dialog open={taskDialogOpen} onOpenChange={setTaskDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Nuova Attività</DialogTitle>
-            <DialogDescription>Aggiungi un'attività da completare per questa pratica.</DialogDescription>
+            <DialogTitle>{t("utility.newActivity")}</DialogTitle>
+            <DialogDescription>{t("utility.aggiungiUnAttivitDaCompletarePerQuestaPrat")}</DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div>
@@ -912,23 +914,23 @@ export default function RepairCenterUtilityPracticeDetail() {
                 id="task-title"
                 value={newTaskTitle}
                 onChange={(e) => setNewTaskTitle(e.target.value)}
-                placeholder="Es: Richiedere documento identità"
+                placeholder={t("utility.activityPlaceholder")}
                 data-testid="input-task-title"
               />
             </div>
             <div>
-              <Label htmlFor="task-description">Descrizione</Label>
+              <Label htmlFor="task-description">{t("common.description")}</Label>
               <Textarea
                 id="task-description"
                 value={newTaskDescription}
                 onChange={(e) => setNewTaskDescription(e.target.value)}
-                placeholder="Descrizione opzionale..."
+                placeholder={t("utility.optionalDescription")}
                 data-testid="input-task-description"
               />
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setTaskDialogOpen(false)}>Annulla</Button>
+            <Button variant="outline" onClick={() => setTaskDialogOpen(false)}>{t("profile.cancel")}</Button>
             <Button 
               onClick={() => createTaskMutation.mutate({ title: newTaskTitle, description: newTaskDescription || undefined })}
               disabled={!newTaskTitle.trim() || createTaskMutation.isPending}
@@ -943,12 +945,12 @@ export default function RepairCenterUtilityPracticeDetail() {
       <Dialog open={noteDialogOpen} onOpenChange={setNoteDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Nuova Nota</DialogTitle>
-            <DialogDescription>Aggiungi una nota o comunicazione per questa pratica.</DialogDescription>
+            <DialogTitle>{t("utility.newNote")}</DialogTitle>
+            <DialogDescription>{t("utility.aggiungiUnaNotaOComunicazionePerQuestaPrati")}</DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div>
-              <Label htmlFor="note-visibility">Visibilità</Label>
+              <Label htmlFor="note-visibility">{t("utility.visibility")}</Label>
               <Select value={newNoteVisibility} onValueChange={(v) => setNewNoteVisibility(v as "internal" | "customer")}>
                 <SelectTrigger data-testid="select-note-visibility">
                   <SelectValue />
@@ -965,14 +967,14 @@ export default function RepairCenterUtilityPracticeDetail() {
                 id="note-body"
                 value={newNoteBody}
                 onChange={(e) => setNewNoteBody(e.target.value)}
-                placeholder="Scrivi la nota..."
+                placeholder={t("utility.writeNote")}
                 rows={4}
                 data-testid="input-note-body"
               />
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setNoteDialogOpen(false)}>Annulla</Button>
+            <Button variant="outline" onClick={() => setNoteDialogOpen(false)}>{t("profile.cancel")}</Button>
             <Button 
               onClick={() => createNoteMutation.mutate({ body: newNoteBody, visibility: newNoteVisibility })}
               disabled={!newNoteBody.trim() || createNoteMutation.isPending}
@@ -987,12 +989,12 @@ export default function RepairCenterUtilityPracticeDetail() {
       <Dialog open={statusDialogOpen} onOpenChange={setStatusDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Cambia Stato Pratica</DialogTitle>
-            <DialogDescription>Seleziona il nuovo stato per la pratica.</DialogDescription>
+            <DialogTitle>{t("utility.changeStatus")}</DialogTitle>
+            <DialogDescription>{t("utility.selezionaIlNuovoStatoPerLaPratica")}</DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div>
-              <Label>Nuovo Stato</Label>
+              <Label>{t("utility.newStatus")}</Label>
               <Select value={newStatus} onValueChange={(v) => setNewStatus(v as PracticeStatus)}>
                 <SelectTrigger data-testid="select-new-status">
                   <SelectValue />
@@ -1005,18 +1007,18 @@ export default function RepairCenterUtilityPracticeDetail() {
               </Select>
             </div>
             <div>
-              <Label htmlFor="status-reason">Motivo (opzionale)</Label>
+              <Label htmlFor="status-reason">{t("common.reasonOptional")}</Label>
               <Textarea
                 id="status-reason"
                 value={statusReason}
                 onChange={(e) => setStatusReason(e.target.value)}
-                placeholder="Motivo del cambio stato..."
+                placeholder={t("utility.statusChangeReason")}
                 data-testid="input-status-reason"
               />
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setStatusDialogOpen(false)}>Annulla</Button>
+            <Button variant="outline" onClick={() => setStatusDialogOpen(false)}>{t("profile.cancel")}</Button>
             <Button 
               onClick={() => updateStatusMutation.mutate({ status: newStatus, reason: statusReason || undefined })}
               disabled={updateStatusMutation.isPending}

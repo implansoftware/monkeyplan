@@ -18,15 +18,17 @@ import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Progress } from "@/components/ui/progress";
 import { AddressAutocomplete } from "@/components/address-autocomplete";
+import { useTranslation } from "react-i18next";
 
 const WIZARD_STEPS = [
-  { id: 1, title: "Info Base", icon: Building },
-  { id: 2, title: "Indirizzo", icon: MapPin },
-  { id: 3, title: "Dati Fiscali", icon: FileText },
-  { id: 4, title: "Configurazione", icon: Settings },
+  { id: 1, title: t("admin.repairCenters.infoBase"), icon: Building },
+  { id: 2, title: t("admin.repairCenters.address"), icon: MapPin },
+  { id: 3, title: t("admin.repairCenters.fiscalData"), icon: FileText },
+  { id: 4, title: t("admin.repairCenters.configuration"), icon: Settings },
 ];
 
 export default function AdminRepairCenters() {
+  const { t } = useTranslation();
   const [searchQuery, setSearchQuery] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingCenter, setEditingCenter] = useState<RepairCenter | null>(null);
@@ -87,10 +89,10 @@ export default function AdminRepairCenters() {
       setEditingCenter(null);
       setSelectedResellerId("");
       setSelectedSubResellerId("");
-      toast({ title: "Centro di riparazione creato" });
+      toast({ title: t("admin.repairCenters.created") });
     },
     onError: (error: Error) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -105,10 +107,10 @@ export default function AdminRepairCenters() {
       setEditingCenter(null);
       setSelectedResellerId("");
       setSelectedSubResellerId("");
-      toast({ title: "Centro aggiornato" });
+      toast({ title: t("admin.repairCenters.updated") });
     },
     onError: (error: Error) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -118,7 +120,7 @@ export default function AdminRepairCenters() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/repair-centers"] });
-      toast({ title: "Centro eliminato" });
+      toast({ title: t("admin.repairCenters.deleted") });
     },
   });
 
@@ -128,13 +130,13 @@ export default function AdminRepairCenters() {
       return await res.json();
     },
     onSuccess: () => {
-      toast({ title: "Password aggiornata con successo" });
+      toast({ title: t("admin.resellers.passwordResetSuccess") });
       setResetPasswordDialogOpen(false);
       setCenterToResetPassword(null);
       setNewPassword("");
     },
     onError: (error: Error) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -147,12 +149,12 @@ export default function AdminRepairCenters() {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/repair-centers/orphans"] });
       setBackfillResult(data);
       toast({ 
-        title: "Account creati", 
+        title: t("admin.repairCenters.accountsCreated"), 
         description: `Creati ${data.created.length} account` 
       });
     },
     onError: (error: Error) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -217,7 +219,7 @@ export default function AdminRepairCenters() {
 
   const handleFinalSubmit = () => {
     if (!addressData.address.trim() || !addressData.city.trim()) {
-      toast({ title: "Errore", description: "Indirizzo e Città sono campi obbligatori", variant: "destructive" });
+      toast({ title: t("common.error"), description: "Indirizzo e Città sono campi obbligatori", variant: "destructive" });
       return;
     }
     
@@ -290,7 +292,7 @@ export default function AdminRepairCenters() {
               <Building className="h-7 w-7 text-white" />
             </div>
             <div>
-              <h1 className="text-2xl sm:text-3xl font-bold text-white tracking-tight">Centri di Riparazione</h1>
+              <h1 className="text-2xl sm:text-3xl font-bold text-white tracking-tight">{t("admin.repairCenters.title")}</h1>
               <p className="text-blue-100/80 mt-1">Gestisci tutti i centri della rete</p>
             </div>
           </div>
@@ -401,7 +403,7 @@ export default function AdminRepairCenters() {
                           className="h-11 rounded-xl"
                           value={formData.password}
                           onChange={(e) => setFormData(prev => ({ ...prev, password: e.target.value }))}
-                          placeholder="Password per accesso al centro"
+                          placeholder={t("admin.repairCenters.centerPassword")}
                           data-testid="input-password" 
                         />
                         <p className="text-xs text-muted-foreground">
@@ -428,7 +430,7 @@ export default function AdminRepairCenters() {
                             provincia: result.province,
                           });
                         }}
-                        placeholder="Inizia a digitare..."
+                        placeholder={t("common.startTyping")}
                         className="h-11 rounded-xl"
                         data-testid="input-address"
                       />
@@ -558,7 +560,7 @@ export default function AdminRepairCenters() {
                         }}
                       >
                         <SelectTrigger id="resellerId" className="h-11 rounded-xl" data-testid="select-reseller-id">
-                          <SelectValue placeholder="Seleziona un rivenditore" />
+                          <SelectValue placeholder={t("utility.selectReseller")} />
                         </SelectTrigger>
                         <SelectContent>
                           {resellers.map((reseller) => (
@@ -581,10 +583,10 @@ export default function AdminRepairCenters() {
                           onValueChange={(value) => setSelectedSubResellerId(value === "none" ? "" : value)}
                         >
                           <SelectTrigger id="subResellerId" className="h-11 rounded-xl" data-testid="select-sub-reseller-id">
-                            <SelectValue placeholder="Seleziona un sub-reseller (opzionale)" />
+                            <SelectValue placeholder={t("admin.repairCenters.selectSubReseller")} />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="none">Nessun sub-reseller</SelectItem>
+                            <SelectItem value="none">{t("admin.resellers.noSubResellers")}</SelectItem>
                             {subResellers.map((subReseller) => (
                               <SelectItem key={subReseller.id} value={subReseller.id}>
                                 {subReseller.fullName} ({subReseller.email})
@@ -604,7 +606,7 @@ export default function AdminRepairCenters() {
                         Tariffa Manodopera
                       </h4>
                       <div className="space-y-2">
-                        <Label htmlFor="hourlyRate" className="text-slate-700 dark:text-slate-300">Tariffa Oraria (EUR)</Label>
+                        <Label htmlFor="hourlyRate" className="text-slate-700 dark:text-slate-300">{t("settings.hourlyRateLabel")}</Label>
                         <div className="relative">
                           <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">€</span>
                           <Input
@@ -690,9 +692,9 @@ export default function AdminRepairCenters() {
                       <Table>
                         <TableHeader>
                           <TableRow>
-                            <TableHead>Centro</TableHead>
-                            <TableHead>Username</TableHead>
-                            <TableHead>Password</TableHead>
+                            <TableHead>{t("admin.repairCenters.center")}</TableHead>
+                            <TableHead>{t("auth.username")}</TableHead>
+                            <TableHead>{t("auth.password")}</TableHead>
                           </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -737,7 +739,7 @@ export default function AdminRepairCenters() {
                 onClick={() => backfillAccountsMutation.mutate()}
                 disabled={backfillAccountsMutation.isPending}
               >
-                {backfillAccountsMutation.isPending ? "Creazione..." : "Crea Account"}
+                {backfillAccountsMutation.isPending ? t("admin.repairCenters.creating") : "Crea Account"}
               </AlertDialogAction>
             )}
           </AlertDialogFooter>
@@ -757,7 +759,7 @@ export default function AdminRepairCenters() {
           <div className="relative">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
             <Input
-              placeholder="Cerca per nome o città..."
+              placeholder={t("common.search")}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-12 h-12 rounded-xl border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50"
@@ -775,7 +777,7 @@ export default function AdminRepairCenters() {
           ) : filteredCenters.length === 0 ? (
             <div className="text-center py-12 text-muted-foreground">
               <Building className="h-12 w-12 mx-auto mb-4 opacity-20" />
-              <p>Nessun centro di riparazione trovato</p>
+              <p>{t("admin.repairCenters.noRepairCenters")}</p>
             </div>
           ) : (
             <div className="rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
@@ -783,12 +785,12 @@ export default function AdminRepairCenters() {
                 <TableHeader>
                   <TableRow className="bg-slate-50 dark:bg-slate-800/50">
                     <TableHead className="w-14 text-slate-600 dark:text-slate-400">Logo</TableHead>
-                    <TableHead className="text-slate-600 dark:text-slate-400">Nome</TableHead>
+                    <TableHead className="text-slate-600 dark:text-slate-400">{t("common.name")}</TableHead>
                     <TableHead className="text-slate-600 dark:text-slate-400">Località</TableHead>
-                    <TableHead className="text-slate-600 dark:text-slate-400">Rivenditore</TableHead>
+                    <TableHead className="text-slate-600 dark:text-slate-400">{t("roles.reseller")}</TableHead>
                     <TableHead className="text-slate-600 dark:text-slate-400">Contatti</TableHead>
-                    <TableHead className="text-slate-600 dark:text-slate-400">Stato</TableHead>
-                    <TableHead className="text-slate-600 dark:text-slate-400 text-right">Azioni</TableHead>
+                    <TableHead className="text-slate-600 dark:text-slate-400">{t("common.status")}</TableHead>
+                    <TableHead className="text-slate-600 dark:text-slate-400 text-right">{t("common.actions")}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -930,13 +932,13 @@ export default function AdminRepairCenters() {
               Stai per resettare la password del centro <strong>{centerToResetPassword?.name}</strong>.
             </p>
             <div className="space-y-2">
-              <Label htmlFor="newPassword">Nuova Password</Label>
+              <Label htmlFor="newPassword">{t("admin.common.newPassword")}</Label>
               <Input
                 id="newPassword"
                 type="password"
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
-                placeholder="Inserisci nuova password (min. 4 caratteri)"
+                placeholder={t("admin.repairCenters.newPasswordPlaceholder")}
                 data-testid="input-new-password"
               />
             </div>
@@ -953,7 +955,7 @@ export default function AdminRepairCenters() {
                 disabled={newPassword.length < 4 || resetPasswordMutation.isPending}
                 data-testid="button-confirm-reset-password"
               >
-                {resetPasswordMutation.isPending ? "Aggiornamento..." : "Conferma Reset"}
+                {resetPasswordMutation.isPending ? t("admin.common.updating") : "Conferma Reset"}
               </Button>
             </div>
           </div>

@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/use-auth";
@@ -70,6 +71,7 @@ function DeviceModelAutocomplete({
   deviceTypes?: DeviceType[];
   deviceBrands?: DeviceBrand[];
 }) {
+  const { t } = useTranslation();
   const [search, setSearch] = useState(value);
   const [isOpen, setIsOpen] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
@@ -138,7 +140,7 @@ function DeviceModelAutocomplete({
           onFocus={() => { setIsFocused(true); if (!selectedId) setIsOpen(suggestions.length > 0); }}
           onBlur={() => setTimeout(() => { setIsFocused(false); setIsOpen(false); }, 200)}
           onKeyDown={handleKeyDown}
-          placeholder="Cerca dispositivo (es. iPhone 15, Galaxy S24...)"
+          placeholder={t("customerPages.cercaDispositivoEsIPhone15GalaxyS24")}
           className="pl-9"
           role="combobox"
           aria-expanded={isOpen}
@@ -199,6 +201,7 @@ function DeviceFormCard({
   deviceTypes?: DeviceType[];
   deviceBrands?: DeviceBrand[];
 }) {
+  const { t } = useTranslation();
   return (
     <div className="space-y-4 p-4 border rounded-md bg-muted/20" data-testid={`card-device-form-${index}`}>
       <div className="flex items-center justify-between gap-2">
@@ -253,7 +256,7 @@ function DeviceFormCard({
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         <div className="space-y-1.5">
-          <Label className="text-xs text-muted-foreground">Quantità</Label>
+          <Label className="text-xs text-muted-foreground">{t("common.quantity")}</Label>
           <Input
             type="number"
             min={1}
@@ -276,7 +279,7 @@ function DeviceFormCard({
           <Input
             value={device.serial}
             onChange={(e) => onUpdate({ serial: e.target.value })}
-            placeholder="Numero di serie"
+            placeholder={t("products.serialNumber")}
             data-testid={`input-serial-${index}`}
           />
         </div>
@@ -312,6 +315,7 @@ function DeviceFormCard({
 }
 
 export default function NewRemoteRequest() {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const { toast } = useToast();
   const [, navigate] = useLocation();
@@ -391,18 +395,18 @@ export default function NewRemoteRequest() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/customer/remote-requests"] });
       devices.forEach((d) => d.photoPreviewUrls.forEach((u) => URL.revokeObjectURL(u)));
-      toast({ title: "Richiesta inviata", description: "La tua richiesta di riparazione è stata inviata con successo. Riceverai un preventivo a breve." });
+      toast({ title: "Richiesta inviata", description: t("customerPages.laTuaRichiestaDiRiparazioneStataInviataCo") });
       navigate("/customer/remote-requests");
     },
     onError: (error: Error) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("auth.error"), description: error.message, variant: "destructive" });
     },
   });
 
   const handleCreateRequest = async (e: React.FormEvent) => {
     e.preventDefault();
     if (devices.length === 0) {
-      toast({ title: "Errore", description: "Aggiungi almeno un dispositivo", variant: "destructive" });
+      toast({ title: t("auth.error"), description: "Aggiungi almeno un dispositivo", variant: "destructive" });
       return;
     }
     for (const d of devices) {
@@ -412,7 +416,7 @@ export default function NewRemoteRequest() {
         return;
       }
       if (d.quantity < 1) {
-        toast({ title: "Errore", description: "La quantità deve essere almeno 1", variant: "destructive" });
+        toast({ title: t("auth.error"), description: t("customerPages.laQuantitDeveEssereAlmeno1"), variant: "destructive" });
         return;
       }
     }
@@ -445,7 +449,7 @@ export default function NewRemoteRequest() {
         devices: devicesData,
       });
     } catch (error: any) {
-      toast({ title: "Errore upload foto", description: error.message, variant: "destructive" });
+      toast({ title: t("customerPages.erroreUploadFoto"), description: error.message, variant: "destructive" });
     } finally {
       setIsUploading(false);
     }
@@ -465,7 +469,7 @@ export default function NewRemoteRequest() {
           <ArrowLeft className="h-4 w-4" />
         </Button>
         <div>
-          <h1 className="text-xl font-bold" data-testid="text-page-title">Nuova Richiesta di Riparazione</h1>
+          <h1 className="text-xl font-bold" data-testid="text-page-title">{t("customerPages.nuovaRichiestaDiRiparazione")}</h1>
           <p className="text-sm text-muted-foreground mt-0.5">
             Aggiungi i dispositivi da riparare e descrivi il problema. Riceverai un preventivo dal centro di riparazione.
           </p>
@@ -507,7 +511,7 @@ export default function NewRemoteRequest() {
         <Card>
           <CardContent className="flex flex-col sm:flex-row items-center justify-between gap-3 py-4">
             <p className="text-sm text-muted-foreground">
-              {devices.length} dispositiv{devices.length === 1 ? "o" : "i"} · {totalDeviceCount} unità
+              {devices.length === 1 ? t("remote.deviceCountLabel", { count: devices.length }) : t("remote.deviceCountLabelPlural", { count: devices.length })} · {t("remote.unitsCount", { qty: totalDeviceCount })}
             </p>
             <div className="flex gap-2">
               <Button type="button" variant="outline" onClick={() => navigate("/customer/remote-requests")} data-testid="button-cancel-request">

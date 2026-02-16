@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useState, useRef, useEffect, useMemo } from "react";
 import { useLocation, Link } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
@@ -49,6 +50,7 @@ function BarcodeDisplay({ code, width = 80, height = 30 }: { code: string; width
 }
 
 function ProductImage({ category, imageUrl, size = "md" }: { category?: string | null; imageUrl?: string | null; size?: "sm" | "md" | "lg" }) {
+  const { t } = useTranslation();
   const [imgError, setImgError] = useState(false);
   const [signedUrl, setSignedUrl] = useState<string | null>(null);
   
@@ -101,7 +103,7 @@ function ProductImage({ category, imageUrl, size = "md" }: { category?: string |
       <div className={`${sizeClasses[size]} rounded-lg flex items-center justify-center flex-shrink-0 overflow-hidden bg-muted`}>
         <img 
           src={signedUrl} 
-          alt="Prodotto" 
+          alt={t("common.product")} 
           className="w-full h-full object-cover"
           onError={() => setImgError(true)}
         />
@@ -259,12 +261,6 @@ type WarrantyProductPOS = {
 
 // formatCurrency importato da @/lib/utils
 
-const paymentMethodLabels: Record<string, { label: string; icon: typeof CreditCard }> = {
-  stripe_link: { label: "Link Pagamento", icon: QrCode },
-  cash: { label: "Contanti", icon: Banknote },
-  paypal: { label: "PayPal", icon: Wallet },
-  mixed: { label: "Misto", icon: Calculator },
-};
 
 interface PaymentConfiguration {
   bankTransferEnabled?: boolean;
@@ -280,6 +276,13 @@ interface RepairCenterPaymentConfig {
 }
 
 export default function PosPage() {
+  const { t } = useTranslation();
+  const paymentMethodLabels: Record<string, { label: string; icon: typeof CreditCard }> = {
+    stripe_link: { label: "Link Pagamento", icon: QrCode },
+    cash: { label: t("pos.cash"), icon: Banknote },
+    paypal: { label: "PayPal", icon: Wallet },
+    mixed: { label: "Misto", icon: Calculator },
+  };
   const { toast } = useToast();
   const [, navigate] = useLocation();
   const [cart, setCart] = useState<CartItem[]>([]);
@@ -522,7 +525,7 @@ export default function PosPage() {
       toast({ title: "Cassa aperta", description: "Puoi iniziare a registrare vendite" });
     },
     onError: (error: any) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("auth.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -541,7 +544,7 @@ export default function PosPage() {
       toast({ title: "Cassa chiusa", description: "Sessione terminata con successo" });
     },
     onError: (error: any) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("auth.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -557,10 +560,10 @@ export default function PosPage() {
       setNewCustomerName("");
       setNewCustomerEmail("");
       setNewCustomerPhone("");
-      toast({ title: "Cliente creato", description: `${customer.fullName} aggiunto con successo` });
+      toast({ title: t("utility.customerCreated"), description: `${customer.fullName} aggiunto con successo` });
     },
     onError: (error: any) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("auth.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -618,7 +621,7 @@ export default function PosPage() {
       }
     },
     onError: (error: any) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("auth.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -633,7 +636,7 @@ export default function PosPage() {
       setPaymentLinkStatus("ready");
     },
     onError: (error: any) => {
-      toast({ title: "Errore generazione link", description: error.message, variant: "destructive" });
+      toast({ title: t("pos.erroreGenerazioneLink"), description: error.message, variant: "destructive" });
       setPaymentLinkStatus("expired");
     },
   });
@@ -649,7 +652,7 @@ export default function PosPage() {
         setPaymentLinkStatus("completed");
         queryClient.invalidateQueries({ queryKey: ["/api/repair-center/pos/transactions", selectedRegisterId] });
         queryClient.invalidateQueries({ queryKey: ["/api/repair-center/pos/session/current", selectedRegisterId] });
-        toast({ title: "Pagamento ricevuto!", description: "La transazione è stata completata" });
+        toast({ title: "Pagamento ricevuto!", description: t("pos.laTransazioneStataCompletata") });
       } else if (data.status === "expired") {
         setPaymentLinkStatus("expired");
       }
@@ -667,7 +670,7 @@ export default function PosPage() {
       setPaymentLinkStatus("ready");
     },
     onError: (error: any) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("auth.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -682,7 +685,7 @@ export default function PosPage() {
       setPaymentLinkStatus("ready");
     },
     onError: (error: any) => {
-      toast({ title: "Errore creazione PayPal", description: error.message, variant: "destructive" });
+      toast({ title: t("pos.erroreCreazionePayPal"), description: error.message, variant: "destructive" });
       setPaymentLinkDialog(false);
     },
   });
@@ -697,14 +700,14 @@ export default function PosPage() {
       if (data.paid) {
         setPaymentLinkStatus("completed");
         queryClient.invalidateQueries({ queryKey: ["/api/repair-center/pos/transactions", selectedRegisterId] });
-        toast({ title: "Pagamento PayPal ricevuto!", description: "Il pagamento è stato completato con successo" });
+        toast({ title: "Pagamento PayPal ricevuto!", description: t("pos.ilPagamentoStatoCompletatoConSuccesso") });
       } else {
         setPaymentLinkStatus("ready");
-        toast({ title: "In attesa", description: "Il cliente non ha ancora completato il pagamento PayPal" });
+        toast({ title: t("b2b.status.pending"), description: "Il cliente non ha ancora completato il pagamento PayPal" });
       }
     },
     onError: (error: any) => {
-      toast({ title: "Errore verifica PayPal", description: error.message, variant: "destructive" });
+      toast({ title: t("pos.erroreVerificaPayPal"), description: error.message, variant: "destructive" });
       setPaymentLinkStatus("ready");
     },
   });
@@ -799,7 +802,7 @@ export default function PosPage() {
         name: wp.name,
         sku: null,
         barcode: null,
-        category: "Garanzia",
+        category: t("common.warranty"),
         imageUrl: null,
         quantity: 1,
         unitPrice: wp.priceInCents,
@@ -886,11 +889,11 @@ export default function PosPage() {
     const price = Number.isFinite(parsed) ? Math.round(parsed * 100) : NaN;
     
     if (!name) {
-      toast({ title: "Errore", description: "Inserisci un nome per il prodotto", variant: "destructive" });
+      toast({ title: t("auth.error"), description: "Inserisci un nome per il prodotto", variant: "destructive" });
       return;
     }
     if (!Number.isFinite(price) || price <= 0) {
-      toast({ title: "Errore", description: "Inserisci un prezzo valido", variant: "destructive" });
+      toast({ title: t("auth.error"), description: "Inserisci un prezzo valido", variant: "destructive" });
       return;
     }
     
@@ -918,7 +921,7 @@ export default function PosPage() {
   const handlePayment = () => {
     if (cart.length === 0) return;
     if (invoiceRequested && (customerType === "guest" || !selectedCustomerId)) {
-      toast({ title: "Errore", description: "Seleziona un cliente per la fattura", variant: "destructive" });
+      toast({ title: t("auth.error"), description: "Seleziona un cliente per la fattura", variant: "destructive" });
       return;
     }
     
@@ -1006,7 +1009,7 @@ export default function PosPage() {
           <Select value={selectedRegisterId} onValueChange={setSelectedRegisterId}>
             <SelectTrigger className="w-full sm:w-[220px] h-10" data-testid="select-register-closed">
               <Store className="w-4 h-4 mr-2" />
-              <SelectValue placeholder="Seleziona cassa" />
+              <SelectValue placeholder={t("pos.selezionaCassa")} />
             </SelectTrigger>
             <SelectContent>
               {registers.filter(r => r.isActive).map(reg => (
@@ -1031,7 +1034,7 @@ export default function PosPage() {
             <div className="mx-auto w-12 h-12 sm:w-16 sm:h-16 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-full flex items-center justify-center mb-4">
               <Receipt className="w-6 h-6 sm:w-8 sm:h-8 text-white" />
             </div>
-            <CardTitle className="text-xl sm:text-2xl">Cassa POS</CardTitle>
+            <CardTitle className="text-xl sm:text-2xl">{t("sidebar.items.pos")}</CardTitle>
             <CardDescription>
               Apri la cassa per iniziare a registrare le vendite
             </CardDescription>
@@ -1258,11 +1261,11 @@ export default function PosPage() {
               {/* Selezione Listino */}
               {priceLists.length > 0 && (
                 <div className="flex items-center gap-2 mb-3">
-                  <span className="text-sm text-muted-foreground">Listino:</span>
+                  <span className="text-sm text-muted-foreground">{t("pos.listino")}</span>
                   <Select value={selectedPriceListId} onValueChange={setSelectedPriceListId}>
                     <SelectTrigger className="w-auto max-w-[220px] h-8" data-testid="select-price-list">
                       <List className="w-3.5 h-3.5 mr-1 flex-shrink-0" />
-                      <SelectValue placeholder="Seleziona listino" />
+                      <SelectValue placeholder={t("pos.selezionaListino")} />
                     </SelectTrigger>
                     <SelectContent>
                       {priceLists.map(pl => (
@@ -1280,7 +1283,7 @@ export default function PosPage() {
                 <div className="flex flex-wrap items-center gap-2">
                   <span className="text-sm text-muted-foreground">Cliente:</span>
                   {(["guest", "existing", "new"] as const).map((type) => {
-                    const labels = { guest: "Ospite", existing: "Esistente", new: "Nuovo" };
+                    const labels = { guest: "Ospite", existing: "Esistente", new: t("common.new") };
                     return (
                       <Button
                         key={type}
@@ -1306,7 +1309,7 @@ export default function PosPage() {
                     {!selectedCustomer ? (
                       <>
                         <Input
-                          placeholder="Cerca cliente..."
+                          placeholder={t("pos.cercaCliente")}
                           value={customerSearch}
                           onChange={(e) => setCustomerSearch(e.target.value)}
                           className="h-8 text-sm"
@@ -1345,8 +1348,8 @@ export default function PosPage() {
                 {customerType === "new" && (
                   <div className="grid grid-cols-1 gap-1 p-2 rounded-md bg-muted/50">
                     <Input placeholder="Nome *" value={newCustomerName} onChange={(e) => setNewCustomerName(e.target.value)} className="h-8 text-sm" data-testid="input-new-customer-name-main" />
-                    <Input placeholder="Email" type="email" value={newCustomerEmail} onChange={(e) => setNewCustomerEmail(e.target.value)} className="h-8 text-sm" data-testid="input-new-customer-email-main" />
-                    <Input placeholder="Telefono" value={newCustomerPhone} onChange={(e) => setNewCustomerPhone(e.target.value)} className="h-8 text-sm" data-testid="input-new-customer-phone-main" />
+                    <Input placeholder={t("auth.email")} type="email" value={newCustomerEmail} onChange={(e) => setNewCustomerEmail(e.target.value)} className="h-8 text-sm" data-testid="input-new-customer-email-main" />
+                    <Input placeholder={t("auth.phone")} value={newCustomerPhone} onChange={(e) => setNewCustomerPhone(e.target.value)} className="h-8 text-sm" data-testid="input-new-customer-phone-main" />
                     <Button size="sm" variant="outline" disabled={!newCustomerName.trim() || createCustomerMutation.isPending} onClick={() => createCustomerMutation.mutate({ fullName: newCustomerName.trim(), email: newCustomerEmail.trim() || undefined, phone: newCustomerPhone.trim() || undefined })} data-testid="button-create-customer-main">
                       {createCustomerMutation.isPending ? <Loader2 className="w-3 h-3 mr-1 animate-spin" /> : <UserPlus className="w-3 h-3 mr-1" />}
                       Crea Cliente
@@ -1358,10 +1361,10 @@ export default function PosPage() {
                   <p className="text-xs text-amber-600">Fattura richiede cliente</p>
                 )}
                 {invoiceRequested && customerType === "existing" && !selectedCustomerId && (
-                  <p className="text-xs text-amber-600">Seleziona cliente per fattura</p>
+                  <p className="text-xs text-amber-600">{t("pos.selezionaClientePerFattura")}</p>
                 )}
                 {invoiceRequested && customerType === "new" && !selectedCustomerId && (
-                  <p className="text-xs text-amber-600">Crea cliente per fattura</p>
+                  <p className="text-xs text-amber-600">{t("pos.creaClientePerFattura")}</p>
                 )}
               </div>
               
@@ -1369,7 +1372,7 @@ export default function PosPage() {
               <TabsContent value="ricambi" className="flex-1 overflow-hidden m-0">
                 <div className="mb-2">
                   <Input
-                    placeholder="Cerca ricambio..."
+                    placeholder={t("pos.cercaRicambio")}
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     className="h-10"
@@ -1386,7 +1389,7 @@ export default function PosPage() {
                     return filtered.length === 0 ? (
                       <div className="flex flex-col items-center justify-center h-40 text-muted-foreground">
                         <Wrench className="w-12 h-12 mb-2 opacity-50" />
-                        <span>Nessun ricambio disponibile</span>
+                        <span>{t("pos.nessunRicambioDisponibile")}</span>
                       </div>
                     ) : (
                       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
@@ -1412,7 +1415,7 @@ export default function PosPage() {
                                 <div className="font-semibold text-primary">{formatCurrency(price)}</div>
                                 {product.availableQuantity !== undefined && (
                                   <Badge variant={isOutOfStock ? "destructive" : "secondary"} className="text-xs">
-                                    {isOutOfStock ? "Esaurito" : `${product.availableQuantity} disp.`}
+                                    {isOutOfStock ? t("catalog.outOfStock") : `${product.availableQuantity} disp.`}
                                   </Badge>
                                 )}
                               </div>
@@ -1429,7 +1432,7 @@ export default function PosPage() {
               <TabsContent value="accessori" className="flex-1 overflow-hidden m-0">
                 <div className="mb-2">
                   <Input
-                    placeholder="Cerca accessorio..."
+                    placeholder={t("products.searchAccessory")}
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     className="h-10"
@@ -1446,7 +1449,7 @@ export default function PosPage() {
                     return filtered.length === 0 ? (
                       <div className="flex flex-col items-center justify-center h-40 text-muted-foreground">
                         <Package className="w-12 h-12 mb-2 opacity-50" />
-                        <span>Nessun accessorio disponibile</span>
+                        <span>{t("pos.nessunAccessorioDisponibile")}</span>
                       </div>
                     ) : (
                       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
@@ -1472,7 +1475,7 @@ export default function PosPage() {
                                 <div className="font-semibold text-primary">{formatCurrency(price)}</div>
                                 {product.availableQuantity !== undefined && (
                                   <Badge variant={isOutOfStock ? "destructive" : "secondary"} className="text-xs">
-                                    {isOutOfStock ? "Esaurito" : `${product.availableQuantity} disp.`}
+                                    {isOutOfStock ? t("catalog.outOfStock") : `${product.availableQuantity} disp.`}
                                   </Badge>
                                 )}
                               </div>
@@ -1489,7 +1492,7 @@ export default function PosPage() {
               <TabsContent value="dispositivi" className="flex-1 overflow-hidden m-0">
                 <div className="mb-2">
                   <Input
-                    placeholder="Cerca dispositivo..."
+                    placeholder={t("products.searchDevice")}
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     className="h-10"
@@ -1506,7 +1509,7 @@ export default function PosPage() {
                     return filtered.length === 0 ? (
                       <div className="flex flex-col items-center justify-center h-40 text-muted-foreground">
                         <Smartphone className="w-12 h-12 mb-2 opacity-50" />
-                        <span>Nessun dispositivo disponibile</span>
+                        <span>{t("pos.nessunDispositivoDisponibile")}</span>
                       </div>
                     ) : (
                       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
@@ -1532,7 +1535,7 @@ export default function PosPage() {
                                 <div className="font-semibold text-primary">{formatCurrency(price)}</div>
                                 {product.availableQuantity !== undefined && (
                                   <Badge variant={isOutOfStock ? "destructive" : "secondary"} className="text-xs">
-                                    {isOutOfStock ? "Esaurito" : `${product.availableQuantity} disp.`}
+                                    {isOutOfStock ? t("catalog.outOfStock") : `${product.availableQuantity} disp.`}
                                   </Badge>
                                 )}
                               </div>
@@ -1548,7 +1551,7 @@ export default function PosPage() {
               <TabsContent value="services" className="flex-1 overflow-hidden m-0">
                 <div className="mb-2">
                   <Input
-                    placeholder="Cerca intervento..."
+                    placeholder={t("products.searchIntervention")}
                     value={serviceSearchQuery}
                     onChange={(e) => setServiceSearchQuery(e.target.value)}
                     className="h-10"
@@ -1563,7 +1566,7 @@ export default function PosPage() {
                   ) : filteredServices.length === 0 ? (
                     <div className="flex flex-col items-center justify-center h-40 text-muted-foreground">
                       <AlertCircle className="w-12 h-12 mb-2 opacity-50" />
-                      <span>Nessun intervento disponibile</span>
+                      <span>{t("pos.nessunInterventoDisponibile")}</span>
                       <span className="text-sm">Configura il catalogo interventi</span>
                     </div>
                   ) : (
@@ -1604,7 +1607,7 @@ export default function PosPage() {
               <TabsContent value="warranties" className="flex-1 overflow-hidden m-0">
                 <div className="mb-2">
                   <Input
-                    placeholder="Cerca garanzia..."
+                    placeholder={t("warranties.searchWarranty")}
                     value={warrantySearchQuery}
                     onChange={(e) => setWarrantySearchQuery(e.target.value)}
                     className="h-10"
@@ -1619,7 +1622,7 @@ export default function PosPage() {
                   ) : filteredWarrantyProducts.length === 0 ? (
                     <div className="flex flex-col items-center justify-center h-40 text-muted-foreground">
                       <Shield className="w-12 h-12 mb-2 opacity-50" />
-                      <span>Nessuna garanzia disponibile</span>
+                      <span>{t("pos.nessunaGaranziaDisponibile")}</span>
                       <span className="text-sm">Configura il catalogo garanzie</span>
                     </div>
                   ) : (
@@ -1690,7 +1693,7 @@ export default function PosPage() {
                               {tx.invoiceRequested && (
                                 <Badge variant={tx.invoiceId ? "default" : "secondary"} className="text-xs">
                                   <FileText className="w-3 h-3 mr-1" />
-                                  {tx.invoiceId ? "Fattura" : "Da fatturare"}
+                                  {tx.invoiceId ? t("common.invoice") : t("pos.toInvoice")}
                                 </Badge>
                               )}
                               {tx.status === "refunded" && (
@@ -1700,7 +1703,7 @@ export default function PosPage() {
                                 <Badge variant="secondary" className="text-xs">Rimborso parziale</Badge>
                               )}
                               {tx.status === "voided" && (
-                                <Badge variant="destructive" className="text-xs">Annullata</Badge>
+                                <Badge variant="destructive" className="text-xs">{t("common.cancelled")}</Badge>
                               )}
                             </div>
                           </div>
@@ -1731,7 +1734,7 @@ export default function PosPage() {
             {cart.length === 0 ? (
               <div className="flex flex-col items-center justify-center h-32 text-muted-foreground">
                 <ShoppingCart className="w-12 h-12 mb-2 opacity-50" />
-                <span>Carrello vuoto</span>
+                <span>{t("pos.emptyCart")}</span>
               </div>
             ) : (
               <div className="space-y-2">
@@ -1823,7 +1826,7 @@ export default function PosPage() {
           </div>
           {discount > 0 && (
             <div className="flex justify-between text-sm text-destructive">
-              <span>Sconto</span>
+              <span>{t("common.discount")}</span>
               <span>-{formatCurrency(discount)}</span>
             </div>
           )}
@@ -1833,7 +1836,7 @@ export default function PosPage() {
           </div>
           <Separator className="my-1" />
           <div className="flex justify-between font-semibold text-lg">
-            <span>Totale</span>
+            <span>{t("common.total")}</span>
             <span>{formatCurrency(cartTotal)}</span>
           </div>
         </div>
@@ -1961,7 +1964,7 @@ export default function PosPage() {
         <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
           <DialogHeader className="pb-2">
             <DialogTitle className="flex items-center justify-between">
-              <span>Pagamento</span>
+              <span>{t("common.payment")}</span>
               <span className="text-lg font-bold text-primary">{formatCurrency(cartTotal)}</span>
             </DialogTitle>
           </DialogHeader>
@@ -2132,7 +2135,7 @@ export default function PosPage() {
                 data-testid="input-closing-cash"
               />
               <p className="text-xs text-muted-foreground mt-2">
-                Inserisci l'importo che lasci in cassa. La differenza rispetto ai contanti attesi verrà registrata come prelievo.
+                {t("pos.closingCashMessage")}
               </p>
               {closingCash && parseFloat(closingCash) < ((currentSession?.openingCash || 0) + (currentSession?.totalCashSales || 0) - (currentSession?.totalRefunds || 0)) / 100 && (
                 <div className="mt-2 p-2 rounded bg-amber-500/10 border border-amber-500/20">
@@ -2189,7 +2192,7 @@ export default function PosPage() {
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label htmlFor="temp-name">Nome Prodotto</Label>
+              <Label htmlFor="temp-name">{t("products.productName")}</Label>
               <Input
                 id="temp-name"
                 placeholder="Es: Riparazione vetro, Servizio..."
@@ -2199,7 +2202,7 @@ export default function PosPage() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="temp-price">Prezzo (EUR)</Label>
+              <Label htmlFor="temp-price">{t("pos.prezzoEUR")}</Label>
               <Input
                 id="temp-price"
                 type="number"
@@ -2378,7 +2381,7 @@ export default function PosPage() {
                     data-testid="button-print-receipt"
                   >
                     <Printer className="w-4 h-4 mr-2" />
-                    {paymentLinkHasInvoice ? "Stampa Fattura" : "Stampa Scontrino"}
+                    {paymentLinkHasInvoice ? "Stampa Fattura" : t("pos.printReceipt")}
                   </Button>
                   <Button onClick={() => setPaymentLinkDialog(false)} data-testid="button-close-payment-success">
                     Chiudi

@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Ticket, InsertTicket } from "@shared/schema";
@@ -18,6 +19,7 @@ import { it } from "date-fns/locale";
 import { Link } from "wouter";
 
 export default function CustomerTickets() {
+  const { t } = useTranslation();
   const [dialogOpen, setDialogOpen] = useState(false);
   const { toast } = useToast();
 
@@ -36,7 +38,7 @@ export default function CustomerTickets() {
       toast({ title: "Ticket creato con successo" });
     },
     onError: (error: Error) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("auth.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -53,18 +55,18 @@ export default function CustomerTickets() {
 
   const getStatusBadge = (status: string) => {
     switch (status) {
-      case "open": return <Badge>Aperto</Badge>;
-      case "in_progress": return <Badge variant="secondary">In lavorazione</Badge>;
-      case "closed": return <Badge variant="outline">Chiuso</Badge>;
+      case "open": return <Badge>{t("tickets.status.open")}</Badge>;
+      case "in_progress": return <Badge variant="secondary">{t("tickets.status.inProgress")}</Badge>;
+      case "closed": return <Badge variant="outline">{t("tickets.status.closed")}</Badge>;
       default: return <Badge variant="outline">{status}</Badge>;
     }
   };
 
   const getPriorityBadge = (priority: string) => {
     switch (priority) {
-      case "high": return <Badge variant="destructive">Alta</Badge>;
-      case "medium": return <Badge variant="secondary">Media</Badge>;
-      case "low": return <Badge variant="outline">Bassa</Badge>;
+      case "high": return <Badge variant="destructive">{t("common.priorityHigh")}</Badge>;
+      case "medium": return <Badge variant="secondary">{t("common.priorityMedium")}</Badge>;
+      case "low": return <Badge variant="outline">{t("common.priorityLow")}</Badge>;
       default: return <Badge variant="outline">{priority}</Badge>;
     }
   };
@@ -96,11 +98,11 @@ export default function CustomerTickets() {
             </DialogTrigger>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>Crea Nuovo Ticket</DialogTitle>
+              <DialogTitle>{t("tickets.creaNuovoTicket")}</DialogTitle>
             </DialogHeader>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="subject">Oggetto</Label>
+                <Label htmlFor="subject">{t("tickets.subject")}</Label>
                 <Input
                   id="subject"
                   name="subject"
@@ -110,7 +112,7 @@ export default function CustomerTickets() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="description">Descrizione</Label>
+                <Label htmlFor="description">{t("common.description")}</Label>
                 <Textarea
                   id="description"
                   name="description"
@@ -121,15 +123,15 @@ export default function CustomerTickets() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="priority">Priorità</Label>
+                <Label htmlFor="priority">{t("common.priority")}</Label>
                 <Select name="priority" defaultValue="medium">
                   <SelectTrigger id="priority" data-testid="select-priority">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="low">Bassa</SelectItem>
-                    <SelectItem value="medium">Media</SelectItem>
-                    <SelectItem value="high">Alta</SelectItem>
+                    <SelectItem value="low">{t("common.priorityLow")}</SelectItem>
+                    <SelectItem value="medium">{t("common.priorityMedium")}</SelectItem>
+                    <SelectItem value="high">{t("common.priorityHigh")}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -139,7 +141,7 @@ export default function CustomerTickets() {
                 disabled={createTicketMutation.isPending}
                 data-testid="button-submit-ticket"
               >
-                {createTicketMutation.isPending ? "Creazione..." : "Crea Ticket"}
+                {createTicketMutation.isPending ? "Creazione..." : t("tickets.createTicket")}
               </Button>
             </form>
           </DialogContent>
@@ -157,8 +159,8 @@ export default function CustomerTickets() {
         <Card>
           <CardContent className="text-center py-12 text-muted-foreground">
             <MessageSquare className="h-12 w-12 mx-auto mb-4 opacity-20" />
-            <p>Nessun ticket trovato</p>
-            <p className="text-sm mt-2">Crea un nuovo ticket per ricevere assistenza</p>
+            <p>{t("tickets.noTicketsFound")}</p>
+            <p className="text-sm mt-2">{t("customerPages.creaUnNuovoTicketPerRicevereAssistenza")}</p>
           </CardContent>
         </Card>
       ) : (

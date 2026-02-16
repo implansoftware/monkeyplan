@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useMemo } from "react";
 import { WidgetPreference, WidgetConfig, getWidgetRegistry } from "./widget-registry";
 
@@ -9,6 +10,7 @@ interface DashboardGridProps {
 }
 
 export function DashboardGrid({ role, layout, widgetComponents, widgetProps = {} }: DashboardGridProps) {
+  const { t } = useTranslation();
   const registry = useMemo(() => getWidgetRegistry(role), [role]);
   const registryMap = useMemo(() => new Map(registry.map((w) => [w.id, w])), [registry]);
 

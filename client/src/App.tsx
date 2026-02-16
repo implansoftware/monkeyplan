@@ -3,6 +3,7 @@ import { Switch, Route, useLocation, Redirect } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
+import "@/i18n";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import NotFound from "@/pages/not-found";
 import AuthPage from "@/pages/auth-page";
@@ -14,6 +15,7 @@ import { ProtectedRoute } from "@/lib/protected-route";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/app-sidebar";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { LanguageSwitcher } from "@/components/language-switcher";
 import { NotificationBell } from "@/components/NotificationBell";
 import { TicketNotificationsProvider } from "@/contexts/TicketNotificationsContext";
 import { Loader2 } from "lucide-react";
@@ -629,7 +631,10 @@ function AppLayout() {
           <div className="flex flex-col flex-1 overflow-hidden">
             <header className="flex items-center justify-between p-4 border-b border-border">
               <SidebarTrigger data-testid="button-sidebar-toggle" />
-              <ThemeToggle />
+              <div className="flex items-center gap-2">
+                <LanguageSwitcher />
+                <ThemeToggle />
+              </div>
             </header>
             <main className="flex-1 overflow-y-auto p-6 flex items-center justify-center">
               <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" />
@@ -648,7 +653,10 @@ function AppLayout() {
           <div className="flex flex-col flex-1 overflow-hidden">
             <header className="flex items-center justify-between p-4 border-b border-border">
               <SidebarTrigger data-testid="button-sidebar-toggle" />
-              <ThemeToggle />
+              <div className="flex items-center gap-2">
+                <LanguageSwitcher />
+                <ThemeToggle />
+              </div>
             </header>
             <main className="flex-1 overflow-y-auto p-6">
               <div className="max-w-7xl mx-auto">
@@ -671,6 +679,7 @@ function AppLayout() {
               <SidebarTrigger data-testid="button-sidebar-toggle" />
               <div className="flex items-center gap-2">
                 <NotificationBell />
+                <LanguageSwitcher />
                 <ThemeToggle />
               </div>
             </header>

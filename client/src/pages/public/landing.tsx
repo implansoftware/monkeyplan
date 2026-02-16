@@ -1,4 +1,5 @@
 import { Link } from "wouter";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import {
@@ -85,6 +86,7 @@ function getDashboardPath(role?: string) {
 }
 
 export function Navbar({ solid = false, showLandingLinks = true }: { solid?: boolean; showLandingLinks?: boolean }) {
+  const { t } = useTranslation();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const { user } = useAuth();
@@ -98,10 +100,10 @@ export function Navbar({ solid = false, showLandingLinks = true }: { solid?: boo
   }, []);
 
   const allNavLinks = [
-    { href: "/about", label: "Chi Siamo", isPage: true },
-    { href: "/faq", label: "FAQ", isPage: true },
-    { href: "/contact", label: "Contatti", isPage: true },
-    { href: "/marketplace", label: "Marketplace", isPage: true },
+    { href: "/about", label: t("public.landing.nav.aboutUs"), isPage: true },
+    { href: "/faq", label: t("public.landing.nav.faq"), isPage: true },
+    { href: "/contact", label: t("public.landing.nav.contact"), isPage: true },
+    { href: "/marketplace", label: t("public.landing.nav.marketplace"), isPage: true },
   ];
   const navLinks = allNavLinks;
 
@@ -112,7 +114,7 @@ export function Navbar({ solid = false, showLandingLinks = true }: { solid?: boo
           ? "bg-white/90 dark:bg-slate-950/90 backdrop-blur-xl shadow-sm"
           : "bg-transparent"
       }`}
-      aria-label="Navigazione principale"
+      aria-label={t("public.landing.nav.ariaLabel")}
       data-testid="navbar-landing"
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -168,7 +170,7 @@ export function Navbar({ solid = false, showLandingLinks = true }: { solid?: boo
               <Link href={dashboardPath} className="hidden md:inline-flex" data-testid="link-dashboard">
                 <Button size="sm" data-testid="button-dashboard">
                   <LayoutDashboard className="w-3.5 h-3.5 mr-1.5" />
-                  Vai alla Dashboard
+                  {t("public.landing.nav.goToDashboard")}
                 </Button>
               </Link>
             ) : (
@@ -180,12 +182,12 @@ export function Navbar({ solid = false, showLandingLinks = true }: { solid?: boo
                     className={isSolid ? "" : "text-white border-white/30 bg-white/10 backdrop-blur-sm"}
                     data-testid="button-login"
                   >
-                    Accedi
+                    {t("public.landing.nav.login")}
                   </Button>
                 </Link>
                 <Link href="/auth" className="hidden md:inline-flex" data-testid="link-register">
                   <Button size="sm" data-testid="button-register">
-                    Prova Gratis
+                    {t("public.landing.nav.tryFree")}
                     <ArrowRight className="w-3.5 h-3.5 ml-1" />
                   </Button>
                 </Link>
@@ -234,17 +236,17 @@ export function Navbar({ solid = false, showLandingLinks = true }: { solid?: boo
               <Link href={dashboardPath} onClick={() => setMobileOpen(false)} data-testid="link-mobile-dashboard">
                 <Button className="w-full" data-testid="button-mobile-dashboard">
                   <LayoutDashboard className="w-3.5 h-3.5 mr-1.5" />
-                  Vai alla Dashboard
+                  {t("public.landing.nav.goToDashboard")}
                 </Button>
               </Link>
             ) : (
               <>
                 <Link href="/auth" onClick={() => setMobileOpen(false)} data-testid="link-mobile-login">
-                  <Button variant="outline" className="w-full" data-testid="button-mobile-login">Accedi</Button>
+                  <Button variant="outline" className="w-full" data-testid="button-mobile-login">{t("public.landing.nav.login")}</Button>
                 </Link>
                 <Link href="/auth" onClick={() => setMobileOpen(false)} data-testid="link-mobile-register">
                   <Button className="w-full" data-testid="button-mobile-register">
-                    Prova Gratis <ArrowRight className="w-3.5 h-3.5 ml-1" />
+                    {t("public.landing.nav.tryFree")} <ArrowRight className="w-3.5 h-3.5 ml-1" />
                   </Button>
                 </Link>
               </>
@@ -257,6 +259,7 @@ export function Navbar({ solid = false, showLandingLinks = true }: { solid?: boo
 }
 
 function HeroSection() {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const dashboardPath = getDashboardPath(user?.role);
 
@@ -280,25 +283,24 @@ function HeroSection() {
             <div className="flex flex-wrap items-center gap-3">
               <span className="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-medium rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/20 backdrop-blur-sm">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                Attivo
+                {t("public.landing.hero.active")}
               </span>
               <span className="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-medium rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/20 backdrop-blur-sm">
                 <Star className="w-3 h-3" />
-                100 Licenze Gratuite
+                {t("public.landing.hero.freeLicenses")}
               </span>
             </div>
 
             <h1 className="text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-extrabold tracking-tight leading-[1.08] text-white" data-testid="text-hero-title">
-              <span className="block">Il gestionale</span>
+              <span className="block">{t("public.landing.hero.titleLine1")}</span>
               <span className="block text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 via-teal-400 to-cyan-400">
-                che ti serve
+                {t("public.landing.hero.titleLine2")}
               </span>
-              <span className="block text-slate-300 font-semibold text-[0.72em]">sul campo. Ogni giorno.</span>
+              <span className="block text-slate-300 font-semibold text-[0.72em]">{t("public.landing.hero.titleLine3")}</span>
             </h1>
 
             <p className="text-lg sm:text-xl text-slate-400 max-w-xl leading-relaxed" data-testid="text-hero-subtitle">
-              Assistenza tecnica, retail telefonia, rivendita usato e reti multi-negozio.
-              Un unico sistema per chi lavora davvero.
+              {t("public.landing.hero.subtitle")}
             </p>
 
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 pt-2">
@@ -306,29 +308,29 @@ function HeroSection() {
                 <Link href={dashboardPath} className="w-full sm:w-auto" data-testid="link-hero-cta">
                   <Button size="lg" className="w-full sm:w-auto font-semibold shadow-lg shadow-primary/25 text-base" data-testid="button-hero-cta">
                     <LayoutDashboard className="w-4 h-4 mr-2" />
-                    Vai alla Dashboard
+                    {t("public.landing.nav.goToDashboard")}
                   </Button>
                 </Link>
               ) : (
                 <Link href="/auth" className="w-full sm:w-auto" data-testid="link-hero-cta">
                   <Button size="lg" className="w-full sm:w-auto font-semibold shadow-lg shadow-primary/25 text-base" data-testid="button-hero-cta">
-                    Inizia Gratis
+                    {t("public.landing.hero.startFree")}
                     <ArrowRight className="w-4 h-4 ml-2" />
                   </Button>
                 </Link>
               )}
               <a href="#features" className="w-full sm:w-auto" data-testid="link-hero-features">
                 <Button variant="outline" size="lg" className="w-full sm:w-auto text-white border-white/15 bg-white/5 backdrop-blur-sm" data-testid="button-hero-features">
-                  Scopri di pi&ugrave;
+                  {t("public.landing.hero.learnMore")}
                 </Button>
               </a>
             </div>
 
             <div className="grid grid-cols-3 gap-4 pt-4 max-w-md">
               {[
-                { value: "10+", label: "Moduli integrati" },
-                { value: "4", label: "Ruoli distinti" },
-                { value: "99.9%", label: "Uptime garantito" },
+                { value: "10+", label: t("public.landing.hero.statModules") },
+                { value: "4", label: t("public.landing.hero.statRoles") },
+                { value: "99.9%", label: t("public.landing.hero.statUptime") },
               ].map((stat) => (
                 <div key={stat.label} className="text-center sm:text-left" data-testid={`stat-hero-${stat.label.toLowerCase().replace(/\s+/g, "-")}`}>
                   <p className="text-2xl sm:text-3xl font-bold text-white">{stat.value}</p>
@@ -346,16 +348,16 @@ function HeroSection() {
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <div className="flex items-center gap-2">
                       <div className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
-                      <span className="text-sm font-medium text-white" data-testid="text-dashboard-title">Dashboard Live</span>
+                      <span className="text-sm font-medium text-white" data-testid="text-dashboard-title">{t("public.landing.hero.dashboardLive")}</span>
                     </div>
-                    <span className="text-xs text-slate-500" data-testid="text-dashboard-date">Oggi</span>
+                    <span className="text-xs text-slate-500" data-testid="text-dashboard-date">{t("public.landing.hero.today")}</span>
                   </div>
                   <div className="grid grid-cols-2 gap-3">
                     {[
-                      { icon: Wrench, label: "Riparazioni", value: "24", color: "text-emerald-400", bg: "bg-emerald-500/10" },
-                      { icon: Package, label: "Magazzino", value: "1.2K", color: "text-cyan-400", bg: "bg-cyan-500/10" },
-                      { icon: ShoppingCart, label: "Vendite", value: "18", color: "text-amber-400", bg: "bg-amber-500/10" },
-                      { icon: TrendingUp, label: "Fatturato", value: "+12%", color: "text-teal-400", bg: "bg-teal-500/10" },
+                      { icon: Wrench, label: t("public.landing.hero.repairs"), value: "24", color: "text-emerald-400", bg: "bg-emerald-500/10" },
+                      { icon: Package, label: t("public.landing.hero.warehouse"), value: "1.2K", color: "text-cyan-400", bg: "bg-cyan-500/10" },
+                      { icon: ShoppingCart, label: t("public.landing.hero.sales"), value: "18", color: "text-amber-400", bg: "bg-amber-500/10" },
+                      { icon: TrendingUp, label: t("public.landing.hero.revenue"), value: "+12%", color: "text-teal-400", bg: "bg-teal-500/10" },
                     ].map((item) => (
                       <div key={item.label} className="p-3 rounded-xl bg-white/[0.03] border border-white/[0.05]">
                         <div className={`w-8 h-8 rounded-lg ${item.bg} flex items-center justify-center mb-2`}>
@@ -372,7 +374,7 @@ function HeroSection() {
                   <div className="rounded-xl bg-white/[0.04] backdrop-blur-sm border border-white/[0.06] p-4 space-y-2">
                     <div className="flex items-center gap-2">
                       <Clock className="w-4 h-4 text-emerald-400" />
-                      <span className="text-xs font-medium text-slate-400">Tempo medio</span>
+                      <span className="text-xs font-medium text-slate-400">{t("public.landing.hero.avgTime")}</span>
                     </div>
                     <p className="text-lg font-bold text-white">2.4h</p>
                     <div className="w-full h-1 rounded-full bg-white/10">
@@ -382,7 +384,7 @@ function HeroSection() {
                   <div className="rounded-xl bg-white/[0.04] backdrop-blur-sm border border-white/[0.06] p-4 space-y-2">
                     <div className="flex items-center gap-2">
                       <CheckCircle className="w-4 h-4 text-cyan-400" />
-                      <span className="text-xs font-medium text-slate-400">Completate</span>
+                      <span className="text-xs font-medium text-slate-400">{t("public.landing.hero.completed")}</span>
                     </div>
                     <p className="text-lg font-bold text-white">96%</p>
                     <div className="w-full h-1 rounded-full bg-white/10">
@@ -402,16 +404,17 @@ function HeroSection() {
 }
 
 function TrustBar() {
+  const { t } = useTranslation();
   const { ref, isVisible } = useInView();
   return (
     <section ref={ref} className="relative py-12 sm:py-16 bg-slate-50 dark:bg-slate-900/50 border-b border-slate-200/50 dark:border-slate-800/50" data-testid="section-trust">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className={`grid grid-cols-2 lg:grid-cols-4 gap-6 lg:gap-8 transition-all duration-700 ${isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"}`}>
           {[
-            { icon: Shield, value: 10, suffix: "+", label: "Moduli operativi", color: "text-emerald-600 dark:text-emerald-400" },
-            { icon: Building2, value: 4, suffix: "", label: "Ruoli aziendali", color: "text-teal-600 dark:text-teal-400" },
-            { icon: Globe, value: 9, suffix: "+", label: "Integrazioni attive", color: "text-cyan-600 dark:text-cyan-400" },
-            { icon: Zap, value: 100, suffix: "", label: "Licenze gratuite", color: "text-amber-600 dark:text-amber-400" },
+            { icon: Shield, value: 10, suffix: "+", label: t("public.landing.trust.operationalModules"), color: "text-emerald-600 dark:text-emerald-400" },
+            { icon: Building2, value: 4, suffix: "", label: t("public.landing.trust.businessRoles"), color: "text-teal-600 dark:text-teal-400" },
+            { icon: Globe, value: 9, suffix: "+", label: t("public.landing.trust.activeIntegrations"), color: "text-cyan-600 dark:text-cyan-400" },
+            { icon: Zap, value: 100, suffix: "", label: t("public.landing.trust.freeLicenses"), color: "text-amber-600 dark:text-amber-400" },
           ].map((item) => (
             <div key={item.label} className="flex items-center gap-4" data-testid={`stat-trust-${item.label.toLowerCase().replace(/\s+/g, "-")}`}>
               <div className="w-11 h-11 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center shrink-0">
@@ -431,45 +434,6 @@ function TrustBar() {
   );
 }
 
-const features = [
-  {
-    icon: Wrench,
-    title: "Assistenza Tecnica",
-    description: "Workflow completo: accettazione, diagnosi, preventivo, approvazione, lavorazione, test, consegna. Ogni riparazione tracciata e documentata.",
-    accent: "emerald",
-  },
-  {
-    icon: Package,
-    title: "Magazzino e Ricambi",
-    description: "Carichi, scarichi, compatibilità, resi, fornitori, DDT. Costi e marginalità sempre sotto controllo con tracciabilità completa.",
-    accent: "cyan",
-  },
-  {
-    icon: ShoppingCart,
-    title: "Vendita e POS Fiscale",
-    description: "POS integrato con RT fiscale, multi-aliquota IVA, corrispettivi, codice lotteria. Incassi, pagamenti digitali e rate.",
-    accent: "amber",
-  },
-  {
-    icon: Smartphone,
-    title: "Usato e Permute",
-    description: "Valutazione dispositivi, ritiro, classificazione, ricondizionamento e rivendita con marginalità reale per singolo device.",
-    accent: "orange",
-  },
-  {
-    icon: Users,
-    title: "CRM Clienti",
-    description: "Clienti, consensi, dispositivi, comunicazioni e storico interazioni. Tutto centralizzato in un unico punto.",
-    accent: "teal",
-  },
-  {
-    icon: Shield,
-    title: "Garanzie e Assicurazioni",
-    description: "Catalogo multi-tenant, offerta durante l'accettazione, storico cliente, analytics dedicate e fatturazione automatica.",
-    accent: "blue",
-  },
-];
-
 const accentMap: Record<string, { iconBg: string; iconText: string }> = {
   emerald: { iconBg: "bg-emerald-500/10 dark:bg-emerald-500/15", iconText: "text-emerald-600 dark:text-emerald-400" },
   cyan: { iconBg: "bg-cyan-500/10 dark:bg-cyan-500/15", iconText: "text-cyan-600 dark:text-cyan-400" },
@@ -480,22 +444,62 @@ const accentMap: Record<string, { iconBg: string; iconText: string }> = {
 };
 
 function FeaturesSection() {
+  const { t } = useTranslation();
   const { ref, isVisible } = useInView();
+
+  const features = [
+    {
+      icon: Wrench,
+      title: t("public.landing.features.repair.title"),
+      description: t("public.landing.features.repair.description"),
+      accent: "emerald",
+    },
+    {
+      icon: Package,
+      title: t("public.landing.features.warehouse.title"),
+      description: t("public.landing.features.warehouse.description"),
+      accent: "cyan",
+    },
+    {
+      icon: ShoppingCart,
+      title: t("public.landing.features.pos.title"),
+      description: t("public.landing.features.pos.description"),
+      accent: "amber",
+    },
+    {
+      icon: Smartphone,
+      title: t("public.landing.features.used.title"),
+      description: t("public.landing.features.used.description"),
+      accent: "orange",
+    },
+    {
+      icon: Users,
+      title: t("public.landing.features.crm.title"),
+      description: t("public.landing.features.crm.description"),
+      accent: "teal",
+    },
+    {
+      icon: Shield,
+      title: t("public.landing.features.warranty.title"),
+      description: t("public.landing.features.warranty.description"),
+      accent: "blue",
+    },
+  ];
+
   return (
     <section id="features" className="py-20 sm:py-28 bg-white dark:bg-slate-950" data-testid="section-features">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div ref={ref} className={`max-w-2xl mx-auto text-center space-y-4 mb-16 transition-all duration-700 ${isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-6"}`}>
           <span className="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-semibold rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
             <Sparkles className="w-3 h-3" />
-            Piattaforma All-in-One
+            {t("public.landing.features.badge")}
           </span>
           <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight text-slate-900 dark:text-white" data-testid="text-features-title">
-            Tutto quello che serve.
-            <span className="block text-slate-400 dark:text-slate-500">Niente di superfluo.</span>
+            {t("public.landing.features.titleLine1")}
+            <span className="block text-slate-400 dark:text-slate-500">{t("public.landing.features.titleLine2")}</span>
           </h2>
           <p className="text-slate-500 dark:text-slate-400 text-lg leading-relaxed">
-            Non un semplice ticketing. Una piattaforma operativa integrata che unisce
-            in un solo ambiente tutto il necessario per lavorare bene.
+            {t("public.landing.features.subtitle")}
           </p>
         </div>
 
@@ -528,14 +532,15 @@ function FeaturesSection() {
 }
 
 function WorkflowSection() {
+  const { t } = useTranslation();
   const { ref, isVisible } = useInView();
   const steps = [
-    { icon: FileText, label: "Accettazione", desc: "Presa in carico con dati dispositivo e cliente" },
-    { icon: Settings, label: "Diagnosi", desc: "Analisi tecnica del problema" },
-    { icon: CreditCard, label: "Preventivo", desc: "Costo stimato con approvazione cliente" },
-    { icon: Wrench, label: "Riparazione", desc: "Lavorazione con log dettagliato" },
-    { icon: CheckCircle, label: "Test & QC", desc: "Verifica qualità e funzionamento" },
-    { icon: Truck, label: "Consegna", desc: "Restituzione e chiusura pratica" },
+    { icon: FileText, label: t("public.landing.workflow.steps.acceptance.label"), desc: t("public.landing.workflow.steps.acceptance.desc") },
+    { icon: Settings, label: t("public.landing.workflow.steps.diagnosis.label"), desc: t("public.landing.workflow.steps.diagnosis.desc") },
+    { icon: CreditCard, label: t("public.landing.workflow.steps.quote.label"), desc: t("public.landing.workflow.steps.quote.desc") },
+    { icon: Wrench, label: t("public.landing.workflow.steps.repair.label"), desc: t("public.landing.workflow.steps.repair.desc") },
+    { icon: CheckCircle, label: t("public.landing.workflow.steps.test.label"), desc: t("public.landing.workflow.steps.test.desc") },
+    { icon: Truck, label: t("public.landing.workflow.steps.delivery.label"), desc: t("public.landing.workflow.steps.delivery.desc") },
   ];
 
   return (
@@ -545,21 +550,20 @@ function WorkflowSection() {
           <div className="space-y-6">
             <span className="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-semibold rounded-full bg-teal-500/10 text-teal-600 dark:text-teal-400">
               <RefreshCw className="w-3 h-3" />
-              Workflow Avanzato
+              {t("public.landing.workflow.badge")}
             </span>
             <h2 className="text-3xl sm:text-4xl font-bold tracking-tight text-slate-900 dark:text-white">
-              Dalla presa in carico
-              <span className="block text-emerald-600 dark:text-emerald-400">alla consegna.</span>
+              {t("public.landing.workflow.titleLine1")}
+              <span className="block text-emerald-600 dark:text-emerald-400">{t("public.landing.workflow.titleLine2")}</span>
             </h2>
             <p className="text-slate-500 dark:text-slate-400 text-lg leading-relaxed">
-              Un flusso di lavoro in 10 stati che standardizza ogni riparazione.
-              Nessun passaggio viene perso, ogni responsabilità è chiara.
+              {t("public.landing.workflow.subtitle")}
             </p>
 
             <div className="pt-2">
               <Link href="/auth" data-testid="link-workflow-cta">
                 <Button variant="outline" data-testid="button-workflow-cta">
-                  Vedi come funziona
+                  {t("public.landing.workflow.cta")}
                   <ArrowUpRight className="w-3.5 h-3.5 ml-1" />
                 </Button>
               </Link>
@@ -589,15 +593,17 @@ function WorkflowSection() {
   );
 }
 
-const multiStorePoints = [
-  { icon: Building2, title: "Punti vendita centralizzati", text: "Gestisci più sedi da un unico sistema con ruoli e permessi differenziati per ogni operatore." },
-  { icon: Network, title: "Autonomia locale", text: "Controllo centrale e autonomia operativa locale. Ogni sede lavora in modo indipendente." },
-  { icon: RefreshCw, title: "Trasferimenti tracciati", text: "Scambi interni di ricambi, dispositivi e accessori tracciati, verificabili e ordinati." },
-  { icon: BarChart3, title: "Dati per decidere", text: "Ogni movimento è registrato, ogni decisione è supportata dai dati. Report e analytics in tempo reale." },
-];
-
 function MultiStoreSection() {
+  const { t } = useTranslation();
   const { ref, isVisible } = useInView();
+
+  const multiStorePoints = [
+    { icon: Building2, title: t("public.landing.multistore.points.centralized.title"), text: t("public.landing.multistore.points.centralized.text") },
+    { icon: Network, title: t("public.landing.multistore.points.autonomy.title"), text: t("public.landing.multistore.points.autonomy.text") },
+    { icon: RefreshCw, title: t("public.landing.multistore.points.transfers.title"), text: t("public.landing.multistore.points.transfers.text") },
+    { icon: BarChart3, title: t("public.landing.multistore.points.data.title"), text: t("public.landing.multistore.points.data.text") },
+  ];
+
   return (
     <section id="multistore" className="relative py-20 sm:py-28 overflow-hidden" data-testid="section-multistore">
       <div className="absolute inset-0 bg-slate-900 dark:bg-slate-950" />
@@ -611,15 +617,14 @@ function MultiStoreSection() {
         <div className="max-w-2xl mx-auto text-center space-y-4 mb-16">
           <span className="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-semibold rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/20">
             <Network className="w-3 h-3" />
-            Multi-Negozio
+            {t("public.landing.multistore.badge")}
           </span>
           <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight text-white" data-testid="text-multistore-title">
-            Pensato per crescere.
-            <span className="block text-slate-400">Senza compromessi.</span>
+            {t("public.landing.multistore.titleLine1")}
+            <span className="block text-slate-400">{t("public.landing.multistore.titleLine2")}</span>
           </h2>
           <p className="text-slate-400 text-lg leading-relaxed">
-            MonkeyPlan è progettato per funzionare in contesti multi-store reali,
-            riducendo sprechi, fermi operativi e confusione.
+            {t("public.landing.multistore.subtitle")}
           </p>
         </div>
 
@@ -641,10 +646,10 @@ function MultiStoreSection() {
 
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-8">
           {[
-            { icon: Store, value: "4", label: "Ruoli Distinti" },
-            { icon: Layers, value: "B2B", label: "Ordini Multi-Livello" },
-            { icon: Truck, value: "Real-time", label: "Trasferimenti Interni" },
-            { icon: CreditCard, value: "POS", label: "Fiscale Integrato" },
+            { icon: Store, value: "4", label: t("public.landing.multistore.stats.roles") },
+            { icon: Layers, value: "B2B", label: t("public.landing.multistore.stats.orders") },
+            { icon: Truck, value: "Real-time", label: t("public.landing.multistore.stats.transfers") },
+            { icon: CreditCard, value: "POS", label: t("public.landing.multistore.stats.fiscal") },
           ].map((stat) => (
             <div key={stat.label} className="text-center p-4 rounded-xl bg-emerald-500/5 border border-emerald-500/10" data-testid={`card-stat-${stat.label.toLowerCase().replace(/\s+/g, "-")}`}>
               <stat.icon className="w-5 h-5 text-emerald-400 mx-auto mb-2" />
@@ -658,35 +663,36 @@ function MultiStoreSection() {
   );
 }
 
-const integrations = [
-  { name: "SIFAR", desc: "Ricambi e parti", category: "supply" },
-  { name: "MobileSentrix", desc: "Componenti", category: "supply" },
-  { name: "Foneday", desc: "Parti di ricambio", category: "supply" },
-  { name: "Valutatore Usati", desc: "Valutazione device", category: "tools" },
-  { name: "Sibill", desc: "Fatturazione", category: "finance" },
-  { name: "PayPal", desc: "Pagamenti online", category: "payments" },
-  { name: "Stripe", desc: "Pagamenti online", category: "payments" },
-  { name: "Scalapay", desc: "Pagamenti a rate", category: "payments" },
-  { name: "Fiskaly", desc: "RT Fiscale Cloud", category: "fiscal" },
-];
-
 function IntegrationsSection() {
+  const { t } = useTranslation();
   const { ref, isVisible } = useInView();
+
+  const integrations = [
+    { name: "SIFAR", desc: t("public.landing.integrations.items.sifar"), category: "supply" },
+    { name: "MobileSentrix", desc: t("public.landing.integrations.items.mobilesentrix"), category: "supply" },
+    { name: "Foneday", desc: t("public.landing.integrations.items.foneday"), category: "supply" },
+    { name: "Valutatore Usati", desc: t("public.landing.integrations.items.valutatore"), category: "tools" },
+    { name: "Sibill", desc: t("public.landing.integrations.items.sibill"), category: "finance" },
+    { name: "PayPal", desc: t("public.landing.integrations.items.paypal"), category: "payments" },
+    { name: "Stripe", desc: t("public.landing.integrations.items.stripe"), category: "payments" },
+    { name: "Scalapay", desc: t("public.landing.integrations.items.scalapay"), category: "payments" },
+    { name: "Fiskaly", desc: t("public.landing.integrations.items.fiskaly"), category: "fiscal" },
+  ];
+
   return (
     <section id="integrations" className="py-20 sm:py-28 bg-white dark:bg-slate-950" data-testid="section-integrations">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div ref={ref} className={`max-w-2xl mx-auto text-center space-y-4 mb-16 transition-all duration-700 ${isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-6"}`}>
           <span className="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-semibold rounded-full bg-cyan-500/10 text-cyan-600 dark:text-cyan-400">
             <Globe className="w-3 h-3" />
-            Ecosistema Aperto
+            {t("public.landing.integrations.badge")}
           </span>
           <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight text-slate-900 dark:text-white" data-testid="text-integrations-title">
-            Si integra col tuo mondo.
-            <span className="block text-slate-400 dark:text-slate-500">Non il contrario.</span>
+            {t("public.landing.integrations.titleLine1")}
+            <span className="block text-slate-400 dark:text-slate-500">{t("public.landing.integrations.titleLine2")}</span>
           </h2>
           <p className="text-slate-500 dark:text-slate-400 text-lg leading-relaxed">
-            Nessun lock-in, nessun vincolo forzato. MonkeyPlan si adatta al tuo
-            ecosistema esistente di fornitori e servizi.
+            {t("public.landing.integrations.subtitle")}
           </p>
         </div>
 
@@ -707,8 +713,7 @@ function IntegrationsSection() {
         </div>
 
         <p className="text-center text-sm text-slate-400 dark:text-slate-500 mt-10 max-w-lg mx-auto">
-          Nuovi fornitori possono essere integrati tramite import/export,
-          flussi operativi o API.
+          {t("public.landing.integrations.footer")}
         </p>
       </div>
     </section>
@@ -716,6 +721,7 @@ function IntegrationsSection() {
 }
 
 function OfferSection() {
+  const { t } = useTranslation();
   const { ref, isVisible } = useInView();
   const { user } = useAuth();
   const dashboardPath = getDashboardPath(user?.role);
@@ -732,28 +738,27 @@ function OfferSection() {
         <div className="text-center space-y-6 mb-12">
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/10 text-white text-sm font-medium backdrop-blur-sm border border-white/20">
             <Gift className="w-4 h-4" />
-            Offerta Lancio
+            {t("public.landing.offer.badge")}
           </div>
 
           <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight text-white leading-tight" data-testid="text-offer-title">
-            Le prime 100 licenze
-            <span className="block">sono gratuite. Davvero.</span>
+            {t("public.landing.offer.titleLine1")}
+            <span className="block">{t("public.landing.offer.titleLine2")}</span>
           </h2>
 
           <p className="text-lg text-white/80 max-w-2xl mx-auto leading-relaxed">
-            Non è una promozione aggressiva. È una scelta consapevole. Crediamo che
-            strumenti concreti e formazione reale possano cambiare il settore.
+            {t("public.landing.offer.subtitle")}
           </p>
         </div>
 
         <div className="grid sm:grid-cols-2 gap-4 max-w-2xl mx-auto mb-10">
           {[
-            "Tutte le funzionalità, senza limitazioni",
-            "Assistenza, magazzino, vendita, usato",
-            "CRM, multi-negozio, scambi interni",
-            "Integrazioni e POS fiscale completo",
-            "Fatturazione automatica B2B",
-            "Garanzie e assicurazioni integrate",
+            t("public.landing.offer.features.allFeatures"),
+            t("public.landing.offer.features.repairWarehouseSales"),
+            t("public.landing.offer.features.crmMultistore"),
+            t("public.landing.offer.features.integrationsPOS"),
+            t("public.landing.offer.features.b2bInvoicing"),
+            t("public.landing.offer.features.warranties"),
           ].map((item, idx) => (
             <div key={item} className="flex items-center gap-3 p-3 rounded-xl bg-white/10 backdrop-blur-sm border border-white/10" data-testid={`item-offer-feature-${idx}`}>
               <CheckCircle className="w-5 h-5 text-emerald-200 shrink-0" />
@@ -767,19 +772,19 @@ function OfferSection() {
             <Link href={dashboardPath} data-testid="link-offer-cta">
               <Button size="lg" className="bg-white text-emerald-700 border-white font-semibold shadow-xl shadow-emerald-900/20 text-base" data-testid="button-offer-cta">
                 <LayoutDashboard className="w-4 h-4 mr-1.5" />
-                Vai alla Dashboard
+                {t("public.landing.nav.goToDashboard")}
               </Button>
             </Link>
           ) : (
             <>
               <Link href="/auth" data-testid="link-offer-cta">
                 <Button size="lg" className="bg-white text-emerald-700 border-white font-semibold shadow-xl shadow-emerald-900/20 text-base" data-testid="button-offer-cta">
-                  Richiedi la tua licenza gratuita
+                  {t("public.landing.offer.cta")}
                   <ChevronRight className="w-4 h-4 ml-1" />
                 </Button>
               </Link>
               <p className="text-sm text-white/50">
-                Nessuna carta di credito richiesta. Accesso immediato a tutte le funzionalità.
+                {t("public.landing.offer.noCreditCard")}
               </p>
             </>
           )}
@@ -790,6 +795,7 @@ function OfferSection() {
 }
 
 function VisionSection() {
+  const { t } = useTranslation();
   const { ref, isVisible } = useInView();
   const { user } = useAuth();
   const dashboardPath = getDashboardPath(user?.role);
@@ -797,30 +803,27 @@ function VisionSection() {
     <section className="py-20 sm:py-28 bg-white dark:bg-slate-950" data-testid="section-vision">
       <div ref={ref} className={`max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 text-center space-y-6 transition-all duration-700 ${isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-6"}`}>
         <h2 className="text-3xl sm:text-4xl font-bold tracking-tight text-slate-900 dark:text-white" data-testid="text-vision-title">
-          Non vogliamo utenti.
-          <span className="block text-emerald-600 dark:text-emerald-400">Vogliamo professionisti.</span>
+          {t("public.landing.vision.titleLine1")}
+          <span className="block text-emerald-600 dark:text-emerald-400">{t("public.landing.vision.titleLine2")}</span>
         </h2>
         <p className="text-lg text-slate-500 dark:text-slate-400 max-w-2xl mx-auto leading-relaxed">
-          Chi entra in questa prima fase non è un semplice utilizzatore,
-          ma parte attiva di un progetto più grande: alzare lo standard operativo
-          dell'intero settore.
+          {t("public.landing.vision.subtitle1")}
         </p>
         <p className="text-slate-500 dark:text-slate-400 max-w-xl mx-auto">
-          Se credi che metodo, formazione e strumenti giusti possano fare la differenza,
-          allora sei nel posto giusto.
+          {t("public.landing.vision.subtitle2")}
         </p>
         <div className="pt-4">
           {user ? (
             <Link href={dashboardPath} data-testid="link-vision-cta">
               <Button size="lg" data-testid="button-vision-cta">
                 <LayoutDashboard className="w-4 h-4 mr-2" />
-                Vai alla Dashboard
+                {t("public.landing.nav.goToDashboard")}
               </Button>
             </Link>
           ) : (
             <Link href="/auth" data-testid="link-vision-cta">
               <Button size="lg" data-testid="button-vision-cta">
-                Unisciti al progetto
+                {t("public.landing.vision.cta")}
                 <ArrowRight className="w-4 h-4 ml-2" />
               </Button>
             </Link>
@@ -832,6 +835,7 @@ function VisionSection() {
 }
 
 function Footer() {
+  const { t } = useTranslation();
   return (
     <footer className="border-t border-slate-200 dark:border-slate-800 py-10 bg-slate-50 dark:bg-slate-900/50" role="contentinfo" data-testid="footer-landing">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -844,19 +848,19 @@ function Footer() {
           </div>
 
           <div className="flex flex-wrap items-center gap-6">
-            <a href="#features" className="text-xs text-slate-500 dark:text-slate-400 transition-colors" data-testid="link-footer-features">Funzionalità</a>
-            <a href="#multistore" className="text-xs text-slate-500 dark:text-slate-400 transition-colors" data-testid="link-footer-multistore">Multi-Negozio</a>
-            <a href="#integrations" className="text-xs text-slate-500 dark:text-slate-400 transition-colors" data-testid="link-footer-integrations">Integrazioni</a>
-            <Link href="/marketplace" className="text-xs text-slate-500 dark:text-slate-400 transition-colors" data-testid="link-footer-marketplace">Marketplace</Link>
-            <Link href="/about" className="text-xs text-slate-500 dark:text-slate-400 transition-colors" data-testid="link-footer-about">Chi Siamo</Link>
-            <Link href="/contact" className="text-xs text-slate-500 dark:text-slate-400 transition-colors" data-testid="link-footer-contact">Contatti</Link>
-            <Link href="/faq" className="text-xs text-slate-500 dark:text-slate-400 transition-colors" data-testid="link-footer-faq">FAQ</Link>
-            <Link href="/terms" className="text-xs text-slate-500 dark:text-slate-400 transition-colors" data-testid="link-footer-terms">Termini</Link>
-            <Link href="/privacy" className="text-xs text-slate-500 dark:text-slate-400 transition-colors" data-testid="link-footer-privacy">Privacy</Link>
+            <a href="#features" className="text-xs text-slate-500 dark:text-slate-400 transition-colors" data-testid="link-footer-features">{t("public.landing.footer.features")}</a>
+            <a href="#multistore" className="text-xs text-slate-500 dark:text-slate-400 transition-colors" data-testid="link-footer-multistore">{t("public.landing.footer.multistore")}</a>
+            <a href="#integrations" className="text-xs text-slate-500 dark:text-slate-400 transition-colors" data-testid="link-footer-integrations">{t("public.landing.footer.integrations")}</a>
+            <Link href="/marketplace" className="text-xs text-slate-500 dark:text-slate-400 transition-colors" data-testid="link-footer-marketplace">{t("public.landing.footer.marketplace")}</Link>
+            <Link href="/about" className="text-xs text-slate-500 dark:text-slate-400 transition-colors" data-testid="link-footer-about">{t("public.landing.footer.aboutUs")}</Link>
+            <Link href="/contact" className="text-xs text-slate-500 dark:text-slate-400 transition-colors" data-testid="link-footer-contact">{t("public.landing.footer.contact")}</Link>
+            <Link href="/faq" className="text-xs text-slate-500 dark:text-slate-400 transition-colors" data-testid="link-footer-faq">{t("public.landing.footer.faq")}</Link>
+            <Link href="/terms" className="text-xs text-slate-500 dark:text-slate-400 transition-colors" data-testid="link-footer-terms">{t("public.landing.footer.terms")}</Link>
+            <Link href="/privacy" className="text-xs text-slate-500 dark:text-slate-400 transition-colors" data-testid="link-footer-privacy">{t("public.landing.footer.privacy")}</Link>
           </div>
 
           <p className="text-[11px] text-slate-400 dark:text-slate-500" data-testid="text-footer-tagline">
-            Il gestionale operativo per assistenza tecnica, retail e rivendita usato.
+            {t("public.landing.footer.tagline")}
           </p>
         </div>
       </div>

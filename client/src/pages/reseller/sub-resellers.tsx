@@ -23,11 +23,12 @@ import { Link } from "wouter";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
+import { useTranslation } from "react-i18next";
 
 const WIZARD_STEPS = [
-  { id: 1, title: "Credenziali", icon: KeyRound },
-  { id: 2, title: "Info Base", icon: UserIcon },
-  { id: 3, title: "Dati Fiscali", icon: FileText },
+  { id: 1, title: t("admin.resellers.credentials"), icon: KeyRound },
+  { id: 2, title: t("admin.resellers.basicInfo"), icon: UserIcon },
+  { id: 3, title: t("profile.fiscalInfo"), icon: FileText },
 ];
 
 interface SubReseller {
@@ -116,6 +117,7 @@ function formatPrice(cents: number): string {
 }
 
 export default function SubResellers() {
+  const { t } = useTranslation();
   const [searchQuery, setSearchQuery] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -224,7 +226,7 @@ export default function SubResellers() {
       handleCloseDialog();
     },
     onError: (error: Error) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -239,7 +241,7 @@ export default function SubResellers() {
       handleCloseDialog();
     },
     onError: (error: Error) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -255,7 +257,7 @@ export default function SubResellers() {
       setDeletingReseller(null);
     },
     onError: (error: Error) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -321,7 +323,7 @@ export default function SubResellers() {
 
     if (file.size > 2 * 1024 * 1024) {
       toast({
-        title: "File troppo grande",
+        title: t("profile.fileTooLarge"),
         description: "Il file non può superare i 2MB.",
         variant: "destructive",
       });
@@ -358,12 +360,12 @@ export default function SubResellers() {
       setLogoFile(null);
       setLogoPreview(null);
       toast({
-        title: "Logo caricato",
+        title: t("profile.logoUploaded"),
         description: "Il logo è stato aggiornato con successo.",
       });
     } catch (error: any) {
       toast({
-        title: "Errore",
+        title: t("common.error"),
         description: error.message || "Impossibile caricare il logo.",
         variant: "destructive",
       });
@@ -385,12 +387,12 @@ export default function SubResellers() {
       
       await queryClient.invalidateQueries({ queryKey: ["/api/reseller/sub-resellers"] });
       toast({
-        title: "Logo rimosso",
+        title: t("profile.logoRemoved"),
         description: "Il logo è stato rimosso con successo.",
       });
     } catch (error: any) {
       toast({
-        title: "Errore",
+        title: t("common.error"),
         description: error.message || "Impossibile rimuovere il logo.",
         variant: "destructive",
       });
@@ -422,7 +424,7 @@ export default function SubResellers() {
       updateMutation.mutate({ id: editingReseller.id, data: updateData });
     } else {
       if (!formData.password) {
-        toast({ title: "Errore", description: "La password è obbligatoria", variant: "destructive" });
+        toast({ title: t("common.error"), description: "La password è obbligatoria", variant: "destructive" });
         return;
       }
       createMutation.mutate(formData);
@@ -471,9 +473,7 @@ export default function SubResellers() {
               <Network className="h-6 w-6 text-white" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold tracking-tight text-white" data-testid="text-page-title">
-                Sub-Reseller
-              </h1>
+              <h1 className="text-2xl font-bold tracking-tight text-white" data-testid="text-page-title">{t("roles.subReseller")}</h1>
               <p className="text-sm text-white/80">
                 Gestisci i tuoi rivenditori affiliati
               </p>
@@ -513,7 +513,7 @@ export default function SubResellers() {
                 <Users className="h-6 w-6 text-emerald-600" />
               </div>
               <div className="flex-1">
-                <p className="text-sm font-medium text-muted-foreground">Clienti Totali</p>
+                <p className="text-sm font-medium text-muted-foreground">{t("dashboard.totalCustomers")}</p>
                 <div className="text-2xl font-bold" data-testid="text-total-customers">
                   {isLoading ? <Skeleton className="h-8 w-16" /> : totalCustomers}
                 </div>
@@ -532,7 +532,7 @@ export default function SubResellers() {
                 <Building className="h-6 w-6 text-amber-600" />
               </div>
               <div className="flex-1">
-                <p className="text-sm font-medium text-muted-foreground">Centri Riparazione</p>
+                <p className="text-sm font-medium text-muted-foreground">{t("sidebar.items.repairCentersShort")}</p>
                 <div className="text-2xl font-bold" data-testid="text-total-centers">
                   {isLoading ? <Skeleton className="h-8 w-16" /> : totalCenters}
                 </div>
@@ -584,7 +584,7 @@ export default function SubResellers() {
                 <div className="relative w-72">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input
-                    placeholder="Cerca per nome, email o username..."
+                    placeholder={t("admin.resellers.searchReseller")}
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     className="pl-9 bg-muted/30"
@@ -606,7 +606,7 @@ export default function SubResellers() {
                   <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-muted/50 mx-auto mb-4">
                     <Network className="h-8 w-8 text-muted-foreground" />
                   </div>
-                  <p className="text-lg font-semibold">Nessun sub-reseller trovato</p>
+                  <p className="text-lg font-semibold">{t("admin.resellers.noSubResellers")}</p>
                   <p className="text-sm text-muted-foreground mt-1">
                     {searchQuery
                       ? "Prova a modificare i criteri di ricerca"
@@ -624,15 +624,15 @@ export default function SubResellers() {
                   <Table>
                     <TableHeader>
                       <TableRow className="bg-muted/30 hover:bg-muted/30">
-                        <TableHead className="font-semibold">Nome</TableHead>
-                        <TableHead className="font-semibold">Email</TableHead>
-                        <TableHead className="font-semibold">Telefono</TableHead>
-                        <TableHead className="font-semibold">Categoria</TableHead>
-                        <TableHead className="text-center font-semibold">Clienti</TableHead>
+                        <TableHead className="font-semibold">{t("common.name")}</TableHead>
+                        <TableHead className="font-semibold">{t("common.email")}</TableHead>
+                        <TableHead className="font-semibold">{t("common.phone")}</TableHead>
+                        <TableHead className="font-semibold">{t("common.category")}</TableHead>
+                        <TableHead className="text-center font-semibold">{t("customers.title")}</TableHead>
                         <TableHead className="text-center font-semibold">Centri</TableHead>
-                        <TableHead className="font-semibold">Stato</TableHead>
-                        <TableHead className="font-semibold">Data Creazione</TableHead>
-                        <TableHead className="text-right font-semibold">Azioni</TableHead>
+                        <TableHead className="font-semibold">{t("common.status")}</TableHead>
+                        <TableHead className="font-semibold">{t("common.creationDate")}</TableHead>
+                        <TableHead className="text-right font-semibold">{t("common.actions")}</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -669,7 +669,7 @@ export default function SubResellers() {
                               variant={reseller.isActive ? "default" : "secondary"}
                               data-testid={`badge-status-${reseller.id}`}
                             >
-                              {reseller.isActive ? "Attivo" : "Inattivo"}
+                              {reseller.isActive ? t("common.active") : t("common.inactive")}
                             </Badge>
                           </TableCell>
                           <TableCell className="text-muted-foreground" data-testid={`text-date-${reseller.id}`}>
@@ -815,7 +815,7 @@ export default function SubResellers() {
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label htmlFor="phone">Telefono</Label>
+                      <Label htmlFor="phone">{t("common.phone")}</Label>
                       <Input 
                         id="phone"
                         value={formData.phone}
@@ -824,7 +824,7 @@ export default function SubResellers() {
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="category">Categoria</Label>
+                      <Label htmlFor="category">{t("common.category")}</Label>
                       <Select
                         value={formData.resellerCategory}
                         onValueChange={(value) => setFormData(prev => ({ ...prev, resellerCategory: value }))}
@@ -841,7 +841,7 @@ export default function SubResellers() {
                     </div>
                   </div>
                   <div className="flex items-center justify-between pt-2">
-                    <Label htmlFor="isActive">Attivo</Label>
+                    <Label htmlFor="isActive">{t("common.active")}</Label>
                     <Switch
                       id="isActive"
                       checked={formData.isActive}
@@ -868,7 +868,7 @@ export default function SubResellers() {
                   {editingReseller && (
                     <div className="space-y-3 pt-4 border-t">
                       <div>
-                        <Label className="text-base font-medium">Logo Aziendale</Label>
+                        <Label className="text-base font-medium">{t("profile.companyLogo")}</Label>
                         <p className="text-xs text-muted-foreground mt-1">
                           Carica il logo del sub-reseller (JPEG, PNG o WebP, max 2MB)
                         </p>
@@ -906,9 +906,7 @@ export default function SubResellers() {
                               onClick={() => document.getElementById('logo-upload-sub-reseller')?.click()}
                               data-testid="button-select-logo-subreseller"
                             >
-                              <Camera className="h-4 w-4 mr-2" />
-                              Seleziona
-                            </Button>
+                              <Camera className="h-4 w-4 mr-2" />{t("common.select")}</Button>
                             
                             {logoFile && (
                               <Button
@@ -935,9 +933,7 @@ export default function SubResellers() {
                                 onClick={() => handleDeleteLogo(editingReseller.id)}
                                 data-testid="button-delete-logo-subreseller"
                               >
-                                <Trash2 className="h-4 w-4 mr-2" />
-                                Rimuovi
-                              </Button>
+                                <Trash2 className="h-4 w-4 mr-2" />{t("profile.removeLogo")}</Button>
                             )}
                           </div>
                           
@@ -988,7 +984,7 @@ export default function SubResellers() {
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div className="space-y-2">
-                      <Label htmlFor="ragioneSociale">Ragione Sociale</Label>
+                      <Label htmlFor="ragioneSociale">{t("auth.companyName")}</Label>
                       <Input 
                         id="ragioneSociale"
                         value={formData.ragioneSociale}
@@ -997,7 +993,7 @@ export default function SubResellers() {
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="partitaIva">Partita IVA</Label>
+                      <Label htmlFor="partitaIva">{t("auth.vatNumber")}</Label>
                       <Input 
                         id="partitaIva"
                         value={formData.partitaIva}
@@ -1006,7 +1002,7 @@ export default function SubResellers() {
                       />
                     </div>
                     <div className="space-y-2 col-span-2">
-                      <Label htmlFor="codiceFiscale">Codice Fiscale</Label>
+                      <Label htmlFor="codiceFiscale">{t("common.taxCode")}</Label>
                       <Input 
                         id="codiceFiscale"
                         value={formData.codiceFiscale}
@@ -1015,7 +1011,7 @@ export default function SubResellers() {
                       />
                     </div>
                     <div className="space-y-2 col-span-2">
-                      <Label htmlFor="indirizzo">Indirizzo</Label>
+                      <Label htmlFor="indirizzo">{t("common.address")}</Label>
                       <Input 
                         id="indirizzo"
                         value={formData.indirizzo}
@@ -1024,7 +1020,7 @@ export default function SubResellers() {
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="citta">Città</Label>
+                      <Label htmlFor="citta">{t("common.city")}</Label>
                       <Input 
                         id="citta"
                         value={formData.citta}
@@ -1034,7 +1030,7 @@ export default function SubResellers() {
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                       <div className="space-y-2">
-                        <Label htmlFor="cap">CAP</Label>
+                        <Label htmlFor="cap">{t("common.zip")}</Label>
                         <Input 
                           id="cap"
                           value={formData.cap}
@@ -1055,7 +1051,7 @@ export default function SubResellers() {
                       </div>
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="codiceUnivoco">Codice SDI</Label>
+                      <Label htmlFor="codiceUnivoco">{t("common.sdi")}</Label>
                       <Input 
                         id="codiceUnivoco"
                         maxLength={7}
@@ -1066,7 +1062,7 @@ export default function SubResellers() {
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="pec">PEC</Label>
+                      <Label htmlFor="pec">{t("common.pec")}</Label>
                       <Input 
                         id="pec"
                         type="email"
@@ -1094,12 +1090,10 @@ export default function SubResellers() {
               {isLastStep ? (
                 <Button onClick={handleSubmit} disabled={isPending} data-testid="button-submit">
                   {isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-                  {editingReseller ? "Salva Modifiche" : "Crea Sub-Reseller"}
+                  {editingReseller ? t("profile.saveChanges") : "Crea Sub-Reseller"}
                 </Button>
               ) : (
-                <Button onClick={nextStep} disabled={!canProceedToNextStep()} data-testid="button-next">
-                  Avanti
-                  <ChevronRight className="h-4 w-4 ml-1" />
+                <Button onClick={nextStep} disabled={!canProceedToNextStep()} data-testid="button-next">{t("common.next")}<ChevronRight className="h-4 w-4 ml-1" />
                 </Button>
               )}
             </div>
@@ -1110,14 +1104,14 @@ export default function SubResellers() {
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent data-testid="dialog-delete-confirm">
           <AlertDialogHeader>
-            <AlertDialogTitle>Conferma Eliminazione</AlertDialogTitle>
+            <AlertDialogTitle>{t("admin.teams.deleteConfirm")}</AlertDialogTitle>
             <AlertDialogDescription>
               Sei sicuro di voler eliminare il sub-reseller "{deletingReseller?.fullName}"?
               Questa azione non può essere annullata.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel data-testid="button-cancel-delete">Annulla</AlertDialogCancel>
+            <AlertDialogCancel data-testid="button-cancel-delete">{t("common.cancel")}</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDelete}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
@@ -1205,27 +1199,27 @@ const SubResellerDetailDialog = ({ open, onOpenChange, reseller }: SubResellerDe
                 variant={data.isActive ? "default" : "secondary"}
                 className={data.isActive ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/20" : ""}
               >
-                {data.isActive ? "Attivo" : "Inattivo"}
+                {data.isActive ? t("common.active") : t("common.inactive")}
               </Badge>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-1">
-                <Label className="text-xs text-muted-foreground">Username</Label>
+                <Label className="text-xs text-muted-foreground">{t("admin.common.usernameLabel")}</Label>
                 <p className="text-sm font-medium">{data.username}</p>
               </div>
               <div className="space-y-1">
-                <Label className="text-xs text-muted-foreground">Telefono</Label>
+                <Label className="text-xs text-muted-foreground">{t("common.phone")}</Label>
                 <p className="text-sm font-medium">{data.phone || "-"}</p>
               </div>
               <div className="space-y-1">
-                <Label className="text-xs text-muted-foreground">Categoria</Label>
+                <Label className="text-xs text-muted-foreground">{t("common.category")}</Label>
                 <Badge variant="outline">
                   {categoryLabels[data.resellerCategory || "standard"] || data.resellerCategory}
                 </Badge>
               </div>
               <div className="space-y-1">
-                <Label className="text-xs text-muted-foreground">Data Creazione</Label>
+                <Label className="text-xs text-muted-foreground">{t("common.creationDate")}</Label>
                 <p className="text-sm font-medium">
                   {format(new Date(data.createdAt), "dd MMMM yyyy", { locale: it })}
                 </p>
@@ -1236,20 +1230,18 @@ const SubResellerDetailDialog = ({ open, onOpenChange, reseller }: SubResellerDe
               <h4 className="font-semibold mb-3 flex items-center gap-2 text-sm">
                 <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-violet-500/10">
                   <FileText className="h-4 w-4 text-violet-600" />
-                </div>
-                Dati Fiscali
-              </h4>
+                </div>{t("profile.fiscalInfo")}</h4>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-1">
-                  <Label className="text-xs text-muted-foreground">Ragione Sociale</Label>
+                  <Label className="text-xs text-muted-foreground">{t("auth.companyName")}</Label>
                   <p className="text-sm font-medium">{data.ragioneSociale || "-"}</p>
                 </div>
                 <div className="space-y-1">
-                  <Label className="text-xs text-muted-foreground">Partita IVA</Label>
+                  <Label className="text-xs text-muted-foreground">{t("auth.vatNumber")}</Label>
                   <p className="text-sm font-medium">{data.partitaIva || "-"}</p>
                 </div>
                 <div className="space-y-1">
-                  <Label className="text-xs text-muted-foreground">Codice Fiscale</Label>
+                  <Label className="text-xs text-muted-foreground">{t("common.taxCode")}</Label>
                   <p className="text-sm font-medium">{data.codiceFiscale || "-"}</p>
                 </div>
                 <div className="space-y-1">
@@ -1257,7 +1249,7 @@ const SubResellerDetailDialog = ({ open, onOpenChange, reseller }: SubResellerDe
                   <p className="text-sm font-medium">{data.codiceUnivoco || "-"}</p>
                 </div>
                 <div className="col-span-2 space-y-1">
-                  <Label className="text-xs text-muted-foreground">PEC</Label>
+                  <Label className="text-xs text-muted-foreground">{t("common.pec")}</Label>
                   <p className="text-sm font-medium">{data.pec || "-"}</p>
                 </div>
               </div>
@@ -1267,24 +1259,22 @@ const SubResellerDetailDialog = ({ open, onOpenChange, reseller }: SubResellerDe
               <h4 className="font-semibold mb-3 flex items-center gap-2 text-sm">
                 <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-amber-500/10">
                   <Building className="h-4 w-4 text-amber-600" />
-                </div>
-                Indirizzo
-              </h4>
+                </div>{t("common.address")}</h4>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="col-span-2 space-y-1">
                   <Label className="text-xs text-muted-foreground">Via/Indirizzo</Label>
                   <p className="text-sm font-medium">{data.indirizzo || "-"}</p>
                 </div>
                 <div className="space-y-1">
-                  <Label className="text-xs text-muted-foreground">Città</Label>
+                  <Label className="text-xs text-muted-foreground">{t("common.city")}</Label>
                   <p className="text-sm font-medium">{data.citta || "-"}</p>
                 </div>
                 <div className="space-y-1">
-                  <Label className="text-xs text-muted-foreground">CAP</Label>
+                  <Label className="text-xs text-muted-foreground">{t("common.zip")}</Label>
                   <p className="text-sm font-medium">{data.cap || "-"}</p>
                 </div>
                 <div className="space-y-1">
-                  <Label className="text-xs text-muted-foreground">Provincia</Label>
+                  <Label className="text-xs text-muted-foreground">{t("common.province")}</Label>
                   <p className="text-sm font-medium">{data.provincia || "-"}</p>
                 </div>
               </div>
@@ -1294,9 +1284,7 @@ const SubResellerDetailDialog = ({ open, onOpenChange, reseller }: SubResellerDe
               <h4 className="font-semibold mb-3 flex items-center gap-2 text-sm">
                 <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-500/10">
                   <TrendingUp className="h-4 w-4 text-emerald-600" />
-                </div>
-                Statistiche
-              </h4>
+                </div>{t("dashboard.statistics")}</h4>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="p-4 rounded-lg bg-blue-500/5 border border-blue-500/10 flex items-center gap-3">
                   <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-500/10">
@@ -1304,7 +1292,7 @@ const SubResellerDetailDialog = ({ open, onOpenChange, reseller }: SubResellerDe
                   </div>
                   <div>
                     <p className="text-2xl font-bold">{data.customersCount || 0}</p>
-                    <p className="text-xs text-muted-foreground">Clienti</p>
+                    <p className="text-xs text-muted-foreground">{t("customers.title")}</p>
                   </div>
                 </div>
                 <div className="p-4 rounded-lg bg-amber-500/5 border border-amber-500/10 flex items-center gap-3">
@@ -1313,7 +1301,7 @@ const SubResellerDetailDialog = ({ open, onOpenChange, reseller }: SubResellerDe
                   </div>
                   <div>
                     <p className="text-2xl font-bold">{data.repairCentersCount || 0}</p>
-                    <p className="text-xs text-muted-foreground">Centri Riparazione</p>
+                    <p className="text-xs text-muted-foreground">{t("sidebar.items.repairCentersShort")}</p>
                   </div>
                 </div>
               </div>
@@ -1341,7 +1329,7 @@ const SubResellerDetailDialog = ({ open, onOpenChange, reseller }: SubResellerDe
                   <div className="p-3 rounded-lg bg-violet-500/5 border border-violet-500/10">
                     <div className="flex flex-wrap items-center gap-2 mb-1">
                       <Package className="h-4 w-4 text-violet-600" />
-                      <span className="text-xs text-muted-foreground">Prodotti</span>
+                      <span className="text-xs text-muted-foreground">{t("products.title")}</span>
                     </div>
                     <p className="text-lg font-bold">{ecommerce.productsPublished}/{ecommerce.productsAssigned}</p>
                     <p className="text-xs text-muted-foreground">pubblicati/assegnati</p>
@@ -1349,7 +1337,7 @@ const SubResellerDetailDialog = ({ open, onOpenChange, reseller }: SubResellerDe
                   <div className="p-3 rounded-lg bg-blue-500/5 border border-blue-500/10">
                     <div className="flex flex-wrap items-center gap-2 mb-1">
                       <ShoppingCart className="h-4 w-4 text-blue-600" />
-                      <span className="text-xs text-muted-foreground">Ordini</span>
+                      <span className="text-xs text-muted-foreground">{t("common.orders")}</span>
                     </div>
                     <p className="text-lg font-bold">{ecommerce.totalOrders}</p>
                     {ecommerce.pendingOrders > 0 && (
@@ -1366,7 +1354,7 @@ const SubResellerDetailDialog = ({ open, onOpenChange, reseller }: SubResellerDe
                   <div className="p-3 rounded-lg bg-muted/50 border">
                     <div className="flex flex-wrap items-center gap-2 mb-1">
                       <TrendingUp className="h-4 w-4 text-muted-foreground" />
-                      <span className="text-xs text-muted-foreground">Ultimo Ordine</span>
+                      <span className="text-xs text-muted-foreground">{t("customers.lastOrder")}</span>
                     </div>
                     <p className="text-sm font-medium">
                       {ecommerce.lastOrderDate 
@@ -1384,15 +1372,11 @@ const SubResellerDetailDialog = ({ open, onOpenChange, reseller }: SubResellerDe
             </div>
           </div>
         ) : (
-          <div className="text-center py-8 text-muted-foreground">
-            Nessun dato disponibile
-          </div>
+          <div className="text-center py-8 text-muted-foreground">{t("common.noData")}</div>
         )}
 
         <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)} data-testid="button-close-detail">
-            Chiudi
-          </Button>
+          <Button variant="outline" onClick={() => onOpenChange(false)} data-testid="button-close-detail">{t("common.close")}</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

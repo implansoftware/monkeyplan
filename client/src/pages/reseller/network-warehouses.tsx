@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import type { WarehouseStock, WarehouseMovement } from "@shared/schema";
+import { useTranslation } from "react-i18next";
 
 type NetworkWarehouse = {
   id: string;
@@ -40,12 +41,13 @@ type EnrichedMovement = WarehouseMovement & {
 };
 
 const OWNER_TYPE_LABELS: Record<string, { label: string; color: string }> = {
-  reseller: { label: "Rivenditore", color: "bg-blue-500/10 text-blue-500" },
-  sub_reseller: { label: "Sub-Rivenditore", color: "bg-cyan-500/10 text-cyan-500" },
+  reseller: { label: t("roles.reseller"), color: "bg-blue-500/10 text-blue-500" },
+  sub_reseller: { label: t("roles.subReseller"), color: "bg-cyan-500/10 text-cyan-500" },
   repair_center: { label: "Centro Riparazioni", color: "bg-orange-500/10 text-orange-500" },
 };
 
 export default function NetworkWarehousesPage() {
+  const { t } = useTranslation();
   const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedWarehouse, setSelectedWarehouse] = useState<NetworkWarehouse | null>(null);
@@ -101,7 +103,7 @@ export default function NetworkWarehousesPage() {
       setTransferItem(null);
     },
     onError: (error: any) => {
-      toast({ title: "Errore trasferimento", description: error.message, variant: "destructive" });
+      toast({ title: t("warehouse.transferError"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -157,7 +159,7 @@ export default function NetworkWarehousesPage() {
               <Warehouse className="h-6 w-6 text-white" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold tracking-tight text-white" data-testid="text-network-warehouses-title">Magazzini Rete</h1>
+              <h1 className="text-2xl font-bold tracking-tight text-white" data-testid="text-network-warehouses-title">{t("sidebar.items.networkWarehouses")}</h1>
               <p className="text-sm text-white/80">Gestisci i magazzini della tua rete: sub-rivenditori e centri di riparazione</p>
             </div>
           </div>
@@ -174,7 +176,7 @@ export default function NetworkWarehousesPage() {
             <div className="relative w-64">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Cerca magazzino..."
+                placeholder={t("warehouse.searchWarehouse")}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="pl-9"
@@ -185,7 +187,7 @@ export default function NetworkWarehousesPage() {
         </CardHeader>
         <CardContent>
           {isLoading ? (
-            <div className="text-center py-8 text-muted-foreground">Caricamento...</div>
+            <div className="text-center py-8 text-muted-foreground">{t("common.loading")}</div>
           ) : filteredWarehouses.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">
               <Warehouse className="h-12 w-12 mx-auto mb-4 opacity-50" />
@@ -195,11 +197,11 @@ export default function NetworkWarehousesPage() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Nome Magazzino</TableHead>
-                  <TableHead>Tipo</TableHead>
-                  <TableHead>Proprietario</TableHead>
-                  <TableHead>Stato</TableHead>
-                  <TableHead className="text-right">Azioni</TableHead>
+                  <TableHead>{t("warehouse.warehouseName")}</TableHead>
+                  <TableHead>{t("common.type")}</TableHead>
+                  <TableHead>{t("warehouse.owner")}</TableHead>
+                  <TableHead>{t("common.status")}</TableHead>
+                  <TableHead className="text-right">{t("common.actions")}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -216,7 +218,7 @@ export default function NetworkWarehousesPage() {
                       </TableCell>
                       <TableCell>
                         <Badge variant={warehouse.isActive ? "default" : "secondary"}>
-                          {warehouse.isActive ? "Attivo" : "Inattivo"}
+                          {warehouse.isActive ? t("common.active") : t("common.inactive")}
                         </Badge>
                       </TableCell>
                       <TableCell className="text-right">
@@ -254,9 +256,7 @@ export default function NetworkWarehousesPage() {
                 Stock
               </TabsTrigger>
               <TabsTrigger value="movements" className="flex flex-wrap items-center gap-1">
-                <ArrowLeftRight className="h-4 w-4" />
-                Movimenti
-              </TabsTrigger>
+                <ArrowLeftRight className="h-4 w-4" />{t("warehouse.movements")}</TabsTrigger>
             </TabsList>
             
             <TabsContent value="stock" className="mt-4">
@@ -264,7 +264,7 @@ export default function NetworkWarehousesPage() {
                 <div className="relative flex-1">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input
-                    placeholder="Cerca prodotto..."
+                    placeholder={t("products.searchProduct")}
                     value={stockSearchTerm}
                     onChange={(e) => setStockSearchTerm(e.target.value)}
                     className="pl-9"
@@ -286,11 +286,11 @@ export default function NetworkWarehousesPage() {
                     <TableHeader>
                       <TableRow>
                         <TableHead className="w-[60px]">Img</TableHead>
-                        <TableHead>Prodotto</TableHead>
-                        <TableHead>SKU</TableHead>
-                        <TableHead>Categoria</TableHead>
-                        <TableHead className="text-right">Quantità</TableHead>
-                        <TableHead className="text-right">Azioni</TableHead>
+                        <TableHead>{t("common.product")}</TableHead>
+                        <TableHead>{t("products.sku")}</TableHead>
+                        <TableHead>{t("common.category")}</TableHead>
+                        <TableHead className="text-right">{t("common.quantity")}</TableHead>
+                        <TableHead className="text-right">{t("common.actions")}</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -347,18 +347,18 @@ export default function NetworkWarehousesPage() {
                 ) : warehouseMovements.length === 0 ? (
                   <div className="text-center py-8 text-muted-foreground">
                     <ArrowLeftRight className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                    <p>Nessun movimento registrato</p>
+                    <p>{t("warehouse.noMovements")}</p>
                   </div>
                 ) : (
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead>Data</TableHead>
-                        <TableHead>Prodotto</TableHead>
-                        <TableHead>Tipo</TableHead>
-                        <TableHead>Da/Verso</TableHead>
-                        <TableHead className="text-right">Quantità</TableHead>
-                        <TableHead>Note</TableHead>
+                        <TableHead>{t("common.date")}</TableHead>
+                        <TableHead>{t("common.product")}</TableHead>
+                        <TableHead>{t("common.type")}</TableHead>
+                        <TableHead>{t("warehouse.fromTo")}</TableHead>
+                        <TableHead className="text-right">{t("common.quantity")}</TableHead>
+                        <TableHead>{t("common.notes")}</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -427,7 +427,7 @@ export default function NetworkWarehousesPage() {
       <Dialog open={transferDialogOpen} onOpenChange={setTransferDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Trasferisci Prodotto</DialogTitle>
+            <DialogTitle>{t("warehouse.transferProduct")}</DialogTitle>
           </DialogHeader>
           
           <div className="space-y-4">
@@ -439,10 +439,10 @@ export default function NetworkWarehousesPage() {
             </div>
             
             <div className="space-y-2">
-              <label className="text-sm font-medium">Magazzino destinazione</label>
+              <label className="text-sm font-medium">{t("warehouse.destWarehouse")}</label>
               <Select value={transferDestWarehouseId} onValueChange={setTransferDestWarehouseId}>
                 <SelectTrigger data-testid="select-dest-warehouse">
-                  <SelectValue placeholder="Seleziona magazzino..." />
+                  <SelectValue placeholder={t("warehouse.selectWarehouse")} />
                 </SelectTrigger>
                 <SelectContent>
                   {warehouses
@@ -457,7 +457,7 @@ export default function NetworkWarehousesPage() {
             </div>
             
             <div className="space-y-2">
-              <label className="text-sm font-medium">Quantità</label>
+              <label className="text-sm font-medium">{t("common.quantity")}</label>
               <Input
                 type="number"
                 min={1}
@@ -470,15 +470,13 @@ export default function NetworkWarehousesPage() {
           </div>
           
           <DialogFooter>
-            <Button variant="outline" onClick={() => setTransferDialogOpen(false)}>
-              Annulla
-            </Button>
+            <Button variant="outline" onClick={() => setTransferDialogOpen(false)}>{t("common.cancel")}</Button>
             <Button
               onClick={handleTransfer}
               disabled={!transferDestWarehouseId || transferQuantity <= 0 || transferMutation.isPending}
               data-testid="button-confirm-transfer"
             >
-              {transferMutation.isPending ? "Trasferimento..." : "Conferma Trasferimento"}
+              {transferMutation.isPending ? t("warehouse.transferring") : t("warehouse.confirmTransfer")}
             </Button>
           </DialogFooter>
         </DialogContent>

@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { RepairOrder } from "@shared/schema";
@@ -20,6 +21,7 @@ interface RepairOrderWithDetails extends RepairOrder {
 }
 
 export default function CustomerRepairs() {
+  const { t } = useTranslation();
   const [, setLocation] = useLocation();
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
@@ -48,33 +50,33 @@ export default function CustomerRepairs() {
 
   const getStatusDescription = (status: string) => {
     const descriptions: Record<string, string> = {
-      pending: "La riparazione è in attesa di essere presa in carico",
-      ingressato: "Il dispositivo è stato ricevuto presso il centro riparazioni",
+      pending: t("repairs.waitingForProcessing"),
+      ingressato: t("repairs.deviceReceived"),
       in_diagnosi: "I tecnici stanno analizzando il problema",
       preventivo_emesso: "È stato preparato un preventivo per la riparazione",
-      preventivo_accettato: "Hai accettato il preventivo, la riparazione procederà",
-      preventivo_rifiutato: "Il preventivo è stato rifiutato",
+      preventivo_accettato: t("repairs.quoteAccepted"),
+      preventivo_rifiutato: t("repairs.quoteRejectedDesc"),
       attesa_ricambi: "In attesa dei componenti necessari",
       waiting_parts: "In attesa dei componenti necessari",
-      in_riparazione: "Il dispositivo è in fase di riparazione",
-      in_progress: "Il dispositivo è in lavorazione",
+      in_riparazione: t("repairs.deviceInRepair"),
+      in_progress: t("repairs.deviceInProgress"),
       in_test: "Verifica del corretto funzionamento",
-      pronto_ritiro: "La riparazione è completata, puoi ritirare il dispositivo",
-      completed: "La riparazione è stata completata",
-      consegnato: "Il dispositivo è stato consegnato",
-      delivered: "Il dispositivo è stato consegnato",
-      cancelled: "La riparazione è stata annullata",
-      annullato: "La riparazione è stata annullata",
+      pronto_ritiro: t("repairs.readyForPickupDesc"),
+      completed: t("repairs.repairCompleted"),
+      consegnato: t("repairs.deviceDelivered"),
+      delivered: t("repairs.deviceDelivered"),
+      cancelled: t("repairs.repairCancelled"),
+      annullato: t("repairs.repairCancelled"),
     };
     return descriptions[status] || "";
   };
 
   const getProgressSteps = (status: string) => {
     const steps = [
-      { key: "ingressato", label: "Ricevuto" },
-      { key: "in_diagnosi", label: "Diagnosi" },
-      { key: "preventivo", label: "Preventivo" },
-      { key: "in_riparazione", label: "Riparazione" },
+      { key: "ingressato", label: t("repairs.status.received") },
+      { key: "in_diagnosi", label: t("repairs.diagnosis") },
+      { key: "preventivo", label: t("repairs.quote") },
+      { key: "in_riparazione", label: t("common.repair") },
       { key: "pronto_ritiro", label: "Pronto" },
     ];
 
@@ -129,7 +131,7 @@ export default function CustomerRepairs() {
               <Wrench className="h-6 w-6 text-white" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold text-white">Le Mie Riparazioni</h1>
+              <h1 className="text-2xl font-bold text-white">{t("customerPages.leMieRiparazioni")}</h1>
               <p className="text-white/80 text-sm">
                 Monitora lo stato delle tue riparazioni in tempo reale
               </p>
@@ -144,7 +146,7 @@ export default function CustomerRepairs() {
             <div className="flex-1 relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Cerca per numero ordine, dispositivo..."
+                placeholder={t("customerPages.cercaPerNumeroOrdineDispositivo")}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-9"
@@ -153,10 +155,10 @@ export default function CustomerRepairs() {
             </div>
             <Select value={statusFilter} onValueChange={setStatusFilter}>
               <SelectTrigger className="w-full sm:w-[200px]" data-testid="select-status-filter">
-                <SelectValue placeholder="Tutti gli stati" />
+                <SelectValue placeholder={t("common.allStatuses")} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">Tutti gli stati</SelectItem>
+                <SelectItem value="all">{t("common.allStatuses")}</SelectItem>
                 {Object.entries(REPAIR_STATUS_CONFIG).map(([key, config]) => (
                   <SelectItem key={key} value={key}>
                     {config.label}
@@ -178,7 +180,7 @@ export default function CustomerRepairs() {
         <Card>
           <CardContent className="text-center py-16 text-muted-foreground">
             <Wrench className="h-16 w-16 mx-auto mb-4 opacity-20" />
-            <h3 className="font-medium text-lg mb-2">Nessuna riparazione</h3>
+            <h3 className="font-medium text-lg mb-2">{t("customers.nessunaRiparazione")}</h3>
             <p className="text-sm">
               Non hai ancora richiesto riparazioni. Contatta un rivenditore per iniziare.
             </p>
@@ -188,7 +190,7 @@ export default function CustomerRepairs() {
         <Card>
           <CardContent className="text-center py-16 text-muted-foreground">
             <Search className="h-16 w-16 mx-auto mb-4 opacity-20" />
-            <h3 className="font-medium text-lg mb-2">Nessun risultato</h3>
+            <h3 className="font-medium text-lg mb-2">{t("common.noResults")}</h3>
             <p className="text-sm">
               Nessuna riparazione corrisponde ai criteri di ricerca.
             </p>

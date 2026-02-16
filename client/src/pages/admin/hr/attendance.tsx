@@ -24,6 +24,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { useTranslation } from "react-i18next";
 
 interface ClockEvent {
   id: string;
@@ -63,6 +64,7 @@ const typeIcons: Record<string, JSX.Element> = {
 };
 
 export default function AdminAttendancePage() {
+  const { t } = useTranslation();
   const [entityType, setEntityType] = useState<AdminEntityType>("all");
   const [selectedEntityId, setSelectedEntityId] = useState("");
   const [editDialogOpen, setEditDialogOpen] = useState(false);
@@ -152,10 +154,10 @@ export default function AdminAttendancePage() {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/hr/clock-events", queryString] });
       setEditDialogOpen(false);
       setEditingEvent(null);
-      toast({ title: "Timbratura aggiornata con successo" });
+      toast({ title: t("hr.clockUpdated") });
     },
     onError: () => {
-      toast({ title: "Errore durante l'aggiornamento", variant: "destructive" });
+      toast({ title: t("hr.updateError"), variant: "destructive" });
     }
   });
 
@@ -178,10 +180,10 @@ export default function AdminAttendancePage() {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/hr/clock-events"] });
       setCreateDialogOpen(false);
       setNewEvent({ eventType: "entry", userId: "", eventTime: format(new Date(), "HH:mm"), notes: "" });
-      toast({ title: "Timbratura creata", description: "La timbratura è stata salvata con successo." });
+      toast({ title: t("hr.clockCreated"), description: t("hr.clockCreatedDesc") });
     },
     onError: (error: any) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     }
   });
 
@@ -297,12 +299,12 @@ export default function AdminAttendancePage() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Dipendente</TableHead>
-                  <TableHead>Tipo</TableHead>
-                  <TableHead>Data/Ora</TableHead>
-                  <TableHead>Posizione</TableHead>
-                  <TableHead>Stato</TableHead>
-                  <TableHead>Azioni</TableHead>
+                  <TableHead>{t("hr.employee")}</TableHead>
+                  <TableHead>{t("common.type")}</TableHead>
+                  <TableHead>{t("common.dateTime")}</TableHead>
+                  <TableHead>{t("warehouse.location")}</TableHead>
+                  <TableHead>{t("common.status")}</TableHead>
+                  <TableHead>{t("common.actions")}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -378,31 +380,31 @@ export default function AdminAttendancePage() {
       <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Modifica Timbratura</DialogTitle>
+            <DialogTitle>{t("hr.editClock")}</DialogTitle>
             <DialogDescription>
               Modifica i dettagli della timbratura
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label>Tipo Evento</Label>
+              <Label>{t("hr.eventType")}</Label>
               <Select
                 value={editForm.eventType}
                 onValueChange={(value) => setEditForm({ ...editForm, eventType: value })}
               >
                 <SelectTrigger data-testid="select-edit-event-type">
-                  <SelectValue placeholder="Seleziona tipo" />
+                  <SelectValue placeholder={t("utility.selectType")} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="entry">Entrata</SelectItem>
-                  <SelectItem value="exit">Uscita</SelectItem>
-                  <SelectItem value="break_start">Inizio Pausa</SelectItem>
-                  <SelectItem value="break_end">Fine Pausa</SelectItem>
+                  <SelectItem value="entry">{t("hr.entry")}</SelectItem>
+                  <SelectItem value="exit">{t("hr.exit")}</SelectItem>
+                  <SelectItem value="break_start">{t("hr.breakStart")}</SelectItem>
+                  <SelectItem value="break_end">{t("hr.breakEnd")}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
             <div className="space-y-2">
-              <Label>Orario</Label>
+              <Label>{t("hr.time")}</Label>
               <Input
                 type="time"
                 value={editForm.eventTime}
@@ -411,11 +413,11 @@ export default function AdminAttendancePage() {
               />
             </div>
             <div className="space-y-2">
-              <Label>Note</Label>
+              <Label>{t("common.notes")}</Label>
               <Textarea
                 value={editForm.notes}
                 onChange={(e) => setEditForm({ ...editForm, notes: e.target.value })}
-                placeholder="Note aggiuntive..."
+                placeholder={t("utility.additionalNotes")}
                 data-testid="textarea-edit-notes"
               />
             </div>
@@ -425,7 +427,7 @@ export default function AdminAttendancePage() {
               Annulla
             </Button>
             <Button onClick={handleEdit} disabled={editMutation.isPending} data-testid="button-save-edit">
-              {editMutation.isPending ? "Salvataggio..." : "Salva"}
+              {editMutation.isPending ? t("settings.savingRate") : "Salva"}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -434,17 +436,17 @@ export default function AdminAttendancePage() {
       <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Nuova Timbratura</DialogTitle>
+            <DialogTitle>{t("hr.newClock")}</DialogTitle>
             <DialogDescription>
               Crea una timbratura per un dipendente dell'entità selezionata.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label>Dipendente</Label>
+              <Label>{t("hr.employee")}</Label>
               <Select value={newEvent.userId} onValueChange={(v) => setNewEvent({ ...newEvent, userId: v })}>
                 <SelectTrigger data-testid="select-create-user">
-                  <SelectValue placeholder="Seleziona dipendente..." />
+                  <SelectValue placeholder={t("hr.selectEmployee")} />
                 </SelectTrigger>
                 <SelectContent>
                   {entityUsers.map((u) => (
@@ -456,21 +458,21 @@ export default function AdminAttendancePage() {
               </Select>
             </div>
             <div className="space-y-2">
-              <Label>Tipo Evento</Label>
+              <Label>{t("hr.eventType")}</Label>
               <Select value={newEvent.eventType} onValueChange={(v) => setNewEvent({ ...newEvent, eventType: v })}>
                 <SelectTrigger data-testid="select-create-event-type">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="entry">Entrata</SelectItem>
-                  <SelectItem value="exit">Uscita</SelectItem>
-                  <SelectItem value="break_start">Inizio Pausa</SelectItem>
-                  <SelectItem value="break_end">Fine Pausa</SelectItem>
+                  <SelectItem value="entry">{t("hr.entry")}</SelectItem>
+                  <SelectItem value="exit">{t("hr.exit")}</SelectItem>
+                  <SelectItem value="break_start">{t("hr.breakStart")}</SelectItem>
+                  <SelectItem value="break_end">{t("hr.breakEnd")}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
             <div className="space-y-2">
-              <Label>Orario</Label>
+              <Label>{t("hr.time")}</Label>
               <Input
                 type="time"
                 value={newEvent.eventTime}
@@ -483,7 +485,7 @@ export default function AdminAttendancePage() {
               <Textarea
                 value={newEvent.notes}
                 onChange={(e) => setNewEvent({ ...newEvent, notes: e.target.value })}
-                placeholder="Note aggiuntive..."
+                placeholder={t("utility.additionalNotes")}
                 data-testid="textarea-create-notes"
               />
             </div>
@@ -497,7 +499,7 @@ export default function AdminAttendancePage() {
               disabled={!newEvent.userId || createMutation.isPending}
               data-testid="button-confirm-create"
             >
-              {createMutation.isPending ? "Salvataggio..." : "Crea Timbratura"}
+              {createMutation.isPending ? t("settings.savingRate") : "Crea Timbratura"}
             </Button>
           </DialogFooter>
         </DialogContent>

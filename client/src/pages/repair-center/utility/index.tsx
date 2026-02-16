@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -25,23 +26,24 @@ interface UtilitySummary {
   supplierCount: number;
 }
 
-const categoryLabels: Record<string, string> = {
-  fisso: "Fisso",
-  mobile: "Mobile",
-  centralino: "Centralino",
-  luce: "Luce",
-  gas: "Gas",
-  altro: "Altro",
-};
 
-const formatCurrency = (cents: number) => {
-  return new Intl.NumberFormat("it-IT", {
-    style: "currency",
-    currency: "EUR",
-  }).format(cents / 100);
-};
 
 export default function RepairCenterUtility() {
+  const { t } = useTranslation();
+  const categoryLabels: Record<string, string> = {
+    fisso: t("utility.serviceTypes.fisso"),
+    mobile: t("utility.serviceTypes.mobile"),
+    centralino: t("utility.serviceTypes.centralino"),
+    luce: t("utility.serviceTypes.luce"),
+    gas: t("utility.serviceTypes.gas"),
+    altro: t("utility.serviceTypes.altro"),
+  };
+  const formatCurrency = (cents: number) => {
+    return new Intl.NumberFormat("it-IT", {
+      style: "currency",
+      currency: "EUR",
+    }).format(cents / 100);
+  };
   const { data: summary, isLoading } = useQuery<UtilitySummary>({
     queryKey: ["/api/utility/reports/summary"],
   });
@@ -51,7 +53,7 @@ export default function RepairCenterUtility() {
       <div className="p-4 sm:p-6 space-y-4 sm:space-y-6">
         <div className="flex flex-wrap items-center gap-3">
           <Zap className="h-8 w-8 text-primary" />
-          <h1 className="text-xl sm:text-2xl font-bold">Utility</h1>
+          <h1 className="text-xl sm:text-2xl font-bold">{t("sidebar.sections.utility")}</h1>
         </div>
         <div className="grid gap-4 md:grid-cols-3">
           {[...Array(3)].map((_, i) => (
@@ -82,7 +84,7 @@ export default function RepairCenterUtility() {
               <Zap className="h-5 w-5 sm:h-7 sm:w-7 text-white" />
             </div>
             <div>
-              <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-white tracking-tight">Utility</h1>
+              <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-white tracking-tight">{t("sidebar.sections.utility")}</h1>
               <p className="text-emerald-100">Gestione servizi telefonici ed energetici</p>
             </div>
           </div>
@@ -155,7 +157,7 @@ export default function RepairCenterUtility() {
                 </div>
               ))}
               {Object.keys(summary?.byCategory || {}).length === 0 && (
-                <p className="text-sm text-muted-foreground">Nessun dato disponibile</p>
+                <p className="text-sm text-muted-foreground">{t("common.noData")}</p>
               )}
             </div>
           </CardContent>

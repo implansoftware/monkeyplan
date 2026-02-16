@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import {
@@ -63,8 +64,10 @@ export function SearchableServiceCombobox({
   deviceTypeId,
   brandId,
   modelId,
-  placeholder = "Cerca servizio...",
+  placeholder,
 }: SearchableServiceComboboxProps) {
+  const { t } = useTranslation();
+  const resolvedPlaceholder = placeholder || t("services.searchService");
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebounce(search, 250);
@@ -112,13 +115,13 @@ export function SearchableServiceCombobox({
           data-testid="combobox-service-search"
         >
           <Wrench className="h-4 w-4 mr-2 flex-shrink-0" />
-          <span>Catalogo</span>
+          <span>{t("catalog.title")}</span>
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-[320px] p-0" align="start">
         <Command shouldFilter={false}>
           <CommandInput
-            placeholder={placeholder}
+            placeholder={resolvedPlaceholder}
             value={search}
             onValueChange={setSearch}
             data-testid="input-service-search"
@@ -135,11 +138,11 @@ export function SearchableServiceCombobox({
               )}
               {!isLoading && services.length === 0 && (
                 <CommandEmpty>
-                  {search ? "Nessun servizio trovato" : "Digita per cercare..."}
+                  {search ? t("services.noServiceFound") : t("form.typeToSearch")}
                 </CommandEmpty>
               )}
               {!isLoading && services.length > 0 && (
-                <CommandGroup heading="Servizi">
+                <CommandGroup heading={t("services.title")}>
                   {services.map((service) => (
                     <CommandItem
                       key={service.id}
@@ -162,8 +165,8 @@ export function SearchableServiceCombobox({
                             <span className="ml-1 text-primary">
                               (
                               {service.priceSource === "reseller"
-                                ? "Reseller"
-                                : "Centro"}
+                                ? t("roles.reseller")
+                                : t("roles.repairCenter")}
                               )
                             </span>
                           )}

@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
@@ -47,16 +48,16 @@ type ProductDetails = {
 };
 
 const CONDITION_LABELS: Record<string, string> = {
-  nuovo: "Nuovo",
+  nuovo: t("common.new"),
   ricondizionato: "Ricondizionato",
   usato: "Usato",
   difettoso: "Difettoso",
 };
 
 const NETWORK_LABELS: Record<string, string> = {
-  unlocked: "Sbloccato",
-  locked: "Bloccato operatore",
-  icloud_locked: "Bloccato iCloud",
+  unlocked: t("products.unlocked"),
+  locked: t("products.carrierLocked"),
+  icloud_locked: t("products.icloudLocked"),
 };
 
 const OWNER_TYPE_LABELS: Record<string, string> = {
@@ -76,6 +77,7 @@ interface ProductDetailDialogProps {
 }
 
 export function ProductDetailDialog({ open, onOpenChange, productId, hideStock = false, hidePrices = false, overridePrice }: ProductDetailDialogProps) {
+  const { t } = useTranslation();
   const { data, isLoading } = useQuery<ProductDetails>({
     queryKey: ["/api/products", productId, "details"],
     queryFn: async () => {
@@ -141,7 +143,7 @@ export function ProductDetailDialog({ open, onOpenChange, productId, hideStock =
                       </Badge>
                     )}
                     <Badge variant={data.product.isActive ? "default" : "destructive"}>
-                      {data.product.isActive ? "Attivo" : "Inattivo"}
+                      {data.product.isActive ? t("common.active") : "Inattivo"}
                     </Badge>
                   </div>
                   <div className="flex flex-wrap items-center gap-4 mt-3">
@@ -159,7 +161,7 @@ export function ProductDetailDialog({ open, onOpenChange, productId, hideStock =
 
               {data.product.description && (
                 <div>
-                  <h3 className="text-sm font-medium text-muted-foreground mb-1">Descrizione</h3>
+                  <h3 className="text-sm font-medium text-muted-foreground mb-1">{t("common.description")}</h3>
                   <p className="text-sm">{data.product.description}</p>
                 </div>
               )}
@@ -173,7 +175,7 @@ export function ProductDetailDialog({ open, onOpenChange, productId, hideStock =
                     <div>
                       <h3 className="font-medium flex items-center gap-2 mb-3">
                         <Smartphone className="h-4 w-4" />
-                        Specifiche {DEVICE_CATEGORY_LABELS[data.product.category || ''] || 'Dispositivo'}
+                        Specifiche {DEVICE_CATEGORY_LABELS[data.product.category || ''] || t('products.device')}
                       </h3>
                       {specs ? (
                         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 text-sm">
@@ -330,11 +332,11 @@ export function ProductDetailDialog({ open, onOpenChange, productId, hideStock =
                       <Table>
                         <TableHeader>
                           <TableRow>
-                            <TableHead>Magazzino</TableHead>
-                            <TableHead>Tipo</TableHead>
-                            <TableHead className="text-right">Quantità</TableHead>
+                            <TableHead>{t("warehouse.warehouse")}</TableHead>
+                            <TableHead>{t("common.type")}</TableHead>
+                            <TableHead className="text-right">{t("common.quantity")}</TableHead>
                             <TableHead className="text-right">Min. Stock</TableHead>
-                            <TableHead>Posizione</TableHead>
+                            <TableHead>{t("warehouse.position")}</TableHead>
                           </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -379,13 +381,13 @@ export function ProductDetailDialog({ open, onOpenChange, productId, hideStock =
                   <div>
                     <h3 className="font-medium flex items-center gap-2 mb-3">
                       <Link2 className="h-4 w-4" />
-                      Compatibilità Dispositivi
+                      {t("products.deviceCompatibility")}
                     </h3>
                     <div className="flex flex-wrap gap-2">
                       {data.compatibilities.map((c) => {
                         const label = c.deviceModelName 
                           ? `${c.deviceBrandName || ''} ${c.deviceModelName}`
-                          : `${c.deviceBrandName || 'Marca'} (tutti i modelli)`;
+                          : t("products.brandAllModels", { brand: c.deviceBrandName || t("common.brand") });
                         return (
                           <Badge key={c.id} variant="secondary">
                             {label}
@@ -408,8 +410,8 @@ export function ProductDetailDialog({ open, onOpenChange, productId, hideStock =
                     <Table>
                       <TableHeader>
                         <TableRow>
-                          <TableHead>Rivenditore</TableHead>
-                          <TableHead className="text-right">Prezzo Vendita</TableHead>
+                          <TableHead>{t("staff.reseller")}</TableHead>
+                          <TableHead className="text-right">{t("products.salePrice")}</TableHead>
                           <TableHead className="text-right">Prezzo Costo</TableHead>
                         </TableRow>
                       </TableHeader>

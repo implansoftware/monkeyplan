@@ -32,6 +32,7 @@ import {
 import { format, addDays, startOfWeek, isSameDay, startOfToday } from "date-fns";
 import { it } from "date-fns/locale";
 import type { RepairCenter } from "@shared/schema";
+import { useTranslation } from "react-i18next";
 
 type Availability = {
   id: string;
@@ -66,6 +67,7 @@ const defaultAvailability: Omit<Availability, "id" | "repairCenterId">[] = [
 ];
 
 export default function ResellerRepairCenterSchedules() {
+  const { t } = useTranslation();
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -141,7 +143,7 @@ export default function ResellerRepairCenterSchedules() {
       toast({ title: "Orari salvati", description: "Gli orari di apertura sono stati aggiornati." });
     },
     onError: (error: Error) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -158,7 +160,7 @@ export default function ResellerRepairCenterSchedules() {
       toast({ title: "Chiusura aggiunta", description: "La data di chiusura è stata registrata." });
     },
     onError: (error: Error) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -172,7 +174,7 @@ export default function ResellerRepairCenterSchedules() {
       toast({ title: "Chiusura rimossa" });
     },
     onError: (error: Error) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -284,9 +286,7 @@ export default function ResellerRepairCenterSchedules() {
                             onClick={() => setEditingAvailability(false)}
                             data-testid="button-cancel-availability"
                           >
-                            <XCircle className="h-4 w-4 mr-1" />
-                            Annulla
-                          </Button>
+                            <XCircle className="h-4 w-4 mr-1" />{t("common.cancel")}</Button>
                           <Button
                             size="sm"
                             onClick={() => saveAvailabilityMutation.mutate(localAvailability)}
@@ -308,9 +308,7 @@ export default function ResellerRepairCenterSchedules() {
                           onClick={() => setEditingAvailability(true)}
                           data-testid="button-edit-availability"
                         >
-                          <Settings className="h-4 w-4 mr-1" />
-                          Modifica
-                        </Button>
+                          <Settings className="h-4 w-4 mr-1" />{t("common.edit")}</Button>
                       )}
                     </div>
 
@@ -337,7 +335,7 @@ export default function ResellerRepairCenterSchedules() {
                                   data-testid={`switch-day-${day.weekday}`}
                                 />
                                 <span className="text-sm">
-                                  {day.isClosed ? "Chiuso" : "Aperto"}
+                                  {day.isClosed ? t("tickets.status.closed") : t("tickets.status.open")}
                                 </span>
                               </div>
 
@@ -401,7 +399,7 @@ export default function ResellerRepairCenterSchedules() {
                           ) : (
                             <>
                               {day.isClosed ? (
-                                <Badge variant="secondary">Chiuso</Badge>
+                                <Badge variant="secondary">{t("tickets.status.closed")}</Badge>
                               ) : (
                                 <div className="flex flex-wrap items-center gap-4 text-sm">
                                   <span>{day.startTime} - {day.endTime}</span>
@@ -491,7 +489,7 @@ export default function ResellerRepairCenterSchedules() {
           </DialogHeader>
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="blackout-date">Data</Label>
+              <Label htmlFor="blackout-date">{t("common.date")}</Label>
               <Input
                 id="blackout-date"
                 type="date"
@@ -502,7 +500,7 @@ export default function ResellerRepairCenterSchedules() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="blackout-reason">Motivo (opzionale)</Label>
+              <Label htmlFor="blackout-reason">{t("common.reasonOptional")}</Label>
               <Input
                 id="blackout-reason"
                 placeholder="Es: Ferie, Festività, Manutenzione"
@@ -515,9 +513,7 @@ export default function ResellerRepairCenterSchedules() {
               <Button
                 variant="outline"
                 onClick={() => setBlackoutDialogOpen(false)}
-              >
-                Annulla
-              </Button>
+              >{t("common.cancel")}</Button>
               <Button
                 onClick={() => createBlackoutMutation.mutate(newBlackout)}
                 disabled={!newBlackout.date || createBlackoutMutation.isPending}

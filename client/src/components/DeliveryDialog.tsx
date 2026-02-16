@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useState, useRef } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -47,7 +48,7 @@ interface DeliveryDialogProps {
 }
 
 const deliverySchema = z.object({
-  deliveredTo: z.string().min(1, "Il nome del destinatario è obbligatorio"),
+  deliveredTo: z.string().min(1, t("delivery.recipientRequired")),
   deliveryMethod: z.enum(["in_store", "courier", "pickup"]),
   idDocumentType: z.string().optional(),
   idDocumentNumber: z.string().optional(),
@@ -68,6 +69,7 @@ export function DeliveryDialog({
   onSuccess,
   currentUser,
 }: DeliveryDialogProps) {
+  const { t } = useTranslation();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [documentPhotoPreview, setDocumentPhotoPreview] = useState<string | null>(null);
@@ -112,7 +114,7 @@ export function DeliveryDialog({
 
     if (!file.type.startsWith('image/')) {
       toast({
-        title: "Errore",
+        title: t("common.error"),
         description: "Per favore seleziona un file immagine",
         variant: "destructive",
       });
@@ -121,7 +123,7 @@ export function DeliveryDialog({
 
     if (file.size > 10 * 1024 * 1024) {
       toast({
-        title: "Errore",
+        title: t("common.error"),
         description: "L'immagine deve essere inferiore a 10MB",
         variant: "destructive",
       });
@@ -141,20 +143,20 @@ export function DeliveryDialog({
       });
 
       if (!res.ok) {
-        throw new Error('Errore durante il caricamento');
+        throw new Error(t("attachment.uploadError"));
       }
 
       const data = await res.json();
       form.setValue('idDocumentPhoto', data.url);
       setDocumentPhotoPreview(data.url);
       toast({
-        title: "Foto caricata",
-        description: "La foto del documento è stata caricata",
+        title: t("attachment.photoUploaded"),
+        description: t("delivery.documentPhotoUploaded"),
       });
     } catch (error) {
       toast({
-        title: "Errore",
-        description: "Impossibile caricare la foto",
+        title: t("common.error"),
+        description: t("attachment.cannotUploadPhoto"),
         variant: "destructive",
       });
     } finally {
@@ -194,8 +196,8 @@ export function DeliveryDialog({
         ? ` - Fattura ${data.invoice.invoiceNumber} generata` 
         : "";
       toast({
-        title: "Consegna completata",
-        description: `Il dispositivo è stato consegnato con successo${invoiceMsg}`,
+        title: t("delivery.deliveryCompleted"),
+        description: t("delivery.deliveredSuccessfully") + invoiceMsg,
       });
       queryClient.invalidateQueries({ queryKey: ["/api/repair-orders", repairOrderId, "delivery"] });
       queryClient.invalidateQueries({ queryKey: ["/api/repair-orders"] });
@@ -206,7 +208,7 @@ export function DeliveryDialog({
     },
     onError: (error: Error) => {
       toast({
-        title: "Errore",
+        title: t("common.error"),
         description: error.message,
         variant: "destructive",
       });
@@ -235,7 +237,7 @@ export function DeliveryDialog({
       case "in_store":
         return "Ritiro in Negozio";
       case "courier":
-        return "Spedizione Corriere";
+        return t("shipping.courierShipping");
       case "pickup":
         return "Ritiro Cliente";
       default:
@@ -268,7 +270,7 @@ export function DeliveryDialog({
               <div className="flex flex-wrap items-center gap-3">
                 <Badge variant="default" className="gap-1 bg-emerald-600">
                   <CheckCircle className="h-3 w-3" />
-                  Consegnato
+                  {t("repair.delivered")}
                 </Badge>
               </div>
 
@@ -285,14 +287,14 @@ export function DeliveryDialog({
                   </div>
                 </div>
                 <div>
-                  <div className="text-muted-foreground">Data</div>
+                  <div className="text-muted-foreground">{t("common.date")}</div>
                   <div className="font-medium">
                     {format(new Date(existingDelivery.deliveredAt), "dd MMM yyyy HH:mm", { locale: it })}
                   </div>
                 </div>
                 {existingDelivery.idDocumentType && (
                   <div>
-                    <div className="text-muted-foreground">Documento</div>
+                    <div className="text-muted-foreground">{t("common.document")}</div>
                     <div className="font-medium">
                       {existingDelivery.idDocumentType}: {existingDelivery.idDocumentNumber}
                     </div>
@@ -302,7 +304,7 @@ export function DeliveryDialog({
 
               {existingDelivery.notes && (
                 <div>
-                  <div className="text-muted-foreground text-sm">Note</div>
+                  <div className="text-muted-foreground text-sm">{t("common.notes")}</div>
                   <div className="text-sm">{existingDelivery.notes}</div>
                 </div>
               )}
@@ -318,7 +320,7 @@ export function DeliveryDialog({
                   >
                     <img 
                       src={existingDelivery.idDocumentPhoto} 
-                      alt="Foto documento" 
+                      alt={t("delivery.documentPhoto")} 
                       className="max-h-32 rounded border hover:opacity-80 transition-opacity"
                     />
                   </a>
@@ -338,7 +340,7 @@ export function DeliveryDialog({
               Scarica Documento
             </Button>
             <Button variant="outline" onClick={() => onOpenChange(false)} data-testid="button-close">
-              Chiudi
+              {t("common.close")}
             </Button>
           </div>
         </DialogContent>
@@ -356,7 +358,7 @@ export function DeliveryDialog({
               <PackageCheck className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
             </div>
             <div>
-              <span className="text-lg font-semibold">Completa Consegna</span>
+              <span className="text-lg font-semibold">{t("delivery.completeDelivery")}</span>
               <DialogDescription className="mt-0.5">
                 Registra la consegna del dispositivo al cliente
               </DialogDescription>
@@ -372,11 +374,11 @@ export function DeliveryDialog({
               name="deliveredTo"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Nome Destinatario *</FormLabel>
+                  <FormLabel>{t("delivery.recipientName")} *</FormLabel>
                   <FormControl>
                     <Input
                       {...field}
-                      placeholder="Nome completo della persona che ritira"
+                      placeholder={t("delivery.fullNamePickup")}
                       data-testid="input-delivered-to"
                     />
                   </FormControl>
@@ -394,7 +396,7 @@ export function DeliveryDialog({
                   <Select onValueChange={field.onChange} defaultValue={field.value}>
                     <FormControl>
                       <SelectTrigger data-testid="select-delivery-method">
-                        <SelectValue placeholder="Seleziona metodo" />
+                        <SelectValue placeholder={t("shipping.selectMethod")} />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
@@ -429,18 +431,18 @@ export function DeliveryDialog({
                 name="idDocumentType"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Tipo Documento</FormLabel>
+                    <FormLabel>{t("delivery.documentType")}</FormLabel>
                     <Select onValueChange={field.onChange} value={field.value}>
                       <FormControl>
                         <SelectTrigger data-testid="select-id-type">
-                          <SelectValue placeholder="Seleziona" />
+                          <SelectValue placeholder={t("common.select")} />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="carta_identita">Carta d'Identità</SelectItem>
+                        <SelectItem value="carta_identita">{t("delivery.idCard")}</SelectItem>
                         <SelectItem value="patente">Patente</SelectItem>
                         <SelectItem value="passaporto">Passaporto</SelectItem>
-                        <SelectItem value="altro">Altro</SelectItem>
+                        <SelectItem value="altro">{t("common.other")}</SelectItem>
                       </SelectContent>
                     </Select>
                     <FormMessage />
@@ -504,7 +506,7 @@ export function DeliveryDialog({
                   data-testid="button-upload-photo"
                 >
                   {isUploadingPhoto ? (
-                    <>Caricamento...</>
+                    <>{t("common.loading")}</>
                   ) : (
                     <>
                       <Camera className="h-4 w-4" />
@@ -520,7 +522,7 @@ export function DeliveryDialog({
 
             <div className="grid grid-cols-1 md:grid-cols-1 sm:grid-cols-2 gap-4">
               <SignaturePad
-                title="Firma Cliente"
+                title={t("delivery.customerSignature")}
                 signerName={customerSignature.signerName || form.watch("deliveredTo")}
                 onSignatureChange={(sig, name) => {
                   setCustomerSignature({
@@ -530,7 +532,7 @@ export function DeliveryDialog({
                 }}
               />
               <SignaturePad
-                title="Firma Tecnico"
+                title={t("delivery.technicianSignature")}
                 signerName={technicianSignature.signerName}
                 onSignatureChange={(sig, name) => {
                   setTechnicianSignature({
@@ -548,14 +550,14 @@ export function DeliveryDialog({
                 onClick={() => onOpenChange(false)}
                 data-testid="button-cancel"
               >
-                Annulla
+                {t("common.cancel")}
               </Button>
               <Button
                 type="submit"
                 disabled={deliverMutation.isPending}
                 data-testid="button-complete-delivery"
               >
-                {deliverMutation.isPending ? "Elaborazione..." : "Completa Consegna"}
+                {deliverMutation.isPending ? t("common.processing") : t("delivery.completeDelivery")}
               </Button>
             </div>
           </form>

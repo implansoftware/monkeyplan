@@ -19,9 +19,11 @@ import { format } from "date-fns";
 import { it } from "date-fns/locale";
 import type { DateRange } from "react-day-picker";
 import { usePageTitle } from "@/hooks/use-page-title";
+import { useTranslation } from "react-i18next";
 
 export default function AdminUsers() {
-  usePageTitle("Utenti");
+  const { t } = useTranslation();
+  usePageTitle(t("sidebar.items.users"));
   const [searchQuery, setSearchQuery] = useState("");
   const [roleFilter, setRoleFilter] = useState<string>("all");
   const [resellerCategoryFilter, setResellerCategoryFilter] = useState<string>("all");
@@ -55,7 +57,7 @@ export default function AdminUsers() {
       setIsExporting(true);
       
       const csv = [
-        ['Nome Completo', 'Email', 'Username', 'Ruolo', 'Categoria/Rivenditore', 'Stato'].join(','),
+        [t("common.fullName"), t("common.email"), 'Username', t("common.role"), t("users.categoryReseller"), t("common.status")].join(','),
         ...filteredUsers.map(u => [
           u.fullName,
           u.email,
@@ -66,7 +68,7 @@ export default function AdminUsers() {
             : u.role === 'repair_center' && u.resellerId 
               ? (resellers.find(r => r.id === u.resellerId)?.fullName || '-')
               : '-',
-          u.isActive ? 'Attivo' : 'Inattivo'
+          u.isActive ? t("common.active") : t("common.inactive")
         ].join(','))
       ].join('\n');
       
@@ -81,13 +83,13 @@ export default function AdminUsers() {
       document.body.removeChild(a);
       
       toast({
-        title: "Export completato",
-        description: "Il file CSV è stato scaricato con successo",
+        title: t("repairs.exportCompleted"),
+        description: t("customers.csvExportSuccess"),
       });
     } catch (error) {
       toast({
-        title: "Errore",
-        description: "Impossibile esportare i dati",
+        title: t("common.error"),
+        description: t("repairs.exportError"),
         variant: "destructive",
       });
     } finally {
@@ -103,10 +105,10 @@ export default function AdminUsers() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/users"] });
       setDialogOpen(false);
-      toast({ title: "Utente creato con successo" });
+      toast({ title: t("users.userCreated") });
     },
     onError: (error: Error) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -119,10 +121,10 @@ export default function AdminUsers() {
       queryClient.invalidateQueries({ queryKey: ["/api/users"] });
       setDialogOpen(false);
       setEditingUser(null);
-      toast({ title: "Utente aggiornato con successo" });
+      toast({ title: t("users.userUpdated") });
     },
     onError: (error: Error) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -132,7 +134,7 @@ export default function AdminUsers() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/users"] });
-      toast({ title: "Utente eliminato" });
+      toast({ title: t("users.userDeleted") });
     },
   });
 
@@ -196,10 +198,10 @@ export default function AdminUsers() {
 
   const getRoleLabel = (role: string) => {
     switch (role) {
-      case "admin": return "Admin";
-      case "reseller": return "Rivenditore";
-      case "repair_center": return "Centro Riparazione";
-      case "customer": return "Cliente";
+      case "admin": return t("roles.admin");
+      case "reseller": return t("roles.reseller");
+      case "repair_center": return t("roles.repairCenter");
+      case "customer": return t("roles.customer");
       default: return role;
     }
   };
@@ -217,9 +219,9 @@ export default function AdminUsers() {
               <Users className="h-5 w-5" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold tracking-tight">Gestione Utenti</h1>
+              <h1 className="text-2xl font-bold tracking-tight">{t("users.management")}</h1>
               <p className="text-sm text-muted-foreground">
-                Gestisci tutti gli utenti della piattaforma
+                {t("users.manageAllUsers")}
               </p>
             </div>
           </div>
@@ -231,7 +233,7 @@ export default function AdminUsers() {
             data-testid="button-export-users"
           >
             <Download className="h-4 w-4 mr-2" />
-            {isExporting ? "Esportazione..." : "Esporta CSV"}
+            {isExporting ? t("repairs.exporting") : t("reports.exportCSV")}
           </Button>
           <Dialog open={dialogOpen} onOpenChange={(open) => { 
             setDialogOpen(open); 
@@ -250,36 +252,36 @@ export default function AdminUsers() {
             <DialogTrigger asChild>
               <Button data-testid="button-new-user">
                 <Plus className="h-4 w-4 mr-2" />
-                Nuovo Utente
+                {t("users.newUser")}
               </Button>
             </DialogTrigger>
             <DialogContent>
             <DialogHeader>
-              <DialogTitle>{editingUser ? 'Modifica Utente' : 'Crea Nuovo Utente'}</DialogTitle>
+              <DialogTitle>{editingUser ? t("users.editUser") : t("users.createNewUser")}</DialogTitle>
             </DialogHeader>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="fullName">Nome Completo</Label>
+                <Label htmlFor="fullName">{t("common.fullName")}</Label>
                 <Input id="fullName" name="fullName" defaultValue={editingUser?.fullName || ''} required data-testid="input-fullname" />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
+                <Label htmlFor="email">{t("common.email")}</Label>
                 <Input id="email" name="email" type="email" defaultValue={editingUser?.email || ''} required data-testid="input-email" />
               </div>
               {!editingUser && (
                 <>
                   <div className="space-y-2">
-                    <Label htmlFor="username">Username</Label>
+                    <Label htmlFor="username">{t("auth.username")}</Label>
                     <Input id="username" name="username" required data-testid="input-username" />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="password">Password</Label>
+                    <Label htmlFor="password">{t("auth.password")}</Label>
                     <Input id="password" name="password" type="password" required data-testid="input-password" />
                   </div>
                 </>
               )}
               <div className="space-y-2">
-                <Label htmlFor="role">Ruolo</Label>
+                <Label htmlFor="role">{t("common.role")}</Label>
                 <Select 
                   name="role" 
                   value={selectedRole}
@@ -289,15 +291,15 @@ export default function AdminUsers() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="reseller">Rivenditore</SelectItem>
-                    <SelectItem value="repair_center">Centro Riparazione</SelectItem>
-                    <SelectItem value="admin">Amministratore</SelectItem>
+                    <SelectItem value="reseller">{t("roles.reseller")}</SelectItem>
+                    <SelectItem value="repair_center">{t("roles.repairCenter")}</SelectItem>
+                    <SelectItem value="admin">{t("roles.administrator")}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
               {selectedRole === 'reseller' && (
                 <div className="space-y-2">
-                  <Label htmlFor="resellerCategory">Categoria Rivenditore</Label>
+                  <Label htmlFor="resellerCategory">{t("users.resellerCategory")}</Label>
                   <Select name="resellerCategory" defaultValue={editingUser?.resellerCategory || "standard"}>
                     <SelectTrigger id="resellerCategory" data-testid="select-reseller-category">
                       <SelectValue />
@@ -305,20 +307,20 @@ export default function AdminUsers() {
                     <SelectContent>
                       <SelectItem value="standard">Standard</SelectItem>
                       <SelectItem value="franchising">Franchising</SelectItem>
-                      <SelectItem value="gdo">GDO (Grande Distribuzione)</SelectItem>
+                      <SelectItem value="gdo">{t("users.gdoLabel")}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
               )}
               {selectedRole === 'repair_center' && (
                 <div className="space-y-2">
-                  <Label htmlFor="resellerId">Rivenditore di Appartenenza</Label>
+                  <Label htmlFor="resellerId">{t("users.belongingReseller")}</Label>
                   <Select 
                     value={selectedResellerId} 
                     onValueChange={setSelectedResellerId}
                   >
                     <SelectTrigger id="resellerId" data-testid="select-reseller-id">
-                      <SelectValue placeholder="Seleziona un rivenditore" />
+                      <SelectValue placeholder={t("customers.selectReseller")} />
                     </SelectTrigger>
                     <SelectContent>
                       {resellers.map((reseller) => (
@@ -332,14 +334,14 @@ export default function AdminUsers() {
               )}
               {editingUser && (
                 <div className="space-y-2">
-                  <Label htmlFor="isActive">Stato</Label>
+                  <Label htmlFor="isActive">{t("common.status")}</Label>
                   <Select name="isActive" defaultValue={editingUser.isActive ? "true" : "false"}>
                     <SelectTrigger id="isActive" data-testid="select-active">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="true">Attivo</SelectItem>
-                      <SelectItem value="false">Inattivo</SelectItem>
+                      <SelectItem value="true">{t("common.active")}</SelectItem>
+                      <SelectItem value="false">{t("common.inactive")}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -351,8 +353,8 @@ export default function AdminUsers() {
                 data-testid="button-submit-user"
               >
                 {editingUser 
-                  ? (updateUserMutation.isPending ? "Aggiornamento..." : "Aggiorna Utente")
-                  : (createUserMutation.isPending ? "Creazione..." : "Crea Utente")
+                  ? (updateUserMutation.isPending ? t("common.updating") : t("users.updateUser"))
+                  : (createUserMutation.isPending ? t("common.creating") : t("users.createUser"))
                 }
               </Button>
             </form>
@@ -368,7 +370,7 @@ export default function AdminUsers() {
             <div className="flex-1 relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Cerca per nome, email o username..."
+                placeholder={t("customers.searchPlaceholder")}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-9"
@@ -380,18 +382,18 @@ export default function AdminUsers() {
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">Tutti i ruoli</SelectItem>
-                <SelectItem value="admin">Admin</SelectItem>
-                <SelectItem value="reseller">Rivenditori</SelectItem>
-                <SelectItem value="repair_center">Centri Riparazione</SelectItem>
+                <SelectItem value="all">{t("users.allRoles")}</SelectItem>
+                <SelectItem value="admin">{t("roles.admin")}</SelectItem>
+                <SelectItem value="reseller">{t("sidebar.items.resellers")}</SelectItem>
+                <SelectItem value="repair_center">{t("sidebar.items.repairCenters")}</SelectItem>
               </SelectContent>
             </Select>
             <Select value={resellerCategoryFilter} onValueChange={setResellerCategoryFilter}>
               <SelectTrigger className="w-full sm:w-48" data-testid="select-filter-reseller-category">
-                <SelectValue placeholder="Categoria Rivenditore" />
+                <SelectValue placeholder={t("users.resellerCategory")} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">Tutte le categorie</SelectItem>
+                <SelectItem value="all">{t("users.allCategories")}</SelectItem>
                 <SelectItem value="standard">Standard</SelectItem>
                 <SelectItem value="franchising">Franchising</SelectItem>
                 <SelectItem value="gdo">GDO</SelectItem>
@@ -408,7 +410,7 @@ export default function AdminUsers() {
                       format(dateRange.from, "dd MMM yyyy", { locale: it })
                     )
                   ) : (
-                    "Seleziona periodo"
+                    t("repairs.selectPeriod")
                   )}
                 </Button>
               </PopoverTrigger>
@@ -429,7 +431,7 @@ export default function AdminUsers() {
               data-testid="button-export-users"
             >
               <Download className="h-4 w-4 mr-2" />
-              {isExporting ? "Esportazione..." : "Esporta CSV"}
+              {isExporting ? t("repairs.exporting") : t("reports.exportCSV")}
             </Button>
           </div>
         </CardHeader>
@@ -443,19 +445,19 @@ export default function AdminUsers() {
           ) : filteredUsers.length === 0 ? (
             <div className="text-center py-12 text-muted-foreground">
               <Users className="h-12 w-12 mx-auto mb-4 opacity-20" />
-              <p>Nessun utente trovato</p>
+              <p>{t("users.noUsersFound")}</p>
             </div>
           ) : (
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Nome</TableHead>
-                  <TableHead>Email</TableHead>
-                  <TableHead>Username</TableHead>
-                  <TableHead>Ruolo</TableHead>
-                  <TableHead>Categoria/Rivenditore</TableHead>
-                  <TableHead>Stato</TableHead>
-                  <TableHead className="text-right">Azioni</TableHead>
+                  <TableHead>{t("common.name")}</TableHead>
+                  <TableHead>{t("common.email")}</TableHead>
+                  <TableHead>{t("auth.username")}</TableHead>
+                  <TableHead>{t("common.role")}</TableHead>
+                  <TableHead>{t("users.categoryReseller")}</TableHead>
+                  <TableHead>{t("common.status")}</TableHead>
+                  <TableHead className="text-right">{t("common.actions")}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -476,7 +478,7 @@ export default function AdminUsers() {
                         </Badge>
                       ) : user.role === 'repair_center' && user.resellerId ? (
                         <span className="text-sm">
-                          {resellers.find(r => r.id === user.resellerId)?.fullName || 'Rivenditore non trovato'}
+                          {resellers.find(r => r.id === user.resellerId)?.fullName || t("users.resellerNotFound")}
                         </span>
                       ) : (
                         <span className="text-muted-foreground">-</span>
@@ -484,7 +486,7 @@ export default function AdminUsers() {
                     </TableCell>
                     <TableCell>
                       <Badge variant={user.isActive ? "default" : "secondary"}>
-                        {user.isActive ? "Attivo" : "Inattivo"}
+                        {user.isActive ? t("common.active") : t("common.inactive")}
                       </Badge>
                     </TableCell>
                     <TableCell className="text-right">

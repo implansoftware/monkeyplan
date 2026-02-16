@@ -44,6 +44,7 @@ import {
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import type { UtilityCategory } from "@shared/schema";
+import { useTranslation } from "react-i18next";
 
 const ICON_OPTIONS: { value: string; label: string; icon: LucideIcon; tags: string[] }[] = [
   { value: "Phone", label: "Telefono", icon: Phone, tags: ["telefono", "fisso", "chiamata"] },
@@ -165,13 +166,13 @@ function IconPicker({ value, onChange }: { value: string; onChange: (value: stri
       <PopoverContent className="w-[300px] p-0" align="start">
         <Command shouldFilter={false}>
           <CommandInput 
-            placeholder="Cerca icona..." 
+            placeholder={t("common.search")} 
             value={search}
             onValueChange={setSearch}
             data-testid="input-search-icon"
           />
           <CommandList>
-            <CommandEmpty>Nessuna icona trovata.</CommandEmpty>
+            <CommandEmpty>{t("utility.noIconFound")}</CommandEmpty>
             <CommandGroup>
               <ScrollArea className="h-[250px]">
                 <div className="grid grid-cols-3 sm:grid-cols-4 gap-1 p-2">
@@ -211,6 +212,7 @@ function IconPicker({ value, onChange }: { value: string; onChange: (value: stri
 }
 
 export default function AdminUtilityCategories() {
+  const { t } = useTranslation();
   const { toast } = useToast();
   
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -238,10 +240,10 @@ export default function AdminUtilityCategories() {
       queryClient.invalidateQueries({ queryKey: ["/api/utility/categories"] });
       setDialogOpen(false);
       resetForm();
-      toast({ title: "Categoria creata", description: "La categoria è stata creata con successo" });
+      toast({ title: t("utility.categoryCreated"), description: t("utility.categoryCreated") });
     },
     onError: (error: any) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -254,10 +256,10 @@ export default function AdminUtilityCategories() {
       setDialogOpen(false);
       setEditingCategory(null);
       resetForm();
-      toast({ title: "Categoria aggiornata" });
+      toast({ title: t("utility.categoryUpdated") });
     },
     onError: (error: any) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -269,10 +271,10 @@ export default function AdminUtilityCategories() {
       queryClient.invalidateQueries({ queryKey: ["/api/utility/categories"] });
       setDeleteDialogOpen(false);
       setCategoryToDelete(null);
-      toast({ title: "Categoria eliminata" });
+      toast({ title: t("utility.categoryDeleted") });
     },
     onError: (error: any) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -284,7 +286,7 @@ export default function AdminUtilityCategories() {
       queryClient.invalidateQueries({ queryKey: ["/api/utility/categories"] });
     },
     onError: (error: any) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -322,7 +324,7 @@ export default function AdminUtilityCategories() {
 
   const handleSubmit = () => {
     if (!form.name.trim() || !form.slug.trim()) {
-      toast({ title: "Errore", description: "Nome e slug sono obbligatori", variant: "destructive" });
+      toast({ title: t("common.error"), description: "Nome e slug sono obbligatori", variant: "destructive" });
       return;
     }
     
@@ -389,7 +391,7 @@ export default function AdminUtilityCategories() {
           {sortedCategories.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">
               <FolderOpen className="h-12 w-12 mx-auto mb-4 opacity-50" />
-              <p>Nessuna categoria definita</p>
+              <p>{t("utility.noCategories")}</p>
               <p className="text-sm">Crea la prima categoria per iniziare</p>
             </div>
           ) : (
@@ -397,13 +399,13 @@ export default function AdminUtilityCategories() {
               <TableHeader>
                 <TableRow>
                   <TableHead className="w-12">Ordine</TableHead>
-                  <TableHead>Icona</TableHead>
-                  <TableHead>Nome</TableHead>
+                  <TableHead>{t("utility.icon")}</TableHead>
+                  <TableHead>{t("common.name")}</TableHead>
                   <TableHead>Slug</TableHead>
-                  <TableHead>Descrizione</TableHead>
-                  <TableHead>Colore</TableHead>
-                  <TableHead>Attiva</TableHead>
-                  <TableHead className="text-right">Azioni</TableHead>
+                  <TableHead>{t("common.description")}</TableHead>
+                  <TableHead>{t("products.color")}</TableHead>
+                  <TableHead>{t("common.active")}</TableHead>
+                  <TableHead className="text-right">{t("common.actions")}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -487,7 +489,7 @@ export default function AdminUtilityCategories() {
           <div className="space-y-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label>Nome *</Label>
+                <Label>{t("common.name")} *</Label>
                 <Input
                   value={form.name}
                   onChange={(e) => setForm({ ...form, name: e.target.value })}
@@ -508,11 +510,11 @@ export default function AdminUtilityCategories() {
             </div>
             
             <div className="space-y-2">
-              <Label>Descrizione</Label>
+              <Label>{t("common.description")}</Label>
               <Textarea
                 value={form.description}
                 onChange={(e) => setForm({ ...form, description: e.target.value })}
-                placeholder="Descrizione opzionale della categoria"
+                placeholder={t("utility.categoryDescription")}
                 rows={2}
                 data-testid="input-description"
               />
@@ -520,7 +522,7 @@ export default function AdminUtilityCategories() {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label>Icona</Label>
+                <Label>{t("utility.icon")}</Label>
                 <IconPicker 
                   value={form.icon} 
                   onChange={(icon) => setForm({ ...form, icon })} 
@@ -528,7 +530,7 @@ export default function AdminUtilityCategories() {
               </div>
               
               <div className="space-y-2">
-                <Label>Colore</Label>
+                <Label>{t("products.color")}</Label>
                 <div className="flex flex-wrap gap-2">
                   {COLOR_OPTIONS.map((option) => (
                     <button
@@ -548,7 +550,7 @@ export default function AdminUtilityCategories() {
             </div>
 
             <div className="space-y-2">
-              <Label>Ordine di visualizzazione</Label>
+              <Label>{t("settings.displayOrder")}</Label>
               <Input
                 type="number"
                 value={form.sortOrder}
@@ -579,7 +581,7 @@ export default function AdminUtilityCategories() {
       <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Conferma Eliminazione</DialogTitle>
+            <DialogTitle>{t("common.confirmDeleteTitle")}</DialogTitle>
             <DialogDescription>
               Sei sicuro di voler eliminare la categoria "{categoryToDelete?.name}"?
               Questa azione non può essere annullata.

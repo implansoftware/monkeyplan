@@ -20,6 +20,7 @@ import { useToast } from "@/hooks/use-toast";
 import type { AccessorySpecs, Product, DeviceModel, DeviceBrand, User, ProductPrice, Warehouse as WarehouseType } from "@shared/schema";
 import { ProductDetailDialog } from "@/components/product-detail-dialog";
 import { AccessoryWizard } from "@/components/AccessoryWizard";
+import { useTranslation } from "react-i18next";
 
 type DeviceCompatibilityEntry = {
   deviceBrandId: string;
@@ -95,6 +96,7 @@ const MATERIAL_OPTIONS = [
 ];
 
 export default function AdminAccessoryCatalog() {
+  const { t } = useTranslation();
   const [searchQuery, setSearchQuery] = useState("");
   const [typeFilter, setTypeFilter] = useState<string>("all");
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -225,11 +227,11 @@ export default function AdminAccessoryCatalog() {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/product-prices"] });
       queryClient.invalidateQueries({ queryKey: ["/api/accessories"] });
       refetchAssignments();
-      toast({ title: "Assegnato", description: "L'accessorio è stato assegnato al rivenditore." });
+      toast({ title: t("common.savedSuccessfully"), description: t("products.accessoryAssigned") });
       setSelectedResellerId("");
     },
     onError: (error: any) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -242,10 +244,10 @@ export default function AdminAccessoryCatalog() {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/product-prices"] });
       queryClient.invalidateQueries({ queryKey: ["/api/accessories"] });
       refetchAssignments();
-      toast({ title: "Rimosso", description: "L'assegnazione è stata rimossa." });
+      toast({ title: t("common.deletedSuccessfully"), description: t("products.assignmentRemoved") });
     },
     onError: (error: any) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -258,10 +260,10 @@ export default function AdminAccessoryCatalog() {
       queryClient.invalidateQueries({ queryKey: ["/api/device-brands"] });
       setNewBrandDialogOpen(false);
       setNewBrandName("");
-      toast({ title: "Brand creato", description: `"${newBrand.name}" aggiunto con successo` });
+      toast({ title: t("products.brandCreated"), description: `"${newBrand.name}" aggiunto con successo` });
     },
     onError: (error: Error) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -282,10 +284,10 @@ export default function AdminAccessoryCatalog() {
           return newSet;
         });
       }
-      toast({ title: "Modello creato", description: `"${newModel.modelName}" aggiunto con successo` });
+      toast({ title: t("products.modelCreated"), description: `"${newModel.modelName}" aggiunto con successo` });
     },
     onError: (error: Error) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -477,10 +479,10 @@ export default function AdminAccessoryCatalog() {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/all-warehouses"] });
       setDialogOpen(false);
       resetForm();
-      toast({ title: "Accessorio aggiunto", description: "L'accessorio è stato aggiunto al catalogo." });
+      toast({ title: t("products.accessoryAdded"), description: t("products.accessoryAddedDesc") });
     },
     onError: (error: any) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -521,10 +523,10 @@ export default function AdminAccessoryCatalog() {
       setDialogOpen(false);
       setEditingAccessory(null);
       resetForm();
-      toast({ title: "Accessorio aggiornato", description: "Le modifiche sono state salvate." });
+      toast({ title: "Accessorio aggiornato", description: t("common.savedSuccessfully") });
     },
     onError: (error: any) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -537,10 +539,10 @@ export default function AdminAccessoryCatalog() {
       queryClient.invalidateQueries({ queryKey: ["/api/accessories"] });
       queryClient.invalidateQueries({ queryKey: ["/api/warehouses"] });
       queryClient.invalidateQueries({ queryKey: ["/api/admin/all-warehouses"] });
-      toast({ title: "Quantità aggiornata" });
+      toast({ title: t("products.quantityUpdated") });
     },
     onError: (error: Error) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -552,10 +554,10 @@ export default function AdminAccessoryCatalog() {
       queryClient.invalidateQueries({ queryKey: ["/api/accessories"] });
       setDeleteDialogOpen(false);
       setAccessoryToDelete(null);
-      toast({ title: "Eliminato", description: "L'accessorio è stato rimosso dal catalogo." });
+      toast({ title: t("common.deletedSuccessfully"), description: "L'accessorio è stato rimosso dal catalogo." });
     },
     onError: (error: any) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -576,7 +578,7 @@ export default function AdminAccessoryCatalog() {
       if (context?.previousData) {
         queryClient.setQueryData(["/api/accessories"], context.previousData);
       }
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     },
     onSuccess: (_, { isVisibleInShop }) => {
       toast({
@@ -593,11 +595,11 @@ export default function AdminAccessoryCatalog() {
     const file = e.target.files?.[0];
     if (file) {
       if (!["image/jpeg", "image/png", "image/webp", "image/gif"].includes(file.type)) {
-        toast({ title: "Errore", description: "Formato non supportato. Usa JPEG, PNG, WebP o GIF.", variant: "destructive" });
+        toast({ title: t("common.error"), description: "Formato non supportato. Usa JPEG, PNG, WebP o GIF.", variant: "destructive" });
         return;
       }
       if (file.size > 10 * 1024 * 1024) {
-        toast({ title: "Errore", description: "Immagine troppo grande. Max 10MB.", variant: "destructive" });
+        toast({ title: t("common.error"), description: "Immagine troppo grande. Max 10MB.", variant: "destructive" });
         return;
       }
       setImageFile(file);
@@ -618,9 +620,9 @@ export default function AdminAccessoryCatalog() {
       });
       if (!response.ok) throw new Error(await response.text());
       queryClient.invalidateQueries({ queryKey: ["/api/accessories"] });
-      toast({ title: "Immagine caricata", description: "L'immagine è stata salvata." });
+      toast({ title: t("products.imageUploaded"), description: t("products.imageSaved") });
     } catch (error: any) {
-      toast({ title: "Errore upload", description: error.message, variant: "destructive" });
+      toast({ title: t("tickets.uploadError"), description: error.message, variant: "destructive" });
     } finally {
       setUploadingImage(false);
       setImageFile(null);
@@ -636,9 +638,9 @@ export default function AdminAccessoryCatalog() {
       });
       if (!response.ok) throw new Error(await response.text());
       queryClient.invalidateQueries({ queryKey: ["/api/accessories"] });
-      toast({ title: "Immagine rimossa" });
+      toast({ title: t("products.imageRemoved") });
     } catch (error: any) {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     }
   };
 
@@ -809,7 +811,7 @@ export default function AdminAccessoryCatalog() {
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Cerca per nome o SKU..."
+                placeholder={t("common.search")}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-9 w-64"
@@ -818,10 +820,10 @@ export default function AdminAccessoryCatalog() {
             </div>
             <Select value={typeFilter} onValueChange={setTypeFilter}>
               <SelectTrigger className="w-44" data-testid="select-type-filter">
-                <SelectValue placeholder="Tipo" />
+                <SelectValue placeholder={t("common.type")} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">Tutti i tipi</SelectItem>
+                <SelectItem value="all">{t("common.allTypes")}</SelectItem>
                 {ACCESSORY_TYPES.map((t) => (
                   <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>
                 ))}
@@ -839,23 +841,23 @@ export default function AdminAccessoryCatalog() {
           ) : filteredAccessories.length === 0 ? (
             <div className="text-center py-12 text-muted-foreground">
               <ShoppingBag className="mx-auto h-12 w-12 mb-4 opacity-50" />
-              <p>Nessun accessorio nel catalogo</p>
+              <p>{t("products.noAccessories")}</p>
             </div>
           ) : (
             <ScrollArea className="h-[500px]">
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Foto</TableHead>
-                    <TableHead>Prodotto</TableHead>
+                    <TableHead>{t("common.photo")}</TableHead>
+                    <TableHead>{t("products.product")}</TableHead>
                     <TableHead>Barcode</TableHead>
-                    <TableHead>Rivenditore</TableHead>
-                    <TableHead>Tipo</TableHead>
-                    <TableHead>Compatibilità</TableHead>
-                    <TableHead>Condizione</TableHead>
-                    <TableHead className="text-right">Prezzo</TableHead>
+                    <TableHead>{t("roles.reseller")}</TableHead>
+                    <TableHead>{t("common.type")}</TableHead>
+                    <TableHead>{t("products.compatibility")}</TableHead>
+                    <TableHead>{t("products.condition")}</TableHead>
+                    <TableHead className="text-right">{t("common.price")}</TableHead>
                     <TableHead className="text-center">Shop</TableHead>
-                    <TableHead className="w-24">Azioni</TableHead>
+                    <TableHead className="w-24">{t("common.actions")}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -910,7 +912,7 @@ export default function AdminAccessoryCatalog() {
                       </TableCell>
                       <TableCell>
                         {accessory.specs?.isUniversal ? (
-                          <Badge variant="secondary">Universale</Badge>
+                          <Badge variant="secondary">{t("products.universal")}</Badge>
                         ) : accessory.specs?.compatibleBrands?.length ? (
                           <span className="text-sm text-muted-foreground">
                             {accessory.specs.compatibleBrands.slice(0, 2).join(", ")}
@@ -1004,7 +1006,7 @@ export default function AdminAccessoryCatalog() {
           <div className="grid gap-4 py-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="name">Nome prodotto *</Label>
+                <Label htmlFor="name">{t("products.productName")} *</Label>
                 <Input
                   id="name"
                   value={formData.name}
@@ -1027,7 +1029,7 @@ export default function AdminAccessoryCatalog() {
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="accessoryType">Tipo accessorio</Label>
+                <Label htmlFor="accessoryType">{t("products.accessoryType")}</Label>
                 <Select value={formData.accessoryType} onValueChange={(v) => setFormData({ ...formData, accessoryType: v })}>
                   <SelectTrigger data-testid="select-accessory-type">
                     <SelectValue />
@@ -1040,10 +1042,10 @@ export default function AdminAccessoryCatalog() {
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="brand">Marca</Label>
+                <Label htmlFor="brand">{t("products.brand")}</Label>
                 <Select value={formData.brand} onValueChange={(v) => setFormData({ ...formData, brand: v })}>
                   <SelectTrigger data-testid="select-accessory-brand">
-                    <SelectValue placeholder="Seleziona marca" />
+                    <SelectValue placeholder={t("products.selectBrand")} />
                   </SelectTrigger>
                   <SelectContent>
                     {BRANDS.map((b) => (
@@ -1053,7 +1055,7 @@ export default function AdminAccessoryCatalog() {
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="condition">Condizione</Label>
+                <Label htmlFor="condition">{t("products.condition")}</Label>
                 <Select value={formData.condition} onValueChange={(v) => setFormData({ ...formData, condition: v })}>
                   <SelectTrigger data-testid="select-accessory-condition">
                     <SelectValue />
@@ -1069,10 +1071,10 @@ export default function AdminAccessoryCatalog() {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="color">Colore</Label>
+                <Label htmlFor="color">{t("products.color")}</Label>
                 <Select value={formData.color} onValueChange={(v) => setFormData({ ...formData, color: v })}>
                   <SelectTrigger data-testid="select-accessory-color">
-                    <SelectValue placeholder="Seleziona colore" />
+                    <SelectValue placeholder={t("products.selectColor")} />
                   </SelectTrigger>
                   <SelectContent>
                     {COLOR_OPTIONS.map((c) => (
@@ -1082,10 +1084,10 @@ export default function AdminAccessoryCatalog() {
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="material">Materiale</Label>
+                <Label htmlFor="material">{t("products.material")}</Label>
                 <Select value={formData.material} onValueChange={(v) => setFormData({ ...formData, material: v })}>
                   <SelectTrigger data-testid="select-accessory-material">
-                    <SelectValue placeholder="Seleziona materiale" />
+                    <SelectValue placeholder={t("products.selectMaterial")} />
                   </SelectTrigger>
                   <SelectContent>
                     {MATERIAL_OPTIONS.map((m) => (
@@ -1103,13 +1105,13 @@ export default function AdminAccessoryCatalog() {
                 onCheckedChange={(checked) => setFormData({ ...formData, isUniversal: !!checked })}
                 data-testid="checkbox-universal"
               />
-              <Label htmlFor="isUniversal">Accessorio universale</Label>
+              <Label htmlFor="isUniversal">{t("products.universalAccessory")}</Label>
             </div>
 
             {!formData.isUniversal && (
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <Label>Dispositivi Compatibili</Label>
+                  <Label>{t("products.compatibleDevices")}</Label>
                   <div className="flex gap-1">
                     <Button
                       type="button"
@@ -1222,7 +1224,7 @@ export default function AdminAccessoryCatalog() {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="unitPrice">Prezzo vendita</Label>
+                <Label htmlFor="unitPrice">{t("products.salePrice")}</Label>
                 <Input
                   id="unitPrice"
                   type="number"
@@ -1234,7 +1236,7 @@ export default function AdminAccessoryCatalog() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="costPrice">Prezzo costo</Label>
+                <Label htmlFor="costPrice">{t("products.costPrice")}</Label>
                 <Input
                   id="costPrice"
                   type="number"
@@ -1248,7 +1250,7 @@ export default function AdminAccessoryCatalog() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="warrantyMonths">Garanzia (mesi)</Label>
+              <Label htmlFor="warrantyMonths">{t("products.warrantyMonths")}</Label>
               <Input
                 id="warrantyMonths"
                 type="number"
@@ -1260,16 +1262,16 @@ export default function AdminAccessoryCatalog() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="supplierId">Fornitore</Label>
+              <Label htmlFor="supplierId">{t("suppliers.supplier")}</Label>
               <Select
                 value={formData.supplierId || "none"}
                 onValueChange={(value) => setFormData({ ...formData, supplierId: value === "none" ? "" : value })}
               >
                 <SelectTrigger data-testid="select-accessory-supplier">
-                  <SelectValue placeholder="Seleziona fornitore..." />
+                  <SelectValue placeholder={t("suppliers.selectSupplier")} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="none">Nessun fornitore</SelectItem>
+                  <SelectItem value="none">{t("suppliers.noSupplier")}</SelectItem>
                   {suppliers.map((supplier) => (
                     <SelectItem key={supplier.id} value={supplier.id}>
                       {supplier.name} ({supplier.code})
@@ -1287,12 +1289,12 @@ export default function AdminAccessoryCatalog() {
                 </Label>
                 <Select onValueChange={editingAccessory ? addEditStock : addInitialStock}>
                   <SelectTrigger className="w-56" data-testid="select-add-stock-warehouse">
-                    <SelectValue placeholder="Aggiungi magazzino..." />
+                    <SelectValue placeholder={t("warehouse.addWarehouse")} />
                   </SelectTrigger>
                   <SelectContent>
                     {groupedWarehouses.admin.filter(w => !(editingAccessory ? editStock : initialStock).find(s => s.warehouseId === w.id)).length > 0 && (
                       <SelectGroup>
-                        <SelectLabel>Magazzini Admin</SelectLabel>
+                        <SelectLabel>{t("warehouse.adminWarehouses")}</SelectLabel>
                         {groupedWarehouses.admin
                           .filter(w => !(editingAccessory ? editStock : initialStock).find(s => s.warehouseId === w.id))
                           .map(wh => (
@@ -1303,7 +1305,7 @@ export default function AdminAccessoryCatalog() {
                     )}
                     {groupedWarehouses.reseller.filter(w => !(editingAccessory ? editStock : initialStock).find(s => s.warehouseId === w.id)).length > 0 && (
                       <SelectGroup>
-                        <SelectLabel>Magazzini Rivenditori</SelectLabel>
+                        <SelectLabel>{t("warehouse.resellerWarehouses")}</SelectLabel>
                         {groupedWarehouses.reseller
                           .filter(w => !(editingAccessory ? editStock : initialStock).find(s => s.warehouseId === w.id))
                           .map(wh => (
@@ -1316,7 +1318,7 @@ export default function AdminAccessoryCatalog() {
                     )}
                     {groupedWarehouses.sub_reseller.filter(w => !(editingAccessory ? editStock : initialStock).find(s => s.warehouseId === w.id)).length > 0 && (
                       <SelectGroup>
-                        <SelectLabel>Magazzini Sotto-Rivenditori</SelectLabel>
+                        <SelectLabel>{t("warehouse.subResellerWarehouses")}</SelectLabel>
                         {groupedWarehouses.sub_reseller
                           .filter(w => !(editingAccessory ? editStock : initialStock).find(s => s.warehouseId === w.id))
                           .map(wh => (
@@ -1329,7 +1331,7 @@ export default function AdminAccessoryCatalog() {
                     )}
                     {groupedWarehouses.repair_center.filter(w => !(editingAccessory ? editStock : initialStock).find(s => s.warehouseId === w.id)).length > 0 && (
                       <SelectGroup>
-                        <SelectLabel>Magazzini Centri Riparazione</SelectLabel>
+                        <SelectLabel>{t("warehouse.repairCenterWarehouses")}</SelectLabel>
                         {groupedWarehouses.repair_center
                           .filter(w => !(editingAccessory ? editStock : initialStock).find(s => s.warehouseId === w.id))
                           .map(wh => (
@@ -1379,7 +1381,7 @@ export default function AdminAccessoryCatalog() {
                           </div>
                           <div className="flex flex-wrap items-center gap-3">
                             <div className="flex-1">
-                              <Label className="text-xs text-muted-foreground">Quantità</Label>
+                              <Label className="text-xs text-muted-foreground">{t("common.quantity")}</Label>
                               <Input
                                 type="number"
                                 min="0"
@@ -1437,7 +1439,7 @@ export default function AdminAccessoryCatalog() {
                           </div>
                           <div className="flex flex-wrap items-center gap-3">
                             <div className="flex-1">
-                              <Label className="text-xs text-muted-foreground">Quantità</Label>
+                              <Label className="text-xs text-muted-foreground">{t("common.quantity")}</Label>
                               <Input
                                 type="number"
                                 min="0"
@@ -1465,31 +1467,31 @@ export default function AdminAccessoryCatalog() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="description">Descrizione</Label>
+              <Label htmlFor="description">{t("common.description")}</Label>
               <Textarea
                 id="description"
                 value={formData.description}
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                placeholder="Descrizione del prodotto..."
+                placeholder={t("products.productDescription")}
                 rows={2}
                 data-testid="textarea-accessory-description"
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="notes">Note interne</Label>
+              <Label htmlFor="notes">{t("products.internalNotes")}</Label>
               <Textarea
                 id="notes"
                 value={formData.notes}
                 onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                placeholder="Note per uso interno..."
+                placeholder={t("products.internalNotes")}
                 rows={2}
                 data-testid="textarea-accessory-notes"
               />
             </div>
 
             <div className="space-y-2">
-                <Label>Immagine prodotto</Label>
+                <Label>{t("products.productImage")}</Label>
                 <div className="flex items-start gap-4">
                   <div className="flex-shrink-0">
                     {imagePreview ? (
@@ -1582,7 +1584,7 @@ export default function AdminAccessoryCatalog() {
       <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Conferma eliminazione</DialogTitle>
+            <DialogTitle>{t("common.confirmDelete")}</DialogTitle>
             <DialogDescription>
               Sei sicuro di voler eliminare "{accessoryToDelete?.name}"? Questa azione non può essere annullata.
             </DialogDescription>
@@ -1608,17 +1610,17 @@ export default function AdminAccessoryCatalog() {
       <Dialog open={newBrandDialogOpen} onOpenChange={setNewBrandDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Nuovo Brand Dispositivo</DialogTitle>
-            <DialogDescription>Aggiungi un nuovo brand di dispositivo al sistema</DialogDescription>
+            <DialogTitle>{t("products.newDeviceBrand")}</DialogTitle>
+            <DialogDescription>{t("products.addNewBrandDesc")}</DialogDescription>
           </DialogHeader>
           <form onSubmit={handleCreateBrand} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="new-brand-name">Nome Brand</Label>
+              <Label htmlFor="new-brand-name">{t("products.brandName")}</Label>
               <Input
                 id="new-brand-name"
                 value={newBrandName}
                 onChange={(e) => setNewBrandName(e.target.value)}
-                placeholder="Es. Apple, Samsung, Xiaomi..."
+                placeholder={t("products.brandExample")}
                 data-testid="input-new-brand-name"
               />
             </div>
@@ -1639,15 +1641,15 @@ export default function AdminAccessoryCatalog() {
       <Dialog open={newModelDialogOpen} onOpenChange={setNewModelDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Nuovo Modello Dispositivo</DialogTitle>
-            <DialogDescription>Aggiungi un nuovo modello di dispositivo</DialogDescription>
+            <DialogTitle>{t("products.newDeviceModel")}</DialogTitle>
+            <DialogDescription>{t("products.addNewDeviceModel")}</DialogDescription>
           </DialogHeader>
           <form onSubmit={handleCreateModel} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="new-model-brand">Brand</Label>
               <Select value={newModelBrandId} onValueChange={setNewModelBrandId}>
                 <SelectTrigger data-testid="select-new-model-brand">
-                  <SelectValue placeholder="Seleziona brand..." />
+                  <SelectValue placeholder={t("products.selectBrand")} />
                 </SelectTrigger>
                 <SelectContent>
                   {deviceBrands.map((brand) => (
@@ -1657,12 +1659,12 @@ export default function AdminAccessoryCatalog() {
               </Select>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="new-model-name">Nome Modello</Label>
+              <Label htmlFor="new-model-name">{t("products.modelName")}</Label>
               <Input
                 id="new-model-name"
                 value={newModelName}
                 onChange={(e) => setNewModelName(e.target.value)}
-                placeholder="Es. iPhone 15 Pro, Galaxy S24 Ultra..."
+                placeholder={t("products.modelExample")}
                 data-testid="input-new-model-name"
               />
             </div>
@@ -1695,7 +1697,7 @@ export default function AdminAccessoryCatalog() {
           <div className="space-y-4 py-4">
             {currentProductAssignments.length > 0 && (
               <div className="space-y-2">
-                <Label>Rivenditori assegnati</Label>
+                <Label>{t("products.assignedResellers")}</Label>
                 <div className="space-y-2">
                   {currentProductAssignments.map((assignment) => (
                     <div key={assignment.id} className="flex items-center justify-between p-2 bg-muted rounded-md">
@@ -1721,13 +1723,13 @@ export default function AdminAccessoryCatalog() {
             )}
 
             <div className="border-t pt-4 space-y-4">
-              <Label>Aggiungi nuovo rivenditore</Label>
+              <Label>{t("products.addNewReseller")}</Label>
               
               <div className="space-y-2">
-                <Label htmlFor="reseller">Rivenditore</Label>
+                <Label htmlFor="reseller">{t("roles.reseller")}</Label>
                 <Select value={selectedResellerId} onValueChange={setSelectedResellerId}>
                   <SelectTrigger data-testid="select-assign-reseller">
-                    <SelectValue placeholder="Seleziona rivenditore" />
+                    <SelectValue placeholder={t("utility.selectReseller")} />
                   </SelectTrigger>
                   <SelectContent>
                     {resellers
@@ -1743,7 +1745,7 @@ export default function AdminAccessoryCatalog() {
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="assignPrice">Prezzo vendita (€) *</Label>
+                  <Label htmlFor="assignPrice">{t("products.salePrice")} (€) *</Label>
                   <Input
                     id="assignPrice"
                     type="number"
@@ -1755,7 +1757,7 @@ export default function AdminAccessoryCatalog() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="assignCostPrice">Prezzo costo (€)</Label>
+                  <Label htmlFor="assignCostPrice">{t("products.costPrice")} (€)</Label>
                   <Input
                     id="assignCostPrice"
                     type="number"

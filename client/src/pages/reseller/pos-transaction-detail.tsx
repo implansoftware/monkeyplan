@@ -30,6 +30,7 @@ import {
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 
 interface TransactionDetail {
   transaction: {
@@ -70,6 +71,7 @@ interface TransactionDetail {
 }
 
 export default function ResellerPosTransactionDetail() {
+  const { t } = useTranslation();
   const [, params] = useRoute("/reseller/pos/transaction/:id");
   const transactionId = params?.id;
   const { toast } = useToast();
@@ -107,7 +109,7 @@ export default function ResellerPosTransactionDetail() {
     },
     onError: (error: Error) => {
       toast({
-        title: "Errore",
+        title: t("common.error"),
         description: error.message || "Impossibile annullare la transazione",
         variant: "destructive",
       });
@@ -132,7 +134,7 @@ export default function ResellerPosTransactionDetail() {
     },
     onError: (error: Error) => {
       toast({
-        title: "Errore",
+        title: t("common.error"),
         description: error.message || "Impossibile effettuare il rimborso",
         variant: "destructive",
       });
@@ -149,7 +151,7 @@ export default function ResellerPosTransactionDetail() {
       if (win) win.print();
     } catch (error) {
       toast({
-        title: "Errore",
+        title: t("common.error"),
         description: "Impossibile stampare lo scontrino",
         variant: "destructive",
       });
@@ -165,9 +167,9 @@ export default function ResellerPosTransactionDetail() {
 
   const getPaymentMethodLabel = (method: string) => {
     const labels: Record<string, string> = {
-      cash: "Contanti",
-      card: "Carta",
-      pos_terminal: "POS",
+      cash: t("pos.cash"),
+      card: t("pos.card"),
+      pos_terminal: t("sidebar.sections.posSection"),
       mixed: "Misto",
     };
     return labels[method] || method;
@@ -183,7 +185,7 @@ export default function ResellerPosTransactionDetail() {
       case "completed":
         return <Badge variant="default" className="bg-green-600 text-lg px-3 py-1"><CheckCircle className="w-4 h-4 mr-1" />Completata</Badge>;
       case "voided":
-        return <Badge variant="destructive" className="text-lg px-3 py-1"><XCircle className="w-4 h-4 mr-1" />Annullata</Badge>;
+        return <Badge variant="destructive" className="text-lg px-3 py-1"><XCircle className="w-4 h-4 mr-1" />{t("common.cancelled")}</Badge>;
       case "refunded":
         return <Badge variant="secondary" className="text-lg px-3 py-1"><RotateCcw className="w-4 h-4 mr-1" />Rimborsata</Badge>;
       default:
@@ -226,9 +228,7 @@ export default function ResellerPosTransactionDetail() {
         <div className="flex flex-wrap items-center gap-4">
           <Link href="/reseller/pos/sales-history">
             <Button variant="ghost" size="sm" data-testid="button-back">
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Indietro
-            </Button>
+              <ArrowLeft className="w-4 h-4 mr-2" />{t("common.back")}</Button>
           </Link>
           <div>
             <h1 className="text-2xl font-bold flex items-center gap-2">
@@ -248,9 +248,7 @@ export default function ResellerPosTransactionDetail() {
                 onClick={handlePrintReceipt}
                 data-testid="button-print-receipt"
               >
-                <Printer className="w-4 h-4 mr-2" />
-                Stampa
-              </Button>
+                <Printer className="w-4 h-4 mr-2" />{t("common.print")}</Button>
               <Button 
                 variant="outline" 
                 size="sm" 
@@ -260,9 +258,7 @@ export default function ResellerPosTransactionDetail() {
                   setRefundDialogOpen(true);
                 }}
               >
-                <RotateCcw className="w-4 h-4 mr-2" />
-                Reso
-              </Button>
+                <RotateCcw className="w-4 h-4 mr-2" />{t("b2b.status.returned")}</Button>
               <Button 
                 variant="outline" 
                 size="sm" 
@@ -270,9 +266,7 @@ export default function ResellerPosTransactionDetail() {
                 className="text-destructive border-destructive hover:bg-destructive/10"
                 onClick={() => setVoidDialogOpen(true)}
               >
-                <Ban className="w-4 h-4 mr-2" />
-                Annulla
-              </Button>
+                <Ban className="w-4 h-4 mr-2" />{t("common.cancel")}</Button>
             </>
           )}
         </div>
@@ -282,21 +276,19 @@ export default function ResellerPosTransactionDetail() {
         <Card className="lg:col-span-2">
           <CardHeader>
             <CardTitle className="flex flex-wrap items-center gap-2">
-              <Package className="w-5 h-5" />
-              Articoli
-            </CardTitle>
+              <Package className="w-5 h-5" />{t("b2b.items")}</CardTitle>
           </CardHeader>
           <CardContent>
             <Table>
               <TableHeader>
                 <TableRow>
                   <TableHead className="w-16"></TableHead>
-                  <TableHead>Prodotto</TableHead>
-                  <TableHead>SKU</TableHead>
-                  <TableHead className="text-right">Quantità</TableHead>
-                  <TableHead className="text-right">Prezzo Unit.</TableHead>
-                  <TableHead className="text-right">Sconto</TableHead>
-                  <TableHead className="text-right">Totale</TableHead>
+                  <TableHead>{t("common.product")}</TableHead>
+                  <TableHead>{t("products.sku")}</TableHead>
+                  <TableHead className="text-right">{t("common.quantity")}</TableHead>
+                  <TableHead className="text-right">{t("products.unitPrice")}</TableHead>
+                  <TableHead className="text-right">{t("common.discount")}</TableHead>
+                  <TableHead className="text-right">{t("common.total")}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -355,13 +347,13 @@ export default function ResellerPosTransactionDetail() {
         <div className="space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle className="text-lg">Informazioni</CardTitle>
+              <CardTitle className="text-lg">{t("common.information")}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex items-start gap-3">
                 <Building2 className="w-5 h-5 text-muted-foreground mt-0.5" />
                 <div>
-                  <p className="text-sm text-muted-foreground">Centro Riparazione</p>
+                  <p className="text-sm text-muted-foreground">{t("roles.repairCenter")}</p>
                   <p className="font-medium">{repairCenterName}</p>
                 </div>
               </div>
@@ -375,7 +367,7 @@ export default function ResellerPosTransactionDetail() {
               <div className="flex items-start gap-3">
                 {getPaymentMethodIcon(transaction.paymentMethod)}
                 <div>
-                  <p className="text-sm text-muted-foreground">Metodo Pagamento</p>
+                  <p className="text-sm text-muted-foreground">{t("pos.paymentMethod")}</p>
                   <p className="font-medium">{getPaymentMethodLabel(transaction.paymentMethod)}</p>
                 </div>
               </div>
@@ -406,9 +398,7 @@ export default function ResellerPosTransactionDetail() {
             <Card>
               <CardHeader>
                 <CardTitle className="text-lg flex items-center gap-2">
-                  <User className="w-5 h-5" />
-                  Cliente
-                </CardTitle>
+                  <User className="w-5 h-5" />{t("common.customer")}</CardTitle>
               </CardHeader>
               <CardContent>
                 <p className="font-medium">{customer.fullName}</p>
@@ -440,7 +430,7 @@ export default function ResellerPosTransactionDetail() {
           {transaction.notes && (
             <Card>
               <CardHeader>
-                <CardTitle className="text-lg">Note</CardTitle>
+                <CardTitle className="text-lg">{t("common.notes")}</CardTitle>
               </CardHeader>
               <CardContent>
                 <p className="text-muted-foreground">{transaction.notes}</p>
@@ -471,9 +461,7 @@ export default function ResellerPosTransactionDetail() {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setVoidDialogOpen(false)} data-testid="button-cancel-void">
-              Annulla
-            </Button>
+            <Button variant="outline" onClick={() => setVoidDialogOpen(false)} data-testid="button-cancel-void">{t("common.cancel")}</Button>
             <Button
               variant="destructive"
               onClick={() => voidMutation.mutate(voidReason)}
@@ -520,9 +508,7 @@ export default function ResellerPosTransactionDetail() {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setRefundDialogOpen(false)} data-testid="button-cancel-refund">
-              Annulla
-            </Button>
+            <Button variant="outline" onClick={() => setRefundDialogOpen(false)} data-testid="button-cancel-refund">{t("common.cancel")}</Button>
             <Button
               onClick={() => refundMutation.mutate({ 
                 amount: Math.round(parseFloat(refundAmount) * 100), 

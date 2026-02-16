@@ -12,6 +12,7 @@ import { useAuth } from '@/hooks/use-auth';
 import { formatDistanceToNow } from 'date-fns';
 import { cn } from '@/lib/utils';
 import type { Notification } from '@shared/schema';
+import { useTranslation } from "react-i18next";
 
 function NotificationItem({ notification, onMarkAsRead }: { notification: Notification; onMarkAsRead: (id: string) => void }) {
   const getNotificationIcon = (type: string) => {
@@ -77,6 +78,7 @@ function NotificationItem({ notification, onMarkAsRead }: { notification: Notifi
 }
 
 export function NotificationBell() {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const { notifications, unreadCount, isLoading, markAsRead, markAllAsRead } = useNotifications();
   
@@ -113,22 +115,22 @@ export function NotificationBell() {
       </PopoverTrigger>
       <PopoverContent className="w-80 p-0" align="end" data-testid="popover-notifications">
         <div className="flex items-center justify-between p-4 border-b">
-          <h3 className="text-sm font-semibold">Notifications</h3>
+          <h3 className="text-sm font-semibold">{t("notifications.title")}</h3>
           {unreadCount > 0 && (
             <Badge variant="secondary" data-testid="text-unread-summary">
-              {unreadCount} unread
+              {unreadCount} {t("notifications.markRead")}
             </Badge>
           )}
         </div>
         <ScrollArea className="h-[400px]">
           {isLoading ? (
             <div className="p-4 text-center text-sm text-muted-foreground">
-              Loading notifications...
+              {t("common.loading")}
             </div>
           ) : notifications.length === 0 ? (
             <div className="p-8 text-center" data-testid="text-empty-state">
               <Bell className="h-12 w-12 mx-auto text-muted-foreground opacity-50 mb-2" />
-              <p className="text-sm text-muted-foreground">No notifications yet</p>
+              <p className="text-sm text-muted-foreground">{t("notifications.noNotifications")}</p>
             </div>
           ) : (
             <div className="p-2 space-y-1">

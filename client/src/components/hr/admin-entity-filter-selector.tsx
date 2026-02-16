@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Building2, Store, Users, Globe } from "lucide-react";
@@ -26,6 +27,7 @@ export function AdminEntityFilterSelector({
   selectedEntityId,
   setSelectedEntityId,
 }: AdminEntityFilterSelectorProps) {
+  const { t } = useTranslation();
   const { data: entities = [] } = useQuery<EntityItem[]>({
     queryKey: ["/api/admin/hr/entities"],
   });
@@ -35,7 +37,7 @@ export function AdminEntityFilterSelector({
   const repairCenters = entities.filter(e => e.type === 'repair-center');
 
   const getEntityName = () => {
-    if (entityType === "all") return "Tutte le Entità";
+    if (entityType === "all") return t("common.allEntities");
     if (entityType === "reseller" && selectedEntityId) {
       const r = resellers.find(s => s.id === selectedEntityId);
       return r?.name || "Reseller";
@@ -48,7 +50,7 @@ export function AdminEntityFilterSelector({
       const rc = repairCenters.find(r => r.id === selectedEntityId);
       return rc?.name || "Centro";
     }
-    return "Seleziona...";
+    return t("common.select");
   };
 
   return (
@@ -69,7 +71,7 @@ export function AdminEntityFilterSelector({
           <SelectItem value="all">
             <div className="flex flex-wrap items-center gap-2">
               <Globe className="h-4 w-4" />
-              <span>Tutte le Entità</span>
+              <span>{t("common.allEntities")}</span>
             </div>
           </SelectItem>
           {resellers.length > 0 && (
@@ -105,7 +107,7 @@ export function AdminEntityFilterSelector({
           onValueChange={setSelectedEntityId}
         >
           <SelectTrigger className="w-full sm:w-[250px]" data-testid="select-admin-entity-id">
-            <SelectValue placeholder="Seleziona entità..." />
+            <SelectValue placeholder={t("staff.selectEntity")} />
           </SelectTrigger>
           <SelectContent>
             {entityType === "reseller" && resellers.map(r => (

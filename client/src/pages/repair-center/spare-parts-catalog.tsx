@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useState } from "react";
 import { BarcodeDisplay } from "@/components/barcode-display";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
@@ -28,22 +29,23 @@ type SparePartWithStock = Product & {
   }>;
 };
 
-const PART_TYPES = [
-  { value: "display", label: "Display/LCD", icon: Monitor },
-  { value: "batteria", label: "Batterie", icon: Battery },
-  { value: "fotocamera", label: "Fotocamere", icon: Camera },
-  { value: "connettore", label: "Connettori Ricarica", icon: Cpu },
-  { value: "altoparlante", label: "Altoparlanti", icon: Speaker },
-  { value: "microfono", label: "Microfoni", icon: Mic },
-  { value: "antenna", label: "Antenne/WiFi", icon: Wifi },
-  { value: "scheda_madre", label: "Scheda Madre", icon: Cpu },
-  { value: "vetro", label: "Vetri/Back Cover", icon: Monitor },
-  { value: "altro", label: "Altro", icon: Wrench },
-];
 
 const BRANDS = ["Apple", "Samsung", "Xiaomi", "Huawei", "OPPO", "OnePlus", "Google", "Motorola", "Altro"];
 
 export default function RepairCenterSparePartsCatalog() {
+  const { t } = useTranslation();
+  const PART_TYPES = [
+    { value: "display", label: "Display/LCD", icon: Monitor },
+    { value: "batteria", label: "Batterie", icon: Battery },
+    { value: "fotocamera", label: "Fotocamere", icon: Camera },
+    { value: "connettore", label: "Connettori Ricarica", icon: Cpu },
+    { value: "altoparlante", label: "Altoparlanti", icon: Speaker },
+    { value: "microfono", label: "Microfoni", icon: Mic },
+    { value: "antenna", label: "Antenne/WiFi", icon: Wifi },
+    { value: "scheda_madre", label: "Scheda Madre", icon: Cpu },
+    { value: "vetro", label: "Vetri/Back Cover", icon: Monitor },
+    { value: "altro", label: t("common.more"), icon: Wrench },
+  ];
   const [searchQuery, setSearchQuery] = useState("");
   const [typeFilter, setTypeFilter] = useState<string>("all");
   const [brandFilter, setBrandFilter] = useState<string>("all");
@@ -88,14 +90,14 @@ export default function RepairCenterSparePartsCatalog() {
     setCart(newCart);
     localStorage.setItem('rc-b2b-cart', JSON.stringify(newCart));
     toast({
-      title: "Aggiunto al carrello",
+      title: t("catalog.addedToCart"),
       description: `${part.name} x${quantity} aggiunto al carrello B2B`,
     });
     setBuyDialogOpen(false);
   };
 
   const getTypeInfo = (category: string | undefined | null) => {
-    return PART_TYPES.find(t => t.value === category) || { value: "altro", label: "Altro", icon: Wrench };
+    return PART_TYPES.find(t => t.value === category) || { value: "altro", label: t("common.more"), icon: Wrench };
   };
 
   const formatPrice = (cents: number | undefined | null) => {
@@ -119,8 +121,8 @@ export default function RepairCenterSparePartsCatalog() {
               <Package className="h-5 w-5 sm:h-7 sm:w-7 text-white" />
             </div>
             <div>
-              <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-white tracking-tight" data-testid="text-page-title">Catalogo Ricambi</h1>
-              <p className="text-emerald-100">Ricambi disponibili dal tuo rivenditore</p>
+              <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-white tracking-tight" data-testid="text-page-title">{t("spareParts.catalogoRicambi")}</h1>
+              <p className="text-emerald-100">{t("spareParts.ricambiDisponibiliDalTuoRivenditore")}</p>
             </div>
           </div>
           <div className="flex flex-wrap items-center gap-2">
@@ -140,7 +142,7 @@ export default function RepairCenterSparePartsCatalog() {
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Cerca per nome o SKU..."
+                placeholder={t("accessories.cercaPerNomeOSKU")}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-10"
@@ -149,10 +151,10 @@ export default function RepairCenterSparePartsCatalog() {
             </div>
             <Select value={typeFilter} onValueChange={setTypeFilter}>
               <SelectTrigger className="w-full sm:w-[200px]" data-testid="select-type-filter">
-                <SelectValue placeholder="Tipo ricambio" />
+                <SelectValue placeholder={t("catalog.sparePartType")} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">Tutti i tipi</SelectItem>
+                <SelectItem value="all">{t("common.allTypes")}</SelectItem>
                 {PART_TYPES.map(type => (
                   <SelectItem key={type.value} value={type.value}>{type.label}</SelectItem>
                 ))}
@@ -160,10 +162,10 @@ export default function RepairCenterSparePartsCatalog() {
             </Select>
             <Select value={brandFilter} onValueChange={setBrandFilter}>
               <SelectTrigger className="w-full sm:w-[180px]" data-testid="select-brand-filter">
-                <SelectValue placeholder="Marca" />
+                <SelectValue placeholder={t("repairs.deviceBrand")} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">Tutte le marche</SelectItem>
+                <SelectItem value="all">{t("products.allBrands")}</SelectItem>
                 {BRANDS.map(brand => (
                   <SelectItem key={brand} value={brand}>{brand}</SelectItem>
                 ))}
@@ -181,19 +183,19 @@ export default function RepairCenterSparePartsCatalog() {
           ) : filteredParts.length === 0 ? (
             <div className="text-center py-12 text-muted-foreground">
               <Wrench className="h-12 w-12 mx-auto mb-4 opacity-50" />
-              <p>Nessun ricambio trovato</p>
+              <p>{t("spareParts.nessunRicambioTrovato")}</p>
             </div>
           ) : (
             <ScrollArea className="h-[600px]">
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Ricambio</TableHead>
-                    <TableHead className="hidden sm:table-cell">Tipo</TableHead>
-                    <TableHead className="hidden md:table-cell">Compatibilità</TableHead>
-                    <TableHead className="text-right">Prezzo B2B</TableHead>
-                    <TableHead className="text-center">Disponibilità</TableHead>
-                    <TableHead className="text-right">Azioni</TableHead>
+                    <TableHead>{t("products.sparePart")}</TableHead>
+                    <TableHead className="hidden sm:table-cell">{t("common.type")}</TableHead>
+                    <TableHead className="hidden md:table-cell">{t("products.compatibility")}</TableHead>
+                    <TableHead className="text-right">{t("accessories.prezzoB2B")}</TableHead>
+                    <TableHead className="text-center">{t("accessories.disponibilit")}</TableHead>
+                    <TableHead className="text-right">{t("common.actions")}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -257,7 +259,7 @@ export default function RepairCenterSparePartsCatalog() {
                               {part.resellerStock} pz
                             </Badge>
                           ) : (
-                            <Badge variant="secondary">Esaurito</Badge>
+                            <Badge variant="secondary">{t("warehouse.outOfStock")}</Badge>
                           )}
                         </TableCell>
                         <TableCell className="text-right">
@@ -313,25 +315,25 @@ export default function RepairCenterSparePartsCatalog() {
             <div className="space-y-6">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <Label className="text-muted-foreground">Prezzo B2B</Label>
+                  <Label className="text-muted-foreground">{t("accessories.prezzoB2B")}</Label>
                   <p className="text-2xl font-bold text-primary">{formatPrice(selectedPart.b2bPrice)}</p>
                 </div>
                 <div>
-                  <Label className="text-muted-foreground">Disponibilità</Label>
+                  <Label className="text-muted-foreground">{t("accessories.disponibilit")}</Label>
                   <p className="text-lg font-medium">{selectedPart.resellerStock} pezzi</p>
                 </div>
               </div>
               
               {selectedPart.description && (
                 <div>
-                  <Label className="text-muted-foreground">Descrizione</Label>
+                  <Label className="text-muted-foreground">{t("common.description")}</Label>
                   <p className="mt-1">{selectedPart.description}</p>
                 </div>
               )}
 
               {selectedPart.deviceCompatibilities && selectedPart.deviceCompatibilities.length > 0 && (
                 <div>
-                  <Label className="text-muted-foreground">Compatibilità Dispositivi</Label>
+                  <Label className="text-muted-foreground">{t("sidebar.items.deviceCompatibilities")}</Label>
                   <div className="flex flex-wrap gap-2 mt-2">
                     {selectedPart.deviceCompatibilities.map((comp, idx) => (
                       <Badge key={idx} variant="outline">
@@ -344,7 +346,7 @@ export default function RepairCenterSparePartsCatalog() {
             </div>
           )}
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDetailDialogOpen(false)}>Chiudi</Button>
+            <Button variant="outline" onClick={() => setDetailDialogOpen(false)}>{t("common.close")}</Button>
             {selectedPart?.availableForPurchase && (
               <Button onClick={() => {
                 setDetailDialogOpen(false);
@@ -362,7 +364,7 @@ export default function RepairCenterSparePartsCatalog() {
       <Dialog open={buyDialogOpen} onOpenChange={setBuyDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Aggiungi al Carrello B2B</DialogTitle>
+            <DialogTitle>{t("accessories.aggiungiAlCarrelloB2B")}</DialogTitle>
             <DialogDescription>
               {selectedPart?.name}
             </DialogDescription>
@@ -371,7 +373,7 @@ export default function RepairCenterSparePartsCatalog() {
             <div className="space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <Label>Prezzo unitario</Label>
+                  <Label>{t("spareParts.prezzoUnitario")}</Label>
                   <p className="text-lg font-bold">{formatPrice(selectedPart.b2bPrice)}</p>
                 </div>
                 <div>
@@ -380,7 +382,7 @@ export default function RepairCenterSparePartsCatalog() {
                 </div>
               </div>
               <div>
-                <Label>Quantità</Label>
+                <Label>{t("common.quantity")}</Label>
                 <Input 
                   type="number" 
                   min={1} 
@@ -392,14 +394,14 @@ export default function RepairCenterSparePartsCatalog() {
               </div>
               <div className="bg-muted p-4 rounded-lg">
                 <div className="flex justify-between">
-                  <span>Totale</span>
+                  <span>{t("common.total")}</span>
                   <span className="font-bold text-lg">{formatPrice(selectedPart.b2bPrice * buyQuantity)}</span>
                 </div>
               </div>
             </div>
           )}
           <DialogFooter>
-            <Button variant="outline" onClick={() => setBuyDialogOpen(false)}>Annulla</Button>
+            <Button variant="outline" onClick={() => setBuyDialogOpen(false)}>{t("profile.cancel")}</Button>
             <Button onClick={() => selectedPart && addToCart(selectedPart, buyQuantity)} data-testid="button-confirm-add">
               <ShoppingCart className="h-4 w-4 mr-2" />
               Aggiungi al Carrello

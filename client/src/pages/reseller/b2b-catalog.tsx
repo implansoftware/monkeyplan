@@ -20,6 +20,7 @@ import { useToast } from "@/hooks/use-toast";
 import { formatCurrency, addVat, calculateVatSummary, DEFAULT_VAT_RATE } from "@/lib/utils";
 import PayPalButton from "@/components/PayPalButton";
 import { StripeB2BCheckout } from "@/components/StripeB2BCheckout";
+import { useTranslation } from "react-i18next";
 
 interface B2BCatalogItem {
   product: Product;
@@ -57,6 +58,7 @@ function formatPrice(cents: number): string {
 }
 
 export default function ResellerB2BCatalog() {
+  const { t } = useTranslation();
   const [searchQuery, setSearchQuery] = useState("");
   const [cart, setCart] = useState<CartItem[]>([]);
   const [checkoutOpen, setCheckoutOpen] = useState(false);
@@ -118,7 +120,7 @@ export default function ResellerB2BCatalog() {
       queryClient.invalidateQueries({ queryKey: ['/api/reseller/b2b-orders'] });
     },
     onError: (error: any) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -188,7 +190,7 @@ export default function ResellerB2BCatalog() {
 
   const handleCheckout = () => {
     if (cart.length === 0) {
-      toast({ title: "Carrello vuoto", description: "Aggiungi prodotti al carrello", variant: "destructive" });
+      toast({ title: t("pos.emptyCart"), description: "Aggiungi prodotti al carrello", variant: "destructive" });
       return;
     }
     setCheckoutOpen(true);
@@ -378,9 +380,7 @@ export default function ResellerB2BCatalog() {
                       disabled={item.adminStock < item.minimumOrderQuantity}
                       data-testid={`button-add-${item.product.id}`}
                     >
-                      <Plus className="h-4 w-4 mr-2" />
-                      Aggiungi
-                    </Button>
+                      <Plus className="h-4 w-4 mr-2" />{t("common.add")}</Button>
                   )}
                 </CardFooter>
               </Card>
@@ -405,10 +405,10 @@ export default function ResellerB2BCatalog() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Prodotto</TableHead>
-                  <TableHead className="text-right">Prezzo</TableHead>
-                  <TableHead className="text-right">Qtà</TableHead>
-                  <TableHead className="text-right">Totale</TableHead>
+                  <TableHead>{t("common.product")}</TableHead>
+                  <TableHead className="text-right">{t("common.price")}</TableHead>
+                  <TableHead className="text-right">{t("common.qty")}</TableHead>
+                  <TableHead className="text-right">{t("common.total")}</TableHead>
                   <TableHead></TableHead>
                 </TableRow>
               </TableHeader>
@@ -544,10 +544,10 @@ export default function ResellerB2BCatalog() {
                   </SelectTrigger>
                   <SelectContent>
                     {paymentConfig?.bankTransfer?.enabled && (
-                      <SelectItem value="bank_transfer">Bonifico Bancario</SelectItem>
+                      <SelectItem value="bank_transfer">{t("settings.bankTransfer")}</SelectItem>
                     )}
                     {paymentConfig?.stripe?.enabled && (
-                      <SelectItem value="stripe">Carta di Credito</SelectItem>
+                      <SelectItem value="stripe">{t("suppliers.creditCard")}</SelectItem>
                     )}
                     {paymentConfig?.paypal?.enabled && (
                       <SelectItem value="paypal">PayPal</SelectItem>
@@ -614,9 +614,7 @@ export default function ResellerB2BCatalog() {
           </div>
 
           <DialogFooter className="flex-col sm:flex-row gap-2">
-            <Button variant="outline" onClick={() => setCheckoutOpen(false)}>
-              Annulla
-            </Button>
+            <Button variant="outline" onClick={() => setCheckoutOpen(false)}>{t("common.cancel")}</Button>
             {paymentMethod === "paypal" && paymentConfig?.paypal?.enabled ? (
               <PayPalButton
                 amount={(grandTotal / 100).toFixed(2)}
@@ -639,7 +637,7 @@ export default function ResellerB2BCatalog() {
                 }}
                 onCancel={() => {
                   toast({
-                    title: "Pagamento annullato",
+                    title: t("license.paymentCancelled"),
                     description: "Hai annullato il pagamento PayPal",
                   });
                 }}
@@ -657,7 +655,7 @@ export default function ResellerB2BCatalog() {
                   toast({ title: "Ordine completato", description: "Pagamento ricevuto con successo" });
                 }}
                 onError={(error) => {
-                  toast({ title: "Errore", description: error, variant: "destructive" });
+                  toast({ title: t("common.error"), description: error, variant: "destructive" });
                 }}
               />
             ) : (

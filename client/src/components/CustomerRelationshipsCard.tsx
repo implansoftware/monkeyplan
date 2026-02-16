@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
@@ -22,7 +23,7 @@ const RELATIONSHIP_TYPES = [
   { value: "zio", label: "Zio/a" },
   { value: "nipote", label: "Nipote" },
   { value: "nonno", label: "Nonno/a" },
-  { value: "altro", label: "Altro" },
+  { value: "altro", label: t("common.other") },
 ] as const;
 
 interface CustomerRelationshipsCardProps {
@@ -36,6 +37,7 @@ interface RelationshipWithCustomer extends CustomerRelationship {
 }
 
 export function CustomerRelationshipsCard({ customerId, resellerId, repairCenterId }: CustomerRelationshipsCardProps) {
+  const { t } = useTranslation();
   const { toast } = useToast();
   const [addDialogOpen, setAddDialogOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
@@ -74,12 +76,12 @@ export function CustomerRelationshipsCard({ customerId, resellerId, repairCenter
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/customers", customerId, "relationships"] });
-      toast({ title: "Parentela aggiunta", description: "La relazione è stata creata con successo." });
+      toast({ title: t("customer.relationAdded"), description: t("customer.relationCreatedSuccess") });
       resetForm();
       setAddDialogOpen(false);
     },
     onError: (error: Error) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -89,10 +91,10 @@ export function CustomerRelationshipsCard({ customerId, resellerId, repairCenter
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/customers", customerId, "relationships"] });
-      toast({ title: "Parentela rimossa", description: "La relazione è stata eliminata." });
+      toast({ title: t("customer.relationRemoved"), description: t("customer.relationDeleted") });
     },
     onError: (error: Error) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -117,7 +119,7 @@ export function CustomerRelationshipsCard({ customerId, resellerId, repairCenter
 
   const handleSubmit = () => {
     if (!selectedCustomerId || !relationshipType) {
-      toast({ title: "Errore", description: "Seleziona un cliente e un tipo di parentela.", variant: "destructive" });
+      toast({ title: t("common.error"), description: "Seleziona un cliente e un tipo di parentela.", variant: "destructive" });
       return;
     }
     createMutation.mutate({
@@ -137,7 +139,7 @@ export function CustomerRelationshipsCard({ customerId, resellerId, repairCenter
           </CardTitle>
           <Button size="sm" onClick={() => setAddDialogOpen(true)} data-testid="button-add-relationship">
             <Plus className="h-4 w-4 mr-1" />
-            Aggiungi
+            {t("common.add")}
           </Button>
         </CardHeader>
         <CardContent>
@@ -196,15 +198,15 @@ export function CustomerRelationshipsCard({ customerId, resellerId, repairCenter
       <Dialog open={addDialogOpen} onOpenChange={setAddDialogOpen}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>Aggiungi Parentela</DialogTitle>
+            <DialogTitle>{t("customer.addRelation")}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label>Cerca Cliente</Label>
+              <Label>{t("customer.searchCustomer")}</Label>
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
-                  placeholder="Cerca per nome o email..."
+                  placeholder={t("customer.searchByNameOrEmail")}
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="pl-9"
@@ -214,10 +216,10 @@ export function CustomerRelationshipsCard({ customerId, resellerId, repairCenter
             </div>
 
             <div className="space-y-2">
-              <Label>Seleziona Cliente</Label>
+              <Label>{t("customer.selectCustomer")}</Label>
               <Select value={selectedCustomerId} onValueChange={setSelectedCustomerId}>
                 <SelectTrigger data-testid="select-customer">
-                  <SelectValue placeholder="Seleziona un cliente..." />
+                  <SelectValue placeholder={t("customer.selectACustomer")} />
                 </SelectTrigger>
                 <SelectContent>
                   {availableCustomers.length === 0 ? (
@@ -236,10 +238,10 @@ export function CustomerRelationshipsCard({ customerId, resellerId, repairCenter
             </div>
 
             <div className="space-y-2">
-              <Label>Tipo di Parentela</Label>
+              <Label>{t("customer.relationType")}</Label>
               <Select value={relationshipType} onValueChange={setRelationshipType}>
                 <SelectTrigger data-testid="select-relationship-type">
-                  <SelectValue placeholder="Seleziona tipo..." />
+                  <SelectValue placeholder={t("common.selectType")} />
                 </SelectTrigger>
                 <SelectContent>
                   {RELATIONSHIP_TYPES.map((type) => (
@@ -252,9 +254,9 @@ export function CustomerRelationshipsCard({ customerId, resellerId, repairCenter
             </div>
 
             <div className="space-y-2">
-              <Label>Note (opzionale)</Label>
+              <Label>{t("common.notesOptional")}</Label>
               <Textarea
-                placeholder="Aggiungi note..."
+                placeholder={t("common.addNotes")}
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
                 data-testid="input-notes"
@@ -263,7 +265,7 @@ export function CustomerRelationshipsCard({ customerId, resellerId, repairCenter
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => { resetForm(); setAddDialogOpen(false); }}>
-              Annulla
+              {t("common.cancel")}
             </Button>
             <Button 
               onClick={handleSubmit} 

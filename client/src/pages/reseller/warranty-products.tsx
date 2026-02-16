@@ -15,6 +15,7 @@ import { Search, Shield, Plus, Pencil, Trash2, Euro } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
+import { useTranslation } from "react-i18next";
 
 type WarrantyFormData = {
   name: string;
@@ -41,6 +42,7 @@ const defaultFormData: WarrantyFormData = {
 };
 
 export default function ResellerWarrantyProducts() {
+  const { t } = useTranslation();
   const [searchQuery, setSearchQuery] = useState("");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<WarrantyProduct | null>(null);
@@ -61,7 +63,7 @@ export default function ResellerWarrantyProducts() {
       closeDialog();
     },
     onError: () => {
-      toast({ title: "Errore", description: "Impossibile creare il prodotto", variant: "destructive" });
+      toast({ title: t("common.error"), description: "Impossibile creare il prodotto", variant: "destructive" });
     },
   });
 
@@ -74,7 +76,7 @@ export default function ResellerWarrantyProducts() {
       closeDialog();
     },
     onError: () => {
-      toast({ title: "Errore", description: "Impossibile aggiornare il prodotto", variant: "destructive" });
+      toast({ title: t("common.error"), description: "Impossibile aggiornare il prodotto", variant: "destructive" });
     },
   });
 
@@ -86,7 +88,7 @@ export default function ResellerWarrantyProducts() {
       setDeleteConfirmId(null);
     },
     onError: () => {
-      toast({ title: "Errore", description: "Impossibile eliminare il prodotto", variant: "destructive" });
+      toast({ title: t("common.error"), description: "Impossibile eliminare il prodotto", variant: "destructive" });
     },
   });
 
@@ -120,7 +122,7 @@ export default function ResellerWarrantyProducts() {
 
   const handleSubmit = () => {
     if (!formData.name || formData.durationMonths <= 0 || formData.priceInCents <= 0) {
-      toast({ title: "Errore", description: "Compila tutti i campi obbligatori", variant: "destructive" });
+      toast({ title: t("common.error"), description: "Compila tutti i campi obbligatori", variant: "destructive" });
       return;
     }
 
@@ -177,7 +179,7 @@ export default function ResellerWarrantyProducts() {
               <Shield className="h-6 w-6 text-white" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold tracking-tight text-white">Prodotti Garanzia</h1>
+              <h1 className="text-2xl font-bold tracking-tight text-white">{t("sidebar.items.warrantyProducts")}</h1>
               <p className="text-sm text-white/80">
                 Gestisci il catalogo delle garanzie e assicurazioni
               </p>
@@ -222,12 +224,12 @@ export default function ResellerWarrantyProducts() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Nome</TableHead>
+                  <TableHead>{t("common.name")}</TableHead>
                   <TableHead>Copertura</TableHead>
                   <TableHead className="text-center">Durata</TableHead>
-                  <TableHead className="text-right">Prezzo</TableHead>
-                  <TableHead className="text-center">Stato</TableHead>
-                  <TableHead className="text-right">Azioni</TableHead>
+                  <TableHead className="text-right">{t("common.price")}</TableHead>
+                  <TableHead className="text-center">{t("common.status")}</TableHead>
+                  <TableHead className="text-right">{t("common.actions")}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -246,7 +248,7 @@ export default function ResellerWarrantyProducts() {
                     <TableCell className="text-right font-medium">{formatCurrency(product.priceInCents)}</TableCell>
                     <TableCell className="text-center">
                       <Badge variant={product.isActive ? "default" : "secondary"}>
-                        {product.isActive ? "Attivo" : "Inattivo"}
+                        {product.isActive ? t("common.active") : t("common.inactive")}
                       </Badge>
                     </TableCell>
                     <TableCell className="text-right">
@@ -297,7 +299,7 @@ export default function ResellerWarrantyProducts() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="description">Descrizione</Label>
+              <Label htmlFor="description">{t("common.description")}</Label>
               <Textarea
                 id="description"
                 value={formData.description}
@@ -410,13 +412,13 @@ export default function ResellerWarrantyProducts() {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={closeDialog}>Annulla</Button>
+            <Button variant="outline" onClick={closeDialog}>{t("common.cancel")}</Button>
             <Button 
               onClick={handleSubmit} 
               disabled={createMutation.isPending || updateMutation.isPending}
               data-testid="button-save-warranty"
             >
-              {createMutation.isPending || updateMutation.isPending ? "Salvataggio..." : editingProduct ? "Salva Modifiche" : "Crea Prodotto"}
+              {createMutation.isPending || updateMutation.isPending ? t("profile.saving") : editingProduct ? t("profile.saveChanges") : "Crea Prodotto"}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -431,14 +433,14 @@ export default function ResellerWarrantyProducts() {
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDeleteConfirmId(null)}>Annulla</Button>
+            <Button variant="outline" onClick={() => setDeleteConfirmId(null)}>{t("common.cancel")}</Button>
             <Button 
               variant="destructive" 
               onClick={() => deleteConfirmId && deleteMutation.mutate(deleteConfirmId)}
               disabled={deleteMutation.isPending}
               data-testid="button-confirm-delete"
             >
-              {deleteMutation.isPending ? "Eliminazione..." : "Elimina"}
+              {deleteMutation.isPending ? t("pages.deleting") : t("common.delete")}
             </Button>
           </DialogFooter>
         </DialogContent>

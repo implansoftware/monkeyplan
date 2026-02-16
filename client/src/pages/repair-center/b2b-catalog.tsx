@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useState, useEffect, useMemo } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Product, ShippingMethod } from "@shared/schema";
@@ -48,6 +49,7 @@ function formatPrice(cents: number): string {
 }
 
 export default function RepairCenterB2BCatalog() {
+  const { t } = useTranslation();
   const [searchQuery, setSearchQuery] = useState("");
   const [cart, setCart] = useState<CartItem[]>([]);
   const [checkoutOpen, setCheckoutOpen] = useState(false);
@@ -101,14 +103,14 @@ export default function RepairCenterB2BCatalog() {
       return res.json();
     },
     onSuccess: () => {
-      toast({ title: "Ordine creato", description: "Il tuo ordine è stato inviato al rivenditore per approvazione" });
+      toast({ title: "Ordine creato", description: t("b2b.ilTuoOrdineStatoInviatoAlRivenditorePerA") });
       setCart([]);
       setCheckoutOpen(false);
       setNotes("");
       queryClient.invalidateQueries({ queryKey: ['/api/repair-center/b2b-orders'] });
     },
     onError: (error: any) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("auth.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -178,7 +180,7 @@ export default function RepairCenterB2BCatalog() {
 
   const handleCheckout = () => {
     if (cart.length === 0) {
-      toast({ title: "Carrello vuoto", description: "Aggiungi prodotti al carrello", variant: "destructive" });
+      toast({ title: t("pos.emptyCart"), description: "Aggiungi prodotti al carrello", variant: "destructive" });
       return;
     }
     setCheckoutOpen(true);
@@ -218,7 +220,7 @@ export default function RepairCenterB2BCatalog() {
               <ShoppingCart className="h-5 w-5 sm:h-7 sm:w-7 text-white" />
             </div>
             <div>
-              <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-white tracking-tight">Catalogo B2B</h1>
+              <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-white tracking-tight">{t("sidebar.items.b2bCatalog")}</h1>
               <p className="text-emerald-100">Acquista prodotti dal magazzino del tuo rivenditore</p>
             </div>
           </div>
@@ -226,7 +228,7 @@ export default function RepairCenterB2BCatalog() {
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-white/70" />
               <Input
-                placeholder="Cerca prodotti..."
+                placeholder={t("b2b.cercaProdotti")}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-9 w-64 bg-white/20 backdrop-blur-sm border-white/30 text-white placeholder:text-white/70"
@@ -255,7 +257,7 @@ export default function RepairCenterB2BCatalog() {
         <Card>
           <CardContent className="py-12 text-center">
             <Package className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-            <p className="text-muted-foreground">Nessun prodotto disponibile nel catalogo B2B del rivenditore</p>
+            <p className="text-muted-foreground">{t("b2b.nessunProdottoDisponibileNelCatalogoB2BDelR")}</p>
           </CardContent>
         </Card>
       ) : (
@@ -290,11 +292,11 @@ export default function RepairCenterB2BCatalog() {
                 </CardHeader>
                 <CardContent className="space-y-2">
                   <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">Prezzo B2B:</span>
+                    <span className="text-muted-foreground">{t("b2b.prezzoB2B")}</span>
                     <span className="font-semibold text-primary">{formatPrice(item.b2bPrice)}</span>
                   </div>
                   <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">Disponibilità:</span>
+                    <span className="text-muted-foreground">{t("b2b.disponibilit")}</span>
                     <Badge variant={item.resellerStock > 10 ? "default" : item.resellerStock > 0 ? "secondary" : "destructive"}>
                       {item.resellerStock} pz
                     </Badge>
@@ -354,7 +356,7 @@ export default function RepairCenterB2BCatalog() {
       <Dialog open={checkoutOpen} onOpenChange={setCheckoutOpen}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle>Conferma Ordine B2B</DialogTitle>
+            <DialogTitle>{t("b2b.confermaOrdineB2B")}</DialogTitle>
             <DialogDescription>Verifica i prodotti nel carrello e completa l'ordine</DialogDescription>
           </DialogHeader>
           
@@ -400,7 +402,7 @@ export default function RepairCenterB2BCatalog() {
             )}
             <Separator className="my-1" />
             <div className="flex justify-between text-lg font-bold">
-              <span>Totale:</span>
+              <span>{t("accessories.totale")}</span>
               <span>{formatPrice(grandTotal)}</span>
             </div>
           </div>
@@ -412,12 +414,12 @@ export default function RepairCenterB2BCatalog() {
                 <div className="h-10 bg-muted animate-pulse rounded" />
               ) : !shippingMethods || shippingMethods.length === 0 ? (
                 <Card className="border-muted bg-muted/10 p-3">
-                  <p className="text-sm text-muted-foreground">Nessun metodo di spedizione configurato</p>
+                  <p className="text-sm text-muted-foreground">{t("b2b.nessunMetodoDiSpedizioneConfigurato")}</p>
                 </Card>
               ) : (
                 <Select value={selectedShippingMethod} onValueChange={setSelectedShippingMethod}>
                   <SelectTrigger data-testid="select-shipping-method">
-                    <SelectValue placeholder="Seleziona metodo di spedizione" />
+                    <SelectValue placeholder={t("b2b.selezionaMetodoDiSpedizione")} />
                   </SelectTrigger>
                   <SelectContent>
                     {shippingMethods.map(method => (
@@ -436,16 +438,16 @@ export default function RepairCenterB2BCatalog() {
                 <Skeleton className="h-10 w-full" />
               ) : !paymentConfig?.hasAnyMethod ? (
                 <Card className="border-muted bg-muted/10 p-3">
-                  <p className="text-sm text-muted-foreground">Nessun metodo di pagamento configurato</p>
+                  <p className="text-sm text-muted-foreground">{t("b2b.nessunMetodoDiPagamentoConfigurato")}</p>
                 </Card>
               ) : (
                 <Select value={paymentMethod} onValueChange={setPaymentMethod}>
                   <SelectTrigger data-testid="select-payment-method">
-                    <SelectValue placeholder="Seleziona metodo di pagamento" />
+                    <SelectValue placeholder={t("b2b.selezionaMetodoDiPagamento")} />
                   </SelectTrigger>
                   <SelectContent>
                     {paymentConfig.bankTransfer.enabled && (
-                      <SelectItem value="bank_transfer">Bonifico Bancario</SelectItem>
+                      <SelectItem value="bank_transfer">{t("settings.bankTransfer")}</SelectItem>
                     )}
                     {paymentConfig.stripe.enabled && (
                       <SelectItem value="stripe">Carta di Credito (Stripe)</SelectItem>
@@ -461,7 +463,7 @@ export default function RepairCenterB2BCatalog() {
             <div className="space-y-2">
               <Label>Note Ordine</Label>
               <Textarea
-                placeholder="Note opzionali per l'ordine..."
+                placeholder={t("b2b.optionalOrderNotes")}
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
                 data-testid="input-notes"
@@ -491,15 +493,15 @@ export default function RepairCenterB2BCatalog() {
                 }}
                 onError={(error) => {
                   toast({
-                    title: "Errore PayPal",
+                    title: t("b2b.errorePayPal"),
                     description: error,
                     variant: "destructive",
                   });
                 }}
                 onCancel={() => {
                   toast({
-                    title: "Pagamento annullato",
-                    description: "Hai annullato il pagamento PayPal",
+                    title: t("license.paymentCancelled"),
+                    description: t("b2b.paypalPaymentCancelled"),
                   });
                 }}
               />
@@ -520,7 +522,7 @@ export default function RepairCenterB2BCatalog() {
                   toast({ title: "Ordine completato", description: "Pagamento ricevuto con successo" });
                 }}
                 onError={(error) => {
-                  toast({ title: "Errore", description: error, variant: "destructive" });
+                  toast({ title: t("auth.error"), description: error, variant: "destructive" });
                 }}
               />
             ) : (
@@ -530,7 +532,7 @@ export default function RepairCenterB2BCatalog() {
                 data-testid="button-submit-order"
               >
                 {createOrderMutation.isPending ? (
-                  "Invio in corso..."
+                  t("common.sendingInProgress")
                 ) : (
                   <>
                     <Send className="h-4 w-4 mr-2" />

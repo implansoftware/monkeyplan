@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useState, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useQuery } from "@tanstack/react-query";
@@ -63,7 +64,8 @@ type RepairCenterStats = {
 const CHART_COLORS = ['hsl(var(--primary))', 'hsl(var(--muted-foreground))', 'hsl(var(--chart-3))', 'hsl(var(--chart-4))'];
 
 export default function RepairCenterDashboard() {
-  usePageTitle("Dashboard Centro Riparazioni");
+  const { t } = useTranslation();
+  usePageTitle(t("dashboard.dashboardCentroRiparazioni"));
   const [customerDialogOpen, setCustomerDialogOpen] = useState(false);
   const [acceptanceDialogOpen, setAcceptanceDialogOpen] = useState(false);
 
@@ -104,18 +106,18 @@ export default function RepairCenterDashboard() {
 
   const getStatusBadge = (status: string) => {
     const statusMap: Record<string, { label: string; color: string }> = {
-      pending: { label: "In Attesa", color: "#94a3b8" },
-      ingressato: { label: "Ingressato", color: "#6366f1" },
-      in_diagnosi: { label: "In Diagnosi", color: "#8b5cf6" },
+      pending: { label: t("common.pending"), color: "#94a3b8" },
+      ingressato: { label: t("dashboard.ingressato"), color: "#6366f1" },
+      in_diagnosi: { label: t("dashboard.inDiagnosi"), color: "#8b5cf6" },
       preventivo_emesso: { label: "Prev. Emesso", color: "#f59e0b" },
       preventivo_accettato: { label: "Prev. OK", color: "#22c55e" },
       preventivo_rifiutato: { label: "Prev. Rifiutato", color: "#ef4444" },
       attesa_ricambi: { label: "Attesa Ricambi", color: "#f97316" },
-      in_riparazione: { label: "In Riparazione", color: "#3b82f6" },
-      in_test: { label: "In Test", color: "#06b6d4" },
+      in_riparazione: { label: t("dashboard.inRiparazione"), color: "#3b82f6" },
+      in_test: { label: t("dashboard.inTest"), color: "#06b6d4" },
       pronto_ritiro: { label: "Pronto", color: "#10b981" },
-      consegnato: { label: "Consegnato", color: "#64748b" },
-      cancelled: { label: "Annullato", color: "#dc2626" },
+      consegnato: { label: t("repairs.status.delivered"), color: "#64748b" },
+      cancelled: { label: t("repairs.status.cancelled"), color: "#dc2626" },
     };
     const config = statusMap[status] || { label: status, color: "#94a3b8" };
     return (
@@ -130,7 +132,7 @@ export default function RepairCenterDashboard() {
 
   const repairsChartData = stats?.repairsByStatus ? [
     { name: "Ingressato", value: stats.repairsByStatus.ingressato },
-    { name: "Diagnosi", value: stats.repairsByStatus.in_diagnosi },
+    { name: t("repairs.diagnosis"), value: stats.repairsByStatus.in_diagnosi },
     { name: "Prev.", value: stats.repairsByStatus.preventivo_emesso },
     { name: "In Rip.", value: stats.repairsByStatus.in_riparazione },
     { name: "Pronto", value: stats.repairsByStatus.pronto_ritiro },
@@ -159,7 +161,7 @@ export default function RepairCenterDashboard() {
               <LayoutDashboard className="h-5 w-5 sm:h-7 sm:w-7 text-white" />
             </div>
             <div>
-              <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-white tracking-tight">Dashboard</h1>
+              <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-white tracking-tight">{t("sidebar.sections.dashboard")}</h1>
               <p className="text-emerald-100">
                 Centro Riparazione
               </p>
@@ -232,7 +234,7 @@ export default function RepairCenterDashboard() {
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-semibold">{pendingInvoices.length} fatture in sospeso</p>
-                <p className="text-xs text-muted-foreground">In attesa di pagamento</p>
+                <p className="text-xs text-muted-foreground">{t("license.statusPending")}</p>
               </div>
               <Link href="/repair-center/invoices">
                 <Button size="sm" variant="ghost">
@@ -253,7 +255,7 @@ export default function RepairCenterDashboard() {
           <CardContent className="relative pt-5 pb-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1">Riparazioni Attive</p>
+                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1">{t("dashboard.activeRepairs")}</p>
                 {isLoading ? (
                   <Skeleton className="h-9 w-16" />
                 ) : (
@@ -282,7 +284,7 @@ export default function RepairCenterDashboard() {
           <CardContent className="relative pt-5 pb-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1">Clienti</p>
+                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1">{t("sidebar.sections.customers")}</p>
                 {isLoading ? (
                   <Skeleton className="h-9 w-16" />
                 ) : (
@@ -341,7 +343,7 @@ export default function RepairCenterDashboard() {
                 <p className="text-xs text-muted-foreground mt-1">
                   {stats?.warehouse?.lowStockItems ? (
                     <span className="text-amber-600 dark:text-amber-400">{stats?.warehouse?.lowStockItems} sotto scorta</span>
-                  ) : "Articoli in magazzino"}
+                  ) : t("warehouse.itemsInStock")}
                 </p>
               </div>
               <div className="h-12 w-12 rounded-xl bg-blue-500 text-white flex items-center justify-center shadow-lg shadow-blue-500/20">
@@ -385,7 +387,7 @@ export default function RepairCenterDashboard() {
                   <ShoppingCart className="h-4 w-4 text-orange-500" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-xs text-muted-foreground">Ordini B2B</p>
+                  <p className="text-xs text-muted-foreground">{t("sidebar.items.b2bOrders")}</p>
                   <p className="text-xl font-bold tabular-nums" data-testid="text-pending-b2b">
                     {stats?.b2b?.pendingOrders ?? 0}
                   </p>
@@ -406,7 +408,7 @@ export default function RepairCenterDashboard() {
                   <Ticket className="h-4 w-4 text-violet-500" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-xs text-muted-foreground">Ticket</p>
+                  <p className="text-xs text-muted-foreground">{t("sidebar.items.tickets")}</p>
                   <p className="text-xl font-bold tabular-nums" data-testid="text-tickets">
                     {stats?.overview?.assignedTickets ?? 0}
                   </p>
@@ -444,7 +446,7 @@ export default function RepairCenterDashboard() {
       {isWidgetVisible("management-quick-actions") && (
       <Card className="overflow-hidden">
         <CardHeader className="pb-3 border-b bg-muted/30">
-          <CardTitle className="text-base font-semibold">Azioni Rapide</CardTitle>
+          <CardTitle className="text-base font-semibold">{t("dashboard.quickActions")}</CardTitle>
         </CardHeader>
         <CardContent className="pt-4">
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
@@ -454,7 +456,7 @@ export default function RepairCenterDashboard() {
               data-testid="button-quick-new-repair"
             >
               <PackageOpen className="h-5 w-5" />
-              <span className="text-xs font-medium">Nuova Lavorazione</span>
+              <span className="text-xs font-medium">{t("dashboard.nuovaLavorazione")}</span>
             </Button>
             <Button 
               variant="outline" 
@@ -463,7 +465,7 @@ export default function RepairCenterDashboard() {
               data-testid="button-quick-customer"
             >
               <UserPlus className="h-5 w-5 text-emerald-500" />
-              <span className="text-xs font-medium">Nuovo Cliente</span>
+              <span className="text-xs font-medium">{t("customers.newCustomer")}</span>
             </Button>
             <Link href="/repair-center/appointments">
               <Button variant="outline" className="w-full h-auto py-4 px-3 flex flex-col items-center gap-2 hover:bg-primary/5 hover:border-primary/30" data-testid="button-quick-appointment">
@@ -474,19 +476,19 @@ export default function RepairCenterDashboard() {
             <Link href="/repair-center/warehouses">
               <Button variant="outline" className="w-full h-auto py-4 px-3 flex flex-col items-center gap-2 hover:bg-primary/5 hover:border-primary/30" data-testid="button-quick-warehouse">
                 <Warehouse className="h-5 w-5 text-violet-500" />
-                <span className="text-xs font-medium">Magazzino</span>
+                <span className="text-xs font-medium">{t("sidebar.sections.warehouse")}</span>
               </Button>
             </Link>
             <Link href="/repair-center/b2b-catalog">
               <Button variant="outline" className="w-full h-auto py-4 px-3 flex flex-col items-center gap-2 hover:bg-primary/5 hover:border-primary/30" data-testid="button-quick-b2b">
                 <ShoppingCart className="h-5 w-5 text-orange-500" />
-                <span className="text-xs font-medium">Ordine B2B</span>
+                <span className="text-xs font-medium">{t("dashboard.ordineB2B")}</span>
               </Button>
             </Link>
             <Link href="/repair-center/suppliers">
               <Button variant="outline" className="w-full h-auto py-4 px-3 flex flex-col items-center gap-2 hover:bg-primary/5 hover:border-primary/30" data-testid="button-quick-suppliers">
                 <Truck className="h-5 w-5 text-amber-500" />
-                <span className="text-xs font-medium">Fornitori</span>
+                <span className="text-xs font-medium">{t("sidebar.sections.supply")}</span>
               </Button>
             </Link>
           </div>
@@ -494,25 +496,25 @@ export default function RepairCenterDashboard() {
             <Link href="/repair-center/tickets">
               <Button variant="ghost" size="sm" className="w-full h-auto py-2 flex flex-col items-center gap-1 text-muted-foreground hover:text-foreground" data-testid="button-quick-tickets">
                 <Ticket className="h-4 w-4" />
-                <span className="text-[10px]">Ticket</span>
+                <span className="text-[10px]">{t("sidebar.items.tickets")}</span>
               </Button>
             </Link>
             <Link href="/repair-center/invoices">
               <Button variant="ghost" size="sm" className="w-full h-auto py-2 flex flex-col items-center gap-1 text-muted-foreground hover:text-foreground" data-testid="button-quick-invoices">
                 <Receipt className="h-4 w-4" />
-                <span className="text-[10px]">Fatture</span>
+                <span className="text-[10px]">{t("sidebar.items.invoices")}</span>
               </Button>
             </Link>
             <Link href="/repair-center/customers">
               <Button variant="ghost" size="sm" className="w-full h-auto py-2 flex flex-col items-center gap-1 text-muted-foreground hover:text-foreground" data-testid="button-quick-customers">
                 <Users className="h-4 w-4" />
-                <span className="text-[10px]">Clienti</span>
+                <span className="text-[10px]">{t("sidebar.sections.customers")}</span>
               </Button>
             </Link>
             <Link href="/repair-center/repairs">
               <Button variant="ghost" size="sm" className="w-full h-auto py-2 flex flex-col items-center gap-1 text-muted-foreground hover:text-foreground" data-testid="button-quick-repairs">
                 <Wrench className="h-4 w-4" />
-                <span className="text-[10px]">Tutte Rip.</span>
+                <span className="text-[10px]">{t("dashboard.tutteRip")}</span>
               </Button>
             </Link>
           </div>
@@ -531,7 +533,7 @@ export default function RepairCenterDashboard() {
           {isWidgetVisible("chart-repairs-status") && (
           <Card className="overflow-hidden">
             <CardHeader className="pb-2 border-b bg-muted/30">
-              <CardTitle className="text-sm font-semibold">Riparazioni per Stato</CardTitle>
+              <CardTitle className="text-sm font-semibold">{t("dashboard.riparazioniPerStato")}</CardTitle>
             </CardHeader>
             <CardContent className="pt-4">
               {isLoading ? (
@@ -557,7 +559,7 @@ export default function RepairCenterDashboard() {
               ) : (
                 <div className="h-48 flex flex-col items-center justify-center text-muted-foreground">
                   <Wrench className="h-8 w-8 mb-2 opacity-20" />
-                  <p className="text-sm">Nessun dato disponibile</p>
+                  <p className="text-sm">{t("common.noData")}</p>
                 </div>
               )}
             </CardContent>
@@ -567,7 +569,7 @@ export default function RepairCenterDashboard() {
           {isWidgetVisible("chart-work-status") && (
           <Card className="overflow-hidden">
             <CardHeader className="pb-2 border-b bg-muted/30">
-              <CardTitle className="text-sm font-semibold">Stato Lavori</CardTitle>
+              <CardTitle className="text-sm font-semibold">{t("dashboard.statoLavori")}</CardTitle>
             </CardHeader>
             <CardContent className="pt-4">
               {isLoading ? (
@@ -615,7 +617,7 @@ export default function RepairCenterDashboard() {
               ) : (
                 <div className="h-48 flex flex-col items-center justify-center text-muted-foreground">
                   <Package className="h-8 w-8 mb-2 opacity-20" />
-                  <p className="text-sm">Nessun dato disponibile</p>
+                  <p className="text-sm">{t("common.noData")}</p>
                 </div>
               )}
             </CardContent>
@@ -638,7 +640,7 @@ export default function RepairCenterDashboard() {
             {recentRepairs.length === 0 ? (
               <div className="text-center py-12 text-muted-foreground">
                 <Package className="h-10 w-10 mx-auto mb-3 opacity-20" />
-                <p className="text-sm font-medium mb-1">Nessuna riparazione</p>
+                <p className="text-sm font-medium mb-1">{t("customers.nessunaRiparazione")}</p>
                 <p className="text-xs text-muted-foreground">Inizia creando una nuova lavorazione</p>
               </div>
             ) : (

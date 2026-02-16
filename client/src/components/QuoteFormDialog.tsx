@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { useForm, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
@@ -92,8 +93,8 @@ interface QuoteFormDialogProps {
 
 const partSchema = z.object({
   productId: z.string().optional(),
-  name: z.string().min(1, "Nome ricambio obbligatorio"),
-  quantity: z.coerce.number().min(1, "La quantità deve essere almeno 1"),
+  name: z.string().min(1, t("quote.partNameRequired")),
+  quantity: z.coerce.number().min(1, t("quote.quantityMinOne")),
   unitPrice: z.coerce.number().min(0, "Il prezzo deve essere positivo"),
   imageUrl: z.string().optional(),
   source: z.string().optional(),
@@ -116,6 +117,7 @@ export function QuoteFormDialog({
   standalone = false,
   onDataCollected,
 }: QuoteFormDialogProps) {
+  const { t } = useTranslation();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [totalAmount, setTotalAmount] = useState(0);
@@ -166,7 +168,7 @@ export function QuoteFormDialog({
   });
 
   const effectiveHourlyRateCents = repairCenter?.hourlyRateCents ?? globalHourlyRateData?.hourlyRateCents ?? 3500;
-  const hourlyRateSource = repairCenter?.hourlyRateCents ? `Centro: ${repairCenter.name}` : "Tariffa Globale";
+  const hourlyRateSource = repairCenter?.hourlyRateCents ? t("quote.centerRate", { name: repairCenter.name }) : t("quote.globalRate");
 
   const getErrorStatus = (error: any): number | null => {
     if (!error?.message) return null;
@@ -262,8 +264,8 @@ export function QuoteFormDialog({
     },
     onSuccess: () => {
       toast({
-        title: "Preventivo creato",
-        description: "Il preventivo è stato creato e inviato con successo",
+        title: t("quote.created"),
+        description: t("quote.createdDescription"),
       });
       queryClient.invalidateQueries({ queryKey: ["/api/repair-orders"] });
       queryClient.invalidateQueries({
@@ -276,7 +278,7 @@ export function QuoteFormDialog({
     },
     onError: (error: Error) => {
       toast({
-        title: "Errore",
+        title: t("common.error"),
         description: error.message,
         variant: "destructive",
       });
@@ -315,15 +317,15 @@ export function QuoteFormDialog({
   const getSourceBadge = (source?: string) => {
     switch (source) {
       case "warehouse":
-        return <Badge variant="outline" className="text-xs"><Warehouse className="h-3 w-3 mr-1" />Magazzino</Badge>;
+        return <Badge variant="outline" className="text-xs"><Warehouse className="h-3 w-3 mr-1" />{t("warehouse.title")}</Badge>;
       case "service":
-        return <Badge variant="outline" className="text-xs"><Wrench className="h-3 w-3 mr-1" />Servizio</Badge>;
+        return <Badge variant="outline" className="text-xs"><Wrench className="h-3 w-3 mr-1" />{t("quote.service")}</Badge>;
       case "network":
-        return <Badge variant="outline" className="text-xs"><Globe className="h-3 w-3 mr-1" />Rete</Badge>;
+        return <Badge variant="outline" className="text-xs"><Globe className="h-3 w-3 mr-1" />{t("network.network")}</Badge>;
       case "supplier":
-        return <Badge variant="outline" className="text-xs"><ShoppingCart className="h-3 w-3 mr-1" />Fornitore</Badge>;
+        return <Badge variant="outline" className="text-xs"><ShoppingCart className="h-3 w-3 mr-1" />{t("quote.supplier")}</Badge>;
       default:
-        return <Badge variant="outline" className="text-xs"><PenLine className="h-3 w-3 mr-1" />Manuale</Badge>;
+        return <Badge variant="outline" className="text-xs"><PenLine className="h-3 w-3 mr-1" />{t("quote.manual")}</Badge>;
     }
   };
 
@@ -342,9 +344,9 @@ export function QuoteFormDialog({
               <FileText className="h-5 w-5 text-primary" />
             </div>
             <div>
-              <DialogTitle className="text-lg">Crea Preventivo</DialogTitle>
+              <DialogTitle className="text-lg">{t("quote.createQuote")}</DialogTitle>
               <DialogDescription className="text-sm">
-                Aggiungi ricambi e servizi per creare il preventivo
+                {t("quote.addPartsAndServices")}
               </DialogDescription>
             </div>
           </div>
@@ -358,10 +360,10 @@ export function QuoteFormDialog({
                 <div className="p-4 border-b bg-muted/30">
                   <h3 className="font-medium flex items-center gap-2">
                     <Package className="h-4 w-4 text-primary" />
-                    Aggiungi Articoli
+                    {t("quote.addItems")}
                   </h3>
                   <p className="text-xs text-muted-foreground mt-1">
-                    Scegli come vuoi aggiungere ricambi e servizi al preventivo
+                    {t("quote.chooseHowToAdd")}
                   </p>
                 </div>
                 
@@ -369,32 +371,32 @@ export function QuoteFormDialog({
                   <TabsList className="w-full grid grid-cols-4 p-1 m-2 mr-4">
                     <TabsTrigger value="warehouse" className="text-xs gap-1" data-testid="tab-warehouse">
                       <Warehouse className="h-3.5 w-3.5" />
-                      <span className="hidden sm:inline">Magazzino</span>
+                      <span className="hidden sm:inline">{t("warehouse.title")}</span>
                     </TabsTrigger>
                     <TabsTrigger value="services" className="text-xs gap-1" data-testid="tab-services">
                       <Wrench className="h-3.5 w-3.5" />
-                      <span className="hidden sm:inline">Servizi</span>
+                      <span className="hidden sm:inline">{t("services.title")}</span>
                     </TabsTrigger>
                     <TabsTrigger value="network" className="text-xs gap-1" data-testid="tab-network">
                       <Globe className="h-3.5 w-3.5" />
-                      <span className="hidden sm:inline">Rete</span>
+                      <span className="hidden sm:inline">{t("network.network")}</span>
                     </TabsTrigger>
                     <TabsTrigger value="manual" className="text-xs gap-1" data-testid="tab-manual">
                       <PenLine className="h-3.5 w-3.5" />
-                      <span className="hidden sm:inline">Manuale</span>
+                      <span className="hidden sm:inline">{t("quote.manual")}</span>
                     </TabsTrigger>
                   </TabsList>
 
                   <div className="p-4 pt-2">
                     <TabsContent value="warehouse" className="mt-0 space-y-3">
                       <div className="text-sm text-muted-foreground">
-                        Cerca ricambi disponibili nel tuo magazzino
+                        {t("quote.searchWarehouseParts")}
                       </div>
                       <div className="flex flex-wrap items-center gap-2">
                         <Select value={selectedWarehouseId} onValueChange={setSelectedWarehouseId}>
                           <SelectTrigger className="w-full" data-testid="select-warehouse">
                             <Warehouse className="h-4 w-4 mr-2 text-muted-foreground" />
-                            <SelectValue placeholder="Seleziona un magazzino..." />
+                            <SelectValue placeholder={t("quote.selectWarehouse")} />
                           </SelectTrigger>
                           <SelectContent>
                             {accessibleWarehouses.map((wh) => (
@@ -424,14 +426,14 @@ export function QuoteFormDialog({
                       {!selectedWarehouseId && (
                         <div className="text-center py-4 text-sm text-muted-foreground border rounded-lg border-dashed">
                           <Warehouse className="h-8 w-8 mx-auto mb-2 opacity-30" />
-                          Seleziona prima un magazzino per cercare i ricambi
+                          {t("quote.selectWarehouseFirst")}
                         </div>
                       )}
                     </TabsContent>
 
                     <TabsContent value="services" className="mt-0 space-y-3">
                       <div className="text-sm text-muted-foreground">
-                        Aggiungi servizi dal catalogo (sostituzione schermo, riparazione, ecc.)
+                        {t("quote.addServicesFromCatalog")}
                       </div>
                       <SearchableServiceCombobox
                         onSelect={(service) => {
@@ -453,7 +455,7 @@ export function QuoteFormDialog({
 
                     <TabsContent value="network" className="mt-0 space-y-3">
                       <div className="text-sm text-muted-foreground">
-                        Cerca prodotti nella rete (altri magazzini, marketplace, fornitori)
+                        {t("quote.searchNetworkProducts")}
                       </div>
                       <NetworkProductSearch
                         onSelect={(product) => {
@@ -473,7 +475,7 @@ export function QuoteFormDialog({
 
                     <TabsContent value="manual" className="mt-0 space-y-3">
                       <div className="text-sm text-muted-foreground">
-                        Inserisci manualmente un articolo con nome e prezzo personalizzati
+                        {t("quote.manualEntryDescription")}
                       </div>
                       <Button
                         type="button"
@@ -483,7 +485,7 @@ export function QuoteFormDialog({
                         data-testid="button-add-part"
                       >
                         <Plus className="h-4 w-4 mr-2" />
-                        Aggiungi Voce Manuale
+                        {t("quote.addManualItem")}
                       </Button>
                     </TabsContent>
                   </div>
@@ -495,11 +497,11 @@ export function QuoteFormDialog({
                   <div className="p-4 border-b bg-muted/30 flex items-center justify-between">
                     <h3 className="font-medium flex items-center gap-2">
                       <ShoppingCart className="h-4 w-4 text-primary" />
-                      Articoli nel Preventivo
+                      {t("quote.itemsInQuote")}
                       <Badge variant="secondary" className="ml-1">{fields.length}</Badge>
                     </h3>
                     <div className="text-sm font-medium">
-                      Subtotale: {formatCurrency(partsTotal)}
+                      {t("quote.subtotal")}: {formatCurrency(partsTotal)}
                     </div>
                   </div>
                   <div className="divide-y">
@@ -533,7 +535,7 @@ export function QuoteFormDialog({
                                     <FormControl>
                                       <Input
                                         {...nameField}
-                                        placeholder="Nome articolo"
+                                        placeholder={t("quote.itemName")}
                                         className="h-8 text-sm font-medium"
                                         data-testid={`input-part-name-${index}`}
                                       />
@@ -564,7 +566,7 @@ export function QuoteFormDialog({
                                 render={({ field: qtyField }) => (
                                   <FormItem className="space-y-0">
                                     <div className="flex flex-wrap items-center gap-1">
-                                      <span className="text-xs text-muted-foreground">Qtà:</span>
+                                      <span className="text-xs text-muted-foreground">{t("quote.qty")}:</span>
                                       <FormControl>
                                         <Input
                                           {...qtyField}
@@ -615,9 +617,9 @@ export function QuoteFormDialog({
               {fields.length === 0 && (
                 <div className="rounded-lg border border-dashed p-8 text-center">
                   <ShoppingCart className="h-10 w-10 mx-auto mb-3 text-muted-foreground/30" />
-                  <h4 className="font-medium text-muted-foreground">Nessun articolo aggiunto</h4>
+                  <h4 className="font-medium text-muted-foreground">{t("quote.noItemsAdded")}</h4>
                   <p className="text-sm text-muted-foreground mt-1">
-                    Usa le schede sopra per aggiungere ricambi, servizi o voci manuali
+                    {t("quote.useTabsToAdd")}
                   </p>
                 </div>
               )}
@@ -626,7 +628,7 @@ export function QuoteFormDialog({
                 <div className="p-4 border-b bg-muted/30">
                   <h3 className="font-medium flex items-center gap-2">
                     <Calculator className="h-4 w-4 text-primary" />
-                    Manodopera
+                    {t("quote.labor")}
                   </h3>
                 </div>
                 <div className="p-4 space-y-4">
@@ -634,10 +636,10 @@ export function QuoteFormDialog({
                     <Alert className="bg-emerald-500/5 border-emerald-500/20">
                       <Calculator className="h-4 w-4 text-emerald-600" />
                       <AlertDescription className="text-sm">
-                        <span className="font-medium">Calcolato automaticamente:</span>{" "}
-                        {formatCurrency(laborCalculation.hourlyRate)}/ora × {laborCalculation.estimatedHours}h = {formatCurrency(laborCalculation.calculatedCost)}
+                        <span className="font-medium">{t("quote.autoCalculated")}:</span>{" "}
+                        {formatCurrency(laborCalculation.hourlyRate)}/{t("quote.hour")} × {laborCalculation.estimatedHours}h = {formatCurrency(laborCalculation.calculatedCost)}
                         <span className="block text-xs text-muted-foreground mt-0.5">
-                          Fonte: {hourlyRateSource}
+                          {t("quote.source")}: {hourlyRateSource}
                         </span>
                       </AlertDescription>
                     </Alert>
@@ -647,7 +649,7 @@ export function QuoteFormDialog({
                     <Alert variant="default" className="bg-muted/50">
                       <Info className="h-4 w-4" />
                       <AlertDescription className="text-sm">
-                        Diagnosi non ancora presente. Inserisci manualmente il costo manodopera.
+                        {t("quote.noDiagnosisYet")}
                       </AlertDescription>
                     </Alert>
                   )}
@@ -663,7 +665,7 @@ export function QuoteFormDialog({
                       data-testid="checkbox-want-labor-cost"
                     />
                     <Label htmlFor="wantAddLaborCostQuote" className="text-sm">
-                      Aggiungi costo manodopera
+                      {t("quote.addLaborCost")}
                     </Label>
                   </div>
                   
@@ -700,7 +702,7 @@ export function QuoteFormDialog({
                   <Button variant="ghost" className="w-full justify-between" type="button">
                     <span className="flex flex-wrap items-center gap-2 text-sm">
                       <StickyNote className="h-4 w-4" />
-                      Opzioni Avanzate
+                      {t("quote.advancedOptions")}
                     </span>
                     {showAdvanced ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
                   </Button>
@@ -714,7 +716,7 @@ export function QuoteFormDialog({
                         <FormItem>
                           <FormLabel className="flex flex-wrap items-center gap-2">
                             <Calendar className="h-4 w-4" />
-                            Valido Fino Al
+                            {t("quote.validUntil")}
                           </FormLabel>
                           <FormControl>
                             <Input
@@ -725,7 +727,7 @@ export function QuoteFormDialog({
                             />
                           </FormControl>
                           <FormDescription className="text-xs">
-                            Data di scadenza del preventivo (opzionale)
+                            {t("quote.validUntilDescription")}
                           </FormDescription>
                           <FormMessage />
                         </FormItem>
@@ -739,12 +741,12 @@ export function QuoteFormDialog({
                         <FormItem>
                           <FormLabel className="flex flex-wrap items-center gap-2">
                             <StickyNote className="h-4 w-4" />
-                            Note
+                            {t("common.notes")}
                           </FormLabel>
                           <FormControl>
                             <Textarea
                               {...field}
-                              placeholder="Note aggiuntive o condizioni..."
+                              placeholder={t("quote.notesPlaceholder")}
                               rows={2}
                               data-testid="input-quote-notes"
                             />
@@ -761,11 +763,11 @@ export function QuoteFormDialog({
             <div className="flex-shrink-0 pt-4 mt-4 border-t bg-background">
               <div className="flex items-center justify-between mb-4">
                 <div className="text-sm text-muted-foreground">
-                  {fields.length} articol{fields.length === 1 ? 'o' : 'i'} 
-                  {wantAddLaborCost && watchLaborCost > 0 && ` + manodopera`}
+                  {t("quote.itemCount", { count: fields.length })} 
+                  {wantAddLaborCost && watchLaborCost > 0 && ` + ${t("quote.labor").toLowerCase()}`}
                 </div>
                 <div className="text-right">
-                  <div className="text-xs text-muted-foreground">Totale Preventivo</div>
+                  <div className="text-xs text-muted-foreground">{t("quote.totalQuote")}</div>
                   <div className="text-2xl font-bold text-primary" data-testid="text-total-amount">
                     {formatCurrency(totalAmount)}
                   </div>
@@ -779,7 +781,7 @@ export function QuoteFormDialog({
                   onClick={() => onOpenChange(false)}
                   data-testid="button-cancel"
                 >
-                  Annulla
+                  {t("common.cancel")}
                 </Button>
                 <Button
                   type="submit"
@@ -787,8 +789,8 @@ export function QuoteFormDialog({
                   data-testid="button-create-quote"
                 >
                   {createQuoteMutation.isPending
-                    ? "Creazione..."
-                    : standalone ? "Conferma" : "Crea Preventivo"}
+                    ? t("common.creating")
+                    : standalone ? t("common.confirm") : t("quote.createQuote")}
                 </Button>
               </div>
             </div>

@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Send, MessageSquare } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useTranslation } from "react-i18next";
 
 type Message = {
   id: string;
@@ -15,6 +16,7 @@ type Message = {
 };
 
 export default function AdminChat() {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const { toast } = useToast();
   const [messages, setMessages] = useState<Message[]>([]);
@@ -49,8 +51,8 @@ export default function AdminChat() {
     socket.onerror = (error) => {
       console.error('WebSocket error:', error);
       toast({
-        title: "Errore connessione",
-        description: "Impossibile connettersi al server chat",
+        title: t("common.connectionError"),
+        description: t("common.connectionError"),
         variant: "destructive",
       });
     };
@@ -118,7 +120,7 @@ export default function AdminChat() {
               {messages.length === 0 ? (
                 <div className="text-center py-12 text-muted-foreground">
                   <MessageSquare className="h-12 w-12 mx-auto mb-4 opacity-20" />
-                  <p>Nessun messaggio</p>
+                  <p>{t("common.noMessages")}</p>
                   <p className="text-sm mt-1">Inizia una conversazione</p>
                 </div>
               ) : (
@@ -153,7 +155,7 @@ export default function AdminChat() {
                 <Input
                   value={newMessage}
                   onChange={(e) => setNewMessage(e.target.value)}
-                  placeholder="Scrivi un messaggio..."
+                  placeholder={t("common.writeMessage")}
                   data-testid="input-chat-message"
                 />
                 <Button type="submit" size="icon" data-testid="button-send-message">

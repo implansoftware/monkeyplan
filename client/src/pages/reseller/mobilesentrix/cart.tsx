@@ -12,6 +12,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { ShoppingCart, Trash2, Plus, Minus, Package, ArrowLeft, CreditCard, Loader2, Truck } from "lucide-react";
 import { Link } from "wouter";
+import { useTranslation } from "react-i18next";
 
 type CartItem = {
   id: string;
@@ -44,6 +45,7 @@ type ShippingMethodsResponse = {
 };
 
 export default function MobilesentrixCartPage() {
+  const { t } = useTranslation();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [isCheckingOut, setIsCheckingOut] = useState(false);
@@ -73,7 +75,7 @@ export default function MobilesentrixCartPage() {
       queryClient.invalidateQueries({ queryKey: ["/api/mobilesentrix/cart/count"] });
     },
     onError: (error: Error) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -87,7 +89,7 @@ export default function MobilesentrixCartPage() {
       toast({ title: "Rimosso", description: "Prodotto rimosso dal carrello" });
     },
     onError: (error: Error) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -101,7 +103,7 @@ export default function MobilesentrixCartPage() {
       toast({ title: "Carrello svuotato", description: "Tutti i prodotti sono stati rimossi" });
     },
     onError: (error: Error) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -121,7 +123,7 @@ export default function MobilesentrixCartPage() {
         queryClient.invalidateQueries({ queryKey: ["/api/mobilesentrix/orders"] });
         toast({ title: "Ordine creato!", description: `Ordine #${data.order?.orderNumber || data.mobilesentrixOrderId} creato con successo` });
       } else {
-        toast({ title: "Errore", description: data.message, variant: "destructive" });
+        toast({ title: t("common.error"), description: data.message, variant: "destructive" });
       }
     },
     onError: (error: Error) => {
@@ -174,9 +176,7 @@ export default function MobilesentrixCartPage() {
           </Link>
           <Link href="/reseller/mobilesentrix/orders">
             <Button variant="outline" data-testid="button-view-orders">
-              <Package className="h-4 w-4 mr-2" />
-              I Miei Ordini
-            </Button>
+              <Package className="h-4 w-4 mr-2" />{t("sidebar.items.myOrders")}</Button>
           </Link>
         </div>
       </div>
@@ -185,7 +185,7 @@ export default function MobilesentrixCartPage() {
         <Card>
           <CardContent className="py-12 text-center">
             <ShoppingCart className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
-            <h2 className="text-xl font-semibold mb-2">Carrello vuoto</h2>
+            <h2 className="text-xl font-semibold mb-2">{t("pos.emptyCart")}</h2>
             <p className="text-muted-foreground mb-4">Aggiungi prodotti dal catalogo MobileSentrix</p>
             <Link href="/reseller/mobilesentrix/catalog">
               <Button data-testid="button-browse-catalog">
@@ -285,7 +285,7 @@ export default function MobilesentrixCartPage() {
           <div className="lg:col-span-1">
             <Card className="sticky top-6">
               <CardHeader>
-                <CardTitle>Riepilogo Ordine</CardTitle>
+                <CardTitle>{t("shop.orderSummary")}</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="flex justify-between text-sm">
@@ -327,7 +327,7 @@ export default function MobilesentrixCartPage() {
 
                 <div className="border-t pt-4">
                   <div className="flex justify-between font-semibold text-lg">
-                    <span>Totale</span>
+                    <span>{t("common.total")}</span>
                     <span>{formatPrice(totalAmount)}</span>
                   </div>
                   <p className="text-xs text-muted-foreground mt-1">

@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { useQuery, useMutation } from "@tanstack/react-query";
@@ -29,28 +30,29 @@ type ReturnWithItems = RcB2bReturn & {
   }>;
 };
 
-const statusLabels: Record<string, { label: string; color: string; icon: typeof Clock }> = {
-  requested: { label: "Richiesto", color: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400", icon: Clock },
-  approved: { label: "Approvato", color: "bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400", icon: CheckCircle },
-  awaiting_shipment: { label: "In attesa spedizione", color: "bg-orange-100 text-orange-800 dark:bg-orange-900/20 dark:text-orange-400", icon: Package },
-  shipped: { label: "Spedito", color: "bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-400", icon: Truck },
-  received: { label: "Ricevuto", color: "bg-teal-100 text-teal-800 dark:bg-teal-900/20 dark:text-teal-400", icon: Package },
-  inspecting: { label: "In ispezione", color: "bg-indigo-100 text-indigo-800 dark:bg-indigo-900/20 dark:text-indigo-400", icon: Search },
-  completed: { label: "Completato", color: "bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400", icon: CheckCircle },
-  rejected: { label: "Rifiutato", color: "bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400", icon: XCircle },
-  cancelled: { label: "Annullato", color: "bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400", icon: XCircle },
-};
 
-const reasonLabels: Record<string, string> = {
-  defective: "Prodotto difettoso",
-  wrong_item: "Articolo errato",
-  damaged: "Danneggiato",
-  not_as_described: "Non conforme alla descrizione",
-  excess_quantity: "Quantità in eccesso",
-  other: "Altro",
-};
 
 export default function RepairCenterB2BReturns() {
+  const { t } = useTranslation();
+  const statusLabels: Record<string, { label: string; color: string; icon: typeof Clock }> = {
+    requested: { label: "Richiesto", color: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400", icon: Clock },
+    approved: { label: t("repairs.status.approved"), color: "bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400", icon: CheckCircle },
+    awaiting_shipment: { label: t("b2b.inAttesaSpedizione"), color: "bg-orange-100 text-orange-800 dark:bg-orange-900/20 dark:text-orange-400", icon: Package },
+    shipped: { label: t("b2b.status.shipped"), color: "bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-400", icon: Truck },
+    received: { label: t("repairs.status.received"), color: "bg-teal-100 text-teal-800 dark:bg-teal-900/20 dark:text-teal-400", icon: Package },
+    inspecting: { label: t("b2b.inIspezione"), color: "bg-indigo-100 text-indigo-800 dark:bg-indigo-900/20 dark:text-indigo-400", icon: Search },
+    completed: { label: t("repairs.status.completed"), color: "bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400", icon: CheckCircle },
+    rejected: { label: t("hr.rejected"), color: "bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400", icon: XCircle },
+    cancelled: { label: t("repairs.status.cancelled"), color: "bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400", icon: XCircle },
+  };
+  const reasonLabels: Record<string, string> = {
+    defective: t("b2b.defectiveProduct"),
+    wrong_item: t("b2b.wrongItem"),
+    damaged: t("common.damaged"),
+    not_as_described: t("b2b.notAsDescribed"),
+    excess_quantity: t("b2b.excessQuantity"),
+    other: "Altro",
+  };
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [detailDialogOpen, setDetailDialogOpen] = useState(false);
@@ -105,8 +107,8 @@ export default function RepairCenterB2BReturns() {
               <RotateCcw className="h-5 w-5 sm:h-7 sm:w-7 text-white" />
             </div>
             <div>
-              <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-white tracking-tight" data-testid="text-page-title">Resi B2B</h1>
-              <p className="text-emerald-100">Gestisci i resi dei tuoi ordini B2B</p>
+              <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-white tracking-tight" data-testid="text-page-title">{t("sidebar.items.b2bReturns")}</h1>
+              <p className="text-emerald-100">{t("b2b.gestisciIResiDeiTuoiOrdiniB2B")}</p>
             </div>
           </div>
           <div className="flex flex-wrap items-center gap-2">
@@ -135,7 +137,7 @@ export default function RepairCenterB2BReturns() {
                 <Clock className="h-6 w-6 text-yellow-600" />
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">In Attesa</p>
+                <p className="text-sm text-muted-foreground">{t("common.pending")}</p>
                 <p className="text-2xl font-bold">{returns.filter(r => r.status === 'requested').length}</p>
               </div>
             </div>
@@ -174,7 +176,7 @@ export default function RepairCenterB2BReturns() {
                 <CheckCircle className="h-6 w-6 text-green-600" />
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">Completati</p>
+                <p className="text-sm text-muted-foreground">{t("common.completed")}</p>
                 <p className="text-2xl font-bold">{returns.filter(r => r.status === 'completed').length}</p>
               </div>
             </div>
@@ -190,7 +192,7 @@ export default function RepairCenterB2BReturns() {
               <div className="relative flex-1 md:w-60">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
-                  placeholder="Cerca..."
+                  placeholder={t("b2b.cerca")}
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="pl-10"
@@ -199,14 +201,14 @@ export default function RepairCenterB2BReturns() {
               </div>
               <Select value={statusFilter} onValueChange={setStatusFilter}>
                 <SelectTrigger className="w-40" data-testid="select-status">
-                  <SelectValue placeholder="Stato" />
+                  <SelectValue placeholder={t("common.status")} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">Tutti</SelectItem>
+                  <SelectItem value="all">{t("common.allMasc")}</SelectItem>
                   <SelectItem value="requested">Richiesti</SelectItem>
                   <SelectItem value="approved">Approvati</SelectItem>
                   <SelectItem value="shipped">Spediti</SelectItem>
-                  <SelectItem value="completed">Completati</SelectItem>
+                  <SelectItem value="completed">{t("common.completed")}</SelectItem>
                   <SelectItem value="rejected">Rifiutati</SelectItem>
                 </SelectContent>
               </Select>
@@ -223,9 +225,9 @@ export default function RepairCenterB2BReturns() {
           ) : filteredReturns.length === 0 ? (
             <div className="text-center py-12 text-muted-foreground">
               <RotateCcw className="h-12 w-12 mx-auto mb-4 opacity-50" />
-              <p>Nessun reso trovato</p>
+              <p>{t("b2b.noReturnsFound")}</p>
               {returns.length === 0 && (
-                <p className="text-sm mt-2">Crea un nuovo reso da un ordine ricevuto</p>
+                <p className="text-sm mt-2">{t("b2b.creaUnNuovoResoDaUnOrdineRicevuto")}</p>
               )}
             </div>
           ) : (
@@ -235,11 +237,11 @@ export default function RepairCenterB2BReturns() {
                 <TableHeader>
                   <TableRow>
                     <TableHead>Numero Reso</TableHead>
-                    <TableHead className="hidden md:table-cell">Data Richiesta</TableHead>
-                    <TableHead className="hidden lg:table-cell">Motivo</TableHead>
-                    <TableHead className="text-right hidden md:table-cell">Importo</TableHead>
-                    <TableHead className="text-center">Stato</TableHead>
-                    <TableHead className="text-right">Azioni</TableHead>
+                    <TableHead className="hidden md:table-cell">{t("warehouse.requestDate")}</TableHead>
+                    <TableHead className="hidden lg:table-cell">{t("common.reason")}</TableHead>
+                    <TableHead className="text-right hidden md:table-cell">{t("common.amount")}</TableHead>
+                    <TableHead className="text-center">{t("common.status")}</TableHead>
+                    <TableHead className="text-right">{t("common.actions")}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -310,21 +312,21 @@ export default function RepairCenterB2BReturns() {
             <div className="space-y-6">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <Label className="text-muted-foreground">Stato</Label>
+                  <Label className="text-muted-foreground">{t("common.status")}</Label>
                   <Badge className={statusLabels[selectedReturn.status]?.color || ""}>
                     {statusLabels[selectedReturn.status]?.label || selectedReturn.status}
                   </Badge>
                 </div>
                 <div>
-                  <Label className="text-muted-foreground">Motivo</Label>
+                  <Label className="text-muted-foreground">{t("common.reason")}</Label>
                   <p className="font-medium">{reasonLabels[selectedReturn.reason] || selectedReturn.reason}</p>
                 </div>
                 <div>
-                  <Label className="text-muted-foreground">Data Richiesta</Label>
+                  <Label className="text-muted-foreground">{t("warehouse.requestDate")}</Label>
                   <p className="font-medium">{formatDate(selectedReturn.requestedAt)}</p>
                 </div>
                 <div>
-                  <Label className="text-muted-foreground">Importo Totale</Label>
+                  <Label className="text-muted-foreground">{t("b2b.importoTotale")}</Label>
                   <p className="font-medium text-lg">{formatCurrency(selectedReturn.totalAmount)}</p>
                 </div>
                 {selectedReturn.trackingNumber && (
@@ -343,7 +345,7 @@ export default function RepairCenterB2BReturns() {
               
               {selectedReturn.reasonDetails && (
                 <div>
-                  <Label className="text-muted-foreground">Dettagli Motivo</Label>
+                  <Label className="text-muted-foreground">{t("suppliers.reasonDetails")}</Label>
                   <p className="mt-1">{selectedReturn.reasonDetails}</p>
                 </div>
               )}
@@ -357,14 +359,14 @@ export default function RepairCenterB2BReturns() {
 
               {returnDetail?.items && returnDetail.items.length > 0 && (
                 <div>
-                  <Label className="text-muted-foreground">Articoli</Label>
+                  <Label className="text-muted-foreground">{t("b2b.items")}</Label>
                   <div className="mt-2 border rounded-lg">
                     <Table>
                       <TableHeader>
                         <TableRow>
-                          <TableHead>Prodotto</TableHead>
-                          <TableHead className="text-center">Qtà</TableHead>
-                          <TableHead className="text-right">Prezzo</TableHead>
+                          <TableHead>{t("common.product")}</TableHead>
+                          <TableHead className="text-center">{t("common.qty")}</TableHead>
+                          <TableHead className="text-right">{t("common.price")}</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
@@ -383,7 +385,7 @@ export default function RepairCenterB2BReturns() {
             </div>
           )}
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDetailDialogOpen(false)}>Chiudi</Button>
+            <Button variant="outline" onClick={() => setDetailDialogOpen(false)}>{t("common.close")}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -398,6 +400,7 @@ export default function RepairCenterB2BReturns() {
         open={createDialogOpen}
         onClose={() => setCreateDialogOpen(false)}
         orders={receivedOrders}
+        reasonLabels={reasonLabels}
       />
     </div>
   );
@@ -408,6 +411,7 @@ function ShipReturnDialog({ open, onClose, returnDoc }: {
   onClose: () => void; 
   returnDoc: RcB2bReturn | null;
 }) {
+  const { t } = useTranslation();
   const [trackingNumber, setTrackingNumber] = useState("");
   const [carrier, setCarrier] = useState("");
   const { toast } = useToast();
@@ -421,13 +425,13 @@ function ShipReturnDialog({ open, onClose, returnDoc }: {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/repair-center/b2b-returns"] });
-      toast({ title: "Reso spedito", description: "La spedizione è stata registrata" });
+      toast({ title: "Reso spedito", description: t("b2b.laSpedizioneStataRegistrata") });
       onClose();
       setTrackingNumber("");
       setCarrier("");
     },
     onError: (error: any) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("auth.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -442,7 +446,7 @@ function ShipReturnDialog({ open, onClose, returnDoc }: {
         </DialogHeader>
         <div className="space-y-4">
           <div>
-            <Label>Corriere</Label>
+            <Label>{t("shipping.carrier")}</Label>
             <Input 
               value={carrier}
               onChange={(e) => setCarrier(e.target.value)}
@@ -455,20 +459,20 @@ function ShipReturnDialog({ open, onClose, returnDoc }: {
             <Input 
               value={trackingNumber}
               onChange={(e) => setTrackingNumber(e.target.value)}
-              placeholder="Inserisci il codice tracking"
+              placeholder={t("b2b.inserisciIlCodiceTracking")}
               data-testid="input-tracking"
             />
           </div>
         </div>
         <DialogFooter>
-          <Button variant="outline" onClick={onClose}>Annulla</Button>
+          <Button variant="outline" onClick={onClose}>{t("profile.cancel")}</Button>
           <Button 
             onClick={() => shipMutation.mutate()}
             disabled={!trackingNumber || !carrier || shipMutation.isPending}
             data-testid="button-confirm-ship"
           >
             <Send className="h-4 w-4 mr-2" />
-            {shipMutation.isPending ? "Invio..." : "Conferma Spedizione"}
+            {shipMutation.isPending ? "Invio..." : t("transfers.confirmShipment")}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -476,11 +480,13 @@ function ShipReturnDialog({ open, onClose, returnDoc }: {
   );
 }
 
-function CreateReturnDialog({ open, onClose, orders }: {
+function CreateReturnDialog({ open, onClose, orders, reasonLabels }: {
   open: boolean;
   onClose: () => void;
   orders: RepairCenterPurchaseOrder[];
+  reasonLabels: Record<string, string>;
 }) {
+  const { t } = useTranslation();
   const [selectedOrderId, setSelectedOrderId] = useState("");
   const [reason, setReason] = useState("");
   const [reasonDetails, setReasonDetails] = useState("");
@@ -508,7 +514,7 @@ function CreateReturnDialog({ open, onClose, orders }: {
         }));
 
       if (items.length === 0) {
-        throw new Error("Seleziona almeno un articolo");
+        throw new Error(t("b2b.selectAtLeastOneItem"));
       }
 
       return apiRequest("POST", "/api/repair-center/b2b-returns", {
@@ -521,7 +527,7 @@ function CreateReturnDialog({ open, onClose, orders }: {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/repair-center/b2b-returns"] });
-      toast({ title: "Reso creato", description: "La richiesta di reso è stata inviata" });
+      toast({ title: t("suppliers.returnCreated"), description: t("b2b.laRichiestaDiResoStataInviata") });
       onClose();
       setSelectedOrderId("");
       setReason("");
@@ -530,7 +536,7 @@ function CreateReturnDialog({ open, onClose, orders }: {
       setSelectedItems({});
     },
     onError: (error: any) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("auth.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -538,20 +544,20 @@ function CreateReturnDialog({ open, onClose, orders }: {
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="max-w-2xl">
         <DialogHeader>
-          <DialogTitle>Nuova Richiesta di Reso</DialogTitle>
+          <DialogTitle>{t("b2b.nuovaRichiestaDiReso")}</DialogTitle>
           <DialogDescription>
             Seleziona l'ordine e gli articoli da rendere
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-4">
           <div>
-            <Label>Ordine</Label>
+            <Label>{t("common.order")}</Label>
             <Select value={selectedOrderId} onValueChange={(v) => {
               setSelectedOrderId(v);
               setSelectedItems({});
             }}>
               <SelectTrigger data-testid="select-order">
-                <SelectValue placeholder="Seleziona ordine" />
+                <SelectValue placeholder={t("b2b.selezionaOrdine")} />
               </SelectTrigger>
               <SelectContent>
                 {orders.map(order => (
@@ -567,7 +573,7 @@ function CreateReturnDialog({ open, onClose, orders }: {
             <Label>Motivo del Reso</Label>
             <Select value={reason} onValueChange={setReason}>
               <SelectTrigger data-testid="select-reason">
-                <SelectValue placeholder="Seleziona motivo" />
+                <SelectValue placeholder={t("b2b.selezionaMotivo")} />
               </SelectTrigger>
               <SelectContent>
                 {Object.entries(reasonLabels).map(([key, label]) => (
@@ -578,11 +584,11 @@ function CreateReturnDialog({ open, onClose, orders }: {
           </div>
 
           <div>
-            <Label>Descrizione Problema</Label>
+            <Label>{t("repairs.problemDescription")}</Label>
             <Textarea 
               value={reasonDetails}
               onChange={(e) => setReasonDetails(e.target.value)}
-              placeholder="Descrivi il problema..."
+              placeholder={t("b2b.describeProblem")}
               data-testid="input-reason-details"
             />
           </div>
@@ -595,9 +601,9 @@ function CreateReturnDialog({ open, onClose, orders }: {
                   <TableHeader>
                     <TableRow>
                       <TableHead className="w-12">Sel.</TableHead>
-                      <TableHead>Prodotto</TableHead>
+                      <TableHead>{t("common.product")}</TableHead>
                       <TableHead className="text-center">Ord.</TableHead>
-                      <TableHead className="text-center">Qtà Reso</TableHead>
+                      <TableHead className="text-center">{t("b2b.qtReso")}</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -644,7 +650,7 @@ function CreateReturnDialog({ open, onClose, orders }: {
           )}
         </div>
         <DialogFooter>
-          <Button variant="outline" onClick={onClose}>Annulla</Button>
+          <Button variant="outline" onClick={onClose}>{t("profile.cancel")}</Button>
           <Button 
             onClick={() => createMutation.mutate()}
             disabled={!selectedOrderId || !reason || createMutation.isPending}

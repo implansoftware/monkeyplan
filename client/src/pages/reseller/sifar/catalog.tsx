@@ -15,6 +15,7 @@ import {
   Package, ShoppingCart, Search, ChevronRight, Plus, Minus, 
   Check, AlertTriangle, Loader2, Settings, ArrowLeft, Image
 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 interface SifarStore {
   id: string;
@@ -66,6 +67,7 @@ interface SifarCartDetail {
 }
 
 export default function SifarCatalogPage() {
+  const { t } = useTranslation();
   const { toast } = useToast();
   const [selectedStoreCode, setSelectedStoreCode] = useState<string>("");
   const [selectedBrand, setSelectedBrand] = useState<string>("");
@@ -141,7 +143,7 @@ export default function SifarCatalogPage() {
       toast({ title: "Aggiunto al carrello" });
     },
     onError: (error: Error) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -222,7 +224,7 @@ export default function SifarCatalogPage() {
         <CardContent className="space-y-4">
           <div className="grid gap-4 md:grid-cols-3">
             <div className="space-y-2">
-              <Label>Punto Vendita</Label>
+              <Label>{t("pos.title")}</Label>
               <Select value={selectedStoreCode} onValueChange={(val) => {
                 setSelectedStoreCode(val);
                 setSelectedBrand("");
@@ -242,7 +244,7 @@ export default function SifarCatalogPage() {
             </div>
 
             <div className="space-y-2">
-              <Label>Marca</Label>
+              <Label>{t("products.brand")}</Label>
               <Select 
                 value={selectedBrand} 
                 onValueChange={(val) => {
@@ -252,7 +254,7 @@ export default function SifarCatalogPage() {
                 disabled={!selectedStoreCode || loadingBrands}
               >
                 <SelectTrigger data-testid="select-brand">
-                  <SelectValue placeholder={loadingBrands ? "Caricamento..." : "Seleziona marca"} />
+                  <SelectValue placeholder={loadingBrands ? t("common.loading") : t("products.selectBrand")} />
                 </SelectTrigger>
                 <SelectContent>
                   {brands.map(brand => (
@@ -265,14 +267,14 @@ export default function SifarCatalogPage() {
             </div>
 
             <div className="space-y-2">
-              <Label>Modello</Label>
+              <Label>{t("products.model")}</Label>
               <Select 
                 value={selectedModel} 
                 onValueChange={setSelectedModel}
                 disabled={!selectedBrand || loadingModels}
               >
                 <SelectTrigger data-testid="select-model">
-                  <SelectValue placeholder={loadingModels ? "Caricamento..." : "Seleziona modello"} />
+                  <SelectValue placeholder={loadingModels ? t("common.loading") : "Seleziona modello"} />
                 </SelectTrigger>
                 <SelectContent>
                   {models.map(model => (
@@ -368,9 +370,7 @@ export default function SifarCatalogPage() {
                         <div className="flex flex-wrap items-center gap-2">
                           {article.disponibile ? (
                             <Badge variant="outline" className="text-green-600 border-green-600">
-                              <Check className="h-3 w-3 mr-1" />
-                              Disponibile
-                            </Badge>
+                              <Check className="h-3 w-3 mr-1" />{t("shop.inStock")}</Badge>
                           ) : article.contattaPerOrdinare ? (
                             <Badge variant="outline" className="text-yellow-600 border-yellow-600">
                               <AlertTriangle className="h-3 w-3 mr-1" />
@@ -438,9 +438,7 @@ export default function SifarCatalogPage() {
                               <Loader2 className="h-4 w-4 animate-spin" />
                             ) : (
                               <>
-                                <ShoppingCart className="h-4 w-4 mr-2" />
-                                Aggiungi
-                              </>
+                                <ShoppingCart className="h-4 w-4 mr-2" />{t("common.add")}</>
                             )}
                           </Button>
                         </div>

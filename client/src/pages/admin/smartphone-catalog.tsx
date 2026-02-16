@@ -21,6 +21,7 @@ import { useRef } from "react";
 import type { SmartphoneSpecs, Product, User, ProductPrice, Warehouse as WarehouseType, DeviceBrand, DeviceModel } from "@shared/schema";
 import { ProductDetailDialog } from "@/components/product-detail-dialog";
 import { SmartphoneWizard } from "@/components/SmartphoneWizard";
+import { useTranslation } from "react-i18next";
 
 type SmartphoneWithSpecs = Product & {
   specs: SmartphoneSpecs | null;
@@ -112,6 +113,7 @@ const ACCESSORY_OPTIONS = [
 ];
 
 export default function AdminSmartphoneCatalog() {
+  const { t } = useTranslation();
   const [searchQuery, setSearchQuery] = useState("");
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
   const [brandFilter, setBrandFilter] = useState<string>("all");
@@ -251,12 +253,12 @@ export default function AdminSmartphoneCatalog() {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/product-prices"] });
       queryClient.invalidateQueries({ queryKey: ["/api/smartphones"] });
       refetchAssignments();
-      toast({ title: "Assegnato", description: "Lo smartphone è stato assegnato al rivenditore." });
+      toast({ title: t("common.savedSuccessfully"), description: t("products.smartphoneAssigned") });
       setSelectedResellerId("");
       // Keep prices pre-filled for next assignment
     },
     onError: (error: any) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -268,10 +270,10 @@ export default function AdminSmartphoneCatalog() {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/product-prices"] });
       queryClient.invalidateQueries({ queryKey: ["/api/smartphones"] });
       refetchAssignments();
-      toast({ title: "Rimosso", description: "L'assegnazione è stata rimossa." });
+      toast({ title: t("common.deletedSuccessfully"), description: t("products.assignmentRemoved") });
     },
     onError: (error: any) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -319,10 +321,10 @@ export default function AdminSmartphoneCatalog() {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/all-warehouses"] });
       setDialogOpen(false);
       resetForm();
-      toast({ title: "Smartphone aggiunto", description: "Il dispositivo è stato aggiunto al catalogo." });
+      toast({ title: t("products.smartphoneAdded"), description: t("products.smartphoneAddedDesc") });
     },
     onError: (error: any) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -343,10 +345,10 @@ export default function AdminSmartphoneCatalog() {
       queryClient.invalidateQueries({ queryKey: ["/api/smartphones"] });
       queryClient.invalidateQueries({ queryKey: ["/api/warehouses"] });
       queryClient.invalidateQueries({ queryKey: ["/api/admin/all-warehouses"] });
-      toast({ title: "Quantità aggiornata" });
+      toast({ title: t("products.quantityUpdated") });
     },
     onError: (error: Error) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -358,10 +360,10 @@ export default function AdminSmartphoneCatalog() {
       queryClient.invalidateQueries({ queryKey: ["/api/smartphones"] });
       setDeleteDialogOpen(false);
       setSmartphoneToDelete(null);
-      toast({ title: "Eliminato", description: "Lo smartphone è stato rimosso dal catalogo." });
+      toast({ title: t("common.deletedSuccessfully"), description: t("products.smartphoneDeleted") });
     },
     onError: (error: any) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -382,7 +384,7 @@ export default function AdminSmartphoneCatalog() {
       if (context?.previousData) {
         queryClient.setQueryData(["/api/smartphones"], context.previousData);
       }
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     },
     onSuccess: (_, { isVisibleInShop }) => {
       toast({
@@ -399,11 +401,11 @@ export default function AdminSmartphoneCatalog() {
     const file = e.target.files?.[0];
     if (file) {
       if (!["image/jpeg", "image/png", "image/webp", "image/gif"].includes(file.type)) {
-        toast({ title: "Errore", description: "Formato non supportato. Usa JPEG, PNG, WebP o GIF.", variant: "destructive" });
+        toast({ title: t("common.error"), description: "Formato non supportato. Usa JPEG, PNG, WebP o GIF.", variant: "destructive" });
         return;
       }
       if (file.size > 10 * 1024 * 1024) {
-        toast({ title: "Errore", description: "Immagine troppo grande. Max 10MB.", variant: "destructive" });
+        toast({ title: t("common.error"), description: "Immagine troppo grande. Max 10MB.", variant: "destructive" });
         return;
       }
       setImageFile(file);
@@ -424,9 +426,9 @@ export default function AdminSmartphoneCatalog() {
       });
       if (!response.ok) throw new Error(await response.text());
       queryClient.invalidateQueries({ queryKey: ["/api/smartphones"] });
-      toast({ title: "Immagine caricata", description: "L'immagine è stata salvata." });
+      toast({ title: t("products.imageUploaded"), description: t("products.imageSaved") });
     } catch (error: any) {
-      toast({ title: "Errore upload", description: error.message, variant: "destructive" });
+      toast({ title: t("tickets.uploadError"), description: error.message, variant: "destructive" });
     } finally {
       setUploadingImage(false);
       setImageFile(null);
@@ -442,9 +444,9 @@ export default function AdminSmartphoneCatalog() {
       });
       if (!response.ok) throw new Error(await response.text());
       queryClient.invalidateQueries({ queryKey: ["/api/smartphones"] });
-      toast({ title: "Immagine rimossa" });
+      toast({ title: t("products.imageRemoved") });
     } catch (error: any) {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     }
   };
 
@@ -633,7 +635,7 @@ export default function AdminSmartphoneCatalog() {
       c.deviceBrandId === selectedDeviceBrandId && c.deviceModelId === null
     );
     if (exists) {
-      toast({ title: "Compatibilità già presente", variant: "destructive" });
+      toast({ title: t("products.compatibilityExists"), variant: "destructive" });
       return;
     }
     const brand = deviceBrands.find(b => b.id === selectedDeviceBrandId);
@@ -652,7 +654,7 @@ export default function AdminSmartphoneCatalog() {
       c.deviceBrandId === selectedDeviceBrandId && c.deviceModelId === modelId
     );
     if (exists) {
-      toast({ title: "Compatibilità già presente", variant: "destructive" });
+      toast({ title: t("products.compatibilityExists"), variant: "destructive" });
       return;
     }
     const brand = deviceBrands.find(b => b.id === selectedDeviceBrandId);
@@ -732,13 +734,13 @@ export default function AdminSmartphoneCatalog() {
         setDialogOpen(false);
         setEditingSmartphone(null);
         resetForm();
-        toast({ title: "Smartphone aggiornato", description: "Le modifiche sono state salvate." });
+        toast({ title: t("products.smartphoneUpdated"), description: t("common.savedSuccessfully") });
       } catch (err: any) {
         console.error("Failed to save product/compatibilities:", err);
         // If error occurs, dialog stays open so user can retry
         toast({ 
-          title: "Errore durante il salvataggio", 
-          description: "Riprova a salvare le modifiche. " + (err.message || ""), 
+          title: t("common.operationFailed"), 
+          description: t("common.operationFailed") + " " + (err.message || ""), 
           variant: "destructive" 
         });
       }
@@ -810,7 +812,7 @@ export default function AdminSmartphoneCatalog() {
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Cerca per nome, SKU o IMEI..."
+                placeholder={t("common.search")}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-9 w-64"
@@ -819,10 +821,10 @@ export default function AdminSmartphoneCatalog() {
             </div>
             <Select value={categoryFilter} onValueChange={setCategoryFilter}>
               <SelectTrigger className="w-36" data-testid="select-category-filter">
-                <SelectValue placeholder="Categoria" />
+                <SelectValue placeholder={t("utility.category")} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">Tutte le categorie</SelectItem>
+                <SelectItem value="all">{t("products.allCategories")}</SelectItem>
                 {CATEGORY_OPTIONS.map((c) => (
                   <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>
                 ))}
@@ -830,10 +832,10 @@ export default function AdminSmartphoneCatalog() {
             </Select>
             <Select value={brandFilter} onValueChange={setBrandFilter}>
               <SelectTrigger className="w-36" data-testid="select-brand-filter">
-                <SelectValue placeholder="Marca" />
+                <SelectValue placeholder={t("products.brand")} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">Tutte le marche</SelectItem>
+                <SelectItem value="all">{t("products.allBrands")}</SelectItem>
                 {BRANDS.map((b) => (
                   <SelectItem key={b} value={b}>{b}</SelectItem>
                 ))}
@@ -841,10 +843,10 @@ export default function AdminSmartphoneCatalog() {
             </Select>
             <Select value={gradeFilter} onValueChange={setGradeFilter}>
               <SelectTrigger className="w-36" data-testid="select-grade-filter">
-                <SelectValue placeholder="Grado" />
+                <SelectValue placeholder={t("products.grade")} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">Tutti i gradi</SelectItem>
+                <SelectItem value="all">{t("products.allGrades")}</SelectItem>
                 {GRADE_OPTIONS.map((g) => (
                   <SelectItem key={g.value} value={g.value}>{g.label}</SelectItem>
                 ))}
@@ -862,7 +864,7 @@ export default function AdminSmartphoneCatalog() {
           ) : filteredSmartphones.length === 0 ? (
             <div className="text-center py-12 text-muted-foreground">
               <Smartphone className="mx-auto h-12 w-12 mb-4 opacity-50" />
-              <p>Nessun dispositivo nel catalogo</p>
+              <p>{t("products.noDevicesInCatalog")}</p>
             </div>
           ) : (
             <ScrollArea className="h-[500px]">
@@ -870,14 +872,14 @@ export default function AdminSmartphoneCatalog() {
               <Table className="min-w-[1000px]">
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Foto</TableHead>
-                    <TableHead>Dispositivo</TableHead>
+                    <TableHead>{t("common.photo")}</TableHead>
+                    <TableHead>{t("repairs.device")}</TableHead>
                     <TableHead>Barcode</TableHead>
-                    <TableHead>Categoria</TableHead>
-                    <TableHead>Rivenditore</TableHead>
-                    <TableHead className="text-right">Prezzo</TableHead>
+                    <TableHead>{t("common.category")}</TableHead>
+                    <TableHead>{t("roles.reseller")}</TableHead>
+                    <TableHead className="text-right">{t("common.price")}</TableHead>
                     <TableHead className="text-center">Shop</TableHead>
-                    <TableHead className="w-24">Azioni</TableHead>
+                    <TableHead className="w-24">{t("common.actions")}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -1028,7 +1030,7 @@ export default function AdminSmartphoneCatalog() {
           <div className="grid gap-4 py-4">
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="name">Nome dispositivo *</Label>
+                <Label htmlFor="name">{t("products.deviceName")} *</Label>
                 <Input
                   id="name"
                   value={formData.name}
@@ -1048,10 +1050,10 @@ export default function AdminSmartphoneCatalog() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="category">Categoria *</Label>
+                <Label htmlFor="category">{t("utility.category")} *</Label>
                 <Select value={formData.category} onValueChange={(v) => setFormData({ ...formData, category: v })}>
                   <SelectTrigger data-testid="select-smartphone-category">
-                    <SelectValue placeholder="Seleziona categoria" />
+                    <SelectValue placeholder={t("utility.selectCategory")} />
                   </SelectTrigger>
                   <SelectContent>
                     {CATEGORY_OPTIONS.map((c) => (
@@ -1064,10 +1066,10 @@ export default function AdminSmartphoneCatalog() {
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="brand">Marca</Label>
+                <Label htmlFor="brand">{t("products.brand")}</Label>
                 <Select value={formData.brand} onValueChange={(v) => setFormData({ ...formData, brand: v })}>
                   <SelectTrigger data-testid="select-smartphone-brand">
-                    <SelectValue placeholder="Seleziona marca" />
+                    <SelectValue placeholder={t("products.selectBrand")} />
                   </SelectTrigger>
                   <SelectContent>
                     {BRANDS.map((b) => (
@@ -1077,10 +1079,10 @@ export default function AdminSmartphoneCatalog() {
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="color">Colore</Label>
+                <Label htmlFor="color">{t("products.color")}</Label>
                 <Select value={formData.color} onValueChange={(v) => setFormData({ ...formData, color: v })}>
                   <SelectTrigger data-testid="select-smartphone-color">
-                    <SelectValue placeholder="Seleziona colore" />
+                    <SelectValue placeholder={t("products.selectColor")} />
                   </SelectTrigger>
                   <SelectContent>
                     {COLOR_OPTIONS.map((c) => (
@@ -1090,7 +1092,7 @@ export default function AdminSmartphoneCatalog() {
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="condition">Condizione</Label>
+                <Label htmlFor="condition">{t("products.condition")}</Label>
                 <Select value={formData.condition} onValueChange={(v) => setFormData({ ...formData, condition: v })}>
                   <SelectTrigger data-testid="select-smartphone-condition">
                     <SelectValue />
@@ -1119,7 +1121,7 @@ export default function AdminSmartphoneCatalog() {
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="grade">Grado</Label>
+                <Label htmlFor="grade">{t("products.grade")}</Label>
                 <Select value={formData.grade} onValueChange={(v) => setFormData({ ...formData, grade: v })}>
                   <SelectTrigger data-testid="select-smartphone-grade">
                     <SelectValue />
@@ -1132,7 +1134,7 @@ export default function AdminSmartphoneCatalog() {
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="networkLock">Stato Rete</Label>
+                <Label htmlFor="networkLock">{t("products.networkStatus")}</Label>
                 <Select value={formData.networkLock} onValueChange={(v) => setFormData({ ...formData, networkLock: v })}>
                   <SelectTrigger data-testid="select-smartphone-network">
                     <SelectValue />
@@ -1148,10 +1150,10 @@ export default function AdminSmartphoneCatalog() {
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="batteryHealth">Batteria %</Label>
+                <Label htmlFor="batteryHealth">{t("products.batteryHealth")}</Label>
                 <Select value={formData.batteryHealth} onValueChange={(v) => setFormData({ ...formData, batteryHealth: v })}>
                   <SelectTrigger data-testid="select-smartphone-battery">
-                    <SelectValue placeholder="Seleziona batteria" />
+                    <SelectValue placeholder={t("products.selectBattery")} />
                   </SelectTrigger>
                   <SelectContent>
                     {BATTERY_OPTIONS.map((b) => (
@@ -1179,12 +1181,12 @@ export default function AdminSmartphoneCatalog() {
                   id="imei2"
                   value={formData.imei2}
                   onChange={(e) => setFormData({ ...formData, imei2: e.target.value })}
-                  placeholder="Per dual SIM"
+                  placeholder={t("products.dualSim")}
                   data-testid="input-smartphone-imei2"
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="serialNumber">Numero di serie</Label>
+                <Label htmlFor="serialNumber">{t("products.serialNumber")}</Label>
                 <Input
                   id="serialNumber"
                   value={formData.serialNumber}
@@ -1197,7 +1199,7 @@ export default function AdminSmartphoneCatalog() {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="unitPrice">Prezzo vendita</Label>
+                <Label htmlFor="unitPrice">{t("products.salePrice")}</Label>
                 <Input
                   id="unitPrice"
                   type="number"
@@ -1209,7 +1211,7 @@ export default function AdminSmartphoneCatalog() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="costPrice">Prezzo costo</Label>
+                <Label htmlFor="costPrice">{t("products.costPrice")}</Label>
                 <Input
                   id="costPrice"
                   type="number"
@@ -1223,7 +1225,7 @@ export default function AdminSmartphoneCatalog() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="warrantyMonths">Garanzia (mesi)</Label>
+              <Label htmlFor="warrantyMonths">{t("products.warrantyMonths")}</Label>
               <Input
                 id="warrantyMonths"
                 type="number"
@@ -1235,16 +1237,16 @@ export default function AdminSmartphoneCatalog() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="supplierId">Fornitore</Label>
+              <Label htmlFor="supplierId">{t("suppliers.supplier")}</Label>
               <Select
                 value={formData.supplierId || "none"}
                 onValueChange={(value) => setFormData({ ...formData, supplierId: value === "none" ? "" : value })}
               >
                 <SelectTrigger data-testid="select-smartphone-supplier">
-                  <SelectValue placeholder="Seleziona fornitore..." />
+                  <SelectValue placeholder={t("suppliers.selectSupplier")} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="none">Nessun fornitore</SelectItem>
+                  <SelectItem value="none">{t("suppliers.noSupplier")}</SelectItem>
                   {suppliers.map((supplier) => (
                     <SelectItem key={supplier.id} value={supplier.id}>
                       {supplier.name} ({supplier.code})
@@ -1262,12 +1264,12 @@ export default function AdminSmartphoneCatalog() {
                 </Label>
                 <Select onValueChange={editingSmartphone ? addEditStock : addInitialStock}>
                   <SelectTrigger className="w-56" data-testid="select-add-stock-warehouse">
-                    <SelectValue placeholder="Aggiungi magazzino..." />
+                    <SelectValue placeholder={t("warehouse.addWarehouse")} />
                   </SelectTrigger>
                   <SelectContent>
                     {groupedWarehouses.admin.filter(w => !(editingSmartphone ? editStock : initialStock).find(s => s.warehouseId === w.id)).length > 0 && (
                       <SelectGroup>
-                        <SelectLabel>Magazzini Admin</SelectLabel>
+                        <SelectLabel>{t("warehouse.adminWarehouses")}</SelectLabel>
                         {groupedWarehouses.admin
                           .filter(w => !(editingSmartphone ? editStock : initialStock).find(s => s.warehouseId === w.id))
                           .map(wh => (
@@ -1278,7 +1280,7 @@ export default function AdminSmartphoneCatalog() {
                     )}
                     {groupedWarehouses.reseller.filter(w => !(editingSmartphone ? editStock : initialStock).find(s => s.warehouseId === w.id)).length > 0 && (
                       <SelectGroup>
-                        <SelectLabel>Magazzini Rivenditori</SelectLabel>
+                        <SelectLabel>{t("warehouse.resellerWarehouses")}</SelectLabel>
                         {groupedWarehouses.reseller
                           .filter(w => !(editingSmartphone ? editStock : initialStock).find(s => s.warehouseId === w.id))
                           .map(wh => (
@@ -1291,7 +1293,7 @@ export default function AdminSmartphoneCatalog() {
                     )}
                     {groupedWarehouses.sub_reseller.filter(w => !(editingSmartphone ? editStock : initialStock).find(s => s.warehouseId === w.id)).length > 0 && (
                       <SelectGroup>
-                        <SelectLabel>Magazzini Sotto-Rivenditori</SelectLabel>
+                        <SelectLabel>{t("warehouse.subResellerWarehouses")}</SelectLabel>
                         {groupedWarehouses.sub_reseller
                           .filter(w => !(editingSmartphone ? editStock : initialStock).find(s => s.warehouseId === w.id))
                           .map(wh => (
@@ -1304,7 +1306,7 @@ export default function AdminSmartphoneCatalog() {
                     )}
                     {groupedWarehouses.repair_center.filter(w => !(editingSmartphone ? editStock : initialStock).find(s => s.warehouseId === w.id)).length > 0 && (
                       <SelectGroup>
-                        <SelectLabel>Magazzini Centri Riparazione</SelectLabel>
+                        <SelectLabel>{t("warehouse.repairCenterWarehouses")}</SelectLabel>
                         {groupedWarehouses.repair_center
                           .filter(w => !(editingSmartphone ? editStock : initialStock).find(s => s.warehouseId === w.id))
                           .map(wh => (
@@ -1354,7 +1356,7 @@ export default function AdminSmartphoneCatalog() {
                           </div>
                           <div className="flex flex-wrap items-center gap-3">
                             <div className="flex-1">
-                              <Label className="text-xs text-muted-foreground">Quantità</Label>
+                              <Label className="text-xs text-muted-foreground">{t("common.quantity")}</Label>
                               <Input
                                 type="number"
                                 min="0"
@@ -1412,7 +1414,7 @@ export default function AdminSmartphoneCatalog() {
                           </div>
                           <div className="flex flex-wrap items-center gap-3">
                             <div className="flex-1">
-                              <Label className="text-xs text-muted-foreground">Quantità</Label>
+                              <Label className="text-xs text-muted-foreground">{t("common.quantity")}</Label>
                               <Input
                                 type="number"
                                 min="0"
@@ -1446,11 +1448,11 @@ export default function AdminSmartphoneCatalog() {
                 onCheckedChange={(checked) => setFormData({ ...formData, originalBox: !!checked })}
                 data-testid="checkbox-original-box"
               />
-              <Label htmlFor="originalBox">Scatola originale inclusa</Label>
+              <Label htmlFor="originalBox">{t("products.originalBoxIncluded")}</Label>
             </div>
 
             <div className="space-y-2">
-              <Label>Accessori Inclusi</Label>
+              <Label>{t("products.includedAccessories")}</Label>
               <div className="flex flex-wrap gap-4">
                 {ACCESSORY_OPTIONS.map((acc) => (
                   <div key={acc} className="flex flex-wrap items-center gap-2">
@@ -1473,31 +1475,31 @@ export default function AdminSmartphoneCatalog() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="description">Descrizione</Label>
+              <Label htmlFor="description">{t("common.description")}</Label>
               <Textarea
                 id="description"
                 value={formData.description}
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                placeholder="Descrizione aggiuntiva..."
+                placeholder={t("utility.optionalDescription")}
                 rows={2}
                 data-testid="textarea-smartphone-description"
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="notes">Note interne</Label>
+              <Label htmlFor="notes">{t("products.internalNotes")}</Label>
               <Textarea
                 id="notes"
                 value={formData.notes}
                 onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                placeholder="Note per uso interno..."
+                placeholder={t("products.internalNotes")}
                 rows={2}
                 data-testid="textarea-smartphone-notes"
               />
             </div>
 
             <div className="space-y-2">
-                <Label>Immagine prodotto</Label>
+                <Label>{t("products.productImage")}</Label>
                 <div className="flex items-start gap-4">
                   <div className="flex-shrink-0">
                     {imagePreview ? (
@@ -1584,7 +1586,7 @@ export default function AdminSmartphoneCatalog() {
                   <div className="flex-1 min-w-[180px]">
                     <Select value={selectedDeviceBrandId} onValueChange={setSelectedDeviceBrandId}>
                       <SelectTrigger data-testid="select-compat-brand">
-                        <SelectValue placeholder="Seleziona marca dispositivo" />
+                        <SelectValue placeholder={t("products.selectDeviceBrand")} />
                       </SelectTrigger>
                       <SelectContent>
                         {deviceBrands.map((brand) => (
@@ -1689,7 +1691,7 @@ export default function AdminSmartphoneCatalog() {
       <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Conferma eliminazione</DialogTitle>
+            <DialogTitle>{t("common.confirmDelete")}</DialogTitle>
             <DialogDescription>
               Sei sicuro di voler eliminare "{smartphoneToDelete?.name}"? Questa azione non può essere annullata.
             </DialogDescription>
@@ -1726,7 +1728,7 @@ export default function AdminSmartphoneCatalog() {
           <div className="space-y-4 py-4">
             {currentProductAssignments.length > 0 && (
               <div className="space-y-2">
-                <Label>Rivenditori assegnati</Label>
+                <Label>{t("products.assignedResellers")}</Label>
                 <div className="space-y-2">
                   {currentProductAssignments.map((assignment) => (
                     <div key={assignment.id} className="flex items-center justify-between p-2 bg-muted rounded-md">
@@ -1752,13 +1754,13 @@ export default function AdminSmartphoneCatalog() {
             )}
 
             <div className="border-t pt-4 space-y-4">
-              <Label>Aggiungi nuovo rivenditore</Label>
+              <Label>{t("products.addNewReseller")}</Label>
               
               <div className="space-y-2">
-                <Label htmlFor="reseller">Rivenditore</Label>
+                <Label htmlFor="reseller">{t("roles.reseller")}</Label>
                 <Select value={selectedResellerId} onValueChange={setSelectedResellerId}>
                   <SelectTrigger data-testid="select-assign-reseller">
-                    <SelectValue placeholder="Seleziona rivenditore" />
+                    <SelectValue placeholder={t("utility.selectReseller")} />
                   </SelectTrigger>
                   <SelectContent>
                     {resellers
@@ -1774,7 +1776,7 @@ export default function AdminSmartphoneCatalog() {
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="assignPrice">Prezzo vendita (€) *</Label>
+                  <Label htmlFor="assignPrice">{t("products.salePrice")} (€) *</Label>
                   <Input
                     id="assignPrice"
                     type="number"
@@ -1786,7 +1788,7 @@ export default function AdminSmartphoneCatalog() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="assignCostPrice">Prezzo costo (€)</Label>
+                  <Label htmlFor="assignCostPrice">{t("products.costPrice")} (€)</Label>
                   <Input
                     id="assignCostPrice"
                     type="number"

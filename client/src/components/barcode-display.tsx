@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Copy, Printer, Barcode, Download, Check } from "lucide-react";
@@ -23,6 +24,7 @@ export function BarcodeDisplay({
   size = "md",
   className = "",
 }: BarcodeDisplayProps) {
+  const { t } = useTranslation();
   const { toast } = useToast();
   const [copied, setCopied] = useState(false);
   const [barcodeDataUrl, setBarcodeDataUrl] = useState<string | null>(null);
@@ -40,10 +42,10 @@ export function BarcodeDisplay({
     try {
       await navigator.clipboard.writeText(value);
       setCopied(true);
-      toast({ title: "Barcode copiato", description: value });
+      toast({ title: t("barcode.copied"), description: value });
       setTimeout(() => setCopied(false), 2000);
     } catch {
-      toast({ title: "Errore", description: "Impossibile copiare", variant: "destructive" });
+      toast({ title: t("common.error"), description: t("barcode.copyError"), variant: "destructive" });
     }
   };
 
@@ -118,7 +120,7 @@ export function BarcodeDisplay({
   if (!value) {
     return (
       <span className="text-muted-foreground text-sm italic">
-        Nessun barcode
+        {t("barcode.noBarcode")}
       </span>
     );
   }
@@ -139,7 +141,7 @@ export function BarcodeDisplay({
           <DialogHeader>
             <DialogTitle className="flex flex-wrap items-center gap-2">
               <Barcode className="h-5 w-5 text-blue-600" />
-              Barcode Prodotto
+              {t("barcode.productBarcode")}
             </DialogTitle>
           </DialogHeader>
           <div className="flex flex-col items-center gap-6 py-6" ref={printRef}>
@@ -154,7 +156,7 @@ export function BarcodeDisplay({
               </div>
             ) : (
               <div className="h-24 w-48 bg-slate-100 dark:bg-slate-800 rounded-lg flex items-center justify-center">
-                <span className="text-muted-foreground">Caricamento...</span>
+                <span className="text-muted-foreground">{t("common.loading")}</span>
               </div>
             )}
             
@@ -163,7 +165,7 @@ export function BarcodeDisplay({
                 {value}
               </p>
               <p className="text-sm text-muted-foreground mt-1">
-                Codice identificativo univoco
+                {t("barcode.uniqueCode")}
               </p>
             </div>
             
@@ -179,12 +181,12 @@ export function BarcodeDisplay({
                   {copied ? (
                     <>
                       <Check className="h-4 w-4 mr-2 text-green-600" />
-                      Copiato
+                      {t("common.copied")}
                     </>
                   ) : (
                     <>
                       <Copy className="h-4 w-4 mr-2" />
-                      Copia
+                      {t("common.copy")}
                     </>
                   )}
                 </Button>
@@ -198,7 +200,7 @@ export function BarcodeDisplay({
                 data-testid="button-download-barcode"
               >
                 <Download className="h-4 w-4 mr-2" />
-                Scarica
+                {t("common.download")}
               </Button>
               
               {printable && (
@@ -210,7 +212,7 @@ export function BarcodeDisplay({
                   data-testid="button-print-barcode"
                 >
                   <Printer className="h-4 w-4 mr-2" />
-                  Stampa
+                  {t("common.print")}
                 </Button>
               )}
             </div>
@@ -224,7 +226,7 @@ export function BarcodeDisplay({
           size="icon"
           className="h-7 w-7"
           onClick={handleCopy}
-          title="Copia barcode"
+          title={t("barcode.copyBarcode")}
           data-testid="button-quick-copy-barcode"
         >
           {copied ? (

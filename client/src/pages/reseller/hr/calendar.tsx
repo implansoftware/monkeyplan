@@ -21,6 +21,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isToday, addMonths, subMonths } from "date-fns";
 import { it } from "date-fns/locale";
+import { useTranslation } from "react-i18next";
 
 interface CalendarEvent {
   userId: string;
@@ -45,6 +46,7 @@ const eventTypeColors: Record<string, { bg: string; text: string }> = {
 };
 
 export default function HrCalendar() {
+  const { t } = useTranslation();
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedEntity, setSelectedEntity] = useState<string>("all");
   
@@ -108,7 +110,7 @@ export default function HrCalendar() {
                 <Calendar className="h-6 w-6 text-white" />
               </div>
               <div>
-                <h1 className="text-2xl font-bold text-white" data-testid="text-calendar-title">Calendario Team</h1>
+                <h1 className="text-2xl font-bold text-white" data-testid="text-calendar-title">{t("sidebar.items.teamCalendar")}</h1>
                 <p className="text-white/80">Visualizzazione assenze e ferie del team</p>
               </div>
             </div>
@@ -125,17 +127,11 @@ export default function HrCalendar() {
       <div className="flex flex-wrap gap-4 items-center justify-between">
         <div className="flex flex-wrap gap-4 items-center">
           <Badge variant="secondary" className="gap-1">
-            <div className="w-3 h-3 rounded-full bg-emerald-500" />
-            Ferie
-          </Badge>
+            <div className="w-3 h-3 rounded-full bg-emerald-500" />{t("hr.vacation")}</Badge>
           <Badge variant="secondary" className="gap-1">
-            <div className="w-3 h-3 rounded-full bg-blue-500" />
-            Permessi
-          </Badge>
+            <div className="w-3 h-3 rounded-full bg-blue-500" />{t("common.permissions")}</Badge>
           <Badge variant="secondary" className="gap-1">
-            <div className="w-3 h-3 rounded-full bg-red-500" />
-            Malattia
-          </Badge>
+            <div className="w-3 h-3 rounded-full bg-red-500" />{t("hr.sickLeave")}</Badge>
           <Badge variant="secondary" className="gap-1">
             <div className="w-3 h-3 rounded-full bg-purple-500" />
             ROL
@@ -158,7 +154,7 @@ export default function HrCalendar() {
                 </SelectItem>
                 {entities.filter(e => e.type === "reseller").length > 0 && (
                   <>
-                    <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">Sub-Reseller</div>
+                    <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">{t("roles.subReseller")}</div>
                     {entities.filter(e => e.type === "reseller").map(entity => (
                       <SelectItem key={entity.id} value={`reseller:${entity.id}`} data-testid={`option-reseller-${entity.id}`}>
                         <div className="flex flex-wrap items-center gap-2">
@@ -171,7 +167,7 @@ export default function HrCalendar() {
                 )}
                 {entities.filter(e => e.type === "repair_center").length > 0 && (
                   <>
-                    <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">Centri Riparazione</div>
+                    <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">{t("sidebar.items.repairCentersShort")}</div>
                     {entities.filter(e => e.type === "repair_center").map(entity => (
                       <SelectItem key={entity.id} value={`repair_center:${entity.id}`} data-testid={`option-repair-center-${entity.id}`}>
                         <div className="flex flex-wrap items-center gap-2">
@@ -198,9 +194,7 @@ export default function HrCalendar() {
               <Button variant="outline" size="icon" onClick={goToNextMonth} data-testid="button-next-month">
                 <ChevronRight className="h-4 w-4" />
               </Button>
-              <Button variant="outline" onClick={goToToday} data-testid="button-today">
-                Oggi
-              </Button>
+              <Button variant="outline" onClick={goToToday} data-testid="button-today">{t("common.today")}</Button>
             </div>
             <CardTitle className="text-xl" data-testid="text-current-month">
               {format(currentDate, "MMMM yyyy", { locale: it })}

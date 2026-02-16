@@ -29,19 +29,20 @@ import { useToast } from "@/hooks/use-toast";
 import { Link } from "wouter";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
+import { useTranslation } from "react-i18next";
 
 type PracticeStatus = "bozza" | "inviata" | "in_lavorazione" | "attesa_documenti" | "completata" | "rifiutata" | "annullata";
 type TaskStatus = "da_fare" | "in_corso" | "completato" | "annullato";
 type Priority = "bassa" | "normale" | "alta" | "urgente";
 
 const statusLabels: Record<PracticeStatus, string> = {
-  bozza: "Bozza",
-  inviata: "Inviata",
-  in_lavorazione: "In Lavorazione",
+  bozza: t("invoices.draft"),
+  inviata: t("invoices.sent"),
+  in_lavorazione: t("repairs.inProgress"),
   attesa_documenti: "Attesa Documenti",
   completata: "Completata",
-  annullata: "Annullata",
-  rifiutata: "Rifiutata",
+  annullata: t("common.cancelled"),
+  rifiutata: t("common.rejected"),
 };
 
 const statusColors: Record<PracticeStatus, string> = {
@@ -57,8 +58,8 @@ const statusColors: Record<PracticeStatus, string> = {
 const taskStatusLabels: Record<TaskStatus, string> = {
   da_fare: "Da fare",
   in_corso: "In corso",
-  completato: "Completato",
-  annullato: "Annullato",
+  completato: t("common.completed"),
+  annullato: t("repairs.status.cancelled"),
 };
 
 const taskStatusIcons: Record<TaskStatus, typeof Circle> = {
@@ -88,8 +89,8 @@ const documentCategoryLabels: Record<string, string> = {
   codice_fiscale: "Codice Fiscale",
   bolletta: "Bolletta",
   conferma_fornitore: "Conferma Fornitore",
-  fattura: "Fattura",
-  altro: "Altro",
+  fattura: t("common.invoice"),
+  altro: t("common.other"),
 };
 
 const formatCurrency = (cents: number | null | undefined) => {
@@ -128,6 +129,7 @@ interface EnrichedPractice extends UtilityPractice {
 }
 
 export default function ResellerUtilityPracticeDetail() {
+  const { t } = useTranslation();
   const params = useParams<{ id: string }>();
   const [, setLocation] = useLocation();
   const { toast } = useToast();
@@ -315,7 +317,7 @@ export default function ResellerUtilityPracticeDetail() {
       toast({ title: "Documento caricato con successo" });
     } catch (error: any) {
       toast({ 
-        title: "Errore", 
+        title: t("common.error"), 
         description: error.message || "Impossibile caricare il documento",
         variant: "destructive" 
       });
@@ -442,10 +444,10 @@ export default function ResellerUtilityPracticeDetail() {
               <CardContent className="space-y-3">
                 {/* Tipo Badge */}
                 <div>
-                  <p className="text-sm text-muted-foreground">Tipo</p>
+                  <p className="text-sm text-muted-foreground">{t("common.type")}</p>
                   <Badge variant="outline" className="mt-1">
                     {practice.itemType === "product" ? (
-                      <><Package className="h-3 w-3 mr-1" />Prodotto</>
+                      <><Package className="h-3 w-3 mr-1" />{t("common.product")}</>
                     ) : practice.itemType === "service_with_products" ? (
                       <><FileText className="h-3 w-3 mr-1" /><Package className="h-3 w-3 mr-1" />Servizio + Prodotti</>
                     ) : (
@@ -458,11 +460,11 @@ export default function ResellerUtilityPracticeDetail() {
                 {(practice.itemType === "service" || practice.itemType === "service_with_products") && (
                   <>
                     <div>
-                      <p className="text-sm text-muted-foreground">Fornitore</p>
+                      <p className="text-sm text-muted-foreground">{t("common.supplier")}</p>
                       <p className="font-medium" data-testid="text-supplier-name">{supplier?.name || "-"}</p>
                     </div>
                     <div>
-                      <p className="text-sm text-muted-foreground">Servizio</p>
+                      <p className="text-sm text-muted-foreground">{t("common.service")}</p>
                       <div className="flex flex-wrap items-center gap-2">
                         <p className="font-medium" data-testid="text-service-name">
                           {(practice as any).customServiceName || service?.name || "-"}
@@ -485,10 +487,10 @@ export default function ResellerUtilityPracticeDetail() {
                           <table className="w-full text-sm">
                             <thead className="bg-muted/50">
                               <tr>
-                                <th className="text-left p-2 font-medium">Prodotto</th>
+                                <th className="text-left p-2 font-medium">{t("common.product")}</th>
                                 <th className="text-right p-2 font-medium">Qtà</th>
                                 <th className="text-right p-2 font-medium">Prezzo Unit.</th>
-                                <th className="text-right p-2 font-medium">Totale</th>
+                                <th className="text-right p-2 font-medium">{t("common.total")}</th>
                               </tr>
                             </thead>
                             <tbody>
@@ -519,7 +521,7 @@ export default function ResellerUtilityPracticeDetail() {
                       </div>
                     ) : practice.itemType === "product" && product ? (
                       <div>
-                        <p className="text-sm text-muted-foreground">Prodotto</p>
+                        <p className="text-sm text-muted-foreground">{t("common.product")}</p>
                         <p className="font-medium" data-testid="text-product-name">{product?.name || "-"}</p>
                         {product?.sku && (
                           <p className="text-xs text-muted-foreground">SKU: {product.sku}</p>
@@ -578,7 +580,7 @@ export default function ResellerUtilityPracticeDetail() {
                   <p className="font-medium">{practice.supplierReference || "-"}</p>
                 </div>
                 <div>
-                  <p className="text-sm text-muted-foreground">Priorità</p>
+                  <p className="text-sm text-muted-foreground">{t("common.priority")}</p>
                   <Badge className={priorityColors[(practice.priority as Priority) || "normale"]}>
                     {priorityLabels[(practice.priority as Priority) || "normale"]}
                   </Badge>
@@ -701,7 +703,7 @@ export default function ResellerUtilityPracticeDetail() {
               data-testid="button-upload-document"
             >
               <Upload className="h-4 w-4 mr-2" />
-              {isUploading ? "Caricamento..." : "Carica Documento"}
+              {isUploading ? t("common.loading") : "Carica Documento"}
             </Button>
           </div>
 
@@ -870,7 +872,7 @@ export default function ResellerUtilityPracticeDetail() {
                         <div className="flex-1">
                           <div className="flex flex-wrap items-center gap-2 mb-2">
                             <Badge variant={note.visibility === "internal" ? "secondary" : "outline"}>
-                              {note.visibility === "internal" ? "Interna" : "Cliente"}
+                              {note.visibility === "internal" ? "Interna" : t("common.customer")}
                             </Badge>
                             <span className="text-xs text-muted-foreground">
                               {formatDate(note.createdAt)}
@@ -917,7 +919,7 @@ export default function ResellerUtilityPracticeDetail() {
               />
             </div>
             <div>
-              <Label htmlFor="task-description">Descrizione</Label>
+              <Label htmlFor="task-description">{t("common.description")}</Label>
               <Textarea
                 id="task-description"
                 value={newTaskDescription}
@@ -928,14 +930,12 @@ export default function ResellerUtilityPracticeDetail() {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setTaskDialogOpen(false)}>Annulla</Button>
+            <Button variant="outline" onClick={() => setTaskDialogOpen(false)}>{t("common.cancel")}</Button>
             <Button 
               onClick={() => createTaskMutation.mutate({ title: newTaskTitle, description: newTaskDescription || undefined })}
               disabled={!newTaskTitle.trim() || createTaskMutation.isPending}
               data-testid="button-save-task"
-            >
-              Aggiungi
-            </Button>
+            >{t("common.add")}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -972,14 +972,12 @@ export default function ResellerUtilityPracticeDetail() {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setNoteDialogOpen(false)}>Annulla</Button>
+            <Button variant="outline" onClick={() => setNoteDialogOpen(false)}>{t("common.cancel")}</Button>
             <Button 
               onClick={() => createNoteMutation.mutate({ body: newNoteBody, visibility: newNoteVisibility })}
               disabled={!newNoteBody.trim() || createNoteMutation.isPending}
               data-testid="button-save-note"
-            >
-              Aggiungi
-            </Button>
+            >{t("common.add")}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -1016,14 +1014,12 @@ export default function ResellerUtilityPracticeDetail() {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setStatusDialogOpen(false)}>Annulla</Button>
+            <Button variant="outline" onClick={() => setStatusDialogOpen(false)}>{t("common.cancel")}</Button>
             <Button 
               onClick={() => updateStatusMutation.mutate({ status: newStatus, reason: statusReason || undefined })}
               disabled={updateStatusMutation.isPending}
               data-testid="button-update-status"
-            >
-              Conferma
-            </Button>
+            >{t("common.confirm")}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

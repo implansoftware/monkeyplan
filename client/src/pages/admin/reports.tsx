@@ -12,9 +12,11 @@ import type { DateRange } from "react-day-picker";
 import { useQuery } from "@tanstack/react-query";
 import type { RepairCenter } from "@shared/schema";
 import { usePageTitle } from "@/hooks/use-page-title";
+import { useTranslation } from "react-i18next";
 
 export default function AdminReports() {
-  usePageTitle("Report");
+  const { t } = useTranslation();
+  usePageTitle(t("reports.title"));
   const [repairDateRange, setRepairDateRange] = useState<DateRange | undefined>();
   const [repairStatus, setRepairStatus] = useState<string>("all");
   const [repairCenterId, setRepairCenterId] = useState<string>("all");
@@ -57,13 +59,13 @@ export default function AdminReports() {
       document.body.removeChild(a);
       
       toast({
-        title: "Export completato",
-        description: "Il report riparazioni è stato scaricato con successo",
+        title: t("reports.exportCompleted"),
+        description: t("reports.repairReportDownloaded"),
       });
     } catch (error) {
       toast({
-        title: "Errore",
-        description: "Impossibile esportare i dati",
+        title: t("common.error"),
+        description: t("reports.exportFailed"),
         variant: "destructive",
       });
     } finally {
@@ -97,13 +99,13 @@ export default function AdminReports() {
       document.body.removeChild(a);
       
       toast({
-        title: "Export completato",
-        description: "Il report inventario è stato scaricato con successo",
+        title: t("reports.exportCompleted"),
+        description: t("reports.inventoryReportDownloaded"),
       });
     } catch (error) {
       toast({
-        title: "Errore",
-        description: "Impossibile esportare i dati",
+        title: t("common.error"),
+        description: t("reports.exportFailed"),
         variant: "destructive",
       });
     } finally {
@@ -124,7 +126,7 @@ export default function AdminReports() {
               <FileSpreadsheet className="h-5 w-5" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold tracking-tight">Report</h1>
+              <h1 className="text-2xl font-bold tracking-tight">{t("sidebar.items.reports")}</h1>
               <p className="text-sm text-muted-foreground">
                 Esporta dati in formato Excel per analisi dettagliate
               </p>
@@ -151,30 +153,30 @@ export default function AdminReports() {
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
-              <label className="text-sm font-medium">Stato</label>
+              <label className="text-sm font-medium">{t("common.status")}</label>
               <Select value={repairStatus} onValueChange={setRepairStatus}>
                 <SelectTrigger data-testid="select-repair-status">
-                  <SelectValue placeholder="Tutti gli stati" />
+                  <SelectValue placeholder={t("common.allStatuses")} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">Tutti gli stati</SelectItem>
-                  <SelectItem value="pending">In Attesa</SelectItem>
-                  <SelectItem value="in_progress">In Lavorazione</SelectItem>
-                  <SelectItem value="completed">Completato</SelectItem>
-                  <SelectItem value="delivered">Consegnato</SelectItem>
-                  <SelectItem value="cancelled">Annullato</SelectItem>
+                  <SelectItem value="all">{t("repairs.allStatuses")}</SelectItem>
+                  <SelectItem value="pending">{t("common.pending")}</SelectItem>
+                  <SelectItem value="in_progress">{t("repairs.inProgress")}</SelectItem>
+                  <SelectItem value="completed">{t("repairs.status.completed")}</SelectItem>
+                  <SelectItem value="delivered">{t("repairs.status.delivered")}</SelectItem>
+                  <SelectItem value="cancelled">{t("repairs.status.cancelled")}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm font-medium">Centro Riparazione</label>
+              <label className="text-sm font-medium">{t("roles.repairCenter")}</label>
               <Select value={repairCenterId} onValueChange={setRepairCenterId}>
                 <SelectTrigger data-testid="select-repair-center">
-                  <SelectValue placeholder="Tutti i centri" />
+                  <SelectValue placeholder={t("warehouse.allCenters")} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">Tutti i centri</SelectItem>
+                  <SelectItem value="all">{t("common.allCenters")}</SelectItem>
                   {repairCenters.map((center) => (
                     <SelectItem key={center.id} value={center.id}>
                       {center.name}
@@ -301,7 +303,7 @@ export default function AdminReports() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Informazioni Export</CardTitle>
+          <CardTitle>{t("reports.exportInfo")}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-2 text-sm text-muted-foreground">
           <p>• I file vengono generati in formato Excel (.xlsx) con intestazioni in italiano</p>

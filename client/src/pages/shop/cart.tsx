@@ -1,5 +1,6 @@
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useParams, useLocation } from "wouter";
+import { useTranslation } from "react-i18next";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,6 +17,7 @@ interface CartItemWithProduct extends CartItem {
 }
 
 export default function ShopCart() {
+  const { t } = useTranslation();
   const { resellerId } = useParams<{ resellerId: string }>();
   const [, setLocation] = useLocation();
   const { toast } = useToast();
@@ -25,7 +27,7 @@ export default function ShopCart() {
     queryKey: ['/api/shop', resellerId, 'cart'],
     queryFn: async () => {
       const res = await fetch(`/api/shop/${resellerId}/cart`, { credentials: 'include' });
-      if (!res.ok) throw new Error('Errore nel caricamento carrello');
+      if (!res.ok) throw new Error(t("shop.cart.errorLoading"));
       return res.json();
     }
   });
@@ -38,7 +40,7 @@ export default function ShopCart() {
       queryClient.invalidateQueries({ queryKey: ['/api/shop', resellerId, 'cart'] });
     },
     onError: (error: any) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("shop.cart.error"), description: error.message, variant: "destructive" });
     }
   });
   
@@ -48,10 +50,10 @@ export default function ShopCart() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/shop', resellerId, 'cart'] });
-      toast({ title: "Prodotto rimosso dal carrello" });
+      toast({ title: t("shop.cart.itemRemoved") });
     },
     onError: (error: any) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("shop.cart.error"), description: error.message, variant: "destructive" });
     }
   });
   
@@ -62,8 +64,8 @@ export default function ShopCart() {
   const handleCheckout = () => {
     if (!user) {
       toast({ 
-        title: "Accedi per continuare", 
-        description: "Devi effettuare il login per procedere con l'acquisto" 
+        title: t("shop.cart.loginRequired"), 
+        description: t("shop.cart.loginRequiredDesc") 
       });
       setLocation('/auth');
       return;
@@ -130,8 +132,8 @@ export default function ShopCart() {
             <ArrowLeft className="h-5 w-5" />
           </Button>
           <div>
-            <h1 className="text-3xl font-bold" data-testid="text-cart-title">Carrello</h1>
-            <p className="text-muted-foreground">0 prodotti</p>
+            <h1 className="text-3xl font-bold" data-testid="text-cart-title">{t("shop.cart.title")}</h1>
+            <p className="text-muted-foreground">{t("shop.cart.emptyCount")}</p>
           </div>
         </div>
 
@@ -139,10 +141,10 @@ export default function ShopCart() {
           <div className="w-24 h-24 rounded-full bg-muted flex items-center justify-center mb-6">
             <ShoppingBag className="h-10 w-10 text-muted-foreground" />
           </div>
-          <h3 className="text-xl font-semibold mb-2">Il tuo carrello è vuoto</h3>
-          <p className="text-muted-foreground mb-6">Esplora il catalogo e aggiungi i prodotti che desideri</p>
+          <h3 className="text-xl font-semibold mb-2">{t("shop.cart.emptyTitle")}</h3>
+          <p className="text-muted-foreground mb-6">{t("shop.cart.emptySubtitle")}</p>
           <Button onClick={() => setLocation(`/shop/${resellerId}`)} data-testid="button-continue-shopping">
-            Continua lo shopping
+            {t("shop.cart.continueShopping")}
           </Button>
         </div>
       </div>
@@ -156,9 +158,9 @@ export default function ShopCart() {
           <ArrowLeft className="h-5 w-5" />
         </Button>
         <div>
-          <h1 className="text-3xl font-bold" data-testid="text-cart-title">Carrello</h1>
+          <h1 className="text-3xl font-bold" data-testid="text-cart-title">{t("shop.cart.title")}</h1>
           <p className="text-muted-foreground">
-            {items.length} {items.length === 1 ? 'prodotto' : 'prodotti'}
+            {items.length} {items.length === 1 ? t("shop.cart.productSingular") : t("shop.cart.productPlural")}
           </p>
         </div>
       </div>
@@ -185,13 +187,13 @@ export default function ShopCart() {
                   
                   <div className="flex-1 min-w-0">
                     <h3 className="font-semibold" data-testid={`text-item-name-${item.id}`}>
-                      {item.product?.name || 'Prodotto'}
+                      {item.product?.name || t("shop.cart.product")}
                     </h3>
                     {item.product?.brand && (
                       <p className="text-sm text-muted-foreground">{item.product.brand}</p>
                     )}
                     <p className="text-sm text-muted-foreground mt-1">
-                      {formatPrice(item.unitPrice)} cad.
+                      {formatPrice(item.unitPrice)} {t("shop.cart.each")}
                     </p>
                     
                     <div className="flex flex-wrap items-center gap-3 mt-3">
@@ -245,33 +247,33 @@ export default function ShopCart() {
         <div>
           <Card className="sticky top-4 z-10">
             <CardHeader>
-              <CardTitle>Riepilogo ordine</CardTitle>
+              <CardTitle>{t("shop.cart.orderSummary")}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
               <div className="flex flex-wrap justify-between gap-1">
-                <span className="text-muted-foreground">Subtotale</span>
+                <span className="text-muted-foreground">{t("shop.cart.subtotal")}</span>
                 <span data-testid="text-subtotal">{formatPrice(cart?.subtotal || 0)}</span>
               </div>
               {(cart?.discount || 0) > 0 && (
                 <div className="flex flex-wrap justify-between gap-1 text-green-600 dark:text-green-400">
-                  <span>Sconto</span>
+                  <span>{t("shop.cart.discount")}</span>
                   <span>-{formatPrice(cart?.discount || 0)}</span>
                 </div>
               )}
               <div className="flex flex-wrap justify-between gap-1">
-                <span className="text-muted-foreground">Spedizione</span>
+                <span className="text-muted-foreground">{t("shop.cart.shipping")}</span>
                 <span data-testid="text-shipping">
-                  {(cart?.shippingCost || 0) > 0 ? formatPrice(cart?.shippingCost || 0) : 'Calcolata al checkout'}
+                  {(cart?.shippingCost || 0) > 0 ? formatPrice(cart?.shippingCost || 0) : t("shop.cart.shippingAtCheckout")}
                 </span>
               </div>
               <Separator />
               <div className="flex flex-wrap justify-between gap-1 text-lg font-bold">
-                <span>Totale</span>
+                <span>{t("shop.cart.total")}</span>
                 <span data-testid="text-total">{formatPrice(cart?.total || 0)}</span>
               </div>
               {items.length > 0 && (
                 <p className="text-sm text-muted-foreground" data-testid="text-vat-amount">
-                  IVA inclusa: {formatPrice(
+                  {t("shop.cart.vatIncluded")}: {formatPrice(
                     (() => {
                       const vatRate = data?.customerVatRate ?? 22;
                       if (vatRate === 0) return 0;
@@ -289,7 +291,7 @@ export default function ShopCart() {
                 onClick={handleCheckout}
                 data-testid="button-checkout"
               >
-                Procedi al checkout
+                {t("shop.cart.proceedToCheckout")}
               </Button>
               <Button 
                 variant="outline" 
@@ -297,7 +299,7 @@ export default function ShopCart() {
                 onClick={() => setLocation(`/shop/${resellerId}`)}
                 data-testid="button-continue-shopping"
               >
-                Continua lo shopping
+                {t("shop.cart.continueShopping")}
               </Button>
             </CardFooter>
           </Card>

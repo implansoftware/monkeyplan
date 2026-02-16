@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -8,14 +9,14 @@ import { Package, Eye, Calendar, CreditCard } from "lucide-react";
 import type { SalesOrder } from "@shared/schema";
 
 const statusLabels: Record<string, string> = {
-  pending: "In attesa",
-  confirmed: "Confermato",
+  pending: t("common.waiting"),
+  confirmed: t("common.confirmed"),
   processing: "In elaborazione",
   ready_to_ship: "Pronto per spedizione",
   shipped: "Spedito",
-  delivered: "Consegnato",
-  completed: "Completato",
-  cancelled: "Annullato",
+  delivered: t("common.delivered"),
+  completed: t("common.completed"),
+  cancelled: t("common.cancelled"),
   refunded: "Rimborsato"
 };
 
@@ -32,6 +33,7 @@ const statusColors: Record<string, string> = {
 };
 
 export default function CustomerOrders() {
+  const { t } = useTranslation();
   const [, setLocation] = useLocation();
   
   const { data: orders, isLoading } = useQuery<SalesOrder[]>({
@@ -96,7 +98,7 @@ export default function CustomerOrders() {
         <Card>
           <CardContent className="p-12 text-center">
             <Package className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-            <h3 className="text-lg font-semibold mb-2">Nessun ordine</h3>
+            <h3 className="text-lg font-semibold mb-2">{t("customerPages.nessunOrdine")}</h3>
             <p className="text-muted-foreground">Non hai ancora effettuato ordini</p>
           </CardContent>
         </Card>

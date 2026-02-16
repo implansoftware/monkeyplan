@@ -10,8 +10,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { formatDistanceToNow } from "date-fns";
 import { it } from "date-fns/locale";
 import { RepairOrderDetailDrawer } from "@/components/RepairOrderDetailDrawer";
+import { useTranslation } from "react-i18next";
 
 export default function ResellerOrders() {
+  const { t } = useTranslation();
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [selectedRepairId, setSelectedRepairId] = useState<string | null>(null);
@@ -30,12 +32,12 @@ export default function ResellerOrders() {
 
   const getStatusBadge = (status: string) => {
     switch (status) {
-      case "pending": return <Badge variant="secondary">In attesa</Badge>;
-      case "in_progress": return <Badge>In lavorazione</Badge>;
+      case "pending": return <Badge variant="secondary">{t("hr.pending")}</Badge>;
+      case "in_progress": return <Badge>{t("tickets.status.inProgress")}</Badge>;
       case "waiting_parts": return <Badge variant="outline">In attesa pezzi</Badge>;
       case "completed": return <Badge>Completata</Badge>;
-      case "delivered": return <Badge variant="outline">Consegnata</Badge>;
-      case "cancelled": return <Badge variant="destructive">Annullata</Badge>;
+      case "delivered": return <Badge variant="outline">{t("shipping.delivered")}</Badge>;
+      case "cancelled": return <Badge variant="destructive">{t("common.cancelled")}</Badge>;
       default: return <Badge variant="outline">{status}</Badge>;
     }
   };
@@ -43,7 +45,7 @@ export default function ResellerOrders() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-semibold mb-2">I Miei Ordini</h1>
+        <h1 className="text-2xl font-semibold mb-2">{t("sidebar.items.myOrders")}</h1>
         <p className="text-muted-foreground">
           Visualizza e monitora tutte le riparazioni
         </p>
@@ -55,7 +57,7 @@ export default function ResellerOrders() {
             <div className="flex-1 relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Cerca ordine..."
+                placeholder={t("b2b.searchOrder")}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-9"
@@ -67,9 +69,9 @@ export default function ResellerOrders() {
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">Tutti gli stati</SelectItem>
-                <SelectItem value="pending">In attesa</SelectItem>
-                <SelectItem value="in_progress">In lavorazione</SelectItem>
+                <SelectItem value="all">{t("common.allStatuses")}</SelectItem>
+                <SelectItem value="pending">{t("hr.pending")}</SelectItem>
+                <SelectItem value="in_progress">{t("tickets.status.inProgress")}</SelectItem>
                 <SelectItem value="completed">Completate</SelectItem>
               </SelectContent>
             </Select>
@@ -85,7 +87,7 @@ export default function ResellerOrders() {
           ) : filteredOrders.length === 0 ? (
             <div className="text-center py-12 text-muted-foreground">
               <Wrench className="h-12 w-12 mx-auto mb-4 opacity-20" />
-              <p>Nessun ordine trovato</p>
+              <p>{t("b2b.noOrdersFound")}</p>
             </div>
           ) : (
             <div className="space-y-3">

@@ -16,6 +16,7 @@ import { format } from "date-fns";
 import { it } from "date-fns/locale";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
+import { useTranslation } from "react-i18next";
 
 type TicketType = {
   id: string;
@@ -42,6 +43,7 @@ type RepairCenter = {
 };
 
 export default function ResellerTickets() {
+  const { t } = useTranslation();
   const [, setLocation] = useLocation();
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
@@ -91,7 +93,7 @@ export default function ResellerTickets() {
     },
     onError: (error: Error) => {
       toast({ 
-        title: "Errore", 
+        title: t("common.error"), 
         description: error.message,
         variant: "destructive" 
       });
@@ -138,7 +140,7 @@ export default function ResellerTickets() {
   const handleSubmit = () => {
     if (!newTicket.subject || !newTicket.description) {
       toast({ 
-        title: "Errore", 
+        title: t("common.error"), 
         description: "Compila tutti i campi obbligatori",
         variant: "destructive" 
       });
@@ -147,7 +149,7 @@ export default function ResellerTickets() {
     
     if (newTicket.targetType === "repair_center" && !newTicket.targetId) {
       toast({ 
-        title: "Errore", 
+        title: t("common.error"), 
         description: "Seleziona un centro riparazione",
         variant: "destructive" 
       });
@@ -191,9 +193,7 @@ export default function ResellerTickets() {
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
               <DialogTrigger asChild>
                 <Button className="shadow-lg shadow-primary/25" data-testid="button-new-ticket">
-                  <Plus className="h-4 w-4 mr-2" />
-                  Nuovo Ticket
-                </Button>
+                  <Plus className="h-4 w-4 mr-2" />{t("tickets.newTicket")}</Button>
               </DialogTrigger>
               <DialogContent className="sm:max-w-[500px]">
                 <DialogHeader>
@@ -218,9 +218,7 @@ export default function ResellerTickets() {
                         </SelectItem>
                         <SelectItem value="repair_center">
                           <div className="flex flex-wrap items-center gap-2">
-                            <Users className="h-4 w-4" />
-                            Centro Riparazione
-                          </div>
+                            <Users className="h-4 w-4" />{t("roles.repairCenter")}</div>
                         </SelectItem>
                       </SelectContent>
                     </Select>
@@ -269,7 +267,7 @@ export default function ResellerTickets() {
                   </div>
                   
                   <div className="space-y-2">
-                    <Label>Priorità</Label>
+                    <Label>{t("common.priority")}</Label>
                     <Select 
                       value={newTicket.priority} 
                       onValueChange={(v) => setNewTicket({ ...newTicket, priority: v })}
@@ -286,9 +284,7 @@ export default function ResellerTickets() {
                   </div>
                   
                   <div className="flex justify-end gap-2 pt-4">
-                    <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
-                      Annulla
-                    </Button>
+                    <Button variant="outline" onClick={() => setIsDialogOpen(false)}>{t("common.cancel")}</Button>
                     <Button 
                       onClick={handleSubmit} 
                       disabled={createMutation.isPending}
@@ -339,10 +335,10 @@ export default function ResellerTickets() {
             
             <Select value={statusFilter} onValueChange={setStatusFilter}>
               <SelectTrigger data-testid="select-status-filter">
-                <SelectValue placeholder="Filtra per stato" />
+                <SelectValue placeholder={t("common.filterByStatus")} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">Tutti gli stati</SelectItem>
+                <SelectItem value="all">{t("common.allStatuses")}</SelectItem>
                 <SelectItem value="open">Aperto</SelectItem>
                 <SelectItem value="in_progress">In lavorazione</SelectItem>
                 <SelectItem value="closed">Chiuso</SelectItem>

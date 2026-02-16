@@ -29,6 +29,7 @@ import {
 import { useState } from "react";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
+import { useTranslation } from "react-i18next";
 
 interface PosSession {
   id: string;
@@ -93,6 +94,7 @@ interface TransactionDetail {
 }
 
 export default function ResellerPosSessions() {
+  const { t } = useTranslation();
   const [repairCenterFilter, setRepairCenterFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
@@ -149,7 +151,7 @@ export default function ResellerPosSessions() {
     if (status === "open") {
       return <Badge className="bg-green-600"><PlayCircle className="w-3 h-3 mr-1" />Aperta</Badge>;
     }
-    return <Badge variant="secondary"><StopCircle className="w-3 h-3 mr-1" />Chiusa</Badge>;
+    return <Badge variant="secondary"><StopCircle className="w-3 h-3 mr-1" />{t("pos.closed")}</Badge>;
   };
 
   const filteredSessions = sessions?.filter(s => {
@@ -190,9 +192,9 @@ export default function ResellerPosSessions() {
       document.body.removeChild(a);
       window.URL.revokeObjectURL(url);
       
-      toast({ title: "Export completato", description: `File ${format.toUpperCase()} scaricato con successo` });
+      toast({ title: t("reports.exportCompleted"), description: `File ${format.toUpperCase()} scaricato con successo` });
     } catch (error) {
-      toast({ title: "Errore", description: "Impossibile esportare le sessioni", variant: "destructive" });
+      toast({ title: t("common.error"), description: "Impossibile esportare le sessioni", variant: "destructive" });
     } finally {
       setIsExporting(false);
     }
@@ -225,7 +227,7 @@ export default function ResellerPosSessions() {
             <DropdownMenuTrigger asChild>
               <Button className="bg-white/20 backdrop-blur-sm border border-white/30 text-white shadow-lg" disabled={isExporting} data-testid="button-export-sessions">
                 <Download className="h-4 w-4 mr-2" />
-                {isExporting ? "Esportazione..." : "Esporta"}
+                {isExporting ? t("pages.exporting") : t("common.export")}
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
@@ -234,9 +236,7 @@ export default function ResellerPosSessions() {
                 Esporta CSV
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => handleExport('xlsx')} data-testid="menu-export-xlsx">
-                <FileSpreadsheet className="h-4 w-4 mr-2" />
-                Esporta Excel
-              </DropdownMenuItem>
+                <FileSpreadsheet className="h-4 w-4 mr-2" />{t("reports.exportExcel")}</DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
@@ -244,7 +244,7 @@ export default function ResellerPosSessions() {
 
       <Card className="rounded-2xl">
         <CardHeader>
-          <CardTitle className="text-lg">Filtri</CardTitle>
+          <CardTitle className="text-lg">{t("common.filters")}</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="flex flex-wrap gap-4">
@@ -260,10 +260,10 @@ export default function ResellerPosSessions() {
             <Select value={repairCenterFilter} onValueChange={setRepairCenterFilter}>
               <SelectTrigger className="w-full sm:w-[200px]" data-testid="select-repair-center">
                 <Building2 className="w-4 h-4 mr-2" />
-                <SelectValue placeholder="Centro Riparazione" />
+                <SelectValue placeholder={t("roles.repairCenter")} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">Tutti i centri</SelectItem>
+                <SelectItem value="all">{t("common.allCenters")}</SelectItem>
                 {repairCenters?.map(rc => (
                   <SelectItem key={rc.id} value={rc.id}>{rc.name}</SelectItem>
                 ))}
@@ -271,10 +271,10 @@ export default function ResellerPosSessions() {
             </Select>
             <Select value={statusFilter} onValueChange={setStatusFilter}>
               <SelectTrigger className="w-full sm:w-[150px]" data-testid="select-status">
-                <SelectValue placeholder="Stato" />
+                <SelectValue placeholder={t("common.status")} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">Tutti</SelectItem>
+                <SelectItem value="all">{t("common.allMasc")}</SelectItem>
                 <SelectItem value="open">Aperte</SelectItem>
                 <SelectItem value="closed">Chiuse</SelectItem>
               </SelectContent>
@@ -299,14 +299,14 @@ export default function ResellerPosSessions() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Centro</TableHead>
+                  <TableHead>{t("admin.common.center")}</TableHead>
                   <TableHead>Cassa</TableHead>
-                  <TableHead>Operatore</TableHead>
+                  <TableHead>{t("warehouse.operator")}</TableHead>
                   <TableHead>Apertura</TableHead>
                   <TableHead>Chiusura</TableHead>
-                  <TableHead>Stato</TableHead>
+                  <TableHead>{t("common.status")}</TableHead>
                   <TableHead className="text-right">Transazioni</TableHead>
-                  <TableHead className="text-right">Totale</TableHead>
+                  <TableHead className="text-right">{t("common.total")}</TableHead>
                   <TableHead></TableHead>
                 </TableRow>
               </TableHeader>
@@ -368,7 +368,7 @@ export default function ResellerPosSessions() {
             <div className="space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <p className="text-sm text-muted-foreground">Centro</p>
+                  <p className="text-sm text-muted-foreground">{t("admin.common.center")}</p>
                   <p className="font-medium">{sessionDetail.session.repairCenterName}</p>
                 </div>
                 <div>
@@ -376,11 +376,11 @@ export default function ResellerPosSessions() {
                   <p className="font-medium">{sessionDetail.session.registerName || "-"}</p>
                 </div>
                 <div>
-                  <p className="text-sm text-muted-foreground">Operatore</p>
+                  <p className="text-sm text-muted-foreground">{t("warehouse.operator")}</p>
                   <p className="font-medium">{sessionDetail.session.operatorName}</p>
                 </div>
                 <div>
-                  <p className="text-sm text-muted-foreground">Stato</p>
+                  <p className="text-sm text-muted-foreground">{t("common.status")}</p>
                   {getStatusBadge(sessionDetail.session.status)}
                 </div>
                 <div>
@@ -404,7 +404,7 @@ export default function ResellerPosSessions() {
                   <p className="font-medium">{sessionDetail.session.totalTransactions}</p>
                 </div>
                 <div>
-                  <p className="text-sm text-muted-foreground">Totale Vendite</p>
+                  <p className="text-sm text-muted-foreground">{t("pos.salesTotal")}</p>
                   <p className="font-medium text-lg">{formatCurrency(sessionDetail.session.totalSales)}</p>
                 </div>
               </div>
@@ -415,8 +415,8 @@ export default function ResellerPosSessions() {
                   <div className="grid grid-cols-4 gap-2 text-xs text-muted-foreground">
                     <span className="font-medium">Aliquota</span>
                     <span className="font-medium text-right">Imponibile</span>
-                    <span className="font-medium text-right">IVA</span>
-                    <span className="font-medium text-right">Totale</span>
+                    <span className="font-medium text-right">{t("common.vat")}</span>
+                    <span className="font-medium text-right">{t("common.total")}</span>
                   </div>
                   {Object.entries(sessionDetail.session.totalsByVatRate).map(([rate, data]) => (
                     <div key={rate} className="grid grid-cols-4 gap-2 text-xs">
@@ -438,10 +438,10 @@ export default function ResellerPosSessions() {
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead>Numero</TableHead>
+                        <TableHead>{t("common.number")}</TableHead>
                         <TableHead>Ora</TableHead>
-                        <TableHead>Pagamento</TableHead>
-                        <TableHead className="text-right">Totale</TableHead>
+                        <TableHead>{t("common.payment")}</TableHead>
+                        <TableHead className="text-right">{t("common.total")}</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -485,41 +485,41 @@ export default function ResellerPosSessions() {
             <div className="space-y-6">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <p className="text-sm text-muted-foreground">Numero</p>
+                  <p className="text-sm text-muted-foreground">{t("common.number")}</p>
                   <p className="font-mono font-medium">{transactionDetail.transaction.transactionNumber}</p>
                 </div>
                 <div>
-                  <p className="text-sm text-muted-foreground">Centro</p>
+                  <p className="text-sm text-muted-foreground">{t("admin.common.center")}</p>
                   <p className="font-medium">{transactionDetail.repairCenterName || "-"}</p>
                 </div>
                 <div>
-                  <p className="text-sm text-muted-foreground">Operatore</p>
+                  <p className="text-sm text-muted-foreground">{t("warehouse.operator")}</p>
                   <p className="font-medium">{transactionDetail.operator?.fullName || "-"}</p>
                 </div>
                 <div>
-                  <p className="text-sm text-muted-foreground">Cliente</p>
+                  <p className="text-sm text-muted-foreground">{t("common.customer")}</p>
                   <p className="font-medium">{transactionDetail.customer?.fullName || "Vendita anonima"}</p>
                 </div>
                 <div>
-                  <p className="text-sm text-muted-foreground">Data/Ora</p>
+                  <p className="text-sm text-muted-foreground">{t("common.dateTime")}</p>
                   <p className="font-medium">{format(new Date(transactionDetail.transaction.createdAt), "dd/MM/yyyy HH:mm", { locale: it })}</p>
                 </div>
                 <div>
-                  <p className="text-sm text-muted-foreground">Metodo Pagamento</p>
+                  <p className="text-sm text-muted-foreground">{t("pos.paymentMethod")}</p>
                   <Badge variant="outline">{transactionDetail.transaction.paymentMethod}</Badge>
                 </div>
               </div>
 
               {transactionDetail.items.length > 0 && (
                 <div>
-                  <h4 className="font-medium mb-3">Articoli</h4>
+                  <h4 className="font-medium mb-3">{t("b2b.items")}</h4>
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead>Prodotto</TableHead>
-                        <TableHead className="text-center">Qtà</TableHead>
-                        <TableHead className="text-right">Prezzo Unit.</TableHead>
-                        <TableHead className="text-right">Totale</TableHead>
+                        <TableHead>{t("common.product")}</TableHead>
+                        <TableHead className="text-center">{t("common.qty")}</TableHead>
+                        <TableHead className="text-right">{t("products.unitPrice")}</TableHead>
+                        <TableHead className="text-right">{t("common.total")}</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -529,7 +529,7 @@ export default function ResellerPosSessions() {
                             <div>
                               <p className="font-medium">{item.productName}</p>
                               {item.productSku && <p className="text-xs text-muted-foreground">SKU: {item.productSku}</p>}
-                              {item.isService && <Badge variant="secondary" className="text-xs mt-1">Servizio</Badge>}
+                              {item.isService && <Badge variant="secondary" className="text-xs mt-1">{t("common.service")}</Badge>}
                             </div>
                           </TableCell>
                           <TableCell className="text-center">{item.quantity}</TableCell>
@@ -544,28 +544,28 @@ export default function ResellerPosSessions() {
 
               <div className="border-t pt-4 space-y-2">
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">Subtotale</span>
+                  <span className="text-muted-foreground">{t("common.subtotal")}</span>
                   <span>{formatCurrency(transactionDetail.transaction.subtotal)}</span>
                 </div>
                 {transactionDetail.transaction.discountAmount > 0 && (
                   <div className="flex justify-between text-green-600">
-                    <span>Sconto</span>
+                    <span>{t("common.discount")}</span>
                     <span>-{formatCurrency(transactionDetail.transaction.discountAmount)}</span>
                   </div>
                 )}
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">IVA</span>
+                  <span className="text-muted-foreground">{t("common.vat")}</span>
                   <span>{formatCurrency(transactionDetail.transaction.taxAmount)}</span>
                 </div>
                 <div className="flex justify-between text-lg font-bold border-t pt-2">
-                  <span>Totale</span>
+                  <span>{t("common.total")}</span>
                   <span>{formatCurrency(transactionDetail.transaction.total)}</span>
                 </div>
               </div>
 
               {transactionDetail.transaction.notes && (
                 <div>
-                  <p className="text-sm text-muted-foreground">Note</p>
+                  <p className="text-sm text-muted-foreground">{t("common.notes")}</p>
                   <p className="text-sm">{transactionDetail.transaction.notes}</p>
                 </div>
               )}

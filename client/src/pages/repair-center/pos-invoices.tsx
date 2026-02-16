@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
@@ -28,6 +29,7 @@ interface SaleTransaction {
 }
 
 export default function SalesHistoryPage() {
+  const { t } = useTranslation();
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
 
@@ -46,17 +48,17 @@ export default function SalesHistoryPage() {
       case "completed": return <Badge>Completata</Badge>;
       case "refunded": return <Badge variant="destructive">Rimborsata</Badge>;
       case "partial_refund": return <Badge variant="secondary">Rimborso parziale</Badge>;
-      case "voided": return <Badge variant="destructive">Annullata</Badge>;
+      case "voided": return <Badge variant="destructive">{t("common.cancelled")}</Badge>;
       case "pending": return <Badge variant="secondary">In sospeso</Badge>;
-      case "cancelled": return <Badge variant="outline">Annullata</Badge>;
+      case "cancelled": return <Badge variant="outline">{t("common.cancelled")}</Badge>;
       default: return <Badge variant="outline">{status}</Badge>;
     }
   };
 
   const getPaymentMethodLabel = (method: string) => {
     const labels: Record<string, string> = {
-      cash: "Contanti",
-      card: "Carta",
+      cash: t("pos.cash"),
+      card: t("pos.card"),
       pos_terminal: "POS",
       mixed: "Misto",
     };
@@ -96,13 +98,13 @@ export default function SalesHistoryPage() {
               <FileText className="h-5 w-5 sm:h-7 sm:w-7 text-white" />
             </div>
             <div>
-              <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-white tracking-tight">Fatture POS</h1>
-              <p className="text-emerald-100">Tutte le transazioni effettuate dal POS</p>
+              <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-white tracking-tight">{t("pos.fatturePOS")}</h1>
+              <p className="text-emerald-100">{t("pos.tutteLeTransazioniEffettuateDalPOS")}</p>
             </div>
           </div>
           <div className="flex flex-wrap items-center gap-3">
             <div className="text-right">
-              <p className="text-xs text-emerald-100">Totale incassato</p>
+              <p className="text-xs text-emerald-100">{t("warranties.totalCollected")}</p>
               <p className="text-lg font-bold text-white">{formatCurrency(totalRevenue)}</p>
             </div>
             <Badge className="bg-white/20 backdrop-blur-sm text-white border-white/30">
@@ -118,7 +120,7 @@ export default function SalesHistoryPage() {
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Cerca per numero transazione..."
+                placeholder={t("pos.cercaPerNumeroTransazione")}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-9"
@@ -127,10 +129,10 @@ export default function SalesHistoryPage() {
             </div>
             <Select value={statusFilter} onValueChange={setStatusFilter}>
               <SelectTrigger className="w-full sm:w-[180px]" data-testid="select-status-filter">
-                <SelectValue placeholder="Stato" />
+                <SelectValue placeholder={t("common.status")} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">Tutti gli stati</SelectItem>
+                <SelectItem value="all">{t("common.allStatuses")}</SelectItem>
                 <SelectItem value="completed">Completata</SelectItem>
                 <SelectItem value="refunded">Rimborsata</SelectItem>
                 <SelectItem value="pending">In sospeso</SelectItem>
@@ -142,11 +144,11 @@ export default function SalesHistoryPage() {
           {filteredTransactions.length === 0 ? (
             <div className="text-center py-12">
               <Receipt className="h-12 w-12 mx-auto text-muted-foreground/50 mb-4" />
-              <h3 className="text-lg font-medium">Nessuna vendita trovata</h3>
+              <h3 className="text-lg font-medium">{t("pos.nessunaVenditaTrovata")}</h3>
               <p className="text-sm text-muted-foreground mt-1">
                 {searchQuery || statusFilter !== "all" 
-                  ? "Prova a modificare i filtri di ricerca" 
-                  : "Le vendite effettuate dal POS appariranno qui"}
+                  ? t("common.tryModifySearchFilters") 
+                  : t("pos.salesWillAppearHere")}
               </p>
             </div>
           ) : (
@@ -154,14 +156,14 @@ export default function SalesHistoryPage() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Numero</TableHead>
-                    <TableHead>Data</TableHead>
+                    <TableHead>{t("common.number")}</TableHead>
+                    <TableHead>{t("common.date")}</TableHead>
                     <TableHead className="hidden md:table-cell">Cassa</TableHead>
-                    <TableHead className="hidden lg:table-cell">Articoli</TableHead>
-                    <TableHead className="hidden md:table-cell">Pagamento</TableHead>
-                    <TableHead>Importo</TableHead>
-                    <TableHead>Stato</TableHead>
-                    <TableHead className="text-right">Azioni</TableHead>
+                    <TableHead className="hidden lg:table-cell">{t("b2b.items")}</TableHead>
+                    <TableHead className="hidden md:table-cell">{t("common.payment")}</TableHead>
+                    <TableHead>{t("common.amount")}</TableHead>
+                    <TableHead>{t("common.status")}</TableHead>
+                    <TableHead className="text-right">{t("common.actions")}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -204,7 +206,7 @@ export default function SalesHistoryPage() {
                         <div className="flex flex-wrap items-center gap-2">
                           {getStatusBadge(tx.status)}
                           {tx.hasInvoice && (
-                            <span title="Fattura emessa">
+                            <span title={t("invoices.invoiceIssued")}>
                               <FileText className="h-3.5 w-3.5 text-blue-500" />
                             </span>
                           )}

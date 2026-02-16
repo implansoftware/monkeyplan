@@ -17,15 +17,16 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import type { SalesOrderShipment } from "@shared/schema";
+import { useTranslation } from "react-i18next";
 
 const statusLabels: Record<string, string> = {
-  pending: "In preparazione",
+  pending: t("shipping.preparing"),
   picked_up: "Ritirato",
-  in_transit: "In transito",
+  in_transit: t("shipping.inTransit"),
   out_for_delivery: "In consegna",
-  delivered: "Consegnato",
+  delivered: t("repairs.status.delivered"),
   failed_attempt: "Tentativo fallito",
-  returned: "Reso",
+  returned: t("b2b.status.returned"),
   lost: "Smarrito"
 };
 
@@ -49,10 +50,11 @@ const carriers = [
   { value: "poste", label: "Poste Italiane" },
   { value: "fedex", label: "FedEx" },
   { value: "sda", label: "SDA" },
-  { value: "altro", label: "Altro" }
+  { value: "altro", label: t("common.other") }
 ];
 
 export default function ResellerShipments() {
+  const { t } = useTranslation();
   const { toast } = useToast();
   
   const [search, setSearch] = useState("");
@@ -108,7 +110,7 @@ export default function ResellerShipments() {
       setNewShipment({ orderId: "", carrier: "", trackingNumber: "", notes: "" });
     },
     onError: (error: any) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     }
   });
   
@@ -119,11 +121,11 @@ export default function ResellerShipments() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/shipments', selectedShipment?.id, 'tracking'] });
       queryClient.invalidateQueries({ queryKey: ['/api/shipments'] });
-      toast({ title: "Evento tracciamento aggiunto" });
+      toast({ title: t("shipping.trackingEventAdded") });
       setNewTrackingEvent({ status: "", location: "", description: "" });
     },
     onError: (error: any) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     }
   });
   
@@ -187,7 +189,7 @@ export default function ResellerShipments() {
               <Truck className="h-6 w-6 text-white" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold text-white" data-testid="text-shipments-title">Spedizioni</h1>
+              <h1 className="text-2xl font-bold text-white" data-testid="text-shipments-title">{t("shipping.title")}</h1>
               <p className="text-white/80 text-sm">Tracciamento e gestione spedizioni</p>
             </div>
           </div>
@@ -212,10 +214,10 @@ export default function ResellerShipments() {
         
         <Select value={statusFilter} onValueChange={setStatusFilter}>
           <SelectTrigger className="w-full sm:w-[180px]" data-testid="select-status-filter">
-            <SelectValue placeholder="Tutti gli stati" />
+            <SelectValue placeholder={t("common.allStatuses")} />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">Tutti gli stati</SelectItem>
+            <SelectItem value="all">{t("common.allStatuses")}</SelectItem>
             {Object.entries(statusLabels).map(([value, label]) => (
               <SelectItem key={value} value={value}>{label}</SelectItem>
             ))}
@@ -228,18 +230,18 @@ export default function ResellerShipments() {
           {filteredShipments.length === 0 ? (
             <div className="p-12 text-center">
               <Truck className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-              <p className="text-muted-foreground">Nessuna spedizione trovata</p>
+              <p className="text-muted-foreground">{t("shipping.noShipmentsFound")}</p>
             </div>
           ) : (
             <Table>
               <TableHeader>
                 <TableRow>
                   <TableHead>Tracking</TableHead>
-                  <TableHead>Corriere</TableHead>
+                  <TableHead>{t("shipping.carrier")}</TableHead>
                   <TableHead>Data spedizione</TableHead>
                   <TableHead>Data consegna stimata</TableHead>
-                  <TableHead>Stato</TableHead>
-                  <TableHead className="text-right">Azioni</TableHead>
+                  <TableHead>{t("common.status")}</TableHead>
+                  <TableHead className="text-right">{t("common.actions")}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -266,9 +268,7 @@ export default function ResellerShipments() {
                           onClick={() => openTrackingDialog(shipment)}
                           data-testid={`button-track-${shipment.id}`}
                         >
-                          <Navigation className="mr-2 h-4 w-4" />
-                          Traccia
-                        </Button>
+                          <Navigation className="mr-2 h-4 w-4" />{t("public.track.track")}</Button>
                       </div>
                     </TableCell>
                   </TableRow>
@@ -296,7 +296,7 @@ export default function ResellerShipments() {
               />
             </div>
             <div className="space-y-2">
-              <Label>Corriere</Label>
+              <Label>{t("shipping.carrier")}</Label>
               <Select 
                 value={newShipment.carrier} 
                 onValueChange={(value) => setNewShipment({ ...newShipment, carrier: value })}
@@ -323,7 +323,7 @@ export default function ResellerShipments() {
               />
             </div>
             <div className="space-y-2">
-              <Label>Note</Label>
+              <Label>{t("common.notes")}</Label>
               <Textarea
                 value={newShipment.notes}
                 onChange={(e) => setNewShipment({ ...newShipment, notes: e.target.value })}
@@ -333,9 +333,7 @@ export default function ResellerShipments() {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowCreateDialog(false)}>
-              Annulla
-            </Button>
+            <Button variant="outline" onClick={() => setShowCreateDialog(false)}>{t("common.cancel")}</Button>
             <Button 
               onClick={() => createShipment.mutate(newShipment)}
               disabled={!newShipment.orderId || !newShipment.carrier || createShipment.isPending}
@@ -349,7 +347,7 @@ export default function ResellerShipments() {
       <Dialog open={showTrackingDialog} onOpenChange={setShowTrackingDialog}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle>Tracciamento spedizione</DialogTitle>
+            <DialogTitle>{t("shipping.shipmentTracking")}</DialogTitle>
             <DialogDescription>
               {selectedShipment?.trackingNumber && (
                 <span className="font-mono">{selectedShipment.trackingNumber}</span>
@@ -384,13 +382,13 @@ export default function ResellerShipments() {
                 <h4 className="font-semibold">Aggiungi evento</h4>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label>Stato</Label>
+                    <Label>{t("common.status")}</Label>
                     <Select
                       value={newTrackingEvent.status}
                       onValueChange={(value) => setNewTrackingEvent({ ...newTrackingEvent, status: value })}
                     >
                       <SelectTrigger>
-                        <SelectValue placeholder="Seleziona stato" />
+                        <SelectValue placeholder={t("common.selectStatus")} />
                       </SelectTrigger>
                       <SelectContent>
                         {Object.entries(statusLabels).map(([value, label]) => (
@@ -400,20 +398,20 @@ export default function ResellerShipments() {
                     </Select>
                   </div>
                   <div className="space-y-2">
-                    <Label>Località</Label>
+                    <Label>{t("shipping.location")}</Label>
                     <Input
                       value={newTrackingEvent.location}
                       onChange={(e) => setNewTrackingEvent({ ...newTrackingEvent, location: e.target.value })}
-                      placeholder="Es: Milano Hub"
+                      placeholder={t("shipping.locationExample")}
                     />
                   </div>
                 </div>
                 <div className="space-y-2">
-                  <Label>Descrizione</Label>
+                  <Label>{t("common.description")}</Label>
                   <Textarea
                     value={newTrackingEvent.description}
                     onChange={(e) => setNewTrackingEvent({ ...newTrackingEvent, description: e.target.value })}
-                    placeholder="Descrizione evento..."
+                    placeholder={t("shipping.eventDescription")}
                     rows={2}
                   />
                 </div>

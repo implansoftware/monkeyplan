@@ -11,6 +11,7 @@ import { format } from "date-fns";
 import { it } from "date-fns/locale";
 import { useState } from "react";
 import { apiRequest } from "@/lib/queryClient";
+import { useTranslation } from "react-i18next";
 
 type MobilesentrixOrder = {
   id: string;
@@ -61,17 +62,18 @@ type OrderDetails = {
 };
 
 const statusConfig: Record<string, { label: string; variant: "default" | "secondary" | "outline" | "destructive"; icon: typeof Clock }> = {
-  pending: { label: "In Attesa", variant: "secondary", icon: Clock },
+  pending: { label: t("common.pending"), variant: "secondary", icon: Clock },
   processing: { label: "In Elaborazione", variant: "default", icon: Package },
-  shipped: { label: "Spedito", variant: "default", icon: Truck },
-  Shipped: { label: "Spedito", variant: "default", icon: Truck },
-  complete: { label: "Completato", variant: "default", icon: CheckCircle },
-  completed: { label: "Completato", variant: "default", icon: CheckCircle },
-  cancelled: { label: "Annullato", variant: "destructive", icon: XCircle },
-  canceled: { label: "Annullato", variant: "destructive", icon: XCircle },
+  shipped: { label: t("b2b.status.shipped"), variant: "default", icon: Truck },
+  Shipped: { label: t("b2b.status.shipped"), variant: "default", icon: Truck },
+  complete: { label: t("common.completed"), variant: "default", icon: CheckCircle },
+  completed: { label: t("common.completed"), variant: "default", icon: CheckCircle },
+  cancelled: { label: t("repairs.status.cancelled"), variant: "destructive", icon: XCircle },
+  canceled: { label: t("repairs.status.cancelled"), variant: "destructive", icon: XCircle },
 };
 
 export default function MobilesentrixOrdersPage() {
+  const { t } = useTranslation();
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
   const [orderDetails, setOrderDetails] = useState<OrderDetails | null>(null);
   const [loadingDetails, setLoadingDetails] = useState(false);
@@ -153,15 +155,11 @@ export default function MobilesentrixOrdersPage() {
         <div className="flex flex-wrap items-center gap-2">
           <Link href="/reseller/mobilesentrix/catalog">
             <Button variant="outline" data-testid="button-back-catalog">
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Catalogo
-            </Button>
+              <ArrowLeft className="h-4 w-4 mr-2" />{t("shop.catalog")}</Button>
           </Link>
           <Link href="/reseller/mobilesentrix/cart">
             <Button variant="outline" data-testid="button-view-cart">
-              <ShoppingCart className="h-4 w-4 mr-2" />
-              Carrello
-            </Button>
+              <ShoppingCart className="h-4 w-4 mr-2" />{t("pos.cart")}</Button>
           </Link>
         </div>
       </div>
@@ -266,19 +264,19 @@ export default function MobilesentrixOrdersPage() {
             <div className="space-y-6">
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
                 <div className="text-center p-3 bg-muted rounded-md">
-                  <p className="text-sm text-muted-foreground">Subtotale</p>
+                  <p className="text-sm text-muted-foreground">{t("common.subtotal")}</p>
                   <p className="text-lg font-semibold">{formatPrice(orderDetails.subtotal)}</p>
                 </div>
                 <div className="text-center p-3 bg-muted rounded-md">
-                  <p className="text-sm text-muted-foreground">Spedizione</p>
+                  <p className="text-sm text-muted-foreground">{t("common.shipment")}</p>
                   <p className="text-lg font-semibold">{formatPrice(orderDetails.shipping_amount)}</p>
                 </div>
                 <div className="text-center p-3 bg-muted rounded-md">
-                  <p className="text-sm text-muted-foreground">Tasse</p>
+                  <p className="text-sm text-muted-foreground">{t("common.taxes")}</p>
                   <p className="text-lg font-semibold">{formatPrice(orderDetails.tax_amount)}</p>
                 </div>
                 <div className="text-center p-3 bg-primary/10 rounded-md">
-                  <p className="text-sm text-muted-foreground">Totale</p>
+                  <p className="text-sm text-muted-foreground">{t("common.total")}</p>
                   <p className="text-lg font-bold">{formatPrice(orderDetails.grand_total)}</p>
                 </div>
               </div>
@@ -287,7 +285,7 @@ export default function MobilesentrixOrdersPage() {
                 <div className="p-4 border rounded-md">
                   <div className="flex flex-wrap items-center gap-2 mb-2">
                     <Truck className="h-4 w-4" />
-                    <h4 className="font-semibold">Spedizione</h4>
+                    <h4 className="font-semibold">{t("common.shipment")}</h4>
                   </div>
                   <p className="text-sm">{orderDetails.shipping_description || "N/A"}</p>
                   {orderDetails.tracking_number && (
@@ -299,7 +297,7 @@ export default function MobilesentrixOrdersPage() {
                 <div className="p-4 border rounded-md">
                   <div className="flex flex-wrap items-center gap-2 mb-2">
                     <CreditCard className="h-4 w-4" />
-                    <h4 className="font-semibold">Pagamento</h4>
+                    <h4 className="font-semibold">{t("common.payment")}</h4>
                   </div>
                   <p className="text-sm">{orderDetails.payment_method || "N/A"}</p>
                 </div>

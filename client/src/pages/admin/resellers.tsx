@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { Link } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
 import { User, InsertUser, RepairCenter } from "@shared/schema";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -23,16 +24,17 @@ import { AddressAutocomplete } from "@/components/address-autocomplete";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
 const WIZARD_STEPS = [
-  { id: 1, title: "Credenziali", icon: KeyRound },
-  { id: 2, title: "Info Base", icon: UserIcon },
-  { id: 3, title: "Dati Fiscali", icon: FileText },
-  { id: 4, title: "Configurazione", icon: Settings },
-  { id: 5, title: "Centri Rip.", icon: Wrench },
+  { id: 1, titleKey: "admin.resellers.wizardCredentials", icon: KeyRound },
+  { id: 2, titleKey: "admin.resellers.wizardBasicInfo", icon: UserIcon },
+  { id: 3, titleKey: "admin.resellers.wizardFiscalData", icon: FileText },
+  { id: 4, titleKey: "admin.resellers.wizardConfig", icon: Settings },
+  { id: 5, titleKey: "admin.resellers.wizardRepairCenters", icon: Wrench },
 ];
 
 type ResellerWithCount = Omit<User, 'password'> & { customerCount: number; staffCount: number; repairCenterCount: number; subResellerCount: number };
 
 export default function AdminResellers() {
+  const { t } = useTranslation();
   const [searchQuery, setSearchQuery] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingReseller, setEditingReseller] = useState<Omit<User, 'password'> | null>(null);
@@ -96,10 +98,10 @@ export default function AdminResellers() {
       queryClient.invalidateQueries({ queryKey: ["/api/users"] });
       queryClient.invalidateQueries({ queryKey: ["/api/admin/resellers"] });
       setDialogOpen(false);
-      toast({ title: "Rivenditore creato con successo" });
+      toast({ title: t("admin.resellers.resellerCreated") });
     },
     onError: (error: Error) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -113,10 +115,10 @@ export default function AdminResellers() {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/resellers"] });
       setDialogOpen(false);
       setEditingReseller(null);
-      toast({ title: "Rivenditore aggiornato con successo" });
+      toast({ title: t("admin.resellers.resellerUpdated") });
     },
     onError: (error: Error) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -130,7 +132,7 @@ export default function AdminResellers() {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/repair-centers"] });
     },
     onError: (error: Error) => {
-      toast({ title: "Errore nell'assegnazione centri", description: error.message, variant: "destructive" });
+      toast({ title: t("admin.resellers.assignCentersError"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -143,12 +145,12 @@ export default function AdminResellers() {
       queryClient.invalidateQueries({ queryKey: ["/api/users"] });
       queryClient.invalidateQueries({ queryKey: ["/api/admin/resellers"] });
       toast({ 
-        title: variables.isActive ? "Rivenditore attivato" : "Rivenditore disattivato",
-        description: variables.isActive ? "L'account è ora attivo" : "L'account è stato disattivato"
+        title: variables.isActive ? t("admin.resellers.resellerActivated") : t("admin.resellers.resellerDeactivated"),
+        description: variables.isActive ? t("admin.resellers.accountActive") : t("admin.resellers.accountDeactivated")
       });
     },
     onError: (error: Error) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -159,7 +161,7 @@ export default function AdminResellers() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/resellers"] });
       queryClient.invalidateQueries({ queryKey: ["/api/users"] });
-      toast({ title: "Rivenditore eliminato con successo" });
+      toast({ title: t("admin.resellers.resellerDeleted") });
       setDeleteDialogOpen(false);
       setResellerToDelete(null);
     },
@@ -171,7 +173,7 @@ export default function AdminResellers() {
           const errorData = JSON.parse(jsonMatch[1]);
           if (["ACTIVE_REPAIRS", "UNPAID_INVOICES", "OPEN_TICKETS", "HAS_CUSTOMERS", "HAS_REPAIR_CENTERS"].includes(errorData.error)) {
             toast({ 
-              title: "Impossibile eliminare il rivenditore", 
+              title: t("admin.resellers.cannotDelete"), 
               description: errorData.message,
               variant: "destructive" 
             });
@@ -181,7 +183,7 @@ export default function AdminResellers() {
           // Not JSON
         }
       }
-      toast({ title: "Errore", description: errorMsg, variant: "destructive" });
+      toast({ title: t("common.error"), description: errorMsg, variant: "destructive" });
     },
   });
 
@@ -191,13 +193,13 @@ export default function AdminResellers() {
       return await res.json();
     },
     onSuccess: () => {
-      toast({ title: "Password aggiornata con successo" });
+      toast({ title: t("admin.resellers.passwordResetSuccess") });
       setResetPasswordDialogOpen(false);
       setResellerToResetPassword(null);
       setNewPassword("");
     },
     onError: (error: Error) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -229,11 +231,11 @@ export default function AdminResellers() {
     
     const validTypes = ['image/jpeg', 'image/png', 'image/webp'];
     if (!validTypes.includes(file.type)) {
-      toast({ title: "Errore", description: "Formato non valido. Usa JPEG, PNG o WebP", variant: "destructive" });
+      toast({ title: t("common.error"), description: "Formato non valido. Usa JPEG, PNG o WebP", variant: "destructive" });
       return;
     }
     if (file.size > 2 * 1024 * 1024) {
-      toast({ title: "Errore", description: "File troppo grande. Max 2MB", variant: "destructive" });
+      toast({ title: t("common.error"), description: "File troppo grande. Max 2MB", variant: "destructive" });
       return;
     }
 
@@ -251,9 +253,9 @@ export default function AdminResellers() {
       if (!res.ok) throw new Error(await res.text());
       
       queryClient.invalidateQueries({ queryKey: ["/api/admin/resellers"] });
-      toast({ title: "Logo caricato", description: "Il logo è stato aggiornato" });
+      toast({ title: t("admin.resellers.logoUploaded"), description: t("admin.resellers.logoUpdatedDesc") });
     } catch (error: any) {
-      toast({ title: "Errore", description: error.message || "Impossibile caricare il logo", variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message || "Impossibile caricare il logo", variant: "destructive" });
     } finally {
       setLogoUploading(false);
       if (logoInputRef.current) logoInputRef.current.value = '';
@@ -273,9 +275,9 @@ export default function AdminResellers() {
       if (!res.ok) throw new Error(await res.text());
       
       queryClient.invalidateQueries({ queryKey: ["/api/admin/resellers"] });
-      toast({ title: "Logo rimosso", description: "Il logo è stato eliminato" });
+      toast({ title: t("admin.resellers.logoRemoved"), description: t("admin.resellers.logoRemovedDesc") });
     } catch (error: any) {
-      toast({ title: "Errore", description: error.message || "Impossibile eliminare il logo", variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message || "Impossibile eliminare il logo", variant: "destructive" });
     } finally {
       setLogoDeleting(false);
     }
@@ -447,7 +449,7 @@ export default function AdminResellers() {
               <Store className="h-7 w-7 text-white" />
             </div>
             <div>
-              <h1 className="text-2xl sm:text-3xl font-bold text-white tracking-tight" data-testid="text-page-title">Rivenditori</h1>
+              <h1 className="text-2xl sm:text-3xl font-bold text-white tracking-tight" data-testid="text-page-title">{t("sidebar.items.resellers")}</h1>
               <p className="text-blue-100/80 mt-1">Gestisci i rivenditori e visualizza i loro clienti</p>
             </div>
           </div>
@@ -488,7 +490,7 @@ export default function AdminResellers() {
                         {isPast ? <Check className="h-5 w-5" /> : <StepIcon className="h-5 w-5" />}
                       </div>
                       <span className={`text-xs mt-1 text-center ${isActive ? 'text-slate-900 dark:text-white font-medium' : 'text-slate-500 dark:text-slate-400'}`}>
-                        {step.title}
+                        {t(step.titleKey)}
                       </span>
                     </div>
                   );
@@ -501,7 +503,7 @@ export default function AdminResellers() {
                   <div className="space-y-4">
                     <p className="text-sm text-muted-foreground">Inserisci le credenziali di accesso per il nuovo rivenditore.</p>
                     <div className="space-y-2">
-                      <Label htmlFor="username" className="text-slate-700 dark:text-slate-300">Username</Label>
+                      <Label htmlFor="username" className="text-slate-700 dark:text-slate-300">{t("auth.username")}</Label>
                       <Input 
                         id="username" 
                         className="h-11 rounded-xl"
@@ -511,7 +513,7 @@ export default function AdminResellers() {
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="password" className="text-slate-700 dark:text-slate-300">Password</Label>
+                      <Label htmlFor="password" className="text-slate-700 dark:text-slate-300">{t("auth.password")}</Label>
                       <Input 
                         id="password" 
                         type="password"
@@ -549,7 +551,7 @@ export default function AdminResellers() {
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="phone" className="text-slate-700 dark:text-slate-300">Telefono</Label>
+                      <Label htmlFor="phone" className="text-slate-700 dark:text-slate-300">{t("common.phone")}</Label>
                       <Input 
                         id="phone"
                         className="h-11 rounded-xl"
@@ -561,7 +563,7 @@ export default function AdminResellers() {
                     
                     {editingReseller && (
                       <div className="space-y-2 pt-2 border-t">
-                        <Label>Logo Aziendale</Label>
+                        <Label>{t("admin.resellers.companyLogo")}</Label>
                         <div className="flex flex-wrap items-center gap-4">
                           <Avatar className="h-16 w-16 border">
                             {resellers.find(r => r.id === editingReseller.id)?.logoUrl ? (
@@ -663,7 +665,7 @@ export default function AdminResellers() {
                         />
                       </div>
                       <div className="space-y-2 col-span-2">
-                        <Label>Indirizzo</Label>
+                        <Label>{t("common.address")}</Label>
                         <AddressAutocomplete
                           value={addressData.indirizzo}
                           onChange={(val) => setAddressData(prev => ({ ...prev, indirizzo: val }))}
@@ -675,7 +677,7 @@ export default function AdminResellers() {
                               provincia: result.province,
                             });
                           }}
-                          placeholder="Inizia a digitare..."
+                          placeholder={t("common.startTyping")}
                           data-testid="input-indirizzo"
                         />
                       </div>
@@ -756,13 +758,13 @@ export default function AdminResellers() {
                   <div className="space-y-4">
                     <p className="text-sm text-muted-foreground">Configurazione categoria e affiliazione.</p>
                     <div className="space-y-2">
-                      <Label htmlFor="resellerCategory" className="text-slate-700 dark:text-slate-300">Categoria</Label>
+                      <Label htmlFor="resellerCategory" className="text-slate-700 dark:text-slate-300">{t("common.category")}</Label>
                       <Select value={selectedCategory} onValueChange={(val) => {
                         setSelectedCategory(val);
                         if (val !== 'standard') setSelectedParentResellerId("");
                       }}>
                         <SelectTrigger id="resellerCategory" className="h-11 rounded-xl" data-testid="select-reseller-category">
-                          <SelectValue placeholder="Seleziona categoria" />
+                          <SelectValue placeholder={t("utility.selectCategory")} />
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="standard">Standard</SelectItem>
@@ -781,10 +783,10 @@ export default function AdminResellers() {
                         <Label htmlFor="parentResellerId" className="text-slate-700 dark:text-slate-300">Rivenditore Padre (opzionale)</Label>
                         <Select value={selectedParentResellerId || "none"} onValueChange={(val) => setSelectedParentResellerId(val === "none" ? "" : val)}>
                           <SelectTrigger id="parentResellerId" className="h-11 rounded-xl" data-testid="select-parent-reseller">
-                            <SelectValue placeholder="Nessun rivenditore padre" />
+                            <SelectValue placeholder={t("admin.resellers.noParentReseller")} />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="none">Nessuno</SelectItem>
+                            <SelectItem value="none">{t("common.none")}</SelectItem>
                             {parentResellers.map((parent) => (
                               <SelectItem key={parent.id} value={parent.id}>
                                 {parent.fullName} ({parent.resellerCategory === 'franchising' ? 'Franchising' : 'GDO'})
@@ -806,7 +808,7 @@ export default function AdminResellers() {
                     {availableRepairCenters.length === 0 ? (
                       <div className="text-center py-6 text-muted-foreground border rounded-md">
                         <Wrench className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                        <p>Nessun centro di riparazione disponibile</p>
+                        <p>{t("admin.resellers.noRepairCenters")}</p>
                         <p className="text-xs mt-1">Tutti i centri sono già assegnati ad altri rivenditori</p>
                       </div>
                     ) : (
@@ -906,7 +908,7 @@ export default function AdminResellers() {
             <div className="relative flex-1">
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" />
               <Input
-                placeholder="Cerca rivenditori..."
+                placeholder={t("common.search")}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-12 h-12 rounded-xl border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50"
@@ -931,16 +933,16 @@ export default function AdminResellers() {
             <Table>
               <TableHeader className="bg-slate-50 dark:bg-slate-800/50">
                 <TableRow>
-                  <TableHead className="text-slate-600 dark:text-slate-400">Nome</TableHead>
-                  <TableHead className="text-slate-600 dark:text-slate-400">Email</TableHead>
-                  <TableHead className="text-slate-600 dark:text-slate-400">Telefono</TableHead>
-                  <TableHead className="text-slate-600 dark:text-slate-400">Categoria</TableHead>
+                  <TableHead className="text-slate-600 dark:text-slate-400">{t("common.name")}</TableHead>
+                  <TableHead className="text-slate-600 dark:text-slate-400">{t("common.email")}</TableHead>
+                  <TableHead className="text-slate-600 dark:text-slate-400">{t("common.phone")}</TableHead>
+                  <TableHead className="text-slate-600 dark:text-slate-400">{t("common.category")}</TableHead>
                   <TableHead className="text-slate-600 dark:text-slate-400">Rivenditore Padre</TableHead>
-                  <TableHead className="text-slate-600 dark:text-slate-400">Clienti</TableHead>
+                  <TableHead className="text-slate-600 dark:text-slate-400">{t("sidebar.items.customers")}</TableHead>
                   <TableHead className="text-slate-600 dark:text-slate-400">Centri Rip.</TableHead>
                   <TableHead className="text-slate-600 dark:text-slate-400">Sub-Reseller</TableHead>
-                  <TableHead className="text-slate-600 dark:text-slate-400">Stato</TableHead>
-                  <TableHead className="text-right text-slate-600 dark:text-slate-400">Azioni</TableHead>
+                  <TableHead className="text-slate-600 dark:text-slate-400">{t("common.status")}</TableHead>
+                  <TableHead className="text-right text-slate-600 dark:text-slate-400">{t("common.actions")}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -1108,17 +1110,17 @@ export default function AdminResellers() {
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent data-testid="dialog-delete-reseller">
           <AlertDialogHeader>
-            <AlertDialogTitle>Eliminare il rivenditore?</AlertDialogTitle>
+            <AlertDialogTitle>{t("admin.resellers.deleteReseller")}</AlertDialogTitle>
             <AlertDialogDescription>
               Stai per eliminare definitivamente il rivenditore <strong>{resellerToDelete?.fullName}</strong>.
               <br /><br />
               Per poter eliminare un rivenditore, assicurati che:
               <ul className="list-disc list-inside mt-2 text-sm">
-                <li>Non ci siano riparazioni attive</li>
-                <li>Non ci siano fatture non pagate</li>
-                <li>Non ci siano ticket aperti</li>
-                <li>Non ci siano clienti associati</li>
-                <li>Non ci siano centri riparazione</li>
+                <li>{t("admin.resellers.noActiveRepairs")}</li>
+                <li>{t("admin.resellers.noUnpaidInvoices")}</li>
+                <li>{t("admin.resellers.noOpenTickets")}</li>
+                <li>{t("admin.resellers.noAssociatedCustomers")}</li>
+                <li>{t("admin.resellers.noRepairCentersAssociated")}</li>
               </ul>
               <br />
               Verranno eliminati automaticamente: collaboratori e credenziali API.
@@ -1127,14 +1129,14 @@ export default function AdminResellers() {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel data-testid="button-cancel-delete">Annulla</AlertDialogCancel>
+            <AlertDialogCancel data-testid="button-cancel-delete">{t("common.cancel")}</AlertDialogCancel>
             <AlertDialogAction
               onClick={confirmDelete}
               disabled={deleteResellerMutation.isPending}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
               data-testid="button-confirm-delete"
             >
-              {deleteResellerMutation.isPending ? "Eliminazione..." : "Elimina"}
+              {deleteResellerMutation.isPending ? t("admin.resellers.deleting") : "Elimina"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -1153,14 +1155,14 @@ export default function AdminResellers() {
               Stai per resettare la password di <strong>{resellerToResetPassword?.fullName}</strong>.
             </p>
             <div className="space-y-2">
-              <Label htmlFor="newPassword" className="text-slate-700 dark:text-slate-300">Nuova Password</Label>
+              <Label htmlFor="newPassword" className="text-slate-700 dark:text-slate-300">{t("admin.common.newPassword")}</Label>
               <Input
                 id="newPassword"
                 type="password"
                 className="h-11 rounded-xl"
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
-                placeholder="Inserisci nuova password (min. 4 caratteri)"
+                placeholder={t("admin.repairCenters.newPasswordPlaceholder")}
                 data-testid="input-new-password"
               />
             </div>
@@ -1179,7 +1181,7 @@ export default function AdminResellers() {
                 disabled={newPassword.length < 4 || resetPasswordMutation.isPending}
                 data-testid="button-confirm-reset-password"
               >
-                {resetPasswordMutation.isPending ? "Aggiornamento..." : "Conferma Reset"}
+                {resetPasswordMutation.isPending ? t("admin.common.updating") : "Conferma Reset"}
               </Button>
             </div>
           </div>
@@ -1234,17 +1236,17 @@ const SubResellersDialog = ({ open, onOpenChange, reseller }: SubResellersDialog
           ) : subResellers.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">
               <UsersRound className="h-12 w-12 mx-auto mb-4 opacity-50" />
-              <p>Nessun sub-reseller trovato</p>
+              <p>{t("admin.resellers.noSubResellers")}</p>
             </div>
           ) : (
             <ScrollArea className="max-h-[400px]">
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Nome</TableHead>
-                    <TableHead>Email</TableHead>
-                    <TableHead>Telefono</TableHead>
-                    <TableHead>Stato</TableHead>
+                    <TableHead>{t("common.name")}</TableHead>
+                    <TableHead>{t("common.email")}</TableHead>
+                    <TableHead>{t("common.phone")}</TableHead>
+                    <TableHead>{t("common.status")}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>

@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -15,6 +16,7 @@ type WarrantyStats = {
 };
 
 export default function RepairCenterWarrantyAnalytics() {
+  const { t } = useTranslation();
   const { data: stats, isLoading } = useQuery<WarrantyStats>({
     queryKey: ["/api/repair-center/warranty-stats"],
   });
@@ -30,7 +32,7 @@ export default function RepairCenterWarrantyAnalytics() {
   if (!stats) {
     return (
       <div className="container mx-auto p-6">
-        <p className="text-muted-foreground">Impossibile caricare le statistiche</p>
+        <p className="text-muted-foreground">{t("warranties.cannotLoadStats")}</p>
       </div>
     );
   }
@@ -55,7 +57,7 @@ export default function RepairCenterWarrantyAnalytics() {
               <Shield className="h-5 w-5 sm:h-7 sm:w-7 text-white" />
             </div>
             <div>
-              <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-white tracking-tight">Garanzie</h1>
+              <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-white tracking-tight">{t("sidebar.sections.warranties")}</h1>
               <p className="text-emerald-100">Analisi e gestione delle garanzie</p>
             </div>
           </div>
@@ -65,7 +67,7 @@ export default function RepairCenterWarrantyAnalytics() {
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card data-testid="card-total-offered">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 gap-2">
-            <CardTitle className="text-sm font-medium">Garanzie Offerte</CardTitle>
+            <CardTitle className="text-sm font-medium">{t("warranties.warrantiesOffered")}</CardTitle>
             <Shield className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -76,18 +78,18 @@ export default function RepairCenterWarrantyAnalytics() {
 
         <Card data-testid="card-total-accepted">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 gap-2">
-            <CardTitle className="text-sm font-medium">Garanzie Vendute</CardTitle>
+            <CardTitle className="text-sm font-medium">{t("warranties.warrantiesSold")}</CardTitle>
             <CheckCircle2 className="h-4 w-4 text-emerald-500" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-emerald-600">{stats.totalAccepted}</div>
-            <p className="text-xs text-muted-foreground">Accettate dai clienti</p>
+            <p className="text-xs text-muted-foreground">{t("warranties.acceptedByCustomers")}</p>
           </CardContent>
         </Card>
 
         <Card data-testid="card-conversion-rate">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 gap-2">
-            <CardTitle className="text-sm font-medium">Tasso Conversione</CardTitle>
+            <CardTitle className="text-sm font-medium">{t("warranties.conversionRate")}</CardTitle>
             <TrendingUp className="h-4 w-4 text-blue-500" />
           </CardHeader>
           <CardContent>
@@ -100,14 +102,14 @@ export default function RepairCenterWarrantyAnalytics() {
 
         <Card data-testid="card-total-revenue">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 gap-2">
-            <CardTitle className="text-sm font-medium">Fatturato Garanzie</CardTitle>
+            <CardTitle className="text-sm font-medium">{t("warranties.warrantyRevenue")}</CardTitle>
             <DollarSign className="h-4 w-4 text-amber-500" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-amber-600">
               {(stats.totalRevenue / 100).toLocaleString('it-IT', { style: 'currency', currency: 'EUR' })}
             </div>
-            <p className="text-xs text-muted-foreground">Totale incassato</p>
+            <p className="text-xs text-muted-foreground">{t("warranties.totalCollected")}</p>
           </CardContent>
         </Card>
       </div>
@@ -115,7 +117,7 @@ export default function RepairCenterWarrantyAnalytics() {
       <div className="grid gap-6 lg:grid-cols-2">
         <Card data-testid="card-monthly-trend">
           <CardHeader>
-            <CardTitle className="text-lg">Trend Mensile</CardTitle>
+            <CardTitle className="text-lg">{t("warranties.monthlyTrend")}</CardTitle>
           </CardHeader>
           <CardContent>
             {chartData.length > 0 ? (
@@ -143,7 +145,7 @@ export default function RepairCenterWarrantyAnalytics() {
 
         <Card data-testid="card-top-products">
           <CardHeader>
-            <CardTitle className="text-lg">Prodotti Più Venduti</CardTitle>
+            <CardTitle className="text-lg">{t("warranties.topSellingProducts")}</CardTitle>
           </CardHeader>
           <CardContent>
             {stats.topProducts.length > 0 ? (

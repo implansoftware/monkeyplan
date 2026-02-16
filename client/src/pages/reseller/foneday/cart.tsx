@@ -23,6 +23,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { useTranslation } from "react-i18next";
 
 type FonedayCartItem = {
   sku: string;
@@ -73,6 +74,7 @@ const initialAddress: ShippingAddress = {
 };
 
 export default function FonedayCartPage() {
+  const { t } = useTranslation();
   const { toast } = useToast();
   const [showCheckout, setShowCheckout] = useState(false);
   const [selectedShipping, setSelectedShipping] = useState("");
@@ -105,7 +107,7 @@ export default function FonedayCartPage() {
       toast({ title: "Rimosso dal carrello" });
     },
     onError: (error: Error) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -118,7 +120,7 @@ export default function FonedayCartPage() {
       refetchCart();
     },
     onError: (error: Error) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -143,7 +145,7 @@ export default function FonedayCartPage() {
       });
     },
     onError: (error: Error) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -244,7 +246,7 @@ export default function FonedayCartPage() {
         <Card>
           <CardContent className="py-12 text-center">
             <ShoppingCart className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-            <h3 className="text-lg font-medium">Carrello vuoto</h3>
+            <h3 className="text-lg font-medium">{t("pos.emptyCart")}</h3>
             <p className="text-muted-foreground mb-4">
               Non hai ancora aggiunto prodotti al carrello
             </p>
@@ -319,16 +321,16 @@ export default function FonedayCartPage() {
           <div className="space-y-4">
             <Card>
               <CardHeader>
-                <CardTitle>Riepilogo</CardTitle>
+                <CardTitle>{t("reports.summary")}</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="flex justify-between">
-                  <span>Subtotale</span>
+                  <span>{t("common.subtotal")}</span>
                   <span className="font-medium">{formatPrice(calculateTotal())}</span>
                 </div>
                 <Separator />
                 <div className="flex justify-between text-lg font-bold">
-                  <span>Totale</span>
+                  <span>{t("common.total")}</span>
                   <span>{formatPrice(calculateTotal())}</span>
                 </div>
 
@@ -352,12 +354,12 @@ export default function FonedayCartPage() {
                         <Input
                           value={address.name}
                           onChange={(e) => setAddress({ ...address, name: e.target.value })}
-                          placeholder="Nome completo"
+                          placeholder={t("auth.fullName")}
                           data-testid="input-shipping-name"
                         />
                       </div>
                       <div>
-                        <Label>Azienda</Label>
+                        <Label>{t("common.company")}</Label>
                         <Input
                           value={address.company}
                           onChange={(e) => setAddress({ ...address, company: e.target.value })}
@@ -389,7 +391,7 @@ export default function FonedayCartPage() {
                           <Input
                             value={address.city}
                             onChange={(e) => setAddress({ ...address, city: e.target.value })}
-                            placeholder="Città"
+                            placeholder={t("common.city")}
                             data-testid="input-shipping-city"
                           />
                         </div>
@@ -398,7 +400,7 @@ export default function FonedayCartPage() {
                           <Input
                             value={address.postal_code}
                             onChange={(e) => setAddress({ ...address, postal_code: e.target.value })}
-                            placeholder="CAP"
+                            placeholder={t("common.zip")}
                             data-testid="input-shipping-postal"
                           />
                         </div>
@@ -443,7 +445,7 @@ export default function FonedayCartPage() {
                     )}
 
                     <div>
-                      <Label>Note</Label>
+                      <Label>{t("common.notes")}</Label>
                       <Textarea
                         value={notes}
                         onChange={(e) => setNotes(e.target.value)}
@@ -458,9 +460,7 @@ export default function FonedayCartPage() {
                         onClick={() => setShowCheckout(false)}
                         className="flex-1"
                         data-testid="button-cancel-checkout"
-                      >
-                        Annulla
-                      </Button>
+                      >{t("common.cancel")}</Button>
                       <Button
                         onClick={() => submitOrderMutation.mutate()}
                         disabled={!isAddressValid() || submitOrderMutation.isPending}

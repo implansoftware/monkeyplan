@@ -30,6 +30,7 @@ import { format, differenceInDays } from "date-fns";
 import { it } from "date-fns/locale";
 import { useToast } from "@/hooks/use-toast";
 import { EntityFilterSelector, EntityType, useEntityFilter } from "@/components/hr/entity-filter-selector";
+import { useTranslation } from "react-i18next";
 
 interface LeaveRequest {
   id: string;
@@ -52,24 +53,25 @@ interface StaffMember {
 }
 
 const leaveTypeLabels: Record<string, { label: string; color: string }> = {
-  ferie: { label: "Ferie", color: "bg-emerald-500" },
+  ferie: { label: t("hr.vacation"), color: "bg-emerald-500" },
   permesso_rol: { label: "Permesso ROL", color: "bg-purple-500" },
-  permesso_studio: { label: "Permesso Studio", color: "bg-blue-500" },
-  permesso_medico: { label: "Permesso Medico", color: "bg-cyan-500" },
-  permesso_lutto: { label: "Permesso Lutto", color: "bg-gray-600" },
-  permesso_matrimonio: { label: "Permesso Matrimonio", color: "bg-pink-500" },
-  congedo_parentale: { label: "Congedo Parentale", color: "bg-amber-500" },
-  altro: { label: "Altro", color: "bg-gray-500" },
+  permesso_studio: { label: t("hr.studyLeave"), color: "bg-blue-500" },
+  permesso_medico: { label: t("hr.medicalLeave"), color: "bg-cyan-500" },
+  permesso_lutto: { label: t("hr.bereavementLeave"), color: "bg-gray-600" },
+  permesso_matrimonio: { label: t("hr.weddingLeave"), color: "bg-pink-500" },
+  congedo_parentale: { label: t("hr.parentalLeave"), color: "bg-amber-500" },
+  altro: { label: t("common.other"), color: "bg-gray-500" },
 };
 
 const statusLabels: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
-  pending: { label: "In Attesa", variant: "secondary" },
-  approved: { label: "Approvata", variant: "default" },
-  rejected: { label: "Rifiutata", variant: "destructive" },
-  cancelled: { label: "Annullata", variant: "outline" },
+  pending: { label: t("common.pending"), variant: "secondary" },
+  approved: { label: t("common.approved"), variant: "default" },
+  rejected: { label: t("common.rejected"), variant: "destructive" },
+  cancelled: { label: t("common.cancelled"), variant: "outline" },
 };
 
 export default function HrLeaveRequests() {
+  const { t } = useTranslation();
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
@@ -130,7 +132,7 @@ export default function HrLeaveRequests() {
       toast({ title: "Richiesta inviata", description: "La richiesta ferie è stata inviata con successo." });
     },
     onError: (error: any) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     }
   });
 
@@ -143,7 +145,7 @@ export default function HrLeaveRequests() {
       toast({ title: "Richiesta aggiornata", description: "Lo stato della richiesta è stato aggiornato." });
     },
     onError: (error: any) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     }
   });
 
@@ -158,7 +160,7 @@ export default function HrLeaveRequests() {
       toast({ title: "Richiesta modificata", description: "Le modifiche sono state salvate." });
     },
     onError: (error: any) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     }
   });
 
@@ -193,7 +195,7 @@ export default function HrLeaveRequests() {
                 <CalendarDays className="h-6 w-6 text-white" />
               </div>
               <div>
-                <h1 className="text-2xl font-bold text-white" data-testid="text-leave-title">Ferie e Permessi</h1>
+                <h1 className="text-2xl font-bold text-white" data-testid="text-leave-title">{t("sidebar.items.leaveRequests")}</h1>
                 <p className="text-white/80">Gestione richieste ferie, permessi e ROL</p>
               </div>
             </div>
@@ -207,9 +209,7 @@ export default function HrLeaveRequests() {
             </Link>
             {!readOnly && (
               <Button variant="secondary" onClick={() => setDialogOpen(true)} data-testid="button-new-request">
-                <Plus className="h-4 w-4 mr-2" />
-                Nuova Richiesta
-              </Button>
+                <Plus className="h-4 w-4 mr-2" />{t("auth.newRequest")}</Button>
             )}
           </div>
         </div>
@@ -257,11 +257,11 @@ export default function HrLeaveRequests() {
               <Select value={statusFilter} onValueChange={setStatusFilter}>
                 <SelectTrigger className="w-40" data-testid="select-status-filter">
                   <Filter className="h-4 w-4 mr-2" />
-                  <SelectValue placeholder="Stato" />
+                  <SelectValue placeholder={t("common.status")} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">Tutti</SelectItem>
-                  <SelectItem value="pending">In Attesa</SelectItem>
+                  <SelectItem value="all">{t("common.allMasc")}</SelectItem>
+                  <SelectItem value="pending">{t("common.pending")}</SelectItem>
                   <SelectItem value="approved">Approvate</SelectItem>
                   <SelectItem value="rejected">Rifiutate</SelectItem>
                 </SelectContent>
@@ -277,18 +277,18 @@ export default function HrLeaveRequests() {
           ) : filteredRequests.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">
               <CalendarDays className="h-12 w-12 mx-auto mb-3 opacity-50" />
-              <p>Nessuna richiesta trovata</p>
+              <p>{t("hr.noLeaveFound")}</p>
             </div>
           ) : (
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Dipendente</TableHead>
-                  <TableHead>Tipo</TableHead>
-                  <TableHead>Periodo</TableHead>
+                  <TableHead>{t("hr.employee")}</TableHead>
+                  <TableHead>{t("common.type")}</TableHead>
+                  <TableHead>{t("common.period")}</TableHead>
                   <TableHead>Giorni</TableHead>
-                  <TableHead>Stato</TableHead>
-                  <TableHead>Azioni</TableHead>
+                  <TableHead>{t("common.status")}</TableHead>
+                  <TableHead>{t("common.actions")}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -362,10 +362,10 @@ export default function HrLeaveRequests() {
           </DialogHeader>
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label>Dipendente</Label>
+              <Label>{t("hr.employee")}</Label>
               <Select value={newRequest.userId} onValueChange={(v) => setNewRequest({ ...newRequest, userId: v })}>
                 <SelectTrigger data-testid="select-employee">
-                  <SelectValue placeholder="Seleziona dipendente..." />
+                  <SelectValue placeholder={t("hr.selectEmployee")} />
                 </SelectTrigger>
                 <SelectContent>
                   {staffMembers.map((member) => (
@@ -377,26 +377,26 @@ export default function HrLeaveRequests() {
               </Select>
             </div>
             <div className="space-y-2">
-              <Label>Tipo</Label>
+              <Label>{t("common.type")}</Label>
               <Select value={newRequest.leaveType} onValueChange={(v) => setNewRequest({ ...newRequest, leaveType: v })}>
                 <SelectTrigger data-testid="select-leave-type">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="ferie">Ferie</SelectItem>
+                  <SelectItem value="ferie">{t("hr.vacation")}</SelectItem>
                   <SelectItem value="permesso_rol">Permesso ROL</SelectItem>
-                  <SelectItem value="permesso_studio">Permesso Studio</SelectItem>
-                  <SelectItem value="permesso_medico">Permesso Medico</SelectItem>
-                  <SelectItem value="permesso_lutto">Permesso Lutto</SelectItem>
-                  <SelectItem value="permesso_matrimonio">Permesso Matrimonio</SelectItem>
-                  <SelectItem value="congedo_parentale">Congedo Parentale</SelectItem>
-                  <SelectItem value="altro">Altro</SelectItem>
+                  <SelectItem value="permesso_studio">{t("hr.studyLeave")}</SelectItem>
+                  <SelectItem value="permesso_medico">{t("hr.medicalLeave")}</SelectItem>
+                  <SelectItem value="permesso_lutto">{t("hr.bereavementLeave")}</SelectItem>
+                  <SelectItem value="permesso_matrimonio">{t("hr.weddingLeave")}</SelectItem>
+                  <SelectItem value="congedo_parentale">{t("hr.parentalLeave")}</SelectItem>
+                  <SelectItem value="altro">{t("common.other")}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label>Data Inizio</Label>
+                <Label>{t("common.startDate")}</Label>
                 <Input
                   type="date"
                   value={newRequest.startDate}
@@ -405,7 +405,7 @@ export default function HrLeaveRequests() {
                 />
               </div>
               <div className="space-y-2">
-                <Label>Data Fine</Label>
+                <Label>{t("common.endDate")}</Label>
                 <Input
                   type="date"
                   value={newRequest.endDate}
@@ -425,13 +425,13 @@ export default function HrLeaveRequests() {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDialogOpen(false)}>Annulla</Button>
+            <Button variant="outline" onClick={() => setDialogOpen(false)}>{t("common.cancel")}</Button>
             <Button 
               onClick={() => createMutation.mutate(newRequest)}
               disabled={!newRequest.userId || !newRequest.startDate || !newRequest.endDate || createMutation.isPending}
               data-testid="button-submit-request"
             >
-              {createMutation.isPending ? "Invio..." : "Invia Richiesta"}
+              {createMutation.isPending ? t("pages.sending") : "Invia Richiesta"}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -445,26 +445,26 @@ export default function HrLeaveRequests() {
           </DialogHeader>
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label>Tipo</Label>
+              <Label>{t("common.type")}</Label>
               <Select value={editForm.leaveType} onValueChange={(v) => setEditForm({ ...editForm, leaveType: v })}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="ferie">Ferie</SelectItem>
+                  <SelectItem value="ferie">{t("hr.vacation")}</SelectItem>
                   <SelectItem value="permesso_rol">Permesso ROL</SelectItem>
-                  <SelectItem value="permesso_studio">Permesso Studio</SelectItem>
-                  <SelectItem value="permesso_medico">Permesso Medico</SelectItem>
-                  <SelectItem value="permesso_lutto">Permesso Lutto</SelectItem>
-                  <SelectItem value="permesso_matrimonio">Permesso Matrimonio</SelectItem>
-                  <SelectItem value="congedo_parentale">Congedo Parentale</SelectItem>
-                  <SelectItem value="altro">Altro</SelectItem>
+                  <SelectItem value="permesso_studio">{t("hr.studyLeave")}</SelectItem>
+                  <SelectItem value="permesso_medico">{t("hr.medicalLeave")}</SelectItem>
+                  <SelectItem value="permesso_lutto">{t("hr.bereavementLeave")}</SelectItem>
+                  <SelectItem value="permesso_matrimonio">{t("hr.weddingLeave")}</SelectItem>
+                  <SelectItem value="congedo_parentale">{t("hr.parentalLeave")}</SelectItem>
+                  <SelectItem value="altro">{t("common.other")}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label>Data Inizio</Label>
+                <Label>{t("common.startDate")}</Label>
                 <Input
                   type="date"
                   value={editForm.startDate}
@@ -472,7 +472,7 @@ export default function HrLeaveRequests() {
                 />
               </div>
               <div className="space-y-2">
-                <Label>Data Fine</Label>
+                <Label>{t("common.endDate")}</Label>
                 <Input
                   type="date"
                   value={editForm.endDate}
@@ -489,28 +489,28 @@ export default function HrLeaveRequests() {
               />
             </div>
             <div className="space-y-2">
-              <Label>Stato</Label>
+              <Label>{t("common.status")}</Label>
               <Select value={editForm.status} onValueChange={(v) => setEditForm({ ...editForm, status: v })}>
                 <SelectTrigger data-testid="select-edit-status">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="pending">In Attesa</SelectItem>
-                  <SelectItem value="approved">Approvata</SelectItem>
-                  <SelectItem value="rejected">Rifiutata</SelectItem>
-                  <SelectItem value="cancelled">Annullata</SelectItem>
+                  <SelectItem value="pending">{t("common.pending")}</SelectItem>
+                  <SelectItem value="approved">{t("common.approved")}</SelectItem>
+                  <SelectItem value="rejected">{t("common.rejected")}</SelectItem>
+                  <SelectItem value="cancelled">{t("common.cancelled")}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setEditDialogOpen(false)}>Annulla</Button>
+            <Button variant="outline" onClick={() => setEditDialogOpen(false)}>{t("common.cancel")}</Button>
             <Button 
               onClick={() => editingRequest && editMutation.mutate({ id: editingRequest.id, data: editForm })}
               disabled={!editForm.startDate || !editForm.endDate || editMutation.isPending}
               data-testid="button-save-edit"
             >
-              {editMutation.isPending ? "Salvataggio..." : "Salva Modifiche"}
+              {editMutation.isPending ? t("profile.saving") : t("profile.saveChanges")}
             </Button>
           </DialogFooter>
         </DialogContent>

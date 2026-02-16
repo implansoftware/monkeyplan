@@ -19,6 +19,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import type { SalesOrderShipment, User as UserType } from "@shared/schema";
+import { useTranslation } from "react-i18next";
 
 const statusLabels: Record<string, string> = {
   pending: "In preparazione",
@@ -55,6 +56,7 @@ const carriers = [
 ];
 
 export default function AdminShipments() {
+  const { t } = useTranslation();
   const { toast } = useToast();
   
   const [search, setSearch] = useState("");
@@ -99,10 +101,10 @@ export default function AdminShipments() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/admin/shipments'] });
-      toast({ title: "Stato spedizione aggiornato" });
+      toast({ title: t("shipping.statusUpdated") });
     },
     onError: (error: any) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     }
   });
   
@@ -113,11 +115,11 @@ export default function AdminShipments() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/shipments', selectedShipment?.id, 'tracking'] });
       queryClient.invalidateQueries({ queryKey: ['/api/admin/shipments'] });
-      toast({ title: "Evento tracciamento aggiunto" });
+      toast({ title: t("shipping.trackingEventAdded") });
       setNewTrackingEvent({ status: "", location: "", description: "" });
     },
     onError: (error: any) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     }
   });
   
@@ -148,7 +150,7 @@ export default function AdminShipments() {
   };
   
   const handleExport = () => {
-    toast({ title: "Export", description: "Funzionalità in arrivo" });
+    toast({ title: t("common.export"), description: t("common.comingSoon") });
   };
   
   const stats = {
@@ -201,7 +203,7 @@ export default function AdminShipments() {
               <Truck className="h-5 w-5" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold tracking-tight" data-testid="text-admin-shipments-title">Spedizioni</h1>
+              <h1 className="text-2xl font-bold tracking-tight" data-testid="text-admin-shipments-title">{t("sidebar.items.shipments")}</h1>
               <p className="text-sm text-muted-foreground">
                 Monitoraggio di tutte le spedizioni
               </p>
@@ -222,7 +224,7 @@ export default function AdminShipments() {
                 <Truck className="h-5 w-5 text-primary" />
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">Totale</p>
+                <p className="text-sm text-muted-foreground">{t("common.total")}</p>
                 <p className="text-2xl font-bold" data-testid="stat-total-shipments">{stats.total}</p>
               </div>
             </div>
@@ -273,7 +275,7 @@ export default function AdminShipments() {
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder="Cerca per numero tracking..."
+            placeholder={t("common.search")}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="pl-10"
@@ -284,10 +286,10 @@ export default function AdminShipments() {
         <Select value={carrierFilter} onValueChange={setCarrierFilter}>
           <SelectTrigger className="w-full sm:w-[180px]" data-testid="select-carrier-filter">
             <Truck className="mr-2 h-4 w-4" />
-            <SelectValue placeholder="Tutti i corrieri" />
+            <SelectValue placeholder={t("shipping.allCarriers")} />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">Tutti i corrieri</SelectItem>
+            <SelectItem value="all">{t("shipping.allCarriers")}</SelectItem>
             {carriers.map((carrier) => (
               <SelectItem key={carrier.value} value={carrier.value}>{carrier.label}</SelectItem>
             ))}
@@ -296,10 +298,10 @@ export default function AdminShipments() {
         
         <Select value={statusFilter} onValueChange={setStatusFilter}>
           <SelectTrigger className="w-full sm:w-[180px]" data-testid="select-status-filter">
-            <SelectValue placeholder="Tutti gli stati" />
+            <SelectValue placeholder={t("common.allStatuses")} />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">Tutti gli stati</SelectItem>
+            <SelectItem value="all">{t("repairs.allStatuses")}</SelectItem>
             {Object.entries(statusLabels).map(([value, label]) => (
               <SelectItem key={value} value={value}>{label}</SelectItem>
             ))}
@@ -319,11 +321,11 @@ export default function AdminShipments() {
               <TableHeader>
                 <TableRow>
                   <TableHead>Tracking</TableHead>
-                  <TableHead>Corriere</TableHead>
-                  <TableHead>Data spedizione</TableHead>
-                  <TableHead>Consegna stimata</TableHead>
-                  <TableHead>Stato</TableHead>
-                  <TableHead className="text-right">Azioni</TableHead>
+                  <TableHead>{t("shipping.carrier")}</TableHead>
+                  <TableHead>{t("shipping.shippingDate")}</TableHead>
+                  <TableHead>{t("shipping.estimatedDelivery")}</TableHead>
+                  <TableHead>{t("common.status")}</TableHead>
+                  <TableHead className="text-right">{t("common.actions")}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -368,7 +370,7 @@ export default function AdminShipments() {
       <Dialog open={showTrackingDialog} onOpenChange={setShowTrackingDialog}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle>Tracciamento spedizione</DialogTitle>
+            <DialogTitle>{t("shipping.shipmentTracking")}</DialogTitle>
             <DialogDescription>
               {selectedShipment?.trackingNumber && (
                 <span className="font-mono">{selectedShipment.trackingNumber}</span>
@@ -421,13 +423,13 @@ export default function AdminShipments() {
                   <h4 className="font-semibold">Aggiungi evento</h4>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label>Stato</Label>
+                      <Label>{t("common.status")}</Label>
                       <Select
                         value={newTrackingEvent.status}
                         onValueChange={(value) => setNewTrackingEvent({ ...newTrackingEvent, status: value })}
                       >
                         <SelectTrigger>
-                          <SelectValue placeholder="Seleziona stato" />
+                          <SelectValue placeholder={t("common.selectStatus")} />
                         </SelectTrigger>
                         <SelectContent>
                           {Object.entries(statusLabels).map(([value, label]) => (
@@ -437,20 +439,20 @@ export default function AdminShipments() {
                       </Select>
                     </div>
                     <div className="space-y-2">
-                      <Label>Località</Label>
+                      <Label>{t("shipping.location")}</Label>
                       <Input
                         value={newTrackingEvent.location}
                         onChange={(e) => setNewTrackingEvent({ ...newTrackingEvent, location: e.target.value })}
-                        placeholder="Es: Milano Hub"
+                        placeholder={t("shipping.locationExample")}
                       />
                     </div>
                   </div>
                   <div className="space-y-2">
-                    <Label>Descrizione</Label>
+                    <Label>{t("common.description")}</Label>
                     <Textarea
                       value={newTrackingEvent.description}
                       onChange={(e) => setNewTrackingEvent({ ...newTrackingEvent, description: e.target.value })}
-                      placeholder="Descrizione evento..."
+                      placeholder={t("shipping.eventDescription")}
                       rows={2}
                     />
                   </div>

@@ -28,7 +28,8 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
 import { format } from "date-fns";
-import { it } from "date-fns/locale";
+import { it as itLocale } from "date-fns/locale";
+import { useTranslation } from "react-i18next";
 
 type Ticket = {
   id: string;
@@ -66,11 +67,12 @@ type StaffUser = {
   role: string;
 };
 
-function getStatusBadge(status: string) {
+function getStatusBadge(status: string, t?: (key: string) => string) {
+  const tr = t || ((k: string) => k);
   switch (status) {
-    case "open": return <Badge>Aperto</Badge>;
-    case "in_progress": return <Badge variant="secondary">In lavorazione</Badge>;
-    case "closed": return <Badge variant="outline">Chiuso</Badge>;
+    case "open": return <Badge>{tr("tickets.status.open")}</Badge>;
+    case "in_progress": return <Badge variant="secondary">{tr("tickets.status.inProgress")}</Badge>;
+    case "closed": return <Badge variant="outline">{tr("tickets.status.closed")}</Badge>;
     default: return <Badge variant="outline">{status}</Badge>;
   }
 }
@@ -111,16 +113,18 @@ function AttachmentList({ attachments }: { attachments?: TicketAttachment[] }) {
   );
 }
 
-function getPriorityBadge(priority: string) {
+function getPriorityBadge(priority: string, t?: (key: string) => string) {
+  const tr = t || ((k: string) => k);
   switch (priority) {
-    case "high": return <Badge variant="destructive">Alta</Badge>;
-    case "medium": return <Badge variant="secondary">Media</Badge>;
-    case "low": return <Badge variant="outline">Bassa</Badge>;
+    case "high": return <Badge variant="destructive">{tr("common.priorityHigh")}</Badge>;
+    case "medium": return <Badge variant="secondary">{tr("common.priorityMedium")}</Badge>;
+    case "low": return <Badge variant="outline">{tr("common.priorityLow")}</Badge>;
     default: return <Badge variant="outline">{priority}</Badge>;
   }
 }
 
 function TicketDetailManageView({ basePath }: { basePath: string }) {
+  const { t } = useTranslation();
   const [location, setLocation] = useLocation();
   const { toast } = useToast();
   const { user } = useAuth();
@@ -165,10 +169,10 @@ function TicketDetailManageView({ basePath }: { basePath: string }) {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/tickets", ticketId] });
       queryClient.invalidateQueries({ queryKey: ["/api/tickets"] });
-      toast({ title: "Stato aggiornato" });
+      toast({ title: t("tickets.statusUpdated") });
     },
     onError: (error: Error) => {
-      toast({ title: "Errore", description: error.message.replace(/^\d+:\s*/, ''), variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message.replace(/^\d+:\s*/, ''), variant: "destructive" });
     },
   });
 
@@ -180,10 +184,10 @@ function TicketDetailManageView({ basePath }: { basePath: string }) {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/tickets", ticketId] });
       queryClient.invalidateQueries({ queryKey: ["/api/tickets"] });
-      toast({ title: "Priorità aggiornata" });
+      toast({ title: t("tickets.priorityUpdated") });
     },
     onError: (error: Error) => {
-      toast({ title: "Errore", description: error.message.replace(/^\d+:\s*/, ''), variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message.replace(/^\d+:\s*/, ''), variant: "destructive" });
     },
   });
 
@@ -195,10 +199,10 @@ function TicketDetailManageView({ basePath }: { basePath: string }) {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/tickets", ticketId] });
       queryClient.invalidateQueries({ queryKey: ["/api/tickets"] });
-      toast({ title: "Assegnazione aggiornata" });
+      toast({ title: t("tickets.assignmentUpdated") });
     },
     onError: (error: Error) => {
-      toast({ title: "Errore", description: error.message.replace(/^\d+:\s*/, ''), variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message.replace(/^\d+:\s*/, ''), variant: "destructive" });
     },
   });
 
@@ -212,10 +216,10 @@ function TicketDetailManageView({ basePath }: { basePath: string }) {
       setReplyMessage("");
       setIsInternalNote(false);
       setSelectedFiles([]);
-      toast({ title: "Messaggio inviato" });
+      toast({ title: t("tickets.messageSent") });
     },
     onError: (error: Error) => {
-      toast({ title: "Errore", description: error.message.replace(/^\d+:\s*/, ''), variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message.replace(/^\d+:\s*/, ''), variant: "destructive" });
       if (error.message.toLowerCase().includes('closed')) {
         queryClient.invalidateQueries({ queryKey: ["/api/tickets", ticketId] });
       }
@@ -250,21 +254,19 @@ function TicketDetailManageView({ basePath }: { basePath: string }) {
     
     setIsUploading(true);
     try {
-      // Upload all selected files first
       const uploadedAttachments: TicketAttachment[] = [];
       for (const file of selectedFiles) {
         const attachment = await uploadFile(file);
         uploadedAttachments.push(attachment);
       }
       
-      // Then send the message with attachments
       sendMessageMutation.mutate({ 
         message: replyMessage, 
         isInternal: isInternalNote,
         attachments: uploadedAttachments 
       });
     } catch (error: any) {
-      toast({ title: "Errore upload", description: error.message, variant: "destructive" });
+      toast({ title: t("tickets.uploadError"), description: error.message, variant: "destructive" });
     } finally {
       setIsUploading(false);
     }
@@ -274,7 +276,7 @@ function TicketDetailManageView({ basePath }: { basePath: string }) {
     const files = Array.from(e.target.files || []);
     const validFiles = files.filter(f => f.size <= 10 * 1024 * 1024); // Max 10MB
     if (validFiles.length !== files.length) {
-      toast({ title: "Attenzione", description: "Alcuni file superano il limite di 10MB", variant: "destructive" });
+      toast({ title: t("common.warning"), description: t("tickets.fileSizeWarning"), variant: "destructive" });
     }
     setSelectedFiles(prev => [...prev, ...validFiles]);
     if (fileInputRef.current) fileInputRef.current.value = '';
@@ -298,7 +300,7 @@ function TicketDetailManageView({ basePath }: { basePath: string }) {
     return (
       <Card>
         <CardContent className="py-8 text-center text-muted-foreground">
-          Ticket non trovato
+          {t("tickets.ticketNotFound")}
         </CardContent>
       </Card>
     );
@@ -315,8 +317,8 @@ function TicketDetailManageView({ basePath }: { basePath: string }) {
         <div className="flex-1">
           <div className="flex flex-wrap items-center gap-2 mb-1">
             <span className="font-mono text-sm text-muted-foreground">#{ticket.ticketNumber}</span>
-            {getStatusBadge(ticket.status)}
-            {getPriorityBadge(ticket.priority)}
+            {getStatusBadge(ticket.status, t)}
+            {getPriorityBadge(ticket.priority, t)}
           </div>
           <h1 className="text-2xl font-semibold">{ticket.subject}</h1>
         </div>
@@ -326,25 +328,25 @@ function TicketDetailManageView({ basePath }: { basePath: string }) {
         <div className="lg:col-span-2 space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle>Dettagli Ticket</CardTitle>
+              <CardTitle>{t("tickets.ticketDetails")}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div>
-                <div className="text-sm font-medium mb-1">Descrizione</div>
+                <div className="text-sm font-medium mb-1">{t("common.description")}</div>
                 <p className="text-sm text-muted-foreground">{ticket.description}</p>
               </div>
               <Separator />
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
                 <div>
-                  <div className="font-medium mb-1">Creato il</div>
+                  <div className="font-medium mb-1">{t("common.createdAt")}</div>
                   <div className="text-muted-foreground">
-                    {format(new Date(ticket.createdAt), "dd MMMM yyyy 'alle' HH:mm", { locale: it })}
+                    {format(new Date(ticket.createdAt), "dd MMMM yyyy 'alle' HH:mm", { locale: itLocale })}
                   </div>
                 </div>
                 <div>
-                  <div className="font-medium mb-1">Ultimo aggiornamento</div>
+                  <div className="font-medium mb-1">{t("common.updatedAt")}</div>
                   <div className="text-muted-foreground">
-                    {format(new Date(ticket.updatedAt), "dd MMMM yyyy 'alle' HH:mm", { locale: it })}
+                    {format(new Date(ticket.updatedAt), "dd MMMM yyyy 'alle' HH:mm", { locale: itLocale })}
                   </div>
                 </div>
               </div>
@@ -353,7 +355,7 @@ function TicketDetailManageView({ basePath }: { basePath: string }) {
 
           <Card>
             <CardHeader>
-              <CardTitle>Conversazione</CardTitle>
+              <CardTitle>{t("tickets.conversation")}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               {messagesLoading ? (
@@ -362,7 +364,7 @@ function TicketDetailManageView({ basePath }: { basePath: string }) {
                   <Skeleton className="h-20 w-full" />
                 </div>
               ) : messages.length === 0 ? (
-                <div className="text-center py-8 text-muted-foreground">Nessun messaggio ancora.</div>
+                <div className="text-center py-8 text-muted-foreground">{t("tickets.noMessagesYet")}</div>
               ) : (
                 <ScrollArea className="h-[400px] pr-4">
                   <div className="space-y-4">
@@ -371,8 +373,8 @@ function TicketDetailManageView({ basePath }: { basePath: string }) {
                         <div className="flex items-center justify-between">
                           <div className="flex flex-wrap items-center gap-2 text-sm">
                             {msg.isInternal ? <UserCog className="h-4 w-4 text-amber-600" /> : <User className="h-4 w-4 text-muted-foreground" />}
-                            <span className="font-medium">{msg.userId === ticket.customerId ? "Cliente" : "Staff"}</span>
-                            {msg.isInternal && <Badge variant="outline" className="text-xs border-amber-500 text-amber-700">Nota interna</Badge>}
+                            <span className="font-medium">{msg.userId === ticket.customerId ? t("common.customer") : "Staff"}</span>
+                            {msg.isInternal && <Badge variant="outline" className="text-xs border-amber-500 text-amber-700">{t("tickets.internalNote")}</Badge>}
                           </div>
                           <span className="text-xs text-muted-foreground">{format(new Date(msg.createdAt), "dd/MM/yyyy HH:mm")}</span>
                         </div>
@@ -390,25 +392,25 @@ function TicketDetailManageView({ basePath }: { basePath: string }) {
                   <Separator />
                   <div className="space-y-3">
                     <div className="flex items-center justify-between">
-                      <Label>Scrivi una risposta</Label>
+                      <Label>{t("tickets.writeReply")}</Label>
                       {canUseInternalNotes && (
                         <div className="flex flex-wrap items-center gap-2">
                           <Switch checked={isInternalNote} onCheckedChange={setIsInternalNote} data-testid="switch-internal-note" />
-                          <Label className="text-sm cursor-pointer">Nota interna</Label>
+                          <Label className="text-sm cursor-pointer">{t("tickets.internalNote")}</Label>
                         </div>
                       )}
                     </div>
                     {isInternalNote && canUseInternalNotes && (
                       <div className="flex flex-wrap items-center gap-2 text-sm text-amber-700 bg-amber-500/10 p-2 rounded">
                         <AlertCircle className="h-4 w-4" />
-                        <span>Le note interne sono visibili solo allo staff</span>
+                        <span>{t("tickets.internalNotesVisibility")}</span>
                       </div>
                     )}
-                    <Textarea placeholder="Digita il tuo messaggio..." value={replyMessage} onChange={(e) => setReplyMessage(e.target.value)} rows={4} data-testid="textarea-reply" />
+                    <Textarea placeholder={t("tickets.typeMessage")} value={replyMessage} onChange={(e) => setReplyMessage(e.target.value)} rows={4} data-testid="textarea-reply" />
                     
                     {selectedFiles.length > 0 && (
                       <div className="space-y-1">
-                        <Label className="text-xs text-muted-foreground">Allegati selezionati:</Label>
+                        <Label className="text-xs text-muted-foreground">{t("tickets.selectedAttachments")}</Label>
                         {selectedFiles.map((file, idx) => (
                           <div key={idx} className="flex flex-wrap items-center gap-2 p-2 rounded border bg-muted/50 text-sm">
                             {getFileIcon(file.type)}
@@ -440,7 +442,7 @@ function TicketDetailManageView({ basePath }: { basePath: string }) {
                         data-testid="button-add-attachment"
                       >
                         <Paperclip className="h-4 w-4 mr-2" />
-                        Allega file
+                        {t("tickets.attachFile")}
                       </Button>
                       <Button 
                         onClick={handleSendReply} 
@@ -448,7 +450,7 @@ function TicketDetailManageView({ basePath }: { basePath: string }) {
                         data-testid="button-send-reply"
                       >
                         <Send className="h-4 w-4 mr-2" />
-                        {isUploading ? "Upload in corso..." : sendMessageMutation.isPending ? "Invio..." : isInternalNote ? "Aggiungi nota interna" : "Invia risposta"}
+                        {isUploading ? t("tickets.uploading") : sendMessageMutation.isPending ? t("tickets.sending") : isInternalNote ? t("tickets.addInternalNote") : t("tickets.sendReply")}
                       </Button>
                     </div>
                   </div>
@@ -457,7 +459,7 @@ function TicketDetailManageView({ basePath }: { basePath: string }) {
 
               {ticket.status === "closed" && (
                 <div className="text-center py-4 text-muted-foreground text-sm">
-                  Questo ticket è stato chiuso. Non è più possibile inviare messaggi.
+                  {t("tickets.ticketClosedMessage")}
                 </div>
               )}
             </CardContent>
@@ -467,45 +469,45 @@ function TicketDetailManageView({ basePath }: { basePath: string }) {
         <div className="space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle>Gestione Ticket</CardTitle>
+              <CardTitle>{t("tickets.ticketManagement")}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
-                <Label>Stato</Label>
+                <Label>{t("common.status")}</Label>
                 <Select value={ticket.status} onValueChange={(value) => updateStatusMutation.mutate(value)} disabled={updateStatusMutation.isPending}>
                   <SelectTrigger data-testid="select-status">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="open">Aperto</SelectItem>
-                    <SelectItem value="in_progress">In lavorazione</SelectItem>
-                    <SelectItem value="closed">Chiuso</SelectItem>
+                    <SelectItem value="open">{t("tickets.status.open")}</SelectItem>
+                    <SelectItem value="in_progress">{t("tickets.status.inProgress")}</SelectItem>
+                    <SelectItem value="closed">{t("tickets.status.closed")}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
 
               <div className="space-y-2">
-                <Label>Priorità</Label>
+                <Label>{t("common.priority")}</Label>
                 <Select value={ticket.priority} onValueChange={(value) => updatePriorityMutation.mutate(value)} disabled={updatePriorityMutation.isPending}>
                   <SelectTrigger data-testid="select-priority">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="low">Bassa</SelectItem>
-                    <SelectItem value="medium">Media</SelectItem>
-                    <SelectItem value="high">Alta</SelectItem>
+                    <SelectItem value="low">{t("common.priorityLow")}</SelectItem>
+                    <SelectItem value="medium">{t("common.priorityMedium")}</SelectItem>
+                    <SelectItem value="high">{t("common.priorityHigh")}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
 
               <div className="space-y-2">
-                <Label>Assegnato a</Label>
+                <Label>{t("tickets.assignedTo")}</Label>
                 <Select value={ticket.assignedTo || "unassigned"} onValueChange={(value) => assignTicketMutation.mutate(value === "unassigned" ? null : value)} disabled={assignTicketMutation.isPending}>
                   <SelectTrigger data-testid="select-assigned-to">
-                    <SelectValue placeholder="Non assegnato" />
+                    <SelectValue placeholder={t("tickets.unassigned")} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="unassigned">Non assegnato</SelectItem>
+                    <SelectItem value="unassigned">{t("tickets.unassigned")}</SelectItem>
                     {staffUsers.map((staff) => (
                       <SelectItem key={staff.id} value={staff.id}>{staff.username} ({staff.role})</SelectItem>
                     ))}
@@ -517,11 +519,11 @@ function TicketDetailManageView({ basePath }: { basePath: string }) {
 
           <Card>
             <CardHeader>
-              <CardTitle>Informazioni Cliente</CardTitle>
+              <CardTitle>{t("tickets.customerInfo")}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-2">
               <div className="text-sm">
-                <span className="text-muted-foreground">ID Cliente: </span>
+                <span className="text-muted-foreground">{t("tickets.customerId")}: </span>
                 <span className="font-mono">{ticket.customerId}</span>
               </div>
             </CardContent>
@@ -533,6 +535,7 @@ function TicketDetailManageView({ basePath }: { basePath: string }) {
 }
 
 function TicketDetailReadView({ basePath }: { basePath: string }) {
+  const { t } = useTranslation();
   const [location, setLocation] = useLocation();
   const { toast } = useToast();
   const { user } = useAuth();
@@ -573,10 +576,10 @@ function TicketDetailReadView({ basePath }: { basePath: string }) {
       queryClient.invalidateQueries({ queryKey: ["/api/tickets", ticketId, "messages"] });
       setReplyMessage("");
       setSelectedFiles([]);
-      toast({ title: "Messaggio inviato" });
+      toast({ title: t("tickets.messageSent") });
     },
     onError: (error: Error) => {
-      toast({ title: "Errore", description: error.message.replace(/^\d+:\s*/, ''), variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message.replace(/^\d+:\s*/, ''), variant: "destructive" });
       if (error.message.toLowerCase().includes('closed')) {
         queryClient.invalidateQueries({ queryKey: ["/api/tickets", ticketId] });
       }
@@ -610,7 +613,7 @@ function TicketDetailReadView({ basePath }: { basePath: string }) {
     const files = Array.from(e.target.files || []);
     const validFiles = files.filter(f => f.size <= 10 * 1024 * 1024);
     if (validFiles.length !== files.length) {
-      toast({ title: "Attenzione", description: "Alcuni file superano il limite di 10MB", variant: "destructive" });
+      toast({ title: t("common.warning"), description: t("tickets.fileSizeWarning"), variant: "destructive" });
     }
     setSelectedFiles(prev => [...prev, ...validFiles]);
     if (fileInputRef.current) fileInputRef.current.value = '';
@@ -629,10 +632,10 @@ function TicketDetailReadView({ basePath }: { basePath: string }) {
       queryClient.invalidateQueries({ queryKey: ["/api/tickets", ticketId] });
       queryClient.invalidateQueries({ queryKey: ["/api/tickets"] });
       queryClient.invalidateQueries({ queryKey: ["/api/reseller/tickets/pending-count"] });
-      toast({ title: "Ticket chiuso", description: "Il ticket è stato chiuso con successo" });
+      toast({ title: t("tickets.ticketClosedTitle"), description: t("tickets.ticketClosedSuccess") });
     },
     onError: (error: Error) => {
-      toast({ title: "Errore", description: error.message.replace(/^\d+:\s*/, ''), variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message.replace(/^\d+:\s*/, ''), variant: "destructive" });
     },
   });
 
@@ -652,7 +655,7 @@ function TicketDetailReadView({ basePath }: { basePath: string }) {
         attachments: uploadedAttachments 
       });
     } catch (error: any) {
-      toast({ title: "Errore upload", description: error.message, variant: "destructive" });
+      toast({ title: t("tickets.uploadError"), description: error.message, variant: "destructive" });
     } finally {
       setIsUploading(false);
     }
@@ -675,7 +678,7 @@ function TicketDetailReadView({ basePath }: { basePath: string }) {
     return (
       <Card>
         <CardContent className="py-8 text-center text-muted-foreground">
-          Ticket non trovato
+          {t("tickets.ticketNotFound")}
         </CardContent>
       </Card>
     );
@@ -690,8 +693,8 @@ function TicketDetailReadView({ basePath }: { basePath: string }) {
         <div className="flex-1">
           <div className="flex flex-wrap items-center gap-2 mb-1">
             <span className="font-mono text-sm text-muted-foreground">#{ticket.ticketNumber}</span>
-            {getStatusBadge(ticket.status)}
-            {getPriorityBadge(ticket.priority)}
+            {getStatusBadge(ticket.status, t)}
+            {getPriorityBadge(ticket.priority, t)}
           </div>
           <h1 className="text-2xl font-semibold">{ticket.subject}</h1>
         </div>
@@ -701,25 +704,25 @@ function TicketDetailReadView({ basePath }: { basePath: string }) {
         <div className="lg:col-span-2 space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle>Dettagli Ticket</CardTitle>
+              <CardTitle>{t("tickets.ticketDetails")}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div>
-                <div className="text-sm font-medium mb-1">Descrizione</div>
+                <div className="text-sm font-medium mb-1">{t("common.description")}</div>
                 <p className="text-sm text-muted-foreground">{ticket.description}</p>
               </div>
               <Separator />
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
                 <div>
-                  <div className="font-medium mb-1">Creato il</div>
+                  <div className="font-medium mb-1">{t("common.createdAt")}</div>
                   <div className="text-muted-foreground">
-                    {format(new Date(ticket.createdAt), "dd MMMM yyyy 'alle' HH:mm", { locale: it })}
+                    {format(new Date(ticket.createdAt), "dd MMMM yyyy 'alle' HH:mm", { locale: itLocale })}
                   </div>
                 </div>
                 <div>
-                  <div className="font-medium mb-1">Ultimo aggiornamento</div>
+                  <div className="font-medium mb-1">{t("common.updatedAt")}</div>
                   <div className="text-muted-foreground">
-                    {format(new Date(ticket.updatedAt), "dd MMMM yyyy 'alle' HH:mm", { locale: it })}
+                    {format(new Date(ticket.updatedAt), "dd MMMM yyyy 'alle' HH:mm", { locale: itLocale })}
                   </div>
                 </div>
               </div>
@@ -728,7 +731,7 @@ function TicketDetailReadView({ basePath }: { basePath: string }) {
 
           <Card>
             <CardHeader>
-              <CardTitle>Conversazione</CardTitle>
+              <CardTitle>{t("tickets.conversation")}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               {messagesLoading ? (
@@ -737,7 +740,7 @@ function TicketDetailReadView({ basePath }: { basePath: string }) {
                   <Skeleton className="h-20 w-full" />
                 </div>
               ) : messages.length === 0 ? (
-                <div className="text-center py-8 text-muted-foreground">Nessun messaggio ancora.</div>
+                <div className="text-center py-8 text-muted-foreground">{t("tickets.noMessagesYet")}</div>
               ) : (
                 <ScrollArea className="h-[400px] pr-4">
                   <div className="space-y-4">
@@ -746,8 +749,8 @@ function TicketDetailReadView({ basePath }: { basePath: string }) {
                         <div className="flex items-center justify-between">
                           <div className="flex flex-wrap items-center gap-2 text-sm">
                             {msg.isInternal ? <UserCog className="h-4 w-4 text-amber-600" /> : <User className="h-4 w-4 text-muted-foreground" />}
-                            <span className="font-medium">{msg.userId === ticket.customerId ? "Cliente" : "Staff"}</span>
-                            {msg.isInternal && <Badge variant="outline" className="text-xs border-amber-500 text-amber-700">Nota interna</Badge>}
+                            <span className="font-medium">{msg.userId === ticket.customerId ? t("common.customer") : "Staff"}</span>
+                            {msg.isInternal && <Badge variant="outline" className="text-xs border-amber-500 text-amber-700">{t("tickets.internalNote")}</Badge>}
                           </div>
                           <span className="text-xs text-muted-foreground">{format(new Date(msg.createdAt), "dd/MM/yyyy HH:mm")}</span>
                         </div>
@@ -764,12 +767,12 @@ function TicketDetailReadView({ basePath }: { basePath: string }) {
                 <>
                   <Separator />
                   <div className="space-y-3">
-                    <Label>Scrivi una risposta</Label>
-                    <Textarea placeholder="Digita il tuo messaggio..." value={replyMessage} onChange={(e) => setReplyMessage(e.target.value)} rows={4} data-testid="textarea-reply" />
+                    <Label>{t("tickets.writeReply")}</Label>
+                    <Textarea placeholder={t("tickets.typeMessage")} value={replyMessage} onChange={(e) => setReplyMessage(e.target.value)} rows={4} data-testid="textarea-reply" />
                     
                     {selectedFiles.length > 0 && (
                       <div className="space-y-1">
-                        <Label className="text-xs text-muted-foreground">Allegati selezionati:</Label>
+                        <Label className="text-xs text-muted-foreground">{t("tickets.selectedAttachments")}</Label>
                         {selectedFiles.map((file, idx) => (
                           <div key={idx} className="flex flex-wrap items-center gap-2 p-2 rounded border bg-muted/50 text-sm">
                             {getFileIcon(file.type)}
@@ -801,7 +804,7 @@ function TicketDetailReadView({ basePath }: { basePath: string }) {
                         data-testid="button-add-attachment"
                       >
                         <Paperclip className="h-4 w-4 mr-2" />
-                        Allega file
+                        {t("tickets.attachFile")}
                       </Button>
                       <Button 
                         onClick={handleSendReply} 
@@ -809,7 +812,7 @@ function TicketDetailReadView({ basePath }: { basePath: string }) {
                         data-testid="button-send-reply"
                       >
                         <Send className="h-4 w-4 mr-2" />
-                        {isUploading ? "Upload in corso..." : sendMessageMutation.isPending ? "Invio..." : "Invia risposta"}
+                        {isUploading ? t("tickets.uploading") : sendMessageMutation.isPending ? t("tickets.sending") : t("tickets.sendReply")}
                       </Button>
                     </div>
                   </div>
@@ -818,7 +821,7 @@ function TicketDetailReadView({ basePath }: { basePath: string }) {
 
               {ticket.status === "closed" && (
                 <div className="text-center py-4 text-muted-foreground text-sm">
-                  Questo ticket è stato chiuso. Non è più possibile inviare messaggi.
+                  {t("tickets.ticketClosedMessage")}
                 </div>
               )}
             </CardContent>
@@ -828,11 +831,11 @@ function TicketDetailReadView({ basePath }: { basePath: string }) {
         <div className="space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle>Informazioni</CardTitle>
+              <CardTitle>{t("common.info")}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-2">
               <div className="text-sm">
-                <span className="text-muted-foreground">ID Ticket: </span>
+                <span className="text-muted-foreground">{t("tickets.ticketId")}: </span>
                 <span className="font-mono">{ticket.ticketNumber}</span>
               </div>
             </CardContent>
@@ -841,7 +844,7 @@ function TicketDetailReadView({ basePath }: { basePath: string }) {
           {canCloseTicket && (
             <Card>
               <CardHeader>
-                <CardTitle>Azioni</CardTitle>
+                <CardTitle>{t("common.actions")}</CardTitle>
               </CardHeader>
               <CardContent>
                 <AlertDialog>
@@ -853,23 +856,23 @@ function TicketDetailReadView({ basePath }: { basePath: string }) {
                       data-testid="button-close-ticket"
                     >
                       <CheckCircle2 className="h-4 w-4 mr-2" />
-                      {closeTicketMutation.isPending ? "Chiusura in corso..." : "Chiudi Ticket"}
+                      {closeTicketMutation.isPending ? t("tickets.closingTicket") : t("tickets.closeTicket")}
                     </Button>
                   </AlertDialogTrigger>
                   <AlertDialogContent>
                     <AlertDialogHeader>
-                      <AlertDialogTitle>Conferma chiusura ticket</AlertDialogTitle>
+                      <AlertDialogTitle>{t("tickets.confirmCloseTitle")}</AlertDialogTitle>
                       <AlertDialogDescription>
-                        Sei sicuro di voler chiudere questo ticket? Una volta chiuso, il cliente non potrà più inviare messaggi.
+                        {t("tickets.confirmCloseDesc")}
                       </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
-                      <AlertDialogCancel data-testid="button-cancel-close">Annulla</AlertDialogCancel>
+                      <AlertDialogCancel data-testid="button-cancel-close">{t("common.cancel")}</AlertDialogCancel>
                       <AlertDialogAction 
                         onClick={() => closeTicketMutation.mutate()}
                         data-testid="button-confirm-close"
                       >
-                        Conferma chiusura
+                        {t("tickets.confirmCloseButton")}
                       </AlertDialogAction>
                     </AlertDialogFooter>
                   </AlertDialogContent>

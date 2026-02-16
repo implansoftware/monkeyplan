@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Card, CardContent } from "@/components/ui/card";
@@ -25,6 +26,7 @@ type EnrichedMovement = WarehouseMovement & {
 };
 
 export default function RepairCenterWarehousesPage() {
+  const { t } = useTranslation();
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState("stock");
   const [searchTerm, setSearchTerm] = useState("");
@@ -76,12 +78,12 @@ export default function RepairCenterWarehousesPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/warehouses", warehouseId, "stock"] });
       queryClient.invalidateQueries({ queryKey: ["/api/warehouses", warehouseId, "movements"] });
-      toast({ title: "Movimento registrato", description: "Il movimento è stato registrato con successo" });
+      toast({ title: t("warehouse.movementRegistered"), description: t("warehouse.movementRegisteredDesc") });
       setShowMovementDialog(false);
       setMovementData({ productId: "", movementType: "carico", quantity: 0, notes: "" });
     },
     onError: (error: any) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("auth.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -94,12 +96,12 @@ export default function RepairCenterWarehousesPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/warehouses", warehouseId, "stock"] });
-      toast({ title: "Stock aggiornato", description: "Min. stock e posizione salvati" });
+      toast({ title: t("warehouse.stockUpdated"), description: "Min. stock e posizione salvati" });
       setShowEditStockDialog(false);
       setEditingStockItem(null);
     },
     onError: (error: any) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("auth.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -118,11 +120,11 @@ export default function RepairCenterWarehousesPage() {
   );
 
   const movementTypeLabels: Record<string, { label: string; icon: any; color: string }> = {
-    carico: { label: "Carico", icon: TrendingUp, color: "text-green-500" },
-    scarico: { label: "Scarico", icon: TrendingDown, color: "text-red-500" },
-    trasferimento_in: { label: "Trasf. In", icon: ArrowLeftRight, color: "text-blue-500" },
-    trasferimento_out: { label: "Trasf. Out", icon: ArrowLeftRight, color: "text-orange-500" },
-    rettifica: { label: "Rettifica", icon: RotateCcw, color: "text-purple-500" },
+    carico: { label: t("warehouse.loadIn"), icon: TrendingUp, color: "text-green-500" },
+    scarico: { label: t("warehouse.loadOut"), icon: TrendingDown, color: "text-red-500" },
+    trasferimento_in: { label: t("warehouse.transferIn"), icon: ArrowLeftRight, color: "text-blue-500" },
+    trasferimento_out: { label: t("warehouse.transferOut"), icon: ArrowLeftRight, color: "text-orange-500" },
+    rettifica: { label: t("warehouse.adjust"), icon: RotateCcw, color: "text-purple-500" },
   };
 
   if (loadingWarehouse) {
@@ -165,17 +167,17 @@ export default function RepairCenterWarehousesPage() {
               </DialogTrigger>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>Registra Movimento</DialogTitle>
+              <DialogTitle>{t("warehouse.registerMovement")}</DialogTitle>
             </DialogHeader>
             <div className="space-y-4">
               <div className="space-y-2">
-                <Label>Prodotto</Label>
+                <Label>{t("common.product")}</Label>
                 <Select 
                   value={movementData.productId} 
                   onValueChange={(v) => setMovementData(prev => ({ ...prev, productId: v }))}
                 >
                   <SelectTrigger data-testid="select-product">
-                    <SelectValue placeholder="Seleziona prodotto" />
+                    <SelectValue placeholder={t("warehouse.selectProduct")} />
                   </SelectTrigger>
                   <SelectContent>
                     {products.map(p => (
@@ -185,7 +187,7 @@ export default function RepairCenterWarehousesPage() {
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label>Tipo Movimento</Label>
+                <Label>{t("warehouse.movementType")}</Label>
                 <Select 
                   value={movementData.movementType} 
                   onValueChange={(v) => setMovementData(prev => ({ ...prev, movementType: v }))}
@@ -194,14 +196,14 @@ export default function RepairCenterWarehousesPage() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="carico">Carico</SelectItem>
-                    <SelectItem value="scarico">Scarico</SelectItem>
-                    <SelectItem value="rettifica">Rettifica</SelectItem>
+                    <SelectItem value="carico">{t("warehouse.loadIn")}</SelectItem>
+                    <SelectItem value="scarico">{t("warehouse.loadOut")}</SelectItem>
+                    <SelectItem value="rettifica">{t("warehouse.adjust")}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label>Quantità</Label>
+                <Label>{t("common.quantity")}</Label>
                 <Input 
                   type="number" 
                   value={movementData.quantity}
@@ -210,7 +212,7 @@ export default function RepairCenterWarehousesPage() {
                 />
               </div>
               <div className="space-y-2">
-                <Label>Note</Label>
+                <Label>{t("common.note")}</Label>
                 <Textarea 
                   value={movementData.notes}
                   onChange={(e) => setMovementData(prev => ({ ...prev, notes: e.target.value }))}
@@ -223,7 +225,7 @@ export default function RepairCenterWarehousesPage() {
                 disabled={!movementData.productId || movementData.quantity === 0 || createMovementMutation.isPending}
                 data-testid="button-save-movement"
               >
-                {createMovementMutation.isPending ? "Salvataggio..." : "Registra Movimento"}
+                {createMovementMutation.isPending ? t("settings.saving") : "Registra Movimento"}
               </Button>
             </div>
           </DialogContent>
@@ -232,14 +234,14 @@ export default function RepairCenterWarehousesPage() {
         <Dialog open={showEditStockDialog} onOpenChange={setShowEditStockDialog}>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>Modifica Stock</DialogTitle>
+              <DialogTitle>{t("warehouse.editStock")}</DialogTitle>
             </DialogHeader>
             <div className="space-y-4">
               <p className="text-sm text-muted-foreground">
                 Prodotto: <span className="font-medium text-foreground">{editingStockItem?.product?.name}</span>
               </p>
               <div className="space-y-2">
-                <Label>Scorta Minima</Label>
+                <Label>{t("warehouse.minStock")}</Label>
                 <Input 
                   type="number" 
                   min="0"
@@ -249,11 +251,11 @@ export default function RepairCenterWarehousesPage() {
                 />
               </div>
               <div className="space-y-2">
-                <Label>Posizione in Magazzino</Label>
+                <Label>{t("warehouse.warehousePosition")}</Label>
                 <Input 
                   value={editStockData.location}
                   onChange={(e) => setEditStockData(prev => ({ ...prev, location: e.target.value }))}
-                  placeholder="Es: Scaffale A3, Ripiano 2"
+                  placeholder={t("warehouse.positionPlaceholder")}
                   data-testid="input-location"
                 />
               </div>
@@ -271,7 +273,7 @@ export default function RepairCenterWarehousesPage() {
                 disabled={updateStockMutation.isPending}
                 data-testid="button-save-stock"
               >
-                {updateStockMutation.isPending ? "Salvataggio..." : "Salva"}
+                {updateStockMutation.isPending ? t("settings.saving") : t("common.save")}
               </Button>
             </div>
           </DialogContent>
@@ -301,7 +303,7 @@ export default function RepairCenterWarehousesPage() {
                 <TrendingUp className="h-6 w-6 text-green-500" />
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">Quantità Totale</p>
+                <p className="text-sm text-muted-foreground">{t("warehouse.quantitTotale")}</p>
                 <p className="text-2xl font-bold" data-testid="text-total-quantity">
                   {stock.reduce((sum, item) => sum + item.quantity, 0)}
                 </p>
@@ -316,7 +318,7 @@ export default function RepairCenterWarehousesPage() {
                 <TrendingDown className="h-6 w-6 text-orange-500" />
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">Sotto Scorta</p>
+                <p className="text-sm text-muted-foreground">{t("warehouse.lowStockItems")}</p>
                 <p className="text-2xl font-bold" data-testid="text-low-stock">
                   {stock.filter(item => item.minStock && item.quantity < item.minStock).length}
                 </p>
@@ -343,7 +345,7 @@ export default function RepairCenterWarehousesPage() {
             <div className="relative flex-1 max-w-sm">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Cerca prodotto..."
+                placeholder={t("warehouse.searchProduct")}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="pl-10"
@@ -358,19 +360,19 @@ export default function RepairCenterWarehousesPage() {
                 <table className="w-full">
                   <thead className="border-b">
                     <tr>
-                      <th className="text-left p-4 font-medium">Prodotto</th>
+                      <th className="text-left p-4 font-medium">{t("common.product")}</th>
                       <th className="text-left p-4 font-medium hidden md:table-cell">SKU</th>
-                      <th className="text-left p-4 font-medium hidden lg:table-cell">Tipo</th>
-                      <th className="text-right p-4 font-medium">Quantità</th>
+                      <th className="text-left p-4 font-medium hidden lg:table-cell">{t("common.type")}</th>
+                      <th className="text-right p-4 font-medium">{t("common.quantity")}</th>
                       <th className="text-right p-4 font-medium hidden md:table-cell">Min. Stock</th>
-                      <th className="text-left p-4 font-medium hidden lg:table-cell">Posizione</th>
-                      <th className="text-center p-4 font-medium">Azioni</th>
+                      <th className="text-left p-4 font-medium hidden lg:table-cell">{t("warehouse.location")}</th>
+                      <th className="text-center p-4 font-medium">{t("common.actions")}</th>
                     </tr>
                   </thead>
                   <tbody>
                     {loadingStock ? (
                       <tr>
-                        <td colSpan={7} className="text-center p-8">Caricamento...</td>
+                        <td colSpan={7} className="text-center p-8">{t("profile.uploadingLogo")}</td>
                       </tr>
                     ) : filteredStock.length === 0 ? (
                       <tr>
@@ -413,7 +415,7 @@ export default function RepairCenterWarehousesPage() {
                               size="icon" 
                               variant="ghost" 
                               onClick={() => handleEditStock(item)}
-                              title="Modifica"
+                              title={t("profile.edit")}
                               data-testid={`button-edit-stock-${item.id}`}
                             >
                               <Pencil className="h-4 w-4" />
@@ -436,18 +438,18 @@ export default function RepairCenterWarehousesPage() {
                 <table className="w-full">
                   <thead className="border-b">
                     <tr>
-                      <th className="text-left p-4 font-medium">Data</th>
-                      <th className="text-left p-4 font-medium">Tipo</th>
-                      <th className="text-left p-4 font-medium">Prodotto</th>
-                      <th className="text-right p-4 font-medium">Quantità</th>
-                      <th className="text-left p-4 font-medium hidden md:table-cell">Operatore</th>
-                      <th className="text-left p-4 font-medium hidden lg:table-cell">Note</th>
+                      <th className="text-left p-4 font-medium">{t("common.date")}</th>
+                      <th className="text-left p-4 font-medium">{t("common.type")}</th>
+                      <th className="text-left p-4 font-medium">{t("common.product")}</th>
+                      <th className="text-right p-4 font-medium">{t("common.quantity")}</th>
+                      <th className="text-left p-4 font-medium hidden md:table-cell">{t("warehouse.operator")}</th>
+                      <th className="text-left p-4 font-medium hidden lg:table-cell">{t("common.note")}</th>
                     </tr>
                   </thead>
                   <tbody>
                     {loadingMovements ? (
                       <tr>
-                        <td colSpan={6} className="text-center p-8">Caricamento...</td>
+                        <td colSpan={6} className="text-center p-8">{t("profile.uploadingLogo")}</td>
                       </tr>
                     ) : movements.length === 0 ? (
                       <tr>

@@ -16,9 +16,11 @@ import { it } from "date-fns/locale";
 import { useToast } from "@/hooks/use-toast";
 import type { DateRange } from "react-day-picker";
 import { usePageTitle } from "@/hooks/use-page-title";
+import { useTranslation } from "react-i18next";
 
 export default function AdminInvoices() {
-  usePageTitle("Fatture");
+  const { t } = useTranslation();
+  usePageTitle(t("sidebar.items.invoices"));
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [dateRange, setDateRange] = useState<DateRange | undefined>();
@@ -54,13 +56,13 @@ export default function AdminInvoices() {
       document.body.removeChild(a);
       
       toast({
-        title: "Export completato",
-        description: "Il file Excel è stato scaricato con successo",
+        title: t("repairs.exportCompleted"),
+        description: t("repairs.exportCompletedDesc"),
       });
     } catch (error) {
       toast({
-        title: "Errore",
-        description: "Impossibile esportare i dati",
+        title: t("common.error"),
+        description: t("repairs.exportError"),
         variant: "destructive",
       });
     } finally {
@@ -76,10 +78,10 @@ export default function AdminInvoices() {
 
   const getStatusBadge = (status: string) => {
     switch (status) {
-      case "paid": return <Badge>Pagata</Badge>;
-      case "pending": return <Badge variant="secondary">In sospeso</Badge>;
-      case "overdue": return <Badge variant="destructive">Scaduta</Badge>;
-      case "cancelled": return <Badge variant="outline">Annullata</Badge>;
+      case "paid": return <Badge>{t("invoices.paid")}</Badge>;
+      case "pending": return <Badge variant="secondary">{t("invoices.pending")}</Badge>;
+      case "overdue": return <Badge variant="destructive">{t("invoices.overdue")}</Badge>;
+      case "cancelled": return <Badge variant="outline">{t("invoices.cancelled")}</Badge>;
       default: return <Badge variant="outline">{status}</Badge>;
     }
   };
@@ -104,9 +106,9 @@ export default function AdminInvoices() {
               <FileText className="h-5 w-5" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold tracking-tight">Fatture</h1>
+              <h1 className="text-2xl font-bold tracking-tight">{t("sidebar.items.invoices")}</h1>
               <p className="text-sm text-muted-foreground">
-                Gestisci tutte le fatture e i pagamenti
+                {t("invoices.manageAllInvoices")}
               </p>
             </div>
           </div>
@@ -120,7 +122,7 @@ export default function AdminInvoices() {
               <div className="flex-1 relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
-                  placeholder="Cerca fattura..."
+                  placeholder={t("invoices.searchInvoice")}
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="pl-9"
@@ -132,11 +134,11 @@ export default function AdminInvoices() {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">Tutti gli stati</SelectItem>
-                  <SelectItem value="paid">Pagate</SelectItem>
-                  <SelectItem value="pending">In sospeso</SelectItem>
-                  <SelectItem value="overdue">Scadute</SelectItem>
-                  <SelectItem value="cancelled">Annullate</SelectItem>
+                  <SelectItem value="all">{t("repairs.allStatuses")}</SelectItem>
+                  <SelectItem value="paid">{t("invoices.paid")}</SelectItem>
+                  <SelectItem value="pending">{t("invoices.pending")}</SelectItem>
+                  <SelectItem value="overdue">{t("invoices.overdue")}</SelectItem>
+                  <SelectItem value="cancelled">{t("invoices.cancelled")}</SelectItem>
                 </SelectContent>
               </Select>
               <Popover>
@@ -150,7 +152,7 @@ export default function AdminInvoices() {
                         format(dateRange.from, "dd MMM yyyy", { locale: it })
                       )
                     ) : (
-                      "Seleziona periodo"
+                      t("repairs.selectPeriod")
                     )}
                   </Button>
                 </PopoverTrigger>
@@ -171,7 +173,7 @@ export default function AdminInvoices() {
                 data-testid="button-export-invoices"
               >
                 <Download className="h-4 w-4 mr-2" />
-                {isExporting ? "Esportazione..." : "Esporta Excel"}
+                {isExporting ? t("repairs.exporting") : t("reports.exportExcel")}
               </Button>
             </div>
           </div>
@@ -186,22 +188,22 @@ export default function AdminInvoices() {
           ) : filteredInvoices.length === 0 ? (
             <div className="text-center py-12 text-muted-foreground">
               <FileText className="h-12 w-12 mx-auto mb-4 opacity-20" />
-              <p>Nessuna fattura trovata</p>
+              <p>{t("invoices.noInvoicesFound")}</p>
             </div>
           ) : (
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Numero</TableHead>
-                  <TableHead>Data</TableHead>
-                  <TableHead className="text-right">Imponibile</TableHead>
-                  <TableHead className="text-right">IVA%</TableHead>
-                  <TableHead className="text-right">IVA</TableHead>
-                  <TableHead className="text-right">Totale</TableHead>
-                  <TableHead>Metodo</TableHead>
-                  <TableHead>Scadenza</TableHead>
-                  <TableHead>Stato</TableHead>
-                  <TableHead className="text-right">Azioni</TableHead>
+                  <TableHead>{t("invoices.number")}</TableHead>
+                  <TableHead>{t("common.date")}</TableHead>
+                  <TableHead className="text-right">{t("invoices.taxableAmount")}</TableHead>
+                  <TableHead className="text-right">{t("invoices.vatRate")}</TableHead>
+                  <TableHead className="text-right">{t("invoices.vat")}</TableHead>
+                  <TableHead className="text-right">{t("common.total")}</TableHead>
+                  <TableHead>{t("invoices.method")}</TableHead>
+                  <TableHead>{t("invoices.dueDate")}</TableHead>
+                  <TableHead>{t("common.status")}</TableHead>
+                  <TableHead className="text-right">{t("common.actions")}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -253,8 +255,8 @@ export default function AdminInvoices() {
                             document.body.removeChild(a);
                           } catch (error) {
                             toast({
-                              title: "Errore",
-                              description: "Impossibile scaricare la fattura",
+                              title: t("common.error"),
+                              description: t("invoices.downloadError"),
                               variant: "destructive",
                             });
                           }

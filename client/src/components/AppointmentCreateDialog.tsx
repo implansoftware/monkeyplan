@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useState, useEffect } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
@@ -57,6 +58,7 @@ export function AppointmentCreateDialog({
   repairCenterId,
   onSuccess,
 }: AppointmentCreateDialogProps) {
+  const { t } = useTranslation();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [selectedOrderId, setSelectedOrderId] = useState<string>("");
@@ -123,7 +125,7 @@ export function AppointmentCreateDialog({
     onSuccess: () => {
       toast({
         title: "Appuntamento creato",
-        description: "L'appuntamento è stato creato con successo",
+        description: t("appointment.createdSuccessfully"),
       });
       queryClient.invalidateQueries({ queryKey: ["/api/repair-centers", repairCenterId, "appointments"] });
       queryClient.invalidateQueries({ queryKey: ["/api/reseller/repairs"] });
@@ -132,8 +134,8 @@ export function AppointmentCreateDialog({
     },
     onError: (error: any) => {
       toast({
-        title: "Errore",
-        description: error.message || "Impossibile creare l'appuntamento",
+        title: t("common.error"),
+        description: error.message || t("appointment.cannotCreate"),
         variant: "destructive",
       });
     },
@@ -183,7 +185,7 @@ export function AppointmentCreateDialog({
             ) : (
               <Select value={selectedOrderId} onValueChange={setSelectedOrderId}>
                 <SelectTrigger className="mt-1" data-testid="select-repair-order">
-                  <SelectValue placeholder="Seleziona un ordine..." />
+                  <SelectValue placeholder={t("parts.selectOrder")} />
                 </SelectTrigger>
                 <SelectContent>
                   {repairsWithoutAppointment.map((repair) => {
@@ -236,7 +238,7 @@ export function AppointmentCreateDialog({
               <div>
                 <h4 className="text-sm font-medium mb-3 flex items-center gap-2">
                   <CalendarIcon className="h-4 w-4" />
-                  Seleziona una data
+                  {t("appointment.selectDate")}
                 </h4>
                 <Calendar
                   mode="single"
@@ -278,7 +280,7 @@ export function AppointmentCreateDialog({
                   </div>
                 ) : slotsData?.closed ? (
                   <div className="text-sm text-muted-foreground p-4 text-center border rounded-md">
-                    {slotsData.reason || "Chiuso in questa data"}
+                    {slotsData.reason || t("appointment.closedOnDate")}
                   </div>
                 ) : !slotsData?.slots.length ? (
                   <div className="text-sm text-muted-foreground p-4 text-center border rounded-md">
@@ -325,9 +327,9 @@ export function AppointmentCreateDialog({
               </Card>
               
               <div>
-                <Label className="text-sm font-medium">Note (opzionale)</Label>
+                <Label className="text-sm font-medium">{t("common.notesOptional")}</Label>
                 <Textarea
-                  placeholder="Aggiungi note per l'appuntamento..."
+                  placeholder={t("appointment.addNotesForAppointment")}
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
                   className="resize-none mt-1"
@@ -345,7 +347,7 @@ export function AppointmentCreateDialog({
             onClick={() => onOpenChange(false)}
             data-testid="button-cancel-create"
           >
-            Annulla
+            {t("common.cancel")}
           </Button>
           <Button
             onClick={handleCreate}

@@ -1,4 +1,5 @@
 // Reference: blueprint:javascript_object_storage
+import { useTranslation } from "react-i18next";
 import { useState } from "react";
 import type { ReactNode } from "react";
 import Uppy from "@uppy/core";
@@ -31,6 +32,7 @@ export function ObjectUploader({
   buttonClassName,
   children,
 }: ObjectUploaderProps) {
+  const { t } = useTranslation();
   const [showModal, setShowModal] = useState(false);
   const [uppy] = useState(() =>
     new Uppy({

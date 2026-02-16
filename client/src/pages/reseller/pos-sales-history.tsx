@@ -32,6 +32,7 @@ import { useState } from "react";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
 import { Link } from "wouter";
+import { useTranslation } from "react-i18next";
 
 interface PosTransaction {
   id: string;
@@ -53,6 +54,7 @@ interface RepairCenter {
 }
 
 export default function ResellerPosSalesHistory() {
+  const { t } = useTranslation();
   const [repairCenterFilter, setRepairCenterFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
@@ -88,9 +90,9 @@ export default function ResellerPosSalesHistory() {
 
   const getPaymentMethodLabel = (method: string) => {
     const labels: Record<string, string> = {
-      cash: "Contanti",
-      card: "Carta",
-      pos_terminal: "POS",
+      cash: t("pos.cash"),
+      card: t("pos.card"),
+      pos_terminal: t("sidebar.sections.posSection"),
       mixed: "Misto",
     };
     return labels[method] || method;
@@ -106,7 +108,7 @@ export default function ResellerPosSalesHistory() {
       case "completed":
         return <Badge variant="default" className="bg-emerald-600"><CheckCircle className="w-3 h-3 mr-1" />Completata</Badge>;
       case "voided":
-        return <Badge variant="destructive"><XCircle className="w-3 h-3 mr-1" />Annullata</Badge>;
+        return <Badge variant="destructive"><XCircle className="w-3 h-3 mr-1" />{t("common.cancelled")}</Badge>;
       case "refunded":
         return <Badge variant="secondary"><RotateCcw className="w-3 h-3 mr-1" />Rimborsata</Badge>;
       default:
@@ -151,9 +153,9 @@ export default function ResellerPosSalesHistory() {
       document.body.removeChild(a);
       window.URL.revokeObjectURL(url);
       
-      toast({ title: "Export completato", description: `File ${format.toUpperCase()} scaricato con successo` });
+      toast({ title: t("reports.exportCompleted"), description: `File ${format.toUpperCase()} scaricato con successo` });
     } catch (error) {
-      toast({ title: "Errore", description: "Impossibile esportare le vendite", variant: "destructive" });
+      toast({ title: t("common.error"), description: "Impossibile esportare le vendite", variant: "destructive" });
     } finally {
       setIsExporting(false);
     }
@@ -184,7 +186,7 @@ export default function ResellerPosSalesHistory() {
             <DropdownMenuTrigger asChild>
               <Button className="bg-white/20 backdrop-blur-sm border border-white/30 text-white" disabled={isExporting} data-testid="button-export-transactions">
                 <Download className="h-4 w-4 mr-2" />
-                {isExporting ? "Esportazione..." : "Esporta"}
+                {isExporting ? t("pages.exporting") : t("common.export")}
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
@@ -193,9 +195,7 @@ export default function ResellerPosSalesHistory() {
                 Esporta CSV
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => handleExport('xlsx')} data-testid="menu-export-xlsx">
-                <FileSpreadsheet className="h-4 w-4 mr-2" />
-                Esporta Excel
-              </DropdownMenuItem>
+                <FileSpreadsheet className="h-4 w-4 mr-2" />{t("reports.exportExcel")}</DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
@@ -206,9 +206,7 @@ export default function ResellerPosSalesHistory() {
           <CardTitle className="flex flex-wrap items-center gap-2 text-lg">
             <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center">
               <Search className="h-4 w-4 text-white" />
-            </div>
-            Filtri
-          </CardTitle>
+            </div>{t("common.filters")}</CardTitle>
         </CardHeader>
         <CardContent className="pt-4">
           <div className="flex flex-wrap gap-4">
@@ -224,10 +222,10 @@ export default function ResellerPosSalesHistory() {
             <Select value={repairCenterFilter} onValueChange={setRepairCenterFilter}>
               <SelectTrigger className="w-full sm:w-[200px]" data-testid="select-repair-center">
                 <Building2 className="w-4 h-4 mr-2" />
-                <SelectValue placeholder="Centro Riparazione" />
+                <SelectValue placeholder={t("roles.repairCenter")} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">Tutti i centri</SelectItem>
+                <SelectItem value="all">{t("common.allCenters")}</SelectItem>
                 {repairCenters?.map(rc => (
                   <SelectItem key={rc.id} value={rc.id}>{rc.name}</SelectItem>
                 ))}
@@ -235,10 +233,10 @@ export default function ResellerPosSalesHistory() {
             </Select>
             <Select value={statusFilter} onValueChange={setStatusFilter}>
               <SelectTrigger className="w-full sm:w-[180px]" data-testid="select-status">
-                <SelectValue placeholder="Stato" />
+                <SelectValue placeholder={t("common.status")} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">Tutti gli stati</SelectItem>
+                <SelectItem value="all">{t("common.allStatuses")}</SelectItem>
                 <SelectItem value="completed">Completate</SelectItem>
                 <SelectItem value="voided">Annullate</SelectItem>
                 <SelectItem value="refunded">Rimborsate</SelectItem>
@@ -266,13 +264,13 @@ export default function ResellerPosSalesHistory() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Numero</TableHead>
-                  <TableHead>Centro</TableHead>
+                  <TableHead>{t("common.number")}</TableHead>
+                  <TableHead>{t("admin.common.center")}</TableHead>
                   <TableHead>Cassa</TableHead>
-                  <TableHead>Data</TableHead>
-                  <TableHead>Pagamento</TableHead>
-                  <TableHead>Stato</TableHead>
-                  <TableHead className="text-right">Totale</TableHead>
+                  <TableHead>{t("common.date")}</TableHead>
+                  <TableHead>{t("common.payment")}</TableHead>
+                  <TableHead>{t("common.status")}</TableHead>
+                  <TableHead className="text-right">{t("common.total")}</TableHead>
                   <TableHead></TableHead>
                 </TableRow>
               </TableHeader>

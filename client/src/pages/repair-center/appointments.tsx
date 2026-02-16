@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
@@ -73,15 +74,7 @@ type Blackout = {
   reason: string | null;
 };
 
-const weekdayNames = ["Domenica", "Lunedì", "Martedì", "Mercoledì", "Giovedì", "Venerdì", "Sabato"];
-
-const statusLabels: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
-  scheduled: { label: "Prenotato", variant: "secondary" },
-  confirmed: { label: "Confermato", variant: "default" },
-  cancelled: { label: "Annullato", variant: "destructive" },
-  completed: { label: "Completato", variant: "outline" },
-  no_show: { label: "Non presentato", variant: "destructive" },
-};
+const WEEKDAY_KEYS = ["settings.sunday", "settings.monday", "settings.tuesday", "settings.wednesday", "settings.thursday", "settings.friday", "settings.saturday"];
 
 const defaultAvailability: Omit<Availability, "id" | "repairCenterId">[] = [
   { weekday: 0, startTime: "09:00", endTime: "13:00", slotDurationMinutes: 30, capacityPerSlot: 3, isClosed: true },
@@ -94,6 +87,15 @@ const defaultAvailability: Omit<Availability, "id" | "repairCenterId">[] = [
 ];
 
 export default function RepairCenterAppointments() {
+  const { t } = useTranslation();
+  const weekdayNames = WEEKDAY_KEYS.map(k => t(k));
+  const statusLabels: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
+    scheduled: { label: t("appointments.scheduled"), variant: "secondary" },
+    confirmed: { label: t("appointments.confirmed"), variant: "default" },
+    cancelled: { label: t("repairs.status.cancelled"), variant: "destructive" },
+    completed: { label: t("repairs.status.completed"), variant: "outline" },
+    no_show: { label: t("appointments.noShow"), variant: "destructive" },
+  };
   const { user } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -167,12 +169,12 @@ export default function RepairCenterAppointments() {
       });
     },
     onSuccess: () => {
-      toast({ title: "Disponibilità salvata", description: "Gli orari sono stati aggiornati" });
+      toast({ title: t("appointments.disponibilitSalvata"), description: "Gli orari sono stati aggiornati" });
       queryClient.invalidateQueries({ queryKey: ["/api/repair-centers", repairCenterId, "availability"] });
       setEditingAvailability(false);
     },
     onError: (error: any) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("auth.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -185,13 +187,13 @@ export default function RepairCenterAppointments() {
       });
     },
     onSuccess: () => {
-      toast({ title: "Chiusura aggiunta", description: "La data di chiusura è stata aggiunta" });
+      toast({ title: "Chiusura aggiunta", description: t("appointments.laDataDiChiusuraStataAggiunta") });
       queryClient.invalidateQueries({ queryKey: ["/api/repair-centers", repairCenterId, "blackouts"] });
       setBlackoutDialogOpen(false);
       setNewBlackout({ date: "", reason: "" });
     },
     onError: (error: any) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("auth.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -201,11 +203,11 @@ export default function RepairCenterAppointments() {
       return await apiRequest("DELETE", `/api/repair-centers/${repairCenterId}/blackouts/${blackoutId}`);
     },
     onSuccess: () => {
-      toast({ title: "Chiusura rimossa", description: "La data di chiusura è stata rimossa" });
+      toast({ title: "Chiusura rimossa", description: t("appointments.laDataDiChiusuraStataRimossa") });
       queryClient.invalidateQueries({ queryKey: ["/api/repair-centers", repairCenterId, "blackouts"] });
     },
     onError: (error: any) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("auth.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -219,7 +221,7 @@ export default function RepairCenterAppointments() {
       setAppointmentDetailOpen(false);
     },
     onError: (error: any) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("auth.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -271,8 +273,8 @@ export default function RepairCenterAppointments() {
               <CalendarIcon className="h-5 w-5 sm:h-7 sm:w-7 text-white" />
             </div>
             <div>
-              <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-white tracking-tight">Appuntamenti</h1>
-              <p className="text-emerald-100">Gestisci gli appuntamenti per il ritiro dei dispositivi</p>
+              <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-white tracking-tight">{t("sidebar.items.appointments")}</h1>
+              <p className="text-emerald-100">{t("appointments.gestisciGliAppuntamentiPerIlRitiroDeiDispos")}</p>
             </div>
           </div>
         </div>
@@ -336,7 +338,7 @@ export default function RepairCenterAppointments() {
                 ) : appointmentsForSelectedDate.length === 0 ? (
                   <div className="text-center py-8 text-muted-foreground">
                     <CalendarCheck className="h-12 w-12 mx-auto mb-2 opacity-50" />
-                    <p>Nessun appuntamento in questa data</p>
+                    <p>{t("appointments.nessunAppuntamentoInQuestaData")}</p>
                   </div>
                 ) : (
                   <div className="space-y-3">
@@ -452,7 +454,7 @@ export default function RepairCenterAppointments() {
                           data-testid={`switch-day-${day.weekday}`}
                         />
                         <span className="text-sm text-muted-foreground">
-                          {day.isClosed ? "Chiuso" : "Aperto"}
+                          {day.isClosed ? "Chiuso" : t("common.open")}
                         </span>
                       </div>
 
@@ -548,7 +550,7 @@ export default function RepairCenterAppointments() {
                 </div>
               ) : !blackouts || blackouts.length === 0 ? (
                 <div className="text-center py-6 text-muted-foreground">
-                  <p>Nessuna data di chiusura programmata</p>
+                  <p>{t("appointments.nessunaDataDiChiusuraProgrammata")}</p>
                 </div>
               ) : (
                 <div className="space-y-2">
@@ -586,14 +588,14 @@ export default function RepairCenterAppointments() {
       <Dialog open={blackoutDialogOpen} onOpenChange={setBlackoutDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Aggiungi Chiusura Straordinaria</DialogTitle>
+            <DialogTitle>{t("appointments.aggiungiChiusuraStraordinaria")}</DialogTitle>
             <DialogDescription>
-              Aggiungi una data in cui il centro sarà chiuso
+              {t("appointments.addClosureDate")}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label>Data</Label>
+              <Label>{t("common.date")}</Label>
               <Input
                 type="date"
                 value={newBlackout.date}
@@ -602,7 +604,7 @@ export default function RepairCenterAppointments() {
               />
             </div>
             <div className="space-y-2">
-              <Label>Motivo (opzionale)</Label>
+              <Label>{t("common.reasonOptional")}</Label>
               <Input
                 placeholder="es. Ferie estive"
                 value={newBlackout.reason}
@@ -630,19 +632,19 @@ export default function RepairCenterAppointments() {
       <Dialog open={appointmentDetailOpen} onOpenChange={setAppointmentDetailOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Dettagli Appuntamento</DialogTitle>
+            <DialogTitle>{t("appointments.dettagliAppuntamento")}</DialogTitle>
           </DialogHeader>
           {selectedAppointment && (
             <div className="space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <Label className="text-muted-foreground">Data</Label>
+                  <Label className="text-muted-foreground">{t("common.date")}</Label>
                   <p className="font-medium">
                     {format(new Date(selectedAppointment.date), "d MMMM yyyy", { locale: it })}
                   </p>
                 </div>
                 <div>
-                  <Label className="text-muted-foreground">Orario</Label>
+                  <Label className="text-muted-foreground">{t("hr.time")}</Label>
                   <p className="font-medium">
                     {selectedAppointment.startTime} - {selectedAppointment.endTime}
                   </p>
@@ -650,7 +652,7 @@ export default function RepairCenterAppointments() {
               </div>
               
               <div>
-                <Label className="text-muted-foreground">Stato</Label>
+                <Label className="text-muted-foreground">{t("common.status")}</Label>
                 <div className="mt-1">
                   <Badge variant={statusLabels[selectedAppointment.status]?.variant || "secondary"}>
                     {statusLabels[selectedAppointment.status]?.label || selectedAppointment.status}
@@ -660,7 +662,7 @@ export default function RepairCenterAppointments() {
 
               {selectedAppointment.notes && (
                 <div>
-                  <Label className="text-muted-foreground">Note</Label>
+                  <Label className="text-muted-foreground">{t("common.note")}</Label>
                   <p className="text-sm">{selectedAppointment.notes}</p>
                 </div>
               )}

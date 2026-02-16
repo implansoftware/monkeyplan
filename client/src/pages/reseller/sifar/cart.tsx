@@ -16,6 +16,7 @@ import {
   ShoppingCart, Trash2, ArrowLeft, Package, Truck, Send, 
   Loader2, AlertTriangle, CheckCircle, Plus, Minus
 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 interface SifarStore {
   id: string;
@@ -49,6 +50,7 @@ interface SifarCourier {
 }
 
 export default function SifarCartPage() {
+  const { t } = useTranslation();
   const { toast } = useToast();
   const [, setLocation] = useLocation();
   const [selectedStoreCode, setSelectedStoreCode] = useState<string>("");
@@ -102,7 +104,7 @@ export default function SifarCartPage() {
       refetchCart();
     },
     onError: (error: Error) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -116,7 +118,7 @@ export default function SifarCartPage() {
       toast({ title: "Articolo rimosso dal carrello" });
     },
     onError: (error: Error) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -130,7 +132,7 @@ export default function SifarCartPage() {
       toast({ title: "Carrello svuotato" });
     },
     onError: (error: Error) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -205,9 +207,7 @@ export default function SifarCartPage() {
             <span>
               Ordine inviato con successo! Numero ordine: <strong>{orderResult.numeroOrdine}</strong>
             </span>
-            <Button variant="outline" size="sm" onClick={() => setOrderResult(null)}>
-              Chiudi
-            </Button>
+            <Button variant="outline" size="sm" onClick={() => setOrderResult(null)}>{t("common.close")}</Button>
           </AlertDescription>
         </Alert>
       )}
@@ -246,7 +246,7 @@ export default function SifarCartPage() {
               ) : !cart || cart.articoli.length === 0 ? (
                 <div className="text-center py-8">
                   <ShoppingCart className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                  <p className="text-muted-foreground">Il carrello è vuoto</p>
+                  <p className="text-muted-foreground">{t("shop.emptyCart")}</p>
                   <Link href="/reseller/sifar/catalog">
                     <Button variant="outline" className="mt-4">
                       Sfoglia catalogo
@@ -336,20 +336,18 @@ export default function SifarCartPage() {
           <Card>
             <CardHeader>
               <CardTitle className="flex flex-wrap items-center gap-2">
-                <Truck className="h-5 w-5" />
-                Riepilogo Ordine
-              </CardTitle>
+                <Truck className="h-5 w-5" />{t("shop.orderSummary")}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
-                <Label>Corriere</Label>
+                <Label>{t("shipping.carrier")}</Label>
                 <Select 
                   value={selectedCourier} 
                   onValueChange={setSelectedCourier}
                   disabled={loadingCouriers || !cart || cart.articoli.length === 0}
                 >
                   <SelectTrigger data-testid="select-courier">
-                    <SelectValue placeholder={loadingCouriers ? "Caricamento..." : "Seleziona corriere"} />
+                    <SelectValue placeholder={loadingCouriers ? t("common.loading") : "Seleziona corriere"} />
                   </SelectTrigger>
                   <SelectContent>
                     {couriers.filter(c => c.disponibile).map(courier => (
@@ -365,16 +363,16 @@ export default function SifarCartPage() {
 
               <div className="space-y-2">
                 <div className="flex justify-between text-sm">
-                  <span>Subtotale</span>
+                  <span>{t("common.subtotal")}</span>
                   <span>{cart ? formatPrice(cart.totale * 100) : "€ 0,00"}</span>
                 </div>
                 <div className="flex justify-between text-sm">
-                  <span>IVA</span>
+                  <span>{t("common.vat")}</span>
                   <span>{cart ? formatPrice((cart.totaleIvato - cart.totale) * 100) : "€ 0,00"}</span>
                 </div>
                 <Separator />
                 <div className="flex justify-between font-bold text-lg">
-                  <span>Totale</span>
+                  <span>{t("common.total")}</span>
                   <span>{cart ? formatPrice(cart.totaleIvato * 100) : "€ 0,00"}</span>
                 </div>
               </div>
@@ -407,7 +405,7 @@ export default function SifarCartPage() {
       <Dialog open={showConfirmOrder} onOpenChange={setShowConfirmOrder}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Conferma Ordine</DialogTitle>
+            <DialogTitle>{t("shop.placeOrder")}</DialogTitle>
             <DialogDescription>
               Stai per inviare un ordine a SIFAR. Questa azione non può essere annullata.
             </DialogDescription>
@@ -430,9 +428,7 @@ export default function SifarCartPage() {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowConfirmOrder(false)}>
-              Annulla
-            </Button>
+            <Button variant="outline" onClick={() => setShowConfirmOrder(false)}>{t("common.cancel")}</Button>
             <Button
               onClick={() => submitOrderMutation.mutate()}
               disabled={submitOrderMutation.isPending}

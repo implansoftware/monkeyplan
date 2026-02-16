@@ -33,6 +33,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { format, differenceInDays } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
 import { EntityFilterSelector, EntityType, useEntityFilter } from "@/components/hr/entity-filter-selector";
+import { useTranslation } from "react-i18next";
 
 interface SickLeave {
   id: string;
@@ -59,6 +60,7 @@ const statusLabels: Record<string, { label: string; variant: "default" | "second
 };
 
 export default function HrSickLeave() {
+  const { t } = useTranslation();
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
@@ -146,7 +148,7 @@ export default function HrSickLeave() {
       setNewSickLeave({ userId: "", startDate: "", endDate: "", certificateNumber: "", inpsProtocol: "", notes: "" });
     },
     onError: (error: any) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     }
   });
 
@@ -161,7 +163,7 @@ export default function HrSickLeave() {
       toast({ title: "Malattia modificata", description: "Le modifiche sono state salvate." });
     },
     onError: (error: any) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     }
   });
 
@@ -172,10 +174,10 @@ export default function HrSickLeave() {
     onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: ["/api/reseller/hr/sick-leaves"] });
       const statusLabel = variables.status === 'confirmed' ? 'confermata' : 'chiusa';
-      toast({ title: "Stato aggiornato", description: `Malattia ${statusLabel} con successo.` });
+      toast({ title: t("tickets.statusUpdated"), description: `Malattia ${statusLabel} con successo.` });
     },
     onError: (error: any) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     }
   });
 
@@ -211,7 +213,7 @@ export default function HrSickLeave() {
                 <Thermometer className="h-6 w-6 text-white" />
               </div>
               <div>
-                <h1 className="text-2xl font-bold text-white" data-testid="text-sick-leave-title">Gestione Malattie</h1>
+                <h1 className="text-2xl font-bold text-white" data-testid="text-sick-leave-title">{t("hr.sickLeaveManagement")}</h1>
                 <p className="text-white/80">Certificati e comunicazioni di malattia</p>
               </div>
             </div>
@@ -274,10 +276,10 @@ export default function HrSickLeave() {
             <Select value={statusFilter} onValueChange={setStatusFilter}>
               <SelectTrigger className="w-40" data-testid="select-status-filter">
                 <Filter className="h-4 w-4 mr-2" />
-                <SelectValue placeholder="Stato" />
+                <SelectValue placeholder={t("common.status")} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">Tutti</SelectItem>
+                <SelectItem value="all">{t("common.allMasc")}</SelectItem>
                 <SelectItem value="pending">In Corso</SelectItem>
                 <SelectItem value="confirmed">Confermate</SelectItem>
                 <SelectItem value="closed">Concluse</SelectItem>
@@ -293,21 +295,21 @@ export default function HrSickLeave() {
           ) : filteredSickLeaves.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">
               <Thermometer className="h-12 w-12 mx-auto mb-3 opacity-50" />
-              <p>Nessuna malattia registrata</p>
+              <p>{t("hr.noSickLeave")}</p>
             </div>
           ) : (
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Dipendente</TableHead>
-                  <TableHead>Data Inizio</TableHead>
-                  <TableHead>Data Fine</TableHead>
+                  <TableHead>{t("hr.employee")}</TableHead>
+                  <TableHead>{t("common.startDate")}</TableHead>
+                  <TableHead>{t("common.endDate")}</TableHead>
                   <TableHead>Giorni</TableHead>
                   <TableHead>N. Certificato</TableHead>
                   <TableHead>Protocollo INPS</TableHead>
-                  <TableHead>Certificato</TableHead>
-                  <TableHead>Stato</TableHead>
-                  <TableHead>Azioni</TableHead>
+                  <TableHead>{t("hr.certificate")}</TableHead>
+                  <TableHead>{t("common.status")}</TableHead>
+                  <TableHead>{t("common.actions")}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -346,7 +348,7 @@ export default function HrSickLeave() {
                                   const data = await response.json();
                                   window.open(data.downloadUrl, '_blank');
                                 } catch (error: any) {
-                                  toast({ title: "Errore", description: error.message, variant: "destructive" });
+                                  toast({ title: t("common.error"), description: error.message, variant: "destructive" });
                                 }
                               }}
                               data-testid={`button-download-certificate-${sl.id}`}
@@ -372,7 +374,7 @@ export default function HrSickLeave() {
                               variant="ghost"
                               className="h-8 w-8 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
                               onClick={() => openEditDialog(sl)}
-                              title="Modifica"
+                              title={t("common.edit")}
                               data-testid={`button-edit-${sl.id}`}
                             >
                               <Pencil className="h-4 w-4" />
@@ -436,7 +438,7 @@ export default function HrSickLeave() {
           </DialogHeader>
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label>Dipendente</Label>
+              <Label>{t("hr.employee")}</Label>
               <Select
                 value={newSickLeave.userId}
                 onValueChange={(value) => setNewSickLeave({ ...newSickLeave, userId: value })}
@@ -455,7 +457,7 @@ export default function HrSickLeave() {
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label>Data Inizio</Label>
+                <Label>{t("common.startDate")}</Label>
                 <Input
                   type="date"
                   value={newSickLeave.startDate}
@@ -496,7 +498,7 @@ export default function HrSickLeave() {
               <Textarea
                 value={newSickLeave.notes}
                 onChange={(e) => setNewSickLeave({ ...newSickLeave, notes: e.target.value })}
-                placeholder="Note aggiuntive..."
+                placeholder={t("utility.additionalNotes")}
                 data-testid="input-notes"
               />
             </div>
@@ -540,7 +542,7 @@ export default function HrSickLeave() {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDialogOpen(false)}>Annulla</Button>
+            <Button variant="outline" onClick={() => setDialogOpen(false)}>{t("common.cancel")}</Button>
             <Button 
               onClick={() => createMutation.mutate(newSickLeave)}
               disabled={!newSickLeave.userId || !newSickLeave.startDate || createMutation.isPending || uploadingCertificate}
@@ -567,13 +569,13 @@ export default function HrSickLeave() {
       <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Modifica Malattia</DialogTitle>
+            <DialogTitle>{t("hr.editSickLeave")}</DialogTitle>
             <DialogDescription>Modifica i dati della malattia di {editingSickLeave?.user?.fullName}</DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label>Data Inizio</Label>
+                <Label>{t("common.startDate")}</Label>
                 <Input
                   type="date"
                   value={editForm.startDate}
@@ -610,11 +612,11 @@ export default function HrSickLeave() {
               <Textarea
                 value={editForm.notes}
                 onChange={(e) => setEditForm({ ...editForm, notes: e.target.value })}
-                placeholder="Note aggiuntive..."
+                placeholder={t("utility.additionalNotes")}
               />
             </div>
             <div className="space-y-2">
-              <Label>Stato</Label>
+              <Label>{t("common.status")}</Label>
               <Select value={editForm.status} onValueChange={(v) => setEditForm({ ...editForm, status: v })}>
                 <SelectTrigger data-testid="select-edit-status">
                   <SelectValue />
@@ -628,13 +630,13 @@ export default function HrSickLeave() {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setEditDialogOpen(false)}>Annulla</Button>
+            <Button variant="outline" onClick={() => setEditDialogOpen(false)}>{t("common.cancel")}</Button>
             <Button 
               onClick={() => editingSickLeave && editMutation.mutate({ id: editingSickLeave.id, data: editForm })}
               disabled={!editForm.startDate || editMutation.isPending}
               data-testid="button-save-sick-edit"
             >
-              {editMutation.isPending ? "Salvataggio..." : "Salva Modifiche"}
+              {editMutation.isPending ? t("profile.saving") : t("profile.saveChanges")}
             </Button>
           </DialogFooter>
         </DialogContent>

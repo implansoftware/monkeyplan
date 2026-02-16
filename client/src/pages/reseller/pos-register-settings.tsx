@@ -25,6 +25,7 @@ import {
 import { Link } from "wouter";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
+import { useTranslation } from "react-i18next";
 
 interface PosRegister {
   id: string;
@@ -54,7 +55,7 @@ interface PaymentConfigResponse {
 }
 
 const PAYMENT_METHODS = [
-  { value: "cash", label: "Contanti", alwaysEnabled: true },
+  { value: "cash", label: t("pos.cash"), alwaysEnabled: true },
   { value: "card", label: "Carta (POS fisico)" },
   { value: "stripe_link", label: "Stripe Payment Link", requiresConfig: "stripeEnabled" },
   { value: "paypal", label: "PayPal", requiresConfig: "paypalEnabled" },
@@ -63,6 +64,7 @@ const PAYMENT_METHODS = [
 ];
 
 export default function ResellerPosRegisterSettingsPage() {
+  const { t } = useTranslation();
   const { id } = useParams<{ id: string }>();
   const [, navigate] = useLocation();
   const { toast } = useToast();
@@ -112,10 +114,10 @@ export default function ResellerPosRegisterSettingsPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/reseller/pos/registers"] });
       queryClient.invalidateQueries({ queryKey: ["/api/reseller/pos/registers", id] });
-      toast({ title: "Impostazioni salvate", description: "Le impostazioni della cassa sono state aggiornate" });
+      toast({ title: t("settings.saved"), description: "Le impostazioni della cassa sono state aggiornate" });
     },
     onError: (error: any) => {
-      toast({ title: "Errore", description: error.message || "Errore nel salvataggio", variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message || "Errore nel salvataggio", variant: "destructive" });
     },
   });
 
@@ -245,9 +247,7 @@ export default function ResellerPosRegisterSettingsPage() {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Printer className="h-5 w-5" />
-              Stampa
-            </CardTitle>
+              <Printer className="h-5 w-5" />{t("common.print")}</CardTitle>
             <CardDescription>
               Configura le opzioni di stampa per questa cassa
             </CardDescription>
@@ -272,9 +272,7 @@ export default function ResellerPosRegisterSettingsPage() {
 
         <div className="flex justify-end gap-3">
           <Link href="/reseller/pos/registers">
-            <Button variant="outline" data-testid="button-cancel">
-              Annulla
-            </Button>
+            <Button variant="outline" data-testid="button-cancel">{t("common.cancel")}</Button>
           </Link>
           <Button 
             onClick={handleSave}
@@ -283,14 +281,10 @@ export default function ResellerPosRegisterSettingsPage() {
           >
             {updateMutation.isPending ? (
               <>
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                Salvataggio...
-              </>
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />{t("profile.saving")}</>
             ) : (
               <>
-                <Save className="h-4 w-4 mr-2" />
-                Salva Impostazioni
-              </>
+                <Save className="h-4 w-4 mr-2" />{t("settings.save")}</>
             )}
           </Button>
         </div>

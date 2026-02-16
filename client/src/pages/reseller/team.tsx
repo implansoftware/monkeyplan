@@ -20,15 +20,16 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { useTranslation } from "react-i18next";
 
 const MODULES = [
   { id: "repairs", name: "Lavorazioni", description: "Gestione riparazioni e ordini" },
-  { id: "customers", name: "Clienti", description: "Anagrafica clienti" },
+  { id: "customers", name: t("customers.title"), description: "Anagrafica clienti" },
   { id: "products", name: "Prodotti", description: "Catalogo prodotti e ricambi" },
   { id: "inventory", name: "Magazzino", description: "Gestione inventario" },
-  { id: "repair_centers", name: "Centri Riparazione", description: "Gestione centri" },
-  { id: "services", name: "Servizi", description: "Catalogo servizi" },
-  { id: "suppliers", name: "Fornitori", description: "Gestione fornitori" },
+  { id: "repair_centers", name: t("sidebar.items.repairCentersShort"), description: "Gestione centri" },
+  { id: "services", name: t("utility.services"), description: "Catalogo servizi" },
+  { id: "suppliers", name: t("suppliers.title"), description: "Gestione fornitori" },
   { id: "supplier_orders", name: "Ordini Fornitori", description: "Ordini ai fornitori" },
   { id: "appointments", name: "Appuntamenti", description: "Gestione appuntamenti" },
   { id: "invoices", name: "Fatture", description: "Fatturazione" },
@@ -38,7 +39,7 @@ const MODULES = [
 const PERMISSION_ACTIONS = [
   { id: "canRead", label: "Lettura", icon: Eye },
   { id: "canCreate", label: "Creazione", icon: FilePlus },
-  { id: "canUpdate", label: "Modifica", icon: Pencil },
+  { id: "canUpdate", label: t("common.edit"), icon: Pencil },
   { id: "canDelete", label: "Eliminazione", icon: Trash2 },
 ];
 
@@ -93,6 +94,7 @@ type FilterType = "all" | "active" | "inactive";
 type EntityType = "own" | "sub-reseller" | "repair-center";
 
 export default function ResellerTeam() {
+  const { t } = useTranslation();
   const [searchQuery, setSearchQuery] = useState("");
   const [activeFilter, setActiveFilter] = useState<FilterType>("all");
   const [entityType, setEntityType] = useState<EntityType>("own");
@@ -194,7 +196,7 @@ export default function ResellerTeam() {
     },
     onError: (error: any) => {
       toast({
-        title: "Errore",
+        title: t("common.error"),
         description: error.message || "Impossibile creare il membro staff",
         variant: "destructive",
       });
@@ -222,7 +224,7 @@ export default function ResellerTeam() {
     },
     onError: (error: any) => {
       toast({
-        title: "Errore",
+        title: t("common.error"),
         description: error.message || "Impossibile aggiornare",
         variant: "destructive",
       });
@@ -244,7 +246,7 @@ export default function ResellerTeam() {
     },
     onError: (error: any) => {
       toast({
-        title: "Errore",
+        title: t("common.error"),
         description: error.message || "Impossibile eliminare",
         variant: "destructive",
       });
@@ -266,7 +268,7 @@ export default function ResellerTeam() {
     },
     onError: (error: any) => {
       toast({
-        title: "Errore",
+        title: t("common.error"),
         description: error.message || "Impossibile reimpostare la password",
         variant: "destructive",
       });
@@ -542,7 +544,7 @@ export default function ResellerTeam() {
                     <SelectItem value="sub-reseller">
                       <div className="flex flex-wrap items-center gap-2">
                         <Store className="h-4 w-4" />
-                        <span>Sub-Reseller</span>
+                        <span>{t("roles.subReseller")}</span>
                       </div>
                     </SelectItem>
                   )}
@@ -550,7 +552,7 @@ export default function ResellerTeam() {
                     <SelectItem value="repair-center">
                       <div className="flex flex-wrap items-center gap-2">
                         <Building2 className="h-4 w-4" />
-                        <span>Centro Riparazione</span>
+                        <span>{t("roles.repairCenter")}</span>
                       </div>
                     </SelectItem>
                   )}
@@ -617,9 +619,7 @@ export default function ResellerTeam() {
                   size="sm"
                   className="h-7 text-xs px-3"
                   onClick={() => setActiveFilter("all")}
-                >
-                  Tutti
-                  <Badge variant="secondary" className="ml-1.5 h-4 px-1 text-[10px]">{staffMembers.length}</Badge>
+                >{t("common.allMasc")}<Badge variant="secondary" className="ml-1.5 h-4 px-1 text-[10px]">{staffMembers.length}</Badge>
                 </Button>
                 <Button
                   variant={activeFilter === "active" ? "default" : "ghost"}
@@ -682,11 +682,11 @@ export default function ResellerTeam() {
                 <TableHeader>
                   <TableRow className="hover:bg-transparent bg-muted/50">
                     <TableHead className="pl-6 w-[200px]">Collaboratore</TableHead>
-                    <TableHead>Contatti</TableHead>
-                    <TableHead className="text-center">Stato</TableHead>
+                    <TableHead>{t("common.contacts")}</TableHead>
+                    <TableHead className="text-center">{t("common.status")}</TableHead>
                     <TableHead className="text-center">Permessi</TableHead>
                     <TableHead>Centri Assegnati</TableHead>
-                    <TableHead className="pr-6 text-right">Azioni</TableHead>
+                    <TableHead className="pr-6 text-right">{t("common.actions")}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -726,11 +726,9 @@ export default function ResellerTeam() {
                       </TableCell>
                       <TableCell className="text-center">
                         {member.isActive ? (
-                          <Badge className="bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-0 font-normal">
-                            Attivo
-                          </Badge>
+                          <Badge className="bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-0 font-normal">{t("common.active")}</Badge>
                         ) : (
-                          <Badge variant="secondary" className="font-normal">Inattivo</Badge>
+                          <Badge variant="secondary" className="font-normal">{t("common.inactive")}</Badge>
                         )}
                       </TableCell>
                       <TableCell className="text-center">
@@ -775,7 +773,7 @@ export default function ResellerTeam() {
                                 size="icon"
                                 className="h-8 w-8"
                                 onClick={() => openEditDialog(member)}
-                                title="Modifica"
+                                title={t("common.edit")}
                                 data-testid={`button-edit-${member.id}`}
                               >
                                 <Edit className="h-4 w-4" />
@@ -802,7 +800,7 @@ export default function ResellerTeam() {
                                   setSelectedMember(member);
                                   setDeleteDialogOpen(true);
                                 }}
-                                title="Elimina"
+                                title={t("common.delete")}
                                 data-testid={`button-delete-${member.id}`}
                               >
                                 <Trash2 className="h-4 w-4" />
@@ -868,7 +866,7 @@ export default function ResellerTeam() {
                   name="email"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Email</FormLabel>
+                      <FormLabel>{t("common.email")}</FormLabel>
                       <FormControl>
                         <Input {...field} type="email" placeholder="mario@esempio.it" data-testid="input-email" />
                       </FormControl>
@@ -1011,11 +1009,9 @@ export default function ResellerTeam() {
               )}
 
               <DialogFooter>
-                <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>
-                  Annulla
-                </Button>
+                <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>{t("common.cancel")}</Button>
                 <Button type="submit" disabled={createMutation.isPending || updateMutation.isPending}>
-                  {createMutation.isPending || updateMutation.isPending ? "Salvataggio..." : isEditing ? "Salva Modifiche" : "Crea Collaboratore"}
+                  {createMutation.isPending || updateMutation.isPending ? t("profile.saving") : isEditing ? t("profile.saveChanges") : "Crea Collaboratore"}
                 </Button>
               </DialogFooter>
             </form>
@@ -1096,11 +1092,9 @@ export default function ResellerTeam() {
 
           <div className="p-6 pt-0 border-t bg-muted/30">
             <DialogFooter className="pt-4">
-              <Button variant="outline" onClick={() => setPermissionsDialogOpen(false)}>
-                Annulla
-              </Button>
+              <Button variant="outline" onClick={() => setPermissionsDialogOpen(false)}>{t("common.cancel")}</Button>
               <Button onClick={handleSavePermissions} disabled={updateMutation.isPending} className="shadow-lg shadow-primary/25">
-                {updateMutation.isPending ? "Salvataggio..." : "Salva Permessi"}
+                {updateMutation.isPending ? t("profile.saving") : "Salva Permessi"}
               </Button>
             </DialogFooter>
           </div>
@@ -1118,15 +1112,13 @@ export default function ResellerTeam() {
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>
-              Annulla
-            </Button>
+            <Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>{t("common.cancel")}</Button>
             <Button
               variant="destructive"
               onClick={() => selectedMember && deleteMutation.mutate(selectedMember.id)}
               disabled={deleteMutation.isPending}
             >
-              {deleteMutation.isPending ? "Eliminazione..." : "Elimina"}
+              {deleteMutation.isPending ? t("pages.deleting") : t("common.delete")}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -1155,14 +1147,12 @@ export default function ResellerTeam() {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setResetPasswordDialogOpen(false)}>
-              Annulla
-            </Button>
+            <Button variant="outline" onClick={() => setResetPasswordDialogOpen(false)}>{t("common.cancel")}</Button>
             <Button
               onClick={() => selectedMember && resetPasswordMutation.mutate({ id: selectedMember.id, newPassword })}
               disabled={resetPasswordMutation.isPending || newPassword.length < 6}
             >
-              {resetPasswordMutation.isPending ? "Salvataggio..." : "Reimposta Password"}
+              {resetPasswordMutation.isPending ? t("profile.saving") : "Reimposta Password"}
             </Button>
           </DialogFooter>
         </DialogContent>

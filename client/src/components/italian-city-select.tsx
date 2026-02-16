@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import { Check, ChevronsUpDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -47,11 +48,13 @@ interface ItalianCitySelectProps {
 export function ItalianCitySelect({
   value,
   onChange,
-  placeholder = "Seleziona città...",
+  placeholder,
   className,
   id,
   "data-testid": testId = "select-city",
 }: ItalianCitySelectProps) {
+  const { t } = useTranslation();
+  const resolvedPlaceholder = placeholder || t("form.selectCity");
   const [open, setOpen] = useState(false);
   const [inputValue, setInputValue] = useState("");
 
@@ -74,20 +77,20 @@ export function ItalianCitySelect({
           id={id}
           data-testid={testId}
         >
-          {value || placeholder}
+          {value || resolvedPlaceholder}
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-[300px] p-0" align="start">
         <Command shouldFilter={false}>
           <CommandInput
-            placeholder="Cerca città..."
+            placeholder={t("form.searchCity")}
             value={inputValue}
             onValueChange={setInputValue}
             data-testid={`${testId}-input`}
           />
           <CommandList>
-            <CommandEmpty>Nessuna città trovata.</CommandEmpty>
+            <CommandEmpty>{t("form.noCityFound")}</CommandEmpty>
             <CommandGroup>
               {filteredCities.slice(0, 20).map((city) => (
                 <CommandItem

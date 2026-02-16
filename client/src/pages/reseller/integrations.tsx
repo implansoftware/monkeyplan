@@ -25,6 +25,7 @@ import fonedayLogo from "@/assets/logos/foneday.png";
 import mobilesentrixLogo from "@/assets/logos/mobilesentrix.png";
 import trovausatiLogo from "@/assets/logos/trovausati.png";
 import sibillLogo from "@/assets/logos/sibill.png";
+import { useTranslation } from "react-i18next";
 
 interface IntegrationSummary {
   code: string;
@@ -108,7 +109,7 @@ function IntegrationCard({ integration }: { integration: IntegrationSummary }) {
       }
     },
     onError: (error: Error) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -131,10 +132,10 @@ function IntegrationCard({ integration }: { integration: IntegrationSummary }) {
       return <Badge variant="secondary" className="gap-1"><XCircle className="h-3 w-3" /> Disattiva</Badge>;
     }
     if (integration.lastTestStatus === "success") {
-      return <Badge className="gap-1 bg-green-500/10 text-green-600 dark:text-green-400 hover:bg-green-500/20"><CheckCircle className="h-3 w-3" /> Attiva</Badge>;
+      return <Badge className="gap-1 bg-green-500/10 text-green-600 dark:text-green-400 hover:bg-green-500/20"><CheckCircle className="h-3 w-3" />{t("license.active")}</Badge>;
     }
     if (integration.lastTestStatus === "error") {
-      return <Badge variant="destructive" className="gap-1"><XCircle className="h-3 w-3" /> Errore</Badge>;
+      return <Badge variant="destructive" className="gap-1"><XCircle className="h-3 w-3" />{t("common.error")}</Badge>;
     }
     return <Badge variant="outline" className="gap-1"><Clock className="h-3 w-3" /> Da testare</Badge>;
   };
@@ -190,7 +191,7 @@ function IntegrationCard({ integration }: { integration: IntegrationSummary }) {
           <Link href={integration.settingsUrl}>
             <Button variant="outline" size="sm" data-testid={`button-settings-${integration.code}`}>
               <Settings className="h-4 w-4 mr-1" />
-              {integration.isConfigured ? "Impostazioni" : "Configura"}
+              {integration.isConfigured ? t("settings.title") : "Configura"}
             </Button>
           </Link>
 
@@ -199,17 +200,13 @@ function IntegrationCard({ integration }: { integration: IntegrationSummary }) {
               {integration.catalogUrl && (
                 <Link href={integration.catalogUrl}>
                   <Button variant="outline" size="sm" data-testid={`button-catalog-${integration.code}`}>
-                    <Package className="h-4 w-4 mr-1" />
-                    Catalogo
-                  </Button>
+                    <Package className="h-4 w-4 mr-1" />{t("shop.catalog")}</Button>
                 </Link>
               )}
               {integration.cartUrl && (
                 <Link href={integration.cartUrl}>
                   <Button variant="outline" size="sm" data-testid={`button-cart-${integration.code}`}>
-                    <ShoppingCart className="h-4 w-4 mr-1" />
-                    Carrello
-                  </Button>
+                    <ShoppingCart className="h-4 w-4 mr-1" />{t("pos.cart")}</Button>
                 </Link>
               )}
               <Button 
@@ -235,6 +232,7 @@ function IntegrationCard({ integration }: { integration: IntegrationSummary }) {
 }
 
 export default function IntegrationsPage() {
+  const { t } = useTranslation();
   const { data: integrations, isLoading, refetch, isRefetching } = useQuery<IntegrationSummary[]>({
     queryKey: ["/api/reseller/integrations/summary"],
   });
@@ -279,7 +277,7 @@ export default function IntegrationsPage() {
               <Plug className="h-6 w-6 text-white" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold tracking-tight text-white">Integrazioni</h1>
+              <h1 className="text-2xl font-bold tracking-tight text-white">{t("settings.integrations")}</h1>
               <p className="text-sm text-white/80">
                 Gestisci tutte le integrazioni con fornitori e servizi esterni
               </p>
@@ -298,9 +296,7 @@ export default function IntegrationsPage() {
               className="bg-white/10 border-white/30 text-white"
               data-testid="button-refresh-integrations"
             >
-              <RefreshCcw className={`h-4 w-4 mr-1 ${isRefetching ? "animate-spin" : ""}`} />
-              Aggiorna
-            </Button>
+              <RefreshCcw className={`h-4 w-4 mr-1 ${isRefetching ? "animate-spin" : ""}`} />{t("common.update")}</Button>
           </div>
         </div>
       </div>
@@ -325,7 +321,7 @@ export default function IntegrationsPage() {
 
       <Card className="rounded-2xl">
         <CardHeader>
-          <CardTitle className="text-base">Informazioni</CardTitle>
+          <CardTitle className="text-base">{t("common.information")}</CardTitle>
         </CardHeader>
         <CardContent className="text-sm text-muted-foreground space-y-2">
           <p>

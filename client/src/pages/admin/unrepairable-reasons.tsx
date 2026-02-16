@@ -71,8 +71,10 @@ function getIconComponent(iconName: string | null | undefined): LucideIcon | nul
   return found?.icon || null;
 }
 import type { UnrepairableReason, DeviceType } from "@shared/schema";
+import { useTranslation } from "react-i18next";
 
 export default function AdminUnrepairableReasons() {
+  const { t } = useTranslation();
   const { toast } = useToast();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingReason, setEditingReason] = useState<UnrepairableReason | null>(null);
@@ -114,11 +116,11 @@ export default function AdminUnrepairableReasons() {
     },
     onSuccess: () => {
       invalidateReasonQueries();
-      toast({ title: "Motivo creato", description: "Il motivo è stato aggiunto con successo" });
+      toast({ title: t("repairs.reasonCreated"), description: t("repairs.reasonCreatedDesc") });
       closeDialog();
     },
     onError: (error: any) => {
-      toast({ variant: "destructive", title: "Errore", description: error.message });
+      toast({ variant: "destructive", title: t("common.error"), description: error.message });
     },
   });
 
@@ -131,11 +133,11 @@ export default function AdminUnrepairableReasons() {
     },
     onSuccess: () => {
       invalidateReasonQueries();
-      toast({ title: "Motivo aggiornato", description: "Le modifiche sono state salvate" });
+      toast({ title: "Motivo aggiornato", description: t("common.savedSuccessfully") });
       closeDialog();
     },
     onError: (error: any) => {
-      toast({ variant: "destructive", title: "Errore", description: error.message });
+      toast({ variant: "destructive", title: t("common.error"), description: error.message });
     },
   });
 
@@ -147,7 +149,7 @@ export default function AdminUnrepairableReasons() {
       invalidateReasonQueries();
     },
     onError: (error: any) => {
-      toast({ variant: "destructive", title: "Errore", description: error.message });
+      toast({ variant: "destructive", title: t("common.error"), description: error.message });
     },
   });
 
@@ -157,10 +159,10 @@ export default function AdminUnrepairableReasons() {
     },
     onSuccess: () => {
       invalidateReasonQueries();
-      toast({ title: "Motivo eliminato", description: "Il motivo è stato rimosso" });
+      toast({ title: t("repairs.reasonDeleted"), description: t("repairs.reasonDeletedDesc") });
     },
     onError: (error: any) => {
-      toast({ variant: "destructive", title: "Errore", description: error.message });
+      toast({ variant: "destructive", title: t("common.error"), description: error.message });
     },
   });
 
@@ -197,7 +199,7 @@ export default function AdminUnrepairableReasons() {
 
   const handleSubmit = () => {
     if (!formData.name.trim()) {
-      toast({ variant: "destructive", title: "Errore", description: "Il nome è obbligatorio" });
+      toast({ variant: "destructive", title: t("common.error"), description: "Il nome è obbligatorio" });
       return;
     }
     if (editingReason) {
@@ -267,10 +269,10 @@ export default function AdminUnrepairableReasons() {
               onValueChange={(v) => setFilterDeviceTypeId(v === "_all" ? "" : v)}
             >
               <SelectTrigger className="w-full sm:w-[200px]" data-testid="filter-device-type">
-                <SelectValue placeholder="Tutti i tipi" />
+                <SelectValue placeholder={t("common.allTypes")} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="_all">Tutti i tipi</SelectItem>
+                <SelectItem value="_all">{t("common.allTypes")}</SelectItem>
                 {deviceTypes.map((dt) => (
                   <SelectItem key={dt.id} value={dt.id}>
                     {dt.name}
@@ -286,11 +288,11 @@ export default function AdminUnrepairableReasons() {
               <TableRow>
                 <TableHead className="w-12">#</TableHead>
                 <TableHead className="w-16">Icona</TableHead>
-                <TableHead>Nome</TableHead>
-                <TableHead>Descrizione</TableHead>
-                <TableHead>Tipo Dispositivo</TableHead>
-                <TableHead>Attivo</TableHead>
-                <TableHead className="text-right">Azioni</TableHead>
+                <TableHead>{t("common.name")}</TableHead>
+                <TableHead>{t("common.description")}</TableHead>
+                <TableHead>{t("products.deviceType")}</TableHead>
+                <TableHead>{t("common.active")}</TableHead>
+                <TableHead className="text-right">{t("common.actions")}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -316,7 +318,7 @@ export default function AdminUnrepairableReasons() {
                     {reason.deviceTypeId ? (
                       <Badge variant="outline">{getDeviceTypeName(reason.deviceTypeId)}</Badge>
                     ) : (
-                      <Badge variant="secondary">Universale</Badge>
+                      <Badge variant="secondary">{t("products.universal")}</Badge>
                     )}
                   </TableCell>
                   <TableCell>
@@ -375,7 +377,7 @@ export default function AdminUnrepairableReasons() {
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label htmlFor="name">Nome *</Label>
+              <Label htmlFor="name">{t("common.name")} *</Label>
               <Input
                 id="name"
                 value={formData.name}
@@ -385,7 +387,7 @@ export default function AdminUnrepairableReasons() {
               />
             </div>
             <div className="space-y-2">
-              <Label>Icona</Label>
+              <Label>{t("utility.icon")}</Label>
               <div className="grid grid-cols-6 gap-2 p-3 border rounded-md max-h-48 overflow-y-auto">
                 <button
                   type="button"
@@ -398,7 +400,7 @@ export default function AdminUnrepairableReasons() {
                   data-testid="button-icon-none"
                 >
                   <CircleSlash className="h-5 w-5" />
-                  <span>Nessuna</span>
+                  <span>{t("common.none")}</span>
                 </button>
                 {AVAILABLE_ICONS.map((iconItem) => {
                   const IconComp = iconItem.icon;
@@ -422,24 +424,24 @@ export default function AdminUnrepairableReasons() {
               </div>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="description">Descrizione</Label>
+              <Label htmlFor="description">{t("common.description")}</Label>
               <Textarea
                 id="description"
                 value={formData.description}
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                placeholder="Descrizione opzionale del motivo..."
+                placeholder={t("settings.optionalReasonDesc")}
                 rows={2}
                 data-testid="textarea-reason-description"
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="deviceType">Tipo Dispositivo</Label>
+              <Label htmlFor="deviceType">{t("products.deviceType")}</Label>
               <Select
                 value={formData.deviceTypeId || "_universal"}
                 onValueChange={(v) => setFormData({ ...formData, deviceTypeId: v === "_universal" ? "" : v })}
               >
                 <SelectTrigger data-testid="select-device-type">
-                  <SelectValue placeholder="Universale (tutti i dispositivi)" />
+                  <SelectValue placeholder={t("settings.universalAllDevices")} />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="_universal">Universale (tutti i dispositivi)</SelectItem>
@@ -456,7 +458,7 @@ export default function AdminUnrepairableReasons() {
               </p>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="sortOrder">Ordine di visualizzazione</Label>
+              <Label htmlFor="sortOrder">{t("settings.displayOrder")}</Label>
               <Input
                 id="sortOrder"
                 type="number"
@@ -472,7 +474,7 @@ export default function AdminUnrepairableReasons() {
                 onCheckedChange={(checked) => setFormData({ ...formData, isActive: checked })}
                 data-testid="switch-is-active"
               />
-              <Label htmlFor="isActive">Attivo</Label>
+              <Label htmlFor="isActive">{t("common.active")}</Label>
             </div>
           </div>
           <DialogFooter>

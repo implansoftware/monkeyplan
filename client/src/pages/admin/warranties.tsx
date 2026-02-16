@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Loader2, Shield, Search, Calendar, AlertTriangle, CheckCircle2, XCircle, Clock, User, Smartphone, Store } from "lucide-react";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
+import { useTranslation } from "react-i18next";
 
 type AdminWarrantyItem = {
   id: string;
@@ -61,6 +62,7 @@ function getDaysRemainingBadge(daysRemaining: number | null, status: string) {
 }
 
 export default function AdminWarranties() {
+  const { t } = useTranslation();
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
 
@@ -165,7 +167,7 @@ export default function AdminWarranties() {
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder="Cerca per cliente, rivenditore, ordine, prodotto, dispositivo..."
+            placeholder={t("products.searchProduct")}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="pl-9"
@@ -174,14 +176,14 @@ export default function AdminWarranties() {
         </div>
         <Select value={statusFilter} onValueChange={setStatusFilter}>
           <SelectTrigger className="w-full sm:w-[180px]" data-testid="select-admin-status-filter">
-            <SelectValue placeholder="Filtra per stato" />
+            <SelectValue placeholder={t("common.filterByStatus")} />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">Tutti gli stati</SelectItem>
-            <SelectItem value="offered">In Attesa</SelectItem>
-            <SelectItem value="accepted">Attiva</SelectItem>
-            <SelectItem value="declined">Rifiutata</SelectItem>
-            <SelectItem value="expired">Scaduta</SelectItem>
+            <SelectItem value="all">{t("repairs.allStatuses")}</SelectItem>
+            <SelectItem value="offered">{t("common.pending")}</SelectItem>
+            <SelectItem value="accepted">{t("common.active")}</SelectItem>
+            <SelectItem value="declined">{t("common.rejected")}</SelectItem>
+            <SelectItem value="expired">{t("license.expired")}</SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -232,14 +234,14 @@ export default function AdminWarranties() {
                         <div className="flex items-center gap-2">
                           <User className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
                           <div className="min-w-0">
-                            <p className="text-muted-foreground">Cliente</p>
+                            <p className="text-muted-foreground">{t("common.customer")}</p>
                             <p className="font-medium truncate">{w.customerName}</p>
                           </div>
                         </div>
                         <div className="flex items-center gap-2">
                           <Store className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
                           <div className="min-w-0">
-                            <p className="text-muted-foreground">Rivenditore</p>
+                            <p className="text-muted-foreground">{t("roles.reseller")}</p>
                             <p className="font-medium truncate">{w.sellerName}</p>
                             <p className="text-muted-foreground truncate">{sellerTypeLabels[w.sellerType] || w.sellerType}</p>
                           </div>
@@ -247,7 +249,7 @@ export default function AdminWarranties() {
                         <div className="flex items-center gap-2">
                           <Smartphone className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
                           <div className="min-w-0">
-                            <p className="text-muted-foreground">Dispositivo</p>
+                            <p className="text-muted-foreground">{t("repairs.device")}</p>
                             <p className="font-medium truncate">{[w.brand, w.deviceModel].filter(Boolean).join(" ") || w.deviceType || "N/A"}</p>
                           </div>
                         </div>
@@ -261,7 +263,7 @@ export default function AdminWarranties() {
                         <div className="flex items-center gap-2">
                           <Calendar className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
                           <div>
-                            <p className="text-muted-foreground">Prezzo</p>
+                            <p className="text-muted-foreground">{t("common.price")}</p>
                             <p className="font-medium">{(w.price / 100).toLocaleString('it-IT', { style: 'currency', currency: 'EUR' })}</p>
                           </div>
                         </div>

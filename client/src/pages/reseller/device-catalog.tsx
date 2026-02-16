@@ -18,6 +18,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import type { DeviceType } from "@shared/schema";
+import { useTranslation } from "react-i18next";
 
 interface CustomBrand {
   id: string;
@@ -65,6 +66,7 @@ type BrandFormValues = z.infer<typeof brandFormSchema>;
 type ModelFormValues = z.infer<typeof modelFormSchema>;
 
 export default function DeviceCatalog() {
+  const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState("brands");
   const [searchQuery, setSearchQuery] = useState("");
   const [originFilter, setOriginFilter] = useState<string>("all");
@@ -128,13 +130,13 @@ export default function DeviceCatalog() {
       setBrandDialogOpen(false);
       brandForm.reset();
       toast({
-        title: "Brand creato",
+        title: t("products.brandCreated"),
         description: "Il nuovo brand è stato aggiunto con successo.",
       });
     },
     onError: (error: any) => {
       toast({
-        title: "Errore",
+        title: t("common.error"),
         description: error.message || "Impossibile creare il brand",
         variant: "destructive",
       });
@@ -158,7 +160,7 @@ export default function DeviceCatalog() {
     },
     onError: (error: any) => {
       toast({
-        title: "Errore",
+        title: t("common.error"),
         description: error.message || "Impossibile aggiornare il brand",
         variant: "destructive",
       });
@@ -180,7 +182,7 @@ export default function DeviceCatalog() {
     },
     onError: (error: any) => {
       toast({
-        title: "Errore",
+        title: t("common.error"),
         description: error.message || "Impossibile eliminare il brand",
         variant: "destructive",
       });
@@ -196,13 +198,13 @@ export default function DeviceCatalog() {
       setModelDialogOpen(false);
       modelForm.reset();
       toast({
-        title: "Modello creato",
+        title: t("products.modelCreated"),
         description: "Il nuovo modello è stato aggiunto con successo.",
       });
     },
     onError: (error: any) => {
       toast({
-        title: "Errore",
+        title: t("common.error"),
         description: error.message || "Impossibile creare il modello",
         variant: "destructive",
       });
@@ -220,13 +222,13 @@ export default function DeviceCatalog() {
       setIsEditing(false);
       modelForm.reset();
       toast({
-        title: "Modello aggiornato",
+        title: t("products.modelUpdated"),
         description: "Le modifiche sono state salvate con successo.",
       });
     },
     onError: (error: any) => {
       toast({
-        title: "Errore",
+        title: t("common.error"),
         description: error.message || "Impossibile aggiornare il modello",
         variant: "destructive",
       });
@@ -242,13 +244,13 @@ export default function DeviceCatalog() {
       setDeleteModelDialogOpen(false);
       setSelectedModel(null);
       toast({
-        title: "Modello eliminato",
+        title: t("products.modelDeleted"),
         description: "Il modello è stato rimosso con successo.",
       });
     },
     onError: (error: any) => {
       toast({
-        title: "Errore",
+        title: t("common.error"),
         description: error.message || "Impossibile eliminare il modello",
         variant: "destructive",
       });
@@ -355,9 +357,7 @@ export default function DeviceCatalog() {
               <Smartphone className="h-6 w-6 text-white" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold tracking-tight text-white" data-testid="text-page-title">
-                Catalogo Dispositivi
-              </h1>
+              <h1 className="text-2xl font-bold tracking-tight text-white" data-testid="text-page-title">{t("products.deviceCatalog")}</h1>
               <p className="text-sm text-white/80">
                 Gestisci brand e modelli personalizzati per la tua azienda
               </p>
@@ -420,10 +420,10 @@ export default function DeviceCatalog() {
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Nome</TableHead>
-                      <TableHead>Tipo</TableHead>
-                      <TableHead>Stato</TableHead>
-                      <TableHead className="text-right">Azioni</TableHead>
+                      <TableHead>{t("common.name")}</TableHead>
+                      <TableHead>{t("common.type")}</TableHead>
+                      <TableHead>{t("common.status")}</TableHead>
+                      <TableHead className="text-right">{t("common.actions")}</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -438,14 +438,12 @@ export default function DeviceCatalog() {
                             </Badge>
                           ) : (
                             <Badge variant="outline" className="gap-1">
-                              <User className="h-3 w-3" />
-                              Personalizzato
-                            </Badge>
+                              <User className="h-3 w-3" />{t("suppliers.custom")}</Badge>
                           )}
                         </TableCell>
                         <TableCell>
                           <Badge variant={brand.isActive ? "default" : "secondary"}>
-                            {brand.isActive ? "Attivo" : "Inattivo"}
+                            {brand.isActive ? t("common.active") : t("common.inactive")}
                           </Badge>
                         </TableCell>
                         <TableCell className="text-right">
@@ -492,9 +490,7 @@ export default function DeviceCatalog() {
                 </CardDescription>
               </div>
               <Button onClick={openCreateModelDialog} data-testid="button-add-model">
-                <Plus className="h-4 w-4 mr-2" />
-                Nuovo Modello
-              </Button>
+                <Plus className="h-4 w-4 mr-2" />{t("products.newModel")}</Button>
             </CardHeader>
             <CardContent>
               <div className="flex flex-wrap items-center gap-2 mb-4 flex-wrap">
@@ -510,12 +506,12 @@ export default function DeviceCatalog() {
                 </div>
                 <Select value={originFilter} onValueChange={setOriginFilter}>
                   <SelectTrigger className="w-full sm:w-[160px]" data-testid="select-origin-filter">
-                    <SelectValue placeholder="Origine" />
+                    <SelectValue placeholder={t("shipping.origin")} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">Tutte le origini</SelectItem>
+                    <SelectItem value="all">{t("repairs.allOrigins")}</SelectItem>
                     <SelectItem value="global">Globale</SelectItem>
-                    <SelectItem value="custom">Personalizzato</SelectItem>
+                    <SelectItem value="custom">{t("suppliers.custom")}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -534,12 +530,12 @@ export default function DeviceCatalog() {
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Codice Mercato</TableHead>
-                      <TableHead>Nome Modello</TableHead>
+                      <TableHead>{t("products.marketCode")}</TableHead>
+                      <TableHead>{t("products.modelName")}</TableHead>
                       <TableHead>Brand</TableHead>
-                      <TableHead>Tipo Dispositivo</TableHead>
-                      <TableHead>Origine</TableHead>
-                      <TableHead className="text-right">Azioni</TableHead>
+                      <TableHead>{t("repairs.deviceType")}</TableHead>
+                      <TableHead>{t("shipping.origin")}</TableHead>
+                      <TableHead className="text-right">{t("common.actions")}</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -570,9 +566,7 @@ export default function DeviceCatalog() {
                             </Badge>
                           ) : (
                             <Badge variant="outline" className="gap-1">
-                              <User className="h-3 w-3" />
-                              Personalizzato
-                            </Badge>
+                              <User className="h-3 w-3" />{t("suppliers.custom")}</Badge>
                           )}
                         </TableCell>
                         <TableCell className="text-right">
@@ -662,18 +656,16 @@ export default function DeviceCatalog() {
                   type="button"
                   variant="outline"
                   onClick={() => setBrandDialogOpen(false)}
-                >
-                  Annulla
-                </Button>
+                >{t("common.cancel")}</Button>
                 <Button
                   type="submit"
                   disabled={createBrandMutation.isPending || updateBrandMutation.isPending}
                   data-testid="button-save-brand"
                 >
                   {createBrandMutation.isPending || updateBrandMutation.isPending
-                    ? "Salvataggio..."
+                    ? t("profile.saving")
                     : isEditing
-                    ? "Salva Modifiche"
+                    ? t("profile.saveChanges")
                     : "Crea Brand"}
                 </Button>
               </DialogFooter>
@@ -686,7 +678,7 @@ export default function DeviceCatalog() {
       <Dialog open={modelDialogOpen} onOpenChange={setModelDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>{isEditing ? "Modifica Modello" : "Nuovo Modello"}</DialogTitle>
+            <DialogTitle>{isEditing ? t("products.editModel") : t("products.newModel")}</DialogTitle>
             <DialogDescription>
               {isEditing
                 ? "Modifica i dettagli del modello personalizzato"
@@ -741,7 +733,7 @@ export default function DeviceCatalog() {
                 name="typeId"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Tipo Dispositivo</FormLabel>
+                    <FormLabel>{t("repairs.deviceType")}</FormLabel>
                     <Select onValueChange={field.onChange} value={field.value}>
                       <FormControl>
                         <SelectTrigger data-testid="select-model-type">
@@ -764,7 +756,7 @@ export default function DeviceCatalog() {
               {/* Market Codes */}
               {!isEditing || (selectedModel && !selectedModel.isGlobal) ? (
                 <div className="space-y-2">
-                  <Label>Codici Mercato</Label>
+                  <Label>{t("products.marketCodes")}</Label>
                   <div className="flex flex-wrap gap-1 min-h-[32px] p-2 border rounded-md bg-muted/30">
                     {modelMarketCodes.map((code, idx) => (
                       <Badge key={idx} variant="secondary" className="gap-1">
@@ -820,18 +812,16 @@ export default function DeviceCatalog() {
                   type="button"
                   variant="outline"
                   onClick={() => setModelDialogOpen(false)}
-                >
-                  Annulla
-                </Button>
+                >{t("common.cancel")}</Button>
                 <Button
                   type="submit"
                   disabled={createModelMutation.isPending || updateModelMutation.isPending}
                   data-testid="button-save-model"
                 >
                   {createModelMutation.isPending || updateModelMutation.isPending
-                    ? "Salvataggio..."
+                    ? t("profile.saving")
                     : isEditing
-                    ? "Salva Modifiche"
+                    ? t("profile.saveChanges")
                     : "Crea Modello"}
                 </Button>
               </DialogFooter>
@@ -853,16 +843,14 @@ export default function DeviceCatalog() {
             <Button
               variant="outline"
               onClick={() => setDeleteBrandDialogOpen(false)}
-            >
-              Annulla
-            </Button>
+            >{t("common.cancel")}</Button>
             <Button
               variant="destructive"
               onClick={() => selectedBrand && deleteBrandMutation.mutate(selectedBrand.id)}
               disabled={deleteBrandMutation.isPending}
               data-testid="button-confirm-delete-brand"
             >
-              {deleteBrandMutation.isPending ? "Eliminazione..." : "Elimina"}
+              {deleteBrandMutation.isPending ? t("pages.deleting") : t("common.delete")}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -872,7 +860,7 @@ export default function DeviceCatalog() {
       <Dialog open={deleteModelDialogOpen} onOpenChange={setDeleteModelDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Elimina Modello</DialogTitle>
+            <DialogTitle>{t("products.deleteModel")}</DialogTitle>
             <DialogDescription>
               Sei sicuro di voler eliminare il modello "{selectedModel?.modelName}"? Questa azione non può essere annullata.
             </DialogDescription>
@@ -881,16 +869,14 @@ export default function DeviceCatalog() {
             <Button
               variant="outline"
               onClick={() => setDeleteModelDialogOpen(false)}
-            >
-              Annulla
-            </Button>
+            >{t("common.cancel")}</Button>
             <Button
               variant="destructive"
               onClick={() => selectedModel && deleteModelMutation.mutate(selectedModel.id)}
               disabled={deleteModelMutation.isPending}
               data-testid="button-confirm-delete-model"
             >
-              {deleteModelMutation.isPending ? "Eliminazione..." : "Elimina"}
+              {deleteModelMutation.isPending ? t("pages.deleting") : t("common.delete")}
             </Button>
           </DialogFooter>
         </DialogContent>

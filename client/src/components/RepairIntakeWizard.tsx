@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useState, useEffect, useRef } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -77,7 +78,7 @@ interface RepairIntakeWizardProps {
 // Wizard schema - includes acceptance flow fields
 const wizardSchema = z.object({
   // Step 1: Device
-  deviceType: z.string().min(1, "Seleziona il tipo di dispositivo"),
+  deviceType: z.string().min(1, t("repair.selectDeviceType")),
   deviceBrandId: z.string().optional(),
   deviceModelId: z.string().optional(),
   deviceModel: z.string().optional(),
@@ -90,7 +91,7 @@ const wizardSchema = z.object({
   issueDescription: z.string().optional().default(""),
   
   // Step 2: Customer & Assignment
-  customerId: z.string().min(1, "Seleziona un cliente"),
+  customerId: z.string().min(1, t("common.selectCustomer")),
   resellerId: z.string().optional(),
   subResellerId: z.string().optional(),
   repairCenterId: z.string().optional(),
@@ -104,12 +105,12 @@ const wizardSchema = z.object({
 type WizardData = z.infer<typeof wizardSchema>;
 
 const STEPS = [
-  { id: 1, name: "Dispositivo", icon: Smartphone },
-  { id: 2, name: "Cliente", icon: User },
-  { id: 3, name: "Condizioni", icon: ClipboardCheck },
-  { id: 4, name: "Diagnosi", icon: FileText },
-  { id: 5, name: "Conferma", icon: CheckCircle2 },
-  { id: 6, name: "Completato", icon: PartyPopper },
+  { id: 1, name: t("repair.device"), icon: Smartphone },
+  { id: 2, name: t("common.customer"), icon: User },
+  { id: 3, name: t("common.condition"), icon: ClipboardCheck },
+  { id: 4, name: t("repair.diagnosis"), icon: FileText },
+  { id: 5, name: t("common.confirm"), icon: CheckCircle2 },
+  { id: 6, name: t("common.completed"), icon: PartyPopper },
 ];
 
 const DEVICE_TYPE_ICONS: Record<string, any> = {
@@ -163,6 +164,7 @@ export function RepairIntakeWizard({
   onOpenChange, 
   onSuccess 
 }: RepairIntakeWizardProps) {
+  const { t } = useTranslation();
   const [currentStep, setCurrentStep] = useState(1);
   const [customerSearch, setCustomerSearch] = useState("");
   const [selectedTypeId, setSelectedTypeId] = useState("");
@@ -341,14 +343,14 @@ export function RepairIntakeWizard({
       setShowNewCustomerForm(false);
       setNewCustomerForm({ fullName: "", email: "", phone: "", customerType: "private", codiceFiscale: "", partitaIva: "", ragioneSociale: "", indirizzo: "", cap: "", citta: "", provincia: "", pec: "", codiceUnivoco: "" });
       toast({ 
-        title: "Cliente creato", 
-        description: `${newCustomer.fullName} è stato aggiunto` 
+        title: t("customer.created"), 
+        description: t("customer.customerAdded", { name: newCustomer.fullName }) 
       });
     },
     onError: (error: any) => {
       toast({ 
-        title: "Errore", 
-        description: error.message || "Impossibile creare il cliente", 
+        title: t("common.error"), 
+        description: error.message || t("customer.cannotCreate"), 
         variant: "destructive" 
       });
     },
@@ -374,12 +376,12 @@ export function RepairIntakeWizard({
       form.setValue("deviceModelId", "");
       setShowNewBrandForm(false);
       setNewBrandName("");
-      toast({ title: "Marca creata", description: `${newBrand.name} aggiunta al catalogo` });
+      toast({ title: t("products.brandCreated"), description: `${newBrand.name} aggiunta al catalogo` });
     },
     onError: (error: any) => {
       toast({ 
-        title: "Errore", 
-        description: error.message || "Impossibile creare la marca", 
+        title: t("common.error"), 
+        description: error.message || t("products.cannotCreateBrand"), 
         variant: "destructive" 
       });
     },
@@ -403,12 +405,12 @@ export function RepairIntakeWizard({
       form.setValue("deviceModelId", newModel.id);
       setShowNewModelForm(false);
       setNewModelName("");
-      toast({ title: "Modello creato", description: `${newModel.modelName} aggiunto al catalogo` });
+      toast({ title: t("products.modelCreated"), description: `${newModel.modelName} aggiunto al catalogo` });
     },
     onError: (error: any) => {
       toast({ 
-        title: "Errore", 
-        description: error.message || "Impossibile creare il modello", 
+        title: t("common.error"), 
+        description: error.message || t("products.cannotCreateModel"), 
         variant: "destructive" 
       });
     },
@@ -423,7 +425,7 @@ export function RepairIntakeWizard({
     queryKey: [customerEndpoint],
     select: (data: any[]) => data?.map((u: any) => ({
       id: u.id,
-      fullName: u.fullName || u.companyName || u.username || "Cliente",
+      fullName: u.fullName || u.companyName || u.username || t("common.customer"),
       email: u.email || "",
       phone: u.phone || "",
     })) || [],
@@ -601,8 +603,8 @@ export function RepairIntakeWizard({
   const categoryLabels: Record<string, string> = {
     hardware: "Hardware",
     software: "Software", 
-    connectivity: "Connettività",
-    altro: "Altro",
+    connectivity: t("diagnosis.connectivity"),
+    altro: t("common.other"),
   };
 
   const categoryIcons: Record<string, any> = {
@@ -770,8 +772,8 @@ export function RepairIntakeWizard({
       }
       
       toast({
-        title: "Riparazione creata",
-        description: "La nuova riparazione è stata registrata con successo",
+        title: t("repair.repairCreated"),
+        description: t("repair.registeredSuccessfully"),
       });
       queryClient.invalidateQueries({ queryKey: ["/api/repair-orders"] });
       onSuccess?.(data.order);
@@ -786,8 +788,8 @@ export function RepairIntakeWizard({
     },
     onError: (error: any) => {
       toast({
-        title: "Errore",
-        description: error.message || "Impossibile creare la riparazione",
+        title: t("common.error"),
+        description: error.message || t("repair.cannotCreate"),
         variant: "destructive",
       });
     },
@@ -825,16 +827,16 @@ export function RepairIntakeWizard({
   const lookupMarketCode = async () => {
     const code = marketCodeInput.trim();
     if (!code) {
-      toast({ variant: "destructive", title: "Inserisci un codice mercato" });
+      toast({ variant: "destructive", title: t("repair.enterMarketCode") });
       return;
     }
     setMarketCodeLoading(true);
     try {
       const res = await fetch(`/api/device-models/by-market-code?code=${encodeURIComponent(code)}`);
-      if (!res.ok) throw new Error("Errore nella ricerca");
+      if (!res.ok) throw new Error(t("common.searchError"));
       const data = await res.json();
       if (!data) {
-        toast({ variant: "destructive", title: "Codice non trovato", description: `Nessun dispositivo con codice ${code}` });
+        toast({ variant: "destructive", title: t("repair.codeNotFound"), description: t("repair.noDeviceWithCode", { code }) });
         return;
       }
       // Populate form fields
@@ -850,9 +852,9 @@ export function RepairIntakeWizard({
         form.setValue("deviceModelId", data.modelId);
         form.setValue("deviceModel", data.modelName || "");
       }
-      toast({ title: "Dispositivo trovato", description: `${data.typeName || ""} ${data.brandName || ""} ${data.modelName || ""}`.trim() });
+      toast({ title: t("repair.deviceFound"), description: t("repair.deviceFoundDesc", { type: data.typeName || "", brand: data.brandName || "", model: data.modelName || "" }) });
     } catch (error) {
-      toast({ variant: "destructive", title: "Errore", description: "Impossibile cercare il codice mercato" });
+      toast({ variant: "destructive", title: t("common.error"), description: "Impossibile cercare il codice mercato" });
     } finally {
       setMarketCodeLoading(false);
     }
@@ -925,12 +927,12 @@ export function RepairIntakeWizard({
                 <div className="text-center mb-4">
                   <User className="h-12 w-12 mx-auto text-primary mb-2" />
                   <h3 className="text-lg font-semibold">
-                    {showNewCustomerForm ? "Nuovo Cliente" : "Seleziona il Cliente"}
+                    {showNewCustomerForm ? t("customer.newCustomer") : t("repair.selectCustomer")}
                   </h3>
                   <p className="text-sm text-muted-foreground">
                     {showNewCustomerForm 
-                      ? "Inserisci i dati del nuovo cliente" 
-                      : "Cerca e seleziona il cliente per questa riparazione"}
+                      ? t("customer.fillCustomerData") 
+                      : t("repair.searchAndSelectCustomer")}
                   </p>
                 </div>
 
@@ -941,7 +943,7 @@ export function RepairIntakeWizard({
                       <div className="relative flex-1">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                         <Input
-                          placeholder="Cerca per nome o email..."
+                          placeholder={t("customer.searchByNameOrEmail")}
                           value={customerSearch}
                           onChange={(e) => setCustomerSearch(e.target.value)}
                           className="pl-10"
@@ -955,7 +957,7 @@ export function RepairIntakeWizard({
                         data-testid="button-new-customer"
                       >
                         <UserPlus className="h-4 w-4 mr-2" />
-                        Nuovo
+                        {t("common.new")}
                       </Button>
                     </div>
 
@@ -964,7 +966,7 @@ export function RepairIntakeWizard({
                       {filteredCustomers.length === 0 ? (
                         <div className="text-center py-8 text-muted-foreground">
                           <AlertCircle className="h-8 w-8 mx-auto mb-2" />
-                          <p>Nessun cliente trovato</p>
+                          <p>{t("customer.noCustomerFound")}</p>
                           <Button
                             type="button"
                             variant="ghost"
@@ -1027,7 +1029,7 @@ export function RepairIntakeWizard({
 
                       <div className="space-y-3">
                         <div>
-                          <Label htmlFor="new-customer-name">Nome Completo *</Label>
+                          <Label htmlFor="new-customer-name">{t("customer.fullName")} *</Label>
                           <div className="relative mt-1">
                             <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                             <Input
@@ -1042,7 +1044,7 @@ export function RepairIntakeWizard({
                         </div>
 
                         <div>
-                          <Label htmlFor="new-customer-email">Email</Label>
+                          <Label htmlFor="new-customer-email">{t("common.email")}</Label>
                           <div className="relative mt-1">
                             <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                             <Input
@@ -1058,7 +1060,7 @@ export function RepairIntakeWizard({
                         </div>
 
                         <div>
-                          <Label htmlFor="new-customer-phone">Telefono</Label>
+                          <Label htmlFor="new-customer-phone">{t("common.phone")}</Label>
                           <div className="relative mt-1">
                             <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                             <Input
@@ -1074,7 +1076,7 @@ export function RepairIntakeWizard({
                         </div>
 
                         <div className="pt-2">
-                          <Label className="text-sm font-medium">Tipo Cliente</Label>
+                          <Label className="text-sm font-medium">{t("customer.customerType")}</Label>
                           <div className="flex gap-2 mt-2">
                             <Button
                               type="button"
@@ -1092,7 +1094,7 @@ export function RepairIntakeWizard({
                               data-testid="button-customer-type-private"
                             >
                               <User className="h-4 w-4 mr-2" />
-                              Privato
+                              {t("customer.private")}
                             </Button>
                             <Button
                               type="button"
@@ -1106,7 +1108,7 @@ export function RepairIntakeWizard({
                               data-testid="button-customer-type-company"
                             >
                               <Building2 className="h-4 w-4 mr-2" />
-                              Azienda
+                              {t("customer.company")}
                             </Button>
                           </div>
                         </div>
@@ -1134,7 +1136,7 @@ export function RepairIntakeWizard({
                           <div className="space-y-3 pt-2 border-t">
                             {newCustomerForm.customerType === "private" ? (
                               <div>
-                                <Label htmlFor="new-customer-codice-fiscale">Codice Fiscale</Label>
+                                <Label htmlFor="new-customer-codice-fiscale">{t("fiscal.fiscalCode")}</Label>
                                 <Input
                                   id="new-customer-codice-fiscale"
                                   placeholder="RSSMRA80A01H501T"
@@ -1173,7 +1175,7 @@ export function RepairIntakeWizard({
                                     />
                                   </div>
                                   <div>
-                                    <Label htmlFor="new-customer-codice-fiscale">Codice Fiscale</Label>
+                                    <Label htmlFor="new-customer-codice-fiscale">{t("fiscal.fiscalCode")}</Label>
                                     <Input
                                       id="new-customer-codice-fiscale"
                                       placeholder="RSSMRA80A01H501T"
@@ -1186,7 +1188,7 @@ export function RepairIntakeWizard({
                                 </div>
                                 <div className="grid grid-cols-2 gap-3">
                                   <div>
-                                    <Label htmlFor="new-customer-pec">PEC</Label>
+                                    <Label htmlFor="new-customer-pec">{t("fiscal.pec")}</Label>
                                     <div className="relative mt-1">
                                       <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                                       <Input
@@ -1201,7 +1203,7 @@ export function RepairIntakeWizard({
                                     </div>
                                   </div>
                                   <div>
-                                    <Label htmlFor="new-customer-codice-univoco">Codice SDI</Label>
+                                    <Label htmlFor="new-customer-codice-univoco">{t("fiscal.sdiCode")}</Label>
                                     <Input
                                       id="new-customer-codice-univoco"
                                       placeholder="XXXXXXX"
@@ -1216,7 +1218,7 @@ export function RepairIntakeWizard({
                             )}
 
                             <div>
-                              <Label htmlFor="new-customer-indirizzo">Indirizzo</Label>
+                              <Label htmlFor="new-customer-indirizzo">{t("common.addressLabel")}</Label>
                               <div className="relative mt-1">
                                 <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                                 <Input
@@ -1232,7 +1234,7 @@ export function RepairIntakeWizard({
 
                             <div className="grid grid-cols-3 gap-3">
                               <div>
-                                <Label htmlFor="new-customer-cap">CAP</Label>
+                                <Label htmlFor="new-customer-cap">{t("common.zipCode")}</Label>
                                 <Input
                                   id="new-customer-cap"
                                   placeholder="00100"
@@ -1243,7 +1245,7 @@ export function RepairIntakeWizard({
                                 />
                               </div>
                               <div>
-                                <Label htmlFor="new-customer-citta">Città</Label>
+                                <Label htmlFor="new-customer-citta">{t("common.city")}</Label>
                                 <Input
                                   id="new-customer-citta"
                                   placeholder="Roma"
@@ -1280,7 +1282,7 @@ export function RepairIntakeWizard({
                             setNewCustomerForm({ fullName: "", email: "", phone: "", customerType: "private", codiceFiscale: "", partitaIva: "", ragioneSociale: "", indirizzo: "", cap: "", citta: "", provincia: "", pec: "", codiceUnivoco: "" });
                           }}
                         >
-                          Annulla
+                          {t("common.cancel")}
                         </Button>
                         <Button
                           type="button"
@@ -1308,12 +1310,12 @@ export function RepairIntakeWizard({
                           {createCustomerMutation.isPending ? (
                             <>
                               <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                              Creazione...
+                              {t("common.creating")}
                             </>
                           ) : (
                             <>
                               <UserPlus className="h-4 w-4 mr-2" />
-                              Crea Cliente
+                              {t("customer.createCustomer")}
                             </>
                           )}
                         </Button>
@@ -1329,7 +1331,7 @@ export function RepairIntakeWizard({
                     name="resellerId"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Assegna a Rivenditore</FormLabel>
+                        <FormLabel>{t("repair.assignToReseller")}</FormLabel>
                         <Select 
                           value={field.value} 
                           onValueChange={(val) => {
@@ -1343,7 +1345,7 @@ export function RepairIntakeWizard({
                         >
                           <FormControl>
                             <SelectTrigger data-testid="select-reseller-step1">
-                              <SelectValue placeholder="Seleziona rivenditore (opzionale)" />
+                              <SelectValue placeholder={t("customer.selectResellerOptional")} />
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
@@ -1369,7 +1371,7 @@ export function RepairIntakeWizard({
                     name="subResellerId"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Assegna a Sub-Rivenditore</FormLabel>
+                        <FormLabel>{t("repair.assignToSubReseller")}</FormLabel>
                         <Select 
                           value={field.value} 
                           onValueChange={(val) => {
@@ -1381,7 +1383,7 @@ export function RepairIntakeWizard({
                         >
                           <FormControl>
                             <SelectTrigger data-testid="select-sub-reseller-step1">
-                              <SelectValue placeholder="Seleziona sub-rivenditore (opzionale)" />
+                              <SelectValue placeholder={t("customer.selectSubResellerOptional")} />
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
@@ -1407,11 +1409,11 @@ export function RepairIntakeWizard({
                     name="repairCenterId"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Assegna a Centro Riparazione</FormLabel>
+                        <FormLabel>{t("repair.assignToRepairCenter")}</FormLabel>
                         <Select value={field.value} onValueChange={field.onChange}>
                           <FormControl>
                             <SelectTrigger data-testid="select-repair-center-step1">
-                              <SelectValue placeholder="Seleziona centro (opzionale)" />
+                              <SelectValue placeholder={t("repair.selectCenterOptional")} />
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
@@ -1489,7 +1491,7 @@ export function RepairIntakeWizard({
 
                 {/* Market Code Lookup - PRIMA di Tipo Dispositivo per auto-compilazione */}
                 <div className="space-y-2">
-                  <Label>Codice Mercato (opzionale)</Label>
+                  <Label>{t("repair.marketCodeOptional")}</Label>
                   <div className="flex gap-2">
                     <Input
                       placeholder="es. A2633, SM-G998B"
@@ -1517,7 +1519,7 @@ export function RepairIntakeWizard({
                   name="deviceType"
                   render={({ field }) => (
                     <FormItem className="min-w-0">
-                      <FormLabel>Tipo Dispositivo *</FormLabel>
+                      <FormLabel>{t("repair.selectDeviceType")} *</FormLabel>
                       <div className="grid gap-2 w-full min-w-0" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))' }}>
                         {deviceTypes.map((type) => {
                           const Icon = DEVICE_TYPE_ICONS[type.name.toLowerCase()] || Smartphone;
@@ -1560,7 +1562,7 @@ export function RepairIntakeWizard({
                       render={({ field }) => (
                         <FormItem className="min-w-0">
                           <div className="flex items-center justify-between mb-2">
-                            <FormLabel>Marca</FormLabel>
+                            <FormLabel>{t("common.brand")}</FormLabel>
                             {canCreateCatalogItems && (
                               <Button
                                 type="button"
@@ -1571,7 +1573,7 @@ export function RepairIntakeWizard({
                                 className="text-xs"
                               >
                                 <Plus className="h-3 w-3 mr-1" />
-                                Aggiungi
+                                {t("common.add")}
                               </Button>
                             )}
                           </div>
@@ -1617,7 +1619,7 @@ export function RepairIntakeWizard({
                         name="deviceModelId"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Modello</FormLabel>
+                            <FormLabel>{t("common.model")}</FormLabel>
                             <div className="flex gap-2">
                               <Select
                                 value={field.value}
@@ -1626,7 +1628,7 @@ export function RepairIntakeWizard({
                               >
                                 <FormControl>
                                   <SelectTrigger data-testid="select-model" className="flex-1">
-                                    <SelectValue placeholder="Seleziona modello" />
+                                    <SelectValue placeholder={t("common.selectModel")} />
                                   </SelectTrigger>
                                 </FormControl>
                                 <SelectContent>
@@ -1673,7 +1675,7 @@ export function RepairIntakeWizard({
                           </div>
                           <div className="flex gap-2">
                             <Input
-                              placeholder="Nome marca..."
+                              placeholder={t("products.brandName")}
                               value={newBrandName}
                               onChange={(e) => setNewBrandName(e.target.value)}
                               data-testid="input-new-brand-name"
@@ -1693,7 +1695,7 @@ export function RepairIntakeWizard({
                               {createBrandMutation.isPending ? (
                                 <Loader2 className="h-4 w-4 animate-spin" />
                               ) : (
-                                "Crea"
+                                t("common.create")
                               )}
                             </Button>
                           </div>
@@ -1721,7 +1723,7 @@ export function RepairIntakeWizard({
                           </div>
                           <div className="flex gap-2">
                             <Input
-                              placeholder="Nome modello..."
+                              placeholder={t("products.modelName")}
                               value={newModelName}
                               onChange={(e) => setNewModelName(e.target.value)}
                               data-testid="input-new-model-name"
@@ -1742,7 +1744,7 @@ export function RepairIntakeWizard({
                               {createModelMutation.isPending ? (
                                 <Loader2 className="h-4 w-4 animate-spin" />
                               ) : (
-                                "Crea"
+                                t("common.create")
                               )}
                             </Button>
                           </div>
@@ -1759,7 +1761,7 @@ export function RepairIntakeWizard({
                     name="deviceModel"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Modello (manuale)</FormLabel>
+                        <FormLabel>{t("repair.manualModel")}</FormLabel>
                         <FormControl>
                           <Input
                             {...field}
@@ -1779,11 +1781,11 @@ export function RepairIntakeWizard({
                     name="imei"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>IMEI</FormLabel>
+                        <FormLabel>{t("repair.imei")}</FormLabel>
                         <FormControl>
                           <Input
                             {...field}
-                            placeholder="Opzionale"
+                            placeholder={t("common.optional")}
                             disabled={form.watch("imeiNotPresent") || form.watch("imeiNotReadable")}
                             data-testid="input-imei"
                           />
@@ -1800,7 +1802,7 @@ export function RepairIntakeWizard({
                         <FormControl>
                           <Input
                             {...field}
-                            placeholder="Opzionale"
+                            placeholder={t("common.optional")}
                             data-testid="input-serial"
                           />
                         </FormControl>
@@ -1881,7 +1883,7 @@ export function RepairIntakeWizard({
                   name="aestheticCondition"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Condizione Estetica</FormLabel>
+                      <FormLabel>{t("repair.cosmeticCondition")}</FormLabel>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                         {AESTHETIC_CONDITIONS.map((condition) => (
                           <Card
@@ -1910,7 +1912,7 @@ export function RepairIntakeWizard({
                   name="accessories"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Accessori Consegnati</FormLabel>
+                      <FormLabel>{t("repair.deliveredAccessories")}</FormLabel>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                         {accessoryTypes.length > 0 ? (
                           accessoryTypes.map((accessory) => (
@@ -1976,7 +1978,7 @@ export function RepairIntakeWizard({
                           <div className="min-w-0">
                             <p className="font-medium">Diagnosi Tecnica</p>
                             <p className="text-sm text-muted-foreground truncate">
-                              {collectedDiagnosisData ? "Diagnosi configurata" : "Opzionale"}
+                              {collectedDiagnosisData ? t("diagnosis.configured") : t("common.optional")}
                             </p>
                           </div>
                         </div>
@@ -2003,7 +2005,7 @@ export function RepairIntakeWizard({
                             onClick={() => setDiagnosisDialogOpen(true)}
                             data-testid="button-configure-diagnosis"
                           >
-                            {collectedDiagnosisData ? "Modifica" : "Configura"}
+                            {collectedDiagnosisData ? t("common.edit") : t("common.configure")}
                           </Button>
                         </div>
                       </div>
@@ -2024,9 +2026,9 @@ export function RepairIntakeWizard({
                             )}
                           </div>
                           <div className="min-w-0">
-                            <p className="font-medium">Preventivo</p>
+                            <p className="font-medium">{t("repair.quote")}</p>
                             <p className="text-sm text-muted-foreground truncate">
-                              {collectedQuoteData ? "Preventivo configurato" : "Opzionale"}
+                              {collectedQuoteData ? t("quote.configured") : t("common.optional")}
                             </p>
                           </div>
                         </div>
@@ -2054,7 +2056,7 @@ export function RepairIntakeWizard({
                             onClick={() => setQuoteDialogOpen(true)}
                             data-testid="button-configure-quote"
                           >
-                            {collectedQuoteData ? "Modifica" : "Configura"}
+                            {collectedQuoteData ? t("common.edit") : t("common.configure")}
                           </Button>
                         </div>
                       </div>
@@ -2090,7 +2092,7 @@ export function RepairIntakeWizard({
                     <div className="flex items-start gap-3">
                       <User className="h-5 w-5 text-muted-foreground mt-0.5" />
                       <div>
-                        <p className="text-sm text-muted-foreground">Cliente</p>
+                        <p className="text-sm text-muted-foreground">{t("common.customer")}</p>
                         <p className="font-medium">{selectedCustomer?.fullName}</p>
                         <p className="text-sm text-muted-foreground">{selectedCustomer?.email}</p>
                       </div>
@@ -2100,7 +2102,7 @@ export function RepairIntakeWizard({
                     <div className="flex items-start gap-3">
                       <Smartphone className="h-5 w-5 text-muted-foreground mt-0.5" />
                       <div>
-                        <p className="text-sm text-muted-foreground">Dispositivo</p>
+                        <p className="text-sm text-muted-foreground">{t("repair.device")}</p>
                         <p className="font-medium">
                           {deviceTypes.find(t => t.id === form.watch("deviceType"))?.name}
                           {form.watch("deviceModelId") && (
@@ -2158,7 +2160,7 @@ export function RepairIntakeWizard({
                   <div className="flex items-start gap-3 p-3 bg-muted/50 rounded-lg">
                     <Store className="h-5 w-5 text-muted-foreground mt-0.5" />
                     <div>
-                      <p className="text-sm text-muted-foreground">Rivenditore</p>
+                      <p className="text-sm text-muted-foreground">{t("staff.reseller")}</p>
                       <p className="font-medium">
                         {resellers.find(r => r.id === form.watch("resellerId"))?.fullName || 
                          resellers.find(r => r.id === form.watch("resellerId"))?.username || "Non selezionato"}
@@ -2186,7 +2188,7 @@ export function RepairIntakeWizard({
                   <div className="flex items-start gap-3 p-3 bg-muted/50 rounded-lg">
                     <Building className="h-5 w-5 text-muted-foreground mt-0.5" />
                     <div>
-                      <p className="text-sm text-muted-foreground">Centro Riparazione</p>
+                      <p className="text-sm text-muted-foreground">{t("repair.repairCenter")}</p>
                       <p className="font-medium">
                         {repairCenters.find(c => c.id === form.watch("repairCenterId"))?.name || "Non selezionato"}
                       </p>
@@ -2205,7 +2207,7 @@ export function RepairIntakeWizard({
                   </div>
                   <h3 className="text-xl font-semibold text-green-600 dark:text-green-400">Riparazione Creata!</h3>
                   <p className="text-muted-foreground mt-1">
-                    Ordine <span className="font-mono font-semibold">{createdOrder.orderNumber}</span> registrato con successo
+                    {t("parts.order")} <span className="font-mono font-semibold">{createdOrder.orderNumber}</span> registrato con successo
                   </p>
                 </div>
 
@@ -2252,7 +2254,7 @@ export function RepairIntakeWizard({
               data-testid="button-wizard-back"
             >
               <ChevronLeft className="h-4 w-4 mr-1" />
-              Indietro
+              {t("common.back")}
             </Button>
 
             {currentStep < 5 ? (
@@ -2261,7 +2263,7 @@ export function RepairIntakeWizard({
                 disabled={!canGoNext()}
                 data-testid="button-wizard-next"
               >
-                Avanti
+                {t("common.next")}
                 <ChevronRight className="h-4 w-4 ml-1" />
               </Button>
             ) : (
@@ -2273,7 +2275,7 @@ export function RepairIntakeWizard({
                 {createMutation.isPending ? (
                   <>
                     <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    Creazione...
+                    {t("common.creating")}
                   </>
                 ) : (
                   <>
@@ -2294,7 +2296,7 @@ export function RepairIntakeWizard({
               data-testid="button-wizard-close"
             >
               <CheckCircle2 className="h-4 w-4 mr-2" />
-              Chiudi
+              {t("common.close")}
             </Button>
           </div>
         )}

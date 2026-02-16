@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useState, useMemo } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Card, CardContent } from "@/components/ui/card";
@@ -85,16 +86,17 @@ type OverviewData = {
   };
 };
 
-const statusConfig: Record<string, { label: string; color: string; icon: any }> = {
-  pending: { label: "In Attesa", color: "bg-yellow-500/20 text-yellow-700", icon: Clock },
-  approved: { label: "Approvata", color: "bg-blue-500/20 text-blue-700", icon: CheckCircle },
-  rejected: { label: "Rifiutata", color: "bg-red-500/20 text-red-700", icon: XCircle },
-  shipped: { label: "Spedita", color: "bg-purple-500/20 text-purple-700", icon: Truck },
-  received: { label: "Ricevuta", color: "bg-green-500/20 text-green-700", icon: PackageCheck },
-  cancelled: { label: "Annullata", color: "bg-gray-500/20 text-gray-700", icon: Ban },
-};
 
 export default function RepairCenterTransferRequestsOverviewPage() {
+  const { t } = useTranslation();
+  const statusConfig: Record<string, { label: string; color: string; icon: any }> = {
+    pending: { label: t("common.pending"), color: "bg-yellow-500/20 text-yellow-700", icon: Clock },
+    approved: { label: t("common.approved"), color: "bg-blue-500/20 text-blue-700", icon: CheckCircle },
+    rejected: { label: t("common.rejected"), color: "bg-red-500/20 text-red-700", icon: XCircle },
+    shipped: { label: t("common.shipped"), color: "bg-purple-500/20 text-purple-700", icon: Truck },
+    received: { label: t("common.received"), color: "bg-green-500/20 text-green-700", icon: PackageCheck },
+    cancelled: { label: t("common.cancelled"), color: "bg-gray-500/20 text-gray-700", icon: Ban },
+  };
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState("active");
   const [searchTerm, setSearchTerm] = useState("");
@@ -130,13 +132,13 @@ export default function RepairCenterTransferRequestsOverviewPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/repair-center/transfer-requests/overview"] });
       queryClient.invalidateQueries({ queryKey: ["/api/repair-center/transfer-requests"] });
-      toast({ title: "Merce ricevuta", description: "La ricezione è stata registrata con successo" });
+      toast({ title: "Merce ricevuta", description: t("transfers.laRicezioneStataRegistrataConSuccesso") });
       setShowReceiveDialog(false);
       setSelectedRequest(null);
       setReceiveItems([]);
     },
     onError: (error: any) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("auth.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -147,10 +149,10 @@ export default function RepairCenterTransferRequestsOverviewPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/repair-center/transfer-requests/overview"] });
       queryClient.invalidateQueries({ queryKey: ["/api/repair-center/transfer-requests"] });
-      toast({ title: "Richiesta annullata", description: "La richiesta è stata annullata" });
+      toast({ title: "Richiesta annullata", description: t("remote.laRichiestaStataAnnullata") });
     },
     onError: (error: any) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("auth.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -192,12 +194,12 @@ export default function RepairCenterTransferRequestsOverviewPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/repair-center/transfer-requests"] });
       queryClient.invalidateQueries({ queryKey: ["/api/repair-center/transfer-requests/overview"] });
-      toast({ title: "Richiesta Inviata", description: "La richiesta di interscambio è stata inviata al reseller" });
+      toast({ title: t("auth.requestSent"), description: t("transfers.laRichiestaDiInterscambioStataInviataAlRe") });
       setShowNewRequestDialog(false);
       resetWizard();
     },
     onError: (error: any) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("auth.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -236,7 +238,7 @@ export default function RepairCenterTransferRequestsOverviewPage() {
       a.remove();
       window.URL.revokeObjectURL(url);
     } catch (error: any) {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("auth.error"), description: error.message, variant: "destructive" });
     }
   };
 
@@ -274,7 +276,7 @@ export default function RepairCenterTransferRequestsOverviewPage() {
           
           <div className="mt-4 space-y-2">
             <div className="text-sm">
-              <span className="text-muted-foreground">Prodotti: </span>
+              <span className="text-muted-foreground">{t("cart.prodotti")} </span>
               <span className="font-medium">{request.items.length}</span>
               <span className="text-muted-foreground ml-4">Tot. pezzi: </span>
               <span className="font-medium">
@@ -404,7 +406,7 @@ export default function RepairCenterTransferRequestsOverviewPage() {
               </div>
               <div>
                 <p className="text-2xl font-bold">{stats?.pending || 0}</p>
-                <p className="text-sm text-muted-foreground">In Attesa</p>
+                <p className="text-sm text-muted-foreground">{t("common.pending")}</p>
               </div>
             </div>
           </CardContent>
@@ -454,7 +456,7 @@ export default function RepairCenterTransferRequestsOverviewPage() {
         <div className="relative flex-1 min-w-0">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder="Cerca per numero o prodotto..."
+            placeholder={t("transfers.cercaPerNumeroOProdotto")}
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="pl-9"
@@ -463,16 +465,16 @@ export default function RepairCenterTransferRequestsOverviewPage() {
         </div>
         <Select value={statusFilter} onValueChange={setStatusFilter}>
           <SelectTrigger className="w-full sm:w-[180px]" data-testid="select-rc-status-filter">
-            <SelectValue placeholder="Filtra per stato" />
+            <SelectValue placeholder={t("common.filterByStatus")} />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">Tutti gli stati</SelectItem>
-            <SelectItem value="pending">In Attesa</SelectItem>
+            <SelectItem value="all">{t("common.allStatuses")}</SelectItem>
+            <SelectItem value="pending">{t("common.pending")}</SelectItem>
             <SelectItem value="approved">Approvate</SelectItem>
             <SelectItem value="shipped">Spedite</SelectItem>
             <SelectItem value="received">Ricevute</SelectItem>
             <SelectItem value="rejected">Rifiutate</SelectItem>
-            <SelectItem value="cancelled">Annullate</SelectItem>
+            <SelectItem value="cancelled">{t("invoices.annullate")}</SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -497,7 +499,7 @@ export default function RepairCenterTransferRequestsOverviewPage() {
             <Card>
               <CardContent className="py-12 text-center">
                 <Package className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                <p className="text-muted-foreground">Nessuna richiesta attiva</p>
+                <p className="text-muted-foreground">{t("transfers.nessunaRichiestaAttiva")}</p>
               </CardContent>
             </Card>
           ) : (
@@ -512,7 +514,7 @@ export default function RepairCenterTransferRequestsOverviewPage() {
             <Card>
               <CardContent className="py-12 text-center">
                 <History className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                <p className="text-muted-foreground">Nessun trasferimento completato</p>
+                <p className="text-muted-foreground">{t("transfers.nessunTrasferimentoCompletato")}</p>
               </CardContent>
             </Card>
           ) : (
@@ -536,15 +538,15 @@ export default function RepairCenterTransferRequestsOverviewPage() {
             <div className="space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
                 <div>
-                  <span className="text-muted-foreground">Stato:</span>
+                  <span className="text-muted-foreground">{t("transfers.stato")}</span>
                   <div className="mt-1">{renderStatusBadge(selectedRequest.status)}</div>
                 </div>
                 <div>
-                  <span className="text-muted-foreground">Magazzino Origine:</span>
+                  <span className="text-muted-foreground">{t("transfers.magazzinoOrigine")}</span>
                   <p className="font-medium">{selectedRequest.sourceWarehouse?.name}</p>
                 </div>
                 <div>
-                  <span className="text-muted-foreground">Creata il:</span>
+                  <span className="text-muted-foreground">{t("transfers.creataIl")}</span>
                   <p className="font-medium">{format(new Date(selectedRequest.createdAt), "dd/MM/yyyy HH:mm", { locale: it })}</p>
                 </div>
                 {selectedRequest.trackingNumber && (
@@ -576,12 +578,12 @@ export default function RepairCenterTransferRequestsOverviewPage() {
               )}
 
               <div>
-                <h4 className="font-medium mb-2">Prodotti</h4>
+                <h4 className="font-medium mb-2">{t("sidebar.items.products")}</h4>
                 <div className="border rounded-lg overflow-x-auto">
                   <table className="w-full text-sm">
                     <thead className="bg-muted">
                       <tr>
-                        <th className="text-left p-2">Prodotto</th>
+                        <th className="text-left p-2">{t("common.product")}</th>
                         <th className="text-right p-2">Richiesti</th>
                         <th className="text-right p-2 hidden md:table-cell">Approvati</th>
                         <th className="text-right p-2 hidden md:table-cell">Spediti</th>
@@ -631,9 +633,9 @@ export default function RepairCenterTransferRequestsOverviewPage() {
       <Dialog open={showReceiveDialog} onOpenChange={setShowReceiveDialog}>
         <DialogContent className="max-w-lg">
           <DialogHeader>
-            <DialogTitle>Conferma Ricezione</DialogTitle>
+            <DialogTitle>{t("b2b.confirmReceipt")}</DialogTitle>
             <DialogDescription>
-              Conferma le quantità ricevute per {selectedRequest?.requestNumber}
+              {t("transfers.confirmReceivedFor", { number: selectedRequest?.requestNumber })}
             </DialogDescription>
           </DialogHeader>
           {selectedRequest && (
@@ -642,7 +644,7 @@ export default function RepairCenterTransferRequestsOverviewPage() {
                 <table className="w-full text-sm">
                   <thead className="bg-muted">
                     <tr>
-                      <th className="text-left p-2">Prodotto</th>
+                      <th className="text-left p-2">{t("common.product")}</th>
                       <th className="text-right p-2">Spediti</th>
                       <th className="text-right p-2">Ricevuti</th>
                     </tr>
@@ -713,11 +715,11 @@ export default function RepairCenterTransferRequestsOverviewPage() {
       }}>
         <DialogContent className="max-w-3xl max-h-[85vh] overflow-hidden flex flex-col">
           <DialogHeader>
-            <DialogTitle>Nuova Richiesta Interscambio</DialogTitle>
+            <DialogTitle>{t("transfers.nuovaRichiestaInterscambio")}</DialogTitle>
             <DialogDescription>
-              {wizardStep === 1 && "Cerca il prodotto che vuoi richiedere"}
-              {wizardStep === 2 && "Seleziona il magazzino da cui richiedere"}
-              {wizardStep === 3 && "Conferma quantità e invia richiesta"}
+              {wizardStep === 1 && t("transfers.searchProduct")}
+              {wizardStep === 2 && t("transfers.selectWarehouse")}
+              {wizardStep === 3 && t("transfers.confirmQuantityAndSend")}
             </DialogDescription>
           </DialogHeader>
 
@@ -745,7 +747,7 @@ export default function RepairCenterTransferRequestsOverviewPage() {
                   <div className="relative flex-1">
                     <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     <Input
-                      placeholder="Cerca prodotto per nome, SKU o marca..."
+                      placeholder={t("transfers.cercaProdottoPerNomeSKUOMarca")}
                       value={productSearch}
                       onChange={(e) => setProductSearch(e.target.value)}
                       className="pl-10"
@@ -754,13 +756,13 @@ export default function RepairCenterTransferRequestsOverviewPage() {
                   </div>
                   <Select value={productTypeFilter} onValueChange={setProductTypeFilter}>
                     <SelectTrigger className="w-full sm:w-[160px]" data-testid="select-rc-product-type">
-                      <SelectValue placeholder="Tipo" />
+                      <SelectValue placeholder={t("common.type")} />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="all">Tutti i tipi</SelectItem>
-                      <SelectItem value="ricambio">Ricambi</SelectItem>
-                      <SelectItem value="accessorio">Accessori</SelectItem>
-                      <SelectItem value="dispositivo">Dispositivi</SelectItem>
+                      <SelectItem value="all">{t("common.allTypes")}</SelectItem>
+                      <SelectItem value="ricambio">{t("sidebar.items.spareParts")}</SelectItem>
+                      <SelectItem value="accessorio">{t("sidebar.items.accessories")}</SelectItem>
+                      <SelectItem value="dispositivo">{t("sidebar.items.devices")}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -774,7 +776,7 @@ export default function RepairCenterTransferRequestsOverviewPage() {
                 {!isSearching && searchResults.length === 0 && (
                   <div className="text-center py-8 text-muted-foreground">
                     <Package className="h-12 w-12 mx-auto mb-2 opacity-50" />
-                    <p>Nessun prodotto disponibile trovato</p>
+                    <p>{t("transfers.nessunProdottoDisponibileTrovato")}</p>
                     <p className="text-sm">Prova a modificare i criteri di ricerca</p>
                   </div>
                 )}
@@ -864,7 +866,7 @@ export default function RepairCenterTransferRequestsOverviewPage() {
                   </CardContent>
                 </Card>
 
-                <Label>Seleziona il magazzino sorgente</Label>
+                <Label>{t("transfers.selezionaIlMagazzinoSorgente")}</Label>
                 <div className="grid gap-2">
                   {selectedProduct.warehouses.map((wh) => (
                     <Card
@@ -931,7 +933,7 @@ export default function RepairCenterTransferRequestsOverviewPage() {
                 </Card>
 
                 <div className="space-y-2">
-                  <Label>Quantità richiesta</Label>
+                  <Label>{t("transfers.quantitRichiesta")}</Label>
                   <Input
                     type="number"
                     min={1}
@@ -947,7 +949,7 @@ export default function RepairCenterTransferRequestsOverviewPage() {
                   <Textarea
                     value={requestNotes}
                     onChange={(e) => setRequestNotes(e.target.value)}
-                    placeholder="Note aggiuntive per la richiesta..."
+                    placeholder={t("transfers.additionalNotes")}
                     data-testid="input-rc-request-notes"
                   />
                 </div>

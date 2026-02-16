@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useLocation } from "wouter";
@@ -42,6 +43,7 @@ type Reseller = {
 };
 
 export default function RepairCenterTickets() {
+  const { t } = useTranslation();
   const [, setLocation] = useLocation();
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
@@ -83,7 +85,7 @@ export default function RepairCenterTickets() {
     },
     onError: (error: Error) => {
       toast({ 
-        title: "Errore", 
+        title: t("auth.error"), 
         description: error.message,
         variant: "destructive" 
       });
@@ -99,18 +101,18 @@ export default function RepairCenterTickets() {
 
   const getStatusBadge = (status: string) => {
     switch (status) {
-      case "open": return <Badge>Aperto</Badge>;
-      case "in_progress": return <Badge variant="secondary">In lavorazione</Badge>;
-      case "closed": return <Badge variant="outline">Chiuso</Badge>;
+      case "open": return <Badge>{t("tickets.status.open")}</Badge>;
+      case "in_progress": return <Badge variant="secondary">{t("tickets.status.inProgress")}</Badge>;
+      case "closed": return <Badge variant="outline">{t("tickets.status.closed")}</Badge>;
       default: return <Badge variant="outline">{status}</Badge>;
     }
   };
 
   const getPriorityBadge = (priority: string) => {
     switch (priority) {
-      case "high": return <Badge variant="destructive">Alta</Badge>;
-      case "medium": return <Badge variant="secondary">Media</Badge>;
-      case "low": return <Badge variant="outline">Bassa</Badge>;
+      case "high": return <Badge variant="destructive">{t("common.priorityHigh")}</Badge>;
+      case "medium": return <Badge variant="secondary">{t("common.priorityMedium")}</Badge>;
+      case "low": return <Badge variant="outline">{t("common.priorityLow")}</Badge>;
       default: return <Badge variant="outline">{priority}</Badge>;
     }
   };
@@ -127,8 +129,8 @@ export default function RepairCenterTickets() {
   const handleSubmit = () => {
     if (!newTicket.subject || !newTicket.description) {
       toast({ 
-        title: "Errore", 
-        description: "Compila tutti i campi obbligatori",
+        title: t("auth.error"), 
+        description: t("common.fillRequiredFields"),
         variant: "destructive" 
       });
       return;
@@ -136,8 +138,8 @@ export default function RepairCenterTickets() {
     
     if (newTicket.targetType === "reseller" && !newTicket.targetId) {
       toast({ 
-        title: "Errore", 
-        description: "Seleziona un rivenditore",
+        title: t("auth.error"), 
+        description: t("admin.repairCenters.selectReseller"),
         variant: "destructive" 
       });
       return;
@@ -160,7 +162,7 @@ export default function RepairCenterTickets() {
               <MessageSquare className="h-5 w-5 sm:h-7 sm:w-7 text-white" />
             </div>
             <div>
-              <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-white tracking-tight">Ticket</h1>
+              <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-white tracking-tight">{t("sidebar.items.tickets")}</h1>
               <p className="text-emerald-100">Comunica con Admin e Rivenditori</p>
             </div>
           </div>
@@ -174,7 +176,7 @@ export default function RepairCenterTickets() {
             </DialogTrigger>
           <DialogContent className="sm:max-w-[500px]">
             <DialogHeader>
-              <DialogTitle>Crea Nuovo Ticket</DialogTitle>
+              <DialogTitle>{t("tickets.creaNuovoTicket")}</DialogTitle>
             </DialogHeader>
             <div className="space-y-4 mt-4">
               <div className="space-y-2">
@@ -184,7 +186,7 @@ export default function RepairCenterTickets() {
                   onValueChange={(v) => setNewTicket({ ...newTicket, targetType: v, targetId: "" })}
                 >
                   <SelectTrigger data-testid="select-target-type">
-                    <SelectValue placeholder="Seleziona destinatario" />
+                    <SelectValue placeholder={t("tickets.selezionaDestinatario")} />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="admin">
@@ -211,7 +213,7 @@ export default function RepairCenterTickets() {
                     onValueChange={(v) => setNewTicket({ ...newTicket, targetId: v })}
                   >
                     <SelectTrigger data-testid="select-reseller">
-                      <SelectValue placeholder="Seleziona rivenditore" />
+                      <SelectValue placeholder={t("utility.selectReseller")} />
                     </SelectTrigger>
                     <SelectContent>
                       {resellers.map((reseller) => (
@@ -229,7 +231,7 @@ export default function RepairCenterTickets() {
                 <Input
                   value={newTicket.subject}
                   onChange={(e) => setNewTicket({ ...newTicket, subject: e.target.value })}
-                  placeholder="Oggetto del ticket"
+                  placeholder={t("tickets.ticketSubject")}
                   data-testid="input-ticket-subject"
                 />
               </div>
@@ -239,14 +241,14 @@ export default function RepairCenterTickets() {
                 <Textarea
                   value={newTicket.description}
                   onChange={(e) => setNewTicket({ ...newTicket, description: e.target.value })}
-                  placeholder="Descrivi il problema o la richiesta..."
+                  placeholder={t("tickets.describeIssue")}
                   rows={4}
                   data-testid="input-ticket-description"
                 />
               </div>
               
               <div className="space-y-2">
-                <Label>Priorità</Label>
+                <Label>{t("common.priority")}</Label>
                 <Select 
                   value={newTicket.priority} 
                   onValueChange={(v) => setNewTicket({ ...newTicket, priority: v })}
@@ -255,9 +257,9 @@ export default function RepairCenterTickets() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="low">Bassa</SelectItem>
-                    <SelectItem value="medium">Media</SelectItem>
-                    <SelectItem value="high">Alta</SelectItem>
+                    <SelectItem value="low">{t("common.priorityLow")}</SelectItem>
+                    <SelectItem value="medium">{t("common.priorityMedium")}</SelectItem>
+                    <SelectItem value="high">{t("common.priorityHigh")}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -287,7 +289,7 @@ export default function RepairCenterTickets() {
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Cerca per numero o oggetto..."
+                placeholder={t("tickets.cercaPerNumeroOOggetto")}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-9"
@@ -297,13 +299,13 @@ export default function RepairCenterTickets() {
             
             <Select value={statusFilter} onValueChange={setStatusFilter}>
               <SelectTrigger data-testid="select-status-filter">
-                <SelectValue placeholder="Filtra per stato" />
+                <SelectValue placeholder={t("common.filterByStatus")} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">Tutti gli stati</SelectItem>
-                <SelectItem value="open">Aperto</SelectItem>
-                <SelectItem value="in_progress">In lavorazione</SelectItem>
-                <SelectItem value="closed">Chiuso</SelectItem>
+                <SelectItem value="all">{t("common.allStatuses")}</SelectItem>
+                <SelectItem value="open">{t("tickets.status.open")}</SelectItem>
+                <SelectItem value="in_progress">{t("tickets.status.inProgress")}</SelectItem>
+                <SelectItem value="closed">{t("tickets.status.closed")}</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -329,12 +331,12 @@ export default function RepairCenterTickets() {
               <MessageSquare className="h-12 w-12 mx-auto mb-4 opacity-50" />
               <p className="text-lg font-medium mb-1">
                 {searchQuery || statusFilter !== "all" 
-                  ? "Nessun ticket trovato" 
-                  : "Nessun ticket interno"
+                  ? t("tickets.noTicketsFound") 
+                  : t("tickets.noInternalTickets")
                 }
               </p>
               <p className="text-sm mb-4">
-                {!searchQuery && statusFilter === "all" && "Crea il tuo primo ticket per comunicare con Admin o il tuo Rivenditore"}
+                {!searchQuery && statusFilter === "all" && t("tickets.createFirstTicket")}
               </p>
               {!searchQuery && statusFilter === "all" && (
                 <Button onClick={() => setIsDialogOpen(true)} data-testid="button-create-first-ticket">

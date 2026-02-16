@@ -20,17 +20,18 @@ import { Link, useSearch, useLocation } from "wouter";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { UtilityPracticeWizard } from "@/components/UtilityPracticeWizard";
 import { PracticesKanbanBoard } from "@/components/PracticesKanbanBoard";
+import { useTranslation } from "react-i18next";
 
 type PracticeStatus = "bozza" | "inviata" | "in_lavorazione" | "attesa_documenti" | "completata" | "rifiutata" | "annullata";
 
 const statusLabels: Record<PracticeStatus, string> = {
-  bozza: "Bozza",
-  inviata: "Inviata",
-  in_lavorazione: "In Lavorazione",
+  bozza: t("invoices.draft"),
+  inviata: t("invoices.sent"),
+  in_lavorazione: t("repairs.inProgress"),
   attesa_documenti: "Attesa Documenti",
   completata: "Completata",
-  annullata: "Annullata",
-  rifiutata: "Rifiutata",
+  annullata: t("common.cancelled"),
+  rifiutata: t("common.rejected"),
 };
 
 const statusColors: Record<PracticeStatus, string> = {
@@ -49,7 +50,7 @@ const categoryLabels: Record<string, string> = {
   centralino: "Centralino",
   luce: "Luce",
   gas: "Gas",
-  altro: "Altro",
+  altro: t("common.other"),
 };
 
 const formatCurrency = (cents: number) => {
@@ -70,6 +71,7 @@ interface PracticeProductItem {
 }
 
 export default function ResellerUtilityPractices() {
+  const { t } = useTranslation();
   const searchString = useSearch();
   const [, navigate] = useLocation();
   const [searchQuery, setSearchQuery] = useState("");
@@ -349,7 +351,7 @@ export default function ResellerUtilityPractices() {
       toast({ title: "Pratica creata con successo" });
     },
     onError: (error: Error) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -365,7 +367,7 @@ export default function ResellerUtilityPractices() {
       toast({ title: "Pratica aggiornata" });
     },
     onError: (error: Error) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -384,13 +386,13 @@ export default function ResellerUtilityPractices() {
       toast({ title: "Cliente creato", description: `${newCustomer.fullName} aggiunto con successo` });
     },
     onError: (error: Error) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     },
   });
 
   const handleCreateCustomer = () => {
     if (!newCustomerName.trim()) {
-      toast({ title: "Errore", description: "Il nome è obbligatorio", variant: "destructive" });
+      toast({ title: t("common.error"), description: "Il nome è obbligatorio", variant: "destructive" });
       return;
     }
     createCustomerMutation.mutate({
@@ -652,10 +654,10 @@ export default function ResellerUtilityPractices() {
             </div>
             <Select value={statusFilter} onValueChange={setStatusFilter}>
               <SelectTrigger className="w-40" data-testid="select-status-filter">
-                <SelectValue placeholder="Stato" />
+                <SelectValue placeholder={t("common.status")} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">Tutti gli stati</SelectItem>
+                <SelectItem value="all">{t("common.allStatuses")}</SelectItem>
                 {Object.entries(statusLabels).map(([value, label]) => (
                   <SelectItem key={value} value={value}>{label}</SelectItem>
                 ))}
@@ -675,9 +677,7 @@ export default function ResellerUtilityPractices() {
             </Tabs>
           </div>
           <Button onClick={handleNewPractice} data-testid="button-new-practice">
-            <Plus className="h-4 w-4 mr-2" />
-            Nuova Pratica
-          </Button>
+            <Plus className="h-4 w-4 mr-2" />{t("utility.newPractice")}</Button>
         </CardHeader>
         <CardContent>
           {viewMode === "pipeline" ? (
@@ -699,19 +699,19 @@ export default function ResellerUtilityPractices() {
           ) : filteredPractices.length === 0 ? (
             <div className="text-center py-8">
               <FileCheck className="h-12 w-12 mx-auto text-muted-foreground mb-3" />
-              <p className="text-muted-foreground">Nessuna pratica trovata</p>
+              <p className="text-muted-foreground">{t("utility.noPracticesFound")}</p>
             </div>
           ) : (
             <Table>
               <TableHeader>
                 <TableRow>
                   <TableHead>N. Pratica</TableHead>
-                  <TableHead>Cliente</TableHead>
-                  <TableHead>Tipo</TableHead>
+                  <TableHead>{t("common.customer")}</TableHead>
+                  <TableHead>{t("common.type")}</TableHead>
                   <TableHead>Servizio/Prodotto</TableHead>
-                  <TableHead>Prezzo</TableHead>
-                  <TableHead>Stato</TableHead>
-                  <TableHead className="text-right">Azioni</TableHead>
+                  <TableHead>{t("common.price")}</TableHead>
+                  <TableHead>{t("common.status")}</TableHead>
+                  <TableHead className="text-right">{t("common.actions")}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -736,8 +736,8 @@ export default function ResellerUtilityPractices() {
                       </TableCell>
                       <TableCell>
                         <Badge variant="outline">
-                          {itemType === "service" ? "Servizio" : 
-                           itemType === "product" ? "Prodotto" : 
+                          {itemType === "service" ? t("common.service") : 
+                           itemType === "product" ? t("common.product") : 
                            itemType === "service_with_products" ? "Servizio + Prodotti" : itemType}
                         </Badge>
                       </TableCell>
@@ -923,9 +923,7 @@ export default function ResellerUtilityPractices() {
                   className="flex-1"
                   data-testid="button-item-type-service"
                 >
-                  <FileCheck className="h-4 w-4 mr-2" />
-                  Servizio
-                </Button>
+                  <FileCheck className="h-4 w-4 mr-2" />{t("common.service")}</Button>
                 <Button
                   type="button"
                   variant={selectedItemType === "product" ? "default" : "outline"}
@@ -933,9 +931,7 @@ export default function ResellerUtilityPractices() {
                   className="flex-1"
                   data-testid="button-item-type-product"
                 >
-                  <Package className="h-4 w-4 mr-2" />
-                  Prodotto
-                </Button>
+                  <Package className="h-4 w-4 mr-2" />{t("common.product")}</Button>
                 <Button
                   type="button"
                   variant={selectedItemType === "service_with_products" ? "default" : "outline"}
@@ -1162,7 +1158,7 @@ export default function ResellerUtilityPractices() {
                         </div>
                         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                           <div className="col-span-1 sm:col-span-3">
-                            <Label className="text-xs">Prodotto</Label>
+                            <Label className="text-xs">{t("common.product")}</Label>
                             <Select
                               value={item.productId}
                               onValueChange={(val) => updateProduct(index, "productId", val)}
@@ -1180,7 +1176,7 @@ export default function ResellerUtilityPractices() {
                             </Select>
                           </div>
                           <div>
-                            <Label className="text-xs">Quantità</Label>
+                            <Label className="text-xs">{t("common.quantity")}</Label>
                             <Input
                               type="number"
                               min="1"
@@ -1201,7 +1197,7 @@ export default function ResellerUtilityPractices() {
                             />
                           </div>
                           <div>
-                            <Label className="text-xs">Totale</Label>
+                            <Label className="text-xs">{t("common.total")}</Label>
                             <div className="h-9 flex items-center px-3 bg-muted rounded-md text-sm font-medium">
                               {formatCurrency(item.quantity * item.unitPriceCents)}
                             </div>
@@ -1304,7 +1300,7 @@ export default function ResellerUtilityPractices() {
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                     <div>
-                      <Label className="text-xs">Email</Label>
+                      <Label className="text-xs">{t("common.email")}</Label>
                       <Input
                         type="email"
                         value={temporaryCustomerEmail}
@@ -1314,7 +1310,7 @@ export default function ResellerUtilityPractices() {
                       />
                     </div>
                     <div>
-                      <Label className="text-xs">Telefono</Label>
+                      <Label className="text-xs">{t("common.phone")}</Label>
                       <Input
                         value={temporaryCustomerPhone}
                         onChange={(e) => setTemporaryCustomerPhone(e.target.value)}
@@ -1370,7 +1366,7 @@ export default function ResellerUtilityPractices() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="status">Stato</Label>
+                <Label htmlFor="status">{t("common.status")}</Label>
                 <Select 
                   value={selectedStatus}
                   onValueChange={(v) => setSelectedStatus(v as PracticeStatus)}
@@ -1446,7 +1442,7 @@ export default function ResellerUtilityPractices() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="notes">Note</Label>
+              <Label htmlFor="notes">{t("common.notes")}</Label>
               <Textarea
                 id="notes"
                 name="notes"
@@ -1462,15 +1458,13 @@ export default function ResellerUtilityPractices() {
                 variant="outline" 
                 onClick={() => setDialogOpen(false)}
                 data-testid="button-cancel"
-              >
-                Annulla
-              </Button>
+              >{t("common.cancel")}</Button>
               <Button 
                 type="submit"
                 disabled={createMutation.isPending || updateMutation.isPending}
                 data-testid="button-save"
               >
-                {editingPractice ? "Salva Modifiche" : "Crea Pratica"}
+                {editingPractice ? t("profile.saveChanges") : "Crea Pratica"}
               </Button>
             </div>
           </form>
@@ -1481,7 +1475,7 @@ export default function ResellerUtilityPractices() {
       <Dialog open={newCustomerDialogOpen} onOpenChange={setNewCustomerDialogOpen}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>Nuovo Cliente</DialogTitle>
+            <DialogTitle>{t("customers.newCustomer")}</DialogTitle>
             <DialogDescription>
               Crea rapidamente un nuovo cliente. Solo il nome è obbligatorio.
             </DialogDescription>
@@ -1529,9 +1523,7 @@ export default function ResellerUtilityPractices() {
                   setNewCustomerPhone("");
                 }}
                 data-testid="button-cancel-new-customer"
-              >
-                Annulla
-              </Button>
+              >{t("common.cancel")}</Button>
               <Button
                 type="button"
                 onClick={handleCreateCustomer}

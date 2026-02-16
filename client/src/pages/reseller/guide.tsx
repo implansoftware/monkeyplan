@@ -21,6 +21,7 @@ import {
   PackageCheck,
   LayoutDashboard
 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 interface GuideSectionProps {
   icon: typeof Users;
@@ -58,6 +59,7 @@ function GuideSection({ icon: Icon, title, description, features }: GuideSection
 }
 
 export default function ResellerGuide() {
+  const { t } = useTranslation();
   const sections: GuideSectionProps[] = [
     {
       icon: LayoutDashboard,
@@ -83,7 +85,7 @@ export default function ResellerGuide() {
     },
     {
       icon: Building,
-      title: "Centri di Riparazione",
+      title: t("admin.repairCenters.title"),
       description: "Gestisci i tuoi centri di riparazione e il loro personale",
       features: [
         "Crea e configura nuovi centri di riparazione",
@@ -94,7 +96,7 @@ export default function ResellerGuide() {
     },
     {
       icon: Wrench,
-      title: "Lavorazioni",
+      title: t("sidebar.items.jobs"),
       description: "Gestisci le riparazioni dall'accettazione alla consegna",
       features: [
         "Crea nuove riparazioni con il wizard guidato",
@@ -118,7 +120,7 @@ export default function ResellerGuide() {
     },
     {
       icon: Warehouse,
-      title: "Magazzino",
+      title: t("warehouse.title"),
       description: "Controlla l'inventario dei ricambi e accessori",
       features: [
         "Visualizza le giacenze in tempo reale",
@@ -165,7 +167,7 @@ export default function ResellerGuide() {
     },
     {
       icon: Truck,
-      title: "Fornitori",
+      title: t("suppliers.title"),
       description: "Gestisci i tuoi fornitori e gli ordini",
       features: [
         "Configura i fornitori con i loro listini",
@@ -176,7 +178,7 @@ export default function ResellerGuide() {
     },
     {
       icon: FileText,
-      title: "Fatturazione",
+      title: t("settings.billing"),
       description: "Gestione completa della fatturazione",
       features: [
         "Genera fatture automatiche per le riparazioni",
@@ -199,7 +201,7 @@ export default function ResellerGuide() {
     },
     {
       icon: Store,
-      title: "E-commerce",
+      title: t("sidebar.sections.ecommerce"),
       description: "Vendi online ai tuoi clienti",
       features: [
         "Configura il catalogo prodotti per lo shop",
@@ -211,7 +213,7 @@ export default function ResellerGuide() {
     },
     {
       icon: ShoppingCart,
-      title: "Acquisti B2B",
+      title: t("sidebar.sections.purchasesB2B"),
       description: "Ordina dalla piattaforma centrale",
       features: [
         "Sfoglia il catalogo B2B dell'admin",
@@ -246,7 +248,7 @@ export default function ResellerGuide() {
     },
     {
       icon: Zap,
-      title: "Utility",
+      title: t("utility.title"),
       description: "Gestisci pratiche per servizi aggiuntivi",
       features: [
         "Configura i fornitori di servizi utility",
@@ -257,7 +259,7 @@ export default function ResellerGuide() {
     },
     {
       icon: CreditCard,
-      title: "Pagamenti",
+      title: t("sidebar.items.payments"),
       description: "Gestisci incassi e pagamenti",
       features: [
         "Registra i pagamenti dei clienti",
@@ -268,7 +270,7 @@ export default function ResellerGuide() {
     },
     {
       icon: Settings,
-      title: "Impostazioni",
+      title: t("settings.title"),
       description: "Configura il tuo account e preferenze",
       features: [
         "Personalizza i dati aziendali",

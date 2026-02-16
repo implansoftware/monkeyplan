@@ -25,6 +25,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { ProductDetailDialog } from "@/components/product-detail-dialog";
 import { Info } from "lucide-react";
 import { usePageTitle } from "@/hooks/use-page-title";
+import { useTranslation } from "react-i18next";
 
 interface InitialStockEntry {
   warehouseId: string;
@@ -99,7 +100,8 @@ const COLORS = [
 ];
 
 export default function AdminProducts() {
-  usePageTitle("Prodotti");
+  const { t } = useTranslation();
+  usePageTitle(t("products.title"));
   const [searchQuery, setSearchQuery] = useState("");
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -198,10 +200,10 @@ export default function AdminProducts() {
       setInitialStock([]);
       setDeviceCompatibilities([]);
       setSelectedSupplierId("");
-      toast({ title: "Prodotto creato con successo" });
+      toast({ title: t("products.productCreated") });
     },
     onError: (error: Error) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -225,10 +227,10 @@ export default function AdminProducts() {
       setEditDialogOpen(false);
       setEditingProduct(null);
       setEditDeviceCompatibilities([]);
-      toast({ title: "Prodotto aggiornato con successo" });
+      toast({ title: t("products.productUpdated") });
     },
     onError: (error: Error) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -242,10 +244,10 @@ export default function AdminProducts() {
       queryClient.invalidateQueries({ queryKey: ["/api/warehouses"] });
       queryClient.invalidateQueries({ queryKey: ["/api/my-warehouse"] });
       queryClient.invalidateQueries({ queryKey: ["/api/admin/all-warehouses"] });
-      toast({ title: "Quantità aggiornata" });
+      toast({ title: t("products.quantityUpdated") });
     },
     onError: (error: Error) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -256,7 +258,7 @@ export default function AdminProducts() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/products"] });
       queryClient.invalidateQueries({ queryKey: ["/api/products/with-stock"] });
-      toast({ title: "Prodotto eliminato" });
+      toast({ title: t("warranties.productDeleted") });
     },
   });
 
@@ -273,7 +275,7 @@ export default function AdminProducts() {
       });
     },
     onError: () => {
-      toast({ title: "Errore", description: "Impossibile modificare la visibilità", variant: "destructive" });
+      toast({ title: t("common.error"), description: "Impossibile modificare la visibilità", variant: "destructive" });
     },
   });
 
@@ -286,10 +288,10 @@ export default function AdminProducts() {
       if (selectedProductForPricing) {
         loadResellerPrices(selectedProductForPricing.id);
       }
-      toast({ title: "Prezzo aggiornato con successo" });
+      toast({ title: t("products.priceUpdated") });
     },
     onError: (error: Error) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -301,10 +303,10 @@ export default function AdminProducts() {
       if (selectedProductForPricing) {
         loadResellerPrices(selectedProductForPricing.id);
       }
-      toast({ title: "Prezzo personalizzato rimosso" });
+      toast({ title: t("products.customPriceRemoved") });
     },
     onError: (error: Error) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -329,10 +331,10 @@ export default function AdminProducts() {
       if (editingProduct && data.imageUrl) {
         setEditingProduct({ ...editingProduct, imageUrl: data.imageUrl });
       }
-      toast({ title: "Immagine caricata con successo" });
+      toast({ title: t("products.imageUploaded") });
     },
     onError: (error: Error) => {
-      toast({ title: "Errore upload", description: error.message, variant: "destructive" });
+      toast({ title: t("tickets.uploadError"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -353,10 +355,10 @@ export default function AdminProducts() {
       if (editingProduct) {
         setEditingProduct({ ...editingProduct, imageUrl: null });
       }
-      toast({ title: "Immagine eliminata" });
+      toast({ title: t("products.imageRemoved") });
     },
     onError: (error: Error) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -374,7 +376,7 @@ export default function AdminProducts() {
       const data = await res.json();
       setResellerPrices(data);
     } catch (error) {
-      toast({ title: "Errore nel caricamento prezzi reseller", variant: "destructive" });
+      toast({ title: t("products.resellerPriceError"), variant: "destructive" });
     } finally {
       setIsLoadingResellerPrices(false);
     }
@@ -397,10 +399,10 @@ export default function AdminProducts() {
       }
       setSupplierDialogOpen(false);
       setEditingProductSupplier(null);
-      toast({ title: "Fornitore associato al prodotto" });
+      toast({ title: t("products.supplierLinked") });
     },
     onError: (error: Error) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -415,10 +417,10 @@ export default function AdminProducts() {
       }
       setSupplierDialogOpen(false);
       setEditingProductSupplier(null);
-      toast({ title: "Associazione aggiornata" });
+      toast({ title: t("products.associationUpdated") });
     },
     onError: (error: Error) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -430,10 +432,10 @@ export default function AdminProducts() {
       if (editingProduct) {
         loadProductSuppliers(editingProduct.id);
       }
-      toast({ title: "Fornitore rimosso dal prodotto" });
+      toast({ title: t("products.supplierRemoved") });
     },
     onError: (error: Error) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -473,10 +475,10 @@ export default function AdminProducts() {
       return await res.json();
     },
     onSuccess: () => {
-      toast({ title: "Compatibilità dispositivi salvate" });
+      toast({ title: t("products.compatibilitiesSaved") });
     },
     onError: (error: Error) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -489,10 +491,10 @@ export default function AdminProducts() {
       queryClient.invalidateQueries({ queryKey: ["/api/device-brands"] });
       setNewBrandDialogOpen(false);
       setNewBrandName("");
-      toast({ title: "Brand creato", description: `"${newBrand.name}" aggiunto con successo` });
+      toast({ title: t("products.brandCreated"), description: `"${newBrand.name}" aggiunto con successo` });
     },
     onError: (error: Error) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -514,10 +516,10 @@ export default function AdminProducts() {
           return newSet;
         });
       }
-      toast({ title: "Modello creato", description: `"${newModel.modelName}" aggiunto con successo` });
+      toast({ title: t("products.modelCreated"), description: `"${newModel.modelName}" aggiunto con successo` });
     },
     onError: (error: Error) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -849,10 +851,10 @@ export default function AdminProducts() {
 
   const getConditionBadge = (condition: string | undefined) => {
     switch (condition) {
-      case "nuovo": return <Badge variant="default">Nuovo</Badge>;
-      case "ricondizionato": return <Badge variant="secondary">Ricondizionato</Badge>;
-      case "usato": return <Badge variant="outline">Usato</Badge>;
-      case "compatibile": return <Badge variant="outline">Compatibile</Badge>;
+      case "nuovo": return <Badge variant="default">{t("products.new")}</Badge>;
+      case "ricondizionato": return <Badge variant="secondary">{t("products.refurbished")}</Badge>;
+      case "usato": return <Badge variant="outline">{t("products.used")}</Badge>;
+      case "compatibile": return <Badge variant="outline">{t("products.compatible")}</Badge>;
       default: return null;
     }
   };
@@ -864,7 +866,7 @@ export default function AdminProducts() {
   const getStockBadge = (totalStock: number, minStock: number | null | undefined) => {
     const min = minStock ?? 5;
     if (totalStock === 0) {
-      return <Badge variant="destructive"><AlertTriangle className="h-3 w-3 mr-1" />Esaurito</Badge>;
+      return <Badge variant="destructive"><AlertTriangle className="h-3 w-3 mr-1" />{t("warehouse.outOfStock")}</Badge>;
     } else if (totalStock <= min) {
       return <Badge variant="secondary" className="bg-yellow-500/20 text-yellow-700 dark:text-yellow-400"><AlertTriangle className="h-3 w-3 mr-1" />Scorta Bassa</Badge>;
     }
@@ -931,16 +933,16 @@ export default function AdminProducts() {
               <form onSubmit={handleSubmit} className="space-y-6">
                 <Tabs defaultValue="info" className="w-full">
                   <TabsList className="grid w-full grid-cols-4">
-                    <TabsTrigger value="info">Info Base</TabsTrigger>
-                    <TabsTrigger value="compatibility">Compatibilità</TabsTrigger>
-                    <TabsTrigger value="pricing">Prezzi</TabsTrigger>
-                    <TabsTrigger value="inventory">Magazzino</TabsTrigger>
+                    <TabsTrigger value="info">{t("admin.repairCenters.infoBase")}</TabsTrigger>
+                    <TabsTrigger value="compatibility">{t("products.compatibility")}</TabsTrigger>
+                    <TabsTrigger value="pricing">{t("products.prices")}</TabsTrigger>
+                    <TabsTrigger value="inventory">{t("sidebar.items.warehouse")}</TabsTrigger>
                   </TabsList>
 
                   <TabsContent value="info" className="space-y-4 mt-4">
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div className="space-y-2">
-                        <Label htmlFor="name">Nome Prodotto *</Label>
+                        <Label htmlFor="name">{t("products.productName")} *</Label>
                         <Input 
                           id="name" 
                           value={newProductName}
@@ -951,7 +953,7 @@ export default function AdminProducts() {
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="sku">SKU/Codice *</Label>
+                        <Label htmlFor="sku">SKU/{t("common.code")} *</Label>
                         <Input 
                           id="sku" 
                           value={newProductSku}
@@ -965,7 +967,7 @@ export default function AdminProducts() {
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div className="space-y-2">
-                        <Label htmlFor="category">Categoria *</Label>
+                        <Label htmlFor="category">{t("utility.category")} *</Label>
                         <Select value={newProductCategory} onValueChange={setNewProductCategory}>
                           <SelectTrigger id="category" data-testid="select-category">
                             <SelectValue />
@@ -980,16 +982,16 @@ export default function AdminProducts() {
                         </Select>
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="productType">Tipo Prodotto *</Label>
+                        <Label htmlFor="productType">{t("products.productType")} *</Label>
                         <Select value={newProductType} onValueChange={setNewProductType}>
                           <SelectTrigger id="productType" data-testid="select-product-type">
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="ricambio">Ricambio</SelectItem>
-                            <SelectItem value="accessorio">Accessorio</SelectItem>
-                            <SelectItem value="dispositivo">Dispositivo</SelectItem>
-                            <SelectItem value="consumabile">Consumabile</SelectItem>
+                            <SelectItem value="ricambio">{t("products.sparePart")}</SelectItem>
+                            <SelectItem value="accessorio">{t("products.accessory")}</SelectItem>
+                            <SelectItem value="dispositivo">{t("repairs.device")}</SelectItem>
+                            <SelectItem value="consumabile">{t("products.consumable")}</SelectItem>
                           </SelectContent>
                         </Select>
                       </div>
@@ -997,24 +999,24 @@ export default function AdminProducts() {
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div className="space-y-2">
-                        <Label htmlFor="condition">Condizione *</Label>
+                        <Label htmlFor="condition">{t("products.condition")} *</Label>
                         <Select value={newProductCondition} onValueChange={setNewProductCondition}>
                           <SelectTrigger id="condition" data-testid="select-condition">
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="nuovo">Nuovo Originale</SelectItem>
-                            <SelectItem value="ricondizionato">Ricondizionato</SelectItem>
-                            <SelectItem value="usato">Usato</SelectItem>
-                            <SelectItem value="compatibile">Compatibile (aftermarket)</SelectItem>
+                            <SelectItem value="nuovo">{t("products.newOriginal")}</SelectItem>
+                            <SelectItem value="ricondizionato">{t("products.refurbished")}</SelectItem>
+                            <SelectItem value="usato">{t("products.used")}</SelectItem>
+                            <SelectItem value="compatibile">{t("products.compatibleAftermarket")}</SelectItem>
                           </SelectContent>
                         </Select>
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="color">Colore</Label>
+                        <Label htmlFor="color">{t("products.color")}</Label>
                         <Select name="color">
                           <SelectTrigger id="color" data-testid="select-color">
-                            <SelectValue placeholder="Seleziona colore" />
+                            <SelectValue placeholder={t("products.selectColor")} />
                           </SelectTrigger>
                           <SelectContent>
                             {COLORS.map(color => (
@@ -1026,11 +1028,11 @@ export default function AdminProducts() {
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="description">Descrizione</Label>
+                      <Label htmlFor="description">{t("common.description")}</Label>
                       <Textarea 
                         id="description" 
                         name="description" 
-                        placeholder="Descrizione dettagliata del prodotto..."
+                        placeholder={t("products.detailedDescription")}
                         rows={3}
                         data-testid="textarea-description" 
                       />
@@ -1039,14 +1041,14 @@ export default function AdminProducts() {
 
                   <TabsContent value="compatibility" className="space-y-4 mt-4">
                     <div className="space-y-2">
-                      <Label htmlFor="deviceTypeId">Tipo Dispositivo</Label>
+                      <Label htmlFor="deviceTypeId">{t("products.deviceType")}</Label>
                       <Select name="deviceTypeId">
                         <SelectTrigger id="deviceTypeId" data-testid="select-device-type">
                           <Smartphone className="h-4 w-4 mr-2" />
-                          <SelectValue placeholder="Tutti i dispositivi" />
+                          <SelectValue placeholder={t("products.allDevices")} />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="all">Tutti i dispositivi</SelectItem>
+                          <SelectItem value="all">{t("products.allDevices")}</SelectItem>
                           {deviceTypes.map(dt => (
                             <SelectItem key={dt.id} value={dt.id}>{dt.name}</SelectItem>
                           ))}
@@ -1056,10 +1058,10 @@ export default function AdminProducts() {
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="brand">Marca</Label>
+                      <Label htmlFor="brand">{t("products.brand")}</Label>
                       <Select name="brand">
                         <SelectTrigger id="brand" data-testid="select-brand">
-                          <SelectValue placeholder="Seleziona marca" />
+                          <SelectValue placeholder={t("products.selectBrand")} />
                         </SelectTrigger>
                         <SelectContent>
                           {BRANDS.map(brand => (
@@ -1071,7 +1073,7 @@ export default function AdminProducts() {
 
                     <div className="space-y-2">
                       <div className="flex items-center justify-between">
-                        <Label>Dispositivi Compatibili</Label>
+                        <Label>{t("products.compatibleDevices")}</Label>
                         <div className="flex gap-1">
                           <Button
                             type="button"
@@ -1185,7 +1187,7 @@ export default function AdminProducts() {
                   <TabsContent value="pricing" className="space-y-4 mt-4">
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div className="space-y-2">
-                        <Label htmlFor="costPrice">Prezzo Acquisto (€)</Label>
+                        <Label htmlFor="costPrice">{t("products.purchasePrice")} (€)</Label>
                         <Input
                           id="costPrice"
                           value={newProductCostPrice}
@@ -1199,7 +1201,7 @@ export default function AdminProducts() {
                         <p className="text-xs text-muted-foreground">Costo dal fornitore</p>
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="unitPrice">Prezzo Vendita (€) *</Label>
+                        <Label htmlFor="unitPrice">{t("products.salePrice")} (€) *</Label>
                         <Input
                           id="unitPrice"
                           value={newProductUnitPrice}
@@ -1216,7 +1218,7 @@ export default function AdminProducts() {
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="warrantyMonths">Garanzia (mesi)</Label>
+                      <Label htmlFor="warrantyMonths">{t("products.warrantyMonths")}</Label>
                       <Input
                         id="warrantyMonths"
                         name="warrantyMonths"
@@ -1232,16 +1234,16 @@ export default function AdminProducts() {
                   <TabsContent value="inventory" className="space-y-4 mt-4">
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div className="space-y-2">
-                        <Label htmlFor="supplier">Fornitore</Label>
+                        <Label htmlFor="supplier">{t("suppliers.supplier")}</Label>
                         <Select 
                           value={selectedSupplierId} 
                           onValueChange={setSelectedSupplierId}
                         >
                           <SelectTrigger data-testid="select-supplier">
-                            <SelectValue placeholder="Seleziona fornitore..." />
+                            <SelectValue placeholder={t("suppliers.selectSupplier")} />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="none">Nessun fornitore</SelectItem>
+                            <SelectItem value="none">{t("suppliers.noSupplier")}</SelectItem>
                             {suppliers.filter(s => s.isActive).map(s => (
                               <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
                             ))}
@@ -1249,11 +1251,11 @@ export default function AdminProducts() {
                         </Select>
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="supplierCode">Codice Fornitore</Label>
+                        <Label htmlFor="supplierCode">{t("suppliers.supplierCode")}</Label>
                         <Input
                           id="supplierCode"
                           name="supplierCode"
-                          placeholder="Codice articolo fornitore"
+                          placeholder={t("suppliers.supplierCode")}
                           data-testid="input-supplier-code"
                         />
                       </div>
@@ -1261,7 +1263,7 @@ export default function AdminProducts() {
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div className="space-y-2">
-                        <Label htmlFor="minStock">Scorta Minima</Label>
+                        <Label htmlFor="minStock">{t("warehouse.minStock")}</Label>
                         <Input
                           id="minStock"
                           name="minStock"
@@ -1274,7 +1276,7 @@ export default function AdminProducts() {
                         <p className="text-xs text-muted-foreground">Alert quando scende sotto</p>
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="location">Ubicazione</Label>
+                        <Label htmlFor="location">{t("warehouse.location")}</Label>
                         <Input
                           id="location"
                           name="location"
@@ -1288,15 +1290,15 @@ export default function AdminProducts() {
 
                     <div className="space-y-3">
                       <div className="flex items-center justify-between">
-                        <Label>Quantità Iniziali per Magazzino</Label>
+                        <Label>{t("warehouse.initialQuantities")}</Label>
                         <Select onValueChange={addInitialStock}>
                           <SelectTrigger className="w-56" data-testid="select-add-stock-warehouse">
-                            <SelectValue placeholder="Aggiungi magazzino..." />
+                            <SelectValue placeholder={t("warehouse.addWarehouse")} />
                           </SelectTrigger>
                           <SelectContent>
                             {groupedWarehouses.admin.filter(w => !initialStock.find(s => s.warehouseId === w.id)).length > 0 && (
                               <SelectGroup>
-                                <SelectLabel>Magazzini Admin</SelectLabel>
+                                <SelectLabel>{t("warehouse.adminWarehouses")}</SelectLabel>
                                 {groupedWarehouses.admin
                                   .filter(w => !initialStock.find(s => s.warehouseId === w.id))
                                   .map(wh => (
@@ -1307,7 +1309,7 @@ export default function AdminProducts() {
                             )}
                             {groupedWarehouses.reseller.filter(w => !initialStock.find(s => s.warehouseId === w.id)).length > 0 && (
                               <SelectGroup>
-                                <SelectLabel>Magazzini Rivenditori</SelectLabel>
+                                <SelectLabel>{t("warehouse.resellerWarehouses")}</SelectLabel>
                                 {groupedWarehouses.reseller
                                   .filter(w => !initialStock.find(s => s.warehouseId === w.id))
                                   .map(wh => (
@@ -1320,7 +1322,7 @@ export default function AdminProducts() {
                             )}
                             {groupedWarehouses.sub_reseller.filter(w => !initialStock.find(s => s.warehouseId === w.id)).length > 0 && (
                               <SelectGroup>
-                                <SelectLabel>Magazzini Sotto-Rivenditori</SelectLabel>
+                                <SelectLabel>{t("warehouse.subResellerWarehouses")}</SelectLabel>
                                 {groupedWarehouses.sub_reseller
                                   .filter(w => !initialStock.find(s => s.warehouseId === w.id))
                                   .map(wh => (
@@ -1333,7 +1335,7 @@ export default function AdminProducts() {
                             )}
                             {groupedWarehouses.repair_center.filter(w => !initialStock.find(s => s.warehouseId === w.id)).length > 0 && (
                               <SelectGroup>
-                                <SelectLabel>Magazzini Centri Riparazione</SelectLabel>
+                                <SelectLabel>{t("warehouse.repairCenterWarehouses")}</SelectLabel>
                                 {groupedWarehouses.repair_center
                                   .filter(w => !initialStock.find(s => s.warehouseId === w.id))
                                   .map(wh => (
@@ -1404,7 +1406,7 @@ export default function AdminProducts() {
                   disabled={createProductMutation.isPending}
                   data-testid="button-submit-product"
                 >
-                  {createProductMutation.isPending ? "Creazione..." : "Crea Prodotto"}
+                  {createProductMutation.isPending ? t("admin.repairCenters.creating") : "Crea Prodotto"}
                 </Button>
               </form>
             </ScrollArea>
@@ -1437,16 +1439,16 @@ export default function AdminProducts() {
                 <form onSubmit={handleEditSubmit} className="space-y-6">
                   <Tabs defaultValue="info" className="w-full">
                     <TabsList className="grid w-full grid-cols-5">
-                      <TabsTrigger value="info">Info</TabsTrigger>
-                      <TabsTrigger value="compatibility">Compatibilità</TabsTrigger>
-                      <TabsTrigger value="pricing">Prezzi</TabsTrigger>
-                      <TabsTrigger value="suppliers">Fornitori</TabsTrigger>
-                      <TabsTrigger value="inventory">Magazzino</TabsTrigger>
+                      <TabsTrigger value="info">{t("common.info")}</TabsTrigger>
+                      <TabsTrigger value="compatibility">{t("products.compatibility")}</TabsTrigger>
+                      <TabsTrigger value="pricing">{t("products.prices")}</TabsTrigger>
+                      <TabsTrigger value="suppliers">{t("sidebar.items.suppliers")}</TabsTrigger>
+                      <TabsTrigger value="inventory">{t("sidebar.items.warehouse")}</TabsTrigger>
                     </TabsList>
 
                     <TabsContent value="info" className="space-y-4 mt-4">
                       <div className="space-y-2">
-                        <Label>Immagine Prodotto</Label>
+                        <Label>{t("products.productImage")}</Label>
                         <div className="flex items-start gap-4">
                           <div className="w-24 h-24 rounded-md border bg-muted flex items-center justify-center overflow-hidden">
                             {editingProduct.imageUrl ? (
@@ -1511,7 +1513,7 @@ export default function AdminProducts() {
                       <Separator />
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div className="space-y-2">
-                          <Label htmlFor="edit-name">Nome Prodotto *</Label>
+                          <Label htmlFor="edit-name">{t("products.productName")} *</Label>
                           <Input 
                             id="edit-name" 
                             name="name" 
@@ -1534,7 +1536,7 @@ export default function AdminProducts() {
 
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div className="space-y-2">
-                          <Label htmlFor="edit-category">Categoria *</Label>
+                          <Label htmlFor="edit-category">{t("utility.category")} *</Label>
                           <Select name="category" defaultValue={editingProduct.category}>
                             <SelectTrigger id="edit-category" data-testid="edit-select-category">
                               <SelectValue />
@@ -1549,16 +1551,16 @@ export default function AdminProducts() {
                           </Select>
                         </div>
                         <div className="space-y-2">
-                          <Label htmlFor="edit-productType">Tipo Prodotto *</Label>
+                          <Label htmlFor="edit-productType">{t("products.productType")} *</Label>
                           <Select name="productType" defaultValue={editingProduct.productType}>
                             <SelectTrigger id="edit-productType" data-testid="edit-select-product-type">
                               <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="ricambio">Ricambio</SelectItem>
-                              <SelectItem value="accessorio">Accessorio</SelectItem>
-                              <SelectItem value="dispositivo">Dispositivo</SelectItem>
-                              <SelectItem value="consumabile">Consumabile</SelectItem>
+                              <SelectItem value="ricambio">{t("products.sparePart")}</SelectItem>
+                              <SelectItem value="accessorio">{t("products.accessory")}</SelectItem>
+                              <SelectItem value="dispositivo">{t("repairs.device")}</SelectItem>
+                              <SelectItem value="consumabile">{t("products.consumable")}</SelectItem>
                             </SelectContent>
                           </Select>
                         </div>
@@ -1566,24 +1568,24 @@ export default function AdminProducts() {
 
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div className="space-y-2">
-                          <Label htmlFor="edit-condition">Condizione *</Label>
+                          <Label htmlFor="edit-condition">{t("products.condition")} *</Label>
                           <Select name="condition" defaultValue={editingProduct.condition}>
                             <SelectTrigger id="edit-condition" data-testid="edit-select-condition">
                               <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="nuovo">Nuovo Originale</SelectItem>
-                              <SelectItem value="ricondizionato">Ricondizionato</SelectItem>
-                              <SelectItem value="usato">Usato</SelectItem>
-                              <SelectItem value="compatibile">Compatibile (aftermarket)</SelectItem>
+                              <SelectItem value="nuovo">{t("products.newOriginal")}</SelectItem>
+                              <SelectItem value="ricondizionato">{t("products.refurbished")}</SelectItem>
+                              <SelectItem value="usato">{t("products.used")}</SelectItem>
+                              <SelectItem value="compatibile">{t("products.compatibleAftermarket")}</SelectItem>
                             </SelectContent>
                           </Select>
                         </div>
                         <div className="space-y-2">
-                          <Label htmlFor="edit-color">Colore</Label>
+                          <Label htmlFor="edit-color">{t("products.color")}</Label>
                           <Select name="color" defaultValue={editingProduct.color || undefined}>
                             <SelectTrigger id="edit-color" data-testid="edit-select-color">
-                              <SelectValue placeholder="Seleziona colore" />
+                              <SelectValue placeholder={t("products.selectColor")} />
                             </SelectTrigger>
                             <SelectContent>
                               {COLORS.map(color => (
@@ -1595,7 +1597,7 @@ export default function AdminProducts() {
                       </div>
 
                       <div className="space-y-2">
-                        <Label htmlFor="edit-description">Descrizione</Label>
+                        <Label htmlFor="edit-description">{t("common.description")}</Label>
                         <Textarea 
                           id="edit-description" 
                           name="description" 
@@ -1606,14 +1608,14 @@ export default function AdminProducts() {
                       </div>
 
                       <div className="flex flex-wrap items-center gap-2">
-                        <Label htmlFor="edit-isActive">Stato Prodotto</Label>
+                        <Label htmlFor="edit-isActive">{t("products.productStatus")}</Label>
                         <Select name="isActive" defaultValue={editingProduct.isActive ? "true" : "false"}>
                           <SelectTrigger className="w-40" data-testid="edit-select-is-active">
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="true">Attivo</SelectItem>
-                            <SelectItem value="false">Disattivato</SelectItem>
+                            <SelectItem value="true">{t("common.active")}</SelectItem>
+                            <SelectItem value="false">{t("common.disabled")}</SelectItem>
                           </SelectContent>
                         </Select>
                       </div>
@@ -1621,14 +1623,14 @@ export default function AdminProducts() {
 
                     <TabsContent value="compatibility" className="space-y-4 mt-4">
                       <div className="space-y-2">
-                        <Label htmlFor="edit-deviceTypeId">Tipo Dispositivo</Label>
+                        <Label htmlFor="edit-deviceTypeId">{t("products.deviceType")}</Label>
                         <Select name="deviceTypeId" defaultValue={editingProduct.deviceTypeId || "all"}>
                           <SelectTrigger id="edit-deviceTypeId" data-testid="edit-select-device-type">
                             <Smartphone className="h-4 w-4 mr-2" />
-                            <SelectValue placeholder="Tutti i dispositivi" />
+                            <SelectValue placeholder={t("settings.allDevices")} />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="all">Tutti i dispositivi</SelectItem>
+                            <SelectItem value="all">{t("products.allDevices")}</SelectItem>
                             {deviceTypes.map(dt => (
                               <SelectItem key={dt.id} value={dt.id}>{dt.name}</SelectItem>
                             ))}
@@ -1638,10 +1640,10 @@ export default function AdminProducts() {
                       </div>
 
                       <div className="space-y-2">
-                        <Label htmlFor="edit-brand">Marca</Label>
+                        <Label htmlFor="edit-brand">{t("products.brand")}</Label>
                         <Select name="brand" defaultValue={editingProduct.brand || undefined}>
                           <SelectTrigger id="edit-brand" data-testid="edit-select-brand">
-                            <SelectValue placeholder="Seleziona marca" />
+                            <SelectValue placeholder={t("products.selectBrand")} />
                           </SelectTrigger>
                           <SelectContent>
                             {BRANDS.map(brand => (
@@ -1653,7 +1655,7 @@ export default function AdminProducts() {
 
                       <div className="space-y-2">
                         <div className="flex items-center justify-between">
-                          <Label>Dispositivi Compatibili</Label>
+                          <Label>{t("products.compatibleDevices")}</Label>
                           <div className="flex gap-1">
                             <Button
                               type="button"
@@ -1771,7 +1773,7 @@ export default function AdminProducts() {
                     <TabsContent value="pricing" className="space-y-4 mt-4">
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div className="space-y-2">
-                          <Label htmlFor="edit-costPrice">Prezzo Acquisto (€)</Label>
+                          <Label htmlFor="edit-costPrice">{t("products.purchasePrice")} (€)</Label>
                           <Input
                             id="edit-costPrice"
                             name="costPrice"
@@ -1783,7 +1785,7 @@ export default function AdminProducts() {
                           />
                         </div>
                         <div className="space-y-2">
-                          <Label htmlFor="edit-unitPrice">Prezzo Vendita (€) *</Label>
+                          <Label htmlFor="edit-unitPrice">{t("products.salePrice")} (€) *</Label>
                           <Input
                             id="edit-unitPrice"
                             name="unitPrice"
@@ -1798,7 +1800,7 @@ export default function AdminProducts() {
                       </div>
 
                       <div className="space-y-2">
-                        <Label htmlFor="edit-warrantyMonths">Garanzia (mesi)</Label>
+                        <Label htmlFor="edit-warrantyMonths">{t("products.warrantyMonths")}</Label>
                         <Input
                           id="edit-warrantyMonths"
                           name="warrantyMonths"
@@ -1862,12 +1864,12 @@ export default function AdminProducts() {
                                     </Badge>
                                   )}
                                   {!ps.isActive && (
-                                    <Badge variant="secondary">Inattivo</Badge>
+                                    <Badge variant="secondary">{t("common.inactive")}</Badge>
                                   )}
                                 </div>
                                 <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground mt-1">
                                   {ps.supplierCode && (
-                                    <span>Cod: {ps.supplierCode}</span>
+                                    <span>{t("common.code")}: {ps.supplierCode}</span>
                                   )}
                                   {ps.purchasePrice && (
                                     <span className="font-medium text-foreground">
@@ -1921,13 +1923,13 @@ export default function AdminProducts() {
                           </DialogHeader>
                           <form onSubmit={handleSupplierSubmit} className="space-y-4">
                             <div className="space-y-2">
-                              <Label htmlFor="ps-supplierId">Fornitore *</Label>
+                              <Label htmlFor="ps-supplierId">{t("suppliers.supplier")} *</Label>
                               <Select 
                                 name="supplierId" 
                                 defaultValue={editingProductSupplier?.supplierId}
                               >
                                 <SelectTrigger data-testid="select-product-supplier">
-                                  <SelectValue placeholder="Seleziona fornitore..." />
+                                  <SelectValue placeholder={t("suppliers.selectSupplier")} />
                                 </SelectTrigger>
                                 <SelectContent>
                                   {suppliers
@@ -1944,17 +1946,17 @@ export default function AdminProducts() {
 
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                               <div className="space-y-2">
-                                <Label htmlFor="ps-supplierCode">Codice Articolo Fornitore</Label>
+                                <Label htmlFor="ps-supplierCode">{t("suppliers.supplierCode")}</Label>
                                 <Input
                                   id="ps-supplierCode"
                                   name="supplierCode"
                                   defaultValue={editingProductSupplier?.supplierCode || ""}
-                                  placeholder="Codice presso fornitore"
+                                  placeholder={t("suppliers.supplierCode")}
                                   data-testid="input-ps-code"
                                 />
                               </div>
                               <div className="space-y-2">
-                                <Label htmlFor="ps-purchasePrice">Prezzo Acquisto (€)</Label>
+                                <Label htmlFor="ps-purchasePrice">{t("products.purchasePrice")} (€)</Label>
                                 <Input
                                   id="ps-purchasePrice"
                                   name="purchasePrice"
@@ -1969,7 +1971,7 @@ export default function AdminProducts() {
 
                             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                               <div className="space-y-2">
-                                <Label htmlFor="ps-minOrderQty">Quantità Min.</Label>
+                                <Label htmlFor="ps-minOrderQty">{t("products.minQty")}</Label>
                                 <Input
                                   id="ps-minOrderQty"
                                   name="minOrderQty"
@@ -1980,7 +1982,7 @@ export default function AdminProducts() {
                                 />
                               </div>
                               <div className="space-y-2">
-                                <Label htmlFor="ps-packSize">Pezzi/Conf.</Label>
+                                <Label htmlFor="ps-packSize">{t("products.packSize")}</Label>
                                 <Input
                                   id="ps-packSize"
                                   name="packSize"
@@ -1991,7 +1993,7 @@ export default function AdminProducts() {
                                 />
                               </div>
                               <div className="space-y-2">
-                                <Label htmlFor="ps-leadTimeDays">Giorni Consegna</Label>
+                                <Label htmlFor="ps-leadTimeDays">{t("products.leadTimeDays")}</Label>
                                 <Input
                                   id="ps-leadTimeDays"
                                   name="leadTimeDays"
@@ -2004,18 +2006,18 @@ export default function AdminProducts() {
                             </div>
 
                             <div className="space-y-2">
-                              <Label htmlFor="ps-supplierName">Nome Prodotto (presso fornitore)</Label>
+                              <Label htmlFor="ps-supplierName">{t("products.supplierProductName")}</Label>
                               <Input
                                 id="ps-supplierName"
                                 name="supplierName"
                                 defaultValue={editingProductSupplier?.supplierName || ""}
-                                placeholder="Come lo chiama il fornitore"
+                                placeholder={t("products.supplierProductName")}
                                 data-testid="input-ps-name"
                               />
                             </div>
 
                             <div className="flex flex-wrap items-center gap-2">
-                              <Label>Fornitore Preferito</Label>
+                              <Label>{t("products.preferredSupplier")}</Label>
                               <Select 
                                 name="isPreferred" 
                                 defaultValue={editingProductSupplier?.isPreferred ? "true" : "false"}
@@ -2054,7 +2056,7 @@ export default function AdminProducts() {
                                 data-testid="button-submit-ps"
                               >
                                 {(createProductSupplierMutation.isPending || updateProductSupplierMutation.isPending)
-                                  ? "Salvataggio..."
+                                  ? t("settings.savingRate")
                                   : editingProductSupplier ? "Aggiorna" : "Associa"}
                               </Button>
                             </div>
@@ -2065,7 +2067,7 @@ export default function AdminProducts() {
 
                     <TabsContent value="inventory" className="space-y-4 mt-4">
                       <div className="space-y-2">
-                        <Label htmlFor="edit-minStock">Scorta Minima</Label>
+                        <Label htmlFor="edit-minStock">{t("warehouse.minStock")}</Label>
                         <Input
                           id="edit-minStock"
                           name="minStock"
@@ -2087,12 +2089,12 @@ export default function AdminProducts() {
                           </Label>
                           <Select onValueChange={addEditStock}>
                             <SelectTrigger className="w-56" data-testid="edit-select-add-warehouse">
-                              <SelectValue placeholder="Aggiungi magazzino..." />
+                              <SelectValue placeholder={t("warehouse.addWarehouse")} />
                             </SelectTrigger>
                             <SelectContent>
                               {groupedWarehouses.admin.filter(w => !editStock.find(s => s.warehouseId === w.id)).length > 0 && (
                                 <SelectGroup>
-                                  <SelectLabel>Magazzini Admin</SelectLabel>
+                                  <SelectLabel>{t("warehouse.adminWarehouses")}</SelectLabel>
                                   {groupedWarehouses.admin
                                     .filter(w => !editStock.find(s => s.warehouseId === w.id))
                                     .map(wh => (
@@ -2103,7 +2105,7 @@ export default function AdminProducts() {
                               )}
                               {groupedWarehouses.reseller.filter(w => !editStock.find(s => s.warehouseId === w.id)).length > 0 && (
                                 <SelectGroup>
-                                  <SelectLabel>Magazzini Rivenditori</SelectLabel>
+                                  <SelectLabel>{t("warehouse.resellerWarehouses")}</SelectLabel>
                                   {groupedWarehouses.reseller
                                     .filter(w => !editStock.find(s => s.warehouseId === w.id))
                                     .map(wh => (
@@ -2116,7 +2118,7 @@ export default function AdminProducts() {
                               )}
                               {groupedWarehouses.sub_reseller.filter(w => !editStock.find(s => s.warehouseId === w.id)).length > 0 && (
                                 <SelectGroup>
-                                  <SelectLabel>Magazzini Sotto-Rivenditori</SelectLabel>
+                                  <SelectLabel>{t("warehouse.subResellerWarehouses")}</SelectLabel>
                                   {groupedWarehouses.sub_reseller
                                     .filter(w => !editStock.find(s => s.warehouseId === w.id))
                                     .map(wh => (
@@ -2129,7 +2131,7 @@ export default function AdminProducts() {
                               )}
                               {groupedWarehouses.repair_center.filter(w => !editStock.find(s => s.warehouseId === w.id)).length > 0 && (
                                 <SelectGroup>
-                                  <SelectLabel>Magazzini Centri Riparazione</SelectLabel>
+                                  <SelectLabel>{t("warehouse.repairCenterWarehouses")}</SelectLabel>
                                   {groupedWarehouses.repair_center
                                     .filter(w => !editStock.find(s => s.warehouseId === w.id))
                                     .map(wh => (
@@ -2177,7 +2179,7 @@ export default function AdminProducts() {
                                   </div>
                                   <div className="flex flex-wrap items-center gap-3">
                                     <div className="flex-1">
-                                      <Label className="text-xs text-muted-foreground">Quantità</Label>
+                                      <Label className="text-xs text-muted-foreground">{t("common.quantity")}</Label>
                                       <Input
                                         type="number"
                                         min="0"
@@ -2213,7 +2215,7 @@ export default function AdminProducts() {
                     disabled={updateProductMutation.isPending}
                     data-testid="button-update-product"
                   >
-                    {updateProductMutation.isPending ? "Salvataggio..." : "Salva Modifiche"}
+                    {updateProductMutation.isPending ? t("settings.savingRate") : "Salva Modifiche"}
                   </Button>
                 </form>
               </ScrollArea>
@@ -2228,7 +2230,7 @@ export default function AdminProducts() {
             <div className="flex-1 relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Cerca per nome, SKU o marca..."
+                placeholder={t("common.search")}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-9"
@@ -2240,7 +2242,7 @@ export default function AdminProducts() {
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">Tutte le categorie</SelectItem>
+                <SelectItem value="all">{t("products.allCategories")}</SelectItem>
                 {CATEGORIES.map(cat => (
                   <SelectItem key={cat.value} value={cat.value}>{cat.label}</SelectItem>
                 ))}
@@ -2258,32 +2260,32 @@ export default function AdminProducts() {
           ) : filteredProducts.length === 0 ? (
             <div className="text-center py-12 text-muted-foreground">
               <Package className="h-12 w-12 mx-auto mb-4 opacity-20" />
-              <p>Nessun prodotto trovato</p>
+              <p>{t("products.noProductsFound")}</p>
             </div>
           ) : (
             <Table>
               <TableHeader>
                 <TableRow>
                   <TableHead className="w-12"></TableHead>
-                  <TableHead>Prodotto</TableHead>
+                  <TableHead>{t("products.product")}</TableHead>
                   <TableHead>Barcode</TableHead>
-                  <TableHead>Categoria</TableHead>
-                  <TableHead>Condizione</TableHead>
-                  <TableHead>Vendita</TableHead>
+                  <TableHead>{t("common.category")}</TableHead>
+                  <TableHead>{t("products.condition")}</TableHead>
+                  <TableHead>{t("products.sale")}</TableHead>
                   <TableHead>
                     <div className="flex flex-wrap items-center gap-1">
                       <Warehouse className="h-4 w-4" />
                       Giacenze
                     </div>
                   </TableHead>
-                  <TableHead>Compatibilità</TableHead>
+                  <TableHead>{t("products.compatibility")}</TableHead>
                   <TableHead>
                     <div className="flex flex-wrap items-center gap-1">
                       <Store className="h-4 w-4" />
                       Shop
                     </div>
                   </TableHead>
-                  <TableHead className="text-right">Azioni</TableHead>
+                  <TableHead className="text-right">{t("common.actions")}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -2343,7 +2345,7 @@ export default function AdminProducts() {
                               ))}
                               <Separator className="my-2" />
                               <div className="flex justify-between gap-4 font-semibold">
-                                <span>Totale</span>
+                                <span>{t("common.total")}</span>
                                 <span className="font-mono">{totalStock}</span>
                               </div>
                             </div>
@@ -2445,7 +2447,7 @@ export default function AdminProducts() {
                               <Info className="h-4 w-4 text-primary" />
                             </Button>
                           </TooltipTrigger>
-                          <TooltipContent>Dettagli prodotto</TooltipContent>
+                          <TooltipContent>{t("products.productDetails")}</TooltipContent>
                         </Tooltip>
                         <Tooltip>
                           <TooltipTrigger asChild>
@@ -2458,7 +2460,7 @@ export default function AdminProducts() {
                               <Users className="h-4 w-4" />
                             </Button>
                           </TooltipTrigger>
-                          <TooltipContent>Prezzi Reseller</TooltipContent>
+                          <TooltipContent>{t("products.resellerPrices")}</TooltipContent>
                         </Tooltip>
                         <Button 
                           variant="ghost" 
@@ -2518,10 +2520,10 @@ export default function AdminProducts() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Rivenditore</TableHead>
+                    <TableHead>{t("roles.reseller")}</TableHead>
                     <TableHead className="text-right">Prezzo Base</TableHead>
                     <TableHead className="text-right">Prezzo Personalizzato</TableHead>
-                    <TableHead className="text-right">Azioni</TableHead>
+                    <TableHead className="text-right">{t("common.actions")}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -2612,14 +2614,14 @@ export default function AdminProducts() {
       <Dialog open={newBrandDialogOpen} onOpenChange={setNewBrandDialogOpen}>
         <DialogContent className="max-w-sm">
           <DialogHeader>
-            <DialogTitle>Nuovo Brand Dispositivo</DialogTitle>
+            <DialogTitle>{t("products.newDeviceBrand")}</DialogTitle>
             <DialogDescription>
               Aggiungi un nuovo brand di dispositivo al catalogo
             </DialogDescription>
           </DialogHeader>
           <form onSubmit={handleCreateBrand} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="newBrandName">Nome Brand *</Label>
+              <Label htmlFor="newBrandName">{t("products.brandName")} *</Label>
               <Input
                 id="newBrandName"
                 value={newBrandName}
@@ -2642,7 +2644,7 @@ export default function AdminProducts() {
                 disabled={createBrandMutation.isPending || !newBrandName.trim()}
                 data-testid="button-submit-new-brand"
               >
-                {createBrandMutation.isPending ? "Creazione..." : "Crea Brand"}
+                {createBrandMutation.isPending ? t("admin.repairCenters.creating") : "Crea Brand"}
               </Button>
             </div>
           </form>
@@ -2653,7 +2655,7 @@ export default function AdminProducts() {
       <Dialog open={newModelDialogOpen} onOpenChange={setNewModelDialogOpen}>
         <DialogContent className="max-w-sm">
           <DialogHeader>
-            <DialogTitle>Nuovo Modello Dispositivo</DialogTitle>
+            <DialogTitle>{t("products.newDeviceModel")}</DialogTitle>
             <DialogDescription>
               Aggiungi un nuovo modello di dispositivo
             </DialogDescription>
@@ -2663,7 +2665,7 @@ export default function AdminProducts() {
               <Label htmlFor="newModelBrand">Brand *</Label>
               <Select value={newModelBrandId} onValueChange={setNewModelBrandId}>
                 <SelectTrigger id="newModelBrand" data-testid="select-new-model-brand">
-                  <SelectValue placeholder="Seleziona brand" />
+                  <SelectValue placeholder={t("products.selectBrand")} />
                 </SelectTrigger>
                 <SelectContent>
                   {deviceBrands.map(brand => (
@@ -2673,7 +2675,7 @@ export default function AdminProducts() {
               </Select>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="newModelName">Nome Modello *</Label>
+              <Label htmlFor="newModelName">{t("products.modelName")} *</Label>
               <Input
                 id="newModelName"
                 value={newModelName}
@@ -2696,7 +2698,7 @@ export default function AdminProducts() {
                 disabled={createModelMutation.isPending || !newModelName.trim() || !newModelBrandId}
                 data-testid="button-submit-new-model"
               >
-                {createModelMutation.isPending ? "Creazione..." : "Crea Modello"}
+                {createModelMutation.isPending ? t("admin.repairCenters.creating") : "Crea Modello"}
               </Button>
             </div>
           </form>

@@ -23,6 +23,7 @@ import type { DateRange } from "react-day-picker";
 import { CustomerWizardDialog } from "@/components/CustomerWizardDialog";
 import { CustomerRelationshipsCard } from "@/components/CustomerRelationshipsCard";
 import { Link } from "wouter";
+import { useTranslation } from "react-i18next";
 
 interface CustomerEditFormData {
   fullName: string;
@@ -63,6 +64,7 @@ const defaultFormData: CustomerEditFormData = {
 };
 
 export default function AdminCustomers() {
+  const { t } = useTranslation();
   const [searchQuery, setSearchQuery] = useState("");
   const [resellerFilter, setResellerFilter] = useState<string>("all");
   const [dateRange, setDateRange] = useState<DateRange | undefined>();
@@ -86,7 +88,7 @@ export default function AdminCustomers() {
       setIsExporting(true);
       
       const csv = [
-        ['Nome', 'Email', 'Username', 'Rivenditore', 'Stato', 'Data Creazione'].join(','),
+        [t("common.name"), t("common.email"), 'Username', t("sidebar.items.resellers"), t("common.status"), t("customers.creationDate")].join(','),
         ...filteredCustomers.map(c => {
           const reseller = resellers.find(r => r.id === c.resellerId);
           return [
@@ -94,7 +96,7 @@ export default function AdminCustomers() {
             c.email,
             c.username,
             reseller?.fullName || 'N/D',
-            c.isActive ? 'Attivo' : 'Inattivo',
+            c.isActive ? t("common.active") : t("common.inactive"),
             format(new Date(c.createdAt), "dd/MM/yyyy")
           ].join(',');
         })
@@ -111,13 +113,13 @@ export default function AdminCustomers() {
       document.body.removeChild(a);
       
       toast({
-        title: "Export completato",
-        description: "Il file CSV è stato scaricato con successo",
+        title: t("repairs.exportCompleted"),
+        description: t("customers.csvExportSuccess"),
       });
     } catch (error) {
       toast({
-        title: "Errore",
-        description: "Impossibile esportare i dati",
+        title: t("common.error"),
+        description: t("repairs.exportError"),
         variant: "destructive",
       });
     } finally {
@@ -131,11 +133,11 @@ export default function AdminCustomers() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/customers"] });
-      toast({ title: "Cliente eliminato" });
+      toast({ title: t("customers.customerDeleted") });
     },
     onError: (error: Error) => {
       toast({ 
-        title: "Errore", 
+        title: t("common.error"), 
         description: error.message, 
         variant: "destructive" 
       });
@@ -151,7 +153,7 @@ export default function AdminCustomers() {
       queryClient.invalidateQueries({ queryKey: ["/api/customers"] });
     },
     onError: (error: Error) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -164,7 +166,7 @@ export default function AdminCustomers() {
       queryClient.invalidateQueries({ queryKey: ["/api/customers"] });
     },
     onError: (error: Error) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -239,7 +241,7 @@ export default function AdminCustomers() {
       
       queryClient.invalidateQueries({ queryKey: [`/api/customers/${editingCustomer.id}`] });
       setEditingCustomer(null);
-      toast({ title: "Cliente aggiornato con successo" });
+      toast({ title: t("customers.customerUpdated") });
     } catch (error) {
     }
   };
@@ -286,8 +288,8 @@ export default function AdminCustomers() {
               <Users className="h-7 w-7 text-white" />
             </div>
             <div>
-              <h1 className="text-2xl sm:text-3xl font-bold text-white tracking-tight">Gestione Clienti</h1>
-              <p className="text-cyan-100/80 mt-1">Gestisci tutti i clienti dei rivenditori</p>
+              <h1 className="text-2xl sm:text-3xl font-bold text-white tracking-tight">{t("customers.management")}</h1>
+              <p className="text-cyan-100/80 mt-1">{t("customers.manageAllResellers")}</p>
             </div>
           </div>
           <div className="flex gap-3 flex-wrap">
@@ -299,7 +301,7 @@ export default function AdminCustomers() {
               data-testid="button-export-customers"
             >
               <Download className="h-4 w-4 mr-2" />
-              {isExporting ? "Esportazione..." : "Esporta CSV"}
+              {isExporting ? t("repairs.exporting") : t("reports.exportCSV")}
             </Button>
             <Button 
               onClick={() => setWizardOpen(true)} 
@@ -307,7 +309,7 @@ export default function AdminCustomers() {
               data-testid="button-new-customer"
             >
               <UserPlus className="h-4 w-4 mr-2" />
-              Nuovo Cliente
+              {t("customers.newCustomer")}
             </Button>
           </div>
         </div>
@@ -322,7 +324,7 @@ export default function AdminCustomers() {
               <Users className="h-6 w-6" />
             </div>
             <div>
-              <p className="text-sm text-blue-100">Totale Clienti</p>
+              <p className="text-sm text-blue-100">{t("customers.totalCustomers")}</p>
               <p className="text-3xl font-bold" data-testid="text-total-customers">{totalCustomers}</p>
             </div>
           </div>
@@ -335,7 +337,7 @@ export default function AdminCustomers() {
               <Activity className="h-6 w-6" />
             </div>
             <div>
-              <p className="text-sm text-emerald-100">Clienti Attivi</p>
+              <p className="text-sm text-emerald-100">{t("customers.activeCustomers")}</p>
               <p className="text-3xl font-bold" data-testid="text-active-customers">{activeCustomers}</p>
             </div>
           </div>
@@ -348,7 +350,7 @@ export default function AdminCustomers() {
               <Building2 className="h-6 w-6" />
             </div>
             <div>
-              <p className="text-sm text-violet-100">Rivenditori</p>
+              <p className="text-sm text-violet-100">{t("sidebar.items.resellers")}</p>
               <p className="text-3xl font-bold" data-testid="text-resellers-count">{resellers.length}</p>
             </div>
           </div>
@@ -362,7 +364,7 @@ export default function AdminCustomers() {
             <div className="relative flex-1">
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" />
               <Input
-                placeholder="Cerca per nome, email o username..."
+                placeholder={t("customers.searchPlaceholder")}
                 className="pl-12 h-12 rounded-xl border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
@@ -371,10 +373,10 @@ export default function AdminCustomers() {
             </div>
             <Select value={resellerFilter} onValueChange={setResellerFilter}>
               <SelectTrigger className="w-full sm:w-[200px] h-12 rounded-xl" data-testid="select-reseller-filter">
-                <SelectValue placeholder="Tutti i rivenditori" />
+                <SelectValue placeholder={t("repairs.allResellers")} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">Tutti i rivenditori</SelectItem>
+                <SelectItem value="all">{t("repairs.allResellers")}</SelectItem>
                 {resellers.map((reseller) => (
                   <SelectItem key={reseller.id} value={reseller.id}>
                     {reseller.fullName}
@@ -396,7 +398,7 @@ export default function AdminCustomers() {
                       format(dateRange.from, "dd/MM/yyyy", { locale: it })
                     )
                   ) : (
-                    "Seleziona periodo"
+                    t("repairs.selectPeriod")
                   )}
                 </Button>
               </PopoverTrigger>
@@ -425,13 +427,13 @@ export default function AdminCustomers() {
               <Table>
                 <TableHeader>
                   <TableRow className="bg-slate-50 dark:bg-slate-800/50">
-                    <TableHead className="text-slate-600 dark:text-slate-400">Nome</TableHead>
-                    <TableHead className="text-slate-600 dark:text-slate-400">Email</TableHead>
-                    <TableHead className="text-slate-600 dark:text-slate-400">Username</TableHead>
-                    <TableHead className="text-slate-600 dark:text-slate-400">Rivenditore</TableHead>
-                    <TableHead className="text-slate-600 dark:text-slate-400">Stato</TableHead>
-                    <TableHead className="text-slate-600 dark:text-slate-400">Data Creazione</TableHead>
-                    <TableHead className="text-right text-slate-600 dark:text-slate-400">Azioni</TableHead>
+                    <TableHead className="text-slate-600 dark:text-slate-400">{t("common.name")}</TableHead>
+                    <TableHead className="text-slate-600 dark:text-slate-400">{t("common.email")}</TableHead>
+                    <TableHead className="text-slate-600 dark:text-slate-400">{t("auth.username")}</TableHead>
+                    <TableHead className="text-slate-600 dark:text-slate-400">{t("sidebar.items.resellers")}</TableHead>
+                    <TableHead className="text-slate-600 dark:text-slate-400">{t("common.status")}</TableHead>
+                    <TableHead className="text-slate-600 dark:text-slate-400">{t("customers.creationDate")}</TableHead>
+                    <TableHead className="text-right text-slate-600 dark:text-slate-400">{t("common.actions")}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -439,7 +441,7 @@ export default function AdminCustomers() {
                     <TableRow>
                       <TableCell colSpan={7} className="text-center py-12">
                         <Users className="h-12 w-12 mx-auto mb-4 text-slate-300" />
-                        <p className="text-slate-500">Nessun cliente trovato</p>
+                        <p className="text-slate-500">{t("customers.noCustomersFound")}</p>
                       </TableCell>
                     </TableRow>
                   ) : (
@@ -459,7 +461,7 @@ export default function AdminCustomers() {
                           </TableCell>
                           <TableCell>
                             <Badge className={customer.isActive ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400" : "bg-slate-100 text-slate-600"}>
-                              {customer.isActive ? "Attivo" : "Inattivo"}
+                              {customer.isActive ? t("common.active") : t("common.inactive")}
                             </Badge>
                           </TableCell>
                           <TableCell className="text-slate-500">
@@ -518,7 +520,7 @@ export default function AdminCustomers() {
               <div className="p-2 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600">
                 <Pencil className="h-5 w-5 text-white" />
               </div>
-              Modifica Cliente
+              {t("customers.editCustomer")}
             </DialogTitle>
           </DialogHeader>
           
@@ -529,16 +531,16 @@ export default function AdminCustomers() {
           ) : (
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
               <TabsList className="grid w-full grid-cols-4 h-12 bg-slate-100 dark:bg-slate-800 rounded-xl p-1">
-                <TabsTrigger value="personal" className="rounded-lg" data-testid="tab-personal">Dati Personali</TabsTrigger>
-                <TabsTrigger value="assignment" className="rounded-lg" data-testid="tab-assignment">Assegnazione</TabsTrigger>
-                <TabsTrigger value="billing" className="rounded-lg" data-testid="tab-billing">Fatturazione</TabsTrigger>
-                <TabsTrigger value="relationships" className="rounded-lg" data-testid="tab-relationships">Parentele</TabsTrigger>
+                <TabsTrigger value="personal" className="rounded-lg" data-testid="tab-personal">{t("customers.personalData")}</TabsTrigger>
+                <TabsTrigger value="assignment" className="rounded-lg" data-testid="tab-assignment">{t("customers.assignment")}</TabsTrigger>
+                <TabsTrigger value="billing" className="rounded-lg" data-testid="tab-billing">{t("invoices.billing")}</TabsTrigger>
+                <TabsTrigger value="relationships" className="rounded-lg" data-testid="tab-relationships">{t("customers.relationships")}</TabsTrigger>
               </TabsList>
               
               <TabsContent value="personal" className="space-y-4 mt-4">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="edit-fullName" className="text-slate-700 dark:text-slate-300">Nome Completo</Label>
+                    <Label htmlFor="edit-fullName" className="text-slate-700 dark:text-slate-300">{t("common.fullName")}</Label>
                     <Input
                       id="edit-fullName"
                       value={editFormData.fullName}
@@ -548,7 +550,7 @@ export default function AdminCustomers() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="edit-email" className="text-slate-700 dark:text-slate-300">Email</Label>
+                    <Label htmlFor="edit-email" className="text-slate-700 dark:text-slate-300">{t("common.email")}</Label>
                     <Input
                       id="edit-email"
                       type="email"
@@ -560,7 +562,7 @@ export default function AdminCustomers() {
                   </div>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="edit-phone" className="text-slate-700 dark:text-slate-300">Telefono</Label>
+                  <Label htmlFor="edit-phone" className="text-slate-700 dark:text-slate-300">{t("common.phone")}</Label>
                   <Input
                     id="edit-phone"
                     value={editFormData.phone}
@@ -573,16 +575,16 @@ export default function AdminCustomers() {
               
               <TabsContent value="assignment" className="space-y-4 mt-4">
                 <div className="space-y-2">
-                  <Label htmlFor="edit-reseller" className="text-slate-700 dark:text-slate-300">Rivenditore</Label>
+                  <Label htmlFor="edit-reseller" className="text-slate-700 dark:text-slate-300">{t("sidebar.items.resellers")}</Label>
                   <Select
                     value={editFormData.resellerId || "none"}
                     onValueChange={(value) => setEditFormData({ ...editFormData, resellerId: value === "none" ? "" : value })}
                   >
                     <SelectTrigger id="edit-reseller" className="h-11 rounded-xl" data-testid="select-edit-reseller">
-                      <SelectValue placeholder="Seleziona rivenditore" />
+                      <SelectValue placeholder={t("customers.selectReseller")} />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="none">Nessun rivenditore</SelectItem>
+                      <SelectItem value="none">{t("customers.noReseller")}</SelectItem>
                       {resellers.map((reseller) => (
                         <SelectItem key={reseller.id} value={reseller.id}>
                           {reseller.fullName}
@@ -593,8 +595,8 @@ export default function AdminCustomers() {
                 </div>
                 <div className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl">
                   <div className="space-y-0.5">
-                    <Label className="text-slate-700 dark:text-slate-300">Account Attivo</Label>
-                    <p className="text-sm text-slate-500">Consenti l'accesso al cliente</p>
+                    <Label className="text-slate-700 dark:text-slate-300">{t("customers.activeAccount")}</Label>
+                    <p className="text-sm text-slate-500">{t("customers.allowAccess")}</p>
                   </div>
                   <Switch
                     checked={editFormData.isActive}
@@ -606,7 +608,7 @@ export default function AdminCustomers() {
               
               <TabsContent value="billing" className="space-y-4 mt-4">
                 <div className="space-y-2">
-                  <Label className="text-slate-700 dark:text-slate-300">Tipo Cliente</Label>
+                  <Label className="text-slate-700 dark:text-slate-300">{t("customers.customerType")}</Label>
                   <Select
                     value={editFormData.customerType}
                     onValueChange={(value: "private" | "company") => setEditFormData({ ...editFormData, customerType: value })}
@@ -615,8 +617,8 @@ export default function AdminCustomers() {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="private">Privato</SelectItem>
-                      <SelectItem value="company">Azienda</SelectItem>
+                      <SelectItem value="private">{t("customers.private")}</SelectItem>
+                      <SelectItem value="company">{t("customers.company")}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -625,7 +627,7 @@ export default function AdminCustomers() {
                   <>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div className="space-y-2">
-                        <Label className="text-slate-700 dark:text-slate-300">Ragione Sociale</Label>
+                        <Label className="text-slate-700 dark:text-slate-300">{t("customers.companyName")}</Label>
                         <Input
                           value={editFormData.companyName}
                           onChange={(e) => setEditFormData({ ...editFormData, companyName: e.target.value })}
@@ -634,7 +636,7 @@ export default function AdminCustomers() {
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label className="text-slate-700 dark:text-slate-300">Partita IVA</Label>
+                        <Label className="text-slate-700 dark:text-slate-300">{t("customers.vatNumber")}</Label>
                         <Input
                           value={editFormData.vatNumber}
                           onChange={(e) => setEditFormData({ ...editFormData, vatNumber: e.target.value })}
@@ -654,7 +656,7 @@ export default function AdminCustomers() {
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label className="text-slate-700 dark:text-slate-300">Codice SDI</Label>
+                        <Label className="text-slate-700 dark:text-slate-300">{t("customers.sdiCode")}</Label>
                         <Input
                           value={editFormData.codiceUnivoco}
                           onChange={(e) => setEditFormData({ ...editFormData, codiceUnivoco: e.target.value })}
@@ -667,7 +669,7 @@ export default function AdminCustomers() {
                 )}
                 
                 <div className="space-y-2">
-                  <Label className="text-slate-700 dark:text-slate-300">Codice Fiscale</Label>
+                  <Label className="text-slate-700 dark:text-slate-300">{t("customers.fiscalCode")}</Label>
                   <Input
                     value={editFormData.fiscalCode}
                     onChange={(e) => setEditFormData({ ...editFormData, fiscalCode: e.target.value })}
@@ -677,7 +679,7 @@ export default function AdminCustomers() {
                 </div>
                 
                 <div className="space-y-2">
-                  <Label className="text-slate-700 dark:text-slate-300">Indirizzo</Label>
+                  <Label className="text-slate-700 dark:text-slate-300">{t("common.address")}</Label>
                   <Input
                     value={editFormData.address}
                     onChange={(e) => setEditFormData({ ...editFormData, address: e.target.value })}
@@ -688,7 +690,7 @@ export default function AdminCustomers() {
                 
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                   <div className="space-y-2">
-                    <Label className="text-slate-700 dark:text-slate-300">CAP</Label>
+                    <Label className="text-slate-700 dark:text-slate-300">{t("common.zipCode")}</Label>
                     <Input
                       value={editFormData.zipCode}
                       onChange={(e) => setEditFormData({ ...editFormData, zipCode: e.target.value })}
@@ -697,7 +699,7 @@ export default function AdminCustomers() {
                     />
                   </div>
                   <div className="space-y-2 col-span-2">
-                    <Label className="text-slate-700 dark:text-slate-300">Citta</Label>
+                    <Label className="text-slate-700 dark:text-slate-300">{t("common.city")}</Label>
                     <Input
                       value={editFormData.city}
                       onChange={(e) => setEditFormData({ ...editFormData, city: e.target.value })}
@@ -718,7 +720,7 @@ export default function AdminCustomers() {
           
           <DialogFooter className="mt-6">
             <Button variant="outline" onClick={() => setEditingCustomer(null)} className="rounded-xl">
-              Annulla
+              {t("common.cancel")}
             </Button>
             <Button 
               onClick={handleSaveEdit} 
@@ -729,10 +731,10 @@ export default function AdminCustomers() {
               {isSaving ? (
                 <>
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Salvataggio...
+                  {t("common.saving")}
                 </>
               ) : (
-                "Salva Modifiche"
+                t("common.saveChanges")
               )}
             </Button>
           </DialogFooter>

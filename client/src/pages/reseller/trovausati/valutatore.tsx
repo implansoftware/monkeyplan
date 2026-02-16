@@ -19,6 +19,7 @@ import {
   Euro, Ticket, QrCode, Calendar, Clock, Store, RefreshCcw, XCircle,
   ChevronRight, Copy, ExternalLink
 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 interface TrovausatiCredential {
   id: string;
@@ -99,6 +100,7 @@ const CONDITIONS = [
 ];
 
 export default function TrovausatiValutatorePage() {
+  const { t } = useTranslation();
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState("valutazione");
   const [searchTerm, setSearchTerm] = useState("");
@@ -154,7 +156,7 @@ export default function TrovausatiValutatorePage() {
       setValuation(data);
     },
     onError: (error: Error) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -184,7 +186,7 @@ export default function TrovausatiValutatorePage() {
       setActiveTab("coupon");
     },
     onError: (error: Error) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -202,7 +204,7 @@ export default function TrovausatiValutatorePage() {
       toast({ title: "Coupon consumato" });
     },
     onError: (error: Error) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -220,7 +222,7 @@ export default function TrovausatiValutatorePage() {
       toast({ title: "Coupon annullato" });
     },
     onError: (error: Error) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -228,7 +230,7 @@ export default function TrovausatiValutatorePage() {
     const statusMap: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
       "issued": { label: "Emesso", variant: "default" },
       "used": { label: "Utilizzato", variant: "secondary" },
-      "cancelled": { label: "Annullato", variant: "destructive" },
+      "cancelled": { label: t("repairs.status.cancelled"), variant: "destructive" },
       "expired": { label: "Scaduto", variant: "outline" },
     };
     const config = statusMap[status] || { label: status, variant: "secondary" as const };
@@ -519,10 +521,10 @@ export default function TrovausatiValutatorePage() {
                 <div className="flex flex-wrap items-center gap-2">
                   <Select value={couponStatusFilter} onValueChange={setCouponStatusFilter}>
                     <SelectTrigger className="w-32" data-testid="select-coupon-status">
-                      <SelectValue placeholder="Stato" />
+                      <SelectValue placeholder={t("common.status")} />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="all">Tutti</SelectItem>
+                      <SelectItem value="all">{t("common.allMasc")}</SelectItem>
                       <SelectItem value="issued">Emessi</SelectItem>
                       <SelectItem value="used">Utilizzati</SelectItem>
                       <SelectItem value="cancelled">Annullati</SelectItem>
@@ -636,9 +638,7 @@ export default function TrovausatiValutatorePage() {
             </Alert>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowEmitCoupon(false)}>
-              Annulla
-            </Button>
+            <Button variant="outline" onClick={() => setShowEmitCoupon(false)}>{t("common.cancel")}</Button>
             <Button
               onClick={() => emitCouponMutation.mutate()}
               disabled={emitCouponMutation.isPending}
@@ -689,7 +689,7 @@ export default function TrovausatiValutatorePage() {
 
                 <div className="space-y-2">
                   <div className="flex justify-between py-2 border-b">
-                    <span className="text-muted-foreground">Stato</span>
+                    <span className="text-muted-foreground">{t("common.status")}</span>
                     {getStatusBadge(selectedCoupon.attributes.status)}
                   </div>
                   <div className="flex justify-between py-2 border-b">

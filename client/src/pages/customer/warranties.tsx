@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -33,20 +34,21 @@ type CustomerWarranty = {
   } | null;
 };
 
-const statusConfig: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline"; icon: typeof CheckCircle2 }> = {
-  offered: { label: "In Attesa", variant: "secondary", icon: Clock },
-  accepted: { label: "Attiva", variant: "default", icon: CheckCircle2 },
-  declined: { label: "Rifiutata", variant: "destructive", icon: XCircle },
-  expired: { label: "Scaduta", variant: "outline", icon: Clock },
-};
 
 const coverageLabels: Record<string, string> = {
   basic: "Base",
-  extended: "Estesa",
+  extended: t("warranties.extended"),
   full: "Completa",
 };
 
 export default function CustomerWarranties() {
+  const { t } = useTranslation();
+  const statusConfig: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline"; icon: typeof CheckCircle2 }> = {
+    offered: { label: t("common.pending"), variant: "secondary", icon: Clock },
+    accepted: { label: t("license.active"), variant: "default", icon: CheckCircle2 },
+    declined: { label: t("common.rejected"), variant: "destructive", icon: XCircle },
+    expired: { label: t("invoices.overdue"), variant: "outline", icon: Clock },
+  };
   const { data: warranties = [], isLoading } = useQuery<CustomerWarranty[]>({
     queryKey: ["/api/customer/warranties"],
   });
@@ -75,8 +77,8 @@ export default function CustomerWarranties() {
             <Shield className="h-6 w-6 text-white" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-white">Le Mie Garanzie</h1>
-            <p className="text-white/80 text-sm">Gestisci le garanzie dei tuoi dispositivi</p>
+            <h1 className="text-2xl font-bold text-white">{t("sidebar.items.myWarranties")}</h1>
+            <p className="text-white/80 text-sm">{t("customerPages.gestisciLeGaranzieDeiTuoiDispositivi")}</p>
           </div>
         </div>
       </div>
@@ -85,7 +87,7 @@ export default function CustomerWarranties() {
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-12 text-center">
             <Shield className="h-12 w-12 text-muted-foreground mb-4" />
-            <p className="text-lg font-medium">Nessuna garanzia trovata</p>
+            <p className="text-lg font-medium">{t("warranties.noWarrantiesFound")}</p>
             <p className="text-muted-foreground">
               Le garanzie acquistate appariranno qui
             </p>
@@ -109,7 +111,7 @@ export default function CustomerWarranties() {
                       <div>
                         <CardTitle className="text-lg">{warranty.productNameSnapshot}</CardTitle>
                         <p className="text-sm text-muted-foreground">
-                          {repairOrder ? `Riparazione #${repairOrder.orderNumber}` : "Garanzia Diretta"}
+                          {repairOrder ? `Riparazione #${repairOrder.orderNumber}` : t("warranties.directWarranty")}
                         </p>
                       </div>
                     </div>
@@ -123,22 +125,22 @@ export default function CustomerWarranties() {
                   <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                     {repairOrder && (
                     <div>
-                      <p className="text-muted-foreground">Dispositivo</p>
+                      <p className="text-muted-foreground">{t("repairs.device")}</p>
                       <p className="font-medium">
                         {[repairOrder.brand, repairOrder.deviceModel].filter(Boolean).join(" ") || repairOrder.deviceType || "N/A"}
                       </p>
                     </div>
                     )}
                     <div>
-                      <p className="text-muted-foreground">Copertura</p>
+                      <p className="text-muted-foreground">{t("warranties.coverage")}</p>
                       <p className="font-medium">{coverageLabels[warranty.coverageTypeSnapshot] || warranty.coverageTypeSnapshot}</p>
                     </div>
                     <div>
-                      <p className="text-muted-foreground">Durata</p>
+                      <p className="text-muted-foreground">{t("common.duration")}</p>
                       <p className="font-medium">{warranty.durationMonthsSnapshot} mesi</p>
                     </div>
                     <div>
-                      <p className="text-muted-foreground">Prezzo</p>
+                      <p className="text-muted-foreground">{t("common.price")}</p>
                       <p className="font-medium">
                         {(warranty.priceSnapshot / 100).toLocaleString('it-IT', { style: 'currency', currency: 'EUR' })}
                       </p>

@@ -50,6 +50,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import type { ServiceItem, ServiceItemPrice, User, DeviceType } from "@shared/schema";
 import { Smartphone } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 const SERVICE_CATEGORIES = [
   { value: "display", label: "Display" },
@@ -120,6 +121,7 @@ const emptyPriceFormData: PriceFormData = {
 };
 
 export default function AdminServiceCatalog() {
+  const { t } = useTranslation();
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState("catalog");
   const [searchQuery, setSearchQuery] = useState("");
@@ -166,13 +168,13 @@ export default function AdminServiceCatalog() {
       return await apiRequest("POST", "/api/admin/service-items", data);
     },
     onSuccess: () => {
-      toast({ title: "Intervento Creato", description: "L'intervento è stato aggiunto al catalogo" });
+      toast({ title: t("products.interventionCreated"), description: t("products.interventionCreatedDesc") });
       queryClient.invalidateQueries({ queryKey: ["/api/admin/service-items"] });
       setIsItemDialogOpen(false);
       resetItemForm();
     },
     onError: (error: Error) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -181,13 +183,13 @@ export default function AdminServiceCatalog() {
       return await apiRequest("PATCH", `/api/admin/service-items/${id}`, data);
     },
     onSuccess: () => {
-      toast({ title: "Intervento Aggiornato", description: "Le modifiche sono state salvate" });
+      toast({ title: t("products.interventionUpdated"), description: t("common.savedSuccessfully") });
       queryClient.invalidateQueries({ queryKey: ["/api/admin/service-items"] });
       setIsItemDialogOpen(false);
       resetItemForm();
     },
     onError: (error: Error) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -196,13 +198,13 @@ export default function AdminServiceCatalog() {
       return await apiRequest("DELETE", `/api/admin/service-items/${id}`);
     },
     onSuccess: () => {
-      toast({ title: "Intervento Eliminato", description: "L'intervento è stato rimosso dal catalogo" });
+      toast({ title: t("products.interventionDeleted"), description: t("products.interventionDeletedDesc") });
       queryClient.invalidateQueries({ queryKey: ["/api/admin/service-items"] });
       setIsDeleteDialogOpen(false);
       setItemToDelete(null);
     },
     onError: (error: Error) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -211,13 +213,13 @@ export default function AdminServiceCatalog() {
       return await apiRequest("POST", "/api/admin/service-item-prices", data);
     },
     onSuccess: () => {
-      toast({ title: "Prezzo Personalizzato Creato", description: "Il listino è stato aggiornato" });
+      toast({ title: t("products.customPriceCreated"), description: t("products.priceListUpdatedDesc") });
       queryClient.invalidateQueries({ queryKey: ["/api/admin/service-items", selectedItemForPrices?.id, "prices"] });
       setIsPriceDialogOpen(false);
       resetPriceForm();
     },
     onError: (error: Error) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -226,11 +228,11 @@ export default function AdminServiceCatalog() {
       return await apiRequest("DELETE", `/api/admin/service-item-prices/${id}`);
     },
     onSuccess: () => {
-      toast({ title: "Prezzo Eliminato", description: "Il prezzo personalizzato è stato rimosso" });
+      toast({ title: t("products.priceDeleted"), description: t("products.customPriceRemovedDesc") });
       queryClient.invalidateQueries({ queryKey: ["/api/admin/service-items", selectedItemForPrices?.id, "prices"] });
     },
     onError: (error: Error) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -270,7 +272,7 @@ export default function AdminServiceCatalog() {
   const handleSaveItem = () => {
     const cents = Math.round(parseFloat(priceEuros) * 100);
     if (isNaN(cents) || cents < 0) {
-      toast({ title: "Errore", description: "Inserisci un prezzo valido", variant: "destructive" });
+      toast({ title: t("common.error"), description: "Inserisci un prezzo valido", variant: "destructive" });
       return;
     }
 
@@ -288,7 +290,7 @@ export default function AdminServiceCatalog() {
 
     const cents = Math.round(parseFloat(customPriceEuros) * 100);
     if (isNaN(cents) || cents < 0) {
-      toast({ title: "Errore", description: "Inserisci un prezzo valido", variant: "destructive" });
+      toast({ title: t("common.error"), description: "Inserisci un prezzo valido", variant: "destructive" });
       return;
     }
 
@@ -303,7 +305,7 @@ export default function AdminServiceCatalog() {
     } else if (priceTargetType === "repair_center" && priceFormData.repairCenterId) {
       data.repairCenterId = priceFormData.repairCenterId;
     } else {
-      toast({ title: "Errore", description: "Seleziona un reseller o un centro riparazioni", variant: "destructive" });
+      toast({ title: t("common.error"), description: "Seleziona un reseller o un centro riparazioni", variant: "destructive" });
       return;
     }
 
@@ -367,7 +369,7 @@ export default function AdminServiceCatalog() {
             <CardHeader>
               <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
-                  <CardTitle>Interventi Disponibili</CardTitle>
+                  <CardTitle>{t("products.availableInterventions")}</CardTitle>
                   <CardDescription>
                     Definisci gli interventi standard e i prezzi base
                   </CardDescription>
@@ -383,7 +385,7 @@ export default function AdminServiceCatalog() {
                 <div className="relative flex-1">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input
-                    placeholder="Cerca per nome o codice..."
+                    placeholder={t("common.search")}
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     className="pl-10"
@@ -393,10 +395,10 @@ export default function AdminServiceCatalog() {
                 <Select value={categoryFilter} onValueChange={setCategoryFilter}>
                   <SelectTrigger className="w-full sm:w-[180px]" data-testid="select-category-filter">
                     <Filter className="h-4 w-4 mr-2" />
-                    <SelectValue placeholder="Categoria" />
+                    <SelectValue placeholder={t("utility.category")} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">Tutte le categorie</SelectItem>
+                    <SelectItem value="all">{t("products.allCategories")}</SelectItem>
                     {SERVICE_CATEGORIES.map(cat => (
                       <SelectItem key={cat.value} value={cat.value}>{cat.label}</SelectItem>
                     ))}
@@ -411,19 +413,19 @@ export default function AdminServiceCatalog() {
               ) : filteredItems.length === 0 ? (
                 <div className="text-center py-12 text-muted-foreground">
                   <Wrench className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                  <p>Nessun intervento trovato</p>
+                  <p>{t("products.noInterventions")}</p>
                 </div>
               ) : (
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Codice</TableHead>
-                      <TableHead>Intervento</TableHead>
-                      <TableHead>Categoria</TableHead>
+                      <TableHead>{t("common.code")}</TableHead>
+                      <TableHead>{t("products.intervention")}</TableHead>
+                      <TableHead>{t("common.category")}</TableHead>
                       <TableHead className="text-right">Prezzo Base</TableHead>
                       <TableHead className="text-right">Durata</TableHead>
-                      <TableHead>Stato</TableHead>
-                      <TableHead className="text-right">Azioni</TableHead>
+                      <TableHead>{t("common.status")}</TableHead>
+                      <TableHead className="text-right">{t("common.actions")}</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -558,19 +560,19 @@ export default function AdminServiceCatalog() {
                   ) : !itemPrices || itemPrices.length === 0 ? (
                     <div className="text-center py-8 text-muted-foreground">
                       <Euro className="h-10 w-10 mx-auto mb-3 opacity-50" />
-                      <p>Nessun prezzo personalizzato per questo intervento</p>
+                      <p>{t("products.noCustomPrices")}</p>
                       <p className="text-sm">Verrà applicato il prezzo base a tutti</p>
                     </div>
                   ) : (
                     <Table>
                       <TableHeader>
                         <TableRow>
-                          <TableHead>Tipo</TableHead>
-                          <TableHead>Entità</TableHead>
-                          <TableHead className="text-right">Prezzo</TableHead>
+                          <TableHead>{t("common.type")}</TableHead>
+                          <TableHead>{t("common.entity")}</TableHead>
+                          <TableHead className="text-right">{t("common.price")}</TableHead>
                           <TableHead className="text-right">Durata</TableHead>
-                          <TableHead>Stato</TableHead>
-                          <TableHead className="text-right">Azioni</TableHead>
+                          <TableHead>{t("common.status")}</TableHead>
+                          <TableHead className="text-right">{t("common.actions")}</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
@@ -633,17 +635,17 @@ export default function AdminServiceCatalog() {
           <div className="space-y-4 py-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="code">Codice</Label>
+                <Label htmlFor="code">{t("common.code")}</Label>
                 <Input
                   id="code"
-                  placeholder="ES: DISP-001"
+                  placeholder={t("products.codeExample")}
                   value={itemFormData.code}
                   onChange={(e) => setItemFormData({ ...itemFormData, code: e.target.value.toUpperCase() })}
                   data-testid="input-code"
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="category">Categoria</Label>
+                <Label htmlFor="category">{t("common.category")}</Label>
                 <Select
                   value={itemFormData.category}
                   onValueChange={(value) => setItemFormData({ ...itemFormData, category: value })}
@@ -661,17 +663,17 @@ export default function AdminServiceCatalog() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="deviceType">Tipo Dispositivo</Label>
+              <Label htmlFor="deviceType">{t("products.deviceType")}</Label>
               <Select
                 value={itemFormData.deviceTypeId || "all"}
                 onValueChange={(value) => setItemFormData({ ...itemFormData, deviceTypeId: value === "all" ? null : value })}
               >
                 <SelectTrigger data-testid="select-device-type">
                   <Smartphone className="h-4 w-4 mr-2" />
-                  <SelectValue placeholder="Tutti i dispositivi" />
+                  <SelectValue placeholder={t("products.allDevices")} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">Tutti i dispositivi</SelectItem>
+                  <SelectItem value="all">{t("products.allDevices")}</SelectItem>
                   {deviceTypes.map(dt => (
                     <SelectItem key={dt.id} value={dt.id}>{dt.name}</SelectItem>
                   ))}
@@ -681,10 +683,10 @@ export default function AdminServiceCatalog() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="name">Nome Intervento</Label>
+              <Label htmlFor="name">{t("products.interventionName")}</Label>
               <Input
                 id="name"
-                placeholder="Sostituzione Display"
+                placeholder={t("products.interventionExample")}
                 value={itemFormData.name}
                 onChange={(e) => setItemFormData({ ...itemFormData, name: e.target.value })}
                 data-testid="input-name"
@@ -692,10 +694,10 @@ export default function AdminServiceCatalog() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="description">Descrizione</Label>
+              <Label htmlFor="description">{t("common.description")}</Label>
               <Textarea
                 id="description"
-                placeholder="Descrizione opzionale dell'intervento..."
+                placeholder={t("products.interventionDesc")}
                 value={itemFormData.description}
                 onChange={(e) => setItemFormData({ ...itemFormData, description: e.target.value })}
                 data-testid="input-description"
@@ -704,7 +706,7 @@ export default function AdminServiceCatalog() {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="price">Prezzo Base (€)</Label>
+                <Label htmlFor="price">{t("products.basePrice")} (€)</Label>
                 <div className="relative">
                   <Euro className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input
@@ -721,7 +723,7 @@ export default function AdminServiceCatalog() {
                 </div>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="labor">Durata (minuti)</Label>
+                <Label htmlFor="labor">{t("products.durationMinutes")}</Label>
                 <div className="relative">
                   <Clock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input
@@ -744,7 +746,7 @@ export default function AdminServiceCatalog() {
                 onCheckedChange={(checked) => setItemFormData({ ...itemFormData, isActive: checked })}
                 data-testid="switch-active"
               />
-              <Label htmlFor="active">Intervento attivo</Label>
+              <Label htmlFor="active">{t("products.activeIntervention")}</Label>
             </div>
           </div>
 
@@ -766,7 +768,7 @@ export default function AdminServiceCatalog() {
       <Dialog open={isPriceDialogOpen} onOpenChange={setIsPriceDialogOpen}>
         <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
-            <DialogTitle>Nuovo Prezzo Personalizzato</DialogTitle>
+            <DialogTitle>{t("products.newCustomPrice")}</DialogTitle>
             <DialogDescription>
               Imposta un prezzo personalizzato per un reseller o centro riparazioni
             </DialogDescription>
@@ -774,27 +776,27 @@ export default function AdminServiceCatalog() {
 
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label>Tipo di Destinatario</Label>
+              <Label>{t("suppliers.recipientType")}</Label>
               <Select value={priceTargetType} onValueChange={(v: "reseller" | "repair_center") => setPriceTargetType(v)}>
                 <SelectTrigger data-testid="select-price-target-type">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="reseller">Reseller</SelectItem>
-                  <SelectItem value="repair_center">Centro Riparazioni</SelectItem>
+                  <SelectItem value="repair_center">{t("admin.repairCenters.repairCenters")}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
 
             {priceTargetType === "reseller" ? (
               <div className="space-y-2">
-                <Label>Seleziona Reseller</Label>
+                <Label>{t("products.selectReseller")}</Label>
                 <Select
                   value={priceFormData.resellerId || ""}
                   onValueChange={(v) => setPriceFormData({ ...priceFormData, resellerId: v, repairCenterId: undefined })}
                 >
                   <SelectTrigger data-testid="select-reseller">
-                    <SelectValue placeholder="Seleziona un reseller..." />
+                    <SelectValue placeholder={t("products.selectReseller")} />
                   </SelectTrigger>
                   <SelectContent>
                     {resellers?.map(r => (
@@ -807,13 +809,13 @@ export default function AdminServiceCatalog() {
               </div>
             ) : (
               <div className="space-y-2">
-                <Label>Seleziona Centro Riparazioni</Label>
+                <Label>{t("products.selectRepairCenter")}</Label>
                 <Select
                   value={priceFormData.repairCenterId || ""}
                   onValueChange={(v) => setPriceFormData({ ...priceFormData, repairCenterId: v, resellerId: undefined })}
                 >
                   <SelectTrigger data-testid="select-repair-center">
-                    <SelectValue placeholder="Seleziona un centro..." />
+                    <SelectValue placeholder={t("products.selectRepairCenter")} />
                   </SelectTrigger>
                   <SelectContent>
                     {repairCenters?.map(r => (
@@ -827,7 +829,7 @@ export default function AdminServiceCatalog() {
             )}
 
             <div className="space-y-2">
-              <Label>Prezzo Personalizzato (€)</Label>
+              <Label>{t("products.customPrice")} (€)</Label>
               <div className="relative">
                 <Euro className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
@@ -865,14 +867,14 @@ export default function AdminServiceCatalog() {
       <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Eliminare questo intervento?</AlertDialogTitle>
+            <AlertDialogTitle>{t("products.deleteIntervention")}</AlertDialogTitle>
             <AlertDialogDescription>
               Stai per eliminare l'intervento "{itemToDelete?.name}".
               Questa azione non può essere annullata.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Annulla</AlertDialogCancel>
+            <AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>
             <AlertDialogAction
               onClick={() => itemToDelete && deleteItemMutation.mutate(itemToDelete.id)}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"

@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useParams, useLocation } from "wouter";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -40,6 +41,7 @@ interface PaymentConfigPublic {
 
 
 export default function ShopCheckout() {
+  const { t } = useTranslation();
   const { resellerId } = useParams<{ resellerId: string }>();
   const [, setLocation] = useLocation();
   const { toast } = useToast();
@@ -133,10 +135,10 @@ export default function ShopCheckout() {
       queryClient.invalidateQueries({ queryKey: ['/api/customer-addresses'] });
       setShowAddAddressDialog(false);
       setSelectedShippingAddress(data.id);
-      toast({ title: "Indirizzo aggiunto" });
+      toast({ title: t("shop.checkout.addressAdded") });
     },
     onError: (error: any) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("shop.checkout.error"), description: error.message, variant: "destructive" });
     }
   });
   
@@ -153,11 +155,11 @@ export default function ShopCheckout() {
     },
     onSuccess: (data: any) => {
       queryClient.invalidateQueries({ queryKey: ['/api/shop', resellerId, 'cart'] });
-      toast({ title: "Ordine confermato!", description: `Ordine #${data.orderNumber}` });
+      toast({ title: t("shop.checkout.orderConfirmed"), description: `${t("shop.checkout.orderNumber")} #${data.orderNumber}` });
       setLocation(`/customer/orders/${data.order?.id || ''}`);
     },
     onError: (error: any) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("shop.checkout.error"), description: error.message, variant: "destructive" });
     }
   });
   
@@ -189,9 +191,9 @@ export default function ShopCheckout() {
   const canPlaceOrder = selectedShippingAddress && selectedShippingMethod && paymentMethod && paymentConfig?.hasAnyMethod;
   
   const checkoutSteps = [
-    { label: "Spedizione", icon: Truck, completed: !!selectedShippingAddress && !!selectedShippingMethod },
-    { label: "Pagamento", icon: CreditCard, completed: !!paymentMethod },
-    { label: "Conferma", icon: Check, completed: false },
+    { label: t("shop.checkout.steps.shipping"), icon: Truck, completed: !!selectedShippingAddress && !!selectedShippingMethod },
+    { label: t("shop.checkout.steps.payment"), icon: CreditCard, completed: !!paymentMethod },
+    { label: t("shop.checkout.steps.confirm"), icon: Check, completed: false },
   ];
 
   const currentStep = !selectedShippingAddress || !selectedShippingMethod ? 0 : !paymentMethod ? 1 : 2;
@@ -203,8 +205,8 @@ export default function ShopCheckout() {
           <ArrowLeft className="h-5 w-5" />
         </Button>
         <div>
-          <h1 className="text-3xl font-bold" data-testid="text-checkout-title">Checkout</h1>
-          <p className="text-muted-foreground">Completa il tuo ordine</p>
+          <h1 className="text-3xl font-bold" data-testid="text-checkout-title">{t("shop.checkout.title")}</h1>
+          <p className="text-muted-foreground">{t("shop.checkout.subtitle")}</p>
         </div>
       </div>
 
@@ -247,7 +249,7 @@ export default function ShopCheckout() {
             <CardHeader>
               <CardTitle className="flex flex-wrap items-center gap-2">
                 <MapPin className="h-5 w-5 text-muted-foreground" />
-                Indirizzo di spedizione
+                {t("shop.checkout.shippingAddress")}
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -256,7 +258,7 @@ export default function ShopCheckout() {
                   <Loader2 className="h-6 w-6 animate-spin" />
                 </div>
               ) : addresses?.length === 0 ? (
-                <p className="text-muted-foreground">Nessun indirizzo salvato</p>
+                <p className="text-muted-foreground">{t("shop.checkout.noAddressSaved")}</p>
               ) : (
                 <RadioGroup value={selectedShippingAddress} onValueChange={setSelectedShippingAddress} className="space-y-3">
                   {addresses?.map((addr) => (
@@ -286,12 +288,12 @@ export default function ShopCheckout() {
                 <DialogTrigger asChild>
                   <Button variant="outline" className="w-full" data-testid="button-add-address">
                     <Plus className="mr-2 h-4 w-4" />
-                    Aggiungi nuovo indirizzo
+                    {t("shop.checkout.addNewAddress")}
                   </Button>
                 </DialogTrigger>
                 <DialogContent>
                   <DialogHeader>
-                    <DialogTitle>Nuovo indirizzo</DialogTitle>
+                    <DialogTitle>{t("shop.checkout.newAddress")}</DialogTitle>
                   </DialogHeader>
                   <Form {...addAddressForm}>
                     <form onSubmit={addAddressForm.handleSubmit((data) => addAddress.mutate(data))} className="space-y-4">
@@ -300,7 +302,7 @@ export default function ShopCheckout() {
                         name="recipientName"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Nome destinatario</FormLabel>
+                            <FormLabel>{t("shop.checkout.recipientName")}</FormLabel>
                             <FormControl>
                               <Input {...field} data-testid="input-recipient-name" />
                             </FormControl>
@@ -312,9 +314,9 @@ export default function ShopCheckout() {
                         name="address"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Indirizzo</FormLabel>
+                            <FormLabel>{t("shop.checkout.addressLabel")}</FormLabel>
                             <FormControl>
-                              <Input {...field} placeholder="Via/Piazza, numero civico" data-testid="input-address" />
+                              <Input {...field} placeholder={t("shop.checkout.addressPlaceholder")} data-testid="input-address" />
                             </FormControl>
                           </FormItem>
                         )}
@@ -325,7 +327,7 @@ export default function ShopCheckout() {
                           name="city"
                           render={({ field }) => (
                             <FormItem>
-                              <FormLabel>Città</FormLabel>
+                              <FormLabel>{t("shop.checkout.city")}</FormLabel>
                               <FormControl>
                                 <Input {...field} data-testid="input-city" />
                               </FormControl>
@@ -337,7 +339,7 @@ export default function ShopCheckout() {
                           name="province"
                           render={({ field }) => (
                             <FormItem>
-                              <FormLabel>Provincia</FormLabel>
+                              <FormLabel>{t("shop.checkout.province")}</FormLabel>
                               <FormControl>
                                 <Input {...field} placeholder="MI" maxLength={2} data-testid="input-province" />
                               </FormControl>
@@ -351,7 +353,7 @@ export default function ShopCheckout() {
                           name="postalCode"
                           render={({ field }) => (
                             <FormItem>
-                              <FormLabel>CAP</FormLabel>
+                              <FormLabel>{t("shop.checkout.postalCode")}</FormLabel>
                               <FormControl>
                                 <Input {...field} maxLength={5} data-testid="input-postal-code" />
                               </FormControl>
@@ -363,7 +365,7 @@ export default function ShopCheckout() {
                           name="phone"
                           render={({ field }) => (
                             <FormItem>
-                              <FormLabel>Telefono</FormLabel>
+                              <FormLabel>{t("shop.checkout.phone")}</FormLabel>
                               <FormControl>
                                 <Input {...field} type="tel" data-testid="input-phone" />
                               </FormControl>
@@ -373,7 +375,7 @@ export default function ShopCheckout() {
                       </div>
                       <Button type="submit" className="w-full" disabled={addAddress.isPending}>
                         {addAddress.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                        Salva indirizzo
+                        {t("shop.checkout.saveAddress")}
                       </Button>
                     </form>
                   </Form>
@@ -386,7 +388,7 @@ export default function ShopCheckout() {
             <CardHeader>
               <CardTitle className="flex flex-wrap items-center gap-2">
                 <Truck className="h-5 w-5 text-muted-foreground" />
-                Metodo di consegna
+                {t("shop.checkout.deliveryMethod")}
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -396,7 +398,7 @@ export default function ShopCheckout() {
                 </div>
               ) : !shippingMethods || shippingMethods.length === 0 ? (
                 <div className="text-center py-4 text-muted-foreground">
-                  <p>Nessun metodo di consegna disponibile.</p>
+                  <p>{t("shop.checkout.noDeliveryMethod")}</p>
                 </div>
               ) : (
                 <RadioGroup value={selectedShippingMethod} onValueChange={setSelectedShippingMethod} className="space-y-3">
@@ -416,17 +418,17 @@ export default function ShopCheckout() {
                         <div className="flex flex-wrap items-center justify-between gap-2">
                           <span className="font-medium">{method.name}</span>
                           {method.priceCents === 0 ? (
-                            <Badge variant="secondary">Gratuita</Badge>
+                            <Badge variant="secondary">{t("shop.checkout.free")}</Badge>
                           ) : (
                             <span className="font-semibold">{formatPrice(method.priceCents / 100)}</span>
                           )}
                         </div>
                         <div className="text-sm text-muted-foreground mt-0.5">
                           {method.isPickup
-                            ? 'Ritiro presso il punto vendita'
+                            ? t("shop.checkout.storePickup")
                             : method.estimatedDays
-                              ? `Consegna in ${method.estimatedDays} giorni lavorativi`
-                              : 'Tempi di consegna variabili'
+                              ? t("shop.checkout.deliveryInDays", { days: method.estimatedDays })
+                              : t("shop.checkout.variableDelivery")
                           }
                         </div>
                       </Label>
@@ -441,7 +443,7 @@ export default function ShopCheckout() {
             <CardHeader>
               <CardTitle className="flex flex-wrap items-center gap-2">
                 <CreditCard className="h-5 w-5 text-muted-foreground" />
-                Metodo di pagamento
+                {t("shop.checkout.paymentMethod")}
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -451,8 +453,8 @@ export default function ShopCheckout() {
                 </div>
               ) : !paymentConfig?.hasAnyMethod ? (
                 <div className="text-center py-4 text-muted-foreground">
-                  <p>Nessun metodo di pagamento disponibile.</p>
-                  <p className="text-sm">Contatta il venditore per maggiori informazioni.</p>
+                  <p>{t("shop.checkout.noPaymentMethod")}</p>
+                  <p className="text-sm">{t("shop.checkout.contactSeller")}</p>
                 </div>
               ) : (
                 <RadioGroup value={paymentMethod} onValueChange={setPaymentMethod} className="space-y-3">
@@ -466,7 +468,7 @@ export default function ShopCheckout() {
                     >
                       <RadioGroupItem value="card" id="payment-card" className="mt-0.5" />
                       <Label htmlFor="payment-card" className="flex-1 cursor-pointer">
-                        <div className="font-medium">Carta di credito/debito</div>
+                        <div className="font-medium">{t("shop.checkout.creditDebitCard")}</div>
                         <div className="text-sm text-muted-foreground">Visa, Mastercard, American Express</div>
                       </Label>
                     </div>
@@ -482,7 +484,7 @@ export default function ShopCheckout() {
                       <RadioGroupItem value="paypal" id="payment-paypal" className="mt-0.5" />
                       <Label htmlFor="payment-paypal" className="flex-1 cursor-pointer">
                         <div className="font-medium">PayPal</div>
-                        <div className="text-sm text-muted-foreground">Paga con il tuo account PayPal</div>
+                        <div className="text-sm text-muted-foreground">{t("shop.checkout.payWithPaypal")}</div>
                       </Label>
                     </div>
                   )}
@@ -496,8 +498,8 @@ export default function ShopCheckout() {
                     >
                       <RadioGroupItem value="bank_transfer" id="payment-transfer" className="mt-0.5" />
                       <Label htmlFor="payment-transfer" className="flex-1 cursor-pointer">
-                        <div className="font-medium">Bonifico bancario</div>
-                        <div className="text-sm text-muted-foreground">Le coordinate bancarie saranno mostrate di seguito</div>
+                        <div className="font-medium">{t("shop.checkout.bankTransfer")}</div>
+                        <div className="text-sm text-muted-foreground">{t("shop.checkout.bankDetailsBelow")}</div>
                       </Label>
                     </div>
                   )}
@@ -512,7 +514,7 @@ export default function ShopCheckout() {
                         <Building className="h-5 w-5 text-blue-600 dark:text-blue-400" />
                       </div>
                       <div className="space-y-2 flex-1">
-                        <h4 className="font-semibold text-blue-900 dark:text-blue-100">Coordinate Bancarie</h4>
+                        <h4 className="font-semibold text-blue-900 dark:text-blue-100">{t("shop.checkout.bankDetails")}</h4>
                         <div className="grid gap-1.5 text-sm">
                           <div className="flex justify-between gap-2">
                             <span className="text-blue-700 dark:text-blue-300">IBAN:</span>
@@ -520,13 +522,13 @@ export default function ShopCheckout() {
                           </div>
                           {paymentConfig.bankTransfer.accountHolder && (
                             <div className="flex justify-between gap-2">
-                              <span className="text-blue-700 dark:text-blue-300">Intestatario:</span>
+                              <span className="text-blue-700 dark:text-blue-300">{t("shop.checkout.accountHolder")}:</span>
                               <span className="font-medium text-blue-900 dark:text-blue-100" data-testid="text-account-holder">{paymentConfig.bankTransfer.accountHolder}</span>
                             </div>
                           )}
                           {paymentConfig.bankTransfer.bankName && (
                             <div className="flex justify-between gap-2">
-                              <span className="text-blue-700 dark:text-blue-300">Banca:</span>
+                              <span className="text-blue-700 dark:text-blue-300">{t("shop.checkout.bank")}:</span>
                               <span className="font-medium text-blue-900 dark:text-blue-100" data-testid="text-bank-name">{paymentConfig.bankTransfer.bankName}</span>
                             </div>
                           )}
@@ -538,7 +540,7 @@ export default function ShopCheckout() {
                           )}
                         </div>
                         <p className="text-xs text-blue-600 dark:text-blue-400 mt-2">
-                          Inserisci il numero ordine nella causale del bonifico.
+                          {t("shop.checkout.bankTransferNote")}
                         </p>
                       </div>
                     </div>
@@ -552,15 +554,15 @@ export default function ShopCheckout() {
             <CardHeader>
               <CardTitle className="flex flex-wrap items-center gap-2">
                 <FileText className="h-5 w-5 text-muted-foreground" />
-                Note per l'ordine
+                {t("shop.checkout.orderNotes")}
               </CardTitle>
-              <CardDescription>Aggiungi eventuali istruzioni o richieste speciali</CardDescription>
+              <CardDescription>{t("shop.checkout.orderNotesDescription")}</CardDescription>
             </CardHeader>
             <CardContent>
               <Textarea
                 value={customerNotes}
                 onChange={(e) => setCustomerNotes(e.target.value)}
-                placeholder="Es: Citofono rotto, chiamare al telefono..."
+                placeholder={t("shop.checkout.orderNotesPlaceholder")}
                 rows={3}
                 data-testid="input-customer-notes"
               />
@@ -572,7 +574,7 @@ export default function ShopCheckout() {
           <Card className="sticky top-4 z-10">
             <CardHeader>
               <CardTitle className="flex flex-wrap items-center gap-2">
-                Riepilogo ordine
+                {t("shop.checkout.orderSummary")}
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -588,31 +590,31 @@ export default function ShopCheckout() {
               <Separator />
 
               <div className="flex justify-between gap-2">
-                <span className="text-muted-foreground">Subtotale</span>
+                <span className="text-muted-foreground">{t("shop.checkout.subtotal")}</span>
                 <span>{formatPrice(cart?.subtotal || 0)}</span>
               </div>
               {(cart?.discount || 0) > 0 && (
                 <div className="flex justify-between gap-2 text-green-600 dark:text-green-400">
-                  <span>Sconto</span>
+                  <span>{t("shop.checkout.discount")}</span>
                   <span>-{formatPrice(cart?.discount || 0)}</span>
                 </div>
               )}
               <div className="flex justify-between gap-2">
-                <span className="text-muted-foreground">Spedizione</span>
+                <span className="text-muted-foreground">{t("shop.checkout.shipping")}</span>
                 <span data-testid="text-shipping-cost">
-                  {shippingCost > 0 ? formatPrice(shippingCost) : 'Gratuita'}
+                  {shippingCost > 0 ? formatPrice(shippingCost) : t("shop.checkout.free")}
                 </span>
               </div>
 
               <Separator />
 
               <div className="flex justify-between gap-2 text-lg font-bold">
-                <span>Totale</span>
+                <span>{t("shop.checkout.total")}</span>
                 <span data-testid="text-checkout-total">{formatPrice((cart?.subtotal || 0) - (cart?.discount || 0) + shippingCost)}</span>
               </div>
               {items.length > 0 && (
                 <div className="flex justify-between gap-2 text-sm text-muted-foreground">
-                  <span>di cui IVA</span>
+                  <span>{t("shop.checkout.includingVat")}</span>
                   <span data-testid="text-checkout-vat">
                     {formatPrice(
                       (() => {
@@ -642,18 +644,18 @@ export default function ShopCheckout() {
                       .then(res => res.json())
                       .then((data: any) => {
                         queryClient.invalidateQueries({ queryKey: ['/api/shop', resellerId, 'cart'] });
-                        toast({ title: "Ordine confermato!", description: `Ordine #${data.orderNumber}` });
+                        toast({ title: t("shop.checkout.orderConfirmed"), description: `${t("shop.checkout.orderNumber")} #${data.orderNumber}` });
                         setLocation(`/customer/orders/${data.order?.id || ''}`);
                       })
                       .catch((error: any) => {
-                        toast({ title: "Errore", description: error.message, variant: "destructive" });
+                        toast({ title: t("shop.checkout.error"), description: error.message, variant: "destructive" });
                       });
                   }}
                   onError={(error) => {
-                    toast({ title: "Errore PayPal", description: error, variant: "destructive" });
+                    toast({ title: t("shop.checkout.paypalError"), description: error, variant: "destructive" });
                   }}
                   onCancel={() => {
-                    toast({ title: "Pagamento annullato", description: "Hai annullato il pagamento PayPal" });
+                    toast({ title: t("shop.checkout.paymentCancelled"), description: t("shop.checkout.paypalCancelled") });
                   }}
                 />
               ) : paymentMethod === "card" && canPlaceOrder ? (
@@ -671,11 +673,11 @@ export default function ShopCheckout() {
                   shippingMethodId={selectedShippingMethod}
                   onSuccess={(order) => {
                     queryClient.invalidateQueries({ queryKey: ['/api/shop', resellerId, 'cart'] });
-                    toast({ title: "Ordine confermato!", description: `Ordine #${order.orderNumber}` });
+                    toast({ title: t("shop.checkout.orderConfirmed"), description: `${t("shop.checkout.orderNumber")} #${order.orderNumber}` });
                     setLocation(`/customer/orders/${order.order?.id || order.id || ''}`);
                   }}
                   onError={(error) => {
-                    toast({ title: "Errore pagamento", description: error, variant: "destructive" });
+                    toast({ title: t("shop.checkout.paymentError"), description: error, variant: "destructive" });
                   }}
                 />
               ) : (
@@ -689,19 +691,19 @@ export default function ShopCheckout() {
                   {placeOrder.isPending ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Elaborazione...
+                      {t("shop.checkout.processing")}
                     </>
                   ) : (
                     <>
                       <Check className="mr-2 h-4 w-4" />
-                      Conferma ordine
+                      {t("shop.checkout.confirmOrder")}
                     </>
                   )}
                 </Button>
               )}
               <div className="flex items-center justify-center gap-1.5 text-xs text-muted-foreground">
                 <Lock className="h-3 w-3" />
-                <span>Pagamento sicuro e protetto</span>
+                <span>{t("shop.checkout.securePayment")}</span>
               </div>
             </CardFooter>
           </Card>

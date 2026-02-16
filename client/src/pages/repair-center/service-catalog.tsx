@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -47,14 +48,6 @@ import {
 } from "@/components/ui/alert-dialog";
 import type { ServiceItem } from "@shared/schema";
 
-const SERVICE_CATEGORIES = [
-  { value: "display", label: "Display" },
-  { value: "batteria", label: "Batteria" },
-  { value: "software", label: "Software" },
-  { value: "hardware", label: "Hardware" },
-  { value: "diagnostica", label: "Diagnostica" },
-  { value: "altro", label: "Altro" },
-];
 
 const getCategoryLabel = (category: string) => {
   return SERVICE_CATEGORIES.find(c => c.value === category)?.label || category;
@@ -72,12 +65,6 @@ const getCategoryColor = (category: string) => {
   return colors[category] || colors.altro;
 };
 
-const formatCurrency = (cents: number) => {
-  return new Intl.NumberFormat("it-IT", {
-    style: "currency",
-    currency: "EUR",
-  }).format(cents / 100);
-};
 
 const getPriceSourceLabel = (source: string) => {
   switch (source) {
@@ -105,6 +92,21 @@ interface ServiceCatalogItem extends ServiceItem {
 }
 
 export default function RepairCenterServiceCatalog() {
+  const { t } = useTranslation();
+  const SERVICE_CATEGORIES = [
+    { value: "display", label: "Display" },
+    { value: "batteria", label: t("settings.battery") },
+    { value: "software", label: "Software" },
+    { value: "hardware", label: "Hardware" },
+    { value: "diagnostica", label: t("sidebar.items.diagnostics") },
+    { value: "altro", label: t("common.more") },
+  ];
+  const formatCurrency = (cents: number) => {
+    return new Intl.NumberFormat("it-IT", {
+      style: "currency",
+      currency: "EUR",
+    }).format(cents / 100);
+  };
   const { toast } = useToast();
   const [searchQuery, setSearchQuery] = useState("");
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
@@ -137,8 +139,8 @@ export default function RepairCenterServiceCatalog() {
     },
     onError: (error: any) => {
       toast({ 
-        title: "Errore", 
-        description: error.message || "Impossibile creare l'intervento",
+        title: t("auth.error"), 
+        description: error.message || t("serviceCatalog.cannotCreateService"),
         variant: "destructive"
       });
     },
@@ -156,8 +158,8 @@ export default function RepairCenterServiceCatalog() {
     },
     onError: (error: any) => {
       toast({ 
-        title: "Errore", 
-        description: error.message || "Impossibile aggiornare l'intervento",
+        title: t("auth.error"), 
+        description: error.message || t("serviceCatalog.cannotUpdateService"),
         variant: "destructive"
       });
     },
@@ -175,8 +177,8 @@ export default function RepairCenterServiceCatalog() {
     },
     onError: (error: any) => {
       toast({ 
-        title: "Errore", 
-        description: error.message || "Impossibile eliminare l'intervento",
+        title: t("auth.error"), 
+        description: error.message || t("serviceCatalog.cannotDeleteService"),
         variant: "destructive"
       });
     },
@@ -212,8 +214,8 @@ export default function RepairCenterServiceCatalog() {
   const handleSaveItem = () => {
     if (!itemCode || !itemName || !itemCategory || !itemPriceEuros) {
       toast({ 
-        title: "Errore", 
-        description: "Compila tutti i campi obbligatori",
+        title: t("auth.error"), 
+        description: t("common.fillRequiredFields"),
         variant: "destructive"
       });
       return;
@@ -280,8 +282,8 @@ export default function RepairCenterServiceCatalog() {
               <Wrench className="h-5 w-5 sm:h-7 sm:w-7 text-white" />
             </div>
             <div>
-              <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-white tracking-tight" data-testid="text-page-title">Catalogo Servizi</h1>
-              <p className="text-emerald-100">Catalogo servizi con prezzi applicati al tuo centro</p>
+              <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-white tracking-tight" data-testid="text-page-title">{t("sidebar.items.serviceCatalog")}</h1>
+              <p className="text-emerald-100">{t("services.catalogoServiziConPrezziApplicatiAlTuoCentr")}</p>
             </div>
           </div>
           <div className="flex flex-wrap items-center gap-2">
@@ -313,12 +315,12 @@ export default function RepairCenterServiceCatalog() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Codice</TableHead>
-                    <TableHead>Intervento</TableHead>
-                    <TableHead className="hidden sm:table-cell">Categoria</TableHead>
-                    <TableHead className="text-right">Prezzo</TableHead>
+                    <TableHead>{t("common.code")}</TableHead>
+                    <TableHead>{t("products.intervention")}</TableHead>
+                    <TableHead className="hidden sm:table-cell">{t("common.category")}</TableHead>
+                    <TableHead className="text-right">{t("common.price")}</TableHead>
                     <TableHead className="hidden sm:table-cell text-right">Tempo</TableHead>
-                    <TableHead className="w-[100px]">Azioni</TableHead>
+                    <TableHead className="w-[100px]">{t("common.actions")}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -388,7 +390,7 @@ export default function RepairCenterServiceCatalog() {
             <div className="relative flex-1 min-w-0">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Cerca per codice, nome o descrizione..."
+                placeholder={t("services.cercaPerCodiceNomeODescrizione")}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-10"
@@ -397,10 +399,10 @@ export default function RepairCenterServiceCatalog() {
             </div>
             <Select value={categoryFilter} onValueChange={setCategoryFilter}>
               <SelectTrigger className="w-full sm:w-[180px]" data-testid="select-category">
-                <SelectValue placeholder="Categoria" />
+                <SelectValue placeholder={t("common.category")} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">Tutte le categorie</SelectItem>
+                <SelectItem value="all">{t("warehouse.allCategories")}</SelectItem>
                 {SERVICE_CATEGORIES.map(cat => (
                   <SelectItem key={cat.value} value={cat.value}>
                     {cat.label}
@@ -419,11 +421,11 @@ export default function RepairCenterServiceCatalog() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Codice</TableHead>
-                    <TableHead>Intervento</TableHead>
-                    <TableHead className="hidden sm:table-cell">Categoria</TableHead>
-                    <TableHead className="text-right">Prezzo</TableHead>
-                    <TableHead className="hidden md:table-cell">Origine</TableHead>
+                    <TableHead>{t("common.code")}</TableHead>
+                    <TableHead>{t("products.intervention")}</TableHead>
+                    <TableHead className="hidden sm:table-cell">{t("common.category")}</TableHead>
+                    <TableHead className="text-right">{t("common.price")}</TableHead>
+                    <TableHead className="hidden md:table-cell">{t("shipping.origin")}</TableHead>
                     <TableHead className="hidden sm:table-cell text-right">Tempo</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -479,12 +481,12 @@ export default function RepairCenterServiceCatalog() {
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>
-              {editingItem ? "Modifica Intervento" : "Nuovo Intervento"}
+              {editingItem ? t("serviceCatalog.editService") : "Nuovo Intervento"}
             </DialogTitle>
             <DialogDescription>
               {editingItem 
-                ? "Modifica i dettagli dell'intervento"
-                : "Crea un nuovo intervento nel tuo listino"
+                ? t("serviceCatalog.editServiceDetails")
+                : t("serviceCatalog.createNewService")
               }
             </DialogDescription>
           </DialogHeader>
@@ -501,7 +503,7 @@ export default function RepairCenterServiceCatalog() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="name">Nome *</Label>
+              <Label htmlFor="name">{t("services.nome")}</Label>
               <Input
                 id="name"
                 value={itemName}
@@ -511,20 +513,20 @@ export default function RepairCenterServiceCatalog() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="description">Descrizione</Label>
+              <Label htmlFor="description">{t("common.description")}</Label>
               <Textarea
                 id="description"
                 value={itemDescription}
                 onChange={(e) => setItemDescription(e.target.value)}
-                placeholder="Descrizione opzionale..."
+                placeholder={t("utility.optionalDescription")}
                 data-testid="input-item-description"
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="category">Categoria *</Label>
+              <Label htmlFor="category">{t("services.categoria")}</Label>
               <Select value={itemCategory} onValueChange={setItemCategory}>
                 <SelectTrigger data-testid="select-item-category">
-                  <SelectValue placeholder="Seleziona categoria" />
+                  <SelectValue placeholder={t("utility.selectCategory")} />
                 </SelectTrigger>
                 <SelectContent>
                   {SERVICE_CATEGORIES.map(cat => (
@@ -537,7 +539,7 @@ export default function RepairCenterServiceCatalog() {
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="price">Prezzo (EUR) *</Label>
+                <Label htmlFor="price">{t("services.prezzoEUR")}</Label>
                 <Input
                   id="price"
                   type="number"
@@ -573,8 +575,8 @@ export default function RepairCenterServiceCatalog() {
               data-testid="button-save-item"
             >
               {(createItemMutation.isPending || updateItemMutation.isPending) 
-                ? "Salvataggio..." 
-                : (editingItem ? "Salva Modifiche" : "Crea Intervento")}
+                ? t("settings.saving") 
+                : (editingItem ? t("team.saveChanges") : t("serviceCatalog.createService"))}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -583,10 +585,10 @@ export default function RepairCenterServiceCatalog() {
       <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Elimina Intervento</AlertDialogTitle>
+            <AlertDialogTitle>{t("services.eliminaIntervento")}</AlertDialogTitle>
             <AlertDialogDescription>
               Sei sicuro di voler eliminare l'intervento "{itemToDelete?.name}"?
-              Questa azione non può essere annullata.
+              {t("common.thisActionCannotBeUndone")}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -598,7 +600,7 @@ export default function RepairCenterServiceCatalog() {
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
               data-testid="button-confirm-delete"
             >
-              {deleteItemMutation.isPending ? "Eliminazione..." : "Elimina"}
+              {deleteItemMutation.isPending ? "Eliminazione..." : t("common.delete")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

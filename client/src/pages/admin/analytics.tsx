@@ -6,6 +6,7 @@ import { LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, Cart
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { usePageTitle } from "@/hooks/use-page-title";
+import { useTranslation } from "react-i18next";
 
 type OverviewKPIs = {
   totalRevenue: number;
@@ -47,7 +48,8 @@ type TopProduct = {
 const CHART_COLORS = ['hsl(var(--chart-1))', 'hsl(var(--chart-2))', 'hsl(var(--chart-3))', 'hsl(var(--chart-4))', 'hsl(var(--chart-5))'];
 
 export default function AdminAnalytics() {
-  usePageTitle("Analisi");
+  const { t } = useTranslation();
+  usePageTitle(t("sidebar.items.analytics"));
   const [period, setPeriod] = useState<'week' | 'month' | 'year'>('month');
   
   const now = new Date();
@@ -91,42 +93,42 @@ export default function AdminAnalytics() {
 
   const kpiCards = [
     {
-      title: "Fatturato Totale",
+      title: t("dashboard.totalRevenue"),
       value: overview?.totalRevenue ? `€${(overview.totalRevenue / 100).toFixed(2)}` : "€0.00",
       icon: Euro,
       color: "text-primary",
       bgColor: "bg-primary/10",
     },
     {
-      title: "Riparazioni Attive",
+      title: t("dashboard.activeRepairs"),
       value: overview?.activeRepairs ?? 0,
       icon: Wrench,
       color: "text-chart-3",
       bgColor: "bg-chart-3/10",
     },
     {
-      title: "Tempo Medio Riparazione",
+      title: t("dashboard.avgRepairTime"),
       value: overview?.avgRepairTime ? `${overview.avgRepairTime.toFixed(1)} giorni` : "0 giorni",
       icon: Clock,
       color: "text-chart-2",
       bgColor: "bg-chart-2/10",
     },
     {
-      title: "Fatture Pagate",
+      title: t("dashboard.paidInvoices"),
       value: overview?.paidInvoices ?? 0,
       icon: TrendingUp,
       color: "text-chart-1",
       bgColor: "bg-chart-1/10",
     },
     {
-      title: "Riparazioni Completate",
+      title: t("dashboard.completedRepairs"),
       value: overview?.completedRepairs ?? 0,
       icon: Activity,
       color: "text-chart-4",
       bgColor: "bg-chart-4/10",
     },
     {
-      title: "Ticket Aperti",
+      title: t("dashboard.openTickets"),
       value: overview?.openTickets ?? 0,
       icon: Ticket,
       color: "text-chart-5",
@@ -153,7 +155,7 @@ export default function AdminAnalytics() {
               <TrendingUp className="h-5 w-5" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold tracking-tight" data-testid="heading-analytics">Analytics</h1>
+              <h1 className="text-2xl font-bold tracking-tight" data-testid="heading-analytics">{t("sidebar.items.analytics")}</h1>
               <p className="text-sm text-muted-foreground">
                 Panoramica dettagliata delle performance e dei KPI
               </p>
@@ -213,7 +215,7 @@ export default function AdminAnalytics() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card data-testid="card-revenue-chart">
           <CardHeader>
-            <CardTitle>Andamento Fatturato</CardTitle>
+            <CardTitle>{t("reports.revenueTrend")}</CardTitle>
           </CardHeader>
           <CardContent>
             {revenueLoading ? (
@@ -242,7 +244,7 @@ export default function AdminAnalytics() {
 
         <Card data-testid="card-status-chart">
           <CardHeader>
-            <CardTitle>Distribuzione Stato Riparazioni</CardTitle>
+            <CardTitle>{t("reports.repairStatusDistribution")}</CardTitle>
           </CardHeader>
           <CardContent>
             {overviewLoading ? (
@@ -280,7 +282,7 @@ export default function AdminAnalytics() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card data-testid="card-centers-chart">
           <CardHeader>
-            <CardTitle>Performance Centri Riparazione</CardTitle>
+            <CardTitle>{t("reports.repairCenterPerformance")}</CardTitle>
           </CardHeader>
           <CardContent>
             {centersLoading ? (
@@ -307,7 +309,7 @@ export default function AdminAnalytics() {
 
         <Card data-testid="card-products-chart">
           <CardHeader>
-            <CardTitle>Top 5 Prodotti Più Utilizzati</CardTitle>
+            <CardTitle>{t("reports.top5Products")}</CardTitle>
           </CardHeader>
           <CardContent>
             {productsLoading ? (

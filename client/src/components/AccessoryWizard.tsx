@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useState, useRef, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -48,18 +49,18 @@ interface AccessoryWizardProps {
 }
 
 const wizardSchema = z.object({
-  name: z.string().min(1, "Nome obbligatorio"),
+  name: z.string().min(1, t("common.nameRequired")),
   sku: z.string().optional(),
-  brand: z.string().min(1, "Seleziona la marca"),
+  brand: z.string().min(1, t("products.selectBrand")),
   color: z.string().optional(),
   description: z.string().optional(),
-  condition: z.string().min(1, "Seleziona la condizione"),
-  accessoryType: z.string().min(1, "Seleziona il tipo"),
+  condition: z.string().min(1, t("common.selectCondition")),
+  accessoryType: z.string().min(1, t("common.selectType")),
   material: z.string().optional(),
   isUniversal: z.boolean().default(false),
   notes: z.string().optional(),
   warrantyMonths: z.string().default("12"),
-  unitPrice: z.string().min(1, "Prezzo vendita obbligatorio"),
+  unitPrice: z.string().min(1, t("products.sellPriceRequired")),
   costPrice: z.string().optional(),
   supplierId: z.string().optional(),
   initialStock: z.array(z.object({
@@ -97,25 +98,25 @@ interface Supplier {
 
 const STEPS = [
   { id: 1, name: "Info Base", icon: ShoppingBag },
-  { id: 2, name: "Prezzo & Stock", icon: Euro },
-  { id: 3, name: "Compatibilità", icon: Link2 },
-  { id: 4, name: "Conferma", icon: CheckCircle2 },
+  { id: 2, name: t("products.priceAndStock"), icon: Euro },
+  { id: 3, name: t("products.compatibility"), icon: Link2 },
+  { id: 4, name: t("common.confirm"), icon: CheckCircle2 },
 ];
 
 const ACCESSORY_TYPES = [
   { value: "cover", label: "Cover / Custodia" },
   { value: "pellicola", label: "Pellicola protettiva" },
-  { value: "caricatore", label: "Caricatore" },
+  { value: "caricatore", label: t("repair.charger") },
   { value: "cavo", label: "Cavo" },
   { value: "auricolare", label: "Auricolari" },
   { value: "powerbank", label: "Power Bank" },
   { value: "supporto", label: "Supporto / Stand" },
   { value: "adattatore", label: "Adattatore" },
-  { value: "altro", label: "Altro" },
+  { value: "altro", label: t("common.other") },
 ];
 
 const CONDITION_OPTIONS = [
-  { value: "nuovo", label: "Nuovo" },
+  { value: "nuovo", label: t("common.new") },
   { value: "ricondizionato", label: "Ricondizionato" },
   { value: "usato", label: "Usato" },
 ];
@@ -139,6 +140,7 @@ export function AccessoryWizard({
   onSuccess,
   editingProduct 
 }: AccessoryWizardProps) {
+  const { t } = useTranslation();
   const [currentStep, setCurrentStep] = useState(1);
   const [compatibilities, setCompatibilities] = useState<CompatibilityEntry[]>([]);
   const [selectedBrandId, setSelectedBrandId] = useState<string>("");
@@ -220,7 +222,7 @@ export function AccessoryWizard({
       c.deviceBrandId === selectedBrandId && c.deviceModelId === null
     );
     if (exists) {
-      toast({ title: "Compatibilità già aggiunta", variant: "destructive" });
+      toast({ title: t("products.compatibilityAlreadyAdded"), variant: "destructive" });
       return;
     }
     const brand = deviceBrands.find(b => b.id === selectedBrandId);
@@ -239,7 +241,7 @@ export function AccessoryWizard({
       c.deviceBrandId === selectedBrandId && c.deviceModelId === modelId
     );
     if (exists) {
-      toast({ title: "Compatibilità già aggiunta", variant: "destructive" });
+      toast({ title: t("products.compatibilityAlreadyAdded"), variant: "destructive" });
       return;
     }
     const brand = deviceBrands.find(b => b.id === selectedBrandId);
@@ -291,7 +293,7 @@ export function AccessoryWizard({
           body: formDataUpload,
           credentials: "include",
         });
-        if (!response.ok) throw new Error("Errore creazione accessorio");
+        if (!response.ok) throw new Error(t("products.accessoryCreationError"));
         createdProduct = await response.json();
       } else {
         const response = await apiRequest("POST", "/api/accessories", {
@@ -327,12 +329,12 @@ export function AccessoryWizard({
       }
       queryClient.invalidateQueries({ queryKey: ["/api/accessories"] });
       queryClient.invalidateQueries({ queryKey: ["/api/products"] });
-      toast({ title: "Accessorio creato", description: `${form.getValues("name")} aggiunto al catalogo` });
+      toast({ title: t("products.accessoryCreated"), description: `${form.getValues("name")} aggiunto al catalogo` });
       handleClose();
       onSuccess?.(newProduct);
     },
     onError: (error: any) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -400,7 +402,7 @@ export function AccessoryWizard({
       <DialogContent ref={dialogContentRef} className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-xl font-semibold">
-            {editingProduct ? "Modifica Accessorio" : "Nuovo Accessorio"}
+            {editingProduct ? t("products.editAccessory") : t("products.newAccessory")}
           </DialogTitle>
         </DialogHeader>
 
@@ -446,7 +448,7 @@ export function AccessoryWizard({
               <div className="space-y-6">
                 <div className="text-center mb-4">
                   <ShoppingBag className="h-12 w-12 mx-auto text-primary mb-2" />
-                  <h3 className="text-lg font-medium">Informazioni Base</h3>
+                  <h3 className="text-lg font-medium">{t("products.basicInfo")}</h3>
                   <p className="text-sm text-muted-foreground">Inserisci i dati principali dell'accessorio</p>
                 </div>
 
@@ -479,7 +481,7 @@ export function AccessoryWizard({
                       onClick={() => fileInputRef.current?.click()}
                     >
                       <ImagePlus className="h-8 w-8" />
-                      <span className="text-xs">Aggiungi foto</span>
+                      <span className="text-xs">{t("common.addPhoto")}</span>
                     </Button>
                   )}
                 </div>
@@ -489,7 +491,7 @@ export function AccessoryWizard({
                   name="accessoryType"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Tipo Accessorio *</FormLabel>
+                      <FormLabel>{t("products.accessoryType")} *</FormLabel>
                       <div className="grid grid-cols-3 gap-2">
                         {ACCESSORY_TYPES.map(type => (
                           <Card
@@ -516,7 +518,7 @@ export function AccessoryWizard({
                   name="name"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Nome Prodotto *</FormLabel>
+                      <FormLabel>{t("products.productName")} *</FormLabel>
                       <FormControl>
                         <Input placeholder="es. Cover Silicone iPhone 14" {...field} data-testid="input-accessory-name" />
                       </FormControl>
@@ -531,11 +533,11 @@ export function AccessoryWizard({
                     name="brand"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Marca *</FormLabel>
+                        <FormLabel>{t("common.brand")} *</FormLabel>
                         <Select onValueChange={field.onChange} value={field.value}>
                           <FormControl>
                             <SelectTrigger data-testid="select-accessory-brand">
-                              <SelectValue placeholder="Seleziona marca" />
+                              <SelectValue placeholder={t("common.selectBrand")} />
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
@@ -554,11 +556,11 @@ export function AccessoryWizard({
                     name="color"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Colore</FormLabel>
+                        <FormLabel>{t("common.color")}</FormLabel>
                         <Select onValueChange={field.onChange} value={field.value}>
                           <FormControl>
                             <SelectTrigger data-testid="select-accessory-color">
-                              <SelectValue placeholder="Seleziona colore" />
+                              <SelectValue placeholder={t("common.selectColor")} />
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
@@ -579,7 +581,7 @@ export function AccessoryWizard({
                     name="condition"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Condizione *</FormLabel>
+                        <FormLabel>{t("common.condition")} *</FormLabel>
                         <Select onValueChange={field.onChange} value={field.value}>
                           <FormControl>
                             <SelectTrigger data-testid="select-accessory-condition">
@@ -606,7 +608,7 @@ export function AccessoryWizard({
                         <Select onValueChange={field.onChange} value={field.value}>
                           <FormControl>
                             <SelectTrigger data-testid="select-accessory-material">
-                              <SelectValue placeholder="Seleziona" />
+                              <SelectValue placeholder={t("common.select")} />
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
@@ -641,8 +643,8 @@ export function AccessoryWizard({
               <div className="space-y-6">
                 <div className="text-center mb-4">
                   <Euro className="h-12 w-12 mx-auto text-primary mb-2" />
-                  <h3 className="text-lg font-medium">Prezzo & Magazzino</h3>
-                  <p className="text-sm text-muted-foreground">Configura prezzi e disponibilità</p>
+                  <h3 className="text-lg font-medium">{t("products.priceAndWarehouse")}</h3>
+                  <p className="text-sm text-muted-foreground">{t("products.configurePricesAndAvailability")}</p>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -651,7 +653,7 @@ export function AccessoryWizard({
                     name="unitPrice"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Prezzo Vendita (€) *</FormLabel>
+                        <FormLabel>{t("products.salePriceEur")}</FormLabel>
                         <FormControl>
                           <Input 
                             type="number" 
@@ -671,7 +673,7 @@ export function AccessoryWizard({
                     name="costPrice"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Costo Acquisto (€)</FormLabel>
+                        <FormLabel>{t("products.purchasePriceEur")}</FormLabel>
                         <FormControl>
                           <Input 
                             type="number" 
@@ -688,16 +690,16 @@ export function AccessoryWizard({
                 </div>
 
                 <div className="space-y-2">
-                  <Label>Fornitore (opzionale)</Label>
+                  <Label>{t("products.supplierOptional")}</Label>
                   <Select
                     value={form.watch("supplierId") || "none"}
                     onValueChange={(value) => form.setValue("supplierId", value === "none" ? "" : value)}
                   >
                     <SelectTrigger data-testid="select-supplier">
-                      <SelectValue placeholder="Seleziona fornitore..." />
+                      <SelectValue placeholder={t("products.selectSupplier")} />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="none">Nessun fornitore</SelectItem>
+                      <SelectItem value="none">{t("products.noSupplier")}</SelectItem>
                       {suppliers.map((s) => (
                         <SelectItem key={s.id} value={s.id}>{s.name} ({s.code})</SelectItem>
                       ))}
@@ -710,7 +712,7 @@ export function AccessoryWizard({
                   name="warrantyMonths"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Garanzia (mesi)</FormLabel>
+                      <FormLabel>{t("products.warrantyMonths")}</FormLabel>
                       <Select onValueChange={field.onChange} value={field.value}>
                         <FormControl>
                           <SelectTrigger data-testid="select-accessory-warranty">
@@ -718,7 +720,7 @@ export function AccessoryWizard({
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          <SelectItem value="0">Nessuna</SelectItem>
+                          <SelectItem value="0">{t("common.noneFem")}</SelectItem>
                           <SelectItem value="3">3 mesi</SelectItem>
                           <SelectItem value="6">6 mesi</SelectItem>
                           <SelectItem value="12">12 mesi</SelectItem>
@@ -732,7 +734,7 @@ export function AccessoryWizard({
 
                 <div className="space-y-4">
                   <div className="flex items-center justify-between">
-                    <Label className="text-base font-medium">Stock Iniziale</Label>
+                    <Label className="text-base font-medium">{t("warehouse.initialStock")}</Label>
                     <Button type="button" variant="outline" size="sm" onClick={addWarehouseStock}>
                       <Warehouse className="h-4 w-4 mr-1" />
                       Aggiungi Magazzino
@@ -744,7 +746,7 @@ export function AccessoryWizard({
                       <CardContent className="p-4">
                         <div className="flex gap-4 items-end">
                           <div className="flex-1">
-                            <Label className="text-xs">Magazzino</Label>
+                            <Label className="text-xs">{t("warehouse.warehouse")}</Label>
                             <Select
                               value={stock.warehouseId}
                               onValueChange={(value) => {
@@ -754,7 +756,7 @@ export function AccessoryWizard({
                               }}
                             >
                               <SelectTrigger>
-                                <SelectValue placeholder="Seleziona" />
+                                <SelectValue placeholder={t("common.select")} />
                               </SelectTrigger>
                               <SelectContent>
                                 {warehouses.map((w: any) => (
@@ -764,7 +766,7 @@ export function AccessoryWizard({
                             </Select>
                           </div>
                           <div className="w-24">
-                            <Label className="text-xs">Quantità</Label>
+                            <Label className="text-xs">{t("common.quantity")}</Label>
                             <Input
                               type="number"
                               min="1"
@@ -777,7 +779,7 @@ export function AccessoryWizard({
                             />
                           </div>
                           <div className="flex-1">
-                            <Label className="text-xs">Posizione</Label>
+                            <Label className="text-xs">{t("warehouse.position")}</Label>
                             <Input
                               placeholder="es. A-01"
                               value={stock.location}
@@ -808,7 +810,7 @@ export function AccessoryWizard({
               <div className="space-y-6">
                 <div className="text-center mb-4">
                   <Link2 className="h-12 w-12 mx-auto text-primary mb-2" />
-                  <h3 className="text-lg font-medium">Compatibilità Dispositivi</h3>
+                  <h3 className="text-lg font-medium">{t("products.deviceCompatibility")}</h3>
                   <p className="text-sm text-muted-foreground">Seleziona i dispositivi compatibili con questo accessorio</p>
                 </div>
 
@@ -816,7 +818,7 @@ export function AccessoryWizard({
                   <div className="flex gap-2">
                     <Select value={selectedBrandId} onValueChange={setSelectedBrandId}>
                       <SelectTrigger className="flex-1" data-testid="select-device-brand">
-                        <SelectValue placeholder="Seleziona marca dispositivo" />
+                        <SelectValue placeholder={t("products.selectDeviceBrand")} />
                       </SelectTrigger>
                       <SelectContent>
                         {deviceBrands.map((brand) => (
@@ -877,7 +879,7 @@ export function AccessoryWizard({
               <div className="space-y-6">
                 <div className="text-center mb-4">
                   <CheckCircle2 className="h-12 w-12 mx-auto text-green-500 mb-2" />
-                  <h3 className="text-lg font-medium">Riepilogo</h3>
+                  <h3 className="text-lg font-medium">{t("repair.summary")}</h3>
                   <p className="text-sm text-muted-foreground">Verifica i dati prima di salvare</p>
                 </div>
 
@@ -901,7 +903,7 @@ export function AccessoryWizard({
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4 border-t">
                       <div>
-                        <Label className="text-xs text-muted-foreground">Colore</Label>
+                        <Label className="text-xs text-muted-foreground">{t("common.color")}</Label>
                         <p className="font-medium">{values.color || "-"}</p>
                       </div>
                       <div>
@@ -917,31 +919,31 @@ export function AccessoryWizard({
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4 border-t">
                       <div>
-                        <Label className="text-xs text-muted-foreground">Prezzo Vendita</Label>
+                        <Label className="text-xs text-muted-foreground">{t("products.salePrice")}</Label>
                         <p className="font-semibold text-lg text-primary">€{values.unitPrice || "0"}</p>
                       </div>
                       <div>
-                        <Label className="text-xs text-muted-foreground">Costo Acquisto</Label>
+                        <Label className="text-xs text-muted-foreground">{t("products.purchasePrice")}</Label>
                         <p className="font-medium">€{values.costPrice || "-"}</p>
                       </div>
                     </div>
 
                     {form.watch("supplierId") && (
                       <div className="pt-4 border-t">
-                        <Label className="text-xs text-muted-foreground">Fornitore</Label>
+                        <Label className="text-xs text-muted-foreground">{t("common.supplier")}</Label>
                         <p className="font-medium">{suppliers.find(s => s.id === form.watch("supplierId"))?.name || "-"}</p>
                       </div>
                     )}
 
                     {values.initialStock.length > 0 && (
                       <div className="pt-4 border-t">
-                        <Label className="text-xs text-muted-foreground">Stock Iniziale</Label>
+                        <Label className="text-xs text-muted-foreground">{t("warehouse.initialStock")}</Label>
                         <div className="mt-2 space-y-1">
                           {values.initialStock.map((stock, i) => {
                             const wh = warehouses.find((w: any) => w.id === stock.warehouseId);
                             return (
                               <div key={i} className="flex justify-between text-sm">
-                                <span>{wh?.name || "Magazzino"}</span>
+                                <span>{wh?.name || t("common.warehouse")}</span>
                                 <span className="font-medium">{stock.quantity} pz</span>
                               </div>
                             );
@@ -975,12 +977,12 @@ export function AccessoryWizard({
                 data-testid="button-wizard-back"
               >
                 <ChevronLeft className="h-4 w-4 mr-1" />
-                {currentStep === 1 ? "Annulla" : "Indietro"}
+                {currentStep === 1 ? t("common.cancel") : t("common.back")}
               </Button>
 
               {currentStep < 4 ? (
                 <Button type="button" onClick={handleNext} data-testid="button-wizard-next">
-                  Avanti
+                  {t("common.next")}
                   <ChevronRight className="h-4 w-4 ml-1" />
                 </Button>
               ) : (

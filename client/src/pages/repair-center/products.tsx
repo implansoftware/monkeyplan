@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -20,6 +21,7 @@ type ProductWithStock = Product & {
 };
 
 export default function RepairCenterProductsPage() {
+  const { t } = useTranslation();
   const [searchTerm, setSearchTerm] = useState("");
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
   const [selectedProduct, setSelectedProduct] = useState<ProductWithStock | null>(null);
@@ -85,7 +87,7 @@ export default function RepairCenterProductsPage() {
               <Package className="h-5 w-5 sm:h-7 sm:w-7 text-white" />
             </div>
             <div>
-              <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-white tracking-tight" data-testid="text-products-title">Prodotti</h1>
+              <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-white tracking-tight" data-testid="text-products-title">{t("sidebar.items.products")}</h1>
               <p className="text-emerald-100">Visualizza i ricambi disponibili e il tuo stock</p>
             </div>
           </div>
@@ -100,7 +102,7 @@ export default function RepairCenterProductsPage() {
                 <Package className="h-6 w-6 text-primary" />
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">Prodotti Totali</p>
+                <p className="text-sm text-muted-foreground">{t("warehouse.totalProducts")}</p>
                 <p className="text-2xl font-bold" data-testid="text-products-count">{products.length}</p>
               </div>
             </div>
@@ -126,7 +128,7 @@ export default function RepairCenterProductsPage() {
                 <AlertTriangle className="h-6 w-6 text-orange-500" />
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">Sotto Scorta</p>
+                <p className="text-sm text-muted-foreground">{t("warehouse.lowStockItems")}</p>
                 <p className="text-2xl font-bold" data-testid="text-low-stock">{lowStockCount}</p>
               </div>
             </div>
@@ -138,7 +140,7 @@ export default function RepairCenterProductsPage() {
         <div className="relative flex-1 min-w-0 max-w-sm">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder="Cerca per nome, SKU o marca..."
+            placeholder={t("products.cercaPerNomeSKUOMarca")}
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="pl-10"
@@ -148,10 +150,10 @@ export default function RepairCenterProductsPage() {
         <Select value={categoryFilter} onValueChange={setCategoryFilter}>
           <SelectTrigger className="w-full sm:w-[180px]" data-testid="select-category">
             <Filter className="h-4 w-4 mr-2" />
-            <SelectValue placeholder="Categoria" />
+            <SelectValue placeholder={t("common.category")} />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">Tutte le categorie</SelectItem>
+            <SelectItem value="all">{t("warehouse.allCategories")}</SelectItem>
             {categories.map(cat => (
               <SelectItem key={cat} value={cat!}>{cat}</SelectItem>
             ))}
@@ -165,13 +167,13 @@ export default function RepairCenterProductsPage() {
             <table className="w-full">
               <thead className="border-b">
                 <tr>
-                  <th className="text-left p-4 font-medium">Prodotto</th>
+                  <th className="text-left p-4 font-medium">{t("common.product")}</th>
                   <th className="text-left p-4 font-medium hidden md:table-cell">SKU</th>
-                  <th className="text-left p-4 font-medium hidden lg:table-cell">Categoria</th>
-                  <th className="text-left p-4 font-medium hidden lg:table-cell">Marca</th>
+                  <th className="text-left p-4 font-medium hidden lg:table-cell">{t("common.category")}</th>
+                  <th className="text-left p-4 font-medium hidden lg:table-cell">{t("repairs.deviceBrand")}</th>
                   <th className="text-right p-4 font-medium">Mio Stock</th>
-                  <th className="text-right p-4 font-medium">Prezzo</th>
-                  <th className="text-center p-4 font-medium">Azioni</th>
+                  <th className="text-right p-4 font-medium">{t("common.price")}</th>
+                  <th className="text-center p-4 font-medium">{t("common.actions")}</th>
                 </tr>
               </thead>
               <tbody>
@@ -235,7 +237,7 @@ export default function RepairCenterProductsPage() {
       <Dialog open={!!selectedProduct} onOpenChange={() => setSelectedProduct(null)}>
         <DialogContent className="max-w-lg">
           <DialogHeader>
-            <DialogTitle>Dettaglio Prodotto</DialogTitle>
+            <DialogTitle>{t("products.dettaglioProdotto")}</DialogTitle>
           </DialogHeader>
           {selectedProduct && (
             <div className="space-y-4">
@@ -262,15 +264,15 @@ export default function RepairCenterProductsPage() {
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <p className="text-sm text-muted-foreground">Categoria</p>
+                  <p className="text-sm text-muted-foreground">{t("common.category")}</p>
                   <p className="font-medium">{selectedProduct.category || "N/D"}</p>
                 </div>
                 <div>
-                  <p className="text-sm text-muted-foreground">Tipo Prodotto</p>
+                  <p className="text-sm text-muted-foreground">{t("products.productType")}</p>
                   <p className="font-medium">{selectedProduct.productType || "N/D"}</p>
                 </div>
                 <div>
-                  <p className="text-sm text-muted-foreground">Prezzo Unitario</p>
+                  <p className="text-sm text-muted-foreground">{t("products.prezzoUnitario")}</p>
                   <p className="font-medium">
                     {selectedProduct.unitPrice ? `€${(selectedProduct.unitPrice / 100).toFixed(2)}` : "N/D"}
                   </p>
@@ -283,7 +285,7 @@ export default function RepairCenterProductsPage() {
 
               {selectedProduct.description && (
                 <div>
-                  <p className="text-sm text-muted-foreground">Descrizione</p>
+                  <p className="text-sm text-muted-foreground">{t("common.description")}</p>
                   <p className="text-sm">{selectedProduct.description}</p>
                 </div>
               )}

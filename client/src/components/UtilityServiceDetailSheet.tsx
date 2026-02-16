@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import {
   Sheet,
   SheetContent,
@@ -37,7 +38,7 @@ const categoryLabels: Record<ServiceCategory, string> = {
   centralino: "Centralino",
   luce: "Luce",
   gas: "Gas",
-  altro: "Altro",
+  altro: t("common.other"),
 };
 
 const categoryColors: Record<string, string> = {
@@ -94,7 +95,7 @@ export function calculateServiceCommission(service: UtilityService): number {
 export function inferServicePriceType(service: UtilityService): string {
   if (service.monthlyPriceCents && service.monthlyPriceCents > 0) return "Mensile";
   if (service.flatPriceCents && service.flatPriceCents > 0) return "Forfait";
-  if (service.activationFeeCents && service.activationFeeCents > 0) return "Attivazione";
+  if (service.activationFeeCents && service.activationFeeCents > 0) return t("utility.activation");
   return "Non definito";
 }
 
@@ -105,13 +106,14 @@ export function UtilityServiceDetailSheet({
   supplier,
   onCreatePractice,
 }: UtilityServiceDetailSheetProps) {
+  const { t } = useTranslation();
   if (!service) {
     return (
       <Sheet open={open} onOpenChange={onOpenChange}>
         <SheetContent className="sm:max-w-lg" data-testid="sheet-service-detail">
           <SheetHeader>
             <SheetTitle>Dettaglio Servizio</SheetTitle>
-            <SheetDescription>Nessun servizio selezionato</SheetDescription>
+            <SheetDescription>{t("services.noServiceSelected")}</SheetDescription>
           </SheetHeader>
         </SheetContent>
       </Sheet>
@@ -148,12 +150,12 @@ export function UtilityServiceDetailSheet({
             {service.isActive ? (
               <Badge variant="outline" className="text-green-600 border-green-300 dark:text-green-400 dark:border-green-700" data-testid="badge-service-status">
                 <CheckCircle2 className="h-3 w-3 mr-1" />
-                Attivo
+                {t("common.active")}
               </Badge>
             ) : (
               <Badge variant="outline" className="text-red-600 border-red-300 dark:text-red-400 dark:border-red-700" data-testid="badge-service-status">
                 <XCircle className="h-3 w-3 mr-1" />
-                Inattivo
+                {t("common.inactive")}
               </Badge>
             )}
           </div>
@@ -169,7 +171,7 @@ export function UtilityServiceDetailSheet({
 
           {service.description && (
             <div>
-              <h4 className="text-sm font-medium mb-1">Descrizione</h4>
+              <h4 className="text-sm font-medium mb-1">{t("common.description")}</h4>
               <p className="text-sm text-muted-foreground" data-testid="text-service-description">
                 {service.description}
               </p>

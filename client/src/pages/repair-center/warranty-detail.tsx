@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useParams, useLocation } from "wouter";
@@ -45,20 +46,21 @@ type WarrantyDetail = {
   daysRemaining: number | null;
 };
 
-const statusConfig: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
-  offered: { label: "In Attesa", variant: "secondary" },
-  accepted: { label: "Attiva", variant: "default" },
-  declined: { label: "Rifiutata", variant: "destructive" },
-  expired: { label: "Scaduta", variant: "outline" },
-};
 
 const coverageLabels: Record<string, string> = {
   basic: "Base",
-  extended: "Estesa",
+  extended: t("warranties.extended"),
   full: "Completa",
 };
 
 export default function RepairCenterWarrantyDetail() {
+  const { t } = useTranslation();
+  const statusConfig: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
+    offered: { label: t("common.pending"), variant: "secondary" },
+    accepted: { label: t("license.active"), variant: "default" },
+    declined: { label: t("common.rejected"), variant: "destructive" },
+    expired: { label: t("invoices.overdue"), variant: "outline" },
+  };
   const { id } = useParams<{ id: string }>();
   const [, navigate] = useLocation();
   const { toast } = useToast();
@@ -95,7 +97,7 @@ export default function RepairCenterWarrantyDetail() {
       toast({ title: "Garanzia aggiornata", description: "Le modifiche sono state salvate con successo." });
     },
     onError: (error: any) => {
-      toast({ title: "Errore", description: error.message || "Impossibile aggiornare la garanzia", variant: "destructive" });
+      toast({ title: t("auth.error"), description: error.message || "Impossibile aggiornare la garanzia", variant: "destructive" });
     },
   });
 
@@ -105,11 +107,11 @@ export default function RepairCenterWarrantyDetail() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/repair-center/warranties"] });
-      toast({ title: "Garanzia cancellata", description: "La garanzia è stata rimossa con successo." });
+      toast({ title: "Garanzia cancellata", description: t("warranties.laGaranziaStataRimossaConSuccesso") });
       navigate("/repair-center/warranties");
     },
     onError: (error: any) => {
-      toast({ title: "Errore", description: error.message || "Impossibile cancellare la garanzia", variant: "destructive" });
+      toast({ title: t("auth.error"), description: error.message || "Impossibile cancellare la garanzia", variant: "destructive" });
     },
   });
 
@@ -163,7 +165,7 @@ export default function RepairCenterWarrantyDetail() {
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-12">
             <Shield className="h-12 w-12 text-muted-foreground mb-4" />
-            <p className="text-lg font-medium">Garanzia non trovata</p>
+            <p className="text-lg font-medium">{t("warranties.garanziaNonTrovata")}</p>
           </CardContent>
         </Card>
       </div>
@@ -197,7 +199,7 @@ export default function RepairCenterWarrantyDetail() {
               </Button>
               <Button onClick={handleSave} disabled={updateMutation.isPending} data-testid="button-save-warranty">
                 <Save className="h-4 w-4 mr-2" />
-                {updateMutation.isPending ? "Salvataggio..." : "Salva"}
+                {updateMutation.isPending ? t("settings.saving") : t("common.save")}
               </Button>
             </>
           )}
@@ -234,7 +236,7 @@ export default function RepairCenterWarrantyDetail() {
                     : "text-emerald-200"
               }`}>
                 {warranty.daysRemaining <= 0 ? (
-                  <><AlertTriangle className="h-3 w-3" />Scaduta</>
+                  <><AlertTriangle className="h-3 w-3" />{t("invoices.overdue")}</>
                 ) : (
                   <><CheckCircle2 className="h-3 w-3" />{warranty.daysRemaining}g rimasti</>
                 )}
@@ -256,18 +258,18 @@ export default function RepairCenterWarrantyDetail() {
           <CardContent className="space-y-3">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
               <div>
-                <p className="text-muted-foreground mb-1">Nome</p>
+                <p className="text-muted-foreground mb-1">{t("common.name")}</p>
                 <p className="font-medium" data-testid="text-customer-name">{warranty.customerName}</p>
               </div>
               <div>
-                <p className="text-muted-foreground mb-1">Email</p>
+                <p className="text-muted-foreground mb-1">{t("auth.email")}</p>
                 <div className="flex items-center gap-1.5">
                   <Mail className="h-3.5 w-3.5 text-muted-foreground" />
                   <p className="font-medium" data-testid="text-customer-email">{warranty.customerEmail || "N/A"}</p>
                 </div>
               </div>
               <div>
-                <p className="text-muted-foreground mb-1">Telefono</p>
+                <p className="text-muted-foreground mb-1">{t("auth.phone")}</p>
                 <div className="flex items-center gap-1.5">
                   <Phone className="h-3.5 w-3.5 text-muted-foreground" />
                   <p className="font-medium" data-testid="text-customer-phone">{warranty.customerPhone || "N/A"}</p>
@@ -287,24 +289,24 @@ export default function RepairCenterWarrantyDetail() {
           <CardContent className="space-y-3">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
               <div>
-                <p className="text-muted-foreground mb-1">Tipo</p>
+                <p className="text-muted-foreground mb-1">{t("common.type")}</p>
                 <p className="font-medium" data-testid="text-device-type">{warranty.deviceType || "N/A"}</p>
               </div>
               <div>
-                <p className="text-muted-foreground mb-1">Marca e Modello</p>
+                <p className="text-muted-foreground mb-1">{t("warranties.marcaEModello")}</p>
                 <p className="font-medium" data-testid="text-device-model">
                   {[warranty.brand, warranty.deviceModel].filter(Boolean).join(" ") || "N/A"}
                 </p>
               </div>
               <div>
-                <p className="text-muted-foreground mb-1">Numero Seriale</p>
+                <p className="text-muted-foreground mb-1">{t("repairs.serialNumber")}</p>
                 <div className="flex items-center gap-1.5">
                   <Hash className="h-3.5 w-3.5 text-muted-foreground" />
                   <p className="font-medium" data-testid="text-serial-number">{warranty.serialNumber || "N/A"}</p>
                 </div>
               </div>
               <div>
-                <p className="text-muted-foreground mb-1">Ordine Riparazione</p>
+                <p className="text-muted-foreground mb-1">{t("warranties.ordineRiparazione")}</p>
                 <p className="font-medium" data-testid="text-order-number">#{warranty.orderNumber}</p>
               </div>
             </div>
@@ -326,7 +328,7 @@ export default function RepairCenterWarrantyDetail() {
                 {warranty.status === "offered" && (
                   <>
                     <div className="space-y-2">
-                      <Label htmlFor="productName">Nome Prodotto</Label>
+                      <Label htmlFor="productName">{t("products.productName")}</Label>
                       <Input
                         id="productName"
                         value={editForm.productName}
@@ -335,7 +337,7 @@ export default function RepairCenterWarrantyDetail() {
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="coverageType">Tipo Copertura</Label>
+                      <Label htmlFor="coverageType">{t("warranties.coverageType")}</Label>
                       <Select
                         value={editForm.coverageType}
                         onValueChange={(v) => setEditForm(prev => ({ ...prev, coverageType: v }))}
@@ -351,7 +353,7 @@ export default function RepairCenterWarrantyDetail() {
                       </Select>
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="durationMonths">Durata (mesi)</Label>
+                      <Label htmlFor="durationMonths">{t("warranties.monthsDuration")}</Label>
                       <Input
                         id="durationMonths"
                         type="number"
@@ -362,7 +364,7 @@ export default function RepairCenterWarrantyDetail() {
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="price">Prezzo (EUR)</Label>
+                      <Label htmlFor="price">{t("pos.prezzoEUR")}</Label>
                       <Input
                         id="price"
                         type="number"
@@ -377,7 +379,7 @@ export default function RepairCenterWarrantyDetail() {
                 )}
               </div>
               <div className="space-y-2">
-                <Label htmlFor="notes">Note</Label>
+                <Label htmlFor="notes">{t("common.note")}</Label>
                 <Textarea
                   id="notes"
                   value={editForm.notes}
@@ -392,19 +394,19 @@ export default function RepairCenterWarrantyDetail() {
             <div className="space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-sm">
                 <div>
-                  <p className="text-muted-foreground mb-1">Prodotto</p>
+                  <p className="text-muted-foreground mb-1">{t("common.product")}</p>
                   <p className="font-medium" data-testid="text-product-name">{warranty.productName}</p>
                 </div>
                 <div>
-                  <p className="text-muted-foreground mb-1">Copertura</p>
+                  <p className="text-muted-foreground mb-1">{t("warranties.coverage")}</p>
                   <p className="font-medium" data-testid="text-coverage">{coverageLabels[warranty.coverageType] || warranty.coverageType}</p>
                 </div>
                 <div>
-                  <p className="text-muted-foreground mb-1">Durata</p>
+                  <p className="text-muted-foreground mb-1">{t("common.duration")}</p>
                   <p className="font-medium" data-testid="text-duration">{warranty.durationMonths} mesi</p>
                 </div>
                 <div>
-                  <p className="text-muted-foreground mb-1">Prezzo</p>
+                  <p className="text-muted-foreground mb-1">{t("common.price")}</p>
                   <p className="font-medium" data-testid="text-price">
                     {(warranty.price / 100).toLocaleString("it-IT", { style: "currency", currency: "EUR" })}
                   </p>
@@ -413,7 +415,7 @@ export default function RepairCenterWarrantyDetail() {
 
               {warranty.notes && (
                 <div className="text-sm">
-                  <p className="text-muted-foreground mb-1">Note</p>
+                  <p className="text-muted-foreground mb-1">{t("common.note")}</p>
                   <p className="font-medium whitespace-pre-wrap" data-testid="text-notes">{warranty.notes}</p>
                 </div>
               )}
@@ -475,7 +477,7 @@ export default function RepairCenterWarrantyDetail() {
               }`}>
                 <Calendar className="h-4 w-4 shrink-0" />
                 <div>
-                  <p className="font-medium">Periodo di validità</p>
+                  <p className="font-medium">{t("warranties.periodoDiValidit")}</p>
                   <p className="text-muted-foreground">
                     Dal {format(new Date(warranty.startsAt), "dd/MM/yyyy", { locale: it })} al {format(new Date(warranty.endsAt), "dd/MM/yyyy", { locale: it })}
                   </p>
@@ -489,9 +491,9 @@ export default function RepairCenterWarrantyDetail() {
       <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Conferma Cancellazione</DialogTitle>
+            <DialogTitle>{t("warranties.confermaCancellazione")}</DialogTitle>
             <DialogDescription>
-              Sei sicuro di voler cancellare questa garanzia? Questa azione non può essere annullata.
+              {t("warranties.confirmCancelWarranty")}
             </DialogDescription>
           </DialogHeader>
           <div className="p-4 rounded-md bg-destructive/10 text-sm">
@@ -510,7 +512,7 @@ export default function RepairCenterWarrantyDetail() {
               data-testid="button-confirm-delete"
             >
               <Trash2 className="h-4 w-4 mr-2" />
-              {deleteMutation.isPending ? "Cancellazione..." : "Cancella Garanzia"}
+              {deleteMutation.isPending ? "Cancellazione..." : t("warranties.cancelWarranty")}
             </Button>
           </DialogFooter>
         </DialogContent>

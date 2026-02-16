@@ -27,12 +27,13 @@ import { Progress } from "@/components/ui/progress";
 import { AddressAutocomplete } from "@/components/address-autocomplete";
 import { useUser } from "@/hooks/use-user";
 import { ActionGuard } from "@/components/permission-guard";
+import { useTranslation } from "react-i18next";
 
 const WIZARD_STEPS = [
-  { id: 1, title: "Info Base", icon: Building },
-  { id: 2, title: "Indirizzo", icon: MapPin },
-  { id: 3, title: "Dati Fiscali", icon: FileText },
-  { id: 4, title: "Configurazione", icon: Settings },
+  { id: 1, title: t("admin.resellers.basicInfo"), icon: Building },
+  { id: 2, title: t("common.address"), icon: MapPin },
+  { id: 3, title: t("profile.fiscalInfo"), icon: FileText },
+  { id: 4, title: t("sidebar.items.configuration"), icon: Settings },
 ];
 
 type SubResellerCenter = {
@@ -103,6 +104,7 @@ type RepairCenterRepairsData = {
 };
 
 export default function ResellerRepairCenters() {
+  const { t } = useTranslation();
   const [, setLocation] = useLocation();
   const [searchQuery, setSearchQuery] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -183,20 +185,20 @@ export default function ResellerRepairCenters() {
             credentials: "include",
           });
           if (!logoRes.ok) {
-            toast({ title: "Attenzione", description: "Centro creato ma upload logo fallito. Puoi caricarlo dal dettaglio.", variant: "default" });
+            toast({ title: t("common.warning"), description: "Centro creato ma upload logo fallito. Puoi caricarlo dal dettaglio.", variant: "default" });
           }
         } catch {
-          toast({ title: "Attenzione", description: "Centro creato ma upload logo fallito.", variant: "default" });
+          toast({ title: t("common.warning"), description: "Centro creato ma upload logo fallito.", variant: "default" });
         }
       }
       queryClient.invalidateQueries({ queryKey: ["/api/reseller/repair-centers"] });
       setDialogOpen(false);
       setEditingCenter(null);
       resetWizard();
-      toast({ title: "Centro di riparazione creato" });
+      toast({ title: t("admin.repairCenters.created") });
     },
     onError: (error: Error) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -209,10 +211,10 @@ export default function ResellerRepairCenters() {
       queryClient.invalidateQueries({ queryKey: ["/api/reseller/repair-centers"] });
       setDialogOpen(false);
       setEditingCenter(null);
-      toast({ title: "Centro aggiornato" });
+      toast({ title: t("admin.repairCenters.updated") });
     },
     onError: (error: Error) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -222,10 +224,10 @@ export default function ResellerRepairCenters() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/reseller/repair-centers"] });
-      toast({ title: "Centro eliminato" });
+      toast({ title: t("admin.repairCenters.deleted") });
     },
     onError: (error: Error) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -235,13 +237,13 @@ export default function ResellerRepairCenters() {
       return await res.json();
     },
     onSuccess: () => {
-      toast({ title: "Password aggiornata con successo" });
+      toast({ title: t("admin.resellers.passwordResetSuccess") });
       setResetPasswordDialogOpen(false);
       setCenterToResetPassword(null);
       setNewPassword("");
     },
     onError: (error: Error) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -270,12 +272,12 @@ export default function ResellerRepairCenters() {
 
     const allowedTypes = ["image/jpeg", "image/png", "image/webp"];
     if (!allowedTypes.includes(file.type)) {
-      toast({ title: "Formato non supportato", description: "Usa un'immagine JPEG, PNG o WebP", variant: "destructive" });
+      toast({ title: t("profile.unsupportedFormat"), description: t("profile.unsupportedFormatDesc"), variant: "destructive" });
       return;
     }
 
     if (file.size > 2 * 1024 * 1024) {
-      toast({ title: "File troppo grande", description: "L'immagine non può superare i 2MB", variant: "destructive" });
+      toast({ title: t("profile.fileTooLarge"), description: t("profile.fileTooLargeDesc"), variant: "destructive" });
       return;
     }
 
@@ -293,9 +295,9 @@ export default function ResellerRepairCenters() {
       if (!res.ok) throw new Error(await res.text());
 
       queryClient.invalidateQueries({ queryKey: [`/api/reseller/repair-centers/${selectedCenterId}/detail`] });
-      toast({ title: "Logo caricato", description: "Il logo è stato aggiornato con successo" });
+      toast({ title: t("profile.logoUploaded"), description: t("profile.logoUploadedDesc") });
     } catch (error: any) {
-      toast({ title: "Errore", description: error.message || "Impossibile caricare il logo", variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message || "Impossibile caricare il logo", variant: "destructive" });
     } finally {
       setIsUploadingLogo(false);
       if (logoInputRef.current) logoInputRef.current.value = "";
@@ -314,9 +316,9 @@ export default function ResellerRepairCenters() {
       if (!res.ok) throw new Error(await res.text());
 
       queryClient.invalidateQueries({ queryKey: [`/api/reseller/repair-centers/${selectedCenterId}/detail`] });
-      toast({ title: "Logo rimosso", description: "Il logo è stato eliminato" });
+      toast({ title: t("profile.logoRemoved"), description: t("profile.logoRemovedDesc") });
     } catch (error: any) {
-      toast({ title: "Errore", description: error.message || "Impossibile eliminare il logo", variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message || "Impossibile eliminare il logo", variant: "destructive" });
     }
   };
 
@@ -326,12 +328,12 @@ export default function ResellerRepairCenters() {
 
     const allowedTypes = ["image/jpeg", "image/png", "image/webp"];
     if (!allowedTypes.includes(file.type)) {
-      toast({ title: "Formato non supportato", description: "Usa un'immagine JPEG, PNG o WebP", variant: "destructive" });
+      toast({ title: t("profile.unsupportedFormat"), description: t("profile.unsupportedFormatDesc"), variant: "destructive" });
       return;
     }
 
     if (file.size > 2 * 1024 * 1024) {
-      toast({ title: "File troppo grande", description: "L'immagine non può superare i 2MB", variant: "destructive" });
+      toast({ title: t("profile.fileTooLarge"), description: t("profile.fileTooLargeDesc"), variant: "destructive" });
       return;
     }
 
@@ -351,7 +353,7 @@ export default function ResellerRepairCenters() {
 
   const getStatusBadge = (status: string) => {
     const statusConfig: Record<string, { label: string; variant: "default" | "secondary" | "outline" | "destructive" }> = {
-      pending: { label: "In Attesa", variant: "secondary" },
+      pending: { label: t("common.pending"), variant: "secondary" },
       ingressato: { label: "Ingressato", variant: "outline" },
       in_diagnosi: { label: "In Diagnosi", variant: "outline" },
       preventivo_emesso: { label: "Preventivo Emesso", variant: "outline" },
@@ -360,8 +362,8 @@ export default function ResellerRepairCenters() {
       in_riparazione: { label: "In Riparazione", variant: "default" },
       in_test: { label: "In Test", variant: "default" },
       pronto_ritiro: { label: "Pronto Ritiro", variant: "default" },
-      consegnato: { label: "Consegnato", variant: "default" },
-      cancelled: { label: "Annullato", variant: "destructive" },
+      consegnato: { label: t("repairs.status.delivered"), variant: "default" },
+      cancelled: { label: t("repairs.status.cancelled"), variant: "destructive" },
     };
     const config = statusConfig[status] || { label: status, variant: "secondary" as const };
     return <Badge variant={config.variant}>{config.label}</Badge>;
@@ -442,7 +444,7 @@ export default function ResellerRepairCenters() {
 
   const handleFinalSubmit = () => {
     if (!addressData.address.trim() || !addressData.city.trim()) {
-      toast({ title: "Errore", description: "Indirizzo e Città sono campi obbligatori", variant: "destructive" });
+      toast({ title: t("common.error"), description: "Indirizzo e Città sono campi obbligatori", variant: "destructive" });
       return;
     }
     
@@ -514,7 +516,7 @@ export default function ResellerRepairCenters() {
               <Building className="h-6 w-6 text-white" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold tracking-tight text-white">Centri di Riparazione</h1>
+              <h1 className="text-2xl font-bold tracking-tight text-white">{t("admin.repairCenters.title")}</h1>
               <p className="text-sm text-white/80">
                 Gestisci i tuoi centri di riparazione
               </p>
@@ -530,14 +532,12 @@ export default function ResellerRepairCenters() {
             <ActionGuard module="repair_centers" action="create">
               <DialogTrigger asChild>
                 <Button onClick={() => resetWizard()} className="bg-white/20 backdrop-blur-sm border border-white/30 text-white shadow-lg" data-testid="button-new-center">
-                  <Plus className="h-4 w-4 mr-2" />
-                  Nuovo Centro
-                </Button>
+                  <Plus className="h-4 w-4 mr-2" />{t("admin.repairCenters.newCenter")}</Button>
               </DialogTrigger>
             </ActionGuard>
           <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto" data-testid="dialog-center-form">
             <DialogHeader>
-              <DialogTitle>{editingCenter ? "Modifica Centro" : "Nuovo Centro di Riparazione"}</DialogTitle>
+              <DialogTitle>{editingCenter ? t("admin.repairCenters.editCenter") : "Nuovo Centro di Riparazione"}</DialogTitle>
             </DialogHeader>
             
             {/* MODIFICA: Form con Accordion (tutte le sezioni visibili) */}
@@ -547,9 +547,7 @@ export default function ResellerRepairCenters() {
                   <AccordionItem value="info">
                     <AccordionTrigger className="text-sm font-medium">
                       <div className="flex flex-wrap items-center gap-2">
-                        <Building className="h-4 w-4" />
-                        Info Base
-                      </div>
+                        <Building className="h-4 w-4" />{t("admin.resellers.basicInfo")}</div>
                     </AccordionTrigger>
                     <AccordionContent className="space-y-4 pt-2">
                       <div className="space-y-2">
@@ -587,9 +585,7 @@ export default function ResellerRepairCenters() {
                   <AccordionItem value="address">
                     <AccordionTrigger className="text-sm font-medium">
                       <div className="flex flex-wrap items-center gap-2">
-                        <MapPin className="h-4 w-4" />
-                        Indirizzo
-                      </div>
+                        <MapPin className="h-4 w-4" />{t("common.address")}</div>
                     </AccordionTrigger>
                     <AccordionContent className="space-y-4 pt-2">
                       <div className="space-y-2">
@@ -605,7 +601,7 @@ export default function ResellerRepairCenters() {
                               provincia: result.province,
                             });
                           }}
-                          placeholder="Inizia a digitare..."
+                          placeholder={t("common.startTyping")}
                           data-testid="edit-input-address"
                         />
                       </div>
@@ -621,7 +617,7 @@ export default function ResellerRepairCenters() {
                         </div>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                           <div className="space-y-2">
-                            <Label htmlFor="edit-cap">CAP</Label>
+                            <Label htmlFor="edit-cap">{t("common.zip")}</Label>
                             <Input 
                               id="edit-cap"
                               value={addressData.cap}
@@ -648,15 +644,13 @@ export default function ResellerRepairCenters() {
                   <AccordionItem value="fiscal">
                     <AccordionTrigger className="text-sm font-medium">
                       <div className="flex flex-wrap items-center gap-2">
-                        <FileText className="h-4 w-4" />
-                        Dati Fiscali
-                      </div>
+                        <FileText className="h-4 w-4" />{t("profile.fiscalInfo")}</div>
                     </AccordionTrigger>
                     <AccordionContent className="space-y-4 pt-2">
                       <p className="text-sm text-muted-foreground">Dati fiscali e fatturazione (opzionali).</p>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <div className="space-y-2">
-                          <Label htmlFor="edit-ragioneSociale">Ragione Sociale</Label>
+                          <Label htmlFor="edit-ragioneSociale">{t("auth.companyName")}</Label>
                           <Input 
                             id="edit-ragioneSociale"
                             value={formData.ragioneSociale}
@@ -665,7 +659,7 @@ export default function ResellerRepairCenters() {
                           />
                         </div>
                         <div className="space-y-2">
-                          <Label htmlFor="edit-partitaIva">Partita IVA</Label>
+                          <Label htmlFor="edit-partitaIva">{t("auth.vatNumber")}</Label>
                           <Input 
                             id="edit-partitaIva"
                             value={formData.partitaIva}
@@ -674,7 +668,7 @@ export default function ResellerRepairCenters() {
                           />
                         </div>
                         <div className="space-y-2 col-span-2">
-                          <Label htmlFor="edit-codiceFiscale">Codice Fiscale</Label>
+                          <Label htmlFor="edit-codiceFiscale">{t("common.taxCode")}</Label>
                           <Input 
                             id="edit-codiceFiscale"
                             value={formData.codiceFiscale}
@@ -683,7 +677,7 @@ export default function ResellerRepairCenters() {
                           />
                         </div>
                         <div className="space-y-2">
-                          <Label htmlFor="edit-codiceUnivoco">Codice SDI</Label>
+                          <Label htmlFor="edit-codiceUnivoco">{t("common.sdi")}</Label>
                           <Input 
                             id="edit-codiceUnivoco"
                             maxLength={7}
@@ -694,7 +688,7 @@ export default function ResellerRepairCenters() {
                           />
                         </div>
                         <div className="space-y-2">
-                          <Label htmlFor="edit-pec">PEC</Label>
+                          <Label htmlFor="edit-pec">{t("common.pec")}</Label>
                           <Input 
                             id="edit-pec"
                             type="email"
@@ -705,7 +699,7 @@ export default function ResellerRepairCenters() {
                           />
                         </div>
                         <div className="space-y-2 col-span-2">
-                          <Label htmlFor="edit-iban">IBAN</Label>
+                          <Label htmlFor="edit-iban">{t("profile.iban")}</Label>
                           <Input 
                             id="edit-iban"
                             value={formData.iban}
@@ -721,13 +715,11 @@ export default function ResellerRepairCenters() {
                   <AccordionItem value="config">
                     <AccordionTrigger className="text-sm font-medium">
                       <div className="flex flex-wrap items-center gap-2">
-                        <Settings className="h-4 w-4" />
-                        Configurazione
-                      </div>
+                        <Settings className="h-4 w-4" />{t("sidebar.items.configuration")}</div>
                     </AccordionTrigger>
                     <AccordionContent className="space-y-4 pt-2">
                       <div className="space-y-2">
-                        <Label htmlFor="edit-hourlyRate">Tariffa Oraria (EUR)</Label>
+                        <Label htmlFor="edit-hourlyRate">{t("settings.hourlyRateLabel")}</Label>
                         <div className="relative">
                           <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">€</span>
                           <Input
@@ -742,9 +734,7 @@ export default function ResellerRepairCenters() {
                             data-testid="edit-input-hourly-rate"
                           />
                         </div>
-                        <p className="text-xs text-muted-foreground">
-                          Tariffa oraria per il calcolo del costo manodopera. Se non specificata, verrà usata la tariffa di sistema.
-                        </p>
+                        <p className="text-xs text-muted-foreground">{t("admin.repairCenters.hourlyRateHelp")}</p>
                       </div>
                       
                       {subResellers.length > 0 && (
@@ -777,9 +767,7 @@ export default function ResellerRepairCenters() {
                   <AccordionItem value="logo">
                     <AccordionTrigger className="text-sm font-medium">
                       <div className="flex flex-wrap items-center gap-2">
-                        <ImageIcon className="h-4 w-4" />
-                        Logo Aziendale
-                      </div>
+                        <ImageIcon className="h-4 w-4" />{t("profile.companyLogo")}</div>
                     </AccordionTrigger>
                     <AccordionContent className="space-y-4 pt-2">
                       <div className="flex flex-wrap items-center gap-4">
@@ -804,7 +792,7 @@ export default function ResellerRepairCenters() {
                               data-testid="button-edit-select-logo"
                             >
                               <Upload className="h-4 w-4 mr-2" />
-                              {isUploadingLogo ? "Caricamento..." : editingCenter?.logoUrl ? "Cambia Logo" : "Carica Logo"}
+                              {isUploadingLogo ? t("common.loading") : editingCenter?.logoUrl ? t("profile.changeLogo") : t("profile.uploadLogo")}
                             </Button>
                             {editingCenter?.logoUrl && (
                               <Button
@@ -821,17 +809,15 @@ export default function ResellerRepairCenters() {
                                     if (!res.ok) throw new Error(await res.text());
                                     queryClient.invalidateQueries({ queryKey: ["/api/reseller/repair-centers"] });
                                     setEditingCenter({ ...editingCenter, logoUrl: null });
-                                    toast({ title: "Logo rimosso" });
+                                    toast({ title: t("profile.logoRemoved") });
                                   } catch (error: any) {
-                                    toast({ title: "Errore", description: error.message, variant: "destructive" });
+                                    toast({ title: t("common.error"), description: error.message, variant: "destructive" });
                                   }
                                 }}
                                 className="text-destructive hover:text-destructive"
                                 data-testid="button-edit-delete-logo"
                               >
-                                <Trash2 className="h-4 w-4 mr-2" />
-                                Rimuovi
-                              </Button>
+                                <Trash2 className="h-4 w-4 mr-2" />{t("profile.removeLogo")}</Button>
                             )}
                           </div>
                           <p className="text-xs text-muted-foreground">
@@ -848,11 +834,11 @@ export default function ResellerRepairCenters() {
 
                             const allowedTypes = ["image/jpeg", "image/png", "image/webp"];
                             if (!allowedTypes.includes(file.type)) {
-                              toast({ title: "Formato non supportato", description: "Usa JPEG, PNG o WebP", variant: "destructive" });
+                              toast({ title: t("profile.unsupportedFormat"), description: "Usa JPEG, PNG o WebP", variant: "destructive" });
                               return;
                             }
                             if (file.size > 2 * 1024 * 1024) {
-                              toast({ title: "File troppo grande", description: "Max 2MB", variant: "destructive" });
+                              toast({ title: t("profile.fileTooLarge"), description: "Max 2MB", variant: "destructive" });
                               return;
                             }
 
@@ -869,9 +855,9 @@ export default function ResellerRepairCenters() {
                               const result = await res.json();
                               queryClient.invalidateQueries({ queryKey: ["/api/reseller/repair-centers"] });
                               setEditingCenter({ ...editingCenter, logoUrl: result.logoUrl });
-                              toast({ title: "Logo caricato" });
+                              toast({ title: t("profile.logoUploaded") });
                             } catch (error: any) {
-                              toast({ title: "Errore", description: error.message, variant: "destructive" });
+                              toast({ title: t("common.error"), description: error.message, variant: "destructive" });
                             } finally {
                               setIsUploadingLogo(false);
                               if (formLogoInputRef.current) formLogoInputRef.current.value = "";
@@ -891,9 +877,7 @@ export default function ResellerRepairCenters() {
                     variant="outline"
                     onClick={() => setDialogOpen(false)}
                     data-testid="button-cancel-edit"
-                  >
-                    Annulla
-                  </Button>
+                  >{t("common.cancel")}</Button>
                   <Button 
                     type="button"
                     onClick={handleFinalSubmit}
@@ -901,9 +885,7 @@ export default function ResellerRepairCenters() {
                     data-testid="button-edit-submit"
                   >
                     {updateCenterMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                    <Check className="mr-1 h-4 w-4" />
-                    Salva Modifiche
-                  </Button>
+                    <Check className="mr-1 h-4 w-4" />{t("profile.saveChanges")}</Button>
                 </div>
               </div>
             ) : (
@@ -974,7 +956,7 @@ export default function ResellerRepairCenters() {
                           type="password"
                           value={formData.password}
                           onChange={(e) => setFormData(prev => ({ ...prev, password: e.target.value }))}
-                          placeholder="Password per accesso al centro"
+                          placeholder={t("admin.repairCenters.centerPassword")}
                           data-testid="input-password" 
                         />
                         <p className="text-xs text-muted-foreground">
@@ -1000,7 +982,7 @@ export default function ResellerRepairCenters() {
                               provincia: result.province,
                             });
                           }}
-                          placeholder="Inizia a digitare..."
+                          placeholder={t("common.startTyping")}
                           data-testid="input-address"
                         />
                       </div>
@@ -1016,7 +998,7 @@ export default function ResellerRepairCenters() {
                         </div>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                           <div className="space-y-2">
-                            <Label htmlFor="cap">CAP</Label>
+                            <Label htmlFor="cap">{t("common.zip")}</Label>
                             <Input 
                               id="cap"
                               value={addressData.cap}
@@ -1058,7 +1040,7 @@ export default function ResellerRepairCenters() {
                       </div>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <div className="space-y-2">
-                          <Label htmlFor="ragioneSociale">Ragione Sociale</Label>
+                          <Label htmlFor="ragioneSociale">{t("auth.companyName")}</Label>
                           <Input 
                             id="ragioneSociale"
                             value={formData.ragioneSociale}
@@ -1067,7 +1049,7 @@ export default function ResellerRepairCenters() {
                           />
                         </div>
                         <div className="space-y-2">
-                          <Label htmlFor="partitaIva">Partita IVA</Label>
+                          <Label htmlFor="partitaIva">{t("auth.vatNumber")}</Label>
                           <Input 
                             id="partitaIva"
                             value={formData.partitaIva}
@@ -1076,7 +1058,7 @@ export default function ResellerRepairCenters() {
                           />
                         </div>
                         <div className="space-y-2 col-span-2">
-                          <Label htmlFor="codiceFiscale">Codice Fiscale</Label>
+                          <Label htmlFor="codiceFiscale">{t("common.taxCode")}</Label>
                           <Input 
                             id="codiceFiscale"
                             value={formData.codiceFiscale}
@@ -1085,7 +1067,7 @@ export default function ResellerRepairCenters() {
                           />
                         </div>
                         <div className="space-y-2">
-                          <Label htmlFor="codiceUnivoco">Codice SDI</Label>
+                          <Label htmlFor="codiceUnivoco">{t("common.sdi")}</Label>
                           <Input 
                             id="codiceUnivoco"
                             maxLength={7}
@@ -1096,7 +1078,7 @@ export default function ResellerRepairCenters() {
                           />
                         </div>
                         <div className="space-y-2">
-                          <Label htmlFor="pec">PEC</Label>
+                          <Label htmlFor="pec">{t("common.pec")}</Label>
                           <Input 
                             id="pec"
                             type="email"
@@ -1107,7 +1089,7 @@ export default function ResellerRepairCenters() {
                           />
                         </div>
                         <div className="space-y-2 col-span-2">
-                          <Label htmlFor="iban">IBAN</Label>
+                          <Label htmlFor="iban">{t("profile.iban")}</Label>
                           <Input 
                             id="iban"
                             value={formData.iban}
@@ -1126,11 +1108,9 @@ export default function ResellerRepairCenters() {
                       
                       <div className="space-y-2">
                         <h4 className="font-medium text-sm text-muted-foreground flex items-center gap-2">
-                          <Clock className="h-4 w-4" />
-                          Tariffa Manodopera
-                        </h4>
+                          <Clock className="h-4 w-4" />{t("admin.repairCenters.hourlyRateSection")}</h4>
                         <div className="space-y-2">
-                          <Label htmlFor="hourlyRate">Tariffa Oraria (EUR)</Label>
+                          <Label htmlFor="hourlyRate">{t("settings.hourlyRateLabel")}</Label>
                           <div className="relative">
                             <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">€</span>
                             <Input
@@ -1207,7 +1187,7 @@ export default function ResellerRepairCenters() {
                                 data-testid="button-select-logo"
                               >
                                 <Upload className="h-4 w-4 mr-2" />
-                                {pendingLogoFile ? "Cambia" : "Seleziona"}
+                                {pendingLogoFile ? "Cambia" : t("common.select")}
                               </Button>
                               {pendingLogoFile && (
                                 <Button
@@ -1218,9 +1198,7 @@ export default function ResellerRepairCenters() {
                                   className="text-destructive hover:text-destructive"
                                   data-testid="button-remove-pending-logo"
                                 >
-                                  <Trash2 className="h-4 w-4 mr-2" />
-                                  Rimuovi
-                                </Button>
+                                  <Trash2 className="h-4 w-4 mr-2" />{t("profile.removeLogo")}</Button>
                               )}
                             </div>
                             <p className="text-xs text-muted-foreground">
@@ -1255,9 +1233,7 @@ export default function ResellerRepairCenters() {
                     disabled={isFirstStep()}
                     data-testid="button-wizard-prev"
                   >
-                    <ChevronLeft className="mr-1 h-4 w-4" />
-                    Indietro
-                  </Button>
+                    <ChevronLeft className="mr-1 h-4 w-4" />{t("common.back")}</Button>
                   {isLastStep() ? (
                     <Button 
                       type="button"
@@ -1266,18 +1242,14 @@ export default function ResellerRepairCenters() {
                       data-testid="button-submit-center"
                     >
                       {createCenterMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                      <Check className="mr-1 h-4 w-4" />
-                      Crea Centro
-                    </Button>
+                      <Check className="mr-1 h-4 w-4" />{t("admin.repairCenters.createCenter")}</Button>
                   ) : (
                     <Button 
                       type="button"
                       onClick={nextStep}
                       disabled={!canProceedToNextStep()}
                       data-testid="button-wizard-next"
-                    >
-                      Avanti
-                      <ChevronRight className="ml-1 h-4 w-4" />
+                    >{t("common.next")}<ChevronRight className="ml-1 h-4 w-4" />
                     </Button>
                   )}
                 </div>
@@ -1295,7 +1267,7 @@ export default function ResellerRepairCenters() {
           <CardContent className="relative pt-5 pb-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1">Totale Centri</p>
+                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1">{t("admin.repairCenters.totalCenters")}</p>
                 <p className="text-3xl font-bold tabular-nums">{centers.length}</p>
                 <p className="text-xs text-muted-foreground mt-1">
                   {hasSubResellers && `+${totalNetworkCenters} nella rete`}
@@ -1313,7 +1285,7 @@ export default function ResellerRepairCenters() {
           <CardContent className="relative pt-5 pb-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1">Centri Attivi</p>
+                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1">{t("admin.repairCenters.activeCenters")}</p>
                 <p className="text-3xl font-bold tabular-nums text-emerald-600 dark:text-emerald-400">{activeCenters}</p>
                 <p className="text-xs text-muted-foreground mt-1">
                   {centers.length > 0 ? Math.round((activeCenters / centers.length) * 100) : 0}% operativi
@@ -1350,7 +1322,7 @@ export default function ResellerRepairCenters() {
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
-              placeholder="Cerca per nome o città..."
+              placeholder={t("admin.repairCenters.searchCenter")}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-9"
@@ -1368,20 +1340,20 @@ export default function ResellerRepairCenters() {
           ) : filteredCenters.length === 0 ? (
             <div className="text-center py-12 text-muted-foreground">
               <Building className="h-12 w-12 mx-auto mb-4 opacity-20" />
-              <p>Nessun centro di riparazione trovato</p>
+              <p>{t("admin.repairCenters.noCenterFound")}</p>
               <p className="text-sm mt-2">Clicca su "Nuovo Centro" per crearne uno</p>
             </div>
           ) : (
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="w-14">Logo</TableHead>
-                  <TableHead>Nome</TableHead>
-                  <TableHead>Località</TableHead>
-                  <TableHead>Contatti</TableHead>
-                  <TableHead>Tariffa Oraria</TableHead>
-                  <TableHead>Stato</TableHead>
-                  <TableHead className="text-right">Azioni</TableHead>
+                  <TableHead className="w-14">{t("admin.common.logo")}</TableHead>
+                  <TableHead>{t("common.name")}</TableHead>
+                  <TableHead>{t("shipping.location")}</TableHead>
+                  <TableHead>{t("common.contacts")}</TableHead>
+                  <TableHead>{t("admin.repairCenterDetail.hourlyRate")}</TableHead>
+                  <TableHead>{t("common.status")}</TableHead>
+                  <TableHead className="text-right">{t("common.actions")}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -1428,7 +1400,7 @@ export default function ResellerRepairCenters() {
                     </TableCell>
                     <TableCell>
                       <Badge variant={center.isActive ? "default" : "secondary"} data-testid={`badge-status-${center.id}`}>
-                        {center.isActive ? "Attivo" : "Inattivo"}
+                        {center.isActive ? t("common.active") : t("common.inactive")}
                       </Badge>
                     </TableCell>
                     <TableCell className="text-right">
@@ -1585,10 +1557,10 @@ export default function ResellerRepairCenters() {
                             <Table>
                               <TableHeader>
                                 <TableRow>
-                                  <TableHead>Nome Centro</TableHead>
-                                  <TableHead>Località</TableHead>
-                                  <TableHead>Contatti</TableHead>
-                                  <TableHead>Stato</TableHead>
+                                  <TableHead>{t("admin.repairCenters.centerName")}</TableHead>
+                                  <TableHead>{t("shipping.location")}</TableHead>
+                                  <TableHead>{t("common.contacts")}</TableHead>
+                                  <TableHead>{t("common.status")}</TableHead>
                                 </TableRow>
                               </TableHeader>
                               <TableBody>
@@ -1620,7 +1592,7 @@ export default function ResellerRepairCenters() {
                                     </TableCell>
                                     <TableCell>
                                       <Badge variant={center.isActive ? "default" : "secondary"}>
-                                        {center.isActive ? "Attivo" : "Inattivo"}
+                                        {center.isActive ? t("common.active") : t("common.inactive")}
                                       </Badge>
                                     </TableCell>
                                   </TableRow>
@@ -1654,7 +1626,7 @@ export default function ResellerRepairCenters() {
                 <span className="text-xl">{centerDetail?.center.name || "Caricamento..."}</span>
                 {centerDetail?.center.isActive !== undefined && (
                   <Badge variant={centerDetail.center.isActive ? "default" : "secondary"} className="ml-3">
-                    {centerDetail.center.isActive ? "Attivo" : "Inattivo"}
+                    {centerDetail.center.isActive ? t("common.active") : t("common.inactive")}
                   </Badge>
                 )}
               </div>
@@ -1669,17 +1641,11 @@ export default function ResellerRepairCenters() {
             <Tabs defaultValue="anagrafica" className="w-full">
               <TabsList className="grid w-full grid-cols-3">
                 <TabsTrigger value="anagrafica" className="flex flex-wrap items-center gap-2" data-testid="tab-anagrafica">
-                  <FileText className="h-4 w-4" />
-                  Anagrafica
-                </TabsTrigger>
+                  <FileText className="h-4 w-4" />{t("admin.resellers.registry")}</TabsTrigger>
                 <TabsTrigger value="statistiche" className="flex flex-wrap items-center gap-2" data-testid="tab-statistiche">
-                  <BarChart3 className="h-4 w-4" />
-                  Statistiche
-                </TabsTrigger>
+                  <BarChart3 className="h-4 w-4" />{t("dashboard.statistics")}</TabsTrigger>
                 <TabsTrigger value="riparazioni" className="flex flex-wrap items-center gap-2" data-testid="tab-riparazioni">
-                  <Wrench className="h-4 w-4" />
-                  Riparazioni
-                </TabsTrigger>
+                  <Wrench className="h-4 w-4" />{t("repairs.title")}</TabsTrigger>
               </TabsList>
 
               {/* Tab Anagrafica */}
@@ -1691,7 +1657,7 @@ export default function ResellerRepairCenters() {
                       <div className="h-8 w-8 rounded-lg bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center">
                         <ImageIcon className="h-4 w-4 text-purple-600 dark:text-purple-400" />
                       </div>
-                      <span className="font-semibold">Logo Aziendale</span>
+                      <span className="font-semibold">{t("profile.companyLogo")}</span>
                     </div>
                   </CardHeader>
                   <CardContent>
@@ -1714,7 +1680,7 @@ export default function ResellerRepairCenters() {
                             data-testid="button-upload-center-logo"
                           >
                             <Upload className="h-4 w-4 mr-2" />
-                            {isUploadingLogo ? "Caricamento..." : centerDetail.center.logoUrl ? "Cambia Logo" : "Carica Logo"}
+                            {isUploadingLogo ? t("common.loading") : centerDetail.center.logoUrl ? t("profile.changeLogo") : t("profile.uploadLogo")}
                           </Button>
                           {centerDetail.center.logoUrl && (
                             <Button
@@ -1724,9 +1690,7 @@ export default function ResellerRepairCenters() {
                               className="text-destructive hover:text-destructive"
                               data-testid="button-delete-center-logo"
                             >
-                              <Trash2 className="h-4 w-4 mr-2" />
-                              Rimuovi
-                            </Button>
+                              <Trash2 className="h-4 w-4 mr-2" />{t("profile.removeLogo")}</Button>
                           )}
                         </div>
                         <p className="text-xs text-muted-foreground">
@@ -1753,7 +1717,7 @@ export default function ResellerRepairCenters() {
                         <div className="h-8 w-8 rounded-lg bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
                           <Phone className="h-4 w-4 text-blue-600 dark:text-blue-400" />
                         </div>
-                        <span className="font-semibold">Contatti</span>
+                        <span className="font-semibold">{t("common.contacts")}</span>
                       </div>
                     </CardHeader>
                     <CardContent className="space-y-3 text-sm">
@@ -1775,7 +1739,7 @@ export default function ResellerRepairCenters() {
                         <div className="h-8 w-8 rounded-lg bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center">
                           <MapPin className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
                         </div>
-                        <span className="font-semibold">Indirizzo</span>
+                        <span className="font-semibold">{t("common.address")}</span>
                       </div>
                     </CardHeader>
                     <CardContent className="text-sm">
@@ -1791,33 +1755,33 @@ export default function ResellerRepairCenters() {
                         <div className="h-8 w-8 rounded-lg bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center">
                           <FileText className="h-4 w-4 text-amber-600 dark:text-amber-400" />
                         </div>
-                        <span className="font-semibold">Dati Fiscali</span>
+                        <span className="font-semibold">{t("profile.fiscalInfo")}</span>
                       </div>
                     </CardHeader>
                     <CardContent>
                       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 text-sm">
                         <div>
-                          <p className="text-muted-foreground text-xs uppercase">Ragione Sociale</p>
+                          <p className="text-muted-foreground text-xs uppercase">{t("auth.companyName")}</p>
                           <p className="font-medium">{centerDetail.center.ragioneSociale || "-"}</p>
                         </div>
                         <div>
-                          <p className="text-muted-foreground text-xs uppercase">Partita IVA</p>
+                          <p className="text-muted-foreground text-xs uppercase">{t("auth.vatNumber")}</p>
                           <p className="font-medium">{centerDetail.center.partitaIva || "-"}</p>
                         </div>
                         <div>
-                          <p className="text-muted-foreground text-xs uppercase">Codice Fiscale</p>
+                          <p className="text-muted-foreground text-xs uppercase">{t("common.taxCode")}</p>
                           <p className="font-medium">{centerDetail.center.codiceFiscale || "-"}</p>
                         </div>
                         <div>
-                          <p className="text-muted-foreground text-xs uppercase">Codice SDI</p>
+                          <p className="text-muted-foreground text-xs uppercase">{t("common.sdi")}</p>
                           <p className="font-medium">{centerDetail.center.codiceUnivoco || "-"}</p>
                         </div>
                         <div>
-                          <p className="text-muted-foreground text-xs uppercase">PEC</p>
+                          <p className="text-muted-foreground text-xs uppercase">{t("common.pec")}</p>
                           <p className="font-medium">{centerDetail.center.pec || "-"}</p>
                         </div>
                         <div>
-                          <p className="text-muted-foreground text-xs uppercase">IBAN</p>
+                          <p className="text-muted-foreground text-xs uppercase">{t("profile.iban")}</p>
                           <p className="font-medium">{centerDetail.center.iban || "-"}</p>
                         </div>
                       </div>
@@ -1849,7 +1813,7 @@ export default function ResellerRepairCenters() {
                     <CardContent className="relative pt-4 pb-3">
                       <div className="flex items-center justify-between">
                         <div>
-                          <p className="text-xs text-muted-foreground uppercase">In Attesa</p>
+                          <p className="text-xs text-muted-foreground uppercase">{t("common.pending")}</p>
                           <p className="text-2xl font-bold text-amber-600">{centerDetail.stats.pendingRepairs}</p>
                         </div>
                         <div className="h-10 w-10 rounded-lg bg-amber-500 text-white flex items-center justify-center">
@@ -1912,7 +1876,7 @@ export default function ResellerRepairCenters() {
                           <Users className="h-5 w-5 text-blue-600 dark:text-blue-400" />
                         </div>
                         <div>
-                          <p className="text-xs text-muted-foreground uppercase">Staff Assegnato</p>
+                          <p className="text-xs text-muted-foreground uppercase">{t("admin.repairCenters.assignedStaff")}</p>
                           <p className="text-xl font-bold">{centerDetail.stats.staffCount}</p>
                         </div>
                       </div>
@@ -1946,11 +1910,11 @@ export default function ResellerRepairCenters() {
                   <div className="flex flex-wrap items-center gap-2">
                     <Select value={repairsStatusFilter} onValueChange={(v) => { setRepairsStatusFilter(v); setRepairsPage(0); }}>
                       <SelectTrigger className="w-48" data-testid="select-repair-status-filter">
-                        <SelectValue placeholder="Filtra per stato" />
+                        <SelectValue placeholder={t("common.filterByStatus")} />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="all">Tutti gli stati</SelectItem>
-                        <SelectItem value="pending">In Attesa</SelectItem>
+                        <SelectItem value="all">{t("common.allStatuses")}</SelectItem>
+                        <SelectItem value="pending">{t("common.pending")}</SelectItem>
                         <SelectItem value="ingressato">Ingressato</SelectItem>
                         <SelectItem value="in_diagnosi">In Diagnosi</SelectItem>
                         <SelectItem value="preventivo_emesso">Preventivo Emesso</SelectItem>
@@ -1959,8 +1923,8 @@ export default function ResellerRepairCenters() {
                         <SelectItem value="in_riparazione">In Riparazione</SelectItem>
                         <SelectItem value="in_test">In Test</SelectItem>
                         <SelectItem value="pronto_ritiro">Pronto Ritiro</SelectItem>
-                        <SelectItem value="consegnato">Consegnato</SelectItem>
-                        <SelectItem value="cancelled">Annullato</SelectItem>
+                        <SelectItem value="consegnato">{t("repairs.status.delivered")}</SelectItem>
+                        <SelectItem value="cancelled">{t("repairs.status.cancelled")}</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -1980,13 +1944,13 @@ export default function ResellerRepairCenters() {
                     <Table>
                       <TableHeader>
                         <TableRow>
-                          <TableHead>Ordine</TableHead>
-                          <TableHead>Dispositivo</TableHead>
-                          <TableHead>Cliente</TableHead>
-                          <TableHead>Stato</TableHead>
-                          <TableHead>Data</TableHead>
-                          <TableHead className="text-right">Importo</TableHead>
-                          <TableHead className="text-right">Azioni</TableHead>
+                          <TableHead>{t("common.order")}</TableHead>
+                          <TableHead>{t("repairs.device")}</TableHead>
+                          <TableHead>{t("common.customer")}</TableHead>
+                          <TableHead>{t("common.status")}</TableHead>
+                          <TableHead>{t("common.date")}</TableHead>
+                          <TableHead className="text-right">{t("common.amount")}</TableHead>
+                          <TableHead className="text-right">{t("common.actions")}</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
@@ -2045,9 +2009,7 @@ export default function ResellerRepairCenters() {
                             disabled={repairsPage === 0}
                             data-testid="button-prev-repairs-page"
                           >
-                            <ChevronLeft className="h-4 w-4 mr-1" />
-                            Precedente
-                          </Button>
+                            <ChevronLeft className="h-4 w-4 mr-1" />{t("table.previous")}</Button>
                           <Button
                             variant="outline"
                             size="sm"
@@ -2086,7 +2048,7 @@ export default function ResellerRepairCenters() {
               <div className="space-y-4">
                 <p>Inserisci la nuova password per il centro <strong>{centerToResetPassword?.name}</strong>.</p>
                 <div className="space-y-2">
-                  <Label htmlFor="newPassword">Nuova Password</Label>
+                  <Label htmlFor="newPassword">{t("profile.newPassword")}</Label>
                   <Input
                     id="newPassword"
                     type="text"
@@ -2106,14 +2068,12 @@ export default function ResellerRepairCenters() {
             <AlertDialogCancel onClick={() => {
               setCenterToResetPassword(null);
               setNewPassword("");
-            }}>
-              Annulla
-            </AlertDialogCancel>
+            }}>{t("common.cancel")}</AlertDialogCancel>
             <AlertDialogAction
               onClick={confirmResetPassword}
               disabled={newPassword.length < 6 || resetPasswordMutation.isPending}
             >
-              {resetPasswordMutation.isPending ? "Aggiornamento..." : "Aggiorna Password"}
+              {resetPasswordMutation.isPending ? t("profile.updating") : "Aggiorna Password"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

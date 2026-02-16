@@ -19,6 +19,7 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Link } from "wouter";
+import { useTranslation } from "react-i18next";
 
 type ServiceCategory = "fisso" | "mobile" | "centralino" | "luce" | "gas" | "altro";
 
@@ -49,6 +50,7 @@ const formatCurrency = (cents: number | null) => {
 };
 
 export default function AdminUtilityServices() {
+  const { t } = useTranslation();
   const [searchQuery, setSearchQuery] = useState("");
   const [supplierFilter, setSupplierFilter] = useState<string>("all");
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
@@ -76,10 +78,10 @@ export default function AdminUtilityServices() {
       queryClient.invalidateQueries({ queryKey: ["/api/utility/services"] });
       setDialogOpen(false);
       setEditingService(null);
-      toast({ title: "Servizio creato con successo" });
+      toast({ title: t("utility.serviceCreated") });
     },
     onError: (error: Error) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -92,10 +94,10 @@ export default function AdminUtilityServices() {
       queryClient.invalidateQueries({ queryKey: ["/api/utility/services"] });
       setDialogOpen(false);
       setEditingService(null);
-      toast({ title: "Servizio aggiornato" });
+      toast({ title: t("utility.serviceUpdated") });
     },
     onError: (error: Error) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -105,10 +107,10 @@ export default function AdminUtilityServices() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/utility/services"] });
-      toast({ title: "Servizio eliminato" });
+      toast({ title: t("utility.serviceDeleted") });
     },
     onError: (error: Error) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -201,7 +203,7 @@ export default function AdminUtilityServices() {
             <div className="flex flex-wrap items-center gap-2">
               <Search className="h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Cerca per nome o codice..."
+                placeholder={t("common.search")}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="max-w-xs"
@@ -210,10 +212,10 @@ export default function AdminUtilityServices() {
             </div>
             <Select value={supplierFilter} onValueChange={setSupplierFilter}>
               <SelectTrigger className="w-40" data-testid="select-supplier-filter">
-                <SelectValue placeholder="Fornitore" />
+                <SelectValue placeholder={t("suppliers.supplier")} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">Tutti i fornitori</SelectItem>
+                <SelectItem value="all">{t("suppliers.allSuppliers")}</SelectItem>
                 {suppliers.map((supplier) => (
                   <SelectItem key={supplier.id} value={supplier.id}>{supplier.name}</SelectItem>
                 ))}
@@ -221,10 +223,10 @@ export default function AdminUtilityServices() {
             </Select>
             <Select value={categoryFilter} onValueChange={setCategoryFilter}>
               <SelectTrigger className="w-32" data-testid="select-category-filter">
-                <SelectValue placeholder="Categoria" />
+                <SelectValue placeholder={t("utility.category")} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">Tutte</SelectItem>
+                <SelectItem value="all">{t("common.all")}</SelectItem>
                 {Object.entries(categoryLabels).map(([value, label]) => (
                   <SelectItem key={value} value={value}>{label}</SelectItem>
                 ))}
@@ -255,15 +257,15 @@ export default function AdminUtilityServices() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Codice</TableHead>
-                  <TableHead>Nome</TableHead>
-                  <TableHead>Fornitore</TableHead>
-                  <TableHead>Categoria</TableHead>
-                  <TableHead>Prezzo Mensile</TableHead>
-                  <TableHead>Costo Attivazione</TableHead>
-                  <TableHead>Commissione</TableHead>
-                  <TableHead>Stato</TableHead>
-                  <TableHead className="text-right">Azioni</TableHead>
+                  <TableHead>{t("common.code")}</TableHead>
+                  <TableHead>{t("common.name")}</TableHead>
+                  <TableHead>{t("suppliers.supplier")}</TableHead>
+                  <TableHead>{t("common.category")}</TableHead>
+                  <TableHead>{t("utility.monthlyPrice")}</TableHead>
+                  <TableHead>{t("utility.activationCost")}</TableHead>
+                  <TableHead>{t("utility.commission")}</TableHead>
+                  <TableHead>{t("common.status")}</TableHead>
+                  <TableHead className="text-right">{t("common.actions")}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -363,14 +365,14 @@ export default function AdminUtilityServices() {
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="supplierId">Fornitore *</Label>
+                <Label htmlFor="supplierId">{t("suppliers.supplier")} *</Label>
                 <Select 
                   value={selectedSupplierId}
                   onValueChange={setSelectedSupplierId}
                   required
                 >
                   <SelectTrigger data-testid="select-supplier">
-                    <SelectValue placeholder="Seleziona fornitore" />
+                    <SelectValue placeholder={t("suppliers.selectSupplier")} />
                   </SelectTrigger>
                   <SelectContent>
                     {suppliers.filter(s => s.isActive).map((supplier) => (
@@ -382,7 +384,7 @@ export default function AdminUtilityServices() {
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="category">Categoria *</Label>
+                <Label htmlFor="category">{t("utility.category")} *</Label>
                 <Select 
                   value={selectedCategory}
                   onValueChange={(v) => setSelectedCategory(v as ServiceCategory)}
@@ -401,7 +403,7 @@ export default function AdminUtilityServices() {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="code">Codice *</Label>
+                <Label htmlFor="code">{t("common.code")} *</Label>
                 <Input
                   id="code"
                   name="code"
@@ -425,13 +427,13 @@ export default function AdminUtilityServices() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="description">Descrizione</Label>
+              <Label htmlFor="description">{t("common.description")}</Label>
               <Textarea
                 id="description"
                 name="description"
                 rows={2}
                 defaultValue={editingService?.description || ""}
-                placeholder="Descrizione del servizio..."
+                placeholder={t("utility.serviceDescription")}
                 data-testid="input-description"
               />
             </div>
@@ -526,7 +528,7 @@ export default function AdminUtilityServices() {
                 </div>
               </div>
               <div className="space-y-2">
-                <Label>Stato</Label>
+                <Label>{t("common.status")}</Label>
                 <div className="flex flex-wrap items-center gap-2 h-9">
                   <Switch
                     checked={isActive}

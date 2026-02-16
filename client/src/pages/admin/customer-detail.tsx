@@ -26,6 +26,7 @@ import {
   Activity
 } from "lucide-react";
 import { getStatusConfig } from "@/lib/repair-status-config";
+import { useTranslation } from "react-i18next";
 
 type EnrichedUtilityPractice = UtilityPractice & { 
   supplierName: string | null; 
@@ -43,6 +44,7 @@ interface CustomerDetailResponse {
 }
 
 export default function AdminCustomerDetail() {
+  const { t } = useTranslation();
   const params = useParams<{ id: string }>();
   const customerId = params.id;
   const [, setLocation] = useLocation();
@@ -71,13 +73,13 @@ export default function AdminCustomerDetail() {
         <Link href="/admin/customers">
           <Button variant="ghost" size="sm" className="gap-2" data-testid="button-back-to-customers">
             <ArrowLeft className="h-4 w-4" />
-            Torna ai clienti
+            {t("customers.backToCustomers")}
           </Button>
         </Link>
         <Card className="border-0 shadow-lg">
           <CardContent className="py-16 text-center">
             <UserIcon className="h-16 w-16 mx-auto mb-4 text-slate-300" />
-            <p className="text-slate-500 text-lg">Cliente non trovato</p>
+            <p className="text-slate-500 text-lg">{t("customers.customerNotFound")}</p>
           </CardContent>
         </Card>
       </div>
@@ -102,7 +104,7 @@ export default function AdminCustomerDetail() {
           <Link href="/admin/customers">
             <Button variant="ghost" size="sm" className="text-white/80 hover:text-white hover:bg-white/10 mb-4" data-testid="button-back-to-customers">
               <ArrowLeft className="h-4 w-4 mr-2" />
-              Torna ai clienti
+              {t("customers.backToCustomers")}
             </Button>
           </Link>
           
@@ -129,7 +131,7 @@ export default function AdminCustomerDetail() {
               data-testid="badge-customer-status"
             >
               <Activity className="h-4 w-4 mr-2" />
-              {customer.isActive ? "Attivo" : "Inattivo"}
+              {customer.isActive ? t("common.active") : t("common.inactive")}
             </Badge>
           </div>
         </div>
@@ -143,17 +145,17 @@ export default function AdminCustomerDetail() {
               <div className="p-2 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600">
                 <UserIcon className="h-5 w-5 text-white" />
               </div>
-              Informazioni Personali
+              {t("customers.personalInfo")}
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="p-4 bg-slate-50 dark:bg-slate-800/30 rounded-xl">
-                <p className="text-xs text-slate-500 uppercase tracking-wide mb-1">Username</p>
+                <p className="text-xs text-slate-500 uppercase tracking-wide mb-1">{t("auth.username")}</p>
                 <p className="font-semibold text-slate-900 dark:text-white font-mono" data-testid="text-customer-username">{customer.username}</p>
               </div>
               <div className="p-4 bg-slate-50 dark:bg-slate-800/30 rounded-xl">
-                <p className="text-xs text-slate-500 uppercase tracking-wide mb-1">Data Registrazione</p>
+                <p className="text-xs text-slate-500 uppercase tracking-wide mb-1">{t("customers.registrationDate")}</p>
                 <p className="font-semibold text-slate-900 dark:text-white flex items-center gap-2" data-testid="text-customer-created">
                   <Calendar className="h-4 w-4 text-blue-500" />
                   {format(new Date(customer.createdAt), "dd MMM yyyy", { locale: it })}
@@ -163,7 +165,7 @@ export default function AdminCustomerDetail() {
             
             {customer.phone && (
               <div className="p-4 bg-slate-50 dark:bg-slate-800/30 rounded-xl">
-                <p className="text-xs text-slate-500 uppercase tracking-wide mb-1">Telefono</p>
+                <p className="text-xs text-slate-500 uppercase tracking-wide mb-1">{t("common.phone")}</p>
                 <p className="font-semibold text-slate-900 dark:text-white flex items-center gap-2" data-testid="text-customer-phone">
                   <Phone className="h-4 w-4 text-emerald-500" />
                   {customer.phone}
@@ -173,7 +175,7 @@ export default function AdminCustomerDetail() {
             
             {reseller && (
               <div className="p-4 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-xl border border-blue-100 dark:border-blue-800">
-                <p className="text-xs text-blue-600 dark:text-blue-400 uppercase tracking-wide mb-1">Rivenditore Assegnato</p>
+                <p className="text-xs text-blue-600 dark:text-blue-400 uppercase tracking-wide mb-1">{t("customers.assignedReseller")}</p>
                 <p className="font-semibold text-slate-900 dark:text-white flex items-center gap-2" data-testid="text-customer-reseller">
                   <Building2 className="h-4 w-4 text-blue-500" />
                   {reseller.fullName}
@@ -183,7 +185,7 @@ export default function AdminCustomerDetail() {
             
             {subReseller && (
               <div className="p-4 bg-gradient-to-r from-violet-50 to-purple-50 dark:from-violet-900/20 dark:to-purple-900/20 rounded-xl border border-violet-100 dark:border-violet-800">
-                <p className="text-xs text-violet-600 dark:text-violet-400 uppercase tracking-wide mb-1">Sub-Reseller Assegnato</p>
+                <p className="text-xs text-violet-600 dark:text-violet-400 uppercase tracking-wide mb-1">{t("customers.assignedSubReseller")}</p>
                 <p className="font-semibold text-slate-900 dark:text-white flex items-center gap-2" data-testid="text-customer-sub-reseller">
                   <Building2 className="h-4 w-4 text-violet-500" />
                   {subReseller.fullName}
@@ -200,13 +202,13 @@ export default function AdminCustomerDetail() {
                 <div className="p-2 rounded-xl bg-gradient-to-br from-emerald-500 to-green-600">
                   <CreditCard className="h-5 w-5 text-white" />
                 </div>
-                Dati di Fatturazione
+                {t("invoices.billingData")}
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
               {billingData.companyName && (
                 <div className="p-3 bg-slate-50 dark:bg-slate-800/30 rounded-xl">
-                  <p className="text-xs text-slate-500 uppercase tracking-wide mb-1">Ragione Sociale</p>
+                  <p className="text-xs text-slate-500 uppercase tracking-wide mb-1">{t("customers.companyName")}</p>
                   <p className="font-semibold text-slate-900 dark:text-white" data-testid="text-billing-company">{billingData.companyName}</p>
                 </div>
               )}
@@ -214,13 +216,13 @@ export default function AdminCustomerDetail() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {billingData.fiscalCode && (
                   <div className="p-3 bg-slate-50 dark:bg-slate-800/30 rounded-xl">
-                    <p className="text-xs text-slate-500 uppercase tracking-wide mb-1">Codice Fiscale</p>
+                    <p className="text-xs text-slate-500 uppercase tracking-wide mb-1">{t("customers.fiscalCode")}</p>
                     <p className="font-semibold text-slate-900 dark:text-white font-mono text-sm" data-testid="text-billing-cf">{billingData.fiscalCode}</p>
                   </div>
                 )}
                 {billingData.vatNumber && (
                   <div className="p-3 bg-slate-50 dark:bg-slate-800/30 rounded-xl">
-                    <p className="text-xs text-slate-500 uppercase tracking-wide mb-1">Partita IVA</p>
+                    <p className="text-xs text-slate-500 uppercase tracking-wide mb-1">{t("customers.vatNumber")}</p>
                     <p className="font-semibold text-slate-900 dark:text-white font-mono text-sm" data-testid="text-billing-piva">{billingData.vatNumber}</p>
                   </div>
                 )}
@@ -228,7 +230,7 @@ export default function AdminCustomerDetail() {
               
               {billingData.address && (
                 <div className="p-3 bg-slate-50 dark:bg-slate-800/30 rounded-xl">
-                  <p className="text-xs text-slate-500 uppercase tracking-wide mb-1">Indirizzo</p>
+                  <p className="text-xs text-slate-500 uppercase tracking-wide mb-1">{t("common.address")}</p>
                   <p className="font-semibold text-slate-900 dark:text-white flex items-center gap-2" data-testid="text-billing-address">
                     <MapPin className="h-4 w-4 text-rose-500" />
                     {billingData.address}
@@ -247,7 +249,7 @@ export default function AdminCustomerDetail() {
                 )}
                 {billingData.codiceUnivoco && (
                   <div className="p-3 bg-slate-50 dark:bg-slate-800/30 rounded-xl">
-                    <p className="text-xs text-slate-500 uppercase tracking-wide mb-1">Codice SDI</p>
+                    <p className="text-xs text-slate-500 uppercase tracking-wide mb-1">{t("customers.sdiCode")}</p>
                     <p className="font-semibold text-slate-900 dark:text-white font-mono" data-testid="text-billing-sdi">{billingData.codiceUnivoco}</p>
                   </div>
                 )}
@@ -261,13 +263,13 @@ export default function AdminCustomerDetail() {
                 <div className="p-2 rounded-xl bg-gradient-to-br from-slate-400 to-slate-500">
                   <CreditCard className="h-5 w-5 text-white" />
                 </div>
-                Dati di Fatturazione
+                {t("invoices.billingData")}
               </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="text-center py-8 bg-slate-50 dark:bg-slate-800/30 rounded-xl">
                 <FileText className="h-12 w-12 mx-auto mb-3 text-slate-300" />
-                <p className="text-slate-500">Nessun dato di fatturazione disponibile</p>
+                <p className="text-slate-500">{t("invoices.noBillingData")}</p>
               </div>
             </CardContent>
           </Card>
@@ -281,11 +283,11 @@ export default function AdminCustomerDetail() {
             <TabsList className="grid w-full grid-cols-3 h-12 bg-slate-100 dark:bg-slate-800 rounded-xl p-1">
               <TabsTrigger value="repairs" className="rounded-lg gap-2 data-[state=active]:bg-white dark:data-[state=active]:bg-slate-700" data-testid="tab-repairs">
                 <Wrench className="h-4 w-4" />
-                Riparazioni ({repairOrders.length})
+                {t("sidebar.items.repairs")} ({repairOrders.length})
               </TabsTrigger>
               <TabsTrigger value="orders" className="rounded-lg gap-2 data-[state=active]:bg-white dark:data-[state=active]:bg-slate-700" data-testid="tab-orders">
                 <ShoppingCart className="h-4 w-4" />
-                Ordini ({salesOrders.length})
+                {t("common.orders")} ({salesOrders.length})
               </TabsTrigger>
               <TabsTrigger value="utility" className="rounded-lg gap-2 data-[state=active]:bg-white dark:data-[state=active]:bg-slate-700" data-testid="tab-utility">
                 <Zap className="h-4 w-4" />
@@ -298,7 +300,7 @@ export default function AdminCustomerDetail() {
             {repairOrders.length === 0 ? (
               <div className="py-12 text-center bg-slate-50 dark:bg-slate-800/30 rounded-xl mt-4">
                 <Wrench className="h-12 w-12 mx-auto mb-4 text-slate-300" />
-                <p className="text-slate-500">Nessuna riparazione trovata</p>
+                <p className="text-slate-500">{t("repairs.noRepairsFound")}</p>
               </div>
             ) : (
               <div className="rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden mt-4">
@@ -306,11 +308,11 @@ export default function AdminCustomerDetail() {
                   <TableHeader>
                     <TableRow className="bg-slate-50 dark:bg-slate-800/50">
                       <TableHead className="text-slate-600 dark:text-slate-400">ID</TableHead>
-                      <TableHead className="text-slate-600 dark:text-slate-400">Dispositivo</TableHead>
-                      <TableHead className="text-slate-600 dark:text-slate-400">Problema</TableHead>
-                      <TableHead className="text-slate-600 dark:text-slate-400">Stato</TableHead>
-                      <TableHead className="text-slate-600 dark:text-slate-400">Data</TableHead>
-                      <TableHead className="text-right text-slate-600 dark:text-slate-400">Azioni</TableHead>
+                      <TableHead className="text-slate-600 dark:text-slate-400">{t("repairs.device")}</TableHead>
+                      <TableHead className="text-slate-600 dark:text-slate-400">{t("repairs.issue")}</TableHead>
+                      <TableHead className="text-slate-600 dark:text-slate-400">{t("common.status")}</TableHead>
+                      <TableHead className="text-slate-600 dark:text-slate-400">{t("common.date")}</TableHead>
+                      <TableHead className="text-right text-slate-600 dark:text-slate-400">{t("common.actions")}</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -366,18 +368,18 @@ export default function AdminCustomerDetail() {
             {salesOrders.length === 0 ? (
               <div className="py-12 text-center bg-slate-50 dark:bg-slate-800/30 rounded-xl mt-4">
                 <ShoppingCart className="h-12 w-12 mx-auto mb-4 text-slate-300" />
-                <p className="text-slate-500">Nessun ordine trovato</p>
+                <p className="text-slate-500">{t("customers.noOrdersFound")}</p>
               </div>
             ) : (
               <div className="rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden mt-4">
                 <Table>
                   <TableHeader>
                     <TableRow className="bg-slate-50 dark:bg-slate-800/50">
-                      <TableHead className="text-slate-600 dark:text-slate-400">Numero Ordine</TableHead>
-                      <TableHead className="text-slate-600 dark:text-slate-400">Stato</TableHead>
-                      <TableHead className="text-slate-600 dark:text-slate-400">Totale</TableHead>
-                      <TableHead className="text-slate-600 dark:text-slate-400">Data</TableHead>
-                      <TableHead className="text-right text-slate-600 dark:text-slate-400">Azioni</TableHead>
+                      <TableHead className="text-slate-600 dark:text-slate-400">{t("common.orderNumber")}</TableHead>
+                      <TableHead className="text-slate-600 dark:text-slate-400">{t("common.status")}</TableHead>
+                      <TableHead className="text-slate-600 dark:text-slate-400">{t("common.total")}</TableHead>
+                      <TableHead className="text-slate-600 dark:text-slate-400">{t("common.date")}</TableHead>
+                      <TableHead className="text-right text-slate-600 dark:text-slate-400">{t("common.actions")}</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -417,19 +419,19 @@ export default function AdminCustomerDetail() {
             {utilityPractices.length === 0 ? (
               <div className="py-12 text-center bg-slate-50 dark:bg-slate-800/30 rounded-xl mt-4">
                 <Zap className="h-12 w-12 mx-auto mb-4 text-slate-300" />
-                <p className="text-slate-500">Nessuna pratica utility trovata</p>
+                <p className="text-slate-500">{t("utility.noPracticesFound")}</p>
               </div>
             ) : (
               <div className="rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden mt-4">
                 <Table>
                   <TableHeader>
                     <TableRow className="bg-slate-50 dark:bg-slate-800/50">
-                      <TableHead className="text-slate-600 dark:text-slate-400">Numero Pratica</TableHead>
-                      <TableHead className="text-slate-600 dark:text-slate-400">Fornitore</TableHead>
-                      <TableHead className="text-slate-600 dark:text-slate-400">Servizio</TableHead>
-                      <TableHead className="text-slate-600 dark:text-slate-400">Stato</TableHead>
-                      <TableHead className="text-slate-600 dark:text-slate-400">Data</TableHead>
-                      <TableHead className="text-right text-slate-600 dark:text-slate-400">Azioni</TableHead>
+                      <TableHead className="text-slate-600 dark:text-slate-400">{t("utility.practiceNumber")}</TableHead>
+                      <TableHead className="text-slate-600 dark:text-slate-400">{t("common.supplier")}</TableHead>
+                      <TableHead className="text-slate-600 dark:text-slate-400">{t("utility.service")}</TableHead>
+                      <TableHead className="text-slate-600 dark:text-slate-400">{t("common.status")}</TableHead>
+                      <TableHead className="text-slate-600 dark:text-slate-400">{t("common.date")}</TableHead>
+                      <TableHead className="text-right text-slate-600 dark:text-slate-400">{t("common.actions")}</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>

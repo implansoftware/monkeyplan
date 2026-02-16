@@ -15,6 +15,7 @@ import { Link } from "wouter";
 import { queryClient } from "@/lib/queryClient";
 import { formatDistanceToNow } from "date-fns";
 import { it } from "date-fns/locale";
+import { useTranslation } from "react-i18next";
 
 type FonedayProduct = {
   id: string | number;
@@ -63,6 +64,7 @@ type CacheStatus = {
 };
 
 export default function FonedayCatalogPage() {
+  const { t } = useTranslation();
   const { toast } = useToast();
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
@@ -185,7 +187,7 @@ export default function FonedayCatalogPage() {
       toast({ title: "Aggiunto al carrello" });
     },
     onError: (error: Error) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -338,7 +340,7 @@ export default function FonedayCatalogPage() {
                 data-testid="button-sync-cache"
               >
                 <RefreshCw className={`h-4 w-4 mr-2 ${cacheStatus?.syncStatus === "syncing" ? "animate-spin" : ""}`} />
-                {cacheStatus?.hasCache && !cacheStatus.isExpired ? "Aggiorna" : "Sincronizza"}
+                {cacheStatus?.hasCache && !cacheStatus.isExpired ? t("common.update") : "Sincronizza"}
               </Button>
             </div>
           </div>
@@ -427,9 +429,7 @@ export default function FonedayCatalogPage() {
                         <div className="text-lg font-semibold">{formatPrice(product.price)}</div>
                         <div className="mt-1">
                           {product.stock > 0 ? (
-                            <Badge variant="default" className="bg-green-600">
-                              Disponibile
-                            </Badge>
+                            <Badge variant="default" className="bg-green-600">{t("shop.inStock")}</Badge>
                           ) : (
                             <Badge variant="secondary">Non disponibile</Badge>
                           )}
@@ -488,9 +488,7 @@ export default function FonedayCatalogPage() {
                   >
                     {isLoadingMore || isFetching ? (
                       <>
-                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                        Caricamento...
-                      </>
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />{t("common.loading")}</>
                     ) : (
                       <>
                         <Plus className="h-4 w-4 mr-2" />

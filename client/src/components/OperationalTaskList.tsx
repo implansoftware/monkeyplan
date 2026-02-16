@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -39,20 +40,21 @@ const typeColors: Record<string, string> = {
   quote: "text-indigo-500",
 };
 
-const priorityConfig: Record<string, { label: string; color: string; bgColor: string }> = {
-  alta: { label: "Alta", color: "text-red-600 dark:text-red-400", bgColor: "bg-red-500/10" },
-  media: { label: "Media", color: "text-amber-600 dark:text-amber-400", bgColor: "bg-amber-500/10" },
-  bassa: { label: "Bassa", color: "text-slate-600 dark:text-slate-400", bgColor: "bg-slate-500/10" },
-};
-
 interface OperationalTaskListProps {
   maxItems?: number;
 }
 
 export function OperationalTaskList({ maxItems = 8 }: OperationalTaskListProps) {
+  const { t } = useTranslation();
   const { data: tasks = [], isLoading } = useQuery<OperationalTask[]>({
     queryKey: ["/api/operational-tasks"],
   });
+
+  const priorityConfig: Record<string, { label: string; color: string; bgColor: string }> = {
+    alta: { label: t("common.priorityHigh"), color: "text-red-600 dark:text-red-400", bgColor: "bg-red-500/10" },
+    media: { label: t("common.priorityMedium"), color: "text-amber-600 dark:text-amber-400", bgColor: "bg-amber-500/10" },
+    bassa: { label: t("common.priorityLow"), color: "text-slate-600 dark:text-slate-400", bgColor: "bg-slate-500/10" },
+  };
 
   const displayTasks = maxItems ? tasks.slice(0, maxItems) : tasks;
   const hasMore = tasks.length > displayTasks.length;
@@ -66,7 +68,7 @@ export function OperationalTaskList({ maxItems = 8 }: OperationalTaskListProps) 
         <CardHeader className="pb-3">
           <CardTitle className="text-base font-semibold flex items-center gap-2">
             <ListTodo className="h-5 w-5" />
-            Attività Operative
+            {t("dashboard.operationalTasks")}
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
@@ -91,7 +93,7 @@ export function OperationalTaskList({ maxItems = 8 }: OperationalTaskListProps) 
         <CardHeader className="pb-3">
           <CardTitle className="text-base font-semibold flex items-center gap-2">
             <ListTodo className="h-5 w-5" />
-            Attività Operative
+            {t("dashboard.operationalTasks")}
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -99,9 +101,9 @@ export function OperationalTaskList({ maxItems = 8 }: OperationalTaskListProps) 
             <div className="h-12 w-12 rounded-full bg-green-500/10 flex items-center justify-center mb-3">
               <CheckCircle2 className="h-6 w-6 text-green-500" />
             </div>
-            <p className="font-medium text-foreground">Tutto in ordine!</p>
+            <p className="font-medium text-foreground">{t("operationalTasks.allDone")}</p>
             <p className="text-sm text-muted-foreground mt-1">
-              Non ci sono attività in sospeso
+              {t("operationalTasks.noPendingTasks")}
             </p>
           </div>
         </CardContent>
@@ -115,7 +117,7 @@ export function OperationalTaskList({ maxItems = 8 }: OperationalTaskListProps) 
         <div className="flex items-center justify-between">
           <CardTitle className="text-base font-semibold flex items-center gap-2">
             <ListTodo className="h-5 w-5" />
-            Attività Operative
+            {t("dashboard.operationalTasks")}
           </CardTitle>
           <div className="flex flex-wrap items-center gap-2">
             {highPriorityCount > 0 && (
@@ -124,7 +126,7 @@ export function OperationalTaskList({ maxItems = 8 }: OperationalTaskListProps) 
                 style={{ backgroundColor: "rgb(239 68 68 / 0.1)", color: "rgb(220 38 38)" }}
                 data-testid="badge-high-priority-count"
               >
-                {highPriorityCount} urgenti
+                {highPriorityCount} {t("operationalTasks.urgent")}
               </Badge>
             )}
             {mediumPriorityCount > 0 && (
@@ -133,7 +135,7 @@ export function OperationalTaskList({ maxItems = 8 }: OperationalTaskListProps) 
                 className="font-normal"
                 data-testid="badge-medium-priority-count"
               >
-                {mediumPriorityCount} in attesa
+                {mediumPriorityCount} {t("operationalTasks.pending")}
               </Badge>
             )}
           </div>
@@ -190,7 +192,7 @@ export function OperationalTaskList({ maxItems = 8 }: OperationalTaskListProps) 
         {hasMore && (
           <div className="pt-2 text-center">
             <p className="text-xs text-muted-foreground">
-              +{tasks.length - displayTasks.length} altre attività
+              {t("operationalTasks.moreTasks", { count: tasks.length - displayTasks.length })}
             </p>
           </div>
         )}

@@ -16,6 +16,7 @@ import {
   Smartphone, Wrench, ShoppingBag, Warehouse
 } from "lucide-react";
 import type { Product } from "@shared/schema";
+import { useTranslation } from "react-i18next";
 
 type ProductWithStock = {
   product: Product;
@@ -66,15 +67,16 @@ type TransferRequest = {
 };
 
 const statusConfig: Record<string, { label: string; color: string; icon: any }> = {
-  pending: { label: "In Attesa", color: "bg-yellow-500/20 text-yellow-700", icon: Clock },
-  approved: { label: "Approvata", color: "bg-blue-500/20 text-blue-700", icon: CheckCircle },
-  rejected: { label: "Rifiutata", color: "bg-red-500/20 text-red-700", icon: XCircle },
-  shipped: { label: "Spedita", color: "bg-purple-500/20 text-purple-700", icon: Truck },
-  received: { label: "Ricevuta", color: "bg-green-500/20 text-green-700", icon: PackageCheck },
-  cancelled: { label: "Annullata", color: "bg-gray-500/20 text-gray-700", icon: Ban },
+  pending: { label: t("common.pending"), color: "bg-yellow-500/20 text-yellow-700", icon: Clock },
+  approved: { label: t("common.approved"), color: "bg-blue-500/20 text-blue-700", icon: CheckCircle },
+  rejected: { label: t("common.rejected"), color: "bg-red-500/20 text-red-700", icon: XCircle },
+  shipped: { label: t("common.shipped"), color: "bg-purple-500/20 text-purple-700", icon: Truck },
+  received: { label: t("common.received"), color: "bg-green-500/20 text-green-700", icon: PackageCheck },
+  cancelled: { label: t("common.cancelled"), color: "bg-gray-500/20 text-gray-700", icon: Ban },
 };
 
 export default function SubResellerTransferRequestsPage() {
+  const { t } = useTranslation();
   const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
@@ -136,12 +138,12 @@ export default function SubResellerTransferRequestsPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/reseller/sub-reseller/transfer-requests"] });
-      toast({ title: "Richiesta Inviata", description: "La richiesta di interscambio è stata inviata al reseller padre" });
+      toast({ title: t("auth.requestSent"), description: "La richiesta di interscambio è stata inviata al reseller padre" });
       setShowNewRequestDialog(false);
       resetWizard();
     },
     onError: (error: any) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -154,7 +156,7 @@ export default function SubResellerTransferRequestsPage() {
       toast({ title: "Richiesta Annullata", description: "La richiesta è stata annullata" });
     },
     onError: (error: any) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -171,7 +173,7 @@ export default function SubResellerTransferRequestsPage() {
       setReceiveItems([]);
     },
     onError: (error: any) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -229,14 +231,12 @@ export default function SubResellerTransferRequestsPage() {
               <Send className="h-6 w-6 text-white" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold tracking-tight text-white" data-testid="text-title">Interscambio</h1>
+              <h1 className="text-2xl font-bold tracking-tight text-white" data-testid="text-title">{t("sidebar.sections.transfers")}</h1>
               <p className="text-sm text-white/80">Richiedi prodotti dal magazzino del reseller padre</p>
             </div>
           </div>
           <Button className="bg-white/20 backdrop-blur-sm border border-white/30 text-white shadow-lg" onClick={() => setShowNewRequestDialog(true)} data-testid="button-new-request">
-            <Plus className="h-4 w-4 mr-2" />
-            Nuova Richiesta
-          </Button>
+            <Plus className="h-4 w-4 mr-2" />{t("auth.newRequest")}</Button>
         </div>
       </div>
 
@@ -287,13 +287,13 @@ export default function SubResellerTransferRequestsPage() {
                     </div>
                     <Select value={productTypeFilter} onValueChange={setProductTypeFilter}>
                       <SelectTrigger className="w-full sm:w-[160px]" data-testid="select-product-type">
-                        <SelectValue placeholder="Tipo" />
+                        <SelectValue placeholder={t("common.type")} />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="all">Tutti i tipi</SelectItem>
-                        <SelectItem value="ricambio">Ricambi</SelectItem>
-                        <SelectItem value="accessorio">Accessori</SelectItem>
-                        <SelectItem value="dispositivo">Dispositivi</SelectItem>
+                        <SelectItem value="all">{t("common.allTypes")}</SelectItem>
+                        <SelectItem value="ricambio">{t("sidebar.items.spareParts")}</SelectItem>
+                        <SelectItem value="accessorio">{t("repairs.accessories")}</SelectItem>
+                        <SelectItem value="dispositivo">{t("sidebar.items.devices")}</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -491,26 +491,20 @@ export default function SubResellerTransferRequestsPage() {
             <DialogFooter className="gap-2 sm:gap-0">
               {wizardStep > 1 && (
                 <Button variant="outline" onClick={() => setWizardStep(wizardStep - 1)} data-testid="button-wizard-back">
-                  <ArrowLeft className="h-4 w-4 mr-2" />
-                  Indietro
-                </Button>
+                  <ArrowLeft className="h-4 w-4 mr-2" />{t("common.back")}</Button>
               )}
               {wizardStep === 1 && (
                 <Button variant="outline" onClick={() => {
                   setShowNewRequestDialog(false);
                   resetWizard();
-                }}>
-                  Annulla
-                </Button>
+                }}>{t("common.cancel")}</Button>
               )}
               {wizardStep === 1 && (
                 <Button
                   onClick={() => setWizardStep(2)}
                   disabled={!selectedProduct}
                   data-testid="button-wizard-next-1"
-                >
-                  Avanti
-                  <ArrowRight className="h-4 w-4 ml-2" />
+                >{t("common.next")}<ArrowRight className="h-4 w-4 ml-2" />
                 </Button>
               )}
               {wizardStep === 2 && (
@@ -518,9 +512,7 @@ export default function SubResellerTransferRequestsPage() {
                   onClick={() => setWizardStep(3)}
                   disabled={!selectedWarehouse}
                   data-testid="button-wizard-next-2"
-                >
-                  Avanti
-                  <ArrowRight className="h-4 w-4 ml-2" />
+                >{t("common.next")}<ArrowRight className="h-4 w-4 ml-2" />
                 </Button>
               )}
               {wizardStep === 3 && (
@@ -533,7 +525,7 @@ export default function SubResellerTransferRequestsPage() {
                   disabled={createRequestMutation.isPending || requestQuantity < 1 || !selectedWarehouse || !selectedProduct}
                   data-testid="button-submit-request"
                 >
-                  {createRequestMutation.isPending ? "Invio..." : "Invia Richiesta"}
+                  {createRequestMutation.isPending ? t("pages.sending") : "Invia Richiesta"}
                 </Button>
               )}
             </DialogFooter>
@@ -553,10 +545,10 @@ export default function SubResellerTransferRequestsPage() {
         </div>
         <Select value={statusFilter} onValueChange={setStatusFilter}>
           <SelectTrigger className="w-full sm:w-[180px]" data-testid="select-status-filter">
-            <SelectValue placeholder="Filtra per stato" />
+            <SelectValue placeholder={t("common.filterByStatus")} />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">Tutti gli stati</SelectItem>
+            <SelectItem value="all">{t("common.allStatuses")}</SelectItem>
             {Object.entries(statusConfig).map(([key, { label }]) => (
               <SelectItem key={key} value={key}>{label}</SelectItem>
             ))}
@@ -568,7 +560,7 @@ export default function SubResellerTransferRequestsPage() {
         <Card className="rounded-2xl">
           <CardContent className="flex flex-col items-center justify-center py-12">
             <Package className="h-12 w-12 text-muted-foreground mb-4" />
-            <p className="text-muted-foreground">Nessuna richiesta trovata</p>
+            <p className="text-muted-foreground">{t("hr.noLeaveFound")}</p>
           </CardContent>
         </Card>
       ) : (
@@ -595,9 +587,7 @@ export default function SubResellerTransferRequestsPage() {
                           disabled={cancelRequestMutation.isPending}
                           data-testid={`button-cancel-${request.id}`}
                         >
-                          <Ban className="h-4 w-4 mr-1" />
-                          Annulla
-                        </Button>
+                          <Ban className="h-4 w-4 mr-1" />{t("common.cancel")}</Button>
                       )}
                       {request.status === 'shipped' && (
                         <Button
@@ -605,9 +595,7 @@ export default function SubResellerTransferRequestsPage() {
                           onClick={() => handleOpenReceive(request)}
                           data-testid={`button-receive-${request.id}`}
                         >
-                          <PackageCheck className="h-4 w-4 mr-1" />
-                          Conferma Ricezione
-                        </Button>
+                          <PackageCheck className="h-4 w-4 mr-1" />{t("b2b.confirmReceipt")}</Button>
                       )}
                       <Button
                         variant="ghost"
@@ -678,7 +666,7 @@ export default function SubResellerTransferRequestsPage() {
               </div>
 
               <div className="border-t pt-4">
-                <h4 className="font-medium mb-2">Articoli</h4>
+                <h4 className="font-medium mb-2">{t("b2b.items")}</h4>
                 <div className="space-y-2">
                   {selectedRequest.items.map((item) => (
                     <div key={item.id} className="flex items-center justify-between p-2 bg-muted/50 rounded">
@@ -701,7 +689,7 @@ export default function SubResellerTransferRequestsPage() {
       <Dialog open={showReceiveDialog} onOpenChange={setShowReceiveDialog}>
         <DialogContent className="max-w-lg">
           <DialogHeader>
-            <DialogTitle>Conferma Ricezione</DialogTitle>
+            <DialogTitle>{t("b2b.confirmReceipt")}</DialogTitle>
           </DialogHeader>
           {selectedRequest && (
             <div className="space-y-4">
@@ -735,9 +723,7 @@ export default function SubResellerTransferRequestsPage() {
             </div>
           )}
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowReceiveDialog(false)}>
-              Annulla
-            </Button>
+            <Button variant="outline" onClick={() => setShowReceiveDialog(false)}>{t("common.cancel")}</Button>
             <Button
               onClick={() => selectedRequest && receiveRequestMutation.mutate({
                 requestId: selectedRequest.id,
@@ -746,7 +732,7 @@ export default function SubResellerTransferRequestsPage() {
               disabled={receiveRequestMutation.isPending}
               data-testid="button-confirm-receive"
             >
-              {receiveRequestMutation.isPending ? "Conferma..." : "Conferma Ricezione"}
+              {receiveRequestMutation.isPending ? "Conferma..." : t("b2b.confirmReceipt")}
             </Button>
           </DialogFooter>
         </DialogContent>

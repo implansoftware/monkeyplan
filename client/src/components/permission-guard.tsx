@@ -1,4 +1,5 @@
 import { useStaffPermissions, StaffModule, getRequiredModuleForUrl } from "@/hooks/use-staff-permissions";
+import { useTranslation } from "react-i18next";
 import { useAuth } from "@/hooks/use-auth";
 import { useLocation } from "wouter";
 import { AlertTriangle, Lock } from "lucide-react";
@@ -20,6 +21,7 @@ export function PermissionGuard({
   fallback,
   silent = false,
 }: PermissionGuardProps) {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const { hasModuleAccess, hasFullAccess, isLoading } = useStaffPermissions();
   const [location, setLocation] = useLocation();
@@ -71,9 +73,9 @@ export function PermissionGuard({
           <div className="mx-auto w-12 h-12 bg-destructive/10 rounded-full flex items-center justify-center mb-4">
             <Lock className="h-6 w-6 text-destructive" />
           </div>
-          <CardTitle>Accesso Negato</CardTitle>
+          <CardTitle>{t("permissions.accessDenied")}</CardTitle>
           <CardDescription>
-            Non hai i permessi necessari per accedere a questa sezione.
+            {t("permissions.accessDeniedDesc")}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -81,7 +83,7 @@ export function PermissionGuard({
             <AlertTriangle className="h-5 w-5 text-muted-foreground shrink-0 mt-0.5" />
             <div className="text-sm text-muted-foreground">
               <p>
-                Contatta il tuo amministratore per richiedere l'accesso a questa funzionalità.
+                {t("permissions.contactAdmin")}
               </p>
             </div>
           </div>
@@ -91,7 +93,7 @@ export function PermissionGuard({
             onClick={() => setLocation("/reseller")}
             data-testid="button-back-to-dashboard"
           >
-            Torna alla Dashboard
+            {t("permissions.backToDashboard")}
           </Button>
         </CardContent>
       </Card>

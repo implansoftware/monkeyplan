@@ -35,6 +35,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { format } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
 import { EntityFilterSelector, EntityType, useEntityFilter } from "@/components/hr/entity-filter-selector";
+import { useTranslation } from "react-i18next";
 
 interface ExpenseReport {
   id: string;
@@ -59,14 +60,15 @@ interface TeamMember {
 }
 
 const statusLabels: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
-  draft: { label: "Bozza", variant: "outline" },
-  pending: { label: "In Attesa", variant: "secondary" },
-  approved: { label: "Approvata", variant: "default" },
-  rejected: { label: "Rifiutata", variant: "destructive" },
-  paid: { label: "Pagata", variant: "default" },
+  draft: { label: t("invoices.draft"), variant: "outline" },
+  pending: { label: t("common.pending"), variant: "secondary" },
+  approved: { label: t("common.approved"), variant: "default" },
+  rejected: { label: t("common.rejected"), variant: "destructive" },
+  paid: { label: t("invoices.paid"), variant: "default" },
 };
 
 export default function HrExpenses() {
+  const { t } = useTranslation();
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
@@ -134,7 +136,7 @@ export default function HrExpenses() {
       toast({ title: "Nota spese creata", description: "La nota spese è stata creata con successo." });
     },
     onError: (error: any) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     }
   });
 
@@ -144,10 +146,10 @@ export default function HrExpenses() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/reseller/hr/expense-reports", entityType, selectedEntityId] });
-      toast({ title: "Stato aggiornato", description: "Lo stato della nota spese è stato aggiornato." });
+      toast({ title: t("tickets.statusUpdated"), description: "Lo stato della nota spese è stato aggiornato." });
     },
     onError: (error: any) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     }
   });
 
@@ -162,7 +164,7 @@ export default function HrExpenses() {
       toast({ title: "Nota spese modificata", description: "Le modifiche sono state salvate." });
     },
     onError: (error: any) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     }
   });
 
@@ -182,10 +184,10 @@ export default function HrExpenses() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/reseller/hr/expense-reports", entityType, selectedEntityId] });
-      toast({ title: "Nota eliminata", description: "La nota spese è stata eliminata." });
+      toast({ title: t("utility.noteDeleted"), description: "La nota spese è stata eliminata." });
     },
     onError: (error: any) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     }
   });
 
@@ -209,11 +211,11 @@ export default function HrExpenses() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/reseller/hr/expense-reports", entityType, selectedEntityId] });
       setUploadingReportId(null);
-      toast({ title: "Allegato caricato", description: "Il giustificativo è stato caricato con successo." });
+      toast({ title: t("hr.attachmentUploaded"), description: "Il giustificativo è stato caricato con successo." });
     },
     onError: (error: any) => {
       setUploadingReportId(null);
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     }
   });
 
@@ -229,7 +231,7 @@ export default function HrExpenses() {
       window.open(data.signedUrl, '_blank');
     },
     onError: (error: any) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     }
   });
 
@@ -239,10 +241,10 @@ export default function HrExpenses() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/reseller/hr/expense-reports", entityType, selectedEntityId] });
-      toast({ title: "Allegato rimosso", description: "Il giustificativo è stato rimosso." });
+      toast({ title: t("hr.attachmentRemoved"), description: "Il giustificativo è stato rimosso." });
     },
     onError: (error: any) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     }
   });
 
@@ -277,7 +279,7 @@ export default function HrExpenses() {
                 <Receipt className="h-6 w-6 text-white" />
               </div>
               <div>
-                <h1 className="text-2xl font-bold text-white" data-testid="text-expenses-title">Rimborsi Spese</h1>
+                <h1 className="text-2xl font-bold text-white" data-testid="text-expenses-title">{t("sidebar.items.expenseReimbursement")}</h1>
                 <p className="text-white/80">Gestione note spese e trasferte</p>
               </div>
             </div>
@@ -291,9 +293,7 @@ export default function HrExpenses() {
             </Link>
             {!readOnly && (
               <Button variant="secondary" onClick={() => setDialogOpen(true)} data-testid="button-new-expense">
-                <Plus className="h-4 w-4 mr-2" />
-                Nuova Nota Spese
-              </Button>
+                <Plus className="h-4 w-4 mr-2" />{t("hr.newExpense")}</Button>
             )}
           </div>
         </div>
@@ -343,20 +343,18 @@ export default function HrExpenses() {
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
               <CardTitle className="flex flex-wrap items-center gap-2">
-                <FileText className="h-5 w-5 text-muted-foreground" />
-                Note Spese
-              </CardTitle>
+                <FileText className="h-5 w-5 text-muted-foreground" />{t("hr.expenses")}</CardTitle>
               <CardDescription>Elenco di tutte le note spese</CardDescription>
             </div>
             <Select value={statusFilter} onValueChange={setStatusFilter}>
               <SelectTrigger className="w-40" data-testid="select-status-filter">
                 <Filter className="h-4 w-4 mr-2" />
-                <SelectValue placeholder="Stato" />
+                <SelectValue placeholder={t("common.status")} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">Tutti</SelectItem>
+                <SelectItem value="all">{t("common.allMasc")}</SelectItem>
                 <SelectItem value="draft">Bozze</SelectItem>
-                <SelectItem value="pending">In Attesa</SelectItem>
+                <SelectItem value="pending">{t("common.pending")}</SelectItem>
                 <SelectItem value="approved">Approvate</SelectItem>
                 <SelectItem value="rejected">Rifiutate</SelectItem>
                 <SelectItem value="paid">Pagate</SelectItem>
@@ -372,19 +370,19 @@ export default function HrExpenses() {
           ) : filteredReports.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">
               <Receipt className="h-12 w-12 mx-auto mb-3 opacity-50" />
-              <p>Nessuna nota spese trovata</p>
+              <p>{t("hr.noExpenses")}</p>
             </div>
           ) : (
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Titolo</TableHead>
-                  <TableHead>Dipendente</TableHead>
-                  <TableHead>Importo</TableHead>
-                  <TableHead>Stato</TableHead>
-                  <TableHead>Data</TableHead>
-                  <TableHead>Allegato</TableHead>
-                  <TableHead>Azioni</TableHead>
+                  <TableHead>{t("common.title")}</TableHead>
+                  <TableHead>{t("hr.employee")}</TableHead>
+                  <TableHead>{t("common.amount")}</TableHead>
+                  <TableHead>{t("common.status")}</TableHead>
+                  <TableHead>{t("common.date")}</TableHead>
+                  <TableHead>{t("hr.attachment")}</TableHead>
+                  <TableHead>{t("common.actions")}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -469,7 +467,7 @@ export default function HrExpenses() {
                               size="icon"
                               variant="ghost"
                               onClick={() => openEditDialog(report)}
-                              title="Modifica"
+                              title={t("common.edit")}
                               data-testid={`button-edit-${report.id}`}
                             >
                               <Pencil className="h-4 w-4 text-blue-600" />
@@ -490,7 +488,7 @@ export default function HrExpenses() {
                                 size="icon"
                                 variant="ghost"
                                 onClick={() => deleteMutation.mutate(report.id)}
-                                title="Elimina"
+                                title={t("common.delete")}
                                 data-testid={`button-delete-${report.id}`}
                               >
                                 <Trash2 className="h-4 w-4 text-red-600" />
@@ -503,7 +501,7 @@ export default function HrExpenses() {
                                 size="icon"
                                 variant="ghost"
                                 onClick={() => updateStatusMutation.mutate({ id: report.id, status: 'approved' })}
-                                title="Approva"
+                                title={t("common.approve")}
                                 data-testid={`button-approve-${report.id}`}
                               >
                                 <Check className="h-4 w-4 text-emerald-600" />
@@ -512,7 +510,7 @@ export default function HrExpenses() {
                                 size="icon"
                                 variant="ghost"
                                 onClick={() => updateStatusMutation.mutate({ id: report.id, status: 'rejected' })}
-                                title="Rifiuta"
+                                title={t("common.reject")}
                                 data-testid={`button-reject-${report.id}`}
                               >
                                 <X className="h-4 w-4 text-red-600" />
@@ -533,7 +531,7 @@ export default function HrExpenses() {
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Nuova Nota Spese</DialogTitle>
+            <DialogTitle>{t("hr.newExpense")}</DialogTitle>
             <DialogDescription>Crea una nuova nota spese</DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
@@ -619,13 +617,13 @@ export default function HrExpenses() {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDialogOpen(false)}>Annulla</Button>
+            <Button variant="outline" onClick={() => setDialogOpen(false)}>{t("common.cancel")}</Button>
             <Button 
               onClick={() => createMutation.mutate({ ...newReport, file: newReportFile })}
               disabled={!newReport.title || !newReport.userId || !newReport.amountEuro || parseFloat(newReport.amountEuro) <= 0 || createMutation.isPending}
               data-testid="button-create-expense"
             >
-              {createMutation.isPending ? "Creazione..." : "Crea"}
+              {createMutation.isPending ? t("pages.creating") : t("common.create")}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -634,7 +632,7 @@ export default function HrExpenses() {
       <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Modifica Nota Spese</DialogTitle>
+            <DialogTitle>{t("hr.editExpense")}</DialogTitle>
             <DialogDescription>Modifica i dati della nota spese di {editingReport?.user?.fullName}</DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
@@ -674,7 +672,7 @@ export default function HrExpenses() {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setEditDialogOpen(false)}>Annulla</Button>
+            <Button variant="outline" onClick={() => setEditDialogOpen(false)}>{t("common.cancel")}</Button>
             <Button 
               onClick={() => editingReport && editMutation.mutate({ 
                 id: editingReport.id, 
@@ -687,7 +685,7 @@ export default function HrExpenses() {
               disabled={!editForm.title || !editForm.amountEuro || parseFloat(editForm.amountEuro) <= 0 || editMutation.isPending}
               data-testid="button-save-expense-edit"
             >
-              {editMutation.isPending ? "Salvataggio..." : "Salva Modifiche"}
+              {editMutation.isPending ? t("profile.saving") : t("profile.saveChanges")}
             </Button>
           </DialogFooter>
         </DialogContent>

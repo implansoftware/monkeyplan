@@ -9,6 +9,7 @@ import { ShoppingCart, Search, Building2, Truck, Calendar } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
+import { useTranslation } from "react-i18next";
 
 type SupplierOrderWithDetails = {
   id: string;
@@ -36,12 +37,12 @@ type RepairCenter = {
 };
 
 const statusLabels: Record<string, string> = {
-  draft: "Bozza",
+  draft: t("invoices.draft"),
   sent: "Inviato",
   confirmed: "Confermato",
-  shipped: "Spedito",
-  partially_received: "Parziale",
-  received: "Ricevuto",
+  shipped: t("b2b.status.shipped"),
+  partially_received: t("invoices.partial"),
+  received: t("repairs.status.received"),
 };
 
 const statusVariants: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
@@ -54,6 +55,7 @@ const statusVariants: Record<string, "default" | "secondary" | "destructive" | "
 };
 
 export default function ResellerSupplierOrders() {
+  const { t } = useTranslation();
   const [searchQuery, setSearchQuery] = useState("");
   const [centerFilter, setCenterFilter] = useState<string>("all");
   const [statusFilter, setStatusFilter] = useState<string>("all");
@@ -117,14 +119,12 @@ export default function ResellerSupplierOrders() {
       <Card className="rounded-2xl">
         <CardHeader className="flex flex-row items-center justify-between gap-4 space-y-0 pb-4">
           <CardTitle className="flex flex-wrap items-center gap-2">
-            <ShoppingCart className="h-5 w-5" />
-            Ordini Fornitori
-          </CardTitle>
+            <ShoppingCart className="h-5 w-5" />{t("admin.permissions.supplierOrders")}</CardTitle>
           <div className="flex flex-wrap items-center gap-4">
             <div className="relative w-64">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
-                placeholder="Cerca ordine..."
+                placeholder={t("b2b.searchOrder")}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-9"
@@ -134,10 +134,10 @@ export default function ResellerSupplierOrders() {
             <Select value={centerFilter} onValueChange={setCenterFilter}>
               <SelectTrigger className="w-48" data-testid="select-center-filter">
                 <Building2 className="h-4 w-4 mr-2" />
-                <SelectValue placeholder="Centro" />
+                <SelectValue placeholder={t("admin.common.center")} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">Tutti i centri</SelectItem>
+                <SelectItem value="all">{t("common.allCenters")}</SelectItem>
                 {repairCenters.map((center) => (
                   <SelectItem key={center.id} value={center.id}>
                     {center.name}
@@ -147,10 +147,10 @@ export default function ResellerSupplierOrders() {
             </Select>
             <Select value={statusFilter} onValueChange={setStatusFilter}>
               <SelectTrigger className="w-40" data-testid="select-status-filter">
-                <SelectValue placeholder="Stato" />
+                <SelectValue placeholder={t("common.status")} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">Tutti gli stati</SelectItem>
+                <SelectItem value="all">{t("common.allStatuses")}</SelectItem>
                 {Object.entries(statusLabels).map(([value, label]) => (
                   <SelectItem key={value} value={value}>
                     {label}
@@ -164,20 +164,20 @@ export default function ResellerSupplierOrders() {
           {filteredOrders.length === 0 ? (
             <div className="text-center py-12 text-muted-foreground">
               <ShoppingCart className="h-12 w-12 mx-auto mb-4 opacity-50" />
-              <p>Nessun ordine trovato</p>
+              <p>{t("b2b.noOrdersFound")}</p>
               <p className="text-sm mt-1">Gli ordini ricambi dei centri di riparazione associati appariranno qui</p>
             </div>
           ) : (
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Numero Ordine</TableHead>
-                  <TableHead>Fornitore</TableHead>
-                  <TableHead>Centro</TableHead>
-                  <TableHead>Stato</TableHead>
-                  <TableHead>Totale</TableHead>
-                  <TableHead>Data Ordine</TableHead>
-                  <TableHead>Consegna Prevista</TableHead>
+                  <TableHead>{t("repairs.orderNumber")}</TableHead>
+                  <TableHead>{t("common.supplier")}</TableHead>
+                  <TableHead>{t("admin.common.center")}</TableHead>
+                  <TableHead>{t("common.status")}</TableHead>
+                  <TableHead>{t("common.total")}</TableHead>
+                  <TableHead>{t("b2b.orderDate")}</TableHead>
+                  <TableHead>{t("suppliers.expectedDelivery")}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>

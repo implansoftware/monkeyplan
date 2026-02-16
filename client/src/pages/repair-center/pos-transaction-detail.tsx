@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useParams, useLocation } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -64,26 +65,8 @@ type TransactionDetail = {
   customer?: { id: string; fullName: string; email: string; phone: string | null };
 };
 
-const formatCurrency = (cents: number) => {
-  return new Intl.NumberFormat("it-IT", {
-    style: "currency",
-    currency: "EUR",
-  }).format(cents / 100);
-};
 
-const paymentMethodLabels: Record<string, { label: string; icon: typeof CreditCard }> = {
-  cash: { label: "Contanti", icon: Banknote },
-  card: { label: "Carta", icon: CreditCard },
-  pos_terminal: { label: "POS", icon: CreditCard },
-  mixed: { label: "Misto", icon: Calculator },
-};
 
-const statusLabels: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
-  completed: { label: "Completata", variant: "default" },
-  refunded: { label: "Rimborsata", variant: "destructive" },
-  partial_refund: { label: "Rimborso parziale", variant: "secondary" },
-  voided: { label: "Annullata", variant: "destructive" },
-};
 
 function BarcodeDisplay({ code, width = 120, height = 35 }: { code: string; width?: number; height?: number }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -154,6 +137,25 @@ function ProductImage({ category, size = "md" }: { category?: string | null; siz
 }
 
 export default function PosTransactionDetailPage() {
+  const { t } = useTranslation();
+  const formatCurrency = (cents: number) => {
+    return new Intl.NumberFormat("it-IT", {
+      style: "currency",
+      currency: "EUR",
+    }).format(cents / 100);
+  };
+  const paymentMethodLabels: Record<string, { label: string; icon: typeof CreditCard }> = {
+    cash: { label: t("pos.cash"), icon: Banknote },
+    card: { label: t("pos.card"), icon: CreditCard },
+    pos_terminal: { label: t("sidebar.sections.posSection"), icon: CreditCard },
+    mixed: { label: "Misto", icon: Calculator },
+  };
+  const statusLabels: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
+    completed: { label: t("pos.completata"), variant: "default" },
+    refunded: { label: "Rimborsata", variant: "destructive" },
+    partial_refund: { label: t("pos.partialRefund"), variant: "secondary" },
+    voided: { label: t("common.cancelled"), variant: "destructive" },
+  };
   const { id } = useParams<{ id: string }>();
   const [, navigate] = useLocation();
 
@@ -181,14 +183,14 @@ export default function PosTransactionDetailPage() {
       setVoidDialogOpen(false);
       setVoidReason("");
       toast({
-        title: "Vendita annullata",
-        description: "La transazione è stata annullata con successo",
+        title: t("pos.saleVoided"),
+        description: t("pos.laTransazioneStataAnnullataConSuccesso"),
       });
     },
     onError: (error: Error) => {
       toast({
-        title: "Errore",
-        description: error.message || "Impossibile annullare la transazione",
+        title: t("auth.error"),
+        description: error.message || t("pos.cannotVoidTransaction"),
         variant: "destructive",
       });
     },
@@ -206,14 +208,14 @@ export default function PosTransactionDetailPage() {
       setRefundReason("");
       setRefundAmount("");
       toast({
-        title: "Rimborso effettuato",
-        description: "Il rimborso è stato registrato con successo",
+        title: t("pos.refundProcessed"),
+        description: t("pos.ilRimborsoStatoRegistratoConSuccesso"),
       });
     },
     onError: (error: Error) => {
       toast({
-        title: "Errore",
-        description: error.message || "Impossibile effettuare il rimborso",
+        title: t("auth.error"),
+        description: error.message || t("pos.cannotProcessRefund"),
         variant: "destructive",
       });
     },
@@ -229,14 +231,14 @@ export default function PosTransactionDetailPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/repair-center/pos/transaction", id] });
       toast({
-        title: "Fattura generata",
-        description: "La fattura di vendita è stata creata con successo",
+        title: t("pos.invoiceGenerated"),
+        description: t("pos.laFatturaDiVenditaStataCreataConSuccesso"),
       });
     },
     onError: (error: Error) => {
       toast({
-        title: "Errore",
-        description: error.message || "Impossibile generare la fattura",
+        title: t("auth.error"),
+        description: error.message || t("pos.cannotGenerateInvoice"),
         variant: "destructive",
       });
     },
@@ -346,7 +348,7 @@ export default function PosTransactionDetailPage() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Totale</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">{t("common.total")}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-2xl sm:text-3xl font-bold">{formatCurrency(transaction.total)}</div>
@@ -360,7 +362,7 @@ export default function PosTransactionDetailPage() {
 
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Pagamento</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">{t("common.payment")}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="flex flex-wrap items-center gap-2 text-lg font-semibold">
@@ -378,7 +380,7 @@ export default function PosTransactionDetailPage() {
 
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Operatore</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">{t("warehouse.operator")}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="flex flex-wrap items-center gap-2 text-lg font-semibold">
@@ -395,7 +397,7 @@ export default function PosTransactionDetailPage() {
 
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Cliente</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">{t("auth.customerTab")}</CardTitle>
           </CardHeader>
           <CardContent>
             {customer ? (
@@ -442,7 +444,7 @@ export default function PosTransactionDetailPage() {
                   disabled={generateInvoiceMutation.isPending || !transaction.customerId}
                   data-testid="button-generate-invoice"
                 >
-                  {generateInvoiceMutation.isPending ? "Generazione..." : "Genera Fattura"}
+                  {generateInvoiceMutation.isPending ? "Generazione..." : t("pos.generateInvoice")}
                 </Button>
               </div>
             )}
@@ -503,7 +505,7 @@ export default function PosTransactionDetailPage() {
             </div>
             {transaction.discountAmount > 0 && (
               <div className="flex justify-between text-destructive">
-                <span>Sconto:</span>
+                <span>{t("pos.sconto")}</span>
                 <span>-{formatCurrency(transaction.discountAmount)}</span>
               </div>
             )}
@@ -513,7 +515,7 @@ export default function PosTransactionDetailPage() {
             </div>
             <Separator />
             <div className="flex justify-between text-xl font-bold">
-              <span>Totale:</span>
+              <span>{t("accessories.totale")}</span>
               <span>{formatCurrency(transaction.total)}</span>
             </div>
           </div>
@@ -544,7 +546,7 @@ export default function PosTransactionDetailPage() {
       {transaction.notes && (
         <Card>
           <CardHeader>
-            <CardTitle className="text-sm font-medium text-muted-foreground">Note</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">{t("common.note")}</CardTitle>
           </CardHeader>
           <CardContent>
             <p>{transaction.notes}</p>
@@ -561,7 +563,7 @@ export default function PosTransactionDetailPage() {
             </DialogTitle>
             <DialogDescription>
               Stai per annullare la vendita {transaction.transactionNumber}. 
-              Questa azione ripristinerà lo stock dei prodotti venduti.
+              {t("pos.voidRestoreStock")}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
@@ -569,7 +571,7 @@ export default function PosTransactionDetailPage() {
               <Label htmlFor="void-reason">Motivo dell'annullamento *</Label>
               <Textarea
                 id="void-reason"
-                placeholder="Inserisci il motivo dell'annullamento..."
+                placeholder={t("pos.inserisciIlMotivoDellAnnullamento")}
                 value={voidReason}
                 onChange={(e) => setVoidReason(e.target.value)}
                 data-testid="input-void-reason"
@@ -590,7 +592,7 @@ export default function PosTransactionDetailPage() {
               disabled={!voidReason.trim() || voidMutation.isPending}
               data-testid="button-confirm-void"
             >
-              {voidMutation.isPending ? "Annullamento..." : "Conferma annullamento"}
+              {voidMutation.isPending ? t("pos.voidingInProgress") : t("pos.confirmVoid")}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -609,7 +611,7 @@ export default function PosTransactionDetailPage() {
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label htmlFor="refund-amount">Importo da rimborsare (€)</Label>
+              <Label htmlFor="refund-amount">{t("pos.importoDaRimborsare")}</Label>
               <Input
                 id="refund-amount"
                 type="number"
@@ -629,7 +631,7 @@ export default function PosTransactionDetailPage() {
               <Label htmlFor="refund-reason">Motivo del reso</Label>
               <Textarea
                 id="refund-reason"
-                placeholder="Inserisci il motivo del reso (opzionale)..."
+                placeholder={t("pos.inserisciIlMotivoDelResoOpzionale")}
                 value={refundReason}
                 onChange={(e) => setRefundReason(e.target.value)}
                 data-testid="input-refund-reason"
@@ -652,7 +654,7 @@ export default function PosTransactionDetailPage() {
               disabled={!refundAmount || parseFloat(refundAmount) <= 0 || refundMutation.isPending}
               data-testid="button-confirm-refund"
             >
-              {refundMutation.isPending ? "Elaborazione..." : "Conferma reso"}
+              {refundMutation.isPending ? t("pos.processingInProgress") : t("pos.confirmReturn")}
             </Button>
           </DialogFooter>
         </DialogContent>

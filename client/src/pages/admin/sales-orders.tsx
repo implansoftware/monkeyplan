@@ -20,6 +20,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import type { SalesOrder, SalesOrderItem, User as UserType } from "@shared/schema";
+import { useTranslation } from "react-i18next";
 
 interface OrderDetailResponse {
   order: SalesOrder;
@@ -66,6 +67,7 @@ const statusTransitions: Record<string, string[]> = {
 };
 
 export default function AdminSalesOrders() {
+  const { t } = useTranslation();
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   
@@ -115,14 +117,14 @@ export default function AdminSalesOrders() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/admin/sales-orders'] });
-      toast({ title: "Stato ordine aggiornato" });
+      toast({ title: t("b2b.orderStatusUpdated") });
       setShowStatusDialog(false);
       setSelectedOrder(null);
       setNewStatus("");
       setStatusReason("");
     },
     onError: (error: any) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     }
   });
   
@@ -173,7 +175,7 @@ export default function AdminSalesOrders() {
   };
   
   const handleExport = () => {
-    toast({ title: "Export", description: "Funzionalità in arrivo" });
+    toast({ title: t("common.export"), description: t("common.comingSoon") });
   };
   
   const stats = {
@@ -248,7 +250,7 @@ export default function AdminSalesOrders() {
                 <AlertCircle className="h-5 w-5 text-yellow-600" />
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">In attesa</p>
+                <p className="text-sm text-muted-foreground">{t("b2b.status.pending")}</p>
                 <p className="text-2xl font-bold" data-testid="stat-pending-orders">{stats.pending}</p>
               </div>
             </div>
@@ -261,7 +263,7 @@ export default function AdminSalesOrders() {
                 <Package className="h-5 w-5 text-blue-600" />
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">In lavorazione</p>
+                <p className="text-sm text-muted-foreground">{t("tickets.status.inProgress")}</p>
                 <p className="text-2xl font-bold" data-testid="stat-processing-orders">{stats.processing}</p>
               </div>
             </div>
@@ -286,7 +288,7 @@ export default function AdminSalesOrders() {
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder="Cerca per numero ordine o cliente..."
+            placeholder={t("customers.searchCustomer")}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="pl-10"
@@ -297,10 +299,10 @@ export default function AdminSalesOrders() {
         <Select value={resellerFilter} onValueChange={setResellerFilter}>
           <SelectTrigger className="w-full sm:w-[200px]" data-testid="select-reseller-filter">
             <Store className="mr-2 h-4 w-4" />
-            <SelectValue placeholder="Tutti i reseller" />
+            <SelectValue placeholder={t("common.allResellers")} />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">Tutti i reseller</SelectItem>
+            <SelectItem value="all">{t("common.all")}</SelectItem>
             {resellers?.map((reseller) => (
               <SelectItem key={reseller.id} value={reseller.id || "unknown"}>
                 {reseller.fullName}
@@ -311,10 +313,10 @@ export default function AdminSalesOrders() {
         
         <Select value={statusFilter} onValueChange={setStatusFilter}>
           <SelectTrigger className="w-full sm:w-[180px]" data-testid="select-status-filter">
-            <SelectValue placeholder="Tutti gli stati" />
+            <SelectValue placeholder={t("common.allStatuses")} />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">Tutti gli stati</SelectItem>
+            <SelectItem value="all">{t("repairs.allStatuses")}</SelectItem>
             {Object.entries(statusLabels).map(([value, label]) => (
               <SelectItem key={value} value={value}>{label}</SelectItem>
             ))}
@@ -333,13 +335,13 @@ export default function AdminSalesOrders() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Ordine</TableHead>
-                  <TableHead>Data</TableHead>
-                  <TableHead>Reseller</TableHead>
-                  <TableHead>Cliente</TableHead>
-                  <TableHead>Totale</TableHead>
-                  <TableHead>Stato</TableHead>
-                  <TableHead className="text-right">Azioni</TableHead>
+                  <TableHead>{t("common.order")}</TableHead>
+                  <TableHead>{t("common.date")}</TableHead>
+                  <TableHead>{t("admin.resellers.reseller")}</TableHead>
+                  <TableHead>{t("common.customer")}</TableHead>
+                  <TableHead>{t("common.total")}</TableHead>
+                  <TableHead>{t("common.status")}</TableHead>
+                  <TableHead className="text-right">{t("common.actions")}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -405,7 +407,7 @@ export default function AdminSalesOrders() {
       <Dialog open={showDetailDialog} onOpenChange={setShowDetailDialog}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle>Dettaglio ordine</DialogTitle>
+            <DialogTitle>{t("b2b.orderDetails")}</DialogTitle>
             <DialogDescription>
               {selectedOrder?.orderNumber}
             </DialogDescription>
@@ -415,7 +417,7 @@ export default function AdminSalesOrders() {
               <div className="space-y-6 pr-4">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <Label className="text-muted-foreground">Stato</Label>
+                    <Label className="text-muted-foreground">{t("common.status")}</Label>
                     <div className="mt-1">
                       <Badge variant={statusColors[selectedOrder.status] as any}>
                         {statusLabels[selectedOrder.status]}
@@ -423,7 +425,7 @@ export default function AdminSalesOrders() {
                     </div>
                   </div>
                   <div>
-                    <Label className="text-muted-foreground">Totale</Label>
+                    <Label className="text-muted-foreground">{t("common.total")}</Label>
                     <p className="text-lg font-semibold">{formatPrice(selectedOrder.total)}</p>
                   </div>
                   <div>
@@ -447,7 +449,7 @@ export default function AdminSalesOrders() {
                 </div>
                 
                 <div>
-                  <Label className="text-muted-foreground">Prodotti</Label>
+                  <Label className="text-muted-foreground">{t("sidebar.items.products")}</Label>
                   <div className="mt-1 space-y-2">
                     {isLoadingDetail ? (
                       <div className="space-y-2">
@@ -487,19 +489,19 @@ export default function AdminSalesOrders() {
                   <Label className="text-muted-foreground">Riepilogo</Label>
                   <div className="mt-1 space-y-2">
                     <div className="flex justify-between">
-                      <span>Subtotale</span>
+                      <span>{t("common.subtotal")}</span>
                       <span>{formatPrice(selectedOrder.subtotal)}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span>Spedizione</span>
+                      <span>{t("settings.tabs.shipping")}</span>
                       <span>{formatPrice(selectedOrder.shippingCost)}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span>Tasse</span>
+                      <span>{t("common.taxes")}</span>
                       <span>{formatPrice(selectedOrder.taxAmount)}</span>
                     </div>
                     <div className="flex justify-between font-semibold border-t pt-2">
-                      <span>Totale</span>
+                      <span>{t("common.total")}</span>
                       <span>{formatPrice(selectedOrder.total)}</span>
                     </div>
                   </div>
@@ -526,7 +528,7 @@ export default function AdminSalesOrders() {
       <Dialog open={showStatusDialog} onOpenChange={setShowStatusDialog}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Aggiorna stato ordine</DialogTitle>
+            <DialogTitle>{t("b2b.updateOrderStatus")}</DialogTitle>
           </DialogHeader>
           {selectedOrder && (
             <div className="space-y-4">
@@ -538,10 +540,10 @@ export default function AdminSalesOrders() {
               </div>
               
               <div className="space-y-2">
-                <Label>Nuovo stato</Label>
+                <Label>{t("utility.newStatus")}</Label>
                 <Select value={newStatus} onValueChange={setNewStatus}>
                   <SelectTrigger>
-                    <SelectValue placeholder="Seleziona nuovo stato" />
+                    <SelectValue placeholder={t("common.selectNewStatus")} />
                   </SelectTrigger>
                   <SelectContent>
                     {statusTransitions[selectedOrder.status]?.map((status) => (
@@ -555,11 +557,11 @@ export default function AdminSalesOrders() {
               
               {(newStatus === 'cancelled' || newStatus === 'refunded') && (
                 <div className="space-y-2">
-                  <Label>Motivo</Label>
+                  <Label>{t("common.reason")}</Label>
                   <Textarea
                     value={statusReason}
                     onChange={(e) => setStatusReason(e.target.value)}
-                    placeholder="Inserisci il motivo..."
+                    placeholder={t("common.enterReason")}
                     rows={3}
                   />
                 </div>

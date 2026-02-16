@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -47,7 +48,7 @@ interface RepairLogDialogProps {
 
 const repairLogSchema = z.object({
   logType: z.enum(["status_change", "technician_note", "parts_installed", "test_result", "customer_contact"]),
-  description: z.string().min(1, "La descrizione è obbligatoria"),
+  description: z.string().min(1, t("common.descriptionRequired")),
   hoursWorked: z.coerce.number().min(0).optional(),
 });
 
@@ -67,6 +68,7 @@ export function RepairLogDialog({
   repairOrderId,
   onSuccess,
 }: RepairLogDialogProps) {
+  const { t } = useTranslation();
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -102,7 +104,7 @@ export function RepairLogDialog({
     onSuccess: () => {
       toast({
         title: "Log aggiunto",
-        description: "Il log di riparazione è stato aggiunto con successo",
+        description: t("repair.repairLogAddedSuccess"),
       });
       queryClient.invalidateQueries({ queryKey: ["/api/repair-orders", repairOrderId, "logs"] });
       form.reset();
@@ -110,7 +112,7 @@ export function RepairLogDialog({
     },
     onError: (error: Error) => {
       toast({
-        title: "Errore",
+        title: t("common.error"),
         description: error.message,
         variant: "destructive",
       });
@@ -225,11 +227,11 @@ export function RepairLogDialog({
                     name="logType"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Tipo Attività *</FormLabel>
+                        <FormLabel>{t("repair.activityType")} *</FormLabel>
                         <Select onValueChange={field.onChange} defaultValue={field.value}>
                           <FormControl>
                             <SelectTrigger data-testid="select-log-type">
-                              <SelectValue placeholder="Seleziona tipo" />
+                              <SelectValue placeholder={t("common.selectType")} />
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
@@ -249,7 +251,7 @@ export function RepairLogDialog({
                     name="hoursWorked"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Ore Lavorate</FormLabel>
+                        <FormLabel>{t("repair.hoursWorked")}</FormLabel>
                         <FormControl>
                           <Input
                             {...field}
@@ -272,11 +274,11 @@ export function RepairLogDialog({
                   name="description"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Descrizione *</FormLabel>
+                      <FormLabel>{t("common.description")} *</FormLabel>
                       <FormControl>
                         <Textarea
                           {...field}
-                          placeholder="Descrivi l'attività eseguita..."
+                          placeholder={t("repair.describeActivityPerformed")}
                           rows={3}
                           data-testid="input-description"
                         />
@@ -293,14 +295,14 @@ export function RepairLogDialog({
                     onClick={() => onOpenChange(false)}
                     data-testid="button-close"
                   >
-                    Chiudi
+                    {t("common.close")}
                   </Button>
                   <Button
                     type="submit"
                     disabled={createLogMutation.isPending}
                     data-testid="button-add-log"
                   >
-                    {createLogMutation.isPending ? "Salvataggio..." : "Aggiungi Log"}
+                    {createLogMutation.isPending ? t("common.saving") : "Aggiungi Log"}
                   </Button>
                 </div>
               </form>

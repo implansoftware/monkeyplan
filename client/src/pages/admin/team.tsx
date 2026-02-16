@@ -18,29 +18,30 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { useTranslation } from "react-i18next";
 
 const ADMIN_MODULES = [
-  { id: "users", name: "Utenti", description: "Gestione utenti del sistema" },
-  { id: "resellers", name: "Rivenditori", description: "Gestione rivenditori" },
-  { id: "repair_centers", name: "Centri Riparazione", description: "Gestione centri riparazione" },
-  { id: "repairs", name: "Lavorazioni", description: "Gestione riparazioni e ordini" },
-  { id: "products", name: "Prodotti", description: "Catalogo prodotti e ricambi" },
-  { id: "inventory", name: "Magazzino", description: "Gestione inventario" },
-  { id: "suppliers", name: "Fornitori", description: "Gestione fornitori" },
-  { id: "supplier_orders", name: "Ordini Fornitori", description: "Ordini ai fornitori" },
-  { id: "invoices", name: "Fatture", description: "Fatturazione" },
-  { id: "tickets", name: "Ticket Supporto", description: "Assistenza e supporto" },
-  { id: "utility", name: "Pratiche Utility", description: "Gestione pratiche utility" },
-  { id: "reports", name: "Report", description: "Report e analytics" },
-  { id: "settings", name: "Impostazioni", description: "Impostazioni sistema" },
-  { id: "service_catalog", name: "Listino Prezzi", description: "Listino prezzi e interventi" },
+  { id: "users", name: t("admin.permissions.repairs"), description: t("admin.permissions.repairsDesc") },
+  { id: "resellers", name: t("sidebar.items.resellers"), description: t("admin.permissions.repairsDesc") },
+  { id: "repair_centers", name: t("admin.permissions.repairCenters"), description: t("admin.permissions.repairCentersDesc") },
+  { id: "repairs", name: t("admin.permissions.repairs"), description: t("admin.permissions.repairsDesc") },
+  { id: "products", name: t("admin.permissions.products"), description: t("admin.permissions.productsDesc") },
+  { id: "inventory", name: t("admin.permissions.inventory"), description: t("admin.permissions.inventoryDesc") },
+  { id: "suppliers", name: t("admin.permissions.suppliers"), description: t("admin.permissions.suppliersDesc") },
+  { id: "supplier_orders", name: t("admin.permissions.supplierOrders"), description: t("admin.permissions.supplierOrdersDesc") },
+  { id: "invoices", name: t("admin.permissions.invoices"), description: t("admin.permissions.invoicesDesc") },
+  { id: "tickets", name: t("admin.permissions.tickets"), description: t("admin.permissions.ticketsDesc") },
+  { id: "utility", name: t("sidebar.items.utility"), description: t("admin.permissions.servicesDesc") },
+  { id: "reports", name: t("sidebar.items.reports"), description: t("admin.permissions.repairsDesc") },
+  { id: "settings", name: t("sidebar.items.settings"), description: t("admin.permissions.servicesDesc") },
+  { id: "service_catalog", name: t("sidebar.items.priceList"), description: t("admin.permissions.servicesDesc") },
 ];
 
 const PERMISSION_ACTIONS = [
-  { id: "canRead", label: "Lettura", icon: Eye },
-  { id: "canCreate", label: "Creazione", icon: FilePlus },
-  { id: "canUpdate", label: "Modifica", icon: Pencil },
-  { id: "canDelete", label: "Eliminazione", icon: Trash2 },
+  { id: "canRead", label: t("admin.permissions.canRead"), icon: Eye },
+  { id: "canCreate", label: t("admin.permissions.canCreate"), icon: FilePlus },
+  { id: "canUpdate", label: t("admin.permissions.canUpdate"), icon: Pencil },
+  { id: "canDelete", label: t("admin.permissions.canDelete"), icon: Trash2 },
 ];
 
 interface AdminStaffMember {
@@ -66,16 +67,17 @@ interface AdminStaffPermission {
 }
 
 const staffFormSchema = z.object({
-  username: z.string().min(3, "Username deve essere almeno 3 caratteri"),
-  email: z.string().email("Email non valida"),
-  fullName: z.string().min(2, "Nome completo richiesto"),
+  username: z.string().min(3, t("form.minLength", { min: 3 })),
+  email: z.string().email(t("form.invalidEmail")),
+  fullName: z.string().min(2, t("form.required")),
   phone: z.string().optional(),
-  password: z.string().min(6, "Password deve essere almeno 6 caratteri").optional(),
+  password: z.string().min(6, t("form.minLength", { min: 6 })).optional(),
 });
 
 type StaffFormValues = z.infer<typeof staffFormSchema>;
 
 export default function AdminTeam() {
+  const { t } = useTranslation();
   const [searchQuery, setSearchQuery] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [permissionsDialogOpen, setPermissionsDialogOpen] = useState(false);
@@ -110,14 +112,14 @@ export default function AdminTeam() {
       form.reset();
       setLocalPermissions({});
       toast({
-        title: "Collaboratore creato",
-        description: "Il nuovo collaboratore admin è stato aggiunto con successo.",
+        title: t("admin.teams.memberCreated"),
+        description: t("admin.teams.memberCreated"),
       });
     },
     onError: (error: any) => {
       toast({
-        title: "Errore",
-        description: error.message || "Impossibile creare il collaboratore",
+        title: t("common.error"),
+        description: error.message || t("common.operationFailed"),
         variant: "destructive",
       });
     },
@@ -136,14 +138,14 @@ export default function AdminTeam() {
       form.reset();
       setLocalPermissions({});
       toast({
-        title: "Aggiornato",
-        description: "Le modifiche sono state salvate con successo.",
+        title: t("common.updatedSuccessfully"),
+        description: t("common.savedSuccessfully"),
       });
     },
     onError: (error: any) => {
       toast({
-        title: "Errore",
-        description: error.message || "Impossibile aggiornare",
+        title: t("common.error"),
+        description: error.message || t("common.operationFailed"),
         variant: "destructive",
       });
     },
@@ -158,14 +160,14 @@ export default function AdminTeam() {
       setDeleteDialogOpen(false);
       setSelectedMember(null);
       toast({
-        title: "Eliminato",
-        description: "Il collaboratore è stato rimosso.",
+        title: t("common.deletedSuccessfully"),
+        description: t("admin.teams.memberDeleted"),
       });
     },
     onError: (error: any) => {
       toast({
-        title: "Errore",
-        description: error.message || "Impossibile eliminare",
+        title: t("common.error"),
+        description: error.message || t("common.operationFailed"),
         variant: "destructive",
       });
     },
@@ -322,13 +324,13 @@ export default function AdminTeam() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Ricerca</CardTitle>
+          <CardTitle>{t("common.search")}</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="relative">
             <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
             <Input
-              placeholder="Cerca per nome, email o username..."
+              placeholder={t("common.search")}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-8"
@@ -355,20 +357,20 @@ export default function AdminTeam() {
           ) : filteredMembers.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">
               {staffMembers.length === 0
-                ? "Nessun collaboratore admin. Aggiungi il primo!"
-                : "Nessun collaboratore trovato"}
+                ? t("admin.teams.addFirstMember")
+                : t("admin.teams.noMembersFound")}
             </div>
           ) : (
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Nome Completo</TableHead>
-                  <TableHead>Email</TableHead>
-                  <TableHead>Username</TableHead>
-                  <TableHead>Stato</TableHead>
-                  <TableHead>Permessi</TableHead>
-                  <TableHead>Data Creazione</TableHead>
-                  <TableHead>Azioni</TableHead>
+                  <TableHead>{t("auth.fullName")}</TableHead>
+                  <TableHead>{t("common.email")}</TableHead>
+                  <TableHead>{t("auth.username")}</TableHead>
+                  <TableHead>{t("common.status")}</TableHead>
+                  <TableHead>{t("common.permissions")}</TableHead>
+                  <TableHead>{t("common.creationDate")}</TableHead>
+                  <TableHead>{t("common.actions")}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -381,9 +383,9 @@ export default function AdminTeam() {
                     <TableCell className="font-mono text-sm">{member.username}</TableCell>
                     <TableCell>
                       {member.isActive ? (
-                        <Badge variant="outline">Attivo</Badge>
+                        <Badge variant="outline">{t("common.active")}</Badge>
                       ) : (
-                        <Badge variant="destructive">Disattivato</Badge>
+                        <Badge variant="destructive">{t("common.disabled")}</Badge>
                       )}
                     </TableCell>
                     <TableCell>
@@ -398,7 +400,7 @@ export default function AdminTeam() {
                           variant="ghost"
                           size="icon"
                           onClick={() => openPermissionsDialog(member)}
-                          title="Gestisci permessi"
+                          title={t("admin.teams.savePermissions")}
                           data-testid={`button-permissions-${member.id}`}
                         >
                           <Shield className="h-4 w-4" />
@@ -407,7 +409,7 @@ export default function AdminTeam() {
                           variant="ghost"
                           size="icon"
                           onClick={() => openEditDialog(member)}
-                          title="Modifica utente"
+                          title={t("admin.teams.editMember")}
                           data-testid={`button-edit-${member.id}`}
                         >
                           <Edit className="h-4 w-4" />
@@ -419,7 +421,7 @@ export default function AdminTeam() {
                             setSelectedMember(member);
                             setDeleteDialogOpen(true);
                           }}
-                          title="Elimina utente"
+                          title={t("common.delete")}
                           data-testid={`button-delete-${member.id}`}
                         >
                           <Trash2 className="h-4 w-4" />
@@ -438,12 +440,12 @@ export default function AdminTeam() {
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
           <DialogHeader>
             <DialogTitle>
-              {isEditing ? "Modifica Collaboratore" : "Nuovo Collaboratore Admin"}
+              {isEditing ? t("admin.teams.editMember") : t("admin.teams.addMember")}
             </DialogTitle>
             <DialogDescription>
               {isEditing
-                ? "Modifica i dati del collaboratore"
-                : "Inserisci i dati del nuovo collaboratore admin"}
+                ? t("admin.teams.editMember")
+                : t("admin.teams.wizardAddMember")}
             </DialogDescription>
           </DialogHeader>
 
@@ -456,9 +458,9 @@ export default function AdminTeam() {
                   name="fullName"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Nome Completo</FormLabel>
+                      <FormLabel>{t("auth.fullName")}</FormLabel>
                       <FormControl>
-                        <Input {...field} placeholder="Mario Rossi" data-testid="input-fullname" />
+                        <Input {...field} placeholder={t("auth.fullName")} data-testid="input-fullname" />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -470,7 +472,7 @@ export default function AdminTeam() {
                   name="email"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Email</FormLabel>
+                      <FormLabel>{t("common.email")}</FormLabel>
                       <FormControl>
                         <Input {...field} type="email" placeholder="mario@esempio.it" data-testid="input-email" />
                       </FormControl>
@@ -486,7 +488,7 @@ export default function AdminTeam() {
                       name="username"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Username</FormLabel>
+                          <FormLabel>{t("auth.username")}</FormLabel>
                           <FormControl>
                             <Input {...field} placeholder="mario.rossi" data-testid="input-username" />
                           </FormControl>
@@ -500,7 +502,7 @@ export default function AdminTeam() {
                       name="password"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Password</FormLabel>
+                          <FormLabel>{t("auth.password")}</FormLabel>
                           <FormControl>
                             <Input {...field} type="password" placeholder="******" data-testid="input-password" />
                           </FormControl>
@@ -600,7 +602,7 @@ export default function AdminTeam() {
                       </div>
                     </TableHead>
                   ))}
-                  <TableHead className="text-center w-[100px]">Tutti</TableHead>
+                  <TableHead className="text-center w-[100px]">{t("common.allMasc")}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -661,7 +663,7 @@ export default function AdminTeam() {
       <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Conferma Eliminazione</DialogTitle>
+            <DialogTitle>{t("common.confirmDeleteTitle")}</DialogTitle>
             <DialogDescription>
               Sei sicuro di voler eliminare {selectedMember?.fullName}? Questa azione non può essere annullata.
             </DialogDescription>

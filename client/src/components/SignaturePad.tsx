@@ -1,4 +1,5 @@
 import { useRef, useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Eraser, Check } from "lucide-react";
@@ -18,6 +19,7 @@ export function SignaturePad({
   existingSignature,
   disabled = false,
 }: SignaturePadProps) {
+  const { t } = useTranslation();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [isDrawing, setIsDrawing] = useState(false);
   const [hasSignature, setHasSignature] = useState(false);
@@ -127,7 +129,7 @@ export function SignaturePad({
           <span>{title}</span>
           {hasSignature && (
             <span className="text-xs text-green-600 flex items-center gap-1">
-              <Check className="h-3 w-3" /> Firmato
+              <Check className="h-3 w-3" /> {t("signature.signed")}
             </span>
           )}
         </CardTitle>
@@ -151,7 +153,7 @@ export function SignaturePad({
         </div>
         <div className="flex justify-between items-center">
           <p className="text-xs text-muted-foreground">
-            {signerName ? `Firmato da: ${signerName}` : "Disegna la firma sopra"}
+            {signerName ? t("signature.signedBy", { name: signerName }) : t("signature.drawAbove")}
           </p>
           {!disabled && (
             <Button
@@ -162,7 +164,7 @@ export function SignaturePad({
               data-testid={`button-clear-signature-${title.toLowerCase().replace(/\s+/g, "-")}`}
             >
               <Eraser className="h-3 w-3 mr-1" />
-              Cancella
+              {t("common.clear")}
             </Button>
           )}
         </div>

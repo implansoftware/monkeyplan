@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useParams, Link } from "wouter";
@@ -37,6 +38,7 @@ interface CustomerDetailResponse extends User {
 }
 
 export default function RepairCenterCustomerDetail() {
+  const { t } = useTranslation();
   const params = useParams<{ id: string }>();
   const customerId = params.id;
   const [editDialogOpen, setEditDialogOpen] = useState(false);
@@ -63,14 +65,14 @@ export default function RepairCenterCustomerDetail() {
       queryClient.invalidateQueries({ queryKey: ["/api/billing-data", customerId] });
       setEditDialogOpen(false);
       toast({
-        title: "Cliente aggiornato",
+        title: t("customers.customerUpdated"),
         description: "I dati del cliente sono stati salvati correttamente.",
       });
     },
     onError: (error: Error) => {
       toast({
-        title: "Errore",
-        description: error.message || "Impossibile aggiornare il cliente",
+        title: t("auth.error"),
+        description: error.message || t("customers.cannotUpdateCustomer"),
         variant: "destructive",
       });
     },
@@ -126,7 +128,7 @@ export default function RepairCenterCustomerDetail() {
               {customer.fullName}
             </h1>
             <Badge variant={customer.isActive ? "outline" : "secondary"} className="font-normal" data-testid="badge-customer-status">
-              {customer.isActive ? "Attivo" : "Inattivo"}
+              {customer.isActive ? t("common.active") : t("common.inactive")}
             </Badge>
           </div>
           <p className="text-sm text-muted-foreground mt-0.5 font-mono">@{customer.username}</p>
@@ -146,7 +148,7 @@ export default function RepairCenterCustomerDetail() {
               </div>
               <div>
                 <p className="text-2xl font-semibold tabular-nums">{repairs.length}</p>
-                <p className="text-xs text-muted-foreground">Riparazioni</p>
+                <p className="text-xs text-muted-foreground">{t("sidebar.sections.repairs")}</p>
               </div>
             </div>
           </CardContent>
@@ -176,7 +178,7 @@ export default function RepairCenterCustomerDetail() {
                 <p className="text-2xl font-semibold tabular-nums">
                   {billingData?.customerType === "company" ? "Azienda" : "Privato"}
                 </p>
-                <p className="text-xs text-muted-foreground">Tipo</p>
+                <p className="text-xs text-muted-foreground">{t("common.type")}</p>
               </div>
             </div>
           </CardContent>
@@ -186,7 +188,7 @@ export default function RepairCenterCustomerDetail() {
       <div className="grid gap-4 md:grid-cols-2">
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium">Contatti</CardTitle>
+            <CardTitle className="text-sm font-medium">{t("common.contacts")}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
             <div className="flex flex-wrap items-center gap-3">
@@ -200,7 +202,7 @@ export default function RepairCenterCustomerDetail() {
               </div>
             )}
             <div className="pt-2 border-t">
-              <p className="text-xs text-muted-foreground">Registrato il</p>
+              <p className="text-xs text-muted-foreground">{t("admin.resellerDetail.registeredOn")}</p>
               <p className="text-sm" data-testid="text-customer-created">
                 {format(new Date(customer.createdAt), "dd MMMM yyyy", { locale: it })}
               </p>
@@ -211,12 +213,12 @@ export default function RepairCenterCustomerDetail() {
         {billingData && (
           <Card>
             <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-medium">Fatturazione</CardTitle>
+              <CardTitle className="text-sm font-medium">{t("sidebar.sections.billing")}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-2 text-sm">
               {billingData.companyName && (
                 <div>
-                  <p className="text-xs text-muted-foreground">Ragione Sociale</p>
+                  <p className="text-xs text-muted-foreground">{t("auth.companyName")}</p>
                   <p data-testid="text-billing-company">{billingData.companyName}</p>
                 </div>
               )}
@@ -236,7 +238,7 @@ export default function RepairCenterCustomerDetail() {
               </div>
               {billingData.address && (
                 <div className="pt-2 border-t">
-                  <p className="text-xs text-muted-foreground">Indirizzo</p>
+                  <p className="text-xs text-muted-foreground">{t("profile.indirizzo")}</p>
                   <p data-testid="text-billing-address">
                     {billingData.address}
                     {billingData.zipCode && `, ${billingData.zipCode}`}
@@ -274,7 +276,7 @@ export default function RepairCenterCustomerDetail() {
             <Card>
               <CardContent className="py-12 text-center text-muted-foreground">
                 <Wrench className="h-8 w-8 mx-auto mb-2 opacity-20" />
-                <p>Nessuna riparazione</p>
+                <p>{t("customers.nessunaRiparazione")}</p>
               </CardContent>
             </Card>
           ) : (
@@ -283,10 +285,10 @@ export default function RepairCenterCustomerDetail() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Ticket</TableHead>
-                    <TableHead>Dispositivo</TableHead>
-                    <TableHead>Stato</TableHead>
-                    <TableHead className="hidden md:table-cell">Data</TableHead>
+                    <TableHead>{t("sidebar.items.tickets")}</TableHead>
+                    <TableHead>{t("repairs.device")}</TableHead>
+                    <TableHead>{t("common.status")}</TableHead>
+                    <TableHead className="hidden md:table-cell">{t("common.date")}</TableHead>
                     <TableHead className="w-10"></TableHead>
                   </TableRow>
                 </TableHeader>
@@ -328,7 +330,7 @@ export default function RepairCenterCustomerDetail() {
       <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Modifica Cliente</DialogTitle>
+            <DialogTitle>{t("customers.modificaCliente")}</DialogTitle>
           </DialogHeader>
           <CustomerEditForm
             customer={customer}
@@ -356,6 +358,7 @@ function CustomerEditForm({
   onCancel: () => void;
   isPending: boolean;
 }) {
+  const { t } = useTranslation();
   const [formData, setFormData] = useState({
     fullName: customer.fullName,
     email: customer.email,
@@ -405,7 +408,7 @@ function CustomerEditForm({
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="space-y-2">
-            <Label htmlFor="fullName">Nome Completo *</Label>
+            <Label htmlFor="fullName">{t("customers.nomeCompleto")}</Label>
             <Input
               id="fullName"
               value={formData.fullName}
@@ -428,7 +431,7 @@ function CustomerEditForm({
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="space-y-2">
-            <Label htmlFor="phone">Telefono</Label>
+            <Label htmlFor="phone">{t("auth.phone")}</Label>
             <Input
               id="phone"
               type="tel"
@@ -447,7 +450,7 @@ function CustomerEditForm({
               type="password"
               value={formData.password}
               onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-              placeholder="Lascia vuoto per non cambiare"
+              placeholder={t("customers.leaveEmptyNoChange")}
               data-testid="input-edit-password"
             />
           </div>
@@ -494,7 +497,7 @@ function CustomerEditForm({
         {isCompany && (
           <>
             <div className="space-y-2">
-              <Label htmlFor="companyName">Ragione Sociale</Label>
+              <Label htmlFor="companyName">{t("auth.companyName")}</Label>
               <Input
                 id="companyName"
                 value={formData.billingData.companyName}
@@ -513,7 +516,7 @@ function CustomerEditForm({
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="fiscalCode">Codice Fiscale</Label>
+                <Label htmlFor="fiscalCode">{t("profile.codiceFiscale")}</Label>
                 <Input
                   id="fiscalCode"
                   value={formData.billingData.fiscalCode}
@@ -549,7 +552,7 @@ function CustomerEditForm({
 
         {!isCompany && (
           <div className="space-y-2">
-            <Label htmlFor="fiscalCode">Codice Fiscale</Label>
+            <Label htmlFor="fiscalCode">{t("profile.codiceFiscale")}</Label>
             <Input
               id="fiscalCode"
               value={formData.billingData.fiscalCode}
@@ -576,7 +579,7 @@ function CustomerEditForm({
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div className="space-y-2">
-            <Label htmlFor="city">Città</Label>
+            <Label htmlFor="city">{t("profile.citta")}</Label>
             <Input
               id="city"
               value={formData.billingData.city}
@@ -594,7 +597,7 @@ function CustomerEditForm({
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="country">Paese</Label>
+            <Label htmlFor="country">{t("common.country")}</Label>
             <Input
               id="country"
               value={formData.billingData.country}
@@ -610,7 +613,7 @@ function CustomerEditForm({
           Annulla
         </Button>
         <Button type="submit" disabled={isPending}>
-          {isPending ? "Salvataggio..." : "Salva Modifiche"}
+          {isPending ? t("settings.saving") : t("team.saveChanges")}
         </Button>
       </DialogFooter>
     </form>

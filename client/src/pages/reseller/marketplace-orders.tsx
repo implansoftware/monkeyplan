@@ -12,6 +12,7 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
+import { useTranslation } from "react-i18next";
 
 interface MarketplaceOrderItem {
   id: string;
@@ -66,13 +67,13 @@ function formatPrice(cents: number): string {
 
 function getStatusBadge(status: string) {
   const statusConfig: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
-    pending: { label: "In attesa", variant: "secondary" },
-    approved: { label: "Approvato", variant: "default" },
-    rejected: { label: "Rifiutato", variant: "destructive" },
+    pending: { label: t("hr.pending"), variant: "secondary" },
+    approved: { label: t("repairs.status.approved"), variant: "default" },
+    rejected: { label: t("b2b.status.cancelled"), variant: "destructive" },
     processing: { label: "In elaborazione", variant: "secondary" },
-    shipped: { label: "Spedito", variant: "default" },
-    received: { label: "Ricevuto", variant: "default" },
-    cancelled: { label: "Annullato", variant: "destructive" },
+    shipped: { label: t("b2b.status.shipped"), variant: "default" },
+    received: { label: t("repairs.status.received"), variant: "default" },
+    cancelled: { label: t("repairs.status.cancelled"), variant: "destructive" },
   };
   const config = statusConfig[status] || { label: status, variant: "outline" as const };
   return <Badge variant={config.variant}>{config.label}</Badge>;
@@ -90,6 +91,7 @@ function getStatusIcon(status: string) {
 }
 
 export default function ResellerMarketplaceOrders() {
+  const { t } = useTranslation();
   const [selectedOrder, setSelectedOrder] = useState<MarketplaceOrder | null>(null);
   const { toast } = useToast();
 
@@ -108,7 +110,7 @@ export default function ResellerMarketplaceOrders() {
       setSelectedOrder(null);
     },
     onError: (error: any) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -157,12 +159,12 @@ export default function ResellerMarketplaceOrders() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Ordine</TableHead>
-                <TableHead>Venditore</TableHead>
-                <TableHead>Data</TableHead>
-                <TableHead>Totale</TableHead>
-                <TableHead>Stato</TableHead>
-                <TableHead className="text-right">Azioni</TableHead>
+                <TableHead>{t("common.order")}</TableHead>
+                <TableHead>{t("marketplace.seller")}</TableHead>
+                <TableHead>{t("common.date")}</TableHead>
+                <TableHead>{t("common.total")}</TableHead>
+                <TableHead>{t("common.status")}</TableHead>
+                <TableHead className="text-right">{t("common.actions")}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -185,9 +187,7 @@ export default function ResellerMarketplaceOrders() {
                       onClick={() => setSelectedOrder(order)}
                       data-testid={`button-view-order-${order.id}`}
                     >
-                      <Eye className="h-4 w-4 mr-1" />
-                      Dettagli
-                    </Button>
+                      <Eye className="h-4 w-4 mr-1" />{t("common.details")}</Button>
                   </TableCell>
                 </TableRow>
               ))}
@@ -245,7 +245,7 @@ export default function ResellerMarketplaceOrders() {
               <Separator />
 
               <div className="space-y-2">
-                <h4 className="font-medium">Prodotti</h4>
+                <h4 className="font-medium">{t("products.title")}</h4>
                 {selectedOrder.items.map((item) => (
                   <div key={item.id} className="flex flex-wrap items-center gap-3 p-2 bg-muted/50 rounded">
                     <div className="w-10 h-10 rounded overflow-hidden bg-muted flex-shrink-0 flex items-center justify-center">
@@ -322,9 +322,7 @@ export default function ResellerMarketplaceOrders() {
           )}
 
           <DialogFooter className="flex-wrap gap-2">
-            <Button variant="outline" onClick={() => setSelectedOrder(null)}>
-              Chiudi
-            </Button>
+            <Button variant="outline" onClick={() => setSelectedOrder(null)}>{t("common.close")}</Button>
             {selectedOrder && ['approved', 'shipped', 'received'].includes(selectedOrder.status) && (
               <Button
                 variant="outline"
@@ -342,7 +340,7 @@ export default function ResellerMarketplaceOrders() {
                 data-testid="button-confirm-receipt"
               >
                 <CheckCircle2 className="h-4 w-4 mr-2" />
-                {confirmReceiptMutation.isPending ? "Conferma..." : "Conferma Ricezione"}
+                {confirmReceiptMutation.isPending ? "Conferma..." : t("b2b.confirmReceipt")}
               </Button>
             )}
           </DialogFooter>

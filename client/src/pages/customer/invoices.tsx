@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -14,6 +15,7 @@ import type { Invoice } from "@shared/schema";
 import type { DateRange } from "react-day-picker";
 
 export default function CustomerInvoices() {
+  const { t } = useTranslation();
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [dateRange, setDateRange] = useState<DateRange | undefined>();
 
@@ -76,19 +78,19 @@ export default function CustomerInvoices() {
         <CardHeader>
           <div className="flex flex-col md:flex-row gap-4">
             <div className="flex-1">
-              <CardTitle>Fatture</CardTitle>
+              <CardTitle>{t("sidebar.items.invoices")}</CardTitle>
             </div>
             <div className="flex gap-2">
               <Select value={statusFilter} onValueChange={setStatusFilter}>
                 <SelectTrigger className="w-full sm:w-[180px]" data-testid="select-status-filter">
                   <Filter className="h-4 w-4 mr-2" />
-                  <SelectValue placeholder="Stato" />
+                  <SelectValue placeholder={t("common.status")} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">Tutti gli Stati</SelectItem>
-                  <SelectItem value="pending">In Sospeso</SelectItem>
+                  <SelectItem value="all">{t("customerPages.tuttiGliStati")}</SelectItem>
+                  <SelectItem value="pending">{t("common.pendingPayments")}</SelectItem>
                   <SelectItem value="paid">Pagato</SelectItem>
-                  <SelectItem value="overdue">Scaduto</SelectItem>
+                  <SelectItem value="overdue">{t("standalone.expired")}</SelectItem>
                 </SelectContent>
               </Select>
 
@@ -126,12 +128,12 @@ export default function CustomerInvoices() {
         <CardContent>
           {isLoading ? (
             <div className="flex items-center justify-center py-12">
-              <div className="text-muted-foreground">Caricamento...</div>
+              <div className="text-muted-foreground">{t("profile.uploadingLogo")}</div>
             </div>
           ) : filteredInvoices.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-12 text-center">
               <FileText className="h-12 w-12 text-muted-foreground mb-4" />
-              <h3 className="text-lg font-semibold mb-2">Nessuna fattura trovata</h3>
+              <h3 className="text-lg font-semibold mb-2">{t("invoices.nessunaFatturaTrovata")}</h3>
               <p className="text-muted-foreground max-w-md">
                 {invoices.length === 0 
                   ? "Non hai ancora ricevuto fatture. Le fatture verranno visualizzate qui una volta emesse."
@@ -148,10 +150,10 @@ export default function CustomerInvoices() {
                   <TableHead className="text-right">Imponibile</TableHead>
                   <TableHead className="text-right">IVA%</TableHead>
                   <TableHead className="text-right">IVA</TableHead>
-                  <TableHead className="text-right">Totale</TableHead>
-                  <TableHead>Stato</TableHead>
-                  <TableHead>Data Pagamento</TableHead>
-                  <TableHead className="text-center">Azioni</TableHead>
+                  <TableHead className="text-right">{t("common.total")}</TableHead>
+                  <TableHead>{t("common.status")}</TableHead>
+                  <TableHead>{t("utility.paymentDate")}</TableHead>
+                  <TableHead className="text-center">{t("common.actions")}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>

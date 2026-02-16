@@ -1,4 +1,5 @@
 import { Badge } from "@/components/ui/badge";
+import { useTranslation } from "react-i18next";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Clock, AlertCircle, AlertTriangle } from "lucide-react";
 import { differenceInMinutes } from "date-fns";
@@ -91,6 +92,7 @@ export function computeSLASeverity(
 }
 
 export function SLABadge({ repairId, status, fallbackDate, slaConfig = defaultSLAConfig, showLabel = false }: SLABadgeProps) {
+  const { t } = useTranslation();
   const { data: slaState } = useQuery<SLAStateResponse>({
     queryKey: ["/api/repairs", repairId, "sla-state"],
     enabled: !!repairId,
@@ -105,18 +107,18 @@ export function SLABadge({ repairId, status, fallbackDate, slaConfig = defaultSL
   }
 
   const phaseLabels: Record<string, string> = {
-    diagnosis: "Diagnosi",
-    quote: "Preventivo",
-    parts: "Ricambi",
-    test: "Test",
-    delivery: "Consegna",
+    diagnosis: t("sla.diagnosis"),
+    quote: t("sla.quote"),
+    parts: t("sla.parts"),
+    test: t("sla.test"),
+    delivery: t("sla.delivery"),
   };
 
   const formatMinutes = (mins: number) => {
     if (mins >= 1440) {
       const days = Math.floor(mins / 1440);
       const hours = Math.floor((mins % 1440) / 60);
-      return days === 1 ? `${days} giorno ${hours}h` : `${days} giorni ${hours}h`;
+      return days === 1 ? `${days} ${t("time.day")} ${hours}h` : `${days} ${t("time.days")} ${hours}h`;
     }
     if (mins >= 60) {
       const hours = Math.floor(mins / 60);
@@ -127,8 +129,8 @@ export function SLABadge({ repairId, status, fallbackDate, slaConfig = defaultSL
   };
 
   const tooltipContent = minutesInState !== null && phase
-    ? `${phaseLabels[phase]}: ${formatMinutes(minutesInState)} in questo stato`
-    : "Tempo in stato corrente";
+    ? `${phaseLabels[phase]}: ${formatMinutes(minutesInState)} ${t("sla.inThisState")}`
+    : t("sla.currentStateTime");
 
   if (severity === "in_time") {
     return (
@@ -140,7 +142,7 @@ export function SLABadge({ repairId, status, fallbackDate, slaConfig = defaultSL
             data-testid="badge-sla-in-time"
           >
             <Clock className="h-3 w-3" />
-            {showLabel && <span>In Tempo</span>}
+            {showLabel && <span>{t("sla.inTime")}</span>}
           </Badge>
         </TooltipTrigger>
         <TooltipContent>
@@ -160,7 +162,7 @@ export function SLABadge({ repairId, status, fallbackDate, slaConfig = defaultSL
             data-testid="badge-sla-late"
           >
             <AlertTriangle className="h-3 w-3" />
-            {showLabel && <span>In Ritardo</span>}
+            {showLabel && <span>{t("sla.late")}</span>}
           </Badge>
         </TooltipTrigger>
         <TooltipContent>
@@ -180,7 +182,7 @@ export function SLABadge({ repairId, status, fallbackDate, slaConfig = defaultSL
             data-testid="badge-sla-urgent"
           >
             <AlertCircle className="h-3 w-3" />
-            {showLabel && <span>Urgente</span>}
+            {showLabel && <span>{t("sla.urgent")}</span>}
           </Badge>
         </TooltipTrigger>
         <TooltipContent>

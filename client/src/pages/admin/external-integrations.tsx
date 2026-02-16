@@ -19,6 +19,7 @@ import {
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useTranslation } from "react-i18next";
 
 type AuthMethod = 'bearer_token' | 'api_key_header' | 'api_key_query' | 'basic_auth' | 'oauth2' | 'none';
 
@@ -32,6 +33,7 @@ const authMethodLabels: Record<AuthMethod, string> = {
 };
 
 export default function AdminExternalIntegrations() {
+  const { t } = useTranslation();
   const [searchQuery, setSearchQuery] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingIntegration, setEditingIntegration] = useState<ExternalIntegration | null>(null);
@@ -51,10 +53,10 @@ export default function AdminExternalIntegrations() {
       queryClient.invalidateQueries({ queryKey: ["/api/external-integrations"] });
       setDialogOpen(false);
       setEditingIntegration(null);
-      toast({ title: "Integrazione creata con successo" });
+      toast({ title: t("settings.integrationCreated") });
     },
     onError: (error: Error) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -67,10 +69,10 @@ export default function AdminExternalIntegrations() {
       queryClient.invalidateQueries({ queryKey: ["/api/external-integrations"] });
       setDialogOpen(false);
       setEditingIntegration(null);
-      toast({ title: "Integrazione aggiornata con successo" });
+      toast({ title: t("settings.integrationUpdated") });
     },
     onError: (error: Error) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -80,10 +82,10 @@ export default function AdminExternalIntegrations() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/external-integrations"] });
-      toast({ title: "Integrazione eliminata" });
+      toast({ title: t("settings.integrationDeleted") });
     },
     onError: (error: Error) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -173,14 +175,14 @@ export default function AdminExternalIntegrations() {
             <form onSubmit={handleSubmit}>
               <Tabs value={activeTab} onValueChange={setActiveTab}>
                 <TabsList className="grid w-full grid-cols-2">
-                  <TabsTrigger value="general">Generale</TabsTrigger>
+                  <TabsTrigger value="general">{t("common.general")}</TabsTrigger>
                   <TabsTrigger value="api">API</TabsTrigger>
                 </TabsList>
 
                 <TabsContent value="general" className="space-y-4 mt-4" forceMount hidden={activeTab !== "general"}>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label htmlFor="code">Codice *</Label>
+                      <Label htmlFor="code">{t("common.code")} *</Label>
                       <Input 
                         id="code" 
                         name="code" 
@@ -194,7 +196,7 @@ export default function AdminExternalIntegrations() {
                       </p>
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="name">Nome *</Label>
+                      <Label htmlFor="name">{t("common.name")} *</Label>
                       <Input 
                         id="name" 
                         name="name" 
@@ -207,11 +209,11 @@ export default function AdminExternalIntegrations() {
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="description">Descrizione</Label>
+                    <Label htmlFor="description">{t("common.description")}</Label>
                     <Textarea 
                       id="description" 
                       name="description" 
-                      placeholder="Descrizione dell'integrazione..."
+                      placeholder={t("settings.integrationDescription")}
                       defaultValue={editingIntegration?.description || ""}
                       data-testid="input-integration-description" 
                     />
@@ -230,7 +232,7 @@ export default function AdminExternalIntegrations() {
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="displayOrder">Ordine Visualizzazione</Label>
+                      <Label htmlFor="displayOrder">{t("settings.displayOrder")}</Label>
                       <Input 
                         id="displayOrder" 
                         name="displayOrder" 
@@ -255,7 +257,7 @@ export default function AdminExternalIntegrations() {
                           defaultChecked={editingIntegration?.supportsCatalog ?? false}
                           data-testid="switch-supports-catalog"
                         />
-                        <Label htmlFor="supportsCatalog">Catalogo</Label>
+                        <Label htmlFor="supportsCatalog">{t("settings.catalog")}</Label>
                       </div>
                       <div className="flex flex-wrap items-center gap-2">
                         <Switch
@@ -264,7 +266,7 @@ export default function AdminExternalIntegrations() {
                           defaultChecked={editingIntegration?.supportsOrdering ?? false}
                           data-testid="switch-supports-ordering"
                         />
-                        <Label htmlFor="supportsOrdering">Ordini</Label>
+                        <Label htmlFor="supportsOrdering">{t("common.orders")}</Label>
                       </div>
                       <div className="flex flex-wrap items-center gap-2">
                         <Switch
@@ -273,7 +275,7 @@ export default function AdminExternalIntegrations() {
                           defaultChecked={editingIntegration?.supportsCart ?? false}
                           data-testid="switch-supports-cart"
                         />
-                        <Label htmlFor="supportsCart">Carrello</Label>
+                        <Label htmlFor="supportsCart">{t("settings.cart")}</Label>
                       </div>
                       <div className="flex flex-wrap items-center gap-2">
                         <Switch
@@ -282,7 +284,7 @@ export default function AdminExternalIntegrations() {
                           defaultChecked={editingIntegration?.supportsInvoicing ?? false}
                           data-testid="switch-supports-invoicing"
                         />
-                        <Label htmlFor="supportsInvoicing">Fatture</Label>
+                        <Label htmlFor="supportsInvoicing">{t("sidebar.items.invoices")}</Label>
                       </div>
                       <div className="flex flex-wrap items-center gap-2">
                         <Switch
@@ -291,7 +293,7 @@ export default function AdminExternalIntegrations() {
                           defaultChecked={editingIntegration?.supportsReconciliation ?? false}
                           data-testid="switch-supports-reconciliation"
                         />
-                        <Label htmlFor="supportsReconciliation">Riconciliazione</Label>
+                        <Label htmlFor="supportsReconciliation">{t("settings.reconciliation")}</Label>
                       </div>
                       <div className="flex flex-wrap items-center gap-2">
                         <Switch
@@ -300,7 +302,7 @@ export default function AdminExternalIntegrations() {
                           defaultChecked={editingIntegration?.supportsAccounts ?? false}
                           data-testid="switch-supports-accounts"
                         />
-                        <Label htmlFor="supportsAccounts">Conti</Label>
+                        <Label htmlFor="supportsAccounts">{t("settings.accounts")}</Label>
                       </div>
                     </div>
                     <div className="flex flex-wrap items-center gap-2 pt-2 border-t">
@@ -310,7 +312,7 @@ export default function AdminExternalIntegrations() {
                         defaultChecked={editingIntegration?.isActive ?? false}
                         data-testid="switch-is-active"
                       />
-                      <Label htmlFor="isActive">Integrazione Attiva</Label>
+                      <Label htmlFor="isActive">{t("settings.activeIntegration")}</Label>
                     </div>
                   </div>
                 </TabsContent>
@@ -329,13 +331,13 @@ export default function AdminExternalIntegrations() {
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="defaultAuthMethod">Metodo Autenticazione</Label>
+                    <Label htmlFor="defaultAuthMethod">{t("settings.authMethod")}</Label>
                     <Select 
                       name="defaultAuthMethod" 
                       defaultValue={editingIntegration?.defaultAuthMethod || "bearer_token"}
                     >
                       <SelectTrigger data-testid="select-auth-method">
-                        <SelectValue placeholder="Seleziona metodo..." />
+                        <SelectValue placeholder={t("settings.selectMethod")} />
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="bearer_token">Bearer Token</SelectItem>
@@ -343,7 +345,7 @@ export default function AdminExternalIntegrations() {
                         <SelectItem value="api_key_query">API Key (Query String)</SelectItem>
                         <SelectItem value="basic_auth">Basic Auth</SelectItem>
                         <SelectItem value="oauth2">OAuth 2.0</SelectItem>
-                        <SelectItem value="none">Nessuna</SelectItem>
+                        <SelectItem value="none">{t("common.none")}</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -376,7 +378,7 @@ export default function AdminExternalIntegrations() {
                   data-testid="button-submit-integration"
                 >
                   {(createMutation.isPending || updateMutation.isPending) 
-                    ? "Salvataggio..." 
+                    ? t("settings.savingRate") 
                     : editingIntegration ? "Aggiorna" : "Crea Integrazione"}
                 </Button>
               </div>
@@ -391,7 +393,7 @@ export default function AdminExternalIntegrations() {
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
-              placeholder="Cerca per nome o codice..."
+              placeholder={t("common.search")}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-9"
@@ -409,18 +411,18 @@ export default function AdminExternalIntegrations() {
           ) : filteredIntegrations.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">
               <Globe className="h-12 w-12 mx-auto mb-4 opacity-50" />
-              <p>Nessuna integrazione trovata</p>
+              <p>{t("settings.noIntegrations")}</p>
             </div>
           ) : (
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Integrazione</TableHead>
-                  <TableHead>Codice</TableHead>
-                  <TableHead>Autenticazione</TableHead>
-                  <TableHead>Funzionalità</TableHead>
-                  <TableHead>Stato</TableHead>
-                  <TableHead className="text-right">Azioni</TableHead>
+                  <TableHead>{t("settings.integration")}</TableHead>
+                  <TableHead>{t("common.code")}</TableHead>
+                  <TableHead>{t("settings.authentication")}</TableHead>
+                  <TableHead>{t("settings.features")}</TableHead>
+                  <TableHead>{t("common.status")}</TableHead>
+                  <TableHead className="text-right">{t("common.actions")}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -470,7 +472,7 @@ export default function AdminExternalIntegrations() {
                           <Badge variant="outline" className="text-xs">Carrello</Badge>
                         )}
                         {integration.supportsInvoicing && (
-                          <Badge variant="outline" className="text-xs">Fatture</Badge>
+                          <Badge variant="outline" className="text-xs">{t("sidebar.items.invoices")}</Badge>
                         )}
                         {integration.supportsReconciliation && (
                           <Badge variant="outline" className="text-xs">Riconciliazione</Badge>

@@ -11,8 +11,10 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useLocation } from "wouter";
 import { ArrowLeft } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 export default function ResellerNewRepair() {
+  const { t } = useTranslation();
   const { toast } = useToast();
   const [, setLocation] = useLocation();
 
@@ -27,7 +29,7 @@ export default function ResellerNewRepair() {
       setLocation("/reseller/orders");
     },
     onError: (error: Error) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -70,7 +72,7 @@ export default function ResellerNewRepair() {
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="deviceType">Tipo Dispositivo</Label>
+                <Label htmlFor="deviceType">{t("repairs.deviceType")}</Label>
                 <Select name="deviceType" defaultValue="smartphone">
                   <SelectTrigger id="deviceType" data-testid="select-device-type">
                     <SelectValue />
@@ -84,7 +86,7 @@ export default function ResellerNewRepair() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="deviceModel">Modello</Label>
+                <Label htmlFor="deviceModel">{t("products.model")}</Label>
                 <Input
                   id="deviceModel"
                   name="deviceModel"
@@ -96,7 +98,7 @@ export default function ResellerNewRepair() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="issueDescription">Descrizione Problema</Label>
+              <Label htmlFor="issueDescription">{t("repairs.problemDescription")}</Label>
               <Textarea
                 id="issueDescription"
                 name="issueDescription"
@@ -124,15 +126,13 @@ export default function ResellerNewRepair() {
                 variant="outline"
                 onClick={() => setLocation("/reseller")}
                 data-testid="button-cancel"
-              >
-                Annulla
-              </Button>
+              >{t("common.cancel")}</Button>
               <Button
                 type="submit"
                 disabled={createRepairMutation.isPending}
                 data-testid="button-submit-repair"
               >
-                {createRepairMutation.isPending ? "Creazione..." : "Crea Richiesta"}
+                {createRepairMutation.isPending ? t("pages.creating") : "Crea Richiesta"}
               </Button>
             </div>
           </form>

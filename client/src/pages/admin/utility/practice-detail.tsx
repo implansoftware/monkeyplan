@@ -29,6 +29,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Link } from "wouter";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
+import { useTranslation } from "react-i18next";
 
 type PracticeStatus = "bozza" | "inviata" | "in_lavorazione" | "attesa_documenti" | "completata" | "rifiutata" | "annullata";
 type TaskStatus = "da_fare" | "in_corso" | "completato" | "annullato";
@@ -131,6 +132,7 @@ interface EnrichedPractice extends UtilityPractice {
 }
 
 export default function AdminUtilityPracticeDetail() {
+  const { t } = useTranslation();
   const params = useParams<{ id: string }>();
   const [, setLocation] = useLocation();
   const { toast } = useToast();
@@ -213,7 +215,7 @@ export default function AdminUtilityPracticeDetail() {
       setTaskDialogOpen(false);
       setNewTaskTitle("");
       setNewTaskDescription("");
-      toast({ title: "Attività creata" });
+      toast({ title: t("utility.activityCreated") });
     },
   });
 
@@ -225,7 +227,7 @@ export default function AdminUtilityPracticeDetail() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/utility/practices", params.id, "tasks"] });
       queryClient.invalidateQueries({ queryKey: ["/api/utility/practices", params.id, "timeline"] });
-      toast({ title: "Attività aggiornata" });
+      toast({ title: t("utility.activityUpdated") });
     },
   });
 
@@ -235,7 +237,7 @@ export default function AdminUtilityPracticeDetail() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/utility/practices", params.id, "tasks"] });
-      toast({ title: "Attività eliminata" });
+      toast({ title: t("utility.activityDeleted") });
     },
   });
 
@@ -250,7 +252,7 @@ export default function AdminUtilityPracticeDetail() {
       setNoteDialogOpen(false);
       setNewNoteBody("");
       setNewNoteVisibility("internal");
-      toast({ title: "Nota aggiunta" });
+      toast({ title: t("utility.noteAdded") });
     },
   });
 
@@ -260,7 +262,7 @@ export default function AdminUtilityPracticeDetail() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/utility/practices", params.id, "notes"] });
-      toast({ title: "Nota eliminata" });
+      toast({ title: t("utility.noteDeleted") });
     },
   });
 
@@ -291,7 +293,7 @@ export default function AdminUtilityPracticeDetail() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/utility/practices", params.id, "documents"] });
       queryClient.invalidateQueries({ queryKey: ["/api/utility/practices", params.id, "timeline"] });
-      toast({ title: "Documento eliminato" });
+      toast({ title: t("utility.documentDeleted") });
     },
   });
 
@@ -318,10 +320,10 @@ export default function AdminUtilityPracticeDetail() {
       
       queryClient.invalidateQueries({ queryKey: ["/api/utility/practices", params.id, "documents"] });
       queryClient.invalidateQueries({ queryKey: ["/api/utility/practices", params.id, "timeline"] });
-      toast({ title: "Documento caricato con successo" });
+      toast({ title: t("utility.documentUploaded") });
     } catch (error: any) {
       toast({ 
-        title: "Errore", 
+        title: t("common.error"), 
         description: error.message || "Impossibile caricare il documento",
         variant: "destructive" 
       });
@@ -349,7 +351,7 @@ export default function AdminUtilityPracticeDetail() {
           <AlertCircle className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
           <h2 className="text-xl font-semibold mb-2">Pratica non trovata</h2>
           <Link href="/admin/utility/practices">
-            <Button variant="outline">Torna alle pratiche</Button>
+            <Button variant="outline">{t("utility.backToPractices")}</Button>
           </Link>
         </div>
       </div>
@@ -465,7 +467,7 @@ export default function AdminUtilityPracticeDetail() {
                     <span className="font-medium" data-testid="text-repair-center-name">
                       {repairCenter.name}
                     </span>
-                    <Badge variant="outline" className="text-xs">Centro Riparazione</Badge>
+                    <Badge variant="outline" className="text-xs">{t("roles.repairCenter")}</Badge>
                   </div>
                 ) : (
                   <div className="flex flex-wrap items-center gap-2">
@@ -489,14 +491,14 @@ export default function AdminUtilityPracticeDetail() {
               <CardContent className="space-y-3">
                 {/* Tipo Badge */}
                 <div>
-                  <p className="text-sm text-muted-foreground">Tipo</p>
+                  <p className="text-sm text-muted-foreground">{t("common.type")}</p>
                   <Badge variant="outline" className="mt-1">
                     {practice.itemType === "product" ? (
                       <><Package className="h-3 w-3 mr-1" />Prodotto</>
                     ) : practice.itemType === "service_with_products" ? (
                       <><FileText className="h-3 w-3 mr-1" /><Package className="h-3 w-3 mr-1" />Servizio + Prodotti</>
                     ) : (
-                      <>Servizio Utility</>
+                      <>{t("utility.utilityService")}</>
                     )}
                   </Badge>
                 </div>
@@ -535,7 +537,7 @@ export default function AdminUtilityPracticeDetail() {
                                 <th className="text-left p-2 font-medium">Prodotto</th>
                                 <th className="text-right p-2 font-medium">Qtà</th>
                                 <th className="text-right p-2 font-medium">Prezzo Unit.</th>
-                                <th className="text-right p-2 font-medium">Totale</th>
+                                <th className="text-right p-2 font-medium">{t("common.total")}</th>
                               </tr>
                             </thead>
                             <tbody>
@@ -625,7 +627,7 @@ export default function AdminUtilityPracticeDetail() {
                   <p className="font-medium">{practice.supplierReference || "-"}</p>
                 </div>
                 <div>
-                  <p className="text-sm text-muted-foreground">Priorità</p>
+                  <p className="text-sm text-muted-foreground">{t("common.priority")}</p>
                   <Badge className={priorityColors[(practice.priority as Priority) || "normale"]}>
                     {priorityLabels[(practice.priority as Priority) || "normale"]}
                   </Badge>
@@ -949,7 +951,7 @@ export default function AdminUtilityPracticeDetail() {
       <Dialog open={taskDialogOpen} onOpenChange={setTaskDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Nuova Attività</DialogTitle>
+            <DialogTitle>{t("utility.newActivity")}</DialogTitle>
             <DialogDescription>Aggiungi un'attività da completare per questa pratica.</DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
@@ -959,23 +961,23 @@ export default function AdminUtilityPracticeDetail() {
                 id="task-title"
                 value={newTaskTitle}
                 onChange={(e) => setNewTaskTitle(e.target.value)}
-                placeholder="Es: Richiedere documento identità"
+                placeholder={t("utility.activityPlaceholder")}
                 data-testid="input-task-title"
               />
             </div>
             <div>
-              <Label htmlFor="task-description">Descrizione</Label>
+              <Label htmlFor="task-description">{t("common.description")}</Label>
               <Textarea
                 id="task-description"
                 value={newTaskDescription}
                 onChange={(e) => setNewTaskDescription(e.target.value)}
-                placeholder="Descrizione opzionale..."
+                placeholder={t("utility.optionalDescription")}
                 data-testid="input-task-description"
               />
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setTaskDialogOpen(false)}>Annulla</Button>
+            <Button variant="outline" onClick={() => setTaskDialogOpen(false)}>{t("common.cancel")}</Button>
             <Button 
               onClick={() => createTaskMutation.mutate({ title: newTaskTitle, description: newTaskDescription || undefined })}
               disabled={!newTaskTitle.trim() || createTaskMutation.isPending}
@@ -990,12 +992,12 @@ export default function AdminUtilityPracticeDetail() {
       <Dialog open={noteDialogOpen} onOpenChange={setNoteDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Nuova Nota</DialogTitle>
+            <DialogTitle>{t("utility.newNote")}</DialogTitle>
             <DialogDescription>Aggiungi una nota o comunicazione per questa pratica.</DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div>
-              <Label htmlFor="note-visibility">Visibilità</Label>
+              <Label htmlFor="note-visibility">{t("utility.visibility")}</Label>
               <Select value={newNoteVisibility} onValueChange={(v) => setNewNoteVisibility(v as "internal" | "customer")}>
                 <SelectTrigger data-testid="select-note-visibility">
                   <SelectValue />
@@ -1012,14 +1014,14 @@ export default function AdminUtilityPracticeDetail() {
                 id="note-body"
                 value={newNoteBody}
                 onChange={(e) => setNewNoteBody(e.target.value)}
-                placeholder="Scrivi la nota..."
+                placeholder={t("utility.writeNote")}
                 rows={4}
                 data-testid="input-note-body"
               />
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setNoteDialogOpen(false)}>Annulla</Button>
+            <Button variant="outline" onClick={() => setNoteDialogOpen(false)}>{t("common.cancel")}</Button>
             <Button 
               onClick={() => createNoteMutation.mutate({ body: newNoteBody, visibility: newNoteVisibility })}
               disabled={!newNoteBody.trim() || createNoteMutation.isPending}
@@ -1034,12 +1036,12 @@ export default function AdminUtilityPracticeDetail() {
       <Dialog open={statusDialogOpen} onOpenChange={setStatusDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Cambia Stato Pratica</DialogTitle>
+            <DialogTitle>{t("utility.changeStatus")}</DialogTitle>
             <DialogDescription>Seleziona il nuovo stato per la pratica.</DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div>
-              <Label>Nuovo Stato</Label>
+              <Label>{t("utility.newStatus")}</Label>
               <Select value={newStatus} onValueChange={(v) => setNewStatus(v as PracticeStatus)}>
                 <SelectTrigger data-testid="select-new-status">
                   <SelectValue />
@@ -1057,13 +1059,13 @@ export default function AdminUtilityPracticeDetail() {
                 id="status-reason"
                 value={statusReason}
                 onChange={(e) => setStatusReason(e.target.value)}
-                placeholder="Motivo del cambio stato..."
+                placeholder={t("utility.statusChangeReason")}
                 data-testid="input-status-reason"
               />
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setStatusDialogOpen(false)}>Annulla</Button>
+            <Button variant="outline" onClick={() => setStatusDialogOpen(false)}>{t("common.cancel")}</Button>
             <Button 
               onClick={() => updateStatusMutation.mutate({ status: newStatus, reason: statusReason || undefined })}
               disabled={updateStatusMutation.isPending}

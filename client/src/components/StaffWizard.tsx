@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -49,30 +50,30 @@ interface StaffWizardProps {
 const MODULES = [
   { id: "repairs", name: "Lavorazioni", description: "Gestione riparazioni e ordini" },
   { id: "customers", name: "Clienti", description: "Anagrafica clienti" },
-  { id: "products", name: "Prodotti", description: "Catalogo prodotti e ricambi" },
-  { id: "inventory", name: "Magazzino", description: "Gestione inventario" },
-  { id: "repair_centers", name: "Centri Riparazione", description: "Gestione centri" },
-  { id: "services", name: "Servizi", description: "Catalogo servizi" },
-  { id: "suppliers", name: "Fornitori", description: "Gestione fornitori" },
-  { id: "supplier_orders", name: "Ordini Fornitori", description: "Ordini ai fornitori" },
+  { id: "products", name: t("staff.products"), description: t("staff.productsDesc") },
+  { id: "inventory", name: t("common.warehouse"), description: "Gestione inventario" },
+  { id: "repair_centers", name: t("customer.repairCenters"), description: "Gestione centri" },
+  { id: "services", name: t("staff.services"), description: t("staff.servicesDesc") },
+  { id: "suppliers", name: t("staff.suppliers"), description: t("staff.suppliersDesc") },
+  { id: "supplier_orders", name: t("staff.supplierOrders"), description: t("staff.supplierOrdersDesc") },
   { id: "appointments", name: "Appuntamenti", description: "Gestione appuntamenti" },
-  { id: "invoices", name: "Fatture", description: "Fatturazione" },
+  { id: "invoices", name: t("staff.invoices"), description: t("staff.invoicesDesc") },
   { id: "tickets", name: "Ticket Supporto", description: "Assistenza clienti" },
 ];
 
 const PERMISSION_ACTIONS = [
   { id: "canRead", label: "Lettura", icon: Eye },
-  { id: "canCreate", label: "Creazione", icon: FilePlus },
-  { id: "canUpdate", label: "Modifica", icon: Pencil },
-  { id: "canDelete", label: "Eliminazione", icon: Trash2 },
+  { id: "canCreate", label: t("staff.creation"), icon: FilePlus },
+  { id: "canUpdate", label: t("common.edit"), icon: Pencil },
+  { id: "canDelete", label: t("staff.deletion"), icon: Trash2 },
 ];
 
 const staffFormSchema = z.object({
   username: z.string().min(3, "Username deve essere almeno 3 caratteri"),
-  email: z.string().email("Email non valida"),
-  fullName: z.string().min(2, "Nome completo richiesto"),
+  email: z.string().email(t("customer.invalidEmail")),
+  fullName: z.string().min(2, t("customer.fullNameRequired")),
   phone: z.string().optional(),
-  password: z.string().min(6, "Password deve essere almeno 6 caratteri"),
+  password: z.string().min(6, t("staff.passwordMinLength")),
 });
 
 type StaffFormValues = z.infer<typeof staffFormSchema>;
@@ -80,8 +81,8 @@ type StaffFormValues = z.infer<typeof staffFormSchema>;
 const STEPS = [
   { id: 1, name: "Dati Utente", icon: User },
   { id: 2, name: "Centri", icon: Store },
-  { id: 3, name: "Permessi", icon: Shield },
-  { id: 4, name: "Conferma", icon: CheckCircle2 },
+  { id: 3, name: t("common.permissions"), icon: Shield },
+  { id: 4, name: t("common.confirm"), icon: CheckCircle2 },
 ];
 
 export function StaffWizard({ 
@@ -92,6 +93,7 @@ export function StaffWizard({
   repairCenters,
   onSuccess 
 }: StaffWizardProps) {
+  const { t } = useTranslation();
   const [currentStep, setCurrentStep] = useState(1);
   const [selectedCenters, setSelectedCenters] = useState<string[]>([]);
   const [permissions, setPermissions] = useState<Record<string, Record<string, boolean>>>({});
@@ -116,15 +118,15 @@ export function StaffWizard({
       queryClient.invalidateQueries({ queryKey: ["/api/admin/resellers", resellerId, "team"] });
       toast({
         title: "Collaboratore creato",
-        description: "Il nuovo membro del team è stato aggiunto con successo.",
+        description: t("staff.teamMemberAddedSuccess"),
       });
       handleClose();
       onSuccess?.();
     },
     onError: (error: any) => {
       toast({
-        title: "Errore",
-        description: error.message || "Impossibile creare il collaboratore",
+        title: t("common.error"),
+        description: error.message || t("staff.cannotCreateCollaborator"),
         variant: "destructive",
       });
     },
@@ -274,7 +276,7 @@ export function StaffWizard({
             name="fullName"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Nome Completo *</FormLabel>
+                <FormLabel>{t("customer.fullName")} *</FormLabel>
                 <FormControl>
                   <Input {...field} placeholder="Mario Rossi" data-testid="wizard-input-fullname" />
                 </FormControl>
@@ -288,7 +290,7 @@ export function StaffWizard({
             name="email"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Email *</FormLabel>
+                <FormLabel>{t("common.email")} *</FormLabel>
                 <FormControl>
                   <Input {...field} type="email" placeholder="mario@esempio.it" data-testid="wizard-input-email" />
                 </FormControl>
@@ -316,7 +318,7 @@ export function StaffWizard({
             name="password"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Password *</FormLabel>
+                <FormLabel>{t("common.password")} *</FormLabel>
                 <FormControl>
                   <Input {...field} type="password" placeholder="••••••" data-testid="wizard-input-password" />
                 </FormControl>
@@ -330,7 +332,7 @@ export function StaffWizard({
             name="phone"
             render={({ field }) => (
               <FormItem className="col-span-2">
-                <FormLabel>Telefono (opzionale)</FormLabel>
+                <FormLabel>{t("common.phoneOptional")}</FormLabel>
                 <FormControl>
                   <Input {...field} placeholder="+39 333 1234567" data-testid="wizard-input-phone" />
                 </FormControl>
@@ -354,7 +356,7 @@ export function StaffWizard({
         <Card>
           <CardContent className="py-8 text-center text-muted-foreground">
             <Store className="w-12 h-12 mx-auto mb-3 opacity-50" />
-            <p>Nessun centro di riparazione disponibile</p>
+            <p>{t("repair.noRepairCenterAvailable")}</p>
             <p className="text-sm">Puoi procedere senza assegnare centri</p>
           </CardContent>
         </Card>
@@ -479,7 +481,7 @@ export function StaffWizard({
     return (
       <div className="space-y-4">
         <div className="text-center mb-4">
-          <h3 className="text-lg font-semibold">Riepilogo</h3>
+          <h3 className="text-lg font-semibold">{t("repair.summary")}</h3>
           <p className="text-sm text-muted-foreground">Verifica i dati prima di creare il collaboratore</p>
         </div>
 
@@ -532,7 +534,7 @@ export function StaffWizard({
             <CardContent className="pt-4">
               <div className="flex flex-wrap items-center gap-2 mb-3">
                 <Shield className="w-4 h-4 text-primary" />
-                <span className="font-medium">Permessi</span>
+                <span className="font-medium">{t("staff.permissions")}</span>
                 <Badge variant="secondary" className="ml-auto">
                   {getPermissionCount()} permessi
                 </Badge>
@@ -545,9 +547,9 @@ export function StaffWizard({
                       const module = MODULES.find(m => m.id === moduleId);
                       const activePerms = [];
                       if (perms.canRead) activePerms.push("Lettura");
-                      if (perms.canCreate) activePerms.push("Creazione");
-                      if (perms.canUpdate) activePerms.push("Modifica");
-                      if (perms.canDelete) activePerms.push("Eliminazione");
+                      if (perms.canCreate) activePerms.push(t("staff.creation"));
+                      if (perms.canUpdate) activePerms.push(t("common.edit"));
+                      if (perms.canDelete) activePerms.push(t("staff.deletion"));
                       
                       return (
                         <div key={moduleId} className="flex items-center justify-between text-sm">
@@ -592,12 +594,12 @@ export function StaffWizard({
             data-testid="wizard-button-back"
           >
             <ChevronLeft className="w-4 h-4 mr-1" />
-            {currentStep === 1 ? "Annulla" : "Indietro"}
+            {currentStep === 1 ? t("common.cancel") : t("common.back")}
           </Button>
 
           {currentStep < 4 ? (
             <Button onClick={nextStep} data-testid="wizard-button-next">
-              Avanti
+              {t("common.next")}
               <ChevronRight className="w-4 h-4 ml-1" />
             </Button>
           ) : (
@@ -609,7 +611,7 @@ export function StaffWizard({
               {createMutation.isPending ? (
                 <>
                   <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Creazione...
+                  {t("common.creating")}
                 </>
               ) : (
                 <>

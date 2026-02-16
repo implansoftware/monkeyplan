@@ -19,6 +19,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Link } from "wouter";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { useTranslation } from "react-i18next";
 
 const categoryLabels: Record<string, string> = {
   fisso: "Fisso",
@@ -26,10 +27,11 @@ const categoryLabels: Record<string, string> = {
   centralino: "Centralino",
   luce: "Luce",
   gas: "Gas",
-  altro: "Altro",
+  altro: t("common.other"),
 };
 
 export default function ResellerUtilitySuppliers() {
+  const { t } = useTranslation();
   const [searchQuery, setSearchQuery] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingSupplier, setEditingSupplier] = useState<UtilitySupplier | null>(null);
@@ -49,10 +51,10 @@ export default function ResellerUtilitySuppliers() {
       queryClient.invalidateQueries({ queryKey: ["/api/utility/suppliers"] });
       setDialogOpen(false);
       setEditingSupplier(null);
-      toast({ title: "Fornitore creato con successo" });
+      toast({ title: t("suppliers.supplierCreated") });
     },
     onError: (error: Error) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -68,7 +70,7 @@ export default function ResellerUtilitySuppliers() {
       toast({ title: "Fornitore aggiornato" });
     },
     onError: (error: Error) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -81,7 +83,7 @@ export default function ResellerUtilitySuppliers() {
       toast({ title: "Fornitore eliminato" });
     },
     onError: (error: Error) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -159,7 +161,7 @@ export default function ResellerUtilitySuppliers() {
           <div className="flex-1 flex items-center gap-2">
             <Search className="h-4 w-4 text-muted-foreground" />
             <Input
-              placeholder="Cerca fornitore..."
+              placeholder={t("suppliers.searchSupplier")}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="max-w-xs"
@@ -167,9 +169,7 @@ export default function ResellerUtilitySuppliers() {
             />
           </div>
           <Button onClick={handleNewSupplier} data-testid="button-new-supplier">
-            <Plus className="h-4 w-4 mr-2" />
-            Nuovo Fornitore
-          </Button>
+            <Plus className="h-4 w-4 mr-2" />{t("suppliers.newSupplier")}</Button>
         </CardHeader>
         <CardContent>
           {isLoading ? (
@@ -181,19 +181,19 @@ export default function ResellerUtilitySuppliers() {
           ) : filteredSuppliers.length === 0 ? (
             <div className="text-center py-8">
               <Building2 className="h-12 w-12 mx-auto text-muted-foreground mb-3" />
-              <p className="text-muted-foreground">Nessun fornitore trovato</p>
+              <p className="text-muted-foreground">{t("suppliers.noSuppliersFound")}</p>
             </div>
           ) : (
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Nome</TableHead>
-                  <TableHead>Codice</TableHead>
-                  <TableHead>Tipo</TableHead>
-                  <TableHead>Categoria</TableHead>
+                  <TableHead>{t("common.name")}</TableHead>
+                  <TableHead>{t("common.code")}</TableHead>
+                  <TableHead>{t("common.type")}</TableHead>
+                  <TableHead>{t("common.category")}</TableHead>
                   <TableHead>Contatto</TableHead>
-                  <TableHead>Stato</TableHead>
-                  <TableHead className="text-right">Azioni</TableHead>
+                  <TableHead>{t("common.status")}</TableHead>
+                  <TableHead className="text-right">{t("common.actions")}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -243,14 +243,10 @@ export default function ResellerUtilitySuppliers() {
                     <TableCell>
                       {supplier.isActive ? (
                         <Badge className="bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300">
-                          <CheckCircle2 className="h-3 w-3 mr-1" />
-                          Attivo
-                        </Badge>
+                          <CheckCircle2 className="h-3 w-3 mr-1" />{t("common.active")}</Badge>
                       ) : (
                         <Badge variant="secondary">
-                          <XCircle className="h-3 w-3 mr-1" />
-                          Inattivo
-                        </Badge>
+                          <XCircle className="h-3 w-3 mr-1" />{t("common.inactive")}</Badge>
                       )}
                     </TableCell>
                     <TableCell className="text-right">
@@ -352,7 +348,7 @@ export default function ResellerUtilitySuppliers() {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
+                <Label htmlFor="email">{t("common.email")}</Label>
                 <Input
                   id="email"
                   name="email"
@@ -362,7 +358,7 @@ export default function ResellerUtilitySuppliers() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="phone">Telefono</Label>
+                <Label htmlFor="phone">{t("common.phone")}</Label>
                 <Input
                   id="phone"
                   name="phone"
@@ -416,7 +412,7 @@ export default function ResellerUtilitySuppliers() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="notes">Note</Label>
+              <Label htmlFor="notes">{t("common.notes")}</Label>
               <Textarea
                 id="notes"
                 name="notes"
@@ -442,15 +438,13 @@ export default function ResellerUtilitySuppliers() {
                 variant="outline" 
                 onClick={() => setDialogOpen(false)}
                 data-testid="button-cancel"
-              >
-                Annulla
-              </Button>
+              >{t("common.cancel")}</Button>
               <Button 
                 type="submit"
                 disabled={createMutation.isPending || updateMutation.isPending}
                 data-testid="button-save"
               >
-                {editingSupplier ? "Salva Modifiche" : "Crea Fornitore"}
+                {editingSupplier ? t("profile.saveChanges") : "Crea Fornitore"}
               </Button>
             </div>
           </form>

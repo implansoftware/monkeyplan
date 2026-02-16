@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
@@ -60,9 +61,9 @@ type Appointment = {
 
 const statusLabels: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
   scheduled: { label: "Prenotato", variant: "secondary" },
-  confirmed: { label: "Confermato", variant: "default" },
-  cancelled: { label: "Annullato", variant: "destructive" },
-  completed: { label: "Completato", variant: "outline" },
+  confirmed: { label: t("common.confirmed"), variant: "default" },
+  cancelled: { label: t("common.cancelled"), variant: "destructive" },
+  completed: { label: t("common.completed"), variant: "outline" },
   no_show: { label: "Non presentato", variant: "destructive" },
 };
 
@@ -74,6 +75,7 @@ export function AppointmentBookingDialog({
   orderNumber,
   onSuccess,
 }: AppointmentBookingDialogProps) {
+  const { t } = useTranslation();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
@@ -120,7 +122,7 @@ export function AppointmentBookingDialog({
     onSuccess: () => {
       toast({
         title: "Appuntamento prenotato",
-        description: "L'appuntamento è stato prenotato con successo",
+        description: t("appointment.bookedSuccessfully"),
       });
       queryClient.invalidateQueries({ queryKey: ["/api/repair-orders", repairOrderId, "appointment"] });
       queryClient.invalidateQueries({ queryKey: ["/api/repair-orders"] });
@@ -131,8 +133,8 @@ export function AppointmentBookingDialog({
     },
     onError: (error: any) => {
       toast({
-        title: "Errore",
-        description: error.message || "Impossibile prenotare l'appuntamento",
+        title: t("common.error"),
+        description: error.message || t("appointment.cannotBook"),
         variant: "destructive",
       });
     },
@@ -142,21 +144,21 @@ export function AppointmentBookingDialog({
     mutationFn: async (appointmentId: string) => {
       return await apiRequest("PATCH", `/api/appointments/${appointmentId}`, {
         status: "cancelled",
-        cancelReason: "Annullato dall'utente",
+        cancelReason: t("appointment.cancelledByUser"),
       });
     },
     onSuccess: () => {
       toast({
         title: "Appuntamento annullato",
-        description: "L'appuntamento è stato annullato",
+        description: t("appointment.cancelledSuccessfully"),
       });
       queryClient.invalidateQueries({ queryKey: ["/api/repair-orders", repairOrderId, "appointment"] });
       queryClient.invalidateQueries({ queryKey: ["/api/repair-orders"] });
     },
     onError: (error: any) => {
       toast({
-        title: "Errore",
-        description: error.message || "Impossibile annullare l'appuntamento",
+        title: t("common.error"),
+        description: error.message || t("appointment.cannotCancel"),
         variant: "destructive",
       });
     },
@@ -222,19 +224,19 @@ export function AppointmentBookingDialog({
             <CardContent className="pt-6">
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-muted-foreground">Stato</span>
+                  <span className="text-sm text-muted-foreground">{t("common.status")}</span>
                   <Badge variant={statusInfo.variant}>{statusInfo.label}</Badge>
                 </div>
                 
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-muted-foreground">Data</span>
+                  <span className="text-sm text-muted-foreground">{t("common.date")}</span>
                   <span className="font-medium">
                     {format(new Date(existingAppointment.date), "EEEE d MMMM yyyy", { locale: it })}
                   </span>
                 </div>
                 
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-muted-foreground">Orario</span>
+                  <span className="text-sm text-muted-foreground">{t("appointment.time")}</span>
                   <span className="font-medium flex items-center gap-2">
                     <Clock className="h-4 w-4" />
                     {existingAppointment.startTime} - {existingAppointment.endTime}
@@ -243,7 +245,7 @@ export function AppointmentBookingDialog({
                 
                 {existingAppointment.notes && (
                   <div>
-                    <span className="text-sm text-muted-foreground block mb-1">Note</span>
+                    <span className="text-sm text-muted-foreground block mb-1">{t("common.notes")}</span>
                     <p className="text-sm">{existingAppointment.notes}</p>
                   </div>
                 )}
@@ -272,7 +274,7 @@ export function AppointmentBookingDialog({
               </Button>
             )}
             <Button variant="outline" onClick={() => onOpenChange(false)} data-testid="button-close-appointment">
-              Chiudi
+              {t("common.close")}
             </Button>
           </div>
         </DialogContent>
@@ -297,7 +299,7 @@ export function AppointmentBookingDialog({
           <div>
             <h4 className="text-sm font-medium mb-3 flex items-center gap-2">
               <CalendarIcon className="h-4 w-4" />
-              Seleziona una data
+              {t("appointment.selectDate")}
             </h4>
             <Calendar
               mode="single"
@@ -339,11 +341,11 @@ export function AppointmentBookingDialog({
               </div>
             ) : slotsData?.isClosed ? (
               <div className="text-sm text-muted-foreground p-4 text-center border rounded-md">
-                {slotsData.reason || "Chiuso in questa data"}
+                {slotsData.reason || t("appointment.closedOnDate")}
               </div>
             ) : !slotsData?.slots.length ? (
               <div className="text-sm text-muted-foreground p-4 text-center border rounded-md">
-                {slotsData?.reason || "Nessuno slot disponibile in questa data"}
+                {slotsData?.reason || t("appointment.noSlotsAvailable")}
               </div>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-[300px] overflow-y-auto pr-1">
@@ -385,9 +387,9 @@ export function AppointmentBookingDialog({
             </Card>
             
             <div>
-              <label className="text-sm font-medium block mb-2">Note (opzionale)</label>
+              <label className="text-sm font-medium block mb-2">{t("common.notesOptional")}</label>
               <Textarea
-                placeholder="Aggiungi note per l'appuntamento..."
+                placeholder={t("appointment.addNotesForAppointment")}
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
                 className="resize-none"
@@ -404,7 +406,7 @@ export function AppointmentBookingDialog({
             onClick={() => onOpenChange(false)}
             data-testid="button-cancel-booking"
           >
-            Annulla
+            {t("common.cancel")}
           </Button>
           <Button
             onClick={handleBook}

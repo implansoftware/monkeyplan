@@ -13,6 +13,7 @@ import { it } from "date-fns/locale";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import type { RepairCenter } from "@shared/schema";
+import { useTranslation } from "react-i18next";
 
 interface PartsOrderWithDetails {
   id: string;
@@ -35,6 +36,7 @@ interface PartsOrderWithDetails {
 }
 
 export default function AdminPartsOrders() {
+  const { t } = useTranslation();
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [centerFilter, setCenterFilter] = useState<string>("all");
@@ -53,11 +55,11 @@ export default function AdminPartsOrders() {
       return await apiRequest("PATCH", `/api/parts-orders/${id}/status`, { status });
     },
     onSuccess: () => {
-      toast({ title: "Stato aggiornato" });
+      toast({ title: t("admin.resellers.statusUpdated") });
       queryClient.invalidateQueries({ queryKey: ["/api/parts-orders"] });
     },
     onError: (error: Error) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -68,9 +70,9 @@ export default function AdminPartsOrders() {
       case "in_transit":
         return <Badge variant="secondary"><Truck className="h-3 w-3 mr-1" />In Transito</Badge>;
       case "received":
-        return <Badge variant="default"><CheckCircle className="h-3 w-3 mr-1" />Ricevuto</Badge>;
+        return <Badge variant="default"><CheckCircle className="h-3 w-3 mr-1" />{t("repairs.status.received")}</Badge>;
       case "cancelled":
-        return <Badge variant="destructive">Annullato</Badge>;
+        return <Badge variant="destructive">{t("repairs.status.cancelled")}</Badge>;
       default:
         return <Badge variant="outline">{status}</Badge>;
     }
@@ -150,7 +152,7 @@ export default function AdminPartsOrders() {
             <div className="flex-1 relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Cerca per prodotto, ordine o centro..."
+                placeholder={t("products.searchProduct")}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-9"
@@ -163,19 +165,19 @@ export default function AdminPartsOrders() {
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">Tutti gli stati</SelectItem>
-                <SelectItem value="ordered">Ordinato</SelectItem>
-                <SelectItem value="in_transit">In Transito</SelectItem>
-                <SelectItem value="received">Ricevuto</SelectItem>
-                <SelectItem value="cancelled">Annullato</SelectItem>
+                <SelectItem value="all">{t("repairs.allStatuses")}</SelectItem>
+                <SelectItem value="ordered">{t("suppliers.ordered")}</SelectItem>
+                <SelectItem value="in_transit">{t("suppliers.inTransit")}</SelectItem>
+                <SelectItem value="received">{t("repairs.status.received")}</SelectItem>
+                <SelectItem value="cancelled">{t("repairs.status.cancelled")}</SelectItem>
               </SelectContent>
             </Select>
             <Select value={centerFilter} onValueChange={setCenterFilter}>
               <SelectTrigger className="w-full sm:w-48" data-testid="select-filter-center">
-                <SelectValue placeholder="Tutti i centri" />
+                <SelectValue placeholder={t("warehouse.allCenters")} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">Tutti i centri</SelectItem>
+                <SelectItem value="all">{t("common.allCenters")}</SelectItem>
                 {repairCenters.map((center) => (
                   <SelectItem key={center.id} value={center.id}>
                     {center.name}
@@ -195,21 +197,21 @@ export default function AdminPartsOrders() {
           ) : filteredOrders.length === 0 ? (
             <div className="text-center py-12 text-muted-foreground">
               <Package className="h-12 w-12 mx-auto mb-4 opacity-50" />
-              <p>Nessun ordine ricambio trovato</p>
+              <p>{t("suppliers.noPartsOrders")}</p>
             </div>
           ) : (
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Prodotto</TableHead>
-                  <TableHead>Ordine Riparazione</TableHead>
-                  <TableHead>Centro</TableHead>
+                  <TableHead>{t("products.product")}</TableHead>
+                  <TableHead>{t("repairs.repairOrder")}</TableHead>
+                  <TableHead>{t("admin.repairCenters.center")}</TableHead>
                   <TableHead className="text-center">Qtà</TableHead>
-                  <TableHead>Costo</TableHead>
-                  <TableHead>Data Ordine</TableHead>
-                  <TableHead>Arrivo Previsto</TableHead>
-                  <TableHead>Stato</TableHead>
-                  <TableHead className="text-right">Azioni</TableHead>
+                  <TableHead>{t("common.cost")}</TableHead>
+                  <TableHead>{t("suppliers.orderDate")}</TableHead>
+                  <TableHead>{t("suppliers.expectedArrival")}</TableHead>
+                  <TableHead>{t("common.status")}</TableHead>
+                  <TableHead className="text-right">{t("common.actions")}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>

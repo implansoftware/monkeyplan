@@ -10,6 +10,7 @@ import {
   ArrowRight,
   TrendingUp,
 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 interface UtilitySummary {
   year: number;
@@ -31,7 +32,7 @@ const categoryLabels: Record<string, string> = {
   centralino: "Centralino",
   luce: "Luce",
   gas: "Gas",
-  altro: "Altro",
+  altro: t("common.other"),
 };
 
 const formatCurrency = (cents: number) => {
@@ -42,6 +43,7 @@ const formatCurrency = (cents: number) => {
 };
 
 export default function ResellerUtility() {
+  const { t } = useTranslation();
   const { data: summary, isLoading } = useQuery<UtilitySummary>({
     queryKey: ["/api/utility/reports/summary"],
   });
@@ -174,7 +176,7 @@ export default function ResellerUtility() {
                 </div>
               ))}
               {Object.keys(summary?.byCategory || {}).length === 0 && (
-                <p className="text-sm text-muted-foreground">Nessun dato disponibile</p>
+                <p className="text-sm text-muted-foreground">{t("common.noData")}</p>
               )}
             </div>
           </CardContent>

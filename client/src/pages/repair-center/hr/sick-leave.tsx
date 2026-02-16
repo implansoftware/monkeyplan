@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useQuery, useMutation } from "@tanstack/react-query";
@@ -34,6 +35,7 @@ interface StaffMember {
 }
 
 export default function RepairCenterHrSickLeave() {
+  const { t } = useTranslation();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [editingSickLeave, setEditingSickLeave] = useState<SickLeave | null>(null);
@@ -78,10 +80,10 @@ export default function RepairCenterHrSickLeave() {
       setDialogOpen(false);
       setNewSickLeave({ userId: "", startDate: "", endDate: "", protocolNumber: "", notes: "" });
       setCertificateFile(null);
-      toast({ title: "Malattia registrata", description: "La registrazione è stata completata con successo." });
+      toast({ title: "Malattia registrata", description: t("hr.laRegistrazioneStataCompletataConSuccesso") });
     },
     onError: (error: any) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("auth.error"), description: error.message, variant: "destructive" });
     }
   });
 
@@ -96,7 +98,7 @@ export default function RepairCenterHrSickLeave() {
       });
       if (!response.ok) {
         const error = await response.json();
-        throw new Error(error.error || "Errore upload");
+        throw new Error(error.error || t("common.uploadError"));
       }
       return response.json();
     },
@@ -105,10 +107,10 @@ export default function RepairCenterHrSickLeave() {
       setUploadDialogOpen(false);
       setCertificateFile(null);
       setSelectedSickLeaveId(null);
-      toast({ title: "Certificato caricato", description: "Il certificato è stato caricato con successo." });
+      toast({ title: "Certificato caricato", description: t("hr.ilCertificatoStatoCaricatoConSuccesso") });
     },
     onError: (error: any) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("auth.error"), description: error.message, variant: "destructive" });
     }
   });
 
@@ -123,7 +125,7 @@ export default function RepairCenterHrSickLeave() {
       toast({ title: "Malattia modificata", description: "Le modifiche sono state salvate." });
     },
     onError: (error: any) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("auth.error"), description: error.message, variant: "destructive" });
     }
   });
 
@@ -151,7 +153,7 @@ export default function RepairCenterHrSickLeave() {
               <HeartPulse className="h-5 w-5 sm:h-7 sm:w-7 text-white" />
             </div>
             <div>
-              <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-white tracking-tight">Malattia</h1>
+              <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-white tracking-tight">{t("hr.sickLeave")}</h1>
               <p className="text-emerald-100">Certificati e assenze per malattia</p>
             </div>
           </div>
@@ -188,13 +190,13 @@ export default function RepairCenterHrSickLeave() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Dipendente</TableHead>
-                  <TableHead>Data Inizio</TableHead>
-                  <TableHead className="hidden sm:table-cell">Data Fine</TableHead>
+                  <TableHead>{t("hr.employee")}</TableHead>
+                  <TableHead>{t("common.startDate")}</TableHead>
+                  <TableHead className="hidden sm:table-cell">{t("common.endDate")}</TableHead>
                   <TableHead className="hidden md:table-cell">N. Certificato</TableHead>
-                  <TableHead>Certificato</TableHead>
-                  <TableHead className="hidden md:table-cell">Note</TableHead>
-                  <TableHead>Azioni</TableHead>
+                  <TableHead>{t("hr.certificate")}</TableHead>
+                  <TableHead className="hidden md:table-cell">{t("common.note")}</TableHead>
+                  <TableHead>{t("common.actions")}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -243,10 +245,10 @@ export default function RepairCenterHrSickLeave() {
           </DialogHeader>
           <div className="space-y-4">
             <div>
-              <label className="text-sm font-medium">Dipendente</label>
+              <label className="text-sm font-medium">{t("hr.employee")}</label>
               <Select value={newSickLeave.userId} onValueChange={(v) => setNewSickLeave({ ...newSickLeave, userId: v })}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Seleziona dipendente" />
+                  <SelectValue placeholder={t("hr.selezionaDipendente")} />
                 </SelectTrigger>
                 <SelectContent>
                   {staffMembers.map((member) => (
@@ -257,7 +259,7 @@ export default function RepairCenterHrSickLeave() {
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="text-sm font-medium">Data Inizio</label>
+                <label className="text-sm font-medium">{t("common.startDate")}</label>
                 <Input type="date" value={newSickLeave.startDate} onChange={(e) => setNewSickLeave({ ...newSickLeave, startDate: e.target.value })} />
               </div>
               <div>
@@ -280,11 +282,11 @@ export default function RepairCenterHrSickLeave() {
             </div>
             <div>
               <label className="text-sm font-medium">Note (opzionale)</label>
-              <Textarea value={newSickLeave.notes} onChange={(e) => setNewSickLeave({ ...newSickLeave, notes: e.target.value })} placeholder="Note aggiuntive..." />
+              <Textarea value={newSickLeave.notes} onChange={(e) => setNewSickLeave({ ...newSickLeave, notes: e.target.value })} placeholder={t("utility.additionalNotes")} />
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDialogOpen(false)}>Annulla</Button>
+            <Button variant="outline" onClick={() => setDialogOpen(false)}>{t("profile.cancel")}</Button>
             <Button onClick={() => createMutation.mutate(newSickLeave)} disabled={createMutation.isPending || !newSickLeave.userId || !newSickLeave.startDate}>
               Registra
             </Button>
@@ -296,7 +298,7 @@ export default function RepairCenterHrSickLeave() {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Carica Certificato Medico</DialogTitle>
-            <DialogDescription>Seleziona il file del certificato da caricare</DialogDescription>
+            <DialogDescription>{t("hr.selezionaIlFileDelCertificatoDaCaricare")}</DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div>
@@ -310,7 +312,7 @@ export default function RepairCenterHrSickLeave() {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => { setUploadDialogOpen(false); setCertificateFile(null); }}>Annulla</Button>
+            <Button variant="outline" onClick={() => { setUploadDialogOpen(false); setCertificateFile(null); }}>{t("profile.cancel")}</Button>
             <Button 
               onClick={() => selectedSickLeaveId && certificateFile && uploadMutation.mutate({ id: selectedSickLeaveId, file: certificateFile })} 
               disabled={uploadMutation.isPending || !certificateFile}
@@ -325,13 +327,13 @@ export default function RepairCenterHrSickLeave() {
       <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Modifica Malattia</DialogTitle>
+            <DialogTitle>{t("hr.editSickLeave")}</DialogTitle>
             <DialogDescription>Modifica i dati della malattia di {editingSickLeave?.user?.fullName}</DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="text-sm font-medium">Data Inizio</label>
+                <label className="text-sm font-medium">{t("common.startDate")}</label>
                 <Input type="date" value={editForm.startDate} onChange={(e) => setEditForm({ ...editForm, startDate: e.target.value })} />
               </div>
               <div>
@@ -345,11 +347,11 @@ export default function RepairCenterHrSickLeave() {
             </div>
             <div>
               <label className="text-sm font-medium">Note (opzionale)</label>
-              <Textarea value={editForm.notes} onChange={(e) => setEditForm({ ...editForm, notes: e.target.value })} placeholder="Note aggiuntive..." />
+              <Textarea value={editForm.notes} onChange={(e) => setEditForm({ ...editForm, notes: e.target.value })} placeholder={t("utility.additionalNotes")} />
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setEditDialogOpen(false)}>Annulla</Button>
+            <Button variant="outline" onClick={() => setEditDialogOpen(false)}>{t("profile.cancel")}</Button>
             <Button 
               onClick={() => editingSickLeave && editMutation.mutate({ id: editingSickLeave.id, data: editForm })} 
               disabled={editMutation.isPending || !editForm.startDate}

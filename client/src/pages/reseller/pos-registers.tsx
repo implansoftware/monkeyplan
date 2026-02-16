@@ -56,6 +56,7 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
+import { useTranslation } from "react-i18next";
 
 interface PosRegister {
   id: string;
@@ -136,9 +137,7 @@ function SessionCell({
             className="text-xs"
             data-testid={`button-close-session-${register.id}`}
           >
-            <StopCircle className="h-3 w-3 mr-1" />
-            Chiudi
-          </Button>
+            <StopCircle className="h-3 w-3 mr-1" />{t("common.close")}</Button>
         </div>
       </div>
     );
@@ -147,9 +146,7 @@ function SessionCell({
   return (
     <div className="flex flex-col items-center gap-1">
       <Badge variant="secondary">
-        <StopCircle className="h-3 w-3 mr-1" />
-        Chiusa
-      </Badge>
+        <StopCircle className="h-3 w-3 mr-1" />{t("pos.closed")}</Badge>
       <Button
         variant="outline"
         size="sm"
@@ -158,14 +155,13 @@ function SessionCell({
         className="text-xs"
         data-testid={`button-open-session-${register.id}`}
       >
-        <PlayCircle className="h-3 w-3 mr-1" />
-        Apri
-      </Button>
+        <PlayCircle className="h-3 w-3 mr-1" />{t("common.open")}</Button>
     </div>
   );
 }
 
 export default function ResellerPosRegistersPage() {
+  const { t } = useTranslation();
   const { toast } = useToast();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingRegister, setEditingRegister] = useState<PosRegister | null>(null);
@@ -221,7 +217,7 @@ export default function ResellerPosRegistersPage() {
       closeDialog();
     },
     onError: (error: Error) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -235,7 +231,7 @@ export default function ResellerPosRegistersPage() {
       closeDialog();
     },
     onError: (error: Error) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -249,7 +245,7 @@ export default function ResellerPosRegistersPage() {
       setDeleteRegister(null);
     },
     onError: (error: Error) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
       setDeleteRegister(null);
     },
   });
@@ -271,7 +267,7 @@ export default function ResellerPosRegistersPage() {
       }
     },
     onError: (error: Error) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -292,7 +288,7 @@ export default function ResellerPosRegistersPage() {
       }
     },
     onError: (error: Error) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -353,11 +349,11 @@ export default function ResellerPosRegistersPage() {
 
   const handleSubmit = () => {
     if (!formData.name.trim()) {
-      toast({ title: "Errore", description: "Il nome della cassa è obbligatorio", variant: "destructive" });
+      toast({ title: t("common.error"), description: "Il nome della cassa è obbligatorio", variant: "destructive" });
       return;
     }
     if (!formData.repairCenterId) {
-      toast({ title: "Errore", description: "Seleziona un centro riparazione", variant: "destructive" });
+      toast({ title: t("common.error"), description: "Seleziona un centro riparazione", variant: "destructive" });
       return;
     }
 
@@ -432,9 +428,7 @@ export default function ResellerPosRegistersPage() {
               <Store className="h-6 w-6 text-white" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold tracking-tight text-white">
-                Gestione Casse
-              </h1>
+              <h1 className="text-2xl font-bold tracking-tight text-white">{t("sidebar.items.posRegisters")}</h1>
               <p className="text-sm text-white/80">
                 Configura i registri di cassa dei tuoi centri riparazione
               </p>
@@ -446,7 +440,7 @@ export default function ResellerPosRegistersPage() {
                 <SelectValue placeholder="Filtra per centro" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">Tutti i centri</SelectItem>
+                <SelectItem value="all">{t("common.allCenters")}</SelectItem>
                 {repairCenters.map(center => (
                   <SelectItem key={center.id} value={center.id}>{center.name}</SelectItem>
                 ))}
@@ -516,14 +510,14 @@ export default function ResellerPosRegistersPage() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Nome</TableHead>
-                  {centerFilter === "all" && <TableHead>Centro</TableHead>}
-                  <TableHead>Descrizione</TableHead>
-                  <TableHead className="text-center">Stato</TableHead>
+                  <TableHead>{t("common.name")}</TableHead>
+                  {centerFilter === "all" && <TableHead>{t("admin.common.center")}</TableHead>}
+                  <TableHead>{t("common.description")}</TableHead>
+                  <TableHead className="text-center">{t("common.status")}</TableHead>
                   <TableHead className="text-center">Predefinita</TableHead>
                   <TableHead className="text-center">Sessione</TableHead>
                   <TableHead>Creata il</TableHead>
-                  <TableHead className="text-right">Azioni</TableHead>
+                  <TableHead className="text-right">{t("common.actions")}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -544,9 +538,7 @@ export default function ResellerPosRegistersPage() {
                     <TableCell className="text-center">
                       {register.isActive ? (
                         <Badge variant="default" className="bg-green-500">
-                          <CheckCircle className="h-3 w-3 mr-1" />
-                          Attiva
-                        </Badge>
+                          <CheckCircle className="h-3 w-3 mr-1" />{t("license.active")}</Badge>
                       ) : (
                         <Badge variant="secondary">
                           <XCircle className="h-3 w-3 mr-1" />
@@ -681,10 +673,10 @@ export default function ResellerPosRegistersPage() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="description">Descrizione</Label>
+              <Label htmlFor="description">{t("common.description")}</Label>
               <Textarea
                 id="description"
-                placeholder="Descrizione opzionale..."
+                placeholder={t("utility.optionalDescription")}
                 value={formData.description}
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                 rows={3}
@@ -707,15 +699,13 @@ export default function ResellerPosRegistersPage() {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={closeDialog} data-testid="button-cancel">
-              Annulla
-            </Button>
+            <Button variant="outline" onClick={closeDialog} data-testid="button-cancel">{t("common.cancel")}</Button>
             <Button 
               onClick={handleSubmit} 
               disabled={createMutation.isPending || updateMutation.isPending}
               data-testid="button-save-register"
             >
-              {createMutation.isPending || updateMutation.isPending ? "Salvataggio..." : "Salva"}
+              {createMutation.isPending || updateMutation.isPending ? t("profile.saving") : t("common.save")}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -735,13 +725,13 @@ export default function ResellerPosRegistersPage() {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel data-testid="button-cancel-delete">Annulla</AlertDialogCancel>
+            <AlertDialogCancel data-testid="button-cancel-delete">{t("common.cancel")}</AlertDialogCancel>
             <AlertDialogAction 
               onClick={confirmDelete}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
               data-testid="button-confirm-delete"
             >
-              {deleteMutation.isPending ? "Eliminazione..." : "Elimina"}
+              {deleteMutation.isPending ? t("pages.deleting") : t("common.delete")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -789,9 +779,7 @@ export default function ResellerPosRegistersPage() {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setOpenSessionDialog({ register: null as any, open: false })} data-testid="button-cancel-open">
-              Annulla
-            </Button>
+            <Button variant="outline" onClick={() => setOpenSessionDialog({ register: null as any, open: false })} data-testid="button-cancel-open">{t("common.cancel")}</Button>
             <Button 
               onClick={() => {
                 if (openSessionDialog.register) {
@@ -864,9 +852,7 @@ export default function ResellerPosRegistersPage() {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setCloseSessionDialog({ session: null as any, register: null as any, open: false })} data-testid="button-cancel-close">
-              Annulla
-            </Button>
+            <Button variant="outline" onClick={() => setCloseSessionDialog({ session: null as any, register: null as any, open: false })} data-testid="button-cancel-close">{t("common.cancel")}</Button>
             <Button 
               onClick={() => {
                 if (closeSessionDialog.session && closingCash) {

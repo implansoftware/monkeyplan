@@ -21,6 +21,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { useTranslation } from "react-i18next";
 
 interface SickLeave {
   id: string;
@@ -64,6 +65,7 @@ const statusLabels: Record<string, string> = {
 };
 
 export default function AdminSickLeavePage() {
+  const { t } = useTranslation();
   const [entityType, setEntityType] = useState<AdminEntityType>("all");
   const [selectedEntityId, setSelectedEntityId] = useState("");
   const [editDialogOpen, setEditDialogOpen] = useState(false);
@@ -108,10 +110,10 @@ export default function AdminSickLeavePage() {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/hr/sick-leaves", queryString] });
       setEditDialogOpen(false);
       setEditingSickLeave(null);
-      toast({ title: "Malattia aggiornata con successo" });
+      toast({ title: t("hr.sickLeaveUpdated") });
     },
     onError: () => {
-      toast({ title: "Errore durante l'aggiornamento", variant: "destructive" });
+      toast({ title: t("hr.updateError"), variant: "destructive" });
     }
   });
 
@@ -172,18 +174,18 @@ export default function AdminSickLeavePage() {
           ) : sickLeaves.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">
               <Stethoscope className="h-12 w-12 mx-auto mb-4 opacity-50" />
-              <p>Nessuna malattia registrata</p>
+              <p>{t("hr.noSickLeave")}</p>
             </div>
           ) : (
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Dipendente</TableHead>
-                  <TableHead>Date</TableHead>
-                  <TableHead>Protocollo</TableHead>
-                  <TableHead>Stato</TableHead>
-                  <TableHead>Certificato</TableHead>
-                  <TableHead>Azioni</TableHead>
+                  <TableHead>{t("hr.employee")}</TableHead>
+                  <TableHead>{t("common.dates")}</TableHead>
+                  <TableHead>{t("hr.protocol")}</TableHead>
+                  <TableHead>{t("common.status")}</TableHead>
+                  <TableHead>{t("hr.certificate")}</TableHead>
+                  <TableHead>{t("common.actions")}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -259,14 +261,14 @@ export default function AdminSickLeavePage() {
       <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Modifica Malattia</DialogTitle>
+            <DialogTitle>{t("hr.editSickLeave")}</DialogTitle>
             <DialogDescription>
               Modifica i dettagli della malattia
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label>Data Inizio</Label>
+              <Label>{t("common.startDate")}</Label>
               <Input
                 type="date"
                 value={editForm.startDate}
@@ -275,7 +277,7 @@ export default function AdminSickLeavePage() {
               />
             </div>
             <div className="space-y-2">
-              <Label>Data Fine</Label>
+              <Label>{t("common.endDate")}</Label>
               <Input
                 type="date"
                 value={editForm.endDate}
@@ -284,20 +286,20 @@ export default function AdminSickLeavePage() {
               />
             </div>
             <div className="space-y-2">
-              <Label>Numero Protocollo</Label>
+              <Label>{t("hr.protocolNumber")}</Label>
               <Input
                 value={editForm.protocolNumber}
                 onChange={(e) => setEditForm({ ...editForm, protocolNumber: e.target.value })}
-                placeholder="Numero protocollo INPS..."
+                placeholder={t("hr.inpsProtocol")}
                 data-testid="input-edit-protocol"
               />
             </div>
             <div className="space-y-2">
-              <Label>Note</Label>
+              <Label>{t("common.notes")}</Label>
               <Textarea
                 value={editForm.notes}
                 onChange={(e) => setEditForm({ ...editForm, notes: e.target.value })}
-                placeholder="Note aggiuntive..."
+                placeholder={t("utility.additionalNotes")}
                 data-testid="textarea-edit-notes"
               />
             </div>
@@ -307,7 +309,7 @@ export default function AdminSickLeavePage() {
               Annulla
             </Button>
             <Button onClick={handleEdit} disabled={editMutation.isPending} data-testid="button-save-edit">
-              {editMutation.isPending ? "Salvataggio..." : "Salva"}
+              {editMutation.isPending ? t("settings.savingRate") : "Salva"}
             </Button>
           </DialogFooter>
         </DialogContent>

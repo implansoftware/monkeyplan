@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { useQuery } from "@tanstack/react-query";
@@ -75,6 +76,7 @@ type TrovausatiShop = {
 };
 
 export default function RepairCenterSuppliers() {
+  const { t } = useTranslation();
   const [searchQuery, setSearchQuery] = useState("");
 
   const { data: suppliers = [], isLoading } = useQuery<Supplier[]>({
@@ -152,7 +154,7 @@ export default function RepairCenterSuppliers() {
               <Truck className="h-5 w-5 sm:h-7 sm:w-7 text-white" />
             </div>
             <div>
-              <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-white tracking-tight" data-testid="text-page-title">Fornitori</h1>
+              <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-white tracking-tight" data-testid="text-page-title">{t("sidebar.sections.supply")}</h1>
               <p className="text-emerald-100">Visualizza i fornitori disponibili</p>
             </div>
           </div>
@@ -173,7 +175,7 @@ export default function RepairCenterSuppliers() {
         <div className="space-y-4">
           <div className="flex flex-wrap items-center gap-2">
             <Zap className="h-5 w-5 text-primary" />
-            <h2 className="text-lg font-semibold">Integrazioni API</h2>
+            <h2 className="text-lg font-semibold">{t("sidebar.items.externalIntegrations")}</h2>
             <Badge variant="secondary">{externalIntegrations.length}</Badge>
           </div>
           
@@ -351,7 +353,7 @@ export default function RepairCenterSuppliers() {
                       <div className="flex items-start gap-2 p-3 rounded-lg bg-muted/50">
                         <AlertTriangle className="h-4 w-4 text-muted-foreground flex-shrink-0 mt-0.5" />
                         <p className="text-xs text-muted-foreground">
-                          Questa integrazione non è stata configurata dal rivenditore.
+                          {t("suppliers.integrationNotConfigured")}
                         </p>
                       </div>
                     )}
@@ -372,7 +374,7 @@ export default function RepairCenterSuppliers() {
           <div className="relative w-full sm:w-64">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
-              placeholder="Cerca fornitore..."
+              placeholder={t("suppliers.searchSupplier")}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-9"
@@ -384,7 +386,7 @@ export default function RepairCenterSuppliers() {
           {filteredSuppliers.length === 0 ? (
             <div className="text-center py-12 text-muted-foreground">
               <Truck className="h-12 w-12 mx-auto mb-4 opacity-50" />
-              <p>Nessun fornitore disponibile</p>
+              <p>{t("suppliers.nessunFornitoreDisponibile")}</p>
               <p className="text-sm mt-1">I fornitori del tuo rivenditore appariranno qui</p>
             </div>
           ) : (
@@ -392,12 +394,12 @@ export default function RepairCenterSuppliers() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Codice</TableHead>
-                  <TableHead>Nome</TableHead>
-                  <TableHead className="hidden md:table-cell">Contatti</TableHead>
-                  <TableHead className="hidden lg:table-cell">Sede</TableHead>
+                  <TableHead>{t("common.code")}</TableHead>
+                  <TableHead>{t("common.name")}</TableHead>
+                  <TableHead className="hidden md:table-cell">{t("common.contacts")}</TableHead>
+                  <TableHead className="hidden lg:table-cell">{t("admin.resellers.headquarters")}</TableHead>
                   <TableHead className="hidden lg:table-cell">Tempi</TableHead>
-                  <TableHead>Tipo</TableHead>
+                  <TableHead>{t("common.type")}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>

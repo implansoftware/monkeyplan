@@ -12,9 +12,11 @@ import { User, Mail, Shield, Upload, Trash2, Building2, FileText, Phone, MapPin,
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import type { User as UserType } from "@shared/schema";
 import { usePageTitle } from "@/hooks/use-page-title";
+import { useTranslation } from "react-i18next";
 
 export default function ProfilePage() {
-  usePageTitle("Profilo");
+  const { t } = useTranslation();
+  usePageTitle(t("profile.title"));
   const { user } = useAuth();
   const { toast } = useToast();
   const [isEditing, setIsEditing] = useState(false);
@@ -50,13 +52,13 @@ export default function ProfilePage() {
       setIsEditing(false);
       setIsEditingFiscal(false);
       toast({
-        title: "Profilo aggiornato",
-        description: "Le modifiche sono state salvate con successo",
+        title: t("profile.profileUpdatedTitle"),
+        description: t("profile.changesSaved"),
       });
     },
     onError: (error: Error) => {
       toast({
-        title: "Errore",
+        title: t("profile.error"),
         description: error.message,
         variant: "destructive",
       });
@@ -70,8 +72,8 @@ export default function ProfilePage() {
     const allowedTypes = ["image/jpeg", "image/png", "image/webp"];
     if (!allowedTypes.includes(file.type)) {
       toast({
-        title: "Formato non supportato",
-        description: "Usa un'immagine JPEG, PNG o WebP",
+        title: t("profile.unsupportedFormat"),
+        description: t("profile.unsupportedFormatDesc"),
         variant: "destructive",
       });
       return;
@@ -79,8 +81,8 @@ export default function ProfilePage() {
 
     if (file.size > 2 * 1024 * 1024) {
       toast({
-        title: "File troppo grande",
-        description: "L'immagine non può superare i 2MB",
+        title: t("profile.fileTooLarge"),
+        description: t("profile.fileTooLargeDesc"),
         variant: "destructive",
       });
       return;
@@ -113,13 +115,13 @@ export default function ProfilePage() {
       await res.json();
       queryClient.invalidateQueries({ queryKey: ["/api/user"] });
       toast({
-        title: "Logo caricato",
-        description: "Il logo è stato aggiornato con successo",
+        title: t("profile.logoUploaded"),
+        description: t("profile.logoUploadedDesc"),
       });
     } catch (error: any) {
       toast({
-        title: "Errore",
-        description: error.message || "Impossibile caricare il logo",
+        title: t("profile.error"),
+        description: error.message || t("profile.uploadError"),
         variant: "destructive",
       });
     } finally {
@@ -154,13 +156,13 @@ export default function ProfilePage() {
 
       queryClient.invalidateQueries({ queryKey: ["/api/user"] });
       toast({
-        title: "Logo rimosso",
-        description: "Il logo è stato eliminato",
+        title: t("profile.logoRemoved"),
+        description: t("profile.logoRemovedDesc"),
       });
     } catch (error: any) {
       toast({
-        title: "Errore",
-        description: error.message || "Impossibile eliminare il logo",
+        title: t("profile.error"),
+        description: error.message || t("profile.deleteError"),
         variant: "destructive",
       });
     }
@@ -213,10 +215,10 @@ export default function ProfilePage() {
 
   const getRoleLabel = (role: string) => {
     switch (role) {
-      case "admin": return "Amministratore";
-      case "reseller": return "Rivenditore";
-      case "repair_center": return "Centro Riparazione";
-      case "customer": return "Cliente";
+      case "admin": return t("roles.admin");
+      case "reseller": return t("roles.reseller");
+      case "repair_center": return t("roles.repairCenter");
+      case "customer": return t("roles.customer");
       default: return role;
     }
   };
@@ -226,7 +228,7 @@ export default function ProfilePage() {
       <div className="container mx-auto py-6">
         <Card>
           <CardContent className="flex items-center justify-center py-12">
-            <p className="text-muted-foreground">Caricamento profilo...</p>
+            <p className="text-muted-foreground">{t("profile.loadingProfile")}</p>
           </CardContent>
         </Card>
       </div>
@@ -257,9 +259,9 @@ export default function ProfilePage() {
               <UserCircle className="h-6 w-6 text-white" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold tracking-tight text-white">Il Mio Profilo</h1>
+              <h1 className="text-2xl font-bold tracking-tight text-white">{t("profile.myProfile")}</h1>
               <p className="text-sm text-white/80">
-                Gestisci le informazioni del tuo account
+                {t("profile.manageAccount")}
               </p>
             </div>
           </div>
@@ -270,12 +272,12 @@ export default function ProfilePage() {
         <CardHeader>
           <div className="flex items-center justify-between">
             <div>
-              <CardTitle>Informazioni Account</CardTitle>
-              <CardDescription>Visualizza e modifica i tuoi dati personali</CardDescription>
+              <CardTitle>{t("profile.accountInfo")}</CardTitle>
+              <CardDescription>{t("profile.accountInfoDesc")}</CardDescription>
             </div>
             {!isEditing && (
               <Button onClick={() => setIsEditing(true)} data-testid="button-edit-profile">
-                Modifica
+                {t("profile.edit")}
               </Button>
             )}
           </div>
@@ -296,12 +298,12 @@ export default function ProfilePage() {
                   data-testid="input-username"
                 />
                 <p className="text-xs text-muted-foreground">
-                  Il nome utente non può essere modificato
+                  {t("profile.usernameNotEditable")}
                 </p>
               </div>
 
               <div className="grid gap-2">
-                <Label htmlFor="fullName">Nome Completo</Label>
+                <Label htmlFor="fullName">{t("profile.fullName")}</Label>
                 <Input
                   id="fullName"
                   value={formData.fullName}
@@ -333,7 +335,7 @@ export default function ProfilePage() {
               <div className="grid gap-2">
                 <Label htmlFor="phone" className="flex flex-wrap items-center gap-2">
                   <Phone className="h-4 w-4" />
-                  Telefono
+                  {t("profile.phone")}
                 </Label>
                 <Input
                   id="phone"
@@ -349,7 +351,7 @@ export default function ProfilePage() {
               <div className="grid gap-2">
                 <Label className="flex flex-wrap items-center gap-2">
                   <Shield className="h-4 w-4" />
-                  Ruolo
+                  {t("profile.role")}
                 </Label>
                 <div>
                   <Badge variant={getRoleBadgeVariant(user.role)} data-testid="badge-role">
@@ -357,7 +359,7 @@ export default function ProfilePage() {
                   </Badge>
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  Il ruolo è assegnato dall'amministratore
+                  {t("profile.roleAssigned")}
                 </p>
               </div>
             </div>
@@ -369,7 +371,7 @@ export default function ProfilePage() {
                   disabled={updateMutation.isPending}
                   data-testid="button-save-profile"
                 >
-                  {updateMutation.isPending ? "Salvataggio..." : "Salva Modifiche"}
+                  {updateMutation.isPending ? t("profile.saving") : t("profile.saveChanges")}
                 </Button>
                 <Button
                   type="button"
@@ -378,7 +380,7 @@ export default function ProfilePage() {
                   disabled={updateMutation.isPending}
                   data-testid="button-cancel-edit"
                 >
-                  Annulla
+                  {t("profile.cancel")}
                 </Button>
               </div>
             )}
@@ -391,10 +393,10 @@ export default function ProfilePage() {
           <CardHeader>
             <CardTitle className="flex flex-wrap items-center gap-2">
               <Building2 className="h-5 w-5" />
-              Logo Aziendale
+              {t("profile.companyLogo")}
             </CardTitle>
             <CardDescription>
-              Carica il logo della tua azienda per personalizzare la tua presenza sulla piattaforma
+              {t("profile.companyLogoDesc")}
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -418,7 +420,7 @@ export default function ProfilePage() {
                     data-testid="button-upload-logo"
                   >
                     <Upload className="h-4 w-4 mr-2" />
-                    {isUploadingLogo ? "Caricamento..." : user.logoUrl ? "Cambia Logo" : "Carica Logo"}
+                    {isUploadingLogo ? t("profile.uploadingLogo") : user.logoUrl ? t("profile.changeLogo") : t("profile.uploadLogo")}
                   </Button>
                   {user.logoUrl && (
                     <Button
@@ -429,12 +431,12 @@ export default function ProfilePage() {
                       data-testid="button-delete-logo"
                     >
                       <Trash2 className="h-4 w-4 mr-2" />
-                      Rimuovi
+                      {t("profile.removeLogo")}
                     </Button>
                   )}
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  Formati supportati: JPEG, PNG, WebP. Dimensione massima: 2MB
+                  {t("profile.supportedFormats")}
                 </p>
               </div>
               
@@ -458,13 +460,13 @@ export default function ProfilePage() {
               <div>
                 <CardTitle className="flex flex-wrap items-center gap-2">
                   <FileText className="h-5 w-5" />
-                  Dati Fiscali e Fatturazione
+                  {t("profile.fiscalTitle")}
                 </CardTitle>
-                <CardDescription>Gestisci i dati fiscali della tua azienda</CardDescription>
+                <CardDescription>{t("profile.fiscalInfoDesc")}</CardDescription>
               </div>
               {!isEditingFiscal && (
                 <Button onClick={() => setIsEditingFiscal(true)} data-testid="button-edit-fiscal">
-                  Modifica
+                  {t("profile.edit")}
                 </Button>
               )}
             </div>
@@ -473,7 +475,7 @@ export default function ProfilePage() {
             <form onSubmit={handleFiscalSubmit} className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="grid gap-2 md:col-span-2">
-                  <Label htmlFor="ragioneSociale">Ragione Sociale</Label>
+                  <Label htmlFor="ragioneSociale">{t("profile.ragioneSociale")}</Label>
                   <Input
                     id="ragioneSociale"
                     value={fiscalData.ragioneSociale}
@@ -485,7 +487,7 @@ export default function ProfilePage() {
                 </div>
                 
                 <div className="grid gap-2">
-                  <Label htmlFor="partitaIva">Partita IVA</Label>
+                  <Label htmlFor="partitaIva">{t("profile.partitaIva")}</Label>
                   <Input
                     id="partitaIva"
                     value={fiscalData.partitaIva}
@@ -497,7 +499,7 @@ export default function ProfilePage() {
                 </div>
                 
                 <div className="grid gap-2">
-                  <Label htmlFor="codiceFiscale">Codice Fiscale</Label>
+                  <Label htmlFor="codiceFiscale">{t("profile.codiceFiscale")}</Label>
                   <Input
                     id="codiceFiscale"
                     value={fiscalData.codiceFiscale}
@@ -511,7 +513,7 @@ export default function ProfilePage() {
                 <div className="grid gap-2 md:col-span-2">
                   <Label htmlFor="indirizzo" className="flex flex-wrap items-center gap-2">
                     <MapPin className="h-4 w-4" />
-                    Indirizzo
+                    {t("profile.indirizzo")}
                   </Label>
                   <Input
                     id="indirizzo"
@@ -524,7 +526,7 @@ export default function ProfilePage() {
                 </div>
 
                 <div className="grid gap-2">
-                  <Label htmlFor="citta">Città</Label>
+                  <Label htmlFor="citta">{t("profile.citta")}</Label>
                   <Input
                     id="citta"
                     value={fiscalData.citta}
@@ -537,7 +539,7 @@ export default function ProfilePage() {
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                   <div className="grid gap-2">
-                    <Label htmlFor="cap">CAP</Label>
+                    <Label htmlFor="cap">{t("profile.cap")}</Label>
                     <Input
                       id="cap"
                       value={fiscalData.cap}
@@ -548,7 +550,7 @@ export default function ProfilePage() {
                     />
                   </div>
                   <div className="grid gap-2">
-                    <Label htmlFor="provincia">Provincia</Label>
+                    <Label htmlFor="provincia">{t("profile.provincia")}</Label>
                     <Input
                       id="provincia"
                       value={fiscalData.provincia}
@@ -579,7 +581,7 @@ export default function ProfilePage() {
                 </div>
 
                 <div className="grid gap-2">
-                  <Label htmlFor="codiceUnivoco">Codice SDI</Label>
+                  <Label htmlFor="codiceUnivoco">{t("profile.codiceUnivoco")}</Label>
                   <Input
                     id="codiceUnivoco"
                     value={fiscalData.codiceUnivoco}
@@ -614,7 +616,7 @@ export default function ProfilePage() {
                     disabled={updateMutation.isPending}
                     data-testid="button-save-fiscal"
                   >
-                    {updateMutation.isPending ? "Salvataggio..." : "Salva Modifiche"}
+                    {updateMutation.isPending ? t("profile.saving") : t("profile.saveChanges")}
                   </Button>
                   <Button
                     type="button"
@@ -623,7 +625,7 @@ export default function ProfilePage() {
                     disabled={updateMutation.isPending}
                     data-testid="button-cancel-fiscal"
                   >
-                    Annulla
+                    {t("profile.cancel")}
                   </Button>
                 </div>
               )}
@@ -634,14 +636,14 @@ export default function ProfilePage() {
 
       <Card className="rounded-2xl">
         <CardHeader>
-          <CardTitle>Sicurezza Account</CardTitle>
-          <CardDescription>Informazioni sulla sicurezza del tuo account</CardDescription>
+          <CardTitle>{t("profile.securityInfo")}</CardTitle>
+          <CardDescription>{t("profile.securityInfoDesc")}</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="space-y-3 text-sm text-muted-foreground">
-            <p>• Per modificare la password, contatta l'amministratore del sistema</p>
-            <p>• Mantieni sempre aggiornati i tuoi dati di contatto</p>
-            <p>• Non condividere le tue credenziali con altre persone</p>
+            <p>{t("profile.securityTip1")}</p>
+            <p>{t("profile.securityTip2")}</p>
+            <p>{t("profile.securityTip3")}</p>
           </div>
         </CardContent>
       </Card>

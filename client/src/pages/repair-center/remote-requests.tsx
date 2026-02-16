@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useState } from "react";
 import { Link } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
@@ -18,22 +19,23 @@ type EnrichedRemoteRequest = RemoteRepairRequest & { devices: RemoteRepairReques
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
 
-const statusLabels: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
-  pending: { label: "In attesa", variant: "secondary" },
-  assigned: { label: "Assegnata", variant: "outline" },
-  accepted: { label: "Accettata", variant: "default" },
-  rejected: { label: "Rifiutata", variant: "destructive" },
-  awaiting_shipment: { label: "Attesa spedizione", variant: "outline" },
-  in_transit: { label: "In transito", variant: "default" },
-  received: { label: "Ricevuto", variant: "default" },
-  repair_created: { label: "Riparazione creata", variant: "default" },
-  cancelled: { label: "Annullata", variant: "destructive" },
-  quoted: { label: "Preventivo inviato", variant: "outline" },
-  quote_accepted: { label: "Preventivo accettato", variant: "default" },
-  quote_declined: { label: "Preventivo rifiutato", variant: "destructive" },
-};
 
 export default function RepairCenterRemoteRequests() {
+  const { t } = useTranslation();
+  const statusLabels: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
+    pending: { label: t("b2b.status.pending"), variant: "secondary" },
+    assigned: { label: "Assegnata", variant: "outline" },
+    accepted: { label: t("remoteRequests.accepted"), variant: "default" },
+    rejected: { label: t("common.rejected"), variant: "destructive" },
+    awaiting_shipment: { label: "Attesa spedizione", variant: "outline" },
+    in_transit: { label: t("shipping.inTransit"), variant: "default" },
+    received: { label: t("repairs.status.received"), variant: "default" },
+    repair_created: { label: t("remoteRequests.repairCreated"), variant: "default" },
+    cancelled: { label: t("common.cancelled"), variant: "destructive" },
+    quoted: { label: t("remote.preventivoInviato"), variant: "outline" },
+    quote_accepted: { label: t("remoteRequests.quoteAccepted"), variant: "default" },
+    quote_declined: { label: t("remoteRequests.quoteDeclined"), variant: "destructive" },
+  };
   const { user } = useAuth();
   const { toast } = useToast();
   const [isRejectOpen, setIsRejectOpen] = useState(false);
@@ -69,13 +71,13 @@ export default function RepairCenterRemoteRequests() {
       queryClient.invalidateQueries({ queryKey: ["/api/repair-center/remote-requests"] });
       queryClient.invalidateQueries({ queryKey: ["/api/repair-center/repairs"] });
       toast({
-        title: "Richiesta accettata",
-        description: "La richiesta è stata accettata con successo",
+        title: t("remoteRequests.requestAccepted"),
+        description: t("remote.laRichiestaStataAccettataConSuccesso"),
       });
     },
     onError: (error: Error) => {
       toast({
-        title: "Errore",
+        title: t("auth.error"),
         description: error.message,
         variant: "destructive",
       });
@@ -95,12 +97,12 @@ export default function RepairCenterRemoteRequests() {
       setQuoteDescription("");
       setQuoteValidDays("7");
       toast({
-        title: "Preventivo inviato",
-        description: "Il preventivo è stato inviato al cliente",
+        title: t("remote.preventivoInviato"),
+        description: t("remote.ilPreventivoStatoInviatoAlCliente"),
       });
     },
     onError: (error: Error) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("auth.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -112,12 +114,12 @@ export default function RepairCenterRemoteRequests() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/repair-center/remote-requests"] });
       toast({
-        title: "Preventivo saltato",
-        description: "Il cliente può procedere direttamente con la spedizione",
+        title: t("remoteRequests.quoteSkipped"),
+        description: t("remote.ilClientePuProcedereDirettamenteConLaSpedi"),
       });
     },
     onError: (error: Error) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("auth.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -133,13 +135,13 @@ export default function RepairCenterRemoteRequests() {
       setSelectedRequest(null);
       setRejectionReason("");
       toast({
-        title: "Richiesta rifiutata",
-        description: "La richiesta è stata rifiutata",
+        title: t("remoteRequests.requestRejected"),
+        description: t("remote.laRichiestaStataRifiutata"),
       });
     },
     onError: (error: Error) => {
       toast({
-        title: "Errore",
+        title: t("auth.error"),
         description: error.message,
         variant: "destructive",
       });
@@ -164,13 +166,13 @@ export default function RepairCenterRemoteRequests() {
         customerProvince: "",
       });
       toast({
-        title: "Pronto per spedizione",
-        description: "Il cliente è stato notificato e può procedere con la spedizione",
+        title: t("remoteRequests.readyForShipment"),
+        description: t("remote.ilClienteStatoNotificatoEPuProcedereCon"),
       });
     },
     onError: (error: Error) => {
       toast({
-        title: "Errore",
+        title: t("auth.error"),
         description: error.message,
         variant: "destructive",
       });
@@ -186,13 +188,13 @@ export default function RepairCenterRemoteRequests() {
       queryClient.invalidateQueries({ queryKey: ["/api/repair-center/remote-requests"] });
       queryClient.invalidateQueries({ queryKey: ["/api/repair-center/repairs"] });
       toast({
-        title: "Dispositivo ricevuto",
-        description: data.repairOrders?.length ? `${data.repairOrders.length} lavorazion${data.repairOrders.length === 1 ? 'e creata' : 'i create'}` : "Dispositivo contrassegnato come ricevuto",
+        title: t("remoteRequests.deviceReceived"),
+        description: data.repairOrders?.length ? (data.repairOrders.length === 1 ? t("remoteRequests.repairsCreated", { count: data.repairOrders.length }) : t("remoteRequests.repairsCreatedPlural", { count: data.repairOrders.length })) : t("remoteRequests.deviceMarkedReceived"),
       });
     },
     onError: (error: Error) => {
       toast({
-        title: "Errore",
+        title: t("auth.error"),
         description: error.message,
         variant: "destructive",
       });
@@ -212,13 +214,13 @@ export default function RepairCenterRemoteRequests() {
       setSelectedRequest(null);
       setForceReceivedNotes("");
       toast({
-        title: "Ricezione confermata",
-        description: data.repairOrders?.length ? `${data.repairOrders.length} lavorazion${data.repairOrders.length === 1 ? 'e creata' : 'i create'}` : "Ricezione forzata con successo",
+        title: t("remoteRequests.receptionConfirmed"),
+        description: data.repairOrders?.length ? (data.repairOrders.length === 1 ? t("remoteRequests.repairsCreated", { count: data.repairOrders.length }) : t("remoteRequests.repairsCreatedPlural", { count: data.repairOrders.length })) : t("remoteRequests.forcedReceptionSuccess"),
       });
     },
     onError: (error: Error) => {
       toast({
-        title: "Errore",
+        title: t("auth.error"),
         description: error.message,
         variant: "destructive",
       });
@@ -237,13 +239,13 @@ export default function RepairCenterRemoteRequests() {
       setSelectedRequest(null);
       setCancellationReason("");
       toast({
-        title: "Richiesta annullata",
-        description: "La richiesta è stata annullata",
+        title: t("remoteRequests.requestCancelled"),
+        description: t("remote.laRichiestaStataAnnullata"),
       });
     },
     onError: (error: Error) => {
       toast({
-        title: "Errore",
+        title: t("auth.error"),
         description: error.message,
         variant: "destructive",
       });
@@ -300,8 +302,8 @@ export default function RepairCenterRemoteRequests() {
               <Truck className="h-5 w-5 sm:h-7 sm:w-7 text-white" />
             </div>
             <div>
-              <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-white tracking-tight" data-testid="text-page-title">Richieste Remote</h1>
-              <p className="text-emerald-100">Gestisci le richieste di riparazione inviate dai clienti</p>
+              <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-white tracking-tight" data-testid="text-page-title">{t("sidebar.items.remoteRequests")}</h1>
+              <p className="text-emerald-100">{t("remote.gestisciLeRichiesteDiRiparazioneInviateDaiC")}</p>
             </div>
           </div>
         </div>
@@ -311,7 +313,7 @@ export default function RepairCenterRemoteRequests() {
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-12">
             <Package className="h-12 w-12 text-muted-foreground mb-4" />
-            <h3 className="text-lg font-medium">Nessuna richiesta</h3>
+            <h3 className="text-lg font-medium">{t("remote.nessunaRichiesta")}</h3>
             <p className="text-muted-foreground text-center mt-2">
               Non ci sono richieste di riparazione remota al momento.
             </p>
@@ -373,7 +375,7 @@ export default function RepairCenterRemoteRequests() {
                           <div className="flex items-center justify-between gap-2 mb-2">
                             <div className="flex items-center gap-2">
                               <Euro className="h-4 w-4 text-muted-foreground" />
-                              <span className="text-sm font-medium">Preventivo inviato</span>
+                              <span className="text-sm font-medium">{t("remote.preventivoInviato")}</span>
                               <Badge variant={request.status === 'quote_accepted' ? 'default' : request.status === 'quote_declined' ? 'destructive' : 'outline'} className="text-xs">
                                 {request.status === 'quoted' ? 'In attesa risposta' : request.status === 'quote_accepted' ? 'Accettato' : request.status === 'quote_declined' ? 'Rifiutato' : 'Inviato'}
                               </Badge>
@@ -398,19 +400,19 @@ export default function RepairCenterRemoteRequests() {
                           <div key={device.id} className="p-3 border rounded-md space-y-2" data-testid={`device-${device.id}`}>
                             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                               <div>
-                                <p className="text-xs text-muted-foreground">Dispositivo</p>
+                                <p className="text-xs text-muted-foreground">{t("repairs.device")}</p>
                                 <p className="text-sm font-medium">{device.deviceType}</p>
                               </div>
                               <div>
-                                <p className="text-xs text-muted-foreground">Marca / Modello</p>
+                                <p className="text-xs text-muted-foreground">{t("remote.marcaModello")}</p>
                                 <p className="text-sm font-medium">{device.brand} {device.model}</p>
                               </div>
                               <div>
-                                <p className="text-xs text-muted-foreground">Quantità</p>
+                                <p className="text-xs text-muted-foreground">{t("common.quantity")}</p>
                                 <p className="text-sm font-medium">{device.quantity}</p>
                               </div>
                               <div>
-                                <p className="text-xs text-muted-foreground">Stato</p>
+                                <p className="text-xs text-muted-foreground">{t("common.status")}</p>
                                 <Badge variant={statusLabels[device.status]?.variant || "secondary"} className="text-xs">
                                   {statusLabels[device.status]?.label || device.status}
                                 </Badge>
@@ -535,7 +537,7 @@ export default function RepairCenterRemoteRequests() {
                             </Button>
                           )}
                           {request.status === 'quote_accepted' && (
-                            <Badge variant="default">Pagamento in corso</Badge>
+                            <Badge variant="default">{t("remote.pagamentoInCorso")}</Badge>
                           )}
                           {request.status === 'awaiting_shipment' && (
                             <>
@@ -578,7 +580,7 @@ export default function RepairCenterRemoteRequests() {
                     <CardContent>
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-3">
                         <div>
-                          <p className="text-sm text-muted-foreground">Cliente</p>
+                          <p className="text-sm text-muted-foreground">{t("auth.customerTab")}</p>
                           <p className="font-medium">{(request as any).customerName || '-'}</p>
                           {(request as any).customerEmail && (
                             <p className="text-xs text-muted-foreground">{(request as any).customerEmail}</p>
@@ -593,7 +595,7 @@ export default function RepairCenterRemoteRequests() {
                           <div className="flex items-center justify-between gap-2 mb-2">
                             <div className="flex items-center gap-2">
                               <Euro className="h-4 w-4 text-muted-foreground" />
-                              <span className="text-sm font-medium">Preventivo inviato</span>
+                              <span className="text-sm font-medium">{t("remote.preventivoInviato")}</span>
                               <Badge variant={request.status === 'quote_accepted' ? 'default' : request.status === 'quote_declined' ? 'destructive' : 'outline'} className="text-xs">
                                 {request.status === 'quoted' ? 'In attesa risposta' : request.status === 'quote_accepted' ? 'Accettato' : request.status === 'quote_declined' ? 'Rifiutato' : 'Inviato'}
                               </Badge>
@@ -618,19 +620,19 @@ export default function RepairCenterRemoteRequests() {
                           <div key={device.id} className="p-3 border rounded-md space-y-2" data-testid={`device-${device.id}`}>
                             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                               <div>
-                                <p className="text-xs text-muted-foreground">Dispositivo</p>
+                                <p className="text-xs text-muted-foreground">{t("repairs.device")}</p>
                                 <p className="text-sm font-medium">{device.deviceType}</p>
                               </div>
                               <div>
-                                <p className="text-xs text-muted-foreground">Marca / Modello</p>
+                                <p className="text-xs text-muted-foreground">{t("remote.marcaModello")}</p>
                                 <p className="text-sm font-medium">{device.brand} {device.model}</p>
                               </div>
                               <div>
-                                <p className="text-xs text-muted-foreground">Quantità</p>
+                                <p className="text-xs text-muted-foreground">{t("common.quantity")}</p>
                                 <p className="text-sm font-medium">{device.quantity}</p>
                               </div>
                               <div>
-                                <p className="text-xs text-muted-foreground">Stato</p>
+                                <p className="text-xs text-muted-foreground">{t("common.status")}</p>
                                 <Badge variant={statusLabels[device.status]?.variant || "secondary"} className="text-xs">
                                   {statusLabels[device.status]?.label || device.status}
                                 </Badge>
@@ -732,12 +734,12 @@ export default function RepairCenterRemoteRequests() {
           </DialogHeader>
           <form onSubmit={handleReject} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="rejectionReason">Motivo</Label>
+              <Label htmlFor="rejectionReason">{t("common.reason")}</Label>
               <Textarea
                 id="rejectionReason"
                 value={rejectionReason}
                 onChange={(e) => setRejectionReason(e.target.value)}
-                placeholder="Spiega il motivo del rifiuto..."
+                placeholder={t("remoteRequests.explainRejectionReason")}
                 rows={3}
                 data-testid="input-rejection-reason"
               />
@@ -750,7 +752,7 @@ export default function RepairCenterRemoteRequests() {
                 {rejectMutation.isPending ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
                 ) : (
-                  "Conferma Rifiuto"
+                  t("transfers.confirmRejection")
                 )}
               </Button>
             </DialogFooter>
@@ -768,7 +770,7 @@ export default function RepairCenterRemoteRequests() {
           </DialogHeader>
           <form onSubmit={handleReady} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="customerAddress">Indirizzo</Label>
+              <Label htmlFor="customerAddress">{t("profile.indirizzo")}</Label>
               <Input
                 id="customerAddress"
                 value={shippingAddress.customerAddress}
@@ -789,17 +791,17 @@ export default function RepairCenterRemoteRequests() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="customerCity">Città</Label>
+                <Label htmlFor="customerCity">{t("profile.citta")}</Label>
                 <Input
                   id="customerCity"
                   value={shippingAddress.customerCity}
                   onChange={(e) => setShippingAddress({ ...shippingAddress, customerCity: e.target.value })}
-                  placeholder="Città"
+                  placeholder={t("profile.citta")}
                   data-testid="input-city"
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="customerProvince">Provincia</Label>
+                <Label htmlFor="customerProvince">{t("profile.provincia")}</Label>
                 <Input
                   id="customerProvince"
                   value={shippingAddress.customerProvince}
@@ -816,7 +818,7 @@ export default function RepairCenterRemoteRequests() {
                 id="centerNotes"
                 value={shippingAddress.centerNotes}
                 onChange={(e) => setShippingAddress({ ...shippingAddress, centerNotes: e.target.value })}
-                placeholder="Istruzioni per la spedizione..."
+                placeholder={t("remoteRequests.shippingInstructions")}
                 rows={2}
                 data-testid="input-center-notes"
               />
@@ -829,7 +831,7 @@ export default function RepairCenterRemoteRequests() {
                 {readyMutation.isPending ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
                 ) : (
-                  "Conferma"
+                  t("common.confirm")
                 )}
               </Button>
             </DialogFooter>
@@ -840,14 +842,14 @@ export default function RepairCenterRemoteRequests() {
       <Dialog open={isCancelOpen} onOpenChange={setIsCancelOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Annulla Richiesta</DialogTitle>
+            <DialogTitle>{t("remote.annullaRichiesta")}</DialogTitle>
             <DialogDescription>
               Il cliente non ha spedito il dispositivo. Vuoi annullare questa richiesta?
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="cancellationReason">Motivo (opzionale)</Label>
+              <Label htmlFor="cancellationReason">{t("common.reasonOptional")}</Label>
               <Textarea
                 id="cancellationReason"
                 value={cancellationReason}
@@ -870,7 +872,7 @@ export default function RepairCenterRemoteRequests() {
                 {cancelMutation.isPending ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
                 ) : (
-                  "Annulla Richiesta"
+                  t("transfers.cancelRequestTitle")
                 )}
               </Button>
             </DialogFooter>
@@ -881,7 +883,7 @@ export default function RepairCenterRemoteRequests() {
       <Dialog open={isQuoteOpen} onOpenChange={setIsQuoteOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Invia Preventivo</DialogTitle>
+            <DialogTitle>{t("standalone.sendQuote")}</DialogTitle>
             <DialogDescription>
               Inserisci l'importo e la descrizione del preventivo per il cliente
             </DialogDescription>
@@ -898,7 +900,7 @@ export default function RepairCenterRemoteRequests() {
             }
           }} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="quoteAmount">Importo (EUR)</Label>
+              <Label htmlFor="quoteAmount">{t("remote.importoEUR")}</Label>
               <Input
                 id="quoteAmount"
                 type="number"
@@ -917,13 +919,13 @@ export default function RepairCenterRemoteRequests() {
                 id="quoteDescription"
                 value={quoteDescription}
                 onChange={(e) => setQuoteDescription(e.target.value)}
-                placeholder="Descrivi i lavori previsti..."
+                placeholder={t("remoteRequests.describePlannedWork")}
                 rows={3}
                 data-testid="input-quote-description"
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="quoteValidDays">Validità (giorni)</Label>
+              <Label htmlFor="quoteValidDays">{t("remote.validitGiorni")}</Label>
               <Input
                 id="quoteValidDays"
                 type="number"
@@ -953,7 +955,7 @@ export default function RepairCenterRemoteRequests() {
       <Dialog open={isForceReceivedOpen} onOpenChange={setIsForceReceivedOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Conferma Ricezione Manuale</DialogTitle>
+            <DialogTitle>{t("remote.confermaRicezioneManuale")}</DialogTitle>
             <DialogDescription>
               Usa questa opzione se hai ricevuto il dispositivo ma il cliente non ha inserito i dati di spedizione nel sistema.
             </DialogDescription>
@@ -982,7 +984,7 @@ export default function RepairCenterRemoteRequests() {
                 {forceReceivedMutation.isPending ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
                 ) : (
-                  "Conferma Ricezione"
+                  t("transfers.confirmReception")
                 )}
               </Button>
             </DialogFooter>

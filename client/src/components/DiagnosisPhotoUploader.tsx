@@ -51,7 +51,7 @@ export function DiagnosisPhotoUploader({
     });
 
     if (!response.ok) {
-      throw new Error("Errore durante il caricamento");
+      throw new Error(t("attachment.uploadError"));
     }
 
     return response.json();
@@ -75,8 +75,8 @@ export function DiagnosisPhotoUploader({
       const validTypes = ["image/jpeg", "image/jpg", "image/png", "image/gif", "image/webp"];
       if (!validTypes.includes(file.type)) {
         toast({
-          title: "Tipo file non valido",
-          description: `${file.name} non è un'immagine supportata`,
+          title: t("attachment.invalidFileType"),
+          description: t("attachment.unsupportedImageType", { name: file.name }),
           variant: "destructive",
         });
         return false;
@@ -116,13 +116,13 @@ export function DiagnosisPhotoUploader({
           });
 
           toast({
-            title: "Foto caricata",
+            title: t("attachment.photoUploaded"),
             description: `${file.name} caricata con successo`,
           });
         }
       } catch (error) {
         toast({
-          title: "Errore caricamento",
+          title: t("common.uploadError"),
           description: `Impossibile caricare ${file.name}`,
           variant: "destructive",
         });

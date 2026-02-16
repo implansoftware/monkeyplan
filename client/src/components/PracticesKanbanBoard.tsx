@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useMemo } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -21,14 +22,14 @@ interface KanbanColumn {
 const PRACTICE_COLUMNS: KanbanColumn[] = [
   {
     key: "bozza",
-    label: "Bozza",
+    label: t("common.draft"),
     color: "text-gray-700 dark:text-gray-300",
     bgColor: "bg-gray-50 dark:bg-gray-900/30",
     borderColor: "border-gray-300 dark:border-gray-700",
   },
   {
     key: "inviata",
-    label: "Inviata",
+    label: t("common.sent"),
     color: "text-blue-700 dark:text-blue-300",
     bgColor: "bg-blue-50 dark:bg-blue-950/30",
     borderColor: "border-blue-300 dark:border-blue-700",
@@ -49,21 +50,21 @@ const PRACTICE_COLUMNS: KanbanColumn[] = [
   },
   {
     key: "completata",
-    label: "Completata",
+    label: t("common.completed"),
     color: "text-green-700 dark:text-green-300",
     bgColor: "bg-green-50 dark:bg-green-950/30",
     borderColor: "border-green-300 dark:border-green-700",
   },
   {
     key: "rifiutata",
-    label: "Rifiutata",
+    label: t("common.rejected"),
     color: "text-red-700 dark:text-red-300",
     bgColor: "bg-red-50 dark:bg-red-950/30",
     borderColor: "border-red-300 dark:border-red-700",
   },
   {
     key: "annullata",
-    label: "Annullata",
+    label: t("common.cancelled"),
     color: "text-red-800 dark:text-red-400",
     bgColor: "bg-red-50/50 dark:bg-red-950/20",
     borderColor: "border-red-200 dark:border-red-800",
@@ -97,6 +98,7 @@ export function PracticesKanbanBoard({
   isLoading,
   onCardClick,
 }: PracticesKanbanBoardProps) {
+  const { t } = useTranslation();
   const grouped = useMemo(() => {
     const groups: Record<string, UtilityPractice[]> = {};
     PRACTICE_COLUMNS.forEach((col) => {
@@ -151,7 +153,7 @@ export function PracticesKanbanBoard({
                 <div className="bg-muted/20 rounded-md p-2 space-y-2 min-h-[400px]">
                   {columnPractices.length === 0 ? (
                     <div className="text-center py-8 text-muted-foreground text-sm">
-                      Nessuna pratica
+                      {t("practice.noPractice")}
                     </div>
                   ) : (
                     columnPractices.map((practice) => (
@@ -218,7 +220,7 @@ function PracticeKanbanCard({ practice, services, suppliers, customers, products
         <div className="flex items-start justify-between gap-2">
           <span className="font-semibold text-sm">{practice.practiceNumber}</span>
           {practice.priority === "urgente" && (
-            <Badge variant="destructive" className="text-xs">Urgente</Badge>
+            <Badge variant="destructive" className="text-xs">{t("dataRecovery.urgent")}</Badge>
           )}
         </div>
 

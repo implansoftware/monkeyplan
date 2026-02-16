@@ -1,4 +1,5 @@
 import { useQuery, useMutation } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import {
   Select,
@@ -32,6 +33,7 @@ interface ContextResponse {
 }
 
 export function ContextSwitcher() {
+  const { t } = useTranslation();
   const { data: options, isLoading: isLoadingOptions } = useQuery<ContextOptionsResponse>({
     queryKey: ['/api/reseller/context-options'],
   });
@@ -164,20 +166,20 @@ export function ContextSwitcher() {
           className="w-full h-9 text-xs bg-muted/50 border-0"
           data-testid="select-context-trigger"
         >
-          <SelectValue placeholder="Seleziona contesto" />
+          <SelectValue placeholder={t("context.selectContext")} />
         </SelectTrigger>
         <SelectContent>
           <SelectItem value="all" data-testid="select-context-all">
             <div className="flex flex-wrap items-center gap-2 whitespace-nowrap">
               <Store className="h-3.5 w-3.5 flex-shrink-0 text-muted-foreground" />
-              <span>Tutti i miei dati</span>
+              <span>{t("context.allMyData")}</span>
             </div>
           </SelectItem>
           
           {options && options.childResellers.length > 0 && (
             <>
               <div className="px-2 py-1.5 text-[10px] font-medium text-muted-foreground uppercase tracking-wide">
-                Sub-Rivenditori
+                {t("context.subResellers")}
               </div>
               {options.childResellers.map((reseller) => (
                 <SelectItem 
@@ -197,7 +199,7 @@ export function ContextSwitcher() {
           {options && options.repairCenters.length > 0 && (
             <>
               <div className="px-2 py-1.5 text-[10px] font-medium text-muted-foreground uppercase tracking-wide">
-                Centri di Riparazione
+                {t("context.repairCenters")}
               </div>
               {options.repairCenters.map((center) => (
                 <SelectItem 
@@ -218,7 +220,7 @@ export function ContextSwitcher() {
       
       {context?.actingAs && (
         <p className="text-[10px] text-muted-foreground mt-1.5 truncate px-1">
-          Visualizzando: {context.actingAs.name}
+          {t("context.viewing")}: {context.actingAs.name}
         </p>
       )}
     </div>

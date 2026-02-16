@@ -21,6 +21,7 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
 import { AddressAutocomplete } from "@/components/address-autocomplete";
+import { useTranslation } from "react-i18next";
 
 type CommunicationChannel = 'email' | 'api' | 'whatsapp';
 
@@ -37,6 +38,7 @@ const communicationChannelIcons: Record<CommunicationChannel, typeof Mail> = {
 };
 
 export default function AdminSuppliers() {
+  const { t } = useTranslation();
   const [searchQuery, setSearchQuery] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingSupplier, setEditingSupplier] = useState<Supplier | null>(null);
@@ -71,10 +73,10 @@ export default function AdminSuppliers() {
       queryClient.invalidateQueries({ queryKey: ["/api/suppliers"] });
       setDialogOpen(false);
       setEditingSupplier(null);
-      toast({ title: "Fornitore creato con successo" });
+      toast({ title: t("suppliers.supplierCreated") });
     },
     onError: (error: Error) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -87,10 +89,10 @@ export default function AdminSuppliers() {
       queryClient.invalidateQueries({ queryKey: ["/api/suppliers"] });
       setDialogOpen(false);
       setEditingSupplier(null);
-      toast({ title: "Fornitore aggiornato" });
+      toast({ title: t("suppliers.supplierUpdated") });
     },
     onError: (error: Error) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -100,10 +102,10 @@ export default function AdminSuppliers() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/suppliers"] });
-      toast({ title: "Fornitore eliminato" });
+      toast({ title: t("suppliers.supplierDeleted") });
     },
     onError: (error: Error) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -211,10 +213,10 @@ export default function AdminSuppliers() {
             <form onSubmit={handleSubmit}>
               <Tabs value={activeTab} onValueChange={setActiveTab}>
                 <TabsList className="grid w-full grid-cols-4">
-                  <TabsTrigger value="general">Generale</TabsTrigger>
-                  <TabsTrigger value="contact">Contatti</TabsTrigger>
-                  <TabsTrigger value="communication">Comunicazione</TabsTrigger>
-                  <TabsTrigger value="commercial">Condizioni</TabsTrigger>
+                  <TabsTrigger value="general">{t("common.general")}</TabsTrigger>
+                  <TabsTrigger value="contact">{t("common.contacts")}</TabsTrigger>
+                  <TabsTrigger value="communication">{t("suppliers.communication")}</TabsTrigger>
+                  <TabsTrigger value="commercial">{t("suppliers.conditions")}</TabsTrigger>
                 </TabsList>
 
                 <TabsContent value="general" className="space-y-4 mt-4" forceMount hidden={activeTab !== "general"}>
@@ -225,7 +227,7 @@ export default function AdminSuppliers() {
                     </div>
                   )}
                   <div className="space-y-2">
-                    <Label htmlFor="name">Ragione Sociale *</Label>
+                    <Label htmlFor="name">{t("suppliers.businessName")} *</Label>
                     <Input 
                       id="name" 
                       name="name" 
@@ -236,7 +238,7 @@ export default function AdminSuppliers() {
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label htmlFor="vatNumber">Partita IVA</Label>
+                      <Label htmlFor="vatNumber">{t("suppliers.vatNumber")}</Label>
                       <Input 
                         id="vatNumber" 
                         name="vatNumber" 
@@ -245,7 +247,7 @@ export default function AdminSuppliers() {
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="fiscalCode">Codice Fiscale</Label>
+                      <Label htmlFor="fiscalCode">{t("suppliers.fiscalCode")}</Label>
                       <Input 
                         id="fiscalCode" 
                         name="fiscalCode" 
@@ -255,7 +257,7 @@ export default function AdminSuppliers() {
                     </div>
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="internalNotes">Note Interne</Label>
+                    <Label htmlFor="internalNotes">{t("common.internalNotes")}</Label>
                     <Textarea 
                       id="internalNotes" 
                       name="internalNotes" 
@@ -269,7 +271,7 @@ export default function AdminSuppliers() {
                 <TabsContent value="contact" className="space-y-4 mt-4" forceMount hidden={activeTab !== "contact"}>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label htmlFor="email">Email</Label>
+                      <Label htmlFor="email">{t("common.email")}</Label>
                       <Input 
                         id="email" 
                         name="email" 
@@ -279,7 +281,7 @@ export default function AdminSuppliers() {
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="phone">Telefono</Label>
+                      <Label htmlFor="phone">{t("common.phone")}</Label>
                       <Input 
                         id="phone" 
                         name="phone" 
@@ -302,7 +304,7 @@ export default function AdminSuppliers() {
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="website">Sito Web</Label>
+                      <Label htmlFor="website">{t("suppliers.website")}</Label>
                       <Input 
                         id="website" 
                         name="website" 
@@ -314,7 +316,7 @@ export default function AdminSuppliers() {
                     </div>
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="address">Indirizzo</Label>
+                    <Label htmlFor="address">{t("common.address")}</Label>
                     <AddressAutocomplete
                       id="address"
                       name="address"
@@ -325,19 +327,19 @@ export default function AdminSuppliers() {
                         setSelectedCity(result.city);
                         setSelectedZipCode(result.postalCode);
                       }}
-                      placeholder="Inizia a digitare l'indirizzo..."
+                      placeholder={t("common.startTypingAddress")}
                       data-testid="input-supplier-address"
                     />
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                     <div className="space-y-2">
-                      <Label htmlFor="city">Città</Label>
+                      <Label htmlFor="city">{t("common.city")}</Label>
                       <Input
                         id="city"
                         name="city"
                         value={selectedCity}
                         onChange={(e) => setSelectedCity(e.target.value)}
-                        placeholder="Città"
+                        placeholder={t("common.city")}
                         data-testid="input-supplier-city"
                       />
                     </div>
@@ -353,7 +355,7 @@ export default function AdminSuppliers() {
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="country">Paese</Label>
+                      <Label htmlFor="country">{t("common.country")}</Label>
                       <Input 
                         id="country" 
                         name="country" 
@@ -366,13 +368,13 @@ export default function AdminSuppliers() {
 
                 <TabsContent value="communication" className="space-y-4 mt-4" forceMount hidden={activeTab !== "communication"}>
                   <div className="space-y-2">
-                    <Label htmlFor="communicationChannel">Canale Preferito *</Label>
+                    <Label htmlFor="communicationChannel">{t("suppliers.preferredChannel")} *</Label>
                     <Select 
                       name="communicationChannel" 
                       defaultValue={editingSupplier?.communicationChannel || "email"}
                     >
                       <SelectTrigger data-testid="select-communication-channel">
-                        <SelectValue placeholder="Seleziona canale" />
+                        <SelectValue placeholder={t("suppliers.selectChannel")} />
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="email">
@@ -414,15 +416,15 @@ export default function AdminSuppliers() {
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="apiFormat">Formato</Label>
+                      <Label htmlFor="apiFormat">{t("suppliers.format")}</Label>
                       <Select name="apiFormat" defaultValue={editingSupplier?.apiFormat || "json"}>
                         <SelectTrigger data-testid="select-api-format">
-                          <SelectValue placeholder="Formato" />
+                          <SelectValue placeholder={t("suppliers.format")} />
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="json">JSON</SelectItem>
                           <SelectItem value="xml">XML</SelectItem>
-                          <SelectItem value="custom">Personalizzato</SelectItem>
+                          <SelectItem value="custom">{t("suppliers.custom")}</SelectItem>
                         </SelectContent>
                       </Select>
                       <p className="text-xs text-muted-foreground mt-1">
@@ -437,23 +439,23 @@ export default function AdminSuppliers() {
                       Template Email
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="orderEmailTemplate">Template Ordini</Label>
+                      <Label htmlFor="orderEmailTemplate">{t("suppliers.orderTemplate")}</Label>
                       <Textarea 
                         id="orderEmailTemplate" 
                         name="orderEmailTemplate" 
                         rows={3}
-                        placeholder="Template per email ordini..."
+                        placeholder={t("suppliers.orderEmailTemplate")}
                         defaultValue={editingSupplier?.orderEmailTemplate || ""}
                         data-testid="input-supplier-order-template" 
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="returnEmailTemplate">Template Resi</Label>
+                      <Label htmlFor="returnEmailTemplate">{t("suppliers.returnTemplate")}</Label>
                       <Textarea 
                         id="returnEmailTemplate" 
                         name="returnEmailTemplate" 
                         rows={3}
-                        placeholder="Template per email resi..."
+                        placeholder={t("suppliers.returnEmailTemplate")}
                         defaultValue={editingSupplier?.returnEmailTemplate || ""}
                         data-testid="input-supplier-return-template" 
                       />
@@ -463,26 +465,26 @@ export default function AdminSuppliers() {
 
                 <TabsContent value="commercial" className="space-y-4 mt-4" forceMount hidden={activeTab !== "commercial"}>
                   <div className="space-y-2">
-                    <Label>Condizioni di Pagamento</Label>
+                    <Label>{t("suppliers.paymentTerms")}</Label>
                     <Select 
                       name="paymentTerms" 
                       defaultValue={editingSupplier?.paymentTerms || "bank_transfer_30"}
                     >
                       <SelectTrigger data-testid="select-payment-terms">
-                        <SelectValue placeholder="Seleziona condizioni" />
+                        <SelectValue placeholder={t("suppliers.selectTerms")} />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="immediate">Pagamento Immediato</SelectItem>
-                        <SelectItem value="cod">Contrassegno</SelectItem>
-                        <SelectItem value="bank_transfer_15">Bonifico 15gg DFFM</SelectItem>
-                        <SelectItem value="bank_transfer_30">Bonifico 30gg DFFM</SelectItem>
-                        <SelectItem value="bank_transfer_60">Bonifico 60gg DFFM</SelectItem>
-                        <SelectItem value="bank_transfer_90">Bonifico 90gg DFFM</SelectItem>
+                        <SelectItem value="immediate">{t("suppliers.immediatePayment")}</SelectItem>
+                        <SelectItem value="cod">{t("suppliers.cashOnDelivery")}</SelectItem>
+                        <SelectItem value="bank_transfer_15">{t("suppliers.bankTransfer15")}</SelectItem>
+                        <SelectItem value="bank_transfer_30">{t("suppliers.bankTransfer30")}</SelectItem>
+                        <SelectItem value="bank_transfer_60">{t("suppliers.bankTransfer60")}</SelectItem>
+                        <SelectItem value="bank_transfer_90">{t("suppliers.bankTransfer90")}</SelectItem>
                         <SelectItem value="riba_30">RiBa 30gg DFFM</SelectItem>
                         <SelectItem value="riba_60">RiBa 60gg DFFM</SelectItem>
-                        <SelectItem value="credit_card">Carta di Credito</SelectItem>
+                        <SelectItem value="credit_card">{t("suppliers.creditCard")}</SelectItem>
                         <SelectItem value="paypal">PayPal</SelectItem>
-                        <SelectItem value="custom">Personalizzato</SelectItem>
+                        <SelectItem value="custom">{t("suppliers.custom")}</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -554,7 +556,7 @@ export default function AdminSuppliers() {
                   data-testid="button-submit-supplier"
                 >
                   {(createMutation.isPending || updateMutation.isPending) 
-                    ? "Salvataggio..." 
+                    ? t("settings.savingRate") 
                     : editingSupplier ? "Aggiorna" : "Crea Fornitore"}
                 </Button>
               </div>
@@ -569,7 +571,7 @@ export default function AdminSuppliers() {
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
-              placeholder="Cerca per nome, codice o città..."
+              placeholder={t("common.search")}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-9"
@@ -587,20 +589,20 @@ export default function AdminSuppliers() {
           ) : filteredSuppliers.length === 0 ? (
             <div className="text-center py-12 text-muted-foreground">
               <Building2 className="h-12 w-12 mx-auto mb-4 opacity-20" />
-              <p>Nessun fornitore trovato</p>
+              <p>{t("suppliers.noSuppliers")}</p>
               <p className="text-sm">Clicca su "Nuovo Fornitore" per aggiungerne uno</p>
             </div>
           ) : (
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Codice</TableHead>
-                  <TableHead>Fornitore</TableHead>
-                  <TableHead>Contatti</TableHead>
-                  <TableHead>Canale</TableHead>
-                  <TableHead>Consegna</TableHead>
-                  <TableHead>Stato</TableHead>
-                  <TableHead className="text-right">Azioni</TableHead>
+                  <TableHead>{t("common.code")}</TableHead>
+                  <TableHead>{t("suppliers.supplier")}</TableHead>
+                  <TableHead>{t("common.contacts")}</TableHead>
+                  <TableHead>{t("suppliers.channel")}</TableHead>
+                  <TableHead>{t("suppliers.delivery")}</TableHead>
+                  <TableHead>{t("common.status")}</TableHead>
+                  <TableHead className="text-right">{t("common.actions")}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>

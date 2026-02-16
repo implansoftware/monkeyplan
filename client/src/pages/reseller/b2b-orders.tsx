@@ -21,6 +21,7 @@ import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
 import { useLocation } from "wouter";
+import { useTranslation } from "react-i18next";
 
 interface B2BOrderWithItems extends ResellerPurchaseOrder {
   items: (ResellerPurchaseOrderItem & { product?: Product })[];
@@ -29,14 +30,14 @@ interface B2BOrderWithItems extends ResellerPurchaseOrder {
 
 const returnStatusLabels: Record<string, string> = {
   requested: "Richiesto",
-  approved: "Approvato",
-  rejected: "Rifiutato",
+  approved: t("repairs.status.approved"),
+  rejected: t("b2b.status.cancelled"),
   awaiting_shipment: "In attesa spedizione",
-  shipped: "Spedito",
-  received: "Ricevuto",
+  shipped: t("b2b.status.shipped"),
+  received: t("repairs.status.received"),
   inspecting: "In ispezione",
-  completed: "Completato",
-  cancelled: "Annullato",
+  completed: t("common.completed"),
+  cancelled: t("repairs.status.cancelled"),
 };
 
 function formatPrice(cents: number): string {
@@ -44,17 +45,17 @@ function formatPrice(cents: number): string {
 }
 
 const statusConfig: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline"; icon: any }> = {
-  draft: { label: "Bozza", variant: "outline", icon: Clock },
-  pending: { label: "In Attesa", variant: "secondary", icon: Clock },
-  approved: { label: "Approvato", variant: "default", icon: CheckCircle },
-  rejected: { label: "Rifiutato", variant: "destructive", icon: XCircle },
-  shipped: { label: "Spedito", variant: "default", icon: Truck },
-  received: { label: "Ricevuto", variant: "default", icon: PackageCheck },
-  cancelled: { label: "Annullato", variant: "destructive", icon: XCircle },
+  draft: { label: t("invoices.draft"), variant: "outline", icon: Clock },
+  pending: { label: t("common.pending"), variant: "secondary", icon: Clock },
+  approved: { label: t("repairs.status.approved"), variant: "default", icon: CheckCircle },
+  rejected: { label: t("b2b.status.cancelled"), variant: "destructive", icon: XCircle },
+  shipped: { label: t("b2b.status.shipped"), variant: "default", icon: Truck },
+  received: { label: t("repairs.status.received"), variant: "default", icon: PackageCheck },
+  cancelled: { label: t("repairs.status.cancelled"), variant: "destructive", icon: XCircle },
 };
 
 const paymentMethodLabels: Record<string, string> = {
-  bank_transfer: "Bonifico Bancario",
+  bank_transfer: t("settings.bankTransfer"),
   stripe: "Stripe",
   credit: "Credito Reseller",
 };
@@ -66,10 +67,11 @@ const returnReasons: Record<string, string> = {
   damaged_in_transit: "Danneggiato in transito",
   excess_stock: "Eccesso di stock",
   quality_issue: "Problema qualità",
-  other: "Altro",
+  other: t("common.other"),
 };
 
 export default function ResellerB2BOrders() {
+  const { t } = useTranslation();
   const [selectedOrder, setSelectedOrder] = useState<B2BOrderWithItems | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
   const [returnDialogOpen, setReturnDialogOpen] = useState(false);
@@ -109,7 +111,7 @@ export default function ResellerB2BOrders() {
           queryClient.invalidateQueries({ queryKey: ['/api/reseller/b2b-orders'] });
         } catch (error: any) {
           toast({ 
-            title: "Errore", 
+            title: t("common.error"), 
             description: error.message || "Errore durante la creazione dell'ordine", 
             variant: "destructive" 
           });
@@ -135,7 +137,7 @@ export default function ResellerB2BOrders() {
       setDetailOpen(false);
     },
     onError: (error: any) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -153,7 +155,7 @@ export default function ResellerB2BOrders() {
       resetReturnForm();
     },
     onError: (error: any) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -190,7 +192,7 @@ export default function ResellerB2BOrders() {
       }));
 
     if (!items || items.length === 0) {
-      toast({ title: "Errore", description: "Seleziona almeno un articolo da rendere", variant: "destructive" });
+      toast({ title: t("common.error"), description: "Seleziona almeno un articolo da rendere", variant: "destructive" });
       return;
     }
 
@@ -243,9 +245,7 @@ export default function ResellerB2BOrders() {
               )}
               {hasCompletedReturn && !hasActiveReturn && (
                 <Badge variant="outline" className="flex flex-wrap items-center gap-1 text-green-600 border-green-300">
-                  <CheckCircle className="h-3 w-3" />
-                  Reso completato
-                </Badge>
+                  <CheckCircle className="h-3 w-3" />{t("b2b.returnCompleted")}</Badge>
               )}
             </div>
           </div>
@@ -263,9 +263,7 @@ export default function ResellerB2BOrders() {
         <CardFooter className="flex justify-between items-center">
           <span className="font-semibold text-primary">{formatPrice(order.total || 0)}</span>
           <Button variant="ghost" size="sm">
-            <Eye className="h-4 w-4 mr-1" />
-            Dettagli
-          </Button>
+            <Eye className="h-4 w-4 mr-1" />{t("common.details")}</Button>
         </CardFooter>
       </Card>
     );
@@ -294,7 +292,7 @@ export default function ResellerB2BOrders() {
               <ShoppingBag className="h-6 w-6 text-white" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold tracking-tight text-white">I Miei Ordini B2B</h1>
+              <h1 className="text-2xl font-bold tracking-tight text-white">{t("sidebar.items.myB2BOrders")}</h1>
               <p className="text-sm text-white/80">Gestisci i tuoi ordini di acquisto dal magazzino centrale</p>
             </div>
           </div>
@@ -382,10 +380,10 @@ export default function ResellerB2BOrders() {
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Prodotto</TableHead>
-                      <TableHead className="text-right">Prezzo</TableHead>
-                      <TableHead className="text-right">Qtà</TableHead>
-                      <TableHead className="text-right">Totale</TableHead>
+                      <TableHead>{t("common.product")}</TableHead>
+                      <TableHead className="text-right">{t("common.price")}</TableHead>
+                      <TableHead className="text-right">{t("common.qty")}</TableHead>
+                      <TableHead className="text-right">{t("common.total")}</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -507,9 +505,7 @@ export default function ResellerB2BOrders() {
               )}
 
               <DialogFooter className="gap-2">
-                <Button variant="outline" onClick={() => setDetailOpen(false)}>
-                  Chiudi
-                </Button>
+                <Button variant="outline" onClick={() => setDetailOpen(false)}>{t("common.close")}</Button>
                 {selectedOrder.status === 'shipped' && (
                   <Button 
                     onClick={() => confirmReceiptMutation.mutate(selectedOrder.id)}
@@ -517,7 +513,7 @@ export default function ResellerB2BOrders() {
                     data-testid="button-confirm-receipt"
                   >
                     <PackageCheck className="h-4 w-4 mr-2" />
-                    {confirmReceiptMutation.isPending ? "Conferma in corso..." : "Conferma Ricezione"}
+                    {confirmReceiptMutation.isPending ? "Conferma in corso..." : t("b2b.confirmReceipt")}
                   </Button>
                 )}
                 {selectedOrder.status === 'received' && 
@@ -580,8 +576,8 @@ export default function ResellerB2BOrders() {
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Prodotto</TableHead>
-                      <TableHead className="text-right">Disponibile</TableHead>
+                      <TableHead>{t("common.product")}</TableHead>
+                      <TableHead className="text-right">{t("shop.inStock")}</TableHead>
                       <TableHead className="text-right w-32">Qtà da rendere</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -635,9 +631,7 @@ export default function ResellerB2BOrders() {
           </div>
 
           <DialogFooter>
-            <Button variant="outline" onClick={() => { setReturnDialogOpen(false); resetReturnForm(); }}>
-              Annulla
-            </Button>
+            <Button variant="outline" onClick={() => { setReturnDialogOpen(false); resetReturnForm(); }}>{t("common.cancel")}</Button>
             <Button 
               onClick={handleSubmitReturn}
               disabled={!returnReason || createReturnMutation.isPending}

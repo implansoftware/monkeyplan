@@ -21,6 +21,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { useTranslation } from "react-i18next";
 
 interface ExpenseReport {
   id: string;
@@ -57,6 +58,7 @@ const statusLabels: Record<string, string> = {
 };
 
 export default function AdminExpensesPage() {
+  const { t } = useTranslation();
   const [entityType, setEntityType] = useState<AdminEntityType>("all");
   const [selectedEntityId, setSelectedEntityId] = useState("");
   const [editDialogOpen, setEditDialogOpen] = useState(false);
@@ -101,10 +103,10 @@ export default function AdminExpensesPage() {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/hr/expense-reports", queryString] });
       setEditDialogOpen(false);
       setEditingReport(null);
-      toast({ title: "Nota spese aggiornata con successo" });
+      toast({ title: t("hr.expenseUpdated") });
     },
     onError: () => {
-      toast({ title: "Errore durante l'aggiornamento", variant: "destructive" });
+      toast({ title: t("hr.updateError"), variant: "destructive" });
     }
   });
 
@@ -122,7 +124,7 @@ export default function AdminExpensesPage() {
     if (!editingReport) return;
     const amount = parseFloat(editForm.totalAmount);
     if (isNaN(amount) || amount < 0) {
-      toast({ title: "Importo non valido", variant: "destructive" });
+      toast({ title: t("hr.invalidAmount"), variant: "destructive" });
       return;
     }
     editMutation.mutate({
@@ -155,11 +157,11 @@ export default function AdminExpensesPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/hr/expense-reports", queryString] });
       setUploadingReportId(null);
-      toast({ title: "Allegato caricato" });
+      toast({ title: t("hr.attachmentUploaded") });
     },
     onError: (error: any) => {
       setUploadingReportId(null);
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     }
   });
 
@@ -175,7 +177,7 @@ export default function AdminExpensesPage() {
       window.open(data.signedUrl, '_blank');
     },
     onError: (error: any) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     }
   });
 
@@ -185,10 +187,10 @@ export default function AdminExpensesPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/hr/expense-reports", queryString] });
-      toast({ title: "Allegato rimosso" });
+      toast({ title: t("hr.attachmentRemoved") });
     },
     onError: (error: any) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     }
   });
 
@@ -215,7 +217,7 @@ export default function AdminExpensesPage() {
         </div>
         <div className="flex flex-wrap items-center gap-4">
           <div className="text-right">
-            <p className="text-sm text-muted-foreground">Totale</p>
+            <p className="text-sm text-muted-foreground">{t("common.total")}</p>
             <p className="text-xl font-bold flex items-center gap-1">
               <Euro className="h-5 w-5" />
               {totalAmount.toFixed(2)}
@@ -245,20 +247,20 @@ export default function AdminExpensesPage() {
           ) : reports.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">
               <Receipt className="h-12 w-12 mx-auto mb-4 opacity-50" />
-              <p>Nessuna nota spese trovata</p>
+              <p>{t("hr.noExpenses")}</p>
             </div>
           ) : (
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Dipendente</TableHead>
-                  <TableHead>Titolo</TableHead>
-                  <TableHead>Importo</TableHead>
-                  <TableHead>Data Creazione</TableHead>
-                  <TableHead>Stato</TableHead>
-                  <TableHead>Descrizione</TableHead>
-                  <TableHead>Allegato</TableHead>
-                  <TableHead>Azioni</TableHead>
+                  <TableHead>{t("hr.employee")}</TableHead>
+                  <TableHead>{t("common.title")}</TableHead>
+                  <TableHead>{t("common.amount")}</TableHead>
+                  <TableHead>{t("common.creationDate")}</TableHead>
+                  <TableHead>{t("common.status")}</TableHead>
+                  <TableHead>{t("common.description")}</TableHead>
+                  <TableHead>{t("hr.attachment")}</TableHead>
+                  <TableHead>{t("common.actions")}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -381,18 +383,18 @@ export default function AdminExpensesPage() {
       <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Modifica Nota Spese</DialogTitle>
+            <DialogTitle>{t("hr.editExpense")}</DialogTitle>
             <DialogDescription>
               Modifica i dettagli della nota spese
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label>Titolo</Label>
+              <Label>{t("common.title")}</Label>
               <Input
                 value={editForm.title}
                 onChange={(e) => setEditForm({ ...editForm, title: e.target.value })}
-                placeholder="Titolo della nota spese..."
+                placeholder={t("hr.expenseTitlePlaceholder")}
                 data-testid="input-edit-title"
               />
             </div>
@@ -409,11 +411,11 @@ export default function AdminExpensesPage() {
               />
             </div>
             <div className="space-y-2">
-              <Label>Descrizione</Label>
+              <Label>{t("common.description")}</Label>
               <Textarea
                 value={editForm.description}
                 onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
-                placeholder="Descrizione della spesa..."
+                placeholder={t("hr.expenseDescPlaceholder")}
                 data-testid="textarea-edit-description"
               />
             </div>
@@ -423,7 +425,7 @@ export default function AdminExpensesPage() {
               Annulla
             </Button>
             <Button onClick={handleEdit} disabled={editMutation.isPending} data-testid="button-save-edit">
-              {editMutation.isPending ? "Salvataggio..." : "Salva"}
+              {editMutation.isPending ? t("settings.savingRate") : "Salva"}
             </Button>
           </DialogFooter>
         </DialogContent>

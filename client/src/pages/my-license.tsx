@@ -12,6 +12,7 @@ import { SiStripe, SiPaypal } from "react-icons/si";
 import type { LicensePlan, License } from "@shared/schema";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
+import { useTranslation } from "react-i18next";
 
 interface MyLicenseResponse {
   license: License | null;
@@ -44,22 +45,30 @@ interface PaymentMethods {
   paypal: boolean;
 }
 
-const DURATION_LABELS: Record<number, string> = {
-  1: "1 Mese",
-  3: "3 Mesi",
-  6: "6 Mesi",
-  12: "12 Mesi",
-};
-
-const STATUS_MAP: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
-  active: { label: "Attiva", variant: "default" },
-  expired: { label: "Scaduta", variant: "destructive" },
-  cancelled: { label: "Cancellata", variant: "secondary" },
-  pending: { label: "In attesa di pagamento", variant: "outline" },
+const STATUS_VARIANTS: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
+  active: "default",
+  expired: "destructive",
+  cancelled: "secondary",
+  pending: "outline",
 };
 
 export default function MyLicense() {
+  const { t } = useTranslation();
   const { toast } = useToast();
+
+  const DURATION_LABELS: Record<number, string> = {
+    1: t("license.month1"),
+    3: t("license.month3"),
+    6: t("license.month6"),
+    12: t("license.month12"),
+  };
+
+  const STATUS_LABELS: Record<string, string> = {
+    active: t("license.statusActive"),
+    expired: t("license.statusExpired"),
+    cancelled: t("license.statusCancelled"),
+    pending: t("license.statusPending"),
+  };
   const [selectedPlan, setSelectedPlan] = useState<LicensePlan | null>(null);
   const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -90,13 +99,13 @@ export default function MyLicense() {
       if (data.confirmed || data.alreadyActive) {
         queryClient.invalidateQueries({ queryKey: ["/api/licenses/my"] });
         queryClient.invalidateQueries({ queryKey: ["/api/licenses/history"] });
-        toast({ title: "Pagamento confermato", description: "La tua licenza è ora attiva." });
+        toast({ title: t("license.paymentConfirmed"), description: t("license.licenseNowActive") });
       } else {
-        toast({ title: "Pagamento in elaborazione", description: "Il pagamento non è ancora stato confermato. Riprova tra qualche secondo.", variant: "destructive" });
+        toast({ title: t("license.paymentProcessing"), description: t("license.paymentNotConfirmedYet"), variant: "destructive" });
       }
     },
     onError: (err: any) => {
-      toast({ title: "Errore", description: err.message, variant: "destructive" });
+      toast({ title: t("license.error"), description: err.message, variant: "destructive" });
     },
   });
 
@@ -109,13 +118,13 @@ export default function MyLicense() {
       if (data.confirmed || data.alreadyActive) {
         queryClient.invalidateQueries({ queryKey: ["/api/licenses/my"] });
         queryClient.invalidateQueries({ queryKey: ["/api/licenses/history"] });
-        toast({ title: "Pagamento PayPal confermato", description: "La tua licenza è ora attiva." });
+        toast({ title: t("license.paypalPaymentConfirmed"), description: t("license.licenseNowActive") });
       } else {
-        toast({ title: "Pagamento in elaborazione", description: "Il pagamento PayPal non è ancora stato confermato.", variant: "destructive" });
+        toast({ title: t("license.paymentProcessing"), description: t("license.paypalPaymentNotConfirmed"), variant: "destructive" });
       }
     },
     onError: (err: any) => {
-      toast({ title: "Errore", description: err.message, variant: "destructive" });
+      toast({ title: t("license.error"), description: err.message, variant: "destructive" });
     },
   });
 
@@ -128,7 +137,7 @@ export default function MyLicense() {
     const paymentCancelled = params.get("payment_cancelled");
 
     if (paymentCancelled) {
-      toast({ title: "Pagamento annullato", description: "Puoi riprovare quando vuoi.", variant: "destructive" });
+      toast({ title: t("license.paymentCancelled"), description: t("license.paymentCancelledDesc"), variant: "destructive" });
       window.history.replaceState({}, "", window.location.pathname);
       return;
     }
@@ -179,7 +188,7 @@ export default function MyLicense() {
       if (data.free) {
         queryClient.invalidateQueries({ queryKey: ["/api/licenses/my"] });
         queryClient.invalidateQueries({ queryKey: ["/api/licenses/history"] });
-        toast({ title: "Licenza attivata", description: "Piano gratuito attivato con successo." });
+        toast({ title: t("license.licenseActivated"), description: t("license.freePlanActivated") });
         setIsPaymentDialogOpen(false);
         setSelectedPlan(null);
         return;
@@ -197,9 +206,9 @@ export default function MyLicense() {
         return;
       }
 
-      toast({ title: "Errore", description: "Nessun URL di pagamento ricevuto", variant: "destructive" });
+      toast({ title: t("license.error"), description: t("license.noPaymentUrl"), variant: "destructive" });
     } catch (err: any) {
-      toast({ title: "Errore", description: err.message || "Errore durante l'attivazione", variant: "destructive" });
+      toast({ title: t("license.error"), description: err.message || t("license.activationError"), variant: "destructive" });
     } finally {
       setIsProcessing(false);
     }
@@ -226,8 +235,8 @@ export default function MyLicense() {
   return (
     <div className="p-6 space-y-8">
       <div>
-        <h1 className="text-2xl font-bold" data-testid="text-page-title">La Mia Licenza</h1>
-        <p className="text-sm text-muted-foreground">Gestisci il tuo abbonamento a MonkeyPlan</p>
+        <h1 className="text-2xl font-bold" data-testid="text-page-title">{t("license.myLicense")}</h1>
+        <p className="text-sm text-muted-foreground">{t("license.manageSubscription")}</p>
       </div>
 
       {hasActiveLicense && currentLicense.license && currentLicense.plan ? (
@@ -239,7 +248,7 @@ export default function MyLicense() {
               </div>
               <div>
                 <CardTitle className="text-lg">{currentLicense.plan.name}</CardTitle>
-                <Badge variant="default">Attiva</Badge>
+                <Badge variant="default">{t("license.active")}</Badge>
               </div>
             </div>
             {currentLicense.daysRemaining !== undefined && (
@@ -247,32 +256,32 @@ export default function MyLicense() {
                 <p className={`text-2xl font-bold ${currentLicense.daysRemaining <= 7 ? 'text-amber-600' : 'text-emerald-600 dark:text-emerald-400'}`} data-testid="text-days-left">
                   {currentLicense.daysRemaining}
                 </p>
-                <p className="text-xs text-muted-foreground">giorni rimasti</p>
+                <p className="text-xs text-muted-foreground">{t("license.daysLeft")}</p>
               </div>
             )}
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <div>
-                <p className="text-xs text-muted-foreground">Inizio</p>
+                <p className="text-xs text-muted-foreground">{t("license.startDate")}</p>
                 <p className="text-sm font-medium">{format(new Date(currentLicense.license.startDate), "dd MMM yyyy", { locale: it })}</p>
               </div>
               <div>
-                <p className="text-xs text-muted-foreground">Scadenza</p>
+                <p className="text-xs text-muted-foreground">{t("license.endDate")}</p>
                 <p className="text-sm font-medium">{format(new Date(currentLicense.license.endDate), "dd MMM yyyy", { locale: it })}</p>
               </div>
               <div>
-                <p className="text-xs text-muted-foreground">Durata</p>
-                <p className="text-sm font-medium">{DURATION_LABELS[currentLicense.plan.durationMonths] || `${currentLicense.plan.durationMonths} Mesi`}</p>
+                <p className="text-xs text-muted-foreground">{t("license.duration")}</p>
+                <p className="text-sm font-medium">{DURATION_LABELS[currentLicense.plan.durationMonths] || `${currentLicense.plan.durationMonths} ${t("license.months")}`}</p>
               </div>
               <div>
-                <p className="text-xs text-muted-foreground">Pagamento</p>
+                <p className="text-xs text-muted-foreground">{t("license.payment")}</p>
                 <p className="text-sm font-medium capitalize">{currentLicense.license.paymentMethod}</p>
               </div>
             </div>
             {currentLicense.plan.features && (
               <div className="mt-4 pt-4 border-t">
-                <p className="text-xs text-muted-foreground mb-2">Funzionalità incluse:</p>
+                <p className="text-xs text-muted-foreground mb-2">{t("license.includedFeatures")}</p>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-1">
                   {currentLicense.plan.features.split("\n").filter(Boolean).map((f, i) => (
                     <div key={i} className="flex items-center gap-2 text-sm">
@@ -290,12 +299,12 @@ export default function MyLicense() {
           <CardContent className="py-8 text-center">
             <AlertTriangle className="w-12 h-12 mx-auto mb-4 text-amber-500" />
             <h3 className="text-lg font-semibold mb-1">
-              {currentLicense?.isExpired ? "Licenza scaduta" : "Nessuna licenza attiva"}
+              {currentLicense?.isExpired ? t("license.licenseExpired") : t("license.noActiveLicense")}
             </h3>
             <p className="text-sm text-muted-foreground">
               {currentLicense?.isExpired
-                ? "La tua licenza è scaduta. Rinnova per continuare a usare MonkeyPlan."
-                : "Scegli un piano qui sotto per attivare la tua licenza MonkeyPlan."}
+                ? t("license.expiredDesc")
+                : t("license.choosePlanDesc")}
             </p>
           </CardContent>
         </Card>
@@ -303,13 +312,13 @@ export default function MyLicense() {
 
       <div>
         <h2 className="text-xl font-semibold mb-4" data-testid="text-plans-title">
-          {hasActiveLicense ? "Cambia Piano" : "Scegli un Piano"}
+          {hasActiveLicense ? t("license.changePlan") : t("license.choosePlan")}
         </h2>
         {(!plans || plans.length === 0) ? (
           <Card>
             <CardContent className="py-8 text-center text-muted-foreground">
               <CreditCard className="w-10 h-10 mx-auto mb-3 opacity-50" />
-              <p>Nessun piano disponibile al momento</p>
+              <p>{t("license.noPlansAvailable")}</p>
             </CardContent>
           </Card>
         ) : (
@@ -328,7 +337,7 @@ export default function MyLicense() {
                   <CardContent className="text-center space-y-4">
                     <div>
                       {isFree ? (
-                        <span className="text-3xl font-bold">Gratuito</span>
+                        <span className="text-3xl font-bold">{t("license.free")}</span>
                       ) : (
                         <>
                           <span className="text-3xl font-bold">{(plan.priceCents / 100).toFixed(2)}</span>
@@ -338,7 +347,7 @@ export default function MyLicense() {
                     </div>
                     <div className="flex items-center justify-center gap-1 text-sm text-muted-foreground">
                       <Clock className="w-3.5 h-3.5" />
-                      {DURATION_LABELS[plan.durationMonths] || `${plan.durationMonths} Mesi`}
+                      {DURATION_LABELS[plan.durationMonths] || `${plan.durationMonths} ${t("license.months")}`}
                     </div>
                     {plan.features && (
                       <div className="text-left space-y-1 text-sm">
@@ -351,9 +360,9 @@ export default function MyLicense() {
                       </div>
                     )}
                     {isCurrentPlan ? (
-                      <Badge variant="default" className="w-full justify-center">Piano attuale</Badge>
+                      <Badge variant="default" className="w-full justify-center">{t("license.currentPlan")}</Badge>
                     ) : !isFree && !hasAnyPaymentMethod ? (
-                      <p className="text-xs text-muted-foreground">Pagamenti non configurati</p>
+                      <p className="text-xs text-muted-foreground">{t("license.paymentsNotConfigured")}</p>
                     ) : (
                       <Button
                         className="w-full"
@@ -362,8 +371,8 @@ export default function MyLicense() {
                         data-testid={`button-activate-plan-${plan.id}`}
                       >
                         {isProcessing ? (
-                          <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Elaborazione...</>
-                        ) : isFree ? "Attiva Gratis" : "Acquista Piano"}
+                          <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> {t("license.processing")}</>
+                        ) : isFree ? t("license.activateFree") : t("license.buyPlan")}
                       </Button>
                     )}
                   </CardContent>
@@ -377,7 +386,7 @@ export default function MyLicense() {
       <Dialog open={isPaymentDialogOpen} onOpenChange={(open) => { if (!isProcessing) { setIsPaymentDialogOpen(open); if (!open) setSelectedPlan(null); } }}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>Scegli il metodo di pagamento</DialogTitle>
+            <DialogTitle>{t("license.choosePaymentMethod")}</DialogTitle>
           </DialogHeader>
           {selectedPlan && (
             <div className="space-y-5">
@@ -387,7 +396,7 @@ export default function MyLicense() {
                     <div>
                       <p className="font-semibold">{selectedPlan.name}</p>
                       <p className="text-sm text-muted-foreground">
-                        {DURATION_LABELS[selectedPlan.durationMonths] || `${selectedPlan.durationMonths} Mesi`}
+                        {DURATION_LABELS[selectedPlan.durationMonths] || `${selectedPlan.durationMonths} ${t("license.months")}`}
                       </p>
                     </div>
                     <p className="text-2xl font-bold">{(selectedPlan.priceCents / 100).toFixed(2)} EUR</p>
@@ -410,8 +419,8 @@ export default function MyLicense() {
                       <SiStripe className="w-5 h-5 text-[#635BFF]" />
                     )}
                     <div className="text-left">
-                      <p className="font-medium">Paga con Stripe</p>
-                      <p className="text-xs text-muted-foreground">Carta di credito/debito</p>
+                      <p className="font-medium">{t("license.payWithStripe")}</p>
+                      <p className="text-xs text-muted-foreground">{t("license.creditDebitCard")}</p>
                     </div>
                   </Button>
                 )}
@@ -430,15 +439,15 @@ export default function MyLicense() {
                       <SiPaypal className="w-5 h-5 text-[#003087]" />
                     )}
                     <div className="text-left">
-                      <p className="font-medium">Paga con PayPal</p>
-                      <p className="text-xs text-muted-foreground">Account PayPal o carta</p>
+                      <p className="font-medium">{t("license.payWithPaypal")}</p>
+                      <p className="text-xs text-muted-foreground">{t("license.paypalOrCard")}</p>
                     </div>
                   </Button>
                 )}
 
                 {!hasStripe && !hasPaypal && (
                   <p className="text-sm text-muted-foreground text-center py-4">
-                    Nessun metodo di pagamento configurato dall'amministratore.
+                    {t("license.noPaymentMethodConfigured")}
                   </p>
                 )}
               </div>
@@ -451,13 +460,14 @@ export default function MyLicense() {
         <div>
           <h2 className="text-xl font-semibold mb-4 flex items-center gap-2" data-testid="text-history-title">
             <History className="w-5 h-5" />
-            Storico Licenze
+            {t("license.licenseHistory")}
           </h2>
           <Card>
             <CardContent className="py-4">
               <div className="space-y-3">
                 {history.map(h => {
-                  const statusInfo = STATUS_MAP[h.status] || { label: h.status, variant: "outline" as const };
+                  const statusVariant = STATUS_VARIANTS[h.status] || "outline";
+                  const statusLabel = STATUS_LABELS[h.status] || h.status;
                   return (
                     <div
                       key={h.id}
@@ -473,7 +483,7 @@ export default function MyLicense() {
                       </div>
                       <div className="flex items-center gap-2">
                         <span className="text-sm text-muted-foreground capitalize">{h.paymentMethod}</span>
-                        <Badge variant={statusInfo.variant}>{statusInfo.label}</Badge>
+                        <Badge variant={statusVariant}>{statusLabel}</Badge>
                       </div>
                     </div>
                   );
@@ -487,18 +497,19 @@ export default function MyLicense() {
       <Dialog open={!!selectedHistoryItem} onOpenChange={(open) => { if (!open) setSelectedHistoryItem(null); }}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle data-testid="text-history-detail-title">Dettagli Licenza</DialogTitle>
+            <DialogTitle data-testid="text-history-detail-title">{t("license.licenseDetails")}</DialogTitle>
           </DialogHeader>
           {selectedHistoryItem && (() => {
             const h = selectedHistoryItem;
-            const statusInfo = STATUS_MAP[h.status] || { label: h.status, variant: "outline" as const };
-            const priceFormatted = h.planPrice > 0 ? `${(h.planPrice / 100).toFixed(2)} €` : "Gratuito";
+            const statusVariant2 = STATUS_VARIANTS[h.status] || "outline";
+            const statusLabel2 = STATUS_LABELS[h.status] || h.status;
+            const priceFormatted = h.planPrice > 0 ? `${(h.planPrice / 100).toFixed(2)} €` : t("license.free");
             const features = h.planFeatures ? h.planFeatures.split("\n").map(f => f.trim()).filter(Boolean) : [];
             return (
               <div className="space-y-4">
                 <div className="flex items-center justify-between gap-2 flex-wrap">
                   <h3 className="text-lg font-semibold">{h.planName}</h3>
-                  <Badge variant={statusInfo.variant}>{statusInfo.label}</Badge>
+                  <Badge variant={statusVariant2}>{statusLabel2}</Badge>
                 </div>
 
                 {h.planDescription && (
@@ -507,51 +518,51 @@ export default function MyLicense() {
 
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <p className="text-xs text-muted-foreground">Prezzo</p>
+                    <p className="text-xs text-muted-foreground">{t("license.price")}</p>
                     <p className="font-medium" data-testid="text-history-price">{priceFormatted}</p>
                   </div>
                   <div>
-                    <p className="text-xs text-muted-foreground">Durata</p>
-                    <p className="font-medium" data-testid="text-history-duration">{DURATION_LABELS[h.planDuration] || `${h.planDuration} mesi`}</p>
+                    <p className="text-xs text-muted-foreground">{t("license.duration")}</p>
+                    <p className="font-medium" data-testid="text-history-duration">{DURATION_LABELS[h.planDuration] || `${h.planDuration} ${t("license.months")}`}</p>
                   </div>
                   <div>
-                    <p className="text-xs text-muted-foreground">Inizio</p>
+                    <p className="text-xs text-muted-foreground">{t("license.startDate")}</p>
                     <p className="font-medium" data-testid="text-history-start">{format(new Date(h.startDate), "dd MMM yyyy", { locale: it })}</p>
                   </div>
                   <div>
-                    <p className="text-xs text-muted-foreground">Scadenza</p>
+                    <p className="text-xs text-muted-foreground">{t("license.endDate")}</p>
                     <p className="font-medium" data-testid="text-history-end">{format(new Date(h.endDate), "dd MMM yyyy", { locale: it })}</p>
                   </div>
                   <div>
-                    <p className="text-xs text-muted-foreground">Metodo di pagamento</p>
+                    <p className="text-xs text-muted-foreground">{t("license.paymentMethod")}</p>
                     <p className="font-medium capitalize" data-testid="text-history-payment">{h.paymentMethod}</p>
                   </div>
                   {h.planMaxStaffUsers != null && (
                     <div>
-                      <p className="text-xs text-muted-foreground">Max utenti staff</p>
+                      <p className="text-xs text-muted-foreground">{t("license.maxStaffUsers")}</p>
                       <p className="font-medium" data-testid="text-history-staff">{h.planMaxStaffUsers}</p>
                     </div>
                   )}
                   <div>
-                    <p className="text-xs text-muted-foreground">Rinnovo automatico</p>
-                    <p className="font-medium" data-testid="text-history-autorenew">{h.autoRenew ? "Si" : "No"}</p>
+                    <p className="text-xs text-muted-foreground">{t("license.autoRenew")}</p>
+                    <p className="font-medium" data-testid="text-history-autorenew">{h.autoRenew ? t("license.yes") : t("license.no")}</p>
                   </div>
                   <div>
-                    <p className="text-xs text-muted-foreground">Data acquisto</p>
+                    <p className="text-xs text-muted-foreground">{t("license.purchaseDate")}</p>
                     <p className="font-medium" data-testid="text-history-created">{format(new Date(h.createdAt), "dd MMM yyyy", { locale: it })}</p>
                   </div>
                 </div>
 
                 {h.paymentId && (
                   <div>
-                    <p className="text-xs text-muted-foreground">ID Pagamento</p>
+                    <p className="text-xs text-muted-foreground">{t("license.paymentId")}</p>
                     <p className="text-sm font-mono break-all" data-testid="text-history-paymentid">{h.paymentId}</p>
                   </div>
                 )}
 
                 {features.length > 0 && (
                   <div>
-                    <p className="text-xs text-muted-foreground mb-1">Funzionalità incluse</p>
+                    <p className="text-xs text-muted-foreground mb-1">{t("license.includedFeaturesLabel")}</p>
                     <div className="flex flex-wrap gap-1">
                       {features.map((f, i) => (
                         <Badge key={i} variant="secondary">{f}</Badge>
@@ -562,7 +573,7 @@ export default function MyLicense() {
 
                 {h.notes && (
                   <div>
-                    <p className="text-xs text-muted-foreground">Note</p>
+                    <p className="text-xs text-muted-foreground">{t("license.notes")}</p>
                     <p className="text-sm" data-testid="text-history-notes">{h.notes}</p>
                   </div>
                 )}

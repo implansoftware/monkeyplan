@@ -18,6 +18,7 @@ import {
   Loader2, AlertTriangle, CheckCircle, ExternalLink, ChevronLeft, 
   ChevronRight, Eye, Truck, Clock, Euro, Smartphone, Battery, Monitor
 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 interface TrovausatiCredential {
   id: string;
@@ -69,6 +70,7 @@ interface MarketplaceOrder {
 }
 
 export default function TrovausatiMarketplacePage() {
+  const { t } = useTranslation();
   const { toast } = useToast();
   const [page, setPage] = useState(0);
   const [searchTerm, setSearchTerm] = useState("");
@@ -120,7 +122,7 @@ export default function TrovausatiMarketplacePage() {
       setActiveTab("orders");
     },
     onError: (error: Error) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -165,8 +167,8 @@ export default function TrovausatiMarketplacePage() {
     const statusMap: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
       "pending": { label: "In attesa", variant: "outline" },
       "confirmed": { label: "Confermato", variant: "default" },
-      "shipped": { label: "Spedito", variant: "secondary" },
-      "delivered": { label: "Consegnato", variant: "default" },
+      "shipped": { label: t("b2b.status.shipped"), variant: "secondary" },
+      "delivered": { label: t("repairs.status.delivered"), variant: "default" },
     };
     const config = statusMap[status] || { label: status, variant: "secondary" as const };
     return <Badge variant={config.variant}>{config.label}</Badge>;
@@ -270,9 +272,7 @@ export default function TrovausatiMarketplacePage() {
                   </div>
                 </div>
                 <Button variant="outline" onClick={() => refetchProducts()} data-testid="button-refresh-products">
-                  <Filter className="h-4 w-4 mr-2" />
-                  Aggiorna
-                </Button>
+                  <Filter className="h-4 w-4 mr-2" />{t("common.update")}</Button>
               </div>
             </CardHeader>
             <CardContent>
@@ -339,9 +339,7 @@ export default function TrovausatiMarketplacePage() {
                           onClick={() => setSelectedProduct(product)}
                           data-testid={`button-view-product-${product.id}`}
                         >
-                          <Eye className="h-4 w-4 mr-1" />
-                          Dettagli
-                        </Button>
+                          <Eye className="h-4 w-4 mr-1" />{t("common.details")}</Button>
                         <Button 
                           size="sm" 
                           className="flex-1"
@@ -350,7 +348,7 @@ export default function TrovausatiMarketplacePage() {
                           data-testid={`button-add-to-cart-${product.id}`}
                         >
                           <ShoppingCart className="h-4 w-4 mr-1" />
-                          {cart.some(p => p.id === product.id) ? "Nel carrello" : "Aggiungi"}
+                          {cart.some(p => p.id === product.id) ? "Nel carrello" : t("common.add")}
                         </Button>
                       </CardFooter>
                     </Card>
@@ -485,7 +483,7 @@ export default function TrovausatiMarketplacePage() {
                   </div>
                   {selectedProduct.attributes.description && (
                     <div>
-                      <Label>Descrizione</Label>
+                      <Label>{t("common.description")}</Label>
                       <p className="text-sm text-muted-foreground">{selectedProduct.attributes.description}</p>
                     </div>
                   )}
@@ -585,7 +583,7 @@ export default function TrovausatiMarketplacePage() {
               </ScrollArea>
               <Separator />
               <div className="flex items-center justify-between py-2">
-                <span className="font-semibold">Totale</span>
+                <span className="font-semibold">{t("common.total")}</span>
                 <span className="text-xl font-bold">€{(cartTotal / 100).toFixed(2)}</span>
               </div>
               <DialogFooter>
@@ -628,9 +626,7 @@ export default function TrovausatiMarketplacePage() {
             </Alert>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowCheckout(false)}>
-              Annulla
-            </Button>
+            <Button variant="outline" onClick={() => setShowCheckout(false)}>{t("common.cancel")}</Button>
             <Button
               onClick={() => placeOrderMutation.mutate()}
               disabled={placeOrderMutation.isPending}

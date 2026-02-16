@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/use-auth";
@@ -17,6 +18,7 @@ interface ProfileResponse extends UserType {
 }
 
 export default function CustomerProfile() {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const { toast } = useToast();
   const [isEditingPersonal, setIsEditingPersonal] = useState(false);
@@ -59,13 +61,13 @@ export default function CustomerProfile() {
       setIsEditingPersonal(false);
       setIsEditingFiscal(false);
       toast({
-        title: "Profilo aggiornato",
-        description: "Le modifiche sono state salvate con successo",
+        title: t("profile.profileUpdatedTitle"),
+        description: t("profile.changesSaved"),
       });
     },
     onError: (error: Error) => {
       toast({
-        title: "Errore",
+        title: t("auth.error"),
         description: error.message,
         variant: "destructive",
       });
@@ -132,11 +134,11 @@ export default function CustomerProfile() {
                 {displayUser?.fullName || displayUser?.username}
               </h1>
               <div className="flex flex-wrap items-center gap-2 mt-1">
-                <Badge variant="secondary" className="bg-white/20 text-white border-white/30" data-testid="badge-role">Cliente</Badge>
+                <Badge variant="secondary" className="bg-white/20 text-white border-white/30" data-testid="badge-role">{t("auth.customerTab")}</Badge>
                 {displayUser?.isActive ? (
-                  <Badge variant="default" className="bg-green-400/80 text-white" data-testid="badge-status">Attivo</Badge>
+                  <Badge variant="default" className="bg-green-400/80 text-white" data-testid="badge-status">{t("common.active")}</Badge>
                 ) : (
-                  <Badge variant="destructive" data-testid="badge-status">Inattivo</Badge>
+                  <Badge variant="destructive" data-testid="badge-status">{t("common.inactive")}</Badge>
                 )}
               </div>
             </div>
@@ -179,7 +181,7 @@ export default function CustomerProfile() {
             <form onSubmit={handlePersonalSubmit} className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="fullName">Nome Completo</Label>
+                  <Label htmlFor="fullName">{t("profile.fullName")}</Label>
                   <Input
                     id="fullName"
                     value={personalData.fullName}
@@ -189,7 +191,7 @@ export default function CustomerProfile() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="email">Email</Label>
+                  <Label htmlFor="email">{t("auth.email")}</Label>
                   <Input
                     id="email"
                     type="email"
@@ -200,7 +202,7 @@ export default function CustomerProfile() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="phone">Telefono</Label>
+                  <Label htmlFor="phone">{t("auth.phone")}</Label>
                   <Input
                     id="phone"
                     value={personalData.phone}
@@ -230,21 +232,21 @@ export default function CustomerProfile() {
               <div className="flex flex-wrap items-center gap-3">
                 <User className="h-4 w-4 text-muted-foreground" />
                 <div>
-                  <p className="text-sm text-muted-foreground">Nome</p>
+                  <p className="text-sm text-muted-foreground">{t("common.name")}</p>
                   <p className="font-medium" data-testid="text-fullname">{displayUser?.fullName || "-"}</p>
                 </div>
               </div>
               <div className="flex flex-wrap items-center gap-3">
                 <Mail className="h-4 w-4 text-muted-foreground" />
                 <div>
-                  <p className="text-sm text-muted-foreground">Email</p>
+                  <p className="text-sm text-muted-foreground">{t("auth.email")}</p>
                   <p className="font-medium" data-testid="text-email">{displayUser?.email || "-"}</p>
                 </div>
               </div>
               <div className="flex flex-wrap items-center gap-3">
                 <Phone className="h-4 w-4 text-muted-foreground" />
                 <div>
-                  <p className="text-sm text-muted-foreground">Telefono</p>
+                  <p className="text-sm text-muted-foreground">{t("auth.phone")}</p>
                   <p className="font-medium" data-testid="text-phone">{displayUser?.phone || "-"}</p>
                 </div>
               </div>
@@ -294,7 +296,7 @@ export default function CustomerProfile() {
             <form onSubmit={handleFiscalSubmit} className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="ragioneSociale">Ragione Sociale</Label>
+                  <Label htmlFor="ragioneSociale">{t("auth.companyName")}</Label>
                   <Input
                     id="ragioneSociale"
                     value={fiscalData.ragioneSociale}
@@ -304,7 +306,7 @@ export default function CustomerProfile() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="partitaIva">Partita IVA</Label>
+                  <Label htmlFor="partitaIva">{t("auth.vatNumber")}</Label>
                   <Input
                     id="partitaIva"
                     value={fiscalData.partitaIva}
@@ -314,7 +316,7 @@ export default function CustomerProfile() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="codiceFiscale">Codice Fiscale</Label>
+                  <Label htmlFor="codiceFiscale">{t("profile.codiceFiscale")}</Label>
                   <Input
                     id="codiceFiscale"
                     value={fiscalData.codiceFiscale}
@@ -324,7 +326,7 @@ export default function CustomerProfile() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="indirizzo">Indirizzo</Label>
+                  <Label htmlFor="indirizzo">{t("profile.indirizzo")}</Label>
                   <Input
                     id="indirizzo"
                     value={fiscalData.indirizzo}
@@ -334,7 +336,7 @@ export default function CustomerProfile() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="citta">Città</Label>
+                  <Label htmlFor="citta">{t("profile.citta")}</Label>
                   <Input
                     id="citta"
                     value={fiscalData.citta}
@@ -355,7 +357,7 @@ export default function CustomerProfile() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="provincia">Provincia</Label>
+                    <Label htmlFor="provincia">{t("profile.provincia")}</Label>
                     <Input
                       id="provincia"
                       value={fiscalData.provincia}
@@ -407,28 +409,28 @@ export default function CustomerProfile() {
               <div className="flex flex-wrap items-center gap-3">
                 <Building2 className="h-4 w-4 text-muted-foreground" />
                 <div>
-                  <p className="text-sm text-muted-foreground">Ragione Sociale</p>
+                  <p className="text-sm text-muted-foreground">{t("auth.companyName")}</p>
                   <p className="font-medium" data-testid="text-ragione-sociale">{billingData?.companyName || "-"}</p>
                 </div>
               </div>
               <div className="flex flex-wrap items-center gap-3">
                 <FileText className="h-4 w-4 text-muted-foreground" />
                 <div>
-                  <p className="text-sm text-muted-foreground">Partita IVA</p>
+                  <p className="text-sm text-muted-foreground">{t("auth.vatNumber")}</p>
                   <p className="font-medium" data-testid="text-partita-iva">{billingData?.vatNumber || "-"}</p>
                 </div>
               </div>
               <div className="flex flex-wrap items-center gap-3">
                 <FileText className="h-4 w-4 text-muted-foreground" />
                 <div>
-                  <p className="text-sm text-muted-foreground">Codice Fiscale</p>
+                  <p className="text-sm text-muted-foreground">{t("profile.codiceFiscale")}</p>
                   <p className="font-medium" data-testid="text-codice-fiscale">{billingData?.fiscalCode || "-"}</p>
                 </div>
               </div>
               <div className="flex flex-wrap items-center gap-3">
                 <MapPin className="h-4 w-4 text-muted-foreground" />
                 <div>
-                  <p className="text-sm text-muted-foreground">Indirizzo</p>
+                  <p className="text-sm text-muted-foreground">{t("profile.indirizzo")}</p>
                   <p className="font-medium" data-testid="text-indirizzo">
                     {billingData?.address 
                       ? `${billingData.address}, ${billingData.zipCode || ""} ${billingData.city || ""}`

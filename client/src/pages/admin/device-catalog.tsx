@@ -19,6 +19,7 @@ import {
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import type { DeviceType, DeviceBrand, DeviceModel } from "@shared/schema";
+import { useTranslation } from "react-i18next";
 
 const DEVICE_TYPE_ICONS: Record<string, any> = {
   smartphone: Smartphone,
@@ -34,6 +35,7 @@ const DEVICE_TYPE_ICONS: Record<string, any> = {
 };
 
 export default function AdminDeviceCatalog() {
+  const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState("types");
   const [searchQuery, setSearchQuery] = useState("");
   const { toast } = useToast();
@@ -85,10 +87,10 @@ export default function AdminDeviceCatalog() {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/device-types"] });
       setTypeDialogOpen(false);
       setTypeForm({ name: "", description: "" });
-      toast({ title: "Tipo creato", description: "Il tipo dispositivo è stato creato" });
+      toast({ title: t("products.typeCreated"), description: t("products.typeCreatedDesc") });
     },
     onError: (error: any) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -101,10 +103,10 @@ export default function AdminDeviceCatalog() {
       setTypeDialogOpen(false);
       setEditingType(null);
       setTypeForm({ name: "", description: "" });
-      toast({ title: "Tipo aggiornato" });
+      toast({ title: t("products.typeUpdated") });
     },
     onError: (error: any) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -116,10 +118,10 @@ export default function AdminDeviceCatalog() {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/device-types"] });
       setDeleteTypeDialogOpen(false);
       setTypeToDelete(null);
-      toast({ title: "Tipo eliminato" });
+      toast({ title: t("products.typeDeleted") });
     },
     onError: (error: any) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -140,10 +142,10 @@ export default function AdminDeviceCatalog() {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/device-brands"] });
       setBrandDialogOpen(false);
       setBrandForm({ name: "", logoUrl: "" });
-      toast({ title: "Marca creata" });
+      toast({ title: t("products.brandCreatedDevice") });
     },
     onError: (error: any) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -156,10 +158,10 @@ export default function AdminDeviceCatalog() {
       setBrandDialogOpen(false);
       setEditingBrand(null);
       setBrandForm({ name: "", logoUrl: "" });
-      toast({ title: "Marca aggiornata" });
+      toast({ title: t("products.brandUpdated") });
     },
     onError: (error: any) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -171,10 +173,10 @@ export default function AdminDeviceCatalog() {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/device-brands"] });
       setDeleteBrandDialogOpen(false);
       setBrandToDelete(null);
-      toast({ title: "Marca eliminata" });
+      toast({ title: t("products.brandDeleted") });
     },
     onError: (error: any) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -196,10 +198,10 @@ export default function AdminDeviceCatalog() {
       setModelDialogOpen(false);
       setModelForm({ modelName: "", brandId: "", typeId: "", marketCodes: [] });
       setNewMarketCode("");
-      toast({ title: "Modello creato" });
+      toast({ title: t("products.modelCreated") });
     },
     onError: (error: any) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -213,10 +215,10 @@ export default function AdminDeviceCatalog() {
       setEditingModel(null);
       setModelForm({ modelName: "", brandId: "", typeId: "", marketCodes: [] });
       setNewMarketCode("");
-      toast({ title: "Modello aggiornato" });
+      toast({ title: t("products.modelUpdated") });
     },
     onError: (error: any) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -228,10 +230,10 @@ export default function AdminDeviceCatalog() {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/device-models"] });
       setDeleteModelDialogOpen(false);
       setModelToDelete(null);
-      toast({ title: "Modello eliminato" });
+      toast({ title: t("products.modelDeleted") });
     },
     onError: (error: any) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -313,14 +315,14 @@ export default function AdminDeviceCatalog() {
       
       if (result.imported > 0 || result.updated > 0) {
         toast({
-          title: "Importazione completata",
-          description: "Importati: " + result.imported + ", Aggiornati: " + result.updated + (result.skipped > 0 ? ", Saltati: " + result.skipped : "")
+          title: t("products.importCompleted"),
+          description: t("products.importResult", { imported: result.imported, updated: result.updated, skipped: result.skipped })
         });
       }
     } catch (error: any) {
       toast({
         variant: "destructive",
-        title: "Errore",
+        title: t("common.error"),
         description: error.message
       });
     } finally {
@@ -374,7 +376,7 @@ export default function AdminDeviceCatalog() {
             <div className="relative flex-1 max-w-sm">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Cerca..."
+                placeholder={t("common.search")}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-9"
@@ -415,10 +417,10 @@ export default function AdminDeviceCatalog() {
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Nome</TableHead>
-                      <TableHead>Descrizione</TableHead>
-                      <TableHead>Stato</TableHead>
-                      <TableHead className="text-right">Azioni</TableHead>
+                      <TableHead>{t("common.name")}</TableHead>
+                      <TableHead>{t("common.description")}</TableHead>
+                      <TableHead>{t("common.status")}</TableHead>
+                      <TableHead className="text-right">{t("common.actions")}</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -494,10 +496,10 @@ export default function AdminDeviceCatalog() {
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Nome</TableHead>
+                      <TableHead>{t("common.name")}</TableHead>
                       <TableHead>Logo URL</TableHead>
-                      <TableHead>Stato</TableHead>
-                      <TableHead className="text-right">Azioni</TableHead>
+                      <TableHead>{t("common.status")}</TableHead>
+                      <TableHead className="text-right">{t("common.actions")}</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -560,10 +562,10 @@ export default function AdminDeviceCatalog() {
                 <div className="flex flex-wrap items-center gap-2">
                   <Select value={modelTypeFilter} onValueChange={setModelTypeFilter}>
                     <SelectTrigger className="w-full sm:w-[180px]" data-testid="select-model-type-filter">
-                      <SelectValue placeholder="Filtra per tipo" />
+                      <SelectValue placeholder={t("common.filterByType")} />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="all">Tutti i tipi</SelectItem>
+                      <SelectItem value="all">{t("common.allTypes")}</SelectItem>
                       {deviceTypes.map(t => (
                         <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>
                       ))}
@@ -571,10 +573,10 @@ export default function AdminDeviceCatalog() {
                   </Select>
                   <Select value={modelBrandFilter} onValueChange={setModelBrandFilter}>
                     <SelectTrigger className="w-full sm:w-[180px]" data-testid="select-model-brand-filter">
-                      <SelectValue placeholder="Filtra per marca" />
+                      <SelectValue placeholder={t("common.filterByBrand")} />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="all">Tutte le marche</SelectItem>
+                      <SelectItem value="all">{t("products.allBrands")}</SelectItem>
                       {deviceBrands.map(b => (
                         <SelectItem key={b.id} value={b.id}>{b.name}</SelectItem>
                       ))}
@@ -601,12 +603,12 @@ export default function AdminDeviceCatalog() {
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead>Codice Mercato</TableHead>
-                        <TableHead>Modello</TableHead>
-                        <TableHead>Marca</TableHead>
-                        <TableHead>Tipo</TableHead>
-                        <TableHead>Stato</TableHead>
-                        <TableHead className="text-right">Azioni</TableHead>
+                        <TableHead>{t("products.marketCode")}</TableHead>
+                        <TableHead>{t("products.model")}</TableHead>
+                        <TableHead>{t("products.brand")}</TableHead>
+                        <TableHead>{t("common.type")}</TableHead>
+                        <TableHead>{t("common.status")}</TableHead>
+                        <TableHead className="text-right">{t("common.actions")}</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -709,12 +711,12 @@ export default function AdminDeviceCatalog() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="type-description">Descrizione</Label>
+              <Label htmlFor="type-description">{t("common.description")}</Label>
               <Input
                 id="type-description"
                 value={typeForm.description}
                 onChange={(e) => setTypeForm({ ...typeForm, description: e.target.value })}
-                placeholder="Descrizione opzionale"
+                placeholder={t("utility.optionalDescription")}
                 data-testid="input-type-description"
               />
             </div>
@@ -746,7 +748,7 @@ export default function AdminDeviceCatalog() {
       <Dialog open={deleteTypeDialogOpen} onOpenChange={setDeleteTypeDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Elimina Tipo</DialogTitle>
+            <DialogTitle>{t("products.deleteType")}</DialogTitle>
             <DialogDescription>
               Sei sicuro di voler eliminare il tipo "{typeToDelete?.name}"? 
               Questa azione non può essere annullata.
@@ -826,7 +828,7 @@ export default function AdminDeviceCatalog() {
       <Dialog open={deleteBrandDialogOpen} onOpenChange={setDeleteBrandDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Elimina Marca</DialogTitle>
+            <DialogTitle>{t("products.deleteBrand")}</DialogTitle>
             <DialogDescription>
               Sei sicuro di voler eliminare la marca "{brandToDelete?.name}"? 
               Questa azione non può essere annullata.
@@ -869,13 +871,13 @@ export default function AdminDeviceCatalog() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="model-brand">Marca</Label>
+              <Label htmlFor="model-brand">{t("products.brand")}</Label>
               <Select 
                 value={modelForm.brandId} 
                 onValueChange={(v) => setModelForm({ ...modelForm, brandId: v })}
               >
                 <SelectTrigger data-testid="select-model-brand">
-                  <SelectValue placeholder="Seleziona marca" />
+                  <SelectValue placeholder={t("products.selectBrand")} />
                 </SelectTrigger>
                 <SelectContent>
                   {deviceBrands.filter(b => b.isActive).map(b => (
@@ -885,13 +887,13 @@ export default function AdminDeviceCatalog() {
               </Select>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="model-type">Tipo Dispositivo</Label>
+              <Label htmlFor="model-type">{t("products.deviceType")}</Label>
               <Select 
                 value={modelForm.typeId} 
                 onValueChange={(v) => setModelForm({ ...modelForm, typeId: v })}
               >
                 <SelectTrigger data-testid="select-model-type">
-                  <SelectValue placeholder="Seleziona tipo" />
+                  <SelectValue placeholder={t("utility.selectType")} />
                 </SelectTrigger>
                 <SelectContent>
                   {deviceTypes.filter(t => t.isActive).map(t => (
@@ -901,7 +903,7 @@ export default function AdminDeviceCatalog() {
               </Select>
             </div>
             <div className="space-y-2">
-              <Label>Codici Mercato</Label>
+              <Label>{t("products.marketCodes")}</Label>
               {modelForm.marketCodes.length > 0 && (
                 <div className="flex flex-wrap gap-1 mb-2">
                   {modelForm.marketCodes.map((code, idx) => (
@@ -999,7 +1001,7 @@ export default function AdminDeviceCatalog() {
       <Dialog open={deleteModelDialogOpen} onOpenChange={setDeleteModelDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Elimina Modello</DialogTitle>
+            <DialogTitle>{t("products.deleteModel")}</DialogTitle>
             <DialogDescription>
               Sei sicuro di voler eliminare il modello "{modelToDelete?.modelName}"? 
               Questa azione non può essere annullata.
@@ -1032,7 +1034,7 @@ export default function AdminDeviceCatalog() {
       }}>
         <DialogContent className="max-w-lg">
           <DialogHeader>
-            <DialogTitle>Importa Dispositivi da Excel</DialogTitle>
+            <DialogTitle>{t("products.importFromExcel")}</DialogTitle>
             <DialogDescription>
               Carica un file Excel con colonne: BRAND, Tipo Dispositivo, Modello Commerciale, Modello Market
             </DialogDescription>

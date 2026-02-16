@@ -16,6 +16,7 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { Plus, Pencil, Trash2, CreditCard, Clock, Users, Tag, Wrench, Package, FileText, ShoppingCart, Store, BarChart3, Headphones, Shield, Smartphone, Receipt } from "lucide-react";
 import type { LicensePlan } from "@shared/schema";
+import { useTranslation } from "react-i18next";
 
 const TARGET_LABELS: Record<string, string> = {
   all: "Tutti",
@@ -142,18 +143,18 @@ function PlanForm({ plan, onSave, onCancel }: { plan?: LicensePlan; onSave: (dat
             <Input value={name} onChange={e => setName(e.target.value)} placeholder="es. Standard Mensile" data-testid="input-plan-name" />
           </div>
           <div className="space-y-2">
-            <Label>Descrizione</Label>
-            <Input value={description} onChange={e => setDescription(e.target.value)} placeholder="Breve descrizione del piano" data-testid="input-plan-description" />
+            <Label>{t("common.description")}</Label>
+            <Input value={description} onChange={e => setDescription(e.target.value)} placeholder={t("license.planDescriptionPlaceholder")} data-testid="input-plan-description" />
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label>Categoria target</Label>
+              <Label>{t("license.targetCategory")}</Label>
               <Select value={targetCategory} onValueChange={setTargetCategory}>
                 <SelectTrigger data-testid="select-target-category">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">Tutti</SelectItem>
+                  <SelectItem value="all">{t("common.allMasc")}</SelectItem>
                   <SelectItem value="standard">Standard</SelectItem>
                   <SelectItem value="franchising">Franchising</SelectItem>
                   <SelectItem value="gdo">GDO</SelectItem>
@@ -161,7 +162,7 @@ function PlanForm({ plan, onSave, onCancel }: { plan?: LicensePlan; onSave: (dat
               </Select>
             </div>
             <div className="space-y-2">
-              <Label>Durata</Label>
+              <Label>{t("common.duration")}</Label>
               <Select value={durationMonths} onValueChange={setDurationMonths}>
                 <SelectTrigger data-testid="select-duration">
                   <SelectValue />
@@ -187,7 +188,7 @@ function PlanForm({ plan, onSave, onCancel }: { plan?: LicensePlan; onSave: (dat
               <Input type="number" step="0.01" min="0" value={priceCents} onChange={e => setPriceCents(e.target.value)} placeholder="29.99" data-testid="input-plan-price" />
             </div>
             <div className="space-y-2">
-              <Label>Max utenti staff</Label>
+              <Label>{t("license.maxStaffUsers")}</Label>
               <Select value={maxStaffUsers} onValueChange={setMaxStaffUsers}>
                 <SelectTrigger data-testid="select-max-staff">
                   <SelectValue />
@@ -246,18 +247,18 @@ function PlanForm({ plan, onSave, onCancel }: { plan?: LicensePlan; onSave: (dat
           <p className="text-sm font-medium text-muted-foreground uppercase tracking-wide">Opzioni</p>
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label>Ordine visualizzazione</Label>
+              <Label>{t("settings.displayOrder")}</Label>
               <Input type="number" value={sortOrder} onChange={e => setSortOrder(e.target.value)} data-testid="input-sort-order" />
             </div>
             <div className="flex items-center gap-3 pt-6">
               <Switch checked={isActive} onCheckedChange={setIsActive} data-testid="switch-is-active" />
-              <Label>Piano attivo</Label>
+              <Label>{t("license.activePlan")}</Label>
             </div>
           </div>
         </div>
 
         <div className="flex justify-end gap-2 pt-4">
-          <Button variant="outline" onClick={onCancel} data-testid="button-cancel-plan">Annulla</Button>
+          <Button variant="outline" onClick={onCancel} data-testid="button-cancel-plan">{t("common.cancel")}</Button>
           <Button onClick={handleSubmit} disabled={!name.trim() || !priceCents} data-testid="button-save-plan">
             {plan ? "Aggiorna" : "Crea Piano"}
           </Button>
@@ -268,6 +269,7 @@ function PlanForm({ plan, onSave, onCancel }: { plan?: LicensePlan; onSave: (dat
 }
 
 export default function AdminLicensePlans() {
+  const { t } = useTranslation();
   const { toast } = useToast();
   const [editingPlan, setEditingPlan] = useState<LicensePlan | null>(null);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
@@ -284,10 +286,10 @@ export default function AdminLicensePlans() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/license-plans"] });
       setIsCreateOpen(false);
-      toast({ title: "Piano creato con successo" });
+      toast({ title: t("license.planCreated") });
     },
     onError: (err: any) => {
-      toast({ title: "Errore", description: err.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: err.message, variant: "destructive" });
     },
   });
 
@@ -299,10 +301,10 @@ export default function AdminLicensePlans() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/license-plans"] });
       setEditingPlan(null);
-      toast({ title: "Piano aggiornato" });
+      toast({ title: t("license.planUpdated") });
     },
     onError: (err: any) => {
-      toast({ title: "Errore", description: err.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: err.message, variant: "destructive" });
     },
   });
 
@@ -313,10 +315,10 @@ export default function AdminLicensePlans() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/license-plans"] });
-      toast({ title: "Piano eliminato" });
+      toast({ title: t("license.planDeleted") });
     },
     onError: (err: any) => {
-      toast({ title: "Errore", description: err.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: err.message, variant: "destructive" });
     },
   });
 
@@ -344,7 +346,7 @@ export default function AdminLicensePlans() {
           </DialogTrigger>
           <DialogContent className="max-w-lg">
             <DialogHeader>
-              <DialogTitle>Crea Nuovo Piano</DialogTitle>
+              <DialogTitle>{t("license.createNewPlan")}</DialogTitle>
             </DialogHeader>
             <PlanForm
               onSave={(data) => createMutation.mutate(data)}
@@ -386,7 +388,7 @@ export default function AdminLicensePlans() {
                     </DialogTrigger>
                     <DialogContent className="max-w-lg">
                       <DialogHeader>
-                        <DialogTitle>Modifica Piano</DialogTitle>
+                        <DialogTitle>{t("license.editPlan")}</DialogTitle>
                       </DialogHeader>
                       {editingPlan && (
                         <PlanForm

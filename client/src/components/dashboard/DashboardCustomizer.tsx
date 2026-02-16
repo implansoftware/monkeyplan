@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -34,6 +35,7 @@ export function DashboardCustomizer({
   onSave, 
   isSaving = false 
 }: DashboardCustomizerProps) {
+  const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const [widgets, setWidgets] = useState<WidgetPreference[]>([]);
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
@@ -120,17 +122,17 @@ export function DashboardCustomizer({
       <DialogTrigger asChild>
         <Button variant="outline" size="sm" className="bg-white/90 backdrop-blur-sm border-white/50 text-emerald-700 shadow-lg" data-testid="button-customize-dashboard">
           <Settings className="h-4 w-4 mr-2" />
-          Personalizza
+          {t("dashboard.customize")}
         </Button>
       </DialogTrigger>
       <DialogContent className="max-w-2xl max-h-[80vh] overflow-hidden flex flex-col">
         <DialogHeader>
-          <DialogTitle>Personalizza Dashboard</DialogTitle>
+          <DialogTitle>{t("dashboard.customizeDashboard")}</DialogTitle>
           <DialogDescription>
-            Attiva o disattiva i widget e riordinali trascinandoli.
+            {t("dashboard.customizeDesc")}
             {" "}
             <span className="text-muted-foreground">
-              ({visibleCount}/{totalCount} visibili)
+              ({visibleCount}/{totalCount} {t("dashboard.visible")})
             </span>
           </DialogDescription>
         </DialogHeader>
@@ -196,14 +198,14 @@ export function DashboardCustomizer({
             data-testid="button-reset-dashboard"
           >
             <RotateCcw className="h-4 w-4 mr-2" />
-            Ripristina
+            {t("common.restore")}
           </Button>
           <div className="flex-1" />
           <Button variant="outline" onClick={handleClose} disabled={isSaving}>
-            Annulla
+            {t("common.cancel")}
           </Button>
           <Button onClick={handleSave} disabled={isSaving} data-testid="button-save-dashboard">
-            {isSaving ? "Salvataggio..." : "Salva"}
+            {isSaving ? t("common.saving") : t("common.save")}
           </Button>
         </DialogFooter>
       </DialogContent>

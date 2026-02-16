@@ -7,6 +7,7 @@ import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, isToday
 import { it } from "date-fns/locale";
 import { useState } from "react";
 import { AdminEntityFilterSelector, AdminEntityType } from "@/components/hr/admin-entity-filter-selector";
+import { useTranslation } from "react-i18next";
 
 interface CalendarEvent {
   userId: string;
@@ -33,6 +34,7 @@ const eventTypeLabels: Record<string, string> = {
 };
 
 export default function AdminCalendarPage() {
+  const { t } = useTranslation();
   const [entityType, setEntityType] = useState<AdminEntityType>("all");
   const [selectedEntityId, setSelectedEntityId] = useState("");
   const [currentDate, setCurrentDate] = useState(new Date());

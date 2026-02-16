@@ -1,12 +1,14 @@
 import { useEffect, useState } from "react";
 import { useRoute, useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Loader2, AlertCircle, LogIn, Wrench } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 
 export default function RepairLink() {
+  const { t } = useTranslation();
   const [, params] = useRoute("/repair-link/:id");
   const repairId = params?.id;
   const [, setLocation] = useLocation();
@@ -30,7 +32,7 @@ export default function RepairLink() {
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="text-center">
           <Loader2 className="h-12 w-12 animate-spin text-primary mx-auto mb-4" />
-          <p className="text-muted-foreground">Verifica autenticazione...</p>
+          <p className="text-muted-foreground">{t("public.repairLink.verificaAuth")}</p>
         </div>
       </div>
     );
@@ -43,11 +45,11 @@ export default function RepairLink() {
         <Card className="max-w-md w-full">
           <CardHeader className="text-center">
             <LogIn className="h-16 w-16 text-primary mx-auto mb-4" />
-            <CardTitle>Accesso Richiesto</CardTitle>
+            <CardTitle>{t("public.repairLink.accessoRichiesto")}</CardTitle>
           </CardHeader>
           <CardContent className="text-center space-y-4">
             <p className="text-muted-foreground">
-              Per visualizzare i dettagli di questa riparazione devi effettuare l'accesso.
+              {t("public.repairLink.accessoRichiestoDesc")}
             </p>
             <Button 
               onClick={() => setLocation(`/auth?returnTo=${returnUrl}`)}
@@ -55,7 +57,7 @@ export default function RepairLink() {
               data-testid="button-login"
             >
               <LogIn className="h-4 w-4 mr-2" />
-              Accedi
+              {t("public.repairLink.accedi")}
             </Button>
           </CardContent>
         </Card>
@@ -68,7 +70,7 @@ export default function RepairLink() {
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="text-center">
           <Loader2 className="h-12 w-12 animate-spin text-primary mx-auto mb-4" />
-          <p className="text-muted-foreground">Caricamento riparazione...</p>
+          <p className="text-muted-foreground">{t("public.repairLink.caricamento")}</p>
         </div>
       </div>
     );
@@ -85,13 +87,13 @@ export default function RepairLink() {
           <CardHeader className="text-center">
             <AlertCircle className="h-16 w-16 text-destructive mx-auto mb-4" />
             <CardTitle>
-              {is404 ? "Riparazione Non Trovata" : is403 ? "Accesso Negato" : "Errore"}
+              {is404 ? t("public.repairLink.nonTrovata") : is403 ? t("public.repairLink.accessoNegato") : t("public.repairLink.errore")}
             </CardTitle>
           </CardHeader>
           <CardContent className="text-center space-y-4">
             <p className="text-muted-foreground">
-              {is404 && "La riparazione richiesta non esiste o è stata eliminata."}
-              {is403 && "Non hai i permessi per visualizzare questa riparazione."}
+              {is404 && t("public.repairLink.nonTrovataDesc")}
+              {is403 && t("public.repairLink.accessoNegatoDesc")}
               {!is404 && !is403 && errorMessage}
             </p>
             <Button 
@@ -101,7 +103,7 @@ export default function RepairLink() {
               data-testid="button-go-home"
             >
               <Wrench className="h-4 w-4 mr-2" />
-              Torna alla Dashboard
+              {t("public.repairLink.tornaDashboard")}
             </Button>
           </CardContent>
         </Card>

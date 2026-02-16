@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useState } from "react";
 import { BarcodeDisplay } from "@/components/barcode-display";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -30,16 +31,6 @@ const GRADE_OPTIONS = [
 ];
 
 // Categorie dispositivi
-const DEVICE_CATEGORIES = [
-  { value: "smartphone", label: "Smartphone" },
-  { value: "tablet", label: "Tablet" },
-  { value: "portatile", label: "Portatile" },
-  { value: "pc_fisso", label: "PC Fisso" },
-  { value: "display", label: "Display" },
-  { value: "batteria", label: "Batteria" },
-  { value: "accessorio", label: "Accessorio" },
-  { value: "altro", label: "Altro" },
-];
 
 // Brand per dispositivi mobili
 const MOBILE_BRANDS = ["Apple", "Samsung", "Xiaomi", "Huawei", "OPPO", "OnePlus", "Google", "Motorola", "Sony", "Nokia", "Realme", "Vivo", "Honor", "Nothing", "Asus ROG", "Altro"];
@@ -51,6 +42,17 @@ const PC_BRANDS = ["Dell", "HP", "Lenovo", "ASUS", "Acer", "Apple", "MSI", "Micr
 const ALL_BRANDS = Array.from(new Set([...MOBILE_BRANDS, ...PC_BRANDS]));
 
 export default function RepairCenterSmartphoneCatalog() {
+  const { t } = useTranslation();
+  const DEVICE_CATEGORIES = [
+    { value: "smartphone", label: "Smartphone" },
+    { value: "tablet", label: "Tablet" },
+    { value: "portatile", label: "Portatile" },
+    { value: "pc_fisso", label: "PC Fisso" },
+    { value: "display", label: "Display" },
+    { value: "batteria", label: t("settings.battery") },
+    { value: "accessorio", label: t("products.accessory") },
+    { value: "altro", label: t("common.more") },
+  ];
   const [searchQuery, setSearchQuery] = useState("");
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
   const [brandFilter, setBrandFilter] = useState<string>("all");
@@ -98,7 +100,7 @@ export default function RepairCenterSmartphoneCatalog() {
     setCart(newCart);
     localStorage.setItem('rc-b2b-cart', JSON.stringify(newCart));
     toast({
-      title: "Aggiunto al carrello",
+      title: t("catalog.addedToCart"),
       description: `${phone.name} x${quantity} aggiunto al carrello B2B`,
     });
     setBuyDialogOpen(false);
@@ -136,7 +138,7 @@ export default function RepairCenterSmartphoneCatalog() {
               <Smartphone className="h-5 w-5 sm:h-7 sm:w-7 text-white" />
             </div>
             <div>
-              <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-white tracking-tight" data-testid="text-page-title">Catalogo Smartphone</h1>
+              <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-white tracking-tight" data-testid="text-page-title">{t("products.smartphoneCatalog")}</h1>
               <p className="text-emerald-100">Dispositivi disponibili dal tuo rivenditore</p>
             </div>
           </div>
@@ -157,7 +159,7 @@ export default function RepairCenterSmartphoneCatalog() {
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Cerca per nome, SKU o IMEI..."
+                placeholder={t("devices.cercaPerNomeSKUOIMEI")}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-10"
@@ -166,10 +168,10 @@ export default function RepairCenterSmartphoneCatalog() {
             </div>
             <Select value={categoryFilter} onValueChange={setCategoryFilter}>
               <SelectTrigger className="w-full sm:w-[180px]" data-testid="select-category-filter">
-                <SelectValue placeholder="Categoria" />
+                <SelectValue placeholder={t("common.category")} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">Tutte le categorie</SelectItem>
+                <SelectItem value="all">{t("warehouse.allCategories")}</SelectItem>
                 {DEVICE_CATEGORIES.map(cat => (
                   <SelectItem key={cat.value} value={cat.value}>{cat.label}</SelectItem>
                 ))}
@@ -177,10 +179,10 @@ export default function RepairCenterSmartphoneCatalog() {
             </Select>
             <Select value={brandFilter} onValueChange={setBrandFilter}>
               <SelectTrigger className="w-full sm:w-[180px]" data-testid="select-brand-filter">
-                <SelectValue placeholder="Marca" />
+                <SelectValue placeholder={t("repairs.deviceBrand")} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">Tutte le marche</SelectItem>
+                <SelectItem value="all">{t("products.allBrands")}</SelectItem>
                 {ALL_BRANDS.map(brand => (
                   <SelectItem key={brand} value={brand}>{brand}</SelectItem>
                 ))}
@@ -188,10 +190,10 @@ export default function RepairCenterSmartphoneCatalog() {
             </Select>
             <Select value={gradeFilter} onValueChange={setGradeFilter}>
               <SelectTrigger className="w-full sm:w-[180px]" data-testid="select-grade-filter">
-                <SelectValue placeholder="Grado" />
+                <SelectValue placeholder={t("products.grade")} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">Tutti i gradi</SelectItem>
+                <SelectItem value="all">{t("products.allGrades")}</SelectItem>
                 {GRADE_OPTIONS.map(grade => (
                   <SelectItem key={grade.value} value={grade.value}>{grade.label}</SelectItem>
                 ))}
@@ -209,21 +211,21 @@ export default function RepairCenterSmartphoneCatalog() {
           ) : filteredSmartphones.length === 0 ? (
             <div className="text-center py-12 text-muted-foreground">
               <Smartphone className="h-12 w-12 mx-auto mb-4 opacity-50" />
-              <p>Nessun dispositivo trovato</p>
+              <p>{t("products.noDevicesFound")}</p>
             </div>
           ) : (
             <ScrollArea className="h-[600px]">
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Prodotto</TableHead>
+                    <TableHead>{t("common.product")}</TableHead>
                     <TableHead className="hidden lg:table-cell">Barcode</TableHead>
-                    <TableHead className="hidden sm:table-cell">Categoria</TableHead>
+                    <TableHead className="hidden sm:table-cell">{t("common.category")}</TableHead>
                     <TableHead className="hidden md:table-cell">Specifiche</TableHead>
-                    <TableHead className="hidden sm:table-cell">Grado</TableHead>
-                    <TableHead className="text-right">Prezzo B2B</TableHead>
-                    <TableHead className="text-center">Disponibilità</TableHead>
-                    <TableHead className="text-right">Azioni</TableHead>
+                    <TableHead className="hidden sm:table-cell">{t("products.grade")}</TableHead>
+                    <TableHead className="text-right">{t("accessories.prezzoB2B")}</TableHead>
+                    <TableHead className="text-center">{t("accessories.disponibilit")}</TableHead>
+                    <TableHead className="text-right">{t("common.actions")}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -382,7 +384,7 @@ export default function RepairCenterSmartphoneCatalog() {
                   </div>
                   <div className="mt-4">
                     <span className="text-2xl font-bold text-primary">{formatPrice(selectedPhone.b2bPrice)}</span>
-                    <span className="text-sm text-muted-foreground ml-2">Prezzo B2B</span>
+                    <span className="text-sm text-muted-foreground ml-2">{t("accessories.prezzoB2B")}</span>
                   </div>
                 </div>
               </div>
@@ -432,14 +434,14 @@ export default function RepairCenterSmartphoneCatalog() {
 
               {selectedPhone.description && (
                 <div className="border-t pt-4">
-                  <h4 className="font-semibold mb-2">Descrizione</h4>
+                  <h4 className="font-semibold mb-2">{t("common.description")}</h4>
                   <p className="text-sm text-muted-foreground">{selectedPhone.description}</p>
                 </div>
               )}
             </div>
           )}
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDetailDialogOpen(false)}>Chiudi</Button>
+            <Button variant="outline" onClick={() => setDetailDialogOpen(false)}>{t("common.close")}</Button>
             {selectedPhone?.availableForPurchase && (
               <Button onClick={() => {
                 setDetailDialogOpen(false);
@@ -457,7 +459,7 @@ export default function RepairCenterSmartphoneCatalog() {
       <Dialog open={buyDialogOpen} onOpenChange={setBuyDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Aggiungi al Carrello B2B</DialogTitle>
+            <DialogTitle>{t("accessories.aggiungiAlCarrelloB2B")}</DialogTitle>
             <DialogDescription>
               Aggiungi questo smartphone al tuo ordine B2B
             </DialogDescription>
@@ -471,7 +473,7 @@ export default function RepairCenterSmartphoneCatalog() {
                 <p className="text-sm text-muted-foreground">Disponibili: {selectedPhone.resellerStock}</p>
               </div>
               <div className="flex flex-wrap items-center gap-4">
-                <span className="text-sm font-medium">Quantità:</span>
+                <span className="text-sm font-medium">{t("accessories.quantit")}</span>
                 <Input 
                   type="number" 
                   value={buyQuantity} 
@@ -483,13 +485,13 @@ export default function RepairCenterSmartphoneCatalog() {
                 />
               </div>
               <div className="flex justify-between font-bold">
-                <span>Totale:</span>
+                <span>{t("accessories.totale")}</span>
                 <span>{formatPrice(selectedPhone.b2bPrice * buyQuantity)}</span>
               </div>
             </div>
           )}
           <DialogFooter>
-            <Button variant="outline" onClick={() => setBuyDialogOpen(false)}>Annulla</Button>
+            <Button variant="outline" onClick={() => setBuyDialogOpen(false)}>{t("profile.cancel")}</Button>
             <Button onClick={() => selectedPhone && addToCart(selectedPhone, buyQuantity)} data-testid="button-confirm-add">
               <ShoppingCart className="h-4 w-4 mr-2" />
               Aggiungi al Carrello

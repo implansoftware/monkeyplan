@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useRoute, Link } from "wouter";
@@ -17,12 +18,6 @@ import {
 } from "@/components/ui/table";
 import type { PriceList, PriceListItem } from "@shared/schema";
 
-const formatCurrency = (cents: number) => {
-  return new Intl.NumberFormat("it-IT", {
-    style: "currency",
-    currency: "EUR",
-  }).format(cents / 100);
-};
 
 type EnrichedPriceListItem = PriceListItem & {
   productName?: string | null;
@@ -32,6 +27,13 @@ type EnrichedPriceListItem = PriceListItem & {
 type PriceListWithItems = PriceList & { items: EnrichedPriceListItem[] };
 
 export default function RepairCenterPriceListDetail() {
+  const { t } = useTranslation();
+  const formatCurrency = (cents: number) => {
+    return new Intl.NumberFormat("it-IT", {
+      style: "currency",
+      currency: "EUR",
+    }).format(cents / 100);
+  };
   const [, params] = useRoute("/repair-center/price-lists/:id");
   const listId = params?.id;
   const [search, setSearch] = useState("");
@@ -60,7 +62,7 @@ export default function RepairCenterPriceListDetail() {
       <div className="container mx-auto py-6">
         <Card>
           <CardContent className="py-12 text-center">
-            <p className="text-muted-foreground">Listino non trovato</p>
+            <p className="text-muted-foreground">{t("priceLists.listinoNonTrovato")}</p>
             <Link href="/repair-center/price-lists">
               <Button variant="outline" className="mt-4">
                 <ArrowLeft className="h-4 w-4 mr-2" />
@@ -88,7 +90,7 @@ export default function RepairCenterPriceListDetail() {
               {priceList.name}
             </h1>
             <p className="text-muted-foreground mt-1">
-              {priceList.description || "Listino prezzi del reseller"}
+              {priceList.description || t("priceLists.resellerPriceList")}
             </p>
           </div>
         </div>
@@ -108,7 +110,7 @@ export default function RepairCenterPriceListDetail() {
             <div className="relative w-full sm:w-64">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Cerca prodotto/servizio..."
+                placeholder={t("priceLists.cercaProdottoServizio")}
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 className="pl-9"
@@ -121,16 +123,16 @@ export default function RepairCenterPriceListDetail() {
           {filteredItems.length === 0 ? (
             <div className="text-center py-12 text-muted-foreground">
               <Euro className="h-12 w-12 mx-auto mb-4 opacity-50" />
-              <p>Nessuna voce nel listino</p>
+              <p>{t("products.noPriceListItems")}</p>
             </div>
           ) : (
             <div className="overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Tipo</TableHead>
-                  <TableHead>Nome</TableHead>
-                  <TableHead className="text-right">Prezzo</TableHead>
+                  <TableHead>{t("common.type")}</TableHead>
+                  <TableHead>{t("common.name")}</TableHead>
+                  <TableHead className="text-right">{t("common.price")}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>

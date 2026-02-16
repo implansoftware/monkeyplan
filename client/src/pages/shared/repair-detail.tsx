@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
@@ -193,6 +194,7 @@ interface RepairDetailPageProps {
 }
 
 export default function RepairDetailPage({ routePattern, backPath }: RepairDetailPageProps) {
+  const { t } = useTranslation();
   const [match, params] = useRoute(routePattern);
   const [, setLocation] = useLocation();
   const repairOrderId = (params as { id?: string })?.id;
@@ -343,7 +345,7 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
       queryClient.invalidateQueries({ queryKey: ["/api/repair-orders", repairOrderId] });
     },
     onError: (error: Error) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("auth.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -408,11 +410,11 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
       return await apiRequest("POST", `/api/repairs/${repairOrderId}/warranty`, { warrantyProductId });
     },
     onSuccess: () => {
-      toast({ title: "Garanzia offerta", description: "L'offerta di garanzia è stata creata con successo." });
+      toast({ title: "Garanzia offerta", description: t("repairs.lOffertaDiGaranziaStataCreataConSuccesso") });
       queryClient.invalidateQueries({ queryKey: ["/api/repairs", repairOrderId, "warranty"] });
     },
     onError: (error: Error) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("auth.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -422,11 +424,11 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
       return await apiRequest("POST", `/api/repairs/${repairOrderId}/warranty/accept`);
     },
     onSuccess: () => {
-      toast({ title: "Garanzia accettata", description: "La garanzia è stata attivata con successo." });
+      toast({ title: "Garanzia accettata", description: t("repairs.laGaranziaStataAttivataConSuccesso") });
       queryClient.invalidateQueries({ queryKey: ["/api/repairs", repairOrderId, "warranty"] });
     },
     onError: (error: Error) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("auth.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -436,11 +438,11 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
       return await apiRequest("POST", `/api/repairs/${repairOrderId}/warranty/decline`);
     },
     onSuccess: () => {
-      toast({ title: "Garanzia rifiutata", description: "L'offerta di garanzia è stata rifiutata." });
+      toast({ title: "Garanzia rifiutata", description: t("repairs.lOffertaDiGaranziaStataRifiutata") });
       queryClient.invalidateQueries({ queryKey: ["/api/repairs", repairOrderId, "warranty"] });
     },
     onError: (error: Error) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("auth.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -509,14 +511,14 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
       return await apiRequest("PATCH", `/api/repair-orders/${repairOrderId}/quote`, { status });
     },
     onSuccess: () => {
-      toast({ title: "Stato preventivo aggiornato" });
+      toast({ title: t("repairs.statoPreventivoAggiornato") });
       queryClient.invalidateQueries({ queryKey: ["/api/repair-orders"] });
       queryClient.invalidateQueries({ queryKey: ["/api/repair-orders", repairOrderId] });
       queryClient.invalidateQueries({ queryKey: ["/api/repair-orders", repairOrderId, "quote"] });
       queryClient.invalidateQueries({ queryKey: ["/api/quotes"] });
     },
     onError: (error: Error) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("auth.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -526,14 +528,14 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
       return await apiRequest("POST", `/api/repair-orders/${repairOrderId}/quote/accept`);
     },
     onSuccess: () => {
-      toast({ title: "Preventivo accettato", description: "La riparazione procederà come indicato nel preventivo." });
+      toast({ title: "Preventivo accettato", description: t("repairs.laRiparazioneProcederComeIndicatoNelPrevent") });
       queryClient.invalidateQueries({ queryKey: ["/api/repair-orders"] });
       queryClient.invalidateQueries({ queryKey: ["/api/repair-orders", repairOrderId] });
       queryClient.invalidateQueries({ queryKey: ["/api/repair-orders", repairOrderId, "quote"] });
       queryClient.invalidateQueries({ queryKey: ["/api/quotes"] });
     },
     onError: (error: Error) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("auth.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -542,14 +544,14 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
       return await apiRequest("POST", `/api/repair-orders/${repairOrderId}/quote/reject`);
     },
     onSuccess: () => {
-      toast({ title: "Preventivo rifiutato", description: "La riparazione è stata annullata." });
+      toast({ title: "Preventivo rifiutato", description: t("repairs.laRiparazioneStataAnnullata") });
       queryClient.invalidateQueries({ queryKey: ["/api/repair-orders"] });
       queryClient.invalidateQueries({ queryKey: ["/api/repair-orders", repairOrderId] });
       queryClient.invalidateQueries({ queryKey: ["/api/repair-orders", repairOrderId, "quote"] });
       queryClient.invalidateQueries({ queryKey: ["/api/quotes"] });
     },
     onError: (error: Error) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("auth.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -584,7 +586,7 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
       queryClient.invalidateQueries({ queryKey: ["/api/repair-orders", repairOrderId] });
     },
     onError: (error: Error) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("auth.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -598,7 +600,7 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
       queryClient.invalidateQueries({ queryKey: ["/api/repair-orders", repairOrderId] });
     },
     onError: (error: Error) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("auth.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -614,7 +616,7 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
       setSkipQuoteReason(null);
     },
     onError: (error: Error) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("auth.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -647,7 +649,7 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
       
       // Verify status is still 'ingressato' before proceeding
       if (freshRepair.status !== 'ingressato') {
-        throw new Error(`Lo stato è cambiato a '${freshRepair.status}'. Aggiorna la pagina.`);
+        throw new Error(t("repairs.statusChangedRefresh", { status: freshRepair.status }));
       }
       
       return await apiRequest("POST", getSkipDiagnosisEndpoint(), { reason });
@@ -660,7 +662,7 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
       setSkipDiagnosisReason("");
     },
     onError: (error: Error) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("auth.error"), description: error.message, variant: "destructive" });
       // Invalidate to refresh the UI with current state
       queryClient.invalidateQueries({ queryKey: ["/api/repair-orders", repairOrderId] });
       setSkipDiagnosisDialogOpen(false);
@@ -669,22 +671,22 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
 
   const getStatusBadge = (status: string) => {
     switch (status) {
-      case "ingressato": return <Badge variant="secondary" data-testid={`status-${status}`}>Ingressato</Badge>;
-      case "in_diagnosi": return <Badge variant="outline" data-testid={`status-${status}`}>In Diagnosi</Badge>;
-      case "preventivo_emesso": return <Badge variant="outline" data-testid={`status-${status}`}>Preventivo Emesso</Badge>;
-      case "preventivo_accettato": return <Badge data-testid={`status-${status}`}>Preventivo Accettato</Badge>;
-      case "preventivo_rifiutato": return <Badge variant="destructive" data-testid={`status-${status}`}>Preventivo Rifiutato</Badge>;
+      case "ingressato": return <Badge variant="secondary" data-testid={`status-${status}`}>{t("dashboard.ingressato")}</Badge>;
+      case "in_diagnosi": return <Badge variant="outline" data-testid={`status-${status}`}>{t("dashboard.inDiagnosi")}</Badge>;
+      case "preventivo_emesso": return <Badge variant="outline" data-testid={`status-${status}`}>{t("repairs.preventivoEmesso")}</Badge>;
+      case "preventivo_accettato": return <Badge data-testid={`status-${status}`}>{t("repairs.preventivoAccettato")}</Badge>;
+      case "preventivo_rifiutato": return <Badge variant="destructive" data-testid={`status-${status}`}>{t("repairs.preventivoRifiutato")}</Badge>;
       case "attesa_ricambi": return <Badge variant="outline" data-testid={`status-${status}`}>Attesa Ricambi</Badge>;
-      case "in_riparazione": return <Badge data-testid={`status-${status}`}>In Riparazione</Badge>;
-      case "in_test": return <Badge data-testid={`status-${status}`}>In Test</Badge>;
+      case "in_riparazione": return <Badge data-testid={`status-${status}`}>{t("dashboard.inRiparazione")}</Badge>;
+      case "in_test": return <Badge data-testid={`status-${status}`}>{t("dashboard.inTest")}</Badge>;
       case "pronto_ritiro": return <Badge data-testid={`status-${status}`}>Pronto Ritiro</Badge>;
-      case "consegnato": return <Badge variant="outline" data-testid={`status-${status}`}>Consegnato</Badge>;
-      case "cancelled": return <Badge variant="destructive" data-testid={`status-${status}`}>Annullato</Badge>;
-      case "pending": return <Badge variant="secondary" data-testid={`status-${status}`}>In attesa</Badge>;
-      case "in_progress": return <Badge data-testid={`status-${status}`}>In lavorazione</Badge>;
+      case "consegnato": return <Badge variant="outline" data-testid={`status-${status}`}>{t("repairs.status.delivered")}</Badge>;
+      case "cancelled": return <Badge variant="destructive" data-testid={`status-${status}`}>{t("repairs.status.cancelled")}</Badge>;
+      case "pending": return <Badge variant="secondary" data-testid={`status-${status}`}>{t("b2b.status.pending")}</Badge>;
+      case "in_progress": return <Badge data-testid={`status-${status}`}>{t("tickets.status.inProgress")}</Badge>;
       case "waiting_parts": return <Badge variant="outline" data-testid={`status-${status}`}>In attesa pezzi</Badge>;
-      case "completed": return <Badge variant="outline" data-testid={`status-${status}`}>Completata</Badge>;
-      case "delivered": return <Badge variant="outline" data-testid={`status-${status}`}>Consegnata</Badge>;
+      case "completed": return <Badge variant="outline" data-testid={`status-${status}`}>{t("pos.completata")}</Badge>;
+      case "delivered": return <Badge variant="outline" data-testid={`status-${status}`}>{t("shipping.delivered")}</Badge>;
       default: return <Badge variant="outline" data-testid={`status-${status}`}>{status}</Badge>;
     }
   };
@@ -712,11 +714,11 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
 
   const getStatusLabel = (status: string) => {
     const labels: Record<string, string> = {
-      diagnosis: "Diagnosi",
+      diagnosis: t("repairs.diagnosis"),
       quote: "Preventivo",
       repair: "Riparazione",
-      testing: "Collaudo",
-      delivery: "Consegna",
+      testing: t("repairs.testing"),
+      delivery: t("common.delivery"),
     };
     return labels[status] || status;
   };
@@ -995,7 +997,7 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
                   {repair.status === 'ingressato' && (
                     <div className="bg-muted/50 rounded-lg p-4 space-y-3">
                       <p className="text-sm">
-                        Il dispositivo è stato <strong>ingressato</strong>. Inizia la <strong>diagnosi tecnica</strong>.
+                        {t("repairs.deviceReceivedStartDiagnosis")}
                       </p>
                       <div className="flex gap-2">
                         <Button
@@ -1028,12 +1030,12 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
                             <span>Diagnosi saltata{repair.skipDiagnosisReason ? `: ${repair.skipDiagnosisReason}` : ''}</span>
                           </div>
                           <p className="text-sm">
-                            <strong>Crea il preventivo</strong> per il cliente.
+                            <strong>{t("repairs.creaIlPreventivo")}</strong> per il cliente.
                           </p>
                         </div>
                       ) : diagnosis ? (
                         <p className="text-sm">
-                          <strong>Diagnosi completata!</strong> Ora <strong>crea il preventivo</strong> per il cliente.
+                          <strong>{t("repairs.diagnosiCompletata")}</strong> Ora <strong>crea il preventivo</strong> per il cliente.
                         </p>
                       ) : (
                         <p className="text-sm">
@@ -1082,7 +1084,7 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
                   {repair.status === 'preventivo_emesso' && (
                     <div className="bg-muted/50 rounded-lg p-4 space-y-3">
                       <p className="text-sm">
-                        <strong>Preventivo inviato</strong> al cliente. In attesa di risposta.
+                        <strong>{t("remote.preventivoInviato")}</strong> al cliente. In attesa di risposta.
                       </p>
                       <div className="flex gap-2">
                         <Button
@@ -1209,7 +1211,7 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
                   {repair.status === 'in_riparazione' && (
                     <div className="bg-muted/50 rounded-lg p-4 space-y-3">
                       <p className="text-sm">
-                        <strong>Riparazione in corso.</strong> Registra le attività e passa al collaudo.
+                        {t("repairs.repairInProgressDesc")}
                       </p>
                       <div className="flex gap-2 flex-wrap">
                         <Button
@@ -1228,7 +1230,7 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
                           data-testid="button-repair-log"
                         >
                           <ClipboardList className="mr-2 h-4 w-4" />
-                          Registra Attività
+                          {t("repairs.logActivity")}
                         </Button>
                         <Button
                           onClick={() => setTestDialogOpen(true)}
@@ -1278,7 +1280,7 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
                     <div className="bg-muted/50 rounded-lg p-4 space-y-3">
                       <p className="text-sm">
                         {user?.role === 'customer' ? (
-                          <>Il tuo dispositivo è <strong>pronto per il ritiro</strong>. Prenota un appuntamento per venire a ritirarlo.</>
+                          <span dangerouslySetInnerHTML={{ __html: t("repairs.deviceReadyBookAppointmentFull") }} />
                         ) : (
                           <>Dispositivo pronto per il ritiro. <strong>Prenota un appuntamento</strong> o <strong>completa la consegna</strong> quando il cliente arriva.</>
                         )}
@@ -1441,7 +1443,7 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
                               <p className="font-medium capitalize">{repairWarranty.coverageTypeSnapshot}</p>
                             </div>
                             <div>
-                              <span className="text-muted-foreground">Prezzo:</span>
+                              <span className="text-muted-foreground">{t("marketplace.prezzo")}</span>
                               <p className="font-medium">
                                 {(repairWarranty.priceSnapshot / 100).toLocaleString('it-IT', { style: 'currency', currency: 'EUR' })}
                               </p>
@@ -1588,7 +1590,7 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
                     </div>
                     <div className="bg-white dark:bg-gray-900 rounded-lg p-3 border">
                       <div className="flex justify-between items-center">
-                        <span className="text-sm text-muted-foreground">Totale preventivo:</span>
+                        <span className="text-sm text-muted-foreground">{t("repairs.totalePreventivo")}</span>
                         <span className="text-lg font-bold">
                           {((quote.totalAmount || 0) / 100).toLocaleString('it-IT', { style: 'currency', currency: 'EUR' })}
                         </span>
@@ -1637,7 +1639,7 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
                     <div className="flex flex-wrap items-center gap-2">
                       <PackageCheck className="h-5 w-5 text-green-600 dark:text-green-400" />
                       <p className="font-medium text-green-800 dark:text-green-200">
-                        Il tuo dispositivo è pronto per il ritiro!
+                        {t("repairs.deviceReadyForPickup")}
                       </p>
                     </div>
                     <p className="text-sm text-muted-foreground">
@@ -1739,22 +1741,22 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
                 <div className="h-8 w-8 rounded-lg bg-blue-500/10 flex items-center justify-center">
                   <Smartphone className="h-4 w-4 text-blue-600 dark:text-blue-400" />
                 </div>
-                <span>Dispositivo</span>
+                <span>{t("repairs.device")}</span>
               </CardTitle>
             </CardHeader>
             <CardContent className="relative space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="bg-muted/30 rounded-lg p-3">
-                  <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Tipo</span>
+                  <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">{t("common.type")}</span>
                   <p className="font-semibold mt-1">{repair.deviceType}</p>
                 </div>
                 <div className="bg-muted/30 rounded-lg p-3">
-                  <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Marca</span>
+                  <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">{t("repairs.deviceBrand")}</span>
                   <p className="font-semibold mt-1">{repair.brand || "-"}</p>
                 </div>
               </div>
               <div className="bg-muted/30 rounded-lg p-3">
-                <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Modello</span>
+                <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">{t("repairs.deviceModel")}</span>
                 <p className="font-semibold mt-1">{repair.deviceModel}</p>
               </div>
               <div className="bg-amber-500/5 border border-amber-500/20 rounded-lg p-3">
@@ -1816,13 +1818,13 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
                 return (
                   <div className="space-y-3" data-testid="repair-center-details">
                     <div>
-                      <span className="text-sm text-muted-foreground">Nome</span>
+                      <span className="text-sm text-muted-foreground">{t("common.name")}</span>
                       <p className="font-medium" data-testid="text-center-name">{assignedCenter.name}</p>
                     </div>
                     
                     {(assignedCenter.address || assignedCenter.city) && (
                       <div>
-                        <span className="text-sm text-muted-foreground">Indirizzo</span>
+                        <span className="text-sm text-muted-foreground">{t("profile.indirizzo")}</span>
                         <p className="font-medium" data-testid="text-center-address">
                           {[
                             assignedCenter.address,
@@ -1835,7 +1837,7 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
                     
                     {assignedCenter.phone && (
                       <div>
-                        <span className="text-sm text-muted-foreground">Telefono</span>
+                        <span className="text-sm text-muted-foreground">{t("auth.phone")}</span>
                         <p className="font-medium" data-testid="text-center-phone">
                           <a href={`tel:${assignedCenter.phone}`} className="text-primary hover:underline">
                             {assignedCenter.phone}
@@ -1846,7 +1848,7 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
                     
                     {assignedCenter.email && (
                       <div>
-                        <span className="text-sm text-muted-foreground">Email</span>
+                        <span className="text-sm text-muted-foreground">{t("auth.email")}</span>
                         <p className="font-medium" data-testid="text-center-email">
                           <a href={`mailto:${assignedCenter.email}`} className="text-primary hover:underline">
                             {assignedCenter.email}
@@ -1857,7 +1859,7 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
                     
                     {assignedCenter.ownerName && (
                       <div>
-                        <span className="text-sm text-muted-foreground">Rivenditore</span>
+                        <span className="text-sm text-muted-foreground">{t("roles.reseller")}</span>
                         <p className="font-medium" data-testid="text-center-owner">{assignedCenter.ownerName}</p>
                       </div>
                     )}
@@ -1875,10 +1877,10 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
                     disabled={updateRepairCenterMutation.isPending}
                   >
                     <SelectTrigger data-testid="select-repair-center">
-                      <SelectValue placeholder="Seleziona centro" />
+                      <SelectValue placeholder={t("repairs.selezionaCentro")} />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="unassigned">Non assegnato</SelectItem>
+                      <SelectItem value="unassigned">{t("tickets.unassigned")}</SelectItem>
                       {repairCenters.map((center) => (
                         <SelectItem key={center.id} value={center.id}>
                           {center.name} {center.ownerName ? `(${center.ownerName})` : ''}
@@ -1926,7 +1928,7 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
                 )}
                 {acceptance.accessories && acceptance.accessories.length > 0 && (
                   <div>
-                    <span className="text-sm text-muted-foreground">Accessori Inclusi</span>
+                    <span className="text-sm text-muted-foreground">{t("products.includedAccessories")}</span>
                     <div className="flex flex-wrap gap-1 mt-1">
                       {acceptance.accessories.map((acc, idx) => (
                         <Badge key={idx} variant="outline" className="text-xs">
@@ -1979,7 +1981,7 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
               <CardContent className="space-y-3">
                 {diagnosis.technicalDiagnosis && (
                   <div>
-                    <span className="text-sm text-muted-foreground">Diagnosi Tecnica</span>
+                    <span className="text-sm text-muted-foreground">{t("repairs.diagnosiTecnica")}</span>
                     <p className="text-sm whitespace-pre-wrap">{diagnosis.technicalDiagnosis}</p>
                   </div>
                 )}
@@ -2045,7 +2047,7 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
               </CardHeader>
               <CardContent>
                 <p className="text-sm text-muted-foreground mb-3">
-                  Il dispositivo è stato diagnosticato come irriparabile. Ecco alcuni smartphone consigliati per la sostituzione:
+                  {t("repairs.unreparableSuggestions")}
                 </p>
                 <div className="space-y-2">
                   {suggestedDevices.map((device) => (
@@ -2100,7 +2102,7 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
                     { key: 'batteryTest', label: 'Batteria' },
                     { key: 'audioTest', label: 'Audio' },
                     { key: 'cameraTest', label: 'Fotocamera' },
-                    { key: 'connectivityTest', label: 'Connettività' },
+                    { key: 'connectivityTest', label: t('repairs.connectivityTest') },
                     { key: 'buttonsTest', label: 'Pulsanti' },
                     { key: 'sensorsTest', label: 'Sensori' },
                     { key: 'chargingTest', label: 'Ricarica' },
@@ -2152,12 +2154,12 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
                 </CardHeader>
                 <CardContent className="space-y-2">
                   <div>
-                    <span className="text-sm text-muted-foreground">Nome</span>
+                    <span className="text-sm text-muted-foreground">{t("common.name")}</span>
                     <p className="font-medium" data-testid="text-customer-name">{customerData.fullName || customerData.username || '-'}</p>
                   </div>
                   {customerData.email && (
                     <div>
-                      <span className="text-sm text-muted-foreground">Email</span>
+                      <span className="text-sm text-muted-foreground">{t("auth.email")}</span>
                       <p className="font-medium">
                         <a href={`mailto:${customerData.email}`} className="text-primary hover:underline" data-testid="link-customer-email">
                           {customerData.email}
@@ -2167,7 +2169,7 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
                   )}
                   {customerData.phone && (
                     <div>
-                      <span className="text-sm text-muted-foreground">Telefono</span>
+                      <span className="text-sm text-muted-foreground">{t("auth.phone")}</span>
                       <p className="font-medium">
                         <a href={`tel:${customerData.phone}`} className="text-primary hover:underline" data-testid="link-customer-phone">
                           {customerData.phone}
@@ -2177,7 +2179,7 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
                   )}
                   {(customerData.address || customerData.city || customerData.province || customerData.postalCode) && (
                     <div>
-                      <span className="text-sm text-muted-foreground">Indirizzo</span>
+                      <span className="text-sm text-muted-foreground">{t("profile.indirizzo")}</span>
                       <p className="font-medium" data-testid="text-customer-address">
                         {[
                           customerData.address,
@@ -2189,13 +2191,13 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
                   )}
                   {customerData.fiscalCode && (
                     <div>
-                      <span className="text-sm text-muted-foreground">Codice Fiscale</span>
+                      <span className="text-sm text-muted-foreground">{t("profile.codiceFiscale")}</span>
                       <p className="font-medium font-mono text-sm" data-testid="text-customer-fiscal-code">{customerData.fiscalCode}</p>
                     </div>
                   )}
                   {customerData.vatNumber && (
                     <div>
-                      <span className="text-sm text-muted-foreground">Partita IVA</span>
+                      <span className="text-sm text-muted-foreground">{t("auth.vatNumber")}</span>
                       <p className="font-medium font-mono text-sm" data-testid="text-customer-vat">{customerData.vatNumber}</p>
                     </div>
                   )}
@@ -2214,11 +2216,11 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
               </CardHeader>
               <CardContent className="space-y-3">
                 <div className="flex justify-between items-center">
-                  <span className="text-sm text-muted-foreground">Numero</span>
+                  <span className="text-sm text-muted-foreground">{t("common.number")}</span>
                   <span className="font-mono text-sm">{quote.quoteNumber}</span>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="text-sm text-muted-foreground">Stato</span>
+                  <span className="text-sm text-muted-foreground">{t("common.status")}</span>
                   <Badge variant={quote.status === 'accepted' ? 'default' : quote.status === 'rejected' ? 'destructive' : 'outline'}>
                     {quote.status === 'pending' || quote.status === 'sent' || quote.status === 'draft' ? 'In Attesa' : quote.status === 'accepted' ? 'Accettato' : 'Rifiutato'}
                   </Badge>
@@ -2231,7 +2233,7 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
                     if (Array.isArray(parts) && parts.length > 0) {
                       return (
                         <div className="pt-2 border-t">
-                          <span className="text-sm text-muted-foreground">Ricambi e Servizi</span>
+                          <span className="text-sm text-muted-foreground">{t("repairs.ricambiEServizi")}</span>
                           <div className="mt-2 space-y-2">
                             {parts.map((part: { name: string; quantity: number; unitPrice: number }, idx: number) => (
                               <div key={idx} className="flex justify-between items-center text-sm bg-muted/50 rounded px-2 py-1">
@@ -2268,14 +2270,14 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
 
                 {/* Total */}
                 <div className="flex justify-between items-center pt-2 border-t bg-muted/30 rounded px-2 py-2">
-                  <span className="font-medium">Totale</span>
+                  <span className="font-medium">{t("common.total")}</span>
                   <span className="text-lg font-bold">{formatCurrency(quote.totalAmount, true)}</span>
                 </div>
 
                 {/* Valid until */}
                 {quote.validUntil && (
                   <div className="flex justify-between items-center text-sm">
-                    <span className="text-muted-foreground">Valido fino al</span>
+                    <span className="text-muted-foreground">{t("standalone.validUntil")}</span>
                     <span>{format(new Date(quote.validUntil), "dd/MM/yyyy", { locale: it })}</span>
                   </div>
                 )}
@@ -2283,7 +2285,7 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
                 {/* Notes */}
                 {quote.notes && (
                   <div className="pt-2 border-t">
-                    <span className="text-sm text-muted-foreground">Note</span>
+                    <span className="text-sm text-muted-foreground">{t("common.note")}</span>
                     <p className="text-sm whitespace-pre-wrap mt-1">{quote.notes}</p>
                   </div>
                 )}
@@ -2322,12 +2324,12 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
               ) : dataRecoveryJob ? (
                 <div className="space-y-2">
                   <div className="flex justify-between items-center">
-                    <span className="text-sm text-muted-foreground">Stato</span>
+                    <span className="text-sm text-muted-foreground">{t("common.status")}</span>
                     <Badge>{dataRecoveryJob.status}</Badge>
                   </div>
                   {dataRecoveryJob.notes && (
                     <div>
-                      <span className="text-sm text-muted-foreground">Note</span>
+                      <span className="text-sm text-muted-foreground">{t("common.note")}</span>
                       <p className="text-sm">{dataRecoveryJob.notes}</p>
                     </div>
                   )}
@@ -2456,9 +2458,9 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <label className="text-sm font-medium">Motivo (opzionale)</label>
+              <label className="text-sm font-medium">{t("common.reasonOptional")}</label>
               <Input
-                placeholder="Es: Problema già noto, cliente abituale..."
+                placeholder={t("repairs.esProblemaGiNotoClienteAbituale")}
                 value={skipDiagnosisReason}
                 onChange={(e) => setSkipDiagnosisReason(e.target.value)}
                 data-testid="input-skip-diagnosis-reason"
@@ -2467,7 +2469,7 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
             <div className="flex flex-wrap items-center gap-2 p-3 bg-amber-500/10 border border-amber-500/20 rounded-lg">
               <AlertTriangle className="h-4 w-4 text-amber-500 flex-shrink-0" />
               <p className="text-sm text-amber-600 dark:text-amber-400">
-                Saltando la diagnosi, il preventivo verrà creato senza dati diagnostici.
+                {t("repairs.skipDiagnosisWarning")}
               </p>
             </div>
           </div>
@@ -2508,7 +2510,7 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
                 data-testid="button-skip-warranty"
               >
                 <Shield className="h-6 w-6" />
-                <span>Garanzia</span>
+                <span>{t("common.warranty")}</span>
               </Button>
               <Button
                 variant={skipQuoteReason === 'omaggio' ? 'default' : 'outline'}

@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useState } from "react";
 import { Link } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -27,6 +28,7 @@ type CustomerWithStats = UserType & {
 };
 
 export default function RepairCenterCustomers() {
+  const { t } = useTranslation();
   const [searchQuery, setSearchQuery] = useState("");
   const [detailDialogOpen, setDetailDialogOpen] = useState(false);
   const [selectedCustomer, setSelectedCustomer] = useState<CustomerWithStats | null>(null);
@@ -72,8 +74,8 @@ export default function RepairCenterCustomers() {
               <Users className="h-5 w-5 sm:h-7 sm:w-7 text-white" />
             </div>
             <div>
-              <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-white tracking-tight" data-testid="text-page-title">Clienti</h1>
-              <p className="text-emerald-100">Clienti assegnati al tuo centro riparazione</p>
+              <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-white tracking-tight" data-testid="text-page-title">{t("sidebar.sections.customers")}</h1>
+              <p className="text-emerald-100">{t("customers.clientiAssegnatiAlTuoCentroRiparazione")}</p>
             </div>
           </div>
           <div className="flex flex-wrap items-center gap-3">
@@ -100,7 +102,7 @@ export default function RepairCenterCustomers() {
                 <Users className="h-6 w-6 text-primary" />
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">Totale Clienti</p>
+                <p className="text-sm text-muted-foreground">{t("customers.totaleClienti")}</p>
                 <p className="text-2xl font-bold">{customers.length}</p>
               </div>
             </div>
@@ -113,7 +115,7 @@ export default function RepairCenterCustomers() {
                 <CheckCircle className="h-6 w-6 text-green-600" />
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">Riparazioni Completate</p>
+                <p className="text-sm text-muted-foreground">{t("dashboard.completedRepairs")}</p>
                 <p className="text-2xl font-bold">{customers.reduce((sum, c) => sum + c.completedRepairs, 0)}</p>
               </div>
             </div>
@@ -126,7 +128,7 @@ export default function RepairCenterCustomers() {
                 <Clock className="h-6 w-6 text-yellow-600" />
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">Riparazioni in Corso</p>
+                <p className="text-sm text-muted-foreground">{t("customers.riparazioniInCorso")}</p>
                 <p className="text-2xl font-bold">{customers.reduce((sum, c) => sum + c.pendingRepairs, 0)}</p>
               </div>
             </div>
@@ -141,7 +143,7 @@ export default function RepairCenterCustomers() {
             <div className="relative w-full md:w-80">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Cerca per nome, email o telefono..."
+                placeholder={t("customers.cercaPerNomeEmailOTelefono")}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-10"
@@ -160,9 +162,9 @@ export default function RepairCenterCustomers() {
           ) : filteredCustomers.length === 0 ? (
             <div className="text-center py-12 text-muted-foreground">
               <Users className="h-12 w-12 mx-auto mb-4 opacity-50" />
-              <p>Nessun cliente trovato</p>
+              <p>{t("customers.nessunClienteTrovato")}</p>
               {customers.length === 0 && (
-                <p className="text-sm mt-2">Crea il primo cliente cliccando su "Nuovo Cliente"</p>
+                <p className="text-sm mt-2">{t("customers.creaIlPrimoClienteCliccandoSuNuovoCliente")}</p>
               )}
             </div>
           ) : (
@@ -171,11 +173,11 @@ export default function RepairCenterCustomers() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Cliente</TableHead>
-                    <TableHead className="hidden md:table-cell">Contatto</TableHead>
-                    <TableHead className="text-center">Riparazioni</TableHead>
-                    <TableHead className="hidden lg:table-cell text-center">In Lavorazione</TableHead>
-                    <TableHead className="text-right">Azioni</TableHead>
+                    <TableHead>{t("auth.customerTab")}</TableHead>
+                    <TableHead className="hidden md:table-cell">{t("common.contact")}</TableHead>
+                    <TableHead className="text-center">{t("sidebar.sections.repairs")}</TableHead>
+                    <TableHead className="hidden lg:table-cell text-center">{t("repairs.inProgress")}</TableHead>
+                    <TableHead className="text-right">{t("common.actions")}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -277,7 +279,7 @@ export default function RepairCenterCustomers() {
           {selectedCustomer && (
             <Tabs defaultValue="info" className="w-full">
               <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="info" data-testid="tab-customer-info">Informazioni</TabsTrigger>
+                <TabsTrigger value="info" data-testid="tab-customer-info">{t("common.information")}</TabsTrigger>
                 <TabsTrigger value="relationships" data-testid="tab-customer-relationships">Parentele</TabsTrigger>
               </TabsList>
               
@@ -307,7 +309,7 @@ export default function RepairCenterCustomers() {
               
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 border-t pt-4">
                 <div>
-                  <h4 className="font-semibold mb-3">Contatti</h4>
+                  <h4 className="font-semibold mb-3">{t("common.contacts")}</h4>
                   <div className="space-y-2 text-sm">
                     <div className="flex flex-wrap items-center gap-2">
                       <Mail className="h-4 w-4 text-muted-foreground" />
@@ -332,10 +334,10 @@ export default function RepairCenterCustomers() {
                   </div>
                 </div>
                 <div>
-                  <h4 className="font-semibold mb-3">Statistiche</h4>
+                  <h4 className="font-semibold mb-3">{t("dashboard.statistics")}</h4>
                   <div className="space-y-2 text-sm">
                     <div className="flex justify-between">
-                      <span className="text-muted-foreground">Totale riparazioni:</span>
+                      <span className="text-muted-foreground">{t("customers.totaleRiparazioni")}</span>
                       <span className="font-medium">{selectedCustomer.totalRepairs}</span>
                     </div>
                     <div className="flex justify-between">
@@ -356,7 +358,7 @@ export default function RepairCenterCustomers() {
 
               {customerDetail?.repairs && customerDetail.repairs.length > 0 && (
                 <div className="border-t pt-4">
-                  <h4 className="font-semibold mb-3">Storico Riparazioni</h4>
+                  <h4 className="font-semibold mb-3">{t("customers.repairHistory")}</h4>
                   <ScrollArea className="h-[200px]">
                     <div className="space-y-2">
                       {customerDetail.repairs.slice(0, 10).map((repair) => (
@@ -387,7 +389,7 @@ export default function RepairCenterCustomers() {
             </Tabs>
           )}
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDetailDialogOpen(false)}>Chiudi</Button>
+            <Button variant="outline" onClick={() => setDetailDialogOpen(false)}>{t("common.close")}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

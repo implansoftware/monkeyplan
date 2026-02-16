@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useLocation } from "wouter";
@@ -42,6 +43,7 @@ function formatPrice(cents: number): string {
 }
 
 export default function RepairCenterCart() {
+  const { t } = useTranslation();
   const [, navigate] = useLocation();
   const [cart, setCart] = useState<CartItem[]>([]);
   const [checkoutOpen, setCheckoutOpen] = useState(false);
@@ -76,7 +78,7 @@ export default function RepairCenterCart() {
       return res.json();
     },
     onSuccess: () => {
-      toast({ title: "Ordine creato", description: "Il tuo ordine è stato inviato al rivenditore per approvazione" });
+      toast({ title: "Ordine creato", description: t("b2b.ilTuoOrdineStatoInviatoAlRivenditorePerA") });
       saveCart([]);
       setCheckoutOpen(false);
       setNotes("");
@@ -84,7 +86,7 @@ export default function RepairCenterCart() {
       navigate('/repair-center/b2b-orders');
     },
     onError: (error: Error) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("auth.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -116,7 +118,7 @@ export default function RepairCenterCart() {
 
   const handleCheckout = () => {
     if (cart.length === 0) {
-      toast({ title: "Carrello vuoto", description: "Aggiungi prodotti al carrello prima di procedere", variant: "destructive" });
+      toast({ title: t("pos.emptyCart"), description: "Aggiungi prodotti al carrello prima di procedere", variant: "destructive" });
       return;
     }
     setCheckoutOpen(true);
@@ -144,8 +146,8 @@ export default function RepairCenterCart() {
               <ShoppingCart className="h-5 w-5 sm:h-7 sm:w-7 text-white" />
             </div>
             <div>
-              <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-white tracking-tight" data-testid="text-page-title">Carrello</h1>
-              <p className="text-emerald-100">Gestisci i prodotti nel tuo carrello e completa l'ordine</p>
+              <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-white tracking-tight" data-testid="text-page-title">{t("sidebar.items.cart")}</h1>
+              <p className="text-emerald-100">{t("cart.gestisciIProdottiNelTuoCarrelloECompletaL")}</p>
             </div>
           </div>
           <div className="flex flex-wrap gap-2">
@@ -167,8 +169,8 @@ export default function RepairCenterCart() {
         <Card>
           <CardContent className="py-16 text-center">
             <ShoppingCart className="h-16 w-16 mx-auto text-muted-foreground mb-4 opacity-50" />
-            <h3 className="text-xl font-semibold mb-2">Il carrello è vuoto</h3>
-            <p className="text-muted-foreground mb-6">Aggiungi prodotti dal catalogo dispositivi per iniziare</p>
+            <h3 className="text-xl font-semibold mb-2">{t("shop.emptyCart")}</h3>
+            <p className="text-muted-foreground mb-6">{t("cart.aggiungiProdottiDalCatalogoDispositiviPerIni")}</p>
             <Button onClick={() => navigate('/repair-center/dispositivi')} data-testid="button-go-catalog">
               <Package className="h-4 w-4 mr-2" />
               Vai al Catalogo Dispositivi
@@ -181,7 +183,7 @@ export default function RepairCenterCart() {
             <Card>
               <CardHeader>
                 <CardTitle>Prodotti nel Carrello ({cartItemCount})</CardTitle>
-                <CardDescription>Modifica le quantità o rimuovi prodotti</CardDescription>
+                <CardDescription>{t("cart.modificaLeQuantitORimuoviProdotti")}</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 {cart.map((item) => (
@@ -234,16 +236,16 @@ export default function RepairCenterCart() {
           <div className="space-y-4">
             <Card>
               <CardHeader>
-                <CardTitle>Riepilogo Ordine</CardTitle>
+                <CardTitle>{t("shop.orderSummary")}</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Prodotti:</span>
+                  <span className="text-muted-foreground">{t("cart.prodotti")}</span>
                   <span>{cartItemCount}</span>
                 </div>
                 <Separator />
                 <div className="flex justify-between text-lg font-bold">
-                  <span>Totale:</span>
+                  <span>{t("accessories.totale")}</span>
                   <span className="text-primary">{formatPrice(cartTotal)}</span>
                 </div>
               </CardContent>
@@ -270,7 +272,7 @@ export default function RepairCenterCart() {
       <Dialog open={checkoutOpen} onOpenChange={setCheckoutOpen}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle>Conferma Ordine B2B</DialogTitle>
+            <DialogTitle>{t("b2b.confermaOrdineB2B")}</DialogTitle>
             <DialogDescription>Verifica i prodotti e conferma l'ordine al rivenditore</DialogDescription>
           </DialogHeader>
           
@@ -280,7 +282,7 @@ export default function RepairCenterCart() {
                 <div key={item.productId} className="flex items-center justify-between py-2 border-b">
                   <div className="flex-1">
                     <p className="font-medium">{item.name}</p>
-                    <p className="text-sm text-muted-foreground">Quantità: {item.quantity}</p>
+                    <p className="text-sm text-muted-foreground">{t("common.quantity")}: {item.quantity}</p>
                   </div>
                   <p className="font-semibold">{formatPrice(item.b2bPrice * item.quantity)}</p>
                 </div>
@@ -298,7 +300,7 @@ export default function RepairCenterCart() {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="bank_transfer">Bonifico Bancario</SelectItem>
+                  <SelectItem value="bank_transfer">{t("settings.bankTransfer")}</SelectItem>
                   <SelectItem value="cash">Contanti alla Consegna</SelectItem>
                   <SelectItem value="credit">Credito Rivenditore</SelectItem>
                 </SelectContent>
@@ -352,7 +354,7 @@ export default function RepairCenterCart() {
               <Label htmlFor="notes">Note Ordine (opzionale)</Label>
               <Textarea
                 id="notes"
-                placeholder="Aggiungi note per il rivenditore..."
+                placeholder={t("cart.addNotesForReseller")}
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
                 data-testid="input-notes"
@@ -363,7 +365,7 @@ export default function RepairCenterCart() {
           <Separator />
 
           <div className="flex justify-between items-center">
-            <span className="text-lg font-bold">Totale Ordine:</span>
+            <span className="text-lg font-bold">{t("b2b.totaleOrdine")}</span>
             <span className="text-2xl font-bold text-primary">{formatPrice(cartTotal)}</span>
           </div>
 
@@ -377,7 +379,7 @@ export default function RepairCenterCart() {
               data-testid="button-confirm-order"
             >
               {createOrderMutation.isPending ? (
-                "Invio in corso..."
+                t("common.sendingInProgress")
               ) : (
                 <>
                   <Send className="h-4 w-4 mr-2" />

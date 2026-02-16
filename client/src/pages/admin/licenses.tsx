@@ -15,6 +15,7 @@ import { Shield, Calendar, User, Gift, Search, Filter } from "lucide-react";
 import type { LicensePlan } from "@shared/schema";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
+import { useTranslation } from "react-i18next";
 
 interface EnrichedLicense {
   id: string;
@@ -49,6 +50,7 @@ const PAYMENT_LABELS: Record<string, string> = {
 };
 
 export default function AdminLicenses() {
+  const { t } = useTranslation();
   const { toast } = useToast();
   const [statusFilter, setStatusFilter] = useState("all");
   const [search, setSearch] = useState("");
@@ -95,10 +97,10 @@ export default function AdminLicenses() {
       setGrantResellerId("");
       setGrantPlanId("");
       setGrantNotes("");
-      toast({ title: "Licenza assegnata con successo" });
+      toast({ title: t("license.licenseAssigned") });
     },
     onError: (err: any) => {
-      toast({ title: "Errore", description: err.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: err.message, variant: "destructive" });
     },
   });
 
@@ -109,10 +111,10 @@ export default function AdminLicenses() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/licenses"] });
-      toast({ title: "Licenza aggiornata" });
+      toast({ title: t("license.licenseUpdated") });
     },
     onError: (err: any) => {
-      toast({ title: "Errore", description: err.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: err.message, variant: "destructive" });
     },
   });
 
@@ -153,14 +155,14 @@ export default function AdminLicenses() {
           </DialogTrigger>
           <DialogContent className="max-w-md">
             <DialogHeader>
-              <DialogTitle>Assegna Licenza</DialogTitle>
+              <DialogTitle>{t("license.assignLicense")}</DialogTitle>
             </DialogHeader>
             <div className="space-y-4">
               <div className="space-y-2">
-                <Label>Rivenditore *</Label>
+                <Label>{t("license.reseller")} *</Label>
                 <Select value={grantResellerId} onValueChange={setGrantResellerId}>
                   <SelectTrigger data-testid="select-grant-reseller">
-                    <SelectValue placeholder="Seleziona rivenditore" />
+                    <SelectValue placeholder={t("utility.selectReseller")} />
                   </SelectTrigger>
                   <SelectContent>
                     {resellers.map((r: any) => (
@@ -172,10 +174,10 @@ export default function AdminLicenses() {
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label>Piano *</Label>
+                <Label>{t("license.plan")} *</Label>
                 <Select value={grantPlanId} onValueChange={setGrantPlanId}>
                   <SelectTrigger data-testid="select-grant-plan">
-                    <SelectValue placeholder="Seleziona piano" />
+                    <SelectValue placeholder={t("license.selectPlan")} />
                   </SelectTrigger>
                   <SelectContent>
                     {(plans || []).filter(p => p.isActive).map(p => (
@@ -187,25 +189,25 @@ export default function AdminLicenses() {
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label>Metodo pagamento</Label>
+                <Label>{t("license.paymentMethod")}</Label>
                 <Select value={grantPaymentMethod} onValueChange={setGrantPaymentMethod}>
                   <SelectTrigger data-testid="select-grant-payment">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="manual">Manuale</SelectItem>
-                    <SelectItem value="free">Gratuita</SelectItem>
+                    <SelectItem value="manual">{t("license.manual")}</SelectItem>
+                    <SelectItem value="free">{t("license.free")}</SelectItem>
                     <SelectItem value="stripe">Stripe</SelectItem>
                     <SelectItem value="paypal">PayPal</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label>Note</Label>
-                <Textarea value={grantNotes} onChange={e => setGrantNotes(e.target.value)} placeholder="Note opzionali" data-testid="input-grant-notes" />
+                <Label>{t("common.notes")}</Label>
+                <Textarea value={grantNotes} onChange={e => setGrantNotes(e.target.value)} placeholder={t("common.optionalNotes")} data-testid="input-grant-notes" />
               </div>
               <div className="flex justify-end gap-2 pt-2">
-                <Button variant="outline" onClick={() => setGrantOpen(false)} data-testid="button-cancel-grant">Annulla</Button>
+                <Button variant="outline" onClick={() => setGrantOpen(false)} data-testid="button-cancel-grant">{t("common.cancel")}</Button>
                 <Button onClick={() => grantMutation.mutate({
                   resellerId: grantResellerId,
                   licensePlanId: grantPlanId,
@@ -260,7 +262,7 @@ export default function AdminLicenses() {
         <div className="relative flex-1 min-w-[200px]">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <Input
-            placeholder="Cerca rivenditore o piano..."
+            placeholder={t("common.search")}
             value={search}
             onChange={e => setSearch(e.target.value)}
             className="pl-9"
@@ -270,14 +272,14 @@ export default function AdminLicenses() {
         <Select value={statusFilter} onValueChange={setStatusFilter}>
           <SelectTrigger className="w-[160px]" data-testid="select-status-filter">
             <Filter className="w-4 h-4 mr-2" />
-            <SelectValue placeholder="Stato" />
+            <SelectValue placeholder={t("common.status")} />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">Tutti</SelectItem>
-            <SelectItem value="active">Attive</SelectItem>
-            <SelectItem value="expired">Scadute</SelectItem>
-            <SelectItem value="cancelled">Cancellate</SelectItem>
-            <SelectItem value="pending">In attesa</SelectItem>
+            <SelectItem value="all">{t("common.allMasc")}</SelectItem>
+            <SelectItem value="active">{t("common.active")}</SelectItem>
+            <SelectItem value="expired">{t("license.expired")}</SelectItem>
+            <SelectItem value="cancelled">{t("common.cancelled")}</SelectItem>
+            <SelectItem value="pending">{t("b2b.status.pending")}</SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -286,7 +288,7 @@ export default function AdminLicenses() {
         <Card>
           <CardContent className="py-12 text-center text-muted-foreground">
             <Shield className="w-12 h-12 mx-auto mb-4 opacity-50" />
-            <p className="text-lg font-medium">Nessuna licenza trovata</p>
+            <p className="text-lg font-medium">{t("license.noLicenses")}</p>
           </CardContent>
         </Card>
       ) : (

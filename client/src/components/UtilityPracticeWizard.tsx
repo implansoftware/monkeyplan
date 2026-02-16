@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useState, useEffect, useMemo } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -65,11 +66,11 @@ interface PracticeProductItem {
 }
 
 const STEPS: { id: WizardStep; label: string; icon: any }[] = [
-  { id: "type", label: "Tipo", icon: ClipboardList },
-  { id: "service", label: "Servizio", icon: FileCheck },
-  { id: "customer", label: "Cliente", icon: User },
-  { id: "pricing", label: "Prezzo", icon: Euro },
-  { id: "review", label: "Riepilogo", icon: Check },
+  { id: "type", label: t("common.type"), icon: ClipboardList },
+  { id: "service", label: t("parts.service"), icon: FileCheck },
+  { id: "customer", label: t("common.customer"), icon: User },
+  { id: "pricing", label: t("common.price"), icon: Euro },
+  { id: "review", label: t("repair.summary"), icon: Check },
 ];
 
 const categoryLabels: Record<string, string> = {
@@ -78,7 +79,7 @@ const categoryLabels: Record<string, string> = {
   centralino: "Centralino",
   luce: "Luce",
   gas: "Gas",
-  altro: "Altro",
+  altro: t("common.other"),
 };
 
 const formatCurrency = (cents: number) => {
@@ -89,6 +90,7 @@ const formatCurrency = (cents: number) => {
 };
 
 export function UtilityPracticeWizard({ open, onOpenChange, onSuccess, preselectedServiceId }: UtilityPracticeWizardProps) {
+  const { t } = useTranslation();
   const { toast } = useToast();
   const { user } = useUser();
   const [currentStep, setCurrentStep] = useState<WizardStep>("type");
@@ -272,13 +274,13 @@ export function UtilityPracticeWizard({ open, onOpenChange, onSuccess, preselect
       return response.json();
     },
     onSuccess: () => {
-      toast({ title: "Pratica creata", description: "La pratica è stata creata con successo" });
+      toast({ title: t("practice.practiceCreated"), description: t("practice.practiceCreatedSuccess") });
       queryClient.invalidateQueries({ queryKey: ["/api/utility/practices"] });
       onOpenChange(false);
       onSuccess?.();
     },
     onError: (error: any) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -523,7 +525,7 @@ export function UtilityPracticeWizard({ open, onOpenChange, onSuccess, preselect
                   data-testid="button-target-repaircenter"
                 >
                   <Loader2 className="h-4 w-4 mr-1" />
-                  Centro Riparazione
+                  {t("repair.repairCenter")}
                 </Button>
               )}
             </div>
@@ -535,7 +537,7 @@ export function UtilityPracticeWizard({ open, onOpenChange, onSuccess, preselect
                 onValueChange={setSelectedResellerId}
               >
                 <SelectTrigger data-testid="select-subreseller">
-                  <SelectValue placeholder="Seleziona sub-rivenditore" />
+                  <SelectValue placeholder={t("customer.selectSubReseller")} />
                 </SelectTrigger>
                 <SelectContent>
                   {subResellers.map((sub: any) => (
@@ -557,7 +559,7 @@ export function UtilityPracticeWizard({ open, onOpenChange, onSuccess, preselect
                 onValueChange={setSelectedRepairCenterId}
               >
                 <SelectTrigger data-testid="select-repaircenter">
-                  <SelectValue placeholder="Seleziona centro riparazione" />
+                  <SelectValue placeholder={t("repair.selectRepairCenter")} />
                 </SelectTrigger>
                 <SelectContent>
                   {repairCenters.map((center: any) => (
@@ -593,7 +595,7 @@ export function UtilityPracticeWizard({ open, onOpenChange, onSuccess, preselect
               <FileCheck className="h-6 w-6" />
             </div>
             <div className="flex-1">
-              <h4 className="font-medium">Servizio</h4>
+              <h4 className="font-medium">{t("parts.service")}</h4>
               <p className="text-sm text-muted-foreground">Attivazione di un servizio utility (telefonia, luce, gas, ecc.)</p>
             </div>
             {selectedItemType === "service" && <CheckCircle2 className="h-5 w-5 text-primary" />}
@@ -612,7 +614,7 @@ export function UtilityPracticeWizard({ open, onOpenChange, onSuccess, preselect
               <Package className="h-6 w-6" />
             </div>
             <div className="flex-1">
-              <h4 className="font-medium">Prodotto</h4>
+              <h4 className="font-medium">{t("parts.product")}</h4>
               <p className="text-sm text-muted-foreground">Vendita di un prodotto (SIM, modem, router, ecc.)</p>
             </div>
             {selectedItemType === "product" && <CheckCircle2 className="h-5 w-5 text-primary" />}
@@ -653,7 +655,7 @@ export function UtilityPracticeWizard({ open, onOpenChange, onSuccess, preselect
             
             <div className="space-y-4">
               <div className="space-y-2">
-                <Label>Fornitore</Label>
+                <Label>{t("common.supplier")}</Label>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-2">
                   <Button
                     type="button"
@@ -677,7 +679,7 @@ export function UtilityPracticeWizard({ open, onOpenChange, onSuccess, preselect
                     data-testid="button-supplier-temporary"
                   >
                     <Plus className="h-4 w-4 mr-2" />
-                    Temporaneo
+                    {t("warehouse.temporary")}
                   </Button>
                 </div>
                 
@@ -686,7 +688,7 @@ export function UtilityPracticeWizard({ open, onOpenChange, onSuccess, preselect
                     <Input
                       value={temporarySupplierName}
                       onChange={(e) => setTemporarySupplierName(e.target.value)}
-                      placeholder="Nome fornitore (es: TIM, Vodafone, Enel...)"
+                      placeholder={t("utility.supplierNameExample")}
                       data-testid="input-temporary-supplier"
                     />
                     {temporarySupplierName.length >= 2 && (() => {
@@ -724,7 +726,7 @@ export function UtilityPracticeWizard({ open, onOpenChange, onSuccess, preselect
                     <div className="relative">
                       <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                       <Input
-                        placeholder="Cerca fornitore..."
+                        placeholder={t("utility.searchSupplier")}
                         value={supplierSearchQuery}
                         onChange={(e) => setSupplierSearchQuery(e.target.value)}
                         className="pl-8"
@@ -770,7 +772,7 @@ export function UtilityPracticeWizard({ open, onOpenChange, onSuccess, preselect
               <Separator />
 
               <div className="space-y-2">
-                <Label>Servizio</Label>
+                <Label>{t("parts.service")}</Label>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-2">
                   <Button
                     type="button"
@@ -794,7 +796,7 @@ export function UtilityPracticeWizard({ open, onOpenChange, onSuccess, preselect
                     data-testid="button-service-custom"
                   >
                     <Plus className="h-4 w-4 mr-2" />
-                    Temporaneo
+                    {t("warehouse.temporary")}
                   </Button>
                 </div>
 
@@ -802,13 +804,13 @@ export function UtilityPracticeWizard({ open, onOpenChange, onSuccess, preselect
                   <Input
                     value={customServiceName}
                     onChange={(e) => setCustomServiceName(e.target.value)}
-                    placeholder="Nome del servizio (es: Fibra 1Gbps)"
+                    placeholder={t("utility.serviceNameExample")}
                     data-testid="input-custom-service"
                   />
                 ) : (
                   <Select value={selectedServiceId} onValueChange={setSelectedServiceId} disabled={!selectedSupplierId && !useTemporarySupplier}>
                     <SelectTrigger data-testid="select-service">
-                      <SelectValue placeholder={selectedSupplierId ? "Seleziona servizio" : "Prima seleziona un fornitore"} />
+                      <SelectValue placeholder={selectedSupplierId ? t("utility.selectService") : t("utility.firstSelectSupplier")} />
                     </SelectTrigger>
                     <SelectContent>
                       {services.filter(s => s.isActive).map((service) => (
@@ -831,12 +833,12 @@ export function UtilityPracticeWizard({ open, onOpenChange, onSuccess, preselect
           
           <div className="flex items-center justify-between">
             <div>
-              <h3 className="text-lg font-medium">Prodotti</h3>
+              <h3 className="text-lg font-medium">{t("parts.products")}</h3>
               <p className="text-sm text-muted-foreground">Aggiungi i prodotti da includere nella pratica</p>
             </div>
             <Button type="button" variant="outline" size="sm" onClick={addProduct} data-testid="button-add-product">
               <Plus className="h-4 w-4 mr-1" />
-              Aggiungi
+              {t("common.add")}
             </Button>
           </div>
 
@@ -845,7 +847,7 @@ export function UtilityPracticeWizard({ open, onOpenChange, onSuccess, preselect
               <CardContent className="p-6 text-center">
                 <Package className="h-10 w-10 mx-auto text-muted-foreground mb-3" />
                 <p className="text-sm text-muted-foreground">
-                  Nessun prodotto aggiunto. Clicca "Aggiungi" per iniziare.
+                  {t("products.noProductsAddedClickAdd")}
                 </p>
               </CardContent>
             </Card>
@@ -855,7 +857,7 @@ export function UtilityPracticeWizard({ open, onOpenChange, onSuccess, preselect
                 <Card key={index}>
                   <CardContent className="p-4">
                     <div className="flex items-start justify-between mb-3">
-                      <Badge variant="outline">Prodotto {index + 1}</Badge>
+                      <Badge variant="outline">{t("products.product")} {index + 1}</Badge>
                       <Button
                         type="button"
                         variant="ghost"
@@ -868,13 +870,13 @@ export function UtilityPracticeWizard({ open, onOpenChange, onSuccess, preselect
                     </div>
                     <div className="grid grid-cols-3 gap-3">
                       <div className="col-span-3">
-                        <Label className="text-xs">Prodotto</Label>
+                        <Label className="text-xs">{t("parts.product")}</Label>
                         <Select
                           value={item.productId}
                           onValueChange={(val) => updateProduct(index, "productId", val)}
                         >
                           <SelectTrigger data-testid={`select-product-${index}`}>
-                            <SelectValue placeholder="Seleziona prodotto" />
+                            <SelectValue placeholder={t("products.selectProduct")} />
                           </SelectTrigger>
                           <SelectContent>
                             {products.filter(p => p.isActive).map((product) => (
@@ -886,7 +888,7 @@ export function UtilityPracticeWizard({ open, onOpenChange, onSuccess, preselect
                         </Select>
                       </div>
                       <div>
-                        <Label className="text-xs">Quantità</Label>
+                        <Label className="text-xs">{t("common.quantity")}</Label>
                         <Input
                           type="number"
                           min="1"
@@ -907,7 +909,7 @@ export function UtilityPracticeWizard({ open, onOpenChange, onSuccess, preselect
                         />
                       </div>
                       <div>
-                        <Label className="text-xs">Totale</Label>
+                        <Label className="text-xs">{t("common.total")}</Label>
                         <div className="h-9 flex items-center px-3 bg-muted rounded-md text-sm font-medium">
                           {formatCurrency(item.quantity * item.unitPriceCents)}
                         </div>
@@ -969,7 +971,7 @@ export function UtilityPracticeWizard({ open, onOpenChange, onSuccess, preselect
         >
           <div className="flex flex-col items-center gap-2">
             <Plus className="h-6 w-6" />
-            <span>Temporaneo</span>
+            <span>{t("warehouse.temporary")}</span>
           </div>
         </Button>
       </div>
@@ -978,11 +980,11 @@ export function UtilityPracticeWizard({ open, onOpenChange, onSuccess, preselect
         <Card>
           <CardContent className="p-4 space-y-4">
             <div className="relative">
-              <Label>Nome Cliente *</Label>
+              <Label>{t("customer.customerName")} *</Label>
               <Input
                 value={temporaryCustomerName}
                 onChange={(e) => setTemporaryCustomerName(e.target.value)}
-                placeholder="Nome e cognome"
+                placeholder={t("common.fullNameSurname")}
                 data-testid="input-temporary-customer-name"
               />
               {temporaryCustomerName.length >= 2 && (() => {
@@ -1023,7 +1025,7 @@ export function UtilityPracticeWizard({ open, onOpenChange, onSuccess, preselect
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <Label className="text-sm">Email</Label>
+                <Label className="text-sm">{t("common.email")}</Label>
                 <Input
                   type="email"
                   value={temporaryCustomerEmail}
@@ -1033,7 +1035,7 @@ export function UtilityPracticeWizard({ open, onOpenChange, onSuccess, preselect
                 />
               </div>
               <div>
-                <Label className="text-sm">Telefono</Label>
+                <Label className="text-sm">{t("common.phone")}</Label>
                 <Input
                   value={temporaryCustomerPhone}
                   onChange={(e) => setTemporaryCustomerPhone(e.target.value)}
@@ -1051,7 +1053,7 @@ export function UtilityPracticeWizard({ open, onOpenChange, onSuccess, preselect
               <CardContent className="p-6 text-center">
                 <User className="h-10 w-10 mx-auto text-muted-foreground mb-3" />
                 <p className="text-sm text-muted-foreground mb-3">
-                  Nessun cliente in anagrafica. Usa l'opzione "Temporaneo".
+                  {t("utility.noCustomersUseTemp")}
                 </p>
                 <Button
                   type="button"
@@ -1138,7 +1140,7 @@ export function UtilityPracticeWizard({ open, onOpenChange, onSuccess, preselect
             >
               <div className="flex flex-col items-center gap-2">
                 <Euro className="h-6 w-6" />
-                <span>Attivazione</span>
+                <span>{t("utility.activation")}</span>
               </div>
             </Button>
           </div>
@@ -1147,7 +1149,7 @@ export function UtilityPracticeWizard({ open, onOpenChange, onSuccess, preselect
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           {selectedPriceType === "mensile" && (
             <div className="space-y-2">
-              <Label>Prezzo Mensile (EUR) *</Label>
+              <Label>{t("utility.monthlyPriceEur")} *</Label>
               <Input
                 type="number"
                 step="0.01"
@@ -1165,7 +1167,7 @@ export function UtilityPracticeWizard({ open, onOpenChange, onSuccess, preselect
           )}
           {selectedPriceType === "forfait" && (
             <div className="space-y-2">
-              <Label>Prezzo Forfait (EUR) *</Label>
+              <Label>{t("utility.flatPriceEur")} *</Label>
               <Input
                 type="number"
                 step="0.01"
@@ -1225,32 +1227,32 @@ export function UtilityPracticeWizard({ open, onOpenChange, onSuccess, preselect
             <Input
               value={supplierReference}
               onChange={(e) => setSupplierReference(e.target.value)}
-              placeholder="Codice pratica fornitore"
+              placeholder={t("practice.supplierPracticeCode")}
               data-testid="input-supplier-reference"
             />
           </div>
           <div className="space-y-2">
-            <Label>Stato</Label>
+            <Label>{t("common.status")}</Label>
             <Select value={selectedStatus} onValueChange={setSelectedStatus}>
               <SelectTrigger data-testid="select-status">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="bozza">Bozza</SelectItem>
-                <SelectItem value="inviata">Inviata</SelectItem>
+                <SelectItem value="bozza">{t("common.draft")}</SelectItem>
+                <SelectItem value="inviata">{t("common.sent")}</SelectItem>
                 <SelectItem value="in_lavorazione">In Lavorazione</SelectItem>
-                <SelectItem value="completata">Completata</SelectItem>
+                <SelectItem value="completata">{t("common.completed")}</SelectItem>
               </SelectContent>
             </Select>
           </div>
         </div>
 
         <div className="space-y-2">
-          <Label>Note</Label>
+          <Label>{t("common.notes")}</Label>
           <Textarea
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
-            placeholder="Note aggiuntive..."
+            placeholder={t("common.additionalNotes")}
             rows={3}
             data-testid="input-notes"
           />
@@ -1274,8 +1276,8 @@ export function UtilityPracticeWizard({ open, onOpenChange, onSuccess, preselect
               <span className="text-sm font-medium">Tipo Pratica</span>
             </div>
             <Badge>
-              {selectedItemType === "service" ? "Servizio" : 
-               selectedItemType === "product" ? "Prodotto" : "Servizio + Prodotti"}
+              {selectedItemType === "service" ? t("quote.service") : 
+               selectedItemType === "product" ? t("products.product") : t("utility.serviceAndProducts")}
             </Badge>
           </CardContent>
         </Card>
@@ -1289,14 +1291,14 @@ export function UtilityPracticeWizard({ open, onOpenChange, onSuccess, preselect
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <p className="text-xs text-muted-foreground">Fornitore</p>
+                  <p className="text-xs text-muted-foreground">{t("common.supplier")}</p>
                   <p className="font-medium">{getSelectedSupplierName() || "-"}</p>
-                  {useTemporarySupplier && <Badge variant="outline" className="mt-1">Temporaneo</Badge>}
+                  {useTemporarySupplier && <Badge variant="outline" className="mt-1">{t("warehouse.temporary")}</Badge>}
                 </div>
                 <div>
-                  <p className="text-xs text-muted-foreground">Servizio</p>
+                  <p className="text-xs text-muted-foreground">{t("parts.service")}</p>
                   <p className="font-medium">{getSelectedServiceName() || "-"}</p>
-                  {useCustomService && <Badge variant="outline" className="mt-1">Temporaneo</Badge>}
+                  {useCustomService && <Badge variant="outline" className="mt-1">{t("warehouse.temporary")}</Badge>}
                 </div>
               </div>
             </CardContent>
@@ -1315,14 +1317,14 @@ export function UtilityPracticeWizard({ open, onOpenChange, onSuccess, preselect
                   const product = products.find(p => p.id === item.productId);
                   return (
                     <div key={idx} className="flex justify-between text-sm">
-                      <span>{product?.name || "Prodotto"} x{item.quantity}</span>
+                      <span>{product?.name || t("products.product")} x{item.quantity}</span>
                       <span className="font-medium">{formatCurrency(item.quantity * item.unitPriceCents)}</span>
                     </div>
                   );
                 })}
                 <Separator />
                 <div className="flex justify-between font-medium">
-                  <span>Totale Prodotti</span>
+                  <span>{t("products.totalProducts")}</span>
                   <span>{formatCurrency(calculateProductsTotal())}</span>
                 </div>
               </div>
@@ -1334,14 +1336,14 @@ export function UtilityPracticeWizard({ open, onOpenChange, onSuccess, preselect
           <CardContent className="p-4 space-y-3">
             <div className="flex flex-wrap items-center gap-2 text-muted-foreground mb-2">
               <User className="h-4 w-4" />
-              <span className="text-sm font-medium">Cliente</span>
+              <span className="text-sm font-medium">{t("common.customer")}</span>
             </div>
             <p className="font-medium">{getSelectedCustomerName() || "-"}</p>
             {useTemporaryCustomer && (
               <>
                 {temporaryCustomerEmail && <p className="text-sm text-muted-foreground">{temporaryCustomerEmail}</p>}
                 {temporaryCustomerPhone && <p className="text-sm text-muted-foreground">{temporaryCustomerPhone}</p>}
-                <Badge variant="outline" className="mt-1">Temporaneo</Badge>
+                <Badge variant="outline" className="mt-1">{t("warehouse.temporary")}</Badge>
               </>
             )}
           </CardContent>
@@ -1351,18 +1353,18 @@ export function UtilityPracticeWizard({ open, onOpenChange, onSuccess, preselect
           <CardContent className="p-4 space-y-3">
             <div className="flex flex-wrap items-center gap-2 text-muted-foreground mb-2">
               <Euro className="h-4 w-4" />
-              <span className="text-sm font-medium">Prezzo</span>
+              <span className="text-sm font-medium">{t("common.price")}</span>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <p className="text-xs text-muted-foreground">Tipo</p>
+                <p className="text-xs text-muted-foreground">{t("common.type")}</p>
                 <p className="font-medium">
                   {selectedPriceType === "mensile" ? "Mensile" : 
                    selectedPriceType === "forfait" ? "Forfait" : "Solo Attivazione"}
                 </p>
               </div>
               <div>
-                <p className="text-xs text-muted-foreground">Importo</p>
+                <p className="text-xs text-muted-foreground">{t("common.amount")}</p>
                 <p className="font-medium text-lg">
                   {selectedPriceType === "mensile" 
                     ? `${monthlyPrice || "0"}€/mese`
@@ -1390,7 +1392,7 @@ export function UtilityPracticeWizard({ open, onOpenChange, onSuccess, preselect
         {notes && (
           <Card>
             <CardContent className="p-4">
-              <p className="text-xs text-muted-foreground mb-1">Note</p>
+              <p className="text-xs text-muted-foreground mb-1">{t("common.notes")}</p>
               <p className="text-sm">{notes}</p>
             </CardContent>
           </Card>
@@ -1420,7 +1422,7 @@ export function UtilityPracticeWizard({ open, onOpenChange, onSuccess, preselect
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
         <DialogHeader>
-          <DialogTitle>Nuova Pratica Utility</DialogTitle>
+          <DialogTitle>{t("utility.newUtilityPractice")}</DialogTitle>
           <DialogDescription>
             Segui i passaggi per creare una nuova pratica
           </DialogDescription>
@@ -1441,7 +1443,7 @@ export function UtilityPracticeWizard({ open, onOpenChange, onSuccess, preselect
             data-testid="button-back"
           >
             <ChevronLeft className="h-4 w-4 mr-1" />
-            Indietro
+            {t("common.back")}
           </Button>
 
           {currentStep === "review" ? (
@@ -1463,7 +1465,7 @@ export function UtilityPracticeWizard({ open, onOpenChange, onSuccess, preselect
               disabled={!canProceed()}
               data-testid="button-next"
             >
-              Avanti
+              {t("common.next")}
               <ChevronRight className="h-4 w-4 ml-1" />
             </Button>
           )}

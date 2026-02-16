@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { useTranslation } from "react-i18next";
 import { MapPin, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
@@ -29,13 +30,15 @@ export function AddressAutocomplete({
   value,
   onChange,
   onAddressSelect,
-  placeholder = "Inizia a digitare l'indirizzo...",
+  placeholder,
   className,
   id,
   name,
   required,
   "data-testid": testId = "input-address-autocomplete",
 }: AddressAutocompleteProps) {
+  const { t } = useTranslation();
+  const resolvedPlaceholder = placeholder || t("form.startTypingAddress");
   const [inputValue, setInputValue] = useState(value || "");
   const [suggestions, setSuggestions] = useState<AddressResult[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -140,7 +143,7 @@ export function AddressAutocomplete({
           onChange={handleInputChange}
           onKeyDown={handleKeyDown}
           onFocus={() => suggestions.length > 0 && setShowSuggestions(true)}
-          placeholder={placeholder}
+          placeholder={resolvedPlaceholder}
           required={required}
           className={cn("pl-9", className)}
           autoComplete="off"

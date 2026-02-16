@@ -33,6 +33,7 @@ import {
 } from "lucide-react";
 import { format, startOfToday } from "date-fns";
 import { it } from "date-fns/locale";
+import { useTranslation } from "react-i18next";
 
 type Appointment = {
   id: string;
@@ -93,8 +94,8 @@ const weekdayNames = ["Domenica", "Lunedì", "Martedì", "Mercoledì", "Giovedì
 const statusLabels: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
   scheduled: { label: "Prenotato", variant: "secondary" },
   confirmed: { label: "Confermato", variant: "default" },
-  cancelled: { label: "Annullato", variant: "destructive" },
-  completed: { label: "Completato", variant: "outline" },
+  cancelled: { label: t("repairs.status.cancelled"), variant: "destructive" },
+  completed: { label: t("common.completed"), variant: "outline" },
   no_show: { label: "Non presentato", variant: "destructive" },
 };
 
@@ -109,6 +110,7 @@ const defaultAvailability: Omit<Availability, "id" | "repairCenterId">[] = [
 ];
 
 export default function ResellerAppointments() {
+  const { t } = useTranslation();
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -199,7 +201,7 @@ export default function ResellerAppointments() {
       setEditingAvailability(false);
     },
     onError: (error: any) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -218,7 +220,7 @@ export default function ResellerAppointments() {
       setNewBlackout({ date: "", reason: "" });
     },
     onError: (error: any) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -232,7 +234,7 @@ export default function ResellerAppointments() {
       queryClient.invalidateQueries({ queryKey: ["/api/repair-centers", selectedCenterId, "blackouts"] });
     },
     onError: (error: any) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -246,7 +248,7 @@ export default function ResellerAppointments() {
       setAppointmentDetailOpen(false);
     },
     onError: (error: any) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -331,7 +333,7 @@ export default function ResellerAppointments() {
                 <CalendarCheck className="h-6 w-6 text-white" />
               </div>
               <div>
-                <h1 className="text-2xl font-bold tracking-tight text-white">Appuntamenti</h1>
+                <h1 className="text-2xl font-bold tracking-tight text-white">{t("sidebar.items.appointments")}</h1>
                 <p className="text-sm text-white/80">
                   Gestisci gli appuntamenti dei tuoi centri
                 </p>
@@ -408,7 +410,7 @@ export default function ResellerAppointments() {
           <CardContent className="relative pt-5 pb-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1">In Attesa</p>
+                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1">{t("common.pending")}</p>
                 <p className="text-3xl font-bold tabular-nums text-amber-600 dark:text-amber-400">{scheduledAppointments}</p>
                 <p className="text-xs text-muted-foreground mt-1">
                   Da confermare
@@ -426,13 +428,9 @@ export default function ResellerAppointments() {
         <Tabs defaultValue="calendar">
           <TabsList>
             <TabsTrigger value="calendar" className="gap-2" data-testid="tab-calendar">
-              <CalendarIcon className="h-4 w-4" />
-              Calendario
-            </TabsTrigger>
+              <CalendarIcon className="h-4 w-4" />{t("hr.calendar")}</TabsTrigger>
             <TabsTrigger value="settings" className="gap-2" data-testid="tab-settings">
-              <Settings className="h-4 w-4" />
-              Impostazioni
-            </TabsTrigger>
+              <Settings className="h-4 w-4" />{t("settings.title")}</TabsTrigger>
           </TabsList>
 
           <TabsContent value="calendar" className="space-y-4">
@@ -548,9 +546,7 @@ export default function ResellerAppointments() {
                       size="sm"
                       onClick={() => setEditingAvailability(true)}
                       data-testid="button-edit-availability"
-                    >
-                      Modifica
-                    </Button>
+                    >{t("common.edit")}</Button>
                   ) : (
                     <div className="flex gap-2">
                       <Button
@@ -572,9 +568,7 @@ export default function ResellerAppointments() {
                           }
                         }}
                         data-testid="button-cancel-availability"
-                      >
-                        Annulla
-                      </Button>
+                      >{t("common.cancel")}</Button>
                       <Button
                         size="sm"
                         onClick={() => saveAvailabilityMutation.mutate()}
@@ -609,7 +603,7 @@ export default function ResellerAppointments() {
                             data-testid={`switch-day-${day.weekday}`}
                           />
                           <span className="text-sm text-muted-foreground">
-                            {day.isClosed ? "Chiuso" : "Aperto"}
+                            {day.isClosed ? t("tickets.status.closed") : t("tickets.status.open")}
                           </span>
                         </div>
 
@@ -691,9 +685,7 @@ export default function ResellerAppointments() {
                     onClick={() => setBlackoutDialogOpen(true)}
                     data-testid="button-add-blackout"
                   >
-                    <Plus className="mr-2 h-4 w-4" />
-                    Aggiungi
-                  </Button>
+                    <Plus className="mr-2 h-4 w-4" />{t("common.add")}</Button>
                 </div>
               </CardHeader>
               <CardContent>
@@ -753,7 +745,7 @@ export default function ResellerAppointments() {
           </DialogHeader>
           <div className="space-y-4">
             <div>
-              <Label>Data</Label>
+              <Label>{t("common.date")}</Label>
               <Input
                 type="date"
                 value={newBlackout.date}
@@ -762,7 +754,7 @@ export default function ResellerAppointments() {
               />
             </div>
             <div>
-              <Label>Motivo (opzionale)</Label>
+              <Label>{t("common.reasonOptional")}</Label>
               <Input
                 value={newBlackout.reason}
                 onChange={(e) => setNewBlackout(prev => ({ ...prev, reason: e.target.value }))}
@@ -774,9 +766,7 @@ export default function ResellerAppointments() {
               <Button
                 variant="outline"
                 onClick={() => setBlackoutDialogOpen(false)}
-              >
-                Annulla
-              </Button>
+              >{t("common.cancel")}</Button>
               <Button
                 onClick={() => createBlackoutMutation.mutate()}
                 disabled={!newBlackout.date || createBlackoutMutation.isPending}
@@ -855,19 +845,19 @@ export default function ResellerAppointments() {
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <Label className="text-muted-foreground">Data</Label>
+                  <Label className="text-muted-foreground">{t("common.date")}</Label>
                   <p className="font-medium">
                     {format(new Date(selectedAppointment.date), "d MMMM yyyy", { locale: it })}
                   </p>
                 </div>
                 <div>
-                  <Label className="text-muted-foreground">Orario</Label>
+                  <Label className="text-muted-foreground">{t("hr.time")}</Label>
                   <p className="font-medium">{selectedAppointment.startTime} - {selectedAppointment.endTime}</p>
                 </div>
               </div>
               
               <div>
-                <Label className="text-muted-foreground">Stato</Label>
+                <Label className="text-muted-foreground">{t("common.status")}</Label>
                 <div className="mt-1">
                   <Badge variant={statusLabels[selectedAppointment.status]?.variant || "secondary"}>
                     {statusLabels[selectedAppointment.status]?.label || selectedAppointment.status}
@@ -877,7 +867,7 @@ export default function ResellerAppointments() {
               
               {selectedAppointment.notes && (
                 <div>
-                  <Label className="text-muted-foreground">Note</Label>
+                  <Label className="text-muted-foreground">{t("common.notes")}</Label>
                   <p>{selectedAppointment.notes}</p>
                 </div>
               )}
@@ -894,9 +884,7 @@ export default function ResellerAppointments() {
                       disabled={updateAppointmentMutation.isPending}
                       data-testid="button-confirm-appointment"
                     >
-                      <CheckCircle className="mr-2 h-4 w-4" />
-                      Conferma
-                    </Button>
+                      <CheckCircle className="mr-2 h-4 w-4" />{t("common.confirm")}</Button>
                     <Button
                       variant="destructive"
                       onClick={() => updateAppointmentMutation.mutate({ 
@@ -906,9 +894,7 @@ export default function ResellerAppointments() {
                       disabled={updateAppointmentMutation.isPending}
                       data-testid="button-cancel-appointment"
                     >
-                      <XCircle className="mr-2 h-4 w-4" />
-                      Annulla
-                    </Button>
+                      <XCircle className="mr-2 h-4 w-4" />{t("common.cancel")}</Button>
                   </>
                 )}
                 {selectedAppointment.status === "confirmed" && (

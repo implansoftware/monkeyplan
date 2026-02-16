@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useQuery, useMutation } from "@tanstack/react-query";
@@ -23,6 +24,7 @@ interface WorkProfile {
 }
 
 export default function RepairCenterHrWorkProfiles() {
+  const { t } = useTranslation();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingProfile, setEditingProfile] = useState<WorkProfile | null>(null);
   const [newProfile, setNewProfile] = useState({ name: "", description: "", weeklyHours: "40", dailyHours: "8" });
@@ -40,10 +42,10 @@ export default function RepairCenterHrWorkProfiles() {
       queryClient.invalidateQueries({ queryKey: ["/api/repair-center/hr/work-profiles"] });
       setDialogOpen(false);
       setNewProfile({ name: "", description: "", weeklyHours: "40", dailyHours: "8" });
-      toast({ title: "Profilo creato", description: "Il profilo orario è stato creato con successo." });
+      toast({ title: "Profilo creato", description: t("hr.ilProfiloOrarioStatoCreatoConSuccesso") });
     },
     onError: (error: any) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("auth.error"), description: error.message, variant: "destructive" });
     }
   });
 
@@ -55,10 +57,10 @@ export default function RepairCenterHrWorkProfiles() {
       queryClient.invalidateQueries({ queryKey: ["/api/repair-center/hr/work-profiles"] });
       setDialogOpen(false);
       setEditingProfile(null);
-      toast({ title: "Profilo aggiornato" });
+      toast({ title: t("profile.profileUpdatedTitle") });
     },
     onError: (error: any) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("auth.error"), description: error.message, variant: "destructive" });
     }
   });
 
@@ -71,7 +73,7 @@ export default function RepairCenterHrWorkProfiles() {
       toast({ title: "Profilo eliminato" });
     },
     onError: (error: any) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("auth.error"), description: error.message, variant: "destructive" });
     }
   });
 
@@ -151,12 +153,12 @@ export default function RepairCenterHrWorkProfiles() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Nome</TableHead>
-                  <TableHead className="hidden md:table-cell">Descrizione</TableHead>
+                  <TableHead>{t("common.name")}</TableHead>
+                  <TableHead className="hidden md:table-cell">{t("common.description")}</TableHead>
                   <TableHead>Ore/Sett.</TableHead>
                   <TableHead>Ore/Giorno</TableHead>
                   <TableHead className="hidden sm:table-cell">Default</TableHead>
-                  <TableHead>Azioni</TableHead>
+                  <TableHead>{t("common.actions")}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -196,7 +198,7 @@ export default function RepairCenterHrWorkProfiles() {
           </DialogHeader>
           <div className="space-y-4">
             <div>
-              <label className="text-sm font-medium">Nome Profilo</label>
+              <label className="text-sm font-medium">{t("hr.nomeProfilo")}</label>
               <Input value={newProfile.name} onChange={(e) => setNewProfile({ ...newProfile, name: e.target.value })} placeholder="Es. Full-time" />
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -211,13 +213,13 @@ export default function RepairCenterHrWorkProfiles() {
             </div>
             <div>
               <label className="text-sm font-medium">Descrizione (opzionale)</label>
-              <Textarea value={newProfile.description} onChange={(e) => setNewProfile({ ...newProfile, description: e.target.value })} placeholder="Descrizione del profilo..." />
+              <Textarea value={newProfile.description} onChange={(e) => setNewProfile({ ...newProfile, description: e.target.value })} placeholder={t("hr.profileDescription")} />
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDialogOpen(false)}>Annulla</Button>
+            <Button variant="outline" onClick={() => setDialogOpen(false)}>{t("profile.cancel")}</Button>
             <Button onClick={handleSubmit} disabled={createMutation.isPending || updateMutation.isPending || !newProfile.name}>
-              {editingProfile ? "Salva Modifiche" : "Crea Profilo"}
+              {editingProfile ? t("team.saveChanges") : t("hr.createProfile")}
             </Button>
           </DialogFooter>
         </DialogContent>

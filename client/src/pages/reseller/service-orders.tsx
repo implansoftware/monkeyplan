@@ -17,6 +17,7 @@ import { Loader2, Check, X, Play, Calendar, Eye, Clock, User, Truck, MapPin, Dow
 import type { ServiceOrder, RepairCenter } from "@shared/schema";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
+import { useTranslation } from "react-i18next";
 
 type ServiceOrderWithDetails = ServiceOrder & {
   customerName: string;
@@ -25,18 +26,18 @@ type ServiceOrderWithDetails = ServiceOrder & {
 };
 
 const statusLabels: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
-  pending: { label: "In attesa", variant: "secondary" },
-  accepted: { label: "Accettato", variant: "default" },
+  pending: { label: t("hr.pending"), variant: "secondary" },
+  accepted: { label: t("standalone.accepted"), variant: "default" },
   scheduled: { label: "Programmato", variant: "outline" },
-  in_progress: { label: "In lavorazione", variant: "default" },
-  completed: { label: "Completato", variant: "default" },
-  cancelled: { label: "Annullato", variant: "destructive" },
+  in_progress: { label: t("tickets.status.inProgress"), variant: "default" },
+  completed: { label: t("common.completed"), variant: "default" },
+  cancelled: { label: t("repairs.status.cancelled"), variant: "destructive" },
 };
 
 const paymentStatusLabels: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
   pending: { label: "Da pagare", variant: "secondary" },
   paid: { label: "Pagato", variant: "default" },
-  cancelled: { label: "Annullato", variant: "destructive" },
+  cancelled: { label: t("repairs.status.cancelled"), variant: "destructive" },
 };
 
 const paymentMethodLabels: Record<string, { label: string; icon: string }> = {
@@ -45,6 +46,7 @@ const paymentMethodLabels: Record<string, { label: string; icon: string }> = {
 };
 
 export default function ResellerServiceOrders() {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const { toast } = useToast();
   const [selectedOrder, setSelectedOrder] = useState<ServiceOrderWithDetails | null>(null);
@@ -80,7 +82,7 @@ export default function ResellerServiceOrders() {
       toast({ title: "Ordine accettato", description: "In attesa scelta consegna dal cliente" });
     },
     onError: (error: Error) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -94,7 +96,7 @@ export default function ResellerServiceOrders() {
       toast({ title: "Lavorazione avviata" });
     },
     onError: (error: Error) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -108,7 +110,7 @@ export default function ResellerServiceOrders() {
       toast({ title: "Ordine completato" });
     },
     onError: (error: Error) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -122,7 +124,7 @@ export default function ResellerServiceOrders() {
       toast({ title: "Ordine annullato" });
     },
     onError: (error: Error) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -136,7 +138,7 @@ export default function ResellerServiceOrders() {
       toast({ title: "Ricezione confermata", description: "Dispositivo ricevuto, lavorazione avviata" });
     },
     onError: (error: Error) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -151,7 +153,7 @@ export default function ResellerServiceOrders() {
       }
     },
     onError: (error: Error) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -168,7 +170,7 @@ export default function ResellerServiceOrders() {
       toast({ title: "Appuntamento programmato" });
     },
     onError: (error: Error) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -231,7 +233,7 @@ export default function ResellerServiceOrders() {
               <Calendar className="h-6 w-6 text-white" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold tracking-tight text-white" data-testid="text-page-title">Ordini Servizi</h1>
+              <h1 className="text-2xl font-bold tracking-tight text-white" data-testid="text-page-title">{t("sidebar.items.serviceOrders")}</h1>
               <p className="text-sm text-white/80">Gestisci le richieste di intervento dai tuoi clienti</p>
             </div>
           </div>
@@ -252,7 +254,7 @@ export default function ResellerServiceOrders() {
               <Badge variant="outline" className="ml-2">{activeCount}</Badge>
             )}
           </TabsTrigger>
-          <TabsTrigger value="completed" data-testid="tab-completed">Completati</TabsTrigger>
+          <TabsTrigger value="completed" data-testid="tab-completed">{t("common.completed")}</TabsTrigger>
           <TabsTrigger value="cancelled" data-testid="tab-cancelled">Annullati</TabsTrigger>
         </TabsList>
 
@@ -268,15 +270,15 @@ export default function ResellerServiceOrders() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Numero</TableHead>
-                    <TableHead>Cliente</TableHead>
-                    <TableHead>Servizio</TableHead>
-                    <TableHead>Dispositivo</TableHead>
-                    <TableHead>Consegna</TableHead>
-                    <TableHead>Importo</TableHead>
-                    <TableHead>Pagamento</TableHead>
-                    <TableHead>Stato</TableHead>
-                    <TableHead>Azioni</TableHead>
+                    <TableHead>{t("common.number")}</TableHead>
+                    <TableHead>{t("common.customer")}</TableHead>
+                    <TableHead>{t("common.service")}</TableHead>
+                    <TableHead>{t("repairs.device")}</TableHead>
+                    <TableHead>{t("suppliers.delivery")}</TableHead>
+                    <TableHead>{t("common.amount")}</TableHead>
+                    <TableHead>{t("common.payment")}</TableHead>
+                    <TableHead>{t("common.status")}</TableHead>
+                    <TableHead>{t("common.actions")}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -306,18 +308,17 @@ export default function ResellerServiceOrders() {
                         {order.deliveryMethod ? (
                           <div className="flex flex-wrap items-center gap-1">
                             {order.deliveryMethod === "shipping" ? (
-                              <><Truck className="w-3 h-3" /> Spedizione</>
+                              <><Truck className="w-3 h-3" />{t("common.shipment")}</>
                             ) : (
                               <><MapPin className="w-3 h-3" /> Di persona</>
                             )}
                             {order.deviceReceivedAt && (
                               <Badge variant="outline" className="ml-1 text-xs">
-                                <Check className="w-2 h-2 mr-1" />Ricevuto
-                              </Badge>
+                                <Check className="w-2 h-2 mr-1" />{t("repairs.status.received")}</Badge>
                             )}
                           </div>
                         ) : (
-                          <span className="text-muted-foreground text-xs">In attesa</span>
+                          <span className="text-muted-foreground text-xs">{t("hr.pending")}</span>
                         )}
                       </TableCell>
                       <TableCell>{formatPrice(order.priceCents)}</TableCell>
@@ -402,9 +403,7 @@ export default function ResellerServiceOrders() {
                               data-testid={`button-confirm-receipt-${order.id}`}
                               className="text-green-600 border-green-200 hover:bg-green-50 dark:hover:bg-green-950"
                             >
-                              <Smartphone className="w-4 h-4 mr-1" />
-                              Ricevuto
-                            </Button>
+                              <Smartphone className="w-4 h-4 mr-1" />{t("repairs.status.received")}</Button>
                           )}
 
 
@@ -454,32 +453,32 @@ export default function ResellerServiceOrders() {
             <div className="space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
                 <div>
-                  <p className="text-muted-foreground">Cliente</p>
+                  <p className="text-muted-foreground">{t("common.customer")}</p>
                   <p className="font-medium">{selectedOrder.customerName}</p>
                 </div>
                 <div>
-                  <p className="text-muted-foreground">Stato</p>
+                  <p className="text-muted-foreground">{t("common.status")}</p>
                   <Badge variant={statusLabels[selectedOrder.status]?.variant || "outline"}>
                     {statusLabels[selectedOrder.status]?.label || selectedOrder.status}
                   </Badge>
                 </div>
                 <div>
-                  <p className="text-muted-foreground">Servizio</p>
+                  <p className="text-muted-foreground">{t("common.service")}</p>
                   <p className="font-medium">{selectedOrder.serviceName}</p>
                 </div>
                 <div>
-                  <p className="text-muted-foreground">Importo</p>
+                  <p className="text-muted-foreground">{t("common.amount")}</p>
                   <p className="font-medium">{formatPrice(selectedOrder.priceCents)}</p>
                 </div>
                 {selectedOrder.brand && (
                   <div>
-                    <p className="text-muted-foreground">Dispositivo</p>
+                    <p className="text-muted-foreground">{t("repairs.device")}</p>
                     <p className="font-medium">{selectedOrder.brand} {selectedOrder.model}</p>
                   </div>
                 )}
                 {selectedOrder.imei && (
                   <div>
-                    <p className="text-muted-foreground">IMEI</p>
+                    <p className="text-muted-foreground">{t("repairs.imei")}</p>
                     <p className="font-medium">{selectedOrder.imei}</p>
                   </div>
                 )}
@@ -500,8 +499,7 @@ export default function ResellerServiceOrders() {
                   <div className="flex flex-wrap items-center gap-2">
                     {selectedOrder.deliveryMethod === "shipping" ? (
                       <Badge variant="outline" className="flex flex-wrap items-center gap-1">
-                        <Truck className="w-3 h-3" /> Spedizione
-                      </Badge>
+                        <Truck className="w-3 h-3" />{t("common.shipment")}</Badge>
                     ) : (
                       <Badge variant="outline" className="flex flex-wrap items-center gap-1">
                         <MapPin className="w-3 h-3" /> Consegna di persona
@@ -557,7 +555,7 @@ export default function ResellerServiceOrders() {
 
               {selectedOrder.internalNotes && (
                 <div>
-                  <p className="text-muted-foreground text-sm mb-1">Note Interne</p>
+                  <p className="text-muted-foreground text-sm mb-1">{t("common.internalNotes")}</p>
                   <p className="text-sm bg-muted p-3 rounded-md">{selectedOrder.internalNotes}</p>
                 </div>
               )}
@@ -565,9 +563,7 @@ export default function ResellerServiceOrders() {
           )}
 
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsDetailOpen(false)}>
-              Chiudi
-            </Button>
+            <Button variant="outline" onClick={() => setIsDetailOpen(false)}>{t("common.close")}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -606,7 +602,7 @@ export default function ResellerServiceOrders() {
               <Textarea
                 value={acceptForm.internalNotes}
                 onChange={(e) => setAcceptForm({ ...acceptForm, internalNotes: e.target.value })}
-                placeholder="Note per uso interno..."
+                placeholder={t("products.internalNotes")}
                 rows={3}
                 data-testid="textarea-internal-notes"
               />
@@ -614,9 +610,7 @@ export default function ResellerServiceOrders() {
           </div>
 
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsAcceptDialogOpen(false)}>
-              Annulla
-            </Button>
+            <Button variant="outline" onClick={() => setIsAcceptDialogOpen(false)}>{t("common.cancel")}</Button>
             <Button
               onClick={handleSubmitAccept}
               disabled={acceptMutation.isPending}
@@ -655,9 +649,7 @@ export default function ResellerServiceOrders() {
           </div>
 
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsScheduleDialogOpen(false)}>
-              Annulla
-            </Button>
+            <Button variant="outline" onClick={() => setIsScheduleDialogOpen(false)}>{t("common.cancel")}</Button>
             <Button
               onClick={() => {
                 if (selectedOrder && scheduleDate) {

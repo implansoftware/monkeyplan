@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -50,15 +51,15 @@ function formatPrice(cents: number): string {
   return new Intl.NumberFormat('it-IT', { style: 'currency', currency: 'EUR' }).format(cents / 100);
 }
 
-function getStatusBadge(status: string) {
+function getStatusBadge(status: string, t: (key: string) => string) {
   const statusMap: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
-    pending: { label: "In Attesa", variant: "secondary" },
-    approved: { label: "Approvato", variant: "default" },
-    paid: { label: "Pagato", variant: "default" },
-    shipped: { label: "Spedito", variant: "default" },
-    delivered: { label: "Consegnato", variant: "default" },
-    rejected: { label: "Rifiutato", variant: "destructive" },
-    cancelled: { label: "Annullato", variant: "destructive" },
+    pending: { label: t("common.pending"), variant: "secondary" },
+    approved: { label: t("repairs.status.approved"), variant: "default" },
+    paid: { label: t("invoices.paid"), variant: "default" },
+    shipped: { label: t("b2b.status.shipped"), variant: "default" },
+    delivered: { label: t("repairs.status.delivered"), variant: "default" },
+    rejected: { label: t("hr.rejected"), variant: "destructive" },
+    cancelled: { label: t("repairs.status.cancelled"), variant: "destructive" },
   };
   
   const config = statusMap[status] || { label: status, variant: "outline" as const };
@@ -80,6 +81,7 @@ function getStatusIcon(status: string) {
 }
 
 export default function RepairCenterB2BOrders() {
+  const { t } = useTranslation();
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const { toast } = useToast();
 
@@ -93,12 +95,12 @@ export default function RepairCenterB2BOrders() {
       return res.json();
     },
     onSuccess: () => {
-      toast({ title: "Ricezione confermata", description: "L'ordine è stato segnato come ricevuto" });
+      toast({ title: "Ricezione confermata", description: t("b2b.lOrdineStatoSegnatoComeRicevuto") });
       queryClient.invalidateQueries({ queryKey: ['/api/repair-center/b2b-orders'] });
       setSelectedOrder(null);
     },
     onError: (error: any) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("auth.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -125,8 +127,8 @@ export default function RepairCenterB2BOrders() {
               <Package className="h-5 w-5 sm:h-7 sm:w-7 text-white" />
             </div>
             <div>
-              <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-white tracking-tight">Ordini B2B</h1>
-              <p className="text-emerald-100">Ordini effettuati al rivenditore</p>
+              <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-white tracking-tight">{t("sidebar.items.b2bOrders")}</h1>
+              <p className="text-emerald-100">{t("b2b.ordiniEffettuatiAlRivenditore")}</p>
             </div>
           </div>
           <Link href="/repair-center/b2b-catalog">
@@ -142,7 +144,7 @@ export default function RepairCenterB2BOrders() {
         <Card>
           <CardContent className="py-12 text-center">
             <ShoppingBag className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-            <p className="text-muted-foreground">Nessun ordine B2B effettuato</p>
+            <p className="text-muted-foreground">{t("b2b.nessunOrdineB2BEffettuato")}</p>
             <Link href="/repair-center/b2b-catalog">
               <Button className="mt-4" variant="outline">
                 Vai al Catalogo
@@ -157,11 +159,11 @@ export default function RepairCenterB2BOrders() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Ordine</TableHead>
-                  <TableHead className="hidden md:table-cell">Data</TableHead>
-                  <TableHead>Stato</TableHead>
-                  <TableHead className="hidden md:table-cell">Articoli</TableHead>
-                  <TableHead className="text-right">Totale</TableHead>
+                  <TableHead>{t("common.order")}</TableHead>
+                  <TableHead className="hidden md:table-cell">{t("common.date")}</TableHead>
+                  <TableHead>{t("common.status")}</TableHead>
+                  <TableHead className="hidden md:table-cell">{t("b2b.items")}</TableHead>
+                  <TableHead className="text-right">{t("common.total")}</TableHead>
                   <TableHead></TableHead>
                 </TableRow>
               </TableHeader>
@@ -175,7 +177,7 @@ export default function RepairCenterB2BOrders() {
                     <TableCell>
                       <div className="flex flex-wrap items-center gap-2">
                         {getStatusIcon(order.status)}
-                        {getStatusBadge(order.status)}
+                        {getStatusBadge(order.status, t)}
                       </div>
                     </TableCell>
                     <TableCell className="hidden md:table-cell">{order.items.length} articoli</TableCell>
@@ -205,7 +207,7 @@ export default function RepairCenterB2BOrders() {
             <DialogHeader>
               <DialogTitle className="flex flex-wrap items-center gap-2">
                 Ordine {selectedOrder.orderNumber}
-                {getStatusBadge(selectedOrder.status)}
+                {getStatusBadge(selectedOrder.status, t)}
               </DialogTitle>
               <DialogDescription>
                 Creato il {format(new Date(selectedOrder.createdAt), "dd MMMM yyyy 'alle' HH:mm", { locale: it })}
@@ -216,10 +218,10 @@ export default function RepairCenterB2BOrders() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Prodotto</TableHead>
-                    <TableHead className="text-center">Qtà</TableHead>
-                    <TableHead className="text-right">Prezzo Unit.</TableHead>
-                    <TableHead className="text-right">Totale</TableHead>
+                    <TableHead>{t("common.product")}</TableHead>
+                    <TableHead className="text-center">{t("common.qty")}</TableHead>
+                    <TableHead className="text-right">{t("products.unitPrice")}</TableHead>
+                    <TableHead className="text-right">{t("common.total")}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -268,7 +270,7 @@ export default function RepairCenterB2BOrders() {
                   </div>
                 )}
                 <div className="flex justify-between items-center pt-2 border-t">
-                  <span className="text-lg font-bold">Totale Ordine:</span>
+                  <span className="text-lg font-bold">{t("b2b.totaleOrdine")}</span>
                   <span className="text-lg font-bold">{formatPrice(selectedOrder.total)}</span>
                 </div>
               </div>

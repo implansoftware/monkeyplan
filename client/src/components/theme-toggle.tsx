@@ -1,8 +1,10 @@
 import { Moon, Sun } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 
 export function ThemeToggle() {
+  const { t } = useTranslation();
   const [theme, setTheme] = useState<"light" | "dark">("light");
 
   useEffect(() => {
@@ -33,7 +35,7 @@ export function ThemeToggle() {
       ) : (
         <Sun className="h-4 w-4" />
       )}
-      <span className="sr-only">Toggle theme</span>
+      <span className="sr-only">{t("theme.toggle")}</span>
     </Button>
   );
 }

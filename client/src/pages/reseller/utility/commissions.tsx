@@ -19,15 +19,16 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Link } from "wouter";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
+import { useTranslation } from "react-i18next";
 
 type CommissionStatus = "pending" | "accrued" | "invoiced" | "paid" | "cancelled";
 
 const statusLabels: Record<CommissionStatus, string> = {
-  pending: "In Attesa",
+  pending: t("common.pending"),
   accrued: "Maturata",
   invoiced: "Fatturata",
-  paid: "Pagata",
-  cancelled: "Annullata",
+  paid: t("invoices.paid"),
+  cancelled: t("common.cancelled"),
 };
 
 const statusColors: Record<CommissionStatus, string> = {
@@ -54,6 +55,7 @@ const formatCurrency = (cents: number) => {
 };
 
 export default function ResellerUtilityCommissions() {
+  const { t } = useTranslation();
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [yearFilter, setYearFilter] = useState<number>(new Date().getFullYear());
@@ -104,7 +106,7 @@ export default function ResellerUtilityCommissions() {
       toast({ title: "Commissione approvata", description: "La commissione è stata approvata con successo" });
     },
     onError: (error: Error) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -121,7 +123,7 @@ export default function ResellerUtilityCommissions() {
       toast({ title: "Commissione rifiutata", description: "La commissione è stata rifiutata" });
     },
     onError: (error: Error) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -200,7 +202,7 @@ export default function ResellerUtilityCommissions() {
       <div className="grid gap-4 md:grid-cols-3">
         <Card className="rounded-2xl" data-testid="card-total-pending">
           <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">In Attesa</CardTitle>
+            <CardTitle className="text-sm font-medium">{t("common.pending")}</CardTitle>
             <Clock className="h-4 w-4 text-yellow-500" />
           </CardHeader>
           <CardContent>
@@ -255,10 +257,10 @@ export default function ResellerUtilityCommissions() {
             </div>
             <Select value={statusFilter} onValueChange={setStatusFilter}>
               <SelectTrigger className="w-32" data-testid="select-status-filter">
-                <SelectValue placeholder="Stato" />
+                <SelectValue placeholder={t("common.status")} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">Tutti</SelectItem>
+                <SelectItem value="all">{t("common.allMasc")}</SelectItem>
                 {Object.entries(statusLabels).map(([value, label]) => (
                   <SelectItem key={value} value={value}>{label}</SelectItem>
                 ))}
@@ -295,12 +297,12 @@ export default function ResellerUtilityCommissions() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Pratica</TableHead>
-                  <TableHead>Periodo</TableHead>
-                  <TableHead>Importo</TableHead>
-                  <TableHead>Stato</TableHead>
+                  <TableHead>{t("utility.practice")}</TableHead>
+                  <TableHead>{t("common.period")}</TableHead>
+                  <TableHead>{t("common.amount")}</TableHead>
+                  <TableHead>{t("common.status")}</TableHead>
                   <TableHead>Data Pagamento</TableHead>
-                  <TableHead className="text-right">Azioni</TableHead>
+                  <TableHead className="text-right">{t("common.actions")}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -343,7 +345,7 @@ export default function ResellerUtilityCommissions() {
                                 disabled={approveMutation.isPending}
                                 className="text-green-600 hover:text-green-700 hover:bg-green-50"
                                 data-testid={`button-approve-${commission.id}`}
-                                title="Approva"
+                                title={t("common.approve")}
                               >
                                 <Check className="h-4 w-4" />
                               </Button>
@@ -354,7 +356,7 @@ export default function ResellerUtilityCommissions() {
                                 disabled={rejectMutation.isPending}
                                 className="text-red-600 hover:text-red-700 hover:bg-red-50"
                                 data-testid={`button-reject-${commission.id}`}
-                                title="Rifiuta"
+                                title={t("common.reject")}
                               >
                                 <X className="h-4 w-4" />
                               </Button>
@@ -397,9 +399,7 @@ export default function ResellerUtilityCommissions() {
                 variant="outline" 
                 onClick={() => setRejectDialogOpen(false)}
                 data-testid="button-cancel-reject"
-              >
-                Annulla
-              </Button>
+              >{t("common.cancel")}</Button>
               <Button 
                 variant="destructive"
                 onClick={handleRejectSubmit}

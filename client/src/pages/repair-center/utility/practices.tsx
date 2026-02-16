@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { UtilityPractice, InsertUtilityPractice, UtilitySupplier, UtilityService, User, Product } from "@shared/schema";
@@ -23,15 +24,6 @@ import { UtilityPracticeWizard } from "@/components/UtilityPracticeWizard";
 
 type PracticeStatus = "bozza" | "inviata" | "in_lavorazione" | "attesa_documenti" | "completata" | "rifiutata" | "annullata";
 
-const statusLabels: Record<PracticeStatus, string> = {
-  bozza: "Bozza",
-  inviata: "Inviata",
-  in_lavorazione: "In Lavorazione",
-  attesa_documenti: "Attesa Documenti",
-  completata: "Completata",
-  annullata: "Annullata",
-  rifiutata: "Rifiutata",
-};
 
 const statusColors: Record<PracticeStatus, string> = {
   bozza: "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300",
@@ -43,21 +35,7 @@ const statusColors: Record<PracticeStatus, string> = {
   rifiutata: "bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300",
 };
 
-const categoryLabels: Record<string, string> = {
-  fisso: "Fisso",
-  mobile: "Mobile",
-  centralino: "Centralino",
-  luce: "Luce",
-  gas: "Gas",
-  altro: "Altro",
-};
 
-const formatCurrency = (cents: number) => {
-  return new Intl.NumberFormat("it-IT", {
-    style: "currency",
-    currency: "EUR",
-  }).format(cents / 100);
-};
 
 type ItemType = "service" | "product" | "service_with_products";
 type PriceType = "mensile" | "forfait";
@@ -70,6 +48,30 @@ interface PracticeProductItem {
 }
 
 export default function RepairCenterUtilityPractices() {
+  const { t } = useTranslation();
+  const statusLabels: Record<PracticeStatus, string> = {
+    bozza: t("utility.practiceStatus.bozza"),
+    inviata: t("utility.practiceStatus.inviata"),
+    in_lavorazione: t("utility.practiceStatus.inLavorazione"),
+    attesa_documenti: t("utility.practiceStatus.attesaDocumenti"),
+    completata: t("utility.practiceStatus.completata"),
+    annullata: t("utility.practiceStatus.annullata"),
+    rifiutata: t("utility.practiceStatus.rifiutata"),
+  };
+  const categoryLabels: Record<string, string> = {
+    fisso: t("utility.serviceTypes.fisso"),
+    mobile: t("utility.serviceTypes.mobile"),
+    centralino: t("utility.serviceTypes.centralino"),
+    luce: t("utility.serviceTypes.luce"),
+    gas: t("utility.serviceTypes.gas"),
+    altro: t("utility.serviceTypes.altro"),
+  };
+  const formatCurrency = (cents: number) => {
+    return new Intl.NumberFormat("it-IT", {
+      style: "currency",
+      currency: "EUR",
+    }).format(cents / 100);
+  };
   const searchString = useSearch();
   const [, navigate] = useLocation();
   const [searchQuery, setSearchQuery] = useState("");
@@ -228,7 +230,7 @@ export default function RepairCenterUtilityPractices() {
 
   const handleImportText = () => {
     if (!importText.trim()) {
-      toast({ title: "Nessun testo", description: "Incolla il testo dal documento", variant: "destructive" });
+      toast({ title: t("utility.noText"), description: t("utility.pasteText"), variant: "destructive" });
       return;
     }
     
@@ -290,17 +292,17 @@ export default function RepairCenterUtilityPractices() {
     setImportText("");
     
     const foundFields = [
-      parsed.supplierName && "Fornitore",
-      parsed.customerName && "Cliente", 
-      parsed.serviceName && "Servizio",
-      parsed.supplierReference && "Riferimento",
+      parsed.supplierName && t("utility.supplier"),
+      parsed.customerName && t("utility.customer"), 
+      parsed.serviceName && t("utility.service"),
+      parsed.supplierReference && t("utility.reference"),
     ].filter(Boolean);
     
     toast({ 
-      title: "Dati importati", 
+      title: t("utility.dataImported"), 
       description: foundFields.length > 0 
         ? `Trovati: ${foundFields.join(", ")}` 
-        : "Nessun dato riconosciuto nel testo"
+        : t("utility.noDataRecognized")
     });
   };
 
@@ -346,10 +348,10 @@ export default function RepairCenterUtilityPractices() {
       queryClient.invalidateQueries({ queryKey: ["/api/utility/practices"] });
       setDialogOpen(false);
       setEditingPractice(null);
-      toast({ title: "Pratica creata con successo" });
+      toast({ title: t("utility.practiceCreated") });
     },
     onError: (error: Error) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("auth.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -362,10 +364,10 @@ export default function RepairCenterUtilityPractices() {
       queryClient.invalidateQueries({ queryKey: ["/api/utility/practices"] });
       setDialogOpen(false);
       setEditingPractice(null);
-      toast({ title: "Pratica aggiornata" });
+      toast({ title: t("utility.practiceUpdated") });
     },
     onError: (error: Error) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("auth.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -381,16 +383,16 @@ export default function RepairCenterUtilityPractices() {
       setNewCustomerName("");
       setNewCustomerEmail("");
       setNewCustomerPhone("");
-      toast({ title: "Cliente creato", description: `${newCustomer.fullName} aggiunto con successo` });
+      toast({ title: t("utility.customerCreated"), description: `${newCustomer.fullName} aggiunto con successo` });
     },
     onError: (error: Error) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("auth.error"), description: error.message, variant: "destructive" });
     },
   });
 
   const handleCreateCustomer = () => {
     if (!newCustomerName.trim()) {
-      toast({ title: "Errore", description: "Il nome è obbligatorio", variant: "destructive" });
+      toast({ title: t("auth.error"), description: t("utility.ilNomeObbligatorio"), variant: "destructive" });
       return;
     }
     createCustomerMutation.mutate({
@@ -627,8 +629,8 @@ export default function RepairCenterUtilityPractices() {
               <FileText className="h-5 w-5 sm:h-7 sm:w-7 text-white" />
             </div>
             <div>
-              <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-white tracking-tight">Pratiche</h1>
-              <p className="text-emerald-100">Gestisci le tue pratiche utility</p>
+              <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-white tracking-tight">{t("sidebar.items.practices")}</h1>
+              <p className="text-emerald-100">{t("utility.gestisciLeTuePraticheUtility")}</p>
             </div>
           </div>
           <div className="flex flex-wrap items-center gap-2">
@@ -646,7 +648,7 @@ export default function RepairCenterUtilityPractices() {
             <div className="flex flex-wrap items-center gap-2">
               <Search className="h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Cerca per numero pratica..."
+                placeholder={t("utility.cercaPerNumeroPratica")}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="max-w-xs"
@@ -655,10 +657,10 @@ export default function RepairCenterUtilityPractices() {
             </div>
             <Select value={statusFilter} onValueChange={setStatusFilter}>
               <SelectTrigger className="w-40" data-testid="select-status-filter">
-                <SelectValue placeholder="Stato" />
+                <SelectValue placeholder={t("common.status")} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">Tutti gli stati</SelectItem>
+                <SelectItem value="all">{t("common.allStatuses")}</SelectItem>
                 {Object.entries(statusLabels).map(([value, label]) => (
                   <SelectItem key={value} value={value}>{label}</SelectItem>
                 ))}
@@ -698,7 +700,7 @@ export default function RepairCenterUtilityPractices() {
           ) : filteredPractices.length === 0 ? (
             <div className="text-center py-8">
               <FileCheck className="h-12 w-12 mx-auto text-muted-foreground mb-3" />
-              <p className="text-muted-foreground">Nessuna pratica trovata</p>
+              <p className="text-muted-foreground">{t("utility.noPracticesFound")}</p>
             </div>
           ) : (
             <div className="overflow-x-auto">
@@ -706,12 +708,12 @@ export default function RepairCenterUtilityPractices() {
               <TableHeader>
                 <TableRow>
                   <TableHead>N. Pratica</TableHead>
-                  <TableHead>Cliente</TableHead>
-                  <TableHead className="hidden md:table-cell">Tipo</TableHead>
-                  <TableHead className="hidden lg:table-cell">Servizio/Prodotto</TableHead>
-                  <TableHead className="hidden md:table-cell">Prezzo</TableHead>
-                  <TableHead>Stato</TableHead>
-                  <TableHead className="text-right">Azioni</TableHead>
+                  <TableHead>{t("auth.customerTab")}</TableHead>
+                  <TableHead className="hidden md:table-cell">{t("common.type")}</TableHead>
+                  <TableHead className="hidden lg:table-cell">{t("utility.serviceProduct")}</TableHead>
+                  <TableHead className="hidden md:table-cell">{t("common.price")}</TableHead>
+                  <TableHead>{t("common.status")}</TableHead>
+                  <TableHead className="text-right">{t("common.actions")}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -736,9 +738,9 @@ export default function RepairCenterUtilityPractices() {
                       </TableCell>
                       <TableCell className="hidden md:table-cell">
                         <Badge variant="outline">
-                          {itemType === "service" ? "Servizio" : 
-                           itemType === "product" ? "Prodotto" : 
-                           itemType === "service_with_products" ? "Servizio + Prodotti" : itemType}
+                          {itemType === "service" ? t("utility.service") : 
+                           itemType === "product" ? t("utility.productType") : 
+                           itemType === "service_with_products" ? t("utility.serviceWithProducts") : itemType}
                         </Badge>
                       </TableCell>
                       <TableCell className="hidden lg:table-cell">
@@ -762,7 +764,7 @@ export default function RepairCenterUtilityPractices() {
                                   return (
                                     <div key={idx} className="flex flex-wrap items-center gap-1">
                                       <Package className="h-3 w-3 text-muted-foreground" />
-                                      <span className="text-xs">{prod?.name || "Prodotto"} x{pp.quantity}</span>
+                                      <span className="text-xs">{prod?.name || t("utility.productType")} x{pp.quantity}</span>
                                     </div>
                                   );
                                 })}
@@ -783,7 +785,7 @@ export default function RepairCenterUtilityPractices() {
                                   return (
                                     <div key={idx} className="flex flex-wrap items-center gap-1">
                                       <Package className="h-3 w-3 text-muted-foreground" />
-                                      <span className="text-sm">{prod?.name || "Prodotto"} x{pp.quantity}</span>
+                                      <span className="text-sm">{prod?.name || t("utility.productType")} x{pp.quantity}</span>
                                     </div>
                                   );
                                 })}
@@ -849,12 +851,12 @@ export default function RepairCenterUtilityPractices() {
         <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
-              {editingPractice ? "Modifica Pratica" : "Nuova Pratica Utility"}
+              {editingPractice ? t("utility.editPractice") : t("utility.newPracticeUtility")}
             </DialogTitle>
             <DialogDescription>
               {editingPractice 
-                ? "Modifica i dati della pratica."
-                : "Crea una nuova pratica di servizio utility."}
+                ? t("utility.editPracticeData")
+                : t("utility.createNewPractice")}
             </DialogDescription>
           </DialogHeader>
           
@@ -875,7 +877,7 @@ export default function RepairCenterUtilityPractices() {
               ) : (
                 <div className="space-y-2 p-3 border rounded-lg bg-muted/50">
                   <div className="flex items-center justify-between">
-                    <Label className="text-sm font-medium">Incolla il testo dal documento</Label>
+                    <Label className="text-sm font-medium">{t("utility.pasteText")}</Label>
                     <Button
                       type="button"
                       variant="ghost"
@@ -890,7 +892,7 @@ export default function RepairCenterUtilityPractices() {
                     </Button>
                   </div>
                   <Textarea
-                    placeholder="Seleziona tutto il testo dal PDF (Ctrl+A), copia (Ctrl+C) e incolla qui (Ctrl+V)..."
+                    placeholder={t("utility.pasteFromPdf")}
                     value={importText}
                     onChange={(e) => setImportText(e.target.value)}
                     rows={4}
@@ -915,7 +917,7 @@ export default function RepairCenterUtilityPractices() {
           
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
-              <Label>Tipo Pratica *</Label>
+              <Label>{t("utility.tipoPratica")}</Label>
               <div className="flex flex-wrap gap-2">
                 <Button
                   type="button"
@@ -989,7 +991,7 @@ export default function RepairCenterUtilityPractices() {
                         <Input
                           value={temporarySupplierName}
                           onChange={(e) => setTemporarySupplierName(e.target.value)}
-                          placeholder="Nome fornitore temporaneo"
+                          placeholder={t("utility.temporarySupplierName")}
                           required
                           data-testid="input-temporary-supplier-name"
                         />
@@ -1034,7 +1036,7 @@ export default function RepairCenterUtilityPractices() {
                         required
                       >
                         <SelectTrigger data-testid="select-supplier">
-                          <SelectValue placeholder="Seleziona fornitore" />
+                          <SelectValue placeholder={t("suppliers.selectSupplier")} />
                         </SelectTrigger>
                         <SelectContent>
                           {suppliers.filter(s => s.isActive).map((supplier) => (
@@ -1047,7 +1049,7 @@ export default function RepairCenterUtilityPractices() {
                     )}
                   </div>
                   <div className="space-y-2">
-                    <Label>Tipo Servizio</Label>
+                    <Label>{t("utility.tipoServizio")}</Label>
                     <div className="flex gap-2">
                       <Button
                         type="button"
@@ -1082,12 +1084,12 @@ export default function RepairCenterUtilityPractices() {
                 <div className="space-y-2">
                   {useCustomService ? (
                     <>
-                      <Label htmlFor="customServiceName">Nome Servizio Temporaneo *</Label>
+                      <Label htmlFor="customServiceName">{t("utility.nomeServizioTemporaneo")}</Label>
                       <Input
                         id="customServiceName"
                         value={customServiceName}
                         onChange={(e) => setCustomServiceName(e.target.value)}
-                        placeholder="Es: Contratto speciale fibra 1Gbps"
+                        placeholder={t("utility.specialContractPlaceholder")}
                         required
                         data-testid="input-custom-service-name"
                       />
@@ -1097,7 +1099,7 @@ export default function RepairCenterUtilityPractices() {
                     </>
                   ) : (
                     <>
-                      <Label htmlFor="serviceId">Servizio *</Label>
+                      <Label htmlFor="serviceId">{t("utility.servizio")}</Label>
                       <Select 
                         name="serviceId" 
                         value={selectedServiceId}
@@ -1106,7 +1108,7 @@ export default function RepairCenterUtilityPractices() {
                         required
                       >
                         <SelectTrigger data-testid="select-service">
-                          <SelectValue placeholder="Seleziona servizio" />
+                          <SelectValue placeholder={t("utility.selezionaServizio")} />
                         </SelectTrigger>
                         <SelectContent>
                           {services.filter(s => s.isActive).map((service) => (
@@ -1125,7 +1127,7 @@ export default function RepairCenterUtilityPractices() {
             {(selectedItemType === "product" || selectedItemType === "service_with_products") && (
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
-                  <Label>Prodotti *</Label>
+                  <Label>{t("utility.prodotti")}</Label>
                   <Button
                     type="button"
                     variant="outline"
@@ -1142,7 +1144,7 @@ export default function RepairCenterUtilityPractices() {
                   <div className="text-center py-4 border rounded-md border-dashed">
                     <Package className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
                     <p className="text-sm text-muted-foreground">
-                      Nessun prodotto aggiunto. Clicca "Aggiungi Prodotto" per iniziare.
+                      {t("utility.noProductsAdded")}
                     </p>
                   </div>
                 ) : (
@@ -1163,13 +1165,13 @@ export default function RepairCenterUtilityPractices() {
                         </div>
                         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                           <div className="col-span-1 sm:col-span-3">
-                            <Label className="text-xs">Prodotto</Label>
+                            <Label className="text-xs">{t("common.product")}</Label>
                             <Select
                               value={item.productId}
                               onValueChange={(val) => updateProduct(index, "productId", val)}
                             >
                               <SelectTrigger data-testid={`select-product-${index}`}>
-                                <SelectValue placeholder="Seleziona prodotto" />
+                                <SelectValue placeholder={t("warehouse.selectProduct")} />
                               </SelectTrigger>
                               <SelectContent>
                                 {products.filter(p => p.isActive).map((product) => (
@@ -1181,7 +1183,7 @@ export default function RepairCenterUtilityPractices() {
                             </Select>
                           </div>
                           <div>
-                            <Label className="text-xs">Quantità</Label>
+                            <Label className="text-xs">{t("common.quantity")}</Label>
                             <Input
                               type="number"
                               min="1"
@@ -1191,7 +1193,7 @@ export default function RepairCenterUtilityPractices() {
                             />
                           </div>
                           <div>
-                            <Label className="text-xs">Prezzo Unit. (EUR)</Label>
+                            <Label className="text-xs">{t("utility.prezzoUnitEUR")}</Label>
                             <Input
                               type="number"
                               step="0.01"
@@ -1202,7 +1204,7 @@ export default function RepairCenterUtilityPractices() {
                             />
                           </div>
                           <div>
-                            <Label className="text-xs">Totale</Label>
+                            <Label className="text-xs">{t("common.total")}</Label>
                             <div className="h-9 flex items-center px-3 bg-muted rounded-md text-sm font-medium">
                               {formatCurrency(item.quantity * item.unitPriceCents)}
                             </div>
@@ -1214,7 +1216,7 @@ export default function RepairCenterUtilityPractices() {
                     {practiceProducts.length > 0 && (
                       <div className="flex justify-end pt-2 border-t">
                         <div className="text-right">
-                          <span className="text-sm text-muted-foreground mr-2">Totale Prodotti:</span>
+                          <span className="text-sm text-muted-foreground mr-2">{t("utility.totaleProdotti")}</span>
                           <span className="font-bold">{formatCurrency(calculateProductsTotal())}</span>
                         </div>
                       </div>
@@ -1259,11 +1261,11 @@ export default function RepairCenterUtilityPractices() {
               {useTemporaryCustomer ? (
                 <div className="space-y-2 p-3 border rounded-md bg-muted/30">
                   <div className="relative">
-                    <Label className="text-xs">Nome Cliente *</Label>
+                    <Label className="text-xs">{t("utility.nomeCliente")}</Label>
                     <Input
                       value={temporaryCustomerName}
                       onChange={(e) => setTemporaryCustomerName(e.target.value)}
-                      placeholder="Nome e cognome"
+                      placeholder={t("common.fullName")}
                       required
                       data-testid="input-temporary-customer-name"
                     />
@@ -1305,7 +1307,7 @@ export default function RepairCenterUtilityPractices() {
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                     <div>
-                      <Label className="text-xs">Email</Label>
+                      <Label className="text-xs">{t("auth.email")}</Label>
                       <Input
                         type="email"
                         value={temporaryCustomerEmail}
@@ -1315,7 +1317,7 @@ export default function RepairCenterUtilityPractices() {
                       />
                     </div>
                     <div>
-                      <Label className="text-xs">Telefono</Label>
+                      <Label className="text-xs">{t("auth.phone")}</Label>
                       <Input
                         value={temporaryCustomerPhone}
                         onChange={(e) => setTemporaryCustomerPhone(e.target.value)}
@@ -1334,7 +1336,7 @@ export default function RepairCenterUtilityPractices() {
                     required
                   >
                     <SelectTrigger data-testid="select-customer" className="flex-1">
-                      <SelectValue placeholder="Seleziona cliente" />
+                      <SelectValue placeholder={t("utility.selectCustomer")} />
                     </SelectTrigger>
                     <SelectContent>
                       {customerUsers.map((customer) => (
@@ -1349,7 +1351,7 @@ export default function RepairCenterUtilityPractices() {
                     variant="outline"
                     size="icon"
                     onClick={() => setNewCustomerDialogOpen(true)}
-                    title="Nuovo cliente"
+                    title={t("customers.newCustomer")}
                     data-testid="button-new-customer"
                   >
                     <Plus className="h-4 w-4" />
@@ -1366,12 +1368,12 @@ export default function RepairCenterUtilityPractices() {
                   name="supplierReference"
                   value={supplierReferenceValue}
                   onChange={(e) => setSupplierReferenceValue(e.target.value)}
-                  placeholder="Codice pratica fornitore"
+                  placeholder={t("utility.supplierPracticeCode")}
                   data-testid="input-supplier-reference"
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="status">Stato</Label>
+                <Label htmlFor="status">{t("common.status")}</Label>
                 <Select 
                   value={selectedStatus}
                   onValueChange={(v) => setSelectedStatus(v as PracticeStatus)}
@@ -1389,7 +1391,7 @@ export default function RepairCenterUtilityPractices() {
             </div>
 
             <div className="space-y-2">
-              <Label>Tipo Prezzo *</Label>
+              <Label>{t("utility.tipoPrezzo")}</Label>
               <div className="flex gap-2">
                 <Button
                   type="button"
@@ -1417,7 +1419,7 @@ export default function RepairCenterUtilityPractices() {
             <div className="space-y-2">
               {selectedPriceType === "mensile" ? (
                 <>
-                  <Label htmlFor="monthlyPriceCents">Prezzo Mensile (EUR)</Label>
+                  <Label htmlFor="monthlyPriceCents">{t("utility.prezzoMensileEUR")}</Label>
                   <Input
                     id="monthlyPriceCents"
                     name="monthlyPriceCents"
@@ -1431,7 +1433,7 @@ export default function RepairCenterUtilityPractices() {
                 </>
               ) : (
                 <>
-                  <Label htmlFor="flatPriceCents">Prezzo Forfait (EUR)</Label>
+                  <Label htmlFor="flatPriceCents">{t("utility.prezzoForfaitEUR")}</Label>
                   <Input
                     id="flatPriceCents"
                     name="flatPriceCents"
@@ -1447,7 +1449,7 @@ export default function RepairCenterUtilityPractices() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="notes">Note</Label>
+              <Label htmlFor="notes">{t("common.note")}</Label>
               <Textarea
                 id="notes"
                 name="notes"
@@ -1471,7 +1473,7 @@ export default function RepairCenterUtilityPractices() {
                 disabled={createMutation.isPending || updateMutation.isPending}
                 data-testid="button-save"
               >
-                {editingPractice ? "Salva Modifiche" : "Crea Pratica"}
+                {editingPractice ? t("team.saveChanges") : t("utility.createPractice")}
               </Button>
             </div>
           </form>
@@ -1482,19 +1484,19 @@ export default function RepairCenterUtilityPractices() {
       <Dialog open={newCustomerDialogOpen} onOpenChange={setNewCustomerDialogOpen}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>Nuovo Cliente</DialogTitle>
+            <DialogTitle>{t("customers.newCustomer")}</DialogTitle>
             <DialogDescription>
-              Crea rapidamente un nuovo cliente. Solo il nome è obbligatorio.
+              {t("utility.quickCreateCustomer")}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="newCustomerName">Nome Completo *</Label>
+              <Label htmlFor="newCustomerName">{t("customers.nomeCompleto")}</Label>
               <Input
                 id="newCustomerName"
                 value={newCustomerName}
                 onChange={(e) => setNewCustomerName(e.target.value)}
-                placeholder="Mario Rossi"
+                placeholder={t("utility.exampleName")}
                 data-testid="input-new-customer-name"
               />
             </div>
@@ -1510,7 +1512,7 @@ export default function RepairCenterUtilityPractices() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="newCustomerPhone">Telefono (opzionale)</Label>
+              <Label htmlFor="newCustomerPhone">{t("admin.teams.phoneOptional")}</Label>
               <Input
                 id="newCustomerPhone"
                 value={newCustomerPhone}
@@ -1539,7 +1541,7 @@ export default function RepairCenterUtilityPractices() {
                 disabled={createCustomerMutation.isPending}
                 data-testid="button-save-new-customer"
               >
-                {createCustomerMutation.isPending ? "Creazione..." : "Crea Cliente"}
+                {createCustomerMutation.isPending ? t("utility.creating") : t("utility.createCustomer")}
               </Button>
             </div>
           </div>

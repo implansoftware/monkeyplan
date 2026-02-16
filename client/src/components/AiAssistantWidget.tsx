@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Loader2, Bot, Send, X } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import { Badge } from "@/components/ui/badge";
+import { useTranslation } from "react-i18next";
 
 interface ChatMessage {
   role: "user" | "assistant";
@@ -13,6 +14,7 @@ interface ChatMessage {
 }
 
 export default function AiAssistantWidget() {
+  const { t } = useTranslation();
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
@@ -44,15 +46,15 @@ export default function AiAssistantWidget() {
         try { parsed = JSON.parse(jsonMatch[1]); } catch {}
       }
       if (parsed?.code === "insufficient_quota") {
-        setErrorMessage("Credito API AI esaurito. Contatta l'amministratore.");
+        setErrorMessage(t("ai.quotaExceeded"));
       } else if (parsed?.code === "invalid_api_key") {
-        setErrorMessage("Chiave API AI non valida. Contatta l'amministratore.");
+        setErrorMessage(t("ai.error"));
       } else if (parsed?.code === "rate_limit") {
-        setErrorMessage("Troppe richieste. Riprova tra qualche secondo.");
+        setErrorMessage(t("ai.rateLimit"));
       } else if (parsed?.error) {
         setErrorMessage(parsed.error);
       } else {
-        setErrorMessage("Errore nella comunicazione con l'assistente AI. Riprova.");
+        setErrorMessage(t("ai.error"));
       }
     },
   });
@@ -103,7 +105,7 @@ export default function AiAssistantWidget() {
         <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 p-4">
           <div className="flex items-center gap-2 flex-wrap">
             <Bot className="h-5 w-5" />
-            <CardTitle className="text-base">Assistente AI</CardTitle>
+            <CardTitle className="text-base">{t("ai.title")}</CardTitle>
             <Badge variant="secondary" className="text-xs">AI</Badge>
           </div>
           <Button
@@ -124,7 +126,7 @@ export default function AiAssistantWidget() {
           >
             {messages.length === 0 && (
               <p className="text-sm text-muted-foreground text-center py-8">
-                Scrivi un messaggio per iniziare la conversazione.
+                {t("ai.placeholder")}
               </p>
             )}
 
@@ -150,7 +152,7 @@ export default function AiAssistantWidget() {
               <div className="flex justify-start" data-testid="ai-chat-loading">
                 <div className="rounded-md px-3 py-2 text-sm bg-secondary text-secondary-foreground flex items-center gap-2">
                   <Loader2 className="h-4 w-4 animate-spin" />
-                  <span className="text-muted-foreground">Risposta in corso...</span>
+                  <span className="text-muted-foreground">{t("ai.thinking")}</span>
                 </div>
               </div>
             )}
@@ -160,7 +162,7 @@ export default function AiAssistantWidget() {
 
           {(chatMutation.isError || errorMessage) && (
             <p className="text-sm text-destructive" data-testid="ai-chat-error">
-              {errorMessage || "Errore nella comunicazione con l'assistente AI. Riprova."}
+              {errorMessage || t("ai.error")}
             </p>
           )}
 
@@ -169,7 +171,7 @@ export default function AiAssistantWidget() {
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder="Scrivi un messaggio..."
+              placeholder={t("ai.placeholder")}
               disabled={chatMutation.isPending}
               data-testid="input-ai-chat-message"
             />

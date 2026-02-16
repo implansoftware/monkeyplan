@@ -15,6 +15,7 @@ import {
   Truck, Ban, Eye, PackageCheck, User, Building, Warehouse
 } from "lucide-react";
 import type { Product } from "@shared/schema";
+import { useTranslation } from "react-i18next";
 
 type TransferRequestItem = {
   id: string;
@@ -67,6 +68,7 @@ const requesterTypeLabels: Record<string, { label: string; icon: any }> = {
 };
 
 export default function AdminTransferRequestsPage() {
+  const { t } = useTranslation();
   const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
@@ -99,14 +101,14 @@ export default function AdminTransferRequestsPage() {
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/transfer-requests"] });
       const action = variables.decision === 'approve' ? 'approvata' : 'rifiutata';
-      toast({ title: "Richiesta " + action, description: `La richiesta è stata ${action} con successo` });
+      toast({ title: t("common.success"), description: t("common.updatedSuccessfully") });
       setShowDecideDialog(false);
       setSelectedRequest(null);
       setApprovedItems([]);
       setRejectionReason("");
     },
     onError: (error: any) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -122,13 +124,13 @@ export default function AdminTransferRequestsPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/transfer-requests"] });
       queryClient.invalidateQueries({ queryKey: ["/api/warehouses"] });
-      toast({ title: "Spedizione Confermata", description: "Gli articoli sono stati spediti e scalati dal magazzino" });
+      toast({ title: t("warehouse.shipmentConfirmed"), description: t("warehouse.shipmentConfirmedDesc") });
       setShowShipDialog(false);
       setSelectedRequest(null);
       setShippedItems([]);
     },
     onError: (error: any) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -221,7 +223,7 @@ export default function AdminTransferRequestsPage() {
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Cerca per numero, richiedente, prodotto..."
+                placeholder={t("products.searchProduct")}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="pl-10"
@@ -230,25 +232,25 @@ export default function AdminTransferRequestsPage() {
             </div>
             <Select value={statusFilter} onValueChange={setStatusFilter}>
               <SelectTrigger data-testid="select-status-filter">
-                <SelectValue placeholder="Stato" />
+                <SelectValue placeholder={t("common.status")} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">Tutti gli stati</SelectItem>
-                <SelectItem value="pending">In Attesa</SelectItem>
-                <SelectItem value="approved">Approvata</SelectItem>
-                <SelectItem value="rejected">Rifiutata</SelectItem>
-                <SelectItem value="shipped">Spedita</SelectItem>
-                <SelectItem value="received">Ricevuta</SelectItem>
-                <SelectItem value="cancelled">Annullata</SelectItem>
+                <SelectItem value="all">{t("repairs.allStatuses")}</SelectItem>
+                <SelectItem value="pending">{t("common.pending")}</SelectItem>
+                <SelectItem value="approved">{t("common.approved")}</SelectItem>
+                <SelectItem value="rejected">{t("common.rejected")}</SelectItem>
+                <SelectItem value="shipped">{t("common.shipped")}</SelectItem>
+                <SelectItem value="received">{t("common.received")}</SelectItem>
+                <SelectItem value="cancelled">{t("common.cancelled")}</SelectItem>
               </SelectContent>
             </Select>
             <Select value={typeFilter} onValueChange={setTypeFilter}>
               <SelectTrigger data-testid="select-type-filter">
-                <SelectValue placeholder="Tipo richiedente" />
+                <SelectValue placeholder={t("warehouse.requesterType")} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">Tutti i tipi</SelectItem>
-                <SelectItem value="repair_center">Centro Riparazione</SelectItem>
+                <SelectItem value="all">{t("common.allTypes")}</SelectItem>
+                <SelectItem value="repair_center">{t("roles.repairCenter")}</SelectItem>
                 <SelectItem value="sub_reseller">Sub-Reseller</SelectItem>
               </SelectContent>
             </Select>
@@ -260,7 +262,7 @@ export default function AdminTransferRequestsPage() {
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-12">
             <Inbox className="h-12 w-12 text-muted-foreground mb-4" />
-            <p className="text-muted-foreground">Nessuna richiesta trovata</p>
+            <p className="text-muted-foreground">{t("hr.noRequestsFound")}</p>
           </CardContent>
         </Card>
       ) : (
@@ -292,15 +294,15 @@ export default function AdminTransferRequestsPage() {
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-2 text-sm">
                         <div className="flex flex-wrap items-center gap-1 text-muted-foreground">
                           <User className="h-4 w-4" />
-                          <span>Da: {request.requesterName || "N/D"}</span>
+                          <span>{t("warehouse.from")}: {request.requesterName || "N/D"}</span>
                         </div>
                         <div className="flex flex-wrap items-center gap-1 text-muted-foreground">
                           <Warehouse className="h-4 w-4" />
-                          <span>Sorgente: {request.sourceWarehouseName || "N/D"}</span>
+                          <span>{t("warehouse.source")}: {request.sourceWarehouseName || "N/D"}</span>
                         </div>
                         <div className="flex flex-wrap items-center gap-1 text-muted-foreground">
                           <Warehouse className="h-4 w-4" />
-                          <span>Dest: {request.requesterWarehouseName || "N/D"}</span>
+                          <span>{t("warehouse.dest")}: {request.requesterWarehouseName || "N/D"}</span>
                         </div>
                       </div>
                       
@@ -370,13 +372,13 @@ export default function AdminTransferRequestsPage() {
       <Dialog open={showDetailsDialog} onOpenChange={setShowDetailsDialog}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle>Dettagli Richiesta {selectedRequest?.requestNumber}</DialogTitle>
+            <DialogTitle>{t("warehouse.requestDetails")} {selectedRequest?.requestNumber}</DialogTitle>
           </DialogHeader>
           {selectedRequest && (
             <div className="space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <Label className="text-muted-foreground">Stato</Label>
+                  <Label className="text-muted-foreground">{t("common.status")}</Label>
                   <Badge className={statusConfig[selectedRequest.status]?.color}>
                     {statusConfig[selectedRequest.status]?.label}
                   </Badge>
@@ -397,7 +399,7 @@ export default function AdminTransferRequestsPage() {
               
               {selectedRequest.notes && (
                 <div>
-                  <Label className="text-muted-foreground">Note</Label>
+                  <Label className="text-muted-foreground">{t("common.notes")}</Label>
                   <p className="text-sm">{selectedRequest.notes}</p>
                 </div>
               )}
@@ -444,7 +446,7 @@ export default function AdminTransferRequestsPage() {
       <Dialog open={showDecideDialog} onOpenChange={setShowDecideDialog}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle>Gestisci Richiesta {selectedRequest?.requestNumber}</DialogTitle>
+            <DialogTitle>{t("warehouse.manageRequest")} {selectedRequest?.requestNumber}</DialogTitle>
           </DialogHeader>
           {selectedRequest && (
             <div className="space-y-4">
@@ -487,11 +489,11 @@ export default function AdminTransferRequestsPage() {
               </div>
               
               <div>
-                <Label>Motivo Rifiuto (opzionale)</Label>
+                <Label>{t("suppliers.rejectionReason")}</Label>
                 <Textarea
                   value={rejectionReason}
                   onChange={(e) => setRejectionReason(e.target.value)}
-                  placeholder="Inserisci il motivo del rifiuto..."
+                  placeholder={t("utility.rejectionReason")}
                   data-testid="textarea-rejection-reason"
                 />
               </div>
@@ -531,7 +533,7 @@ export default function AdminTransferRequestsPage() {
       <Dialog open={showShipDialog} onOpenChange={setShowShipDialog}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle>Spedisci Richiesta {selectedRequest?.requestNumber}</DialogTitle>
+            <DialogTitle>{t("warehouse.shipRequest")} {selectedRequest?.requestNumber}</DialogTitle>
           </DialogHeader>
           {selectedRequest && (
             <div className="space-y-4">

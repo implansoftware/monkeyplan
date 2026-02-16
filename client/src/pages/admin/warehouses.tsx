@@ -18,6 +18,7 @@ import {
   ArrowRight, Clock, CheckCircle, XCircle, Pencil
 } from "lucide-react";
 import type { Warehouse as WarehouseType, WarehouseStock, WarehouseMovement, Product } from "@shared/schema";
+import { useTranslation } from "react-i18next";
 
 type AccessibleWarehouse = {
   id: string;
@@ -34,6 +35,7 @@ type EnrichedMovement = WarehouseMovement & {
 };
 
 export default function WarehousesPage() {
+  const { t } = useTranslation();
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState("stock");
   const [searchTerm, setSearchTerm] = useState("");
@@ -101,12 +103,12 @@ export default function WarehousesPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/warehouses", warehouseId, "stock"] });
       queryClient.invalidateQueries({ queryKey: ["/api/warehouses", warehouseId, "movements"] });
-      toast({ title: "Movimento registrato", description: "Il movimento è stato registrato con successo" });
+      toast({ title: t("warehouse.movementRegistered"), description: t("warehouse.movementRegisteredDesc") });
       setShowMovementDialog(false);
       setMovementData({ productId: "", movementType: "carico", quantity: 0, notes: "" });
     },
     onError: (error: any) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -121,12 +123,12 @@ export default function WarehousesPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/warehouses", warehouseId, "stock"] });
       queryClient.invalidateQueries({ queryKey: ["/api/warehouses", warehouseId, "movements"] });
-      toast({ title: "Stock aggiornato", description: "Giacenza, min. stock e posizione salvati" });
+      toast({ title: t("warehouse.stockUpdated"), description: t("warehouse.stockUpdatedDesc") });
       setShowEditStockDialog(false);
       setEditingStockItem(null);
     },
     onError: (error: any) => {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -136,7 +138,7 @@ export default function WarehousesPage() {
       return apiRequest("POST", "/api/warehouses/transfer-immediate", data);
     },
     onSuccess: () => {
-      toast({ title: "Trasferimento completato", description: "Il prodotto è stato trasferito con successo" });
+      toast({ title: t("warehouse.transferCompleted"), description: t("warehouse.transferCompletedDesc") });
       queryClient.invalidateQueries({ queryKey: ["/api/warehouses", warehouseId, "stock"] });
       queryClient.invalidateQueries({ queryKey: ["/api/warehouses", warehouseId, "movements"] });
       setTransferDialogOpen(false);
@@ -145,7 +147,7 @@ export default function WarehousesPage() {
       setTransferQuantity(1);
     },
     onError: (error: any) => {
-      toast({ title: "Errore trasferimento", description: error.message, variant: "destructive" });
+      toast({ title: t("warehouse.transferError"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -186,11 +188,11 @@ export default function WarehousesPage() {
   );
 
   const movementTypeLabels: Record<string, { label: string; icon: any; color: string }> = {
-    carico: { label: "Carico", icon: TrendingUp, color: "text-green-500" },
-    scarico: { label: "Scarico", icon: TrendingDown, color: "text-red-500" },
-    trasferimento_in: { label: "Trasf. In", icon: ArrowRight, color: "text-blue-500" },
-    trasferimento_out: { label: "Trasf. Out", icon: ArrowLeftRight, color: "text-orange-500" },
-    rettifica: { label: "Rettifica", icon: RotateCcw, color: "text-purple-500" },
+    carico: { label: t("warehouse.loadIn"), icon: TrendingUp, color: "text-green-500" },
+    scarico: { label: t("warehouse.loadOut"), icon: TrendingDown, color: "text-red-500" },
+    trasferimento_in: { label: t("warehouse.transferIn"), icon: ArrowRight, color: "text-blue-500" },
+    trasferimento_out: { label: t("warehouse.transferOut"), icon: ArrowLeftRight, color: "text-orange-500" },
+    rettifica: { label: t("warehouse.adjustment"), icon: RotateCcw, color: "text-purple-500" },
   };
 
 
@@ -227,7 +229,7 @@ export default function WarehousesPage() {
             </div>
             <div>
               <h1 className="text-2xl font-bold tracking-tight text-white" data-testid="text-warehouse-title">
-                {myWarehouse?.name || "Il Mio Magazzino"}
+                {myWarehouse?.name || t("sidebar.items.myWarehouse")}
               </h1>
               {myWarehouse?.address && (
                 <p className="text-sm text-white/80 flex items-center gap-1">
@@ -249,17 +251,17 @@ export default function WarehousesPage() {
           </DialogTrigger>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>Registra Movimento</DialogTitle>
+              <DialogTitle>{t("warehouse.registerMovement")}</DialogTitle>
             </DialogHeader>
             <div className="space-y-4">
               <div className="space-y-2">
-                <Label>Prodotto</Label>
+                <Label>{t("warehouse.product")}</Label>
                 <Select 
                   value={movementData.productId} 
                   onValueChange={(v) => setMovementData(prev => ({ ...prev, productId: v }))}
                 >
                   <SelectTrigger data-testid="select-product">
-                    <SelectValue placeholder="Seleziona prodotto" />
+                    <SelectValue placeholder={t("warehouse.selectProduct")} />
                   </SelectTrigger>
                   <SelectContent>
                     {products.map(p => (
@@ -269,7 +271,7 @@ export default function WarehousesPage() {
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label>Tipo Movimento</Label>
+                <Label>{t("warehouse.movementType")}</Label>
                 <Select 
                   value={movementData.movementType} 
                   onValueChange={(v) => setMovementData(prev => ({ ...prev, movementType: v }))}
@@ -278,14 +280,14 @@ export default function WarehousesPage() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="carico">Carico</SelectItem>
-                    <SelectItem value="scarico">Scarico</SelectItem>
-                    <SelectItem value="rettifica">Rettifica</SelectItem>
+                    <SelectItem value="carico">{t("warehouse.load")}</SelectItem>
+                    <SelectItem value="scarico">{t("warehouse.unload")}</SelectItem>
+                    <SelectItem value="rettifica">{t("warehouse.adjustment")}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label>Quantità</Label>
+                <Label>{t("common.quantity")}</Label>
                 <Input 
                   type="number" 
                   value={movementData.quantity}
@@ -294,7 +296,7 @@ export default function WarehousesPage() {
                 />
               </div>
               <div className="space-y-2">
-                <Label>Note</Label>
+                <Label>{t("common.notes")}</Label>
                 <Textarea 
                   value={movementData.notes}
                   onChange={(e) => setMovementData(prev => ({ ...prev, notes: e.target.value }))}
@@ -307,7 +309,7 @@ export default function WarehousesPage() {
                 disabled={!movementData.productId || movementData.quantity === 0 || createMovementMutation.isPending}
                 data-testid="button-save-movement"
               >
-                {createMovementMutation.isPending ? "Salvataggio..." : "Registra Movimento"}
+                {createMovementMutation.isPending ? t("settings.savingRate") : t("warehouse.registerMovement")}
               </Button>
             </div>
           </DialogContent>
@@ -316,14 +318,14 @@ export default function WarehousesPage() {
         <Dialog open={showEditStockDialog} onOpenChange={setShowEditStockDialog}>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>Modifica Stock</DialogTitle>
+              <DialogTitle>{t("warehouse.editStock")}</DialogTitle>
             </DialogHeader>
             <div className="space-y-4">
               <p className="text-sm text-muted-foreground">
                 Prodotto: <span className="font-medium text-foreground">{editingStockItem?.product?.name}</span>
               </p>
               <div className="space-y-2">
-                <Label>Giacenza</Label>
+                <Label>{t("warehouse.stock")}</Label>
                 <Input 
                   type="number" 
                   min="0"
@@ -334,7 +336,7 @@ export default function WarehousesPage() {
                 <p className="text-xs text-muted-foreground">Quantità attuale in magazzino</p>
               </div>
               <div className="space-y-2">
-                <Label>Scorta Minima</Label>
+                <Label>{t("warehouse.minStock")}</Label>
                 <Input 
                   type="number" 
                   min="0"
@@ -345,11 +347,11 @@ export default function WarehousesPage() {
                 <p className="text-xs text-muted-foreground">Riceverai un avviso quando la quantità scende sotto questo valore</p>
               </div>
               <div className="space-y-2">
-                <Label>Posizione in Magazzino</Label>
+                <Label>{t("warehouse.warehousePosition")}</Label>
                 <Input 
                   value={editStockData.location}
                   onChange={(e) => setEditStockData(prev => ({ ...prev, location: e.target.value }))}
-                  placeholder="Es: Scaffale A3, Ripiano 2"
+                  placeholder={t("warehouse.positionPlaceholder")}
                   data-testid="input-location"
                 />
               </div>
@@ -368,7 +370,7 @@ export default function WarehousesPage() {
                 disabled={updateStockMutation.isPending}
                 data-testid="button-save-stock"
               >
-                {updateStockMutation.isPending ? "Salvataggio..." : "Salva"}
+                {updateStockMutation.isPending ? t("settings.savingRate") : t("common.save")}
               </Button>
             </div>
           </DialogContent>
@@ -438,7 +440,7 @@ export default function WarehousesPage() {
             <div className="relative flex-1 max-w-sm">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Cerca prodotto..."
+                placeholder={t("products.searchProduct")}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="pl-10"
@@ -454,18 +456,18 @@ export default function WarehousesPage() {
                   <thead className="border-b">
                     <tr>
                       <th className="text-left p-4 font-medium">Prodotto</th>
-                      <th className="text-left p-4 font-medium">SKU</th>
-                      <th className="text-left p-4 font-medium">Tipo</th>
-                      <th className="text-right p-4 font-medium">Quantità</th>
+                      <th className="text-left p-4 font-medium">{t("products.sku")}</th>
+                      <th className="text-left p-4 font-medium">{t("common.type")}</th>
+                      <th className="text-right p-4 font-medium">{t("common.quantity")}</th>
                       <th className="text-right p-4 font-medium">Min. Stock</th>
-                      <th className="text-left p-4 font-medium">Posizione</th>
-                      <th className="text-center p-4 font-medium">Azioni</th>
+                      <th className="text-left p-4 font-medium">{t("warehouse.location")}</th>
+                      <th className="text-center p-4 font-medium">{t("common.actions")}</th>
                     </tr>
                   </thead>
                   <tbody>
                     {loadingStock ? (
                       <tr>
-                        <td colSpan={7} className="text-center p-8">Caricamento...</td>
+                        <td colSpan={7} className="text-center p-8">{t("common.loading")}</td>
                       </tr>
                     ) : filteredStock.length === 0 ? (
                       <tr>
@@ -510,7 +512,7 @@ export default function WarehousesPage() {
                                   size="icon" 
                                   variant="ghost" 
                                   onClick={() => openTransferDialog(item)}
-                                  title="Trasferisci"
+                                  title={t("warehouse.transfer")}
                                   data-testid={`button-transfer-${item.id}`}
                                 >
                                   <ArrowLeftRight className="h-4 w-4" />
@@ -520,7 +522,7 @@ export default function WarehousesPage() {
                                 size="icon" 
                                 variant="ghost" 
                                 onClick={() => handleEditStock(item)}
-                                title="Modifica"
+                                title={t("common.edit")}
                                 data-testid={`button-edit-stock-${item.id}`}
                               >
                                 <Pencil className="h-4 w-4" />
@@ -544,19 +546,19 @@ export default function WarehousesPage() {
                 <table className="w-full">
                   <thead className="border-b">
                     <tr>
-                      <th className="text-left p-4 font-medium">Data</th>
-                      <th className="text-left p-4 font-medium">Tipo</th>
+                      <th className="text-left p-4 font-medium">{t("common.date")}</th>
+                      <th className="text-left p-4 font-medium">{t("common.type")}</th>
                       <th className="text-left p-4 font-medium">Da/Verso</th>
                       <th className="text-left p-4 font-medium">Prodotto</th>
-                      <th className="text-right p-4 font-medium">Quantità</th>
+                      <th className="text-right p-4 font-medium">{t("common.quantity")}</th>
                       <th className="text-left p-4 font-medium">Operatore</th>
-                      <th className="text-left p-4 font-medium">Note</th>
+                      <th className="text-left p-4 font-medium">{t("common.notes")}</th>
                     </tr>
                   </thead>
                   <tbody>
                     {loadingMovements ? (
                       <tr>
-                        <td colSpan={7} className="text-center p-8">Caricamento...</td>
+                        <td colSpan={7} className="text-center p-8">{t("common.loading")}</td>
                       </tr>
                     ) : movements.length === 0 ? (
                       <tr>
@@ -616,7 +618,7 @@ export default function WarehousesPage() {
       <Dialog open={transferDialogOpen} onOpenChange={setTransferDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Trasferisci Prodotto</DialogTitle>
+            <DialogTitle>{t("warehouse.transferProduct")}</DialogTitle>
           </DialogHeader>
           
           <div className="space-y-4">
@@ -628,7 +630,7 @@ export default function WarehousesPage() {
             </div>
             
             <div className="space-y-2">
-              <Label>Magazzino destinazione</Label>
+              <Label>{t("warehouse.destWarehouse")}</Label>
               {destinationWarehouses.length === 0 ? (
                 <p className="text-sm text-muted-foreground p-3 bg-muted rounded-md">
                   Nessun magazzino disponibile per il trasferimento. Crea prima dei sub-rivenditori o centri di riparazione.
@@ -636,7 +638,7 @@ export default function WarehousesPage() {
               ) : (
                 <Select value={transferDestWarehouseId} onValueChange={setTransferDestWarehouseId}>
                   <SelectTrigger data-testid="select-dest-warehouse">
-                    <SelectValue placeholder="Seleziona magazzino..." />
+                    <SelectValue placeholder={t("warehouse.selectWarehouse")} />
                   </SelectTrigger>
                   <SelectContent>
                     {destinationWarehouses.map(wh => (
@@ -650,7 +652,7 @@ export default function WarehousesPage() {
             </div>
             
             <div className="space-y-2">
-              <Label>Quantità</Label>
+              <Label>{t("common.quantity")}</Label>
               <Input
                 type="number"
                 min={1}
@@ -671,7 +673,7 @@ export default function WarehousesPage() {
               disabled={!transferDestWarehouseId || transferQuantity <= 0 || transferMutation.isPending}
               data-testid="button-confirm-transfer"
             >
-              {transferMutation.isPending ? "Trasferimento..." : "Conferma Trasferimento"}
+              {transferMutation.isPending ? t("warehouse.transferring") : t("warehouse.confirmTransfer")}
             </Button>
           </DialogFooter>
         </DialogContent>
