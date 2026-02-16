@@ -47956,7 +47956,13 @@ Rispondi in italiano in modo professionale e conciso. Se non sei sicuro di qualc
     } catch (error: any) {
       console.error("AI Chat error:", error);
       if (error.status === 429) {
-        return res.status(429).json({ error: "Troppe richieste. Riprova tra qualche secondo." });
+        if (error.code === "insufficient_quota") {
+          return res.status(429).json({ error: "Credito API OpenAI esaurito. Contatta l'amministratore per verificare il piano di fatturazione.", code: "insufficient_quota" });
+        }
+        return res.status(429).json({ error: "Troppe richieste. Riprova tra qualche secondo.", code: "rate_limit" });
+      }
+      if (error.code === "invalid_api_key") {
+        return res.status(401).json({ error: "Chiave API OpenAI non valida. Contatta l'amministratore.", code: "invalid_api_key" });
       }
       res.status(500).json({ error: "Errore nella comunicazione con l'assistente AI" });
     }

@@ -22,16 +22,38 @@ export default function AiAssistantWidget() {
     queryKey: ["/api/ai/status"],
   });
 
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
   const chatMutation = useMutation({
     mutationFn: async (chatMessages: ChatMessage[]) => {
       const res = await apiRequest("POST", "/api/ai/chat", { messages: chatMessages });
       return await res.json();
     },
     onSuccess: (data) => {
+      setErrorMessage(null);
       setMessages((prev) => [
         ...prev,
         { role: "assistant", content: data.reply || data.message || data.content || "" },
       ]);
+    },
+    onError: (error: any) => {
+      const msg = error?.message || "";
+      let parsed: any = null;
+      const jsonMatch = msg.match(/^\d+:\s*(.+)$/s);
+      if (jsonMatch) {
+        try { parsed = JSON.parse(jsonMatch[1]); } catch {}
+      }
+      if (parsed?.code === "insufficient_quota") {
+        setErrorMessage("Credito API AI esaurito. Contatta l'amministratore.");
+      } else if (parsed?.code === "invalid_api_key") {
+        setErrorMessage("Chiave API AI non valida. Contatta l'amministratore.");
+      } else if (parsed?.code === "rate_limit") {
+        setErrorMessage("Troppe richieste. Riprova tra qualche secondo.");
+      } else if (parsed?.error) {
+        setErrorMessage(parsed.error);
+      } else {
+        setErrorMessage("Errore nella comunicazione con l'assistente AI. Riprova.");
+      }
     },
   });
 
@@ -136,9 +158,9 @@ export default function AiAssistantWidget() {
             <div ref={messagesEndRef} />
           </div>
 
-          {chatMutation.isError && (
+          {(chatMutation.isError || errorMessage) && (
             <p className="text-sm text-destructive" data-testid="ai-chat-error">
-              Errore nell'invio del messaggio. Riprova.
+              {errorMessage || "Errore nella comunicazione con l'assistente AI. Riprova."}
             </p>
           )}
 
