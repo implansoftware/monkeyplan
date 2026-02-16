@@ -38,6 +38,7 @@ The backend is an `Express.js` application with TypeScript, featuring a RESTful 
 *   **Sibill**: Invoice management and bank reconciliation.
 *   **Fiskaly SIGN IT**: Cloud-certified fiscal reporting service.
 *   **Expo Push**: Push notification service.
+*   **OpenAI**: AI assistant integration (GPT-4o-mini) with admin-controlled access per entity.
 *   **Key NPM Packages**:
     *   `@neondatabase/serverless`
     *   `drizzle-orm`, `drizzle-zod`

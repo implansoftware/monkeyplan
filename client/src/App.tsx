@@ -17,6 +17,7 @@ import { ThemeToggle } from "@/components/theme-toggle";
 import { NotificationBell } from "@/components/NotificationBell";
 import { TicketNotificationsProvider } from "@/contexts/TicketNotificationsContext";
 import { Loader2 } from "lucide-react";
+import AiAssistantWidget from "@/components/AiAssistantWidget";
 import LandingPage, { Navbar as PublicNavbar } from "@/pages/public/landing";
 import AboutPage from "@/pages/public/about";
 import ContactPage from "@/pages/public/contact";
@@ -684,6 +685,7 @@ function AppLayout() {
               </div>
             </main>
           </div>
+          <AiAssistantWidget />
         </div>
       </SidebarProvider>
     </TicketNotificationsProvider>

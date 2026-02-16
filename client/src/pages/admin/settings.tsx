@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
-import { Settings, Save, Clock, Euro, Timer, CreditCard, Landmark, Loader2, Download, Search, FileText, Package, Wrench, CheckCircle, Truck } from "lucide-react";
+import { Settings, Save, Clock, Euro, Timer, CreditCard, Landmark, Loader2, Download, Search, FileText, Package, Wrench, CheckCircle, Truck, Bot } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -130,6 +130,138 @@ const paymentFormSchema = z.object({
 });
 
 type PaymentFormValues = z.infer<typeof paymentFormSchema>;
+
+interface AiEntity {
+  id: string;
+  name: string;
+  type: "reseller" | "repair_center";
+  aiEnabled: boolean;
+  allowSubResellers?: boolean;
+}
+
+interface AiAccessData {
+  resellers: AiEntity[];
+  repairCenters: AiEntity[];
+}
+
+function AiAccessManagement() {
+  const { toast } = useToast();
+  const { data, isLoading } = useQuery<AiAccessData>({
+    queryKey: ["/api/admin/ai-access"],
+  });
+
+  const toggleMutation = useMutation({
+    mutationFn: async ({ entityType, entityId, enabled, allowSubResellers }: { entityType: string; entityId: string; enabled: boolean; allowSubResellers?: boolean }) => {
+      const body: any = { enabled };
+      if (allowSubResellers !== undefined) body.allowSubResellers = allowSubResellers;
+      return apiRequest("PUT", `/api/admin/ai-access/${entityType}/${entityId}`, body);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/ai-access"] });
+      toast({ title: "Aggiornato", description: "Accesso AI aggiornato con successo" });
+    },
+    onError: (error: Error) => {
+      toast({ title: "Errore", description: error.message, variant: "destructive" });
+    },
+  });
+
+  if (isLoading) {
+    return (
+      <Card>
+        <CardHeader><CardTitle>Assistente AI</CardTitle></CardHeader>
+        <CardContent className="space-y-4">
+          <Skeleton className="h-10 w-full" />
+          <Skeleton className="h-10 w-full" />
+          <Skeleton className="h-10 w-full" />
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex flex-wrap items-center gap-2">
+            <Bot className="h-5 w-5" />
+            Gestione Accesso AI
+          </CardTitle>
+          <CardDescription>
+            Abilita o disabilita l'assistente AI per reseller e centri riparazione
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <div className="space-y-4">
+            <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wider">Reseller</h3>
+            {(!data?.resellers || data.resellers.length === 0) ? (
+              <p className="text-sm text-muted-foreground">Nessun reseller trovato</p>
+            ) : (
+              <div className="space-y-3">
+                {data.resellers.map((r) => (
+                  <div key={r.id} className="flex flex-col gap-3 p-4 rounded-md border" data-testid={`ai-reseller-${r.id}`}>
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="font-medium">{r.name}</span>
+                        <Badge variant={r.aiEnabled ? "default" : "secondary"}>
+                          {r.aiEnabled ? "AI Attivo" : "AI Disattivo"}
+                        </Badge>
+                      </div>
+                      <Switch
+                        checked={r.aiEnabled}
+                        onCheckedChange={(checked) =>
+                          toggleMutation.mutate({ entityType: "reseller", entityId: r.id, enabled: checked, allowSubResellers: r.allowSubResellers })
+                        }
+                        data-testid={`switch-ai-reseller-${r.id}`}
+                      />
+                    </div>
+                    {r.aiEnabled && (
+                      <div className="flex flex-wrap items-center justify-between gap-2 pl-4 border-l-2 border-muted">
+                        <span className="text-sm text-muted-foreground">Consenti accesso ai sub-reseller</span>
+                        <Switch
+                          checked={r.allowSubResellers ?? false}
+                          onCheckedChange={(checked) =>
+                            toggleMutation.mutate({ entityType: "reseller", entityId: r.id, enabled: r.aiEnabled, allowSubResellers: checked })
+                          }
+                          data-testid={`switch-ai-sub-${r.id}`}
+                        />
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+          <div className="space-y-4">
+            <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wider">Centri Riparazione</h3>
+            {(!data?.repairCenters || data.repairCenters.length === 0) ? (
+              <p className="text-sm text-muted-foreground">Nessun centro riparazione trovato</p>
+            ) : (
+              <div className="space-y-3">
+                {data.repairCenters.map((rc) => (
+                  <div key={rc.id} className="flex flex-wrap items-center justify-between gap-2 p-4 rounded-md border" data-testid={`ai-rc-${rc.id}`}>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="font-medium">{rc.name}</span>
+                      <Badge variant={rc.aiEnabled ? "default" : "secondary"}>
+                        {rc.aiEnabled ? "AI Attivo" : "AI Disattivo"}
+                      </Badge>
+                    </div>
+                    <Switch
+                      checked={rc.aiEnabled}
+                      onCheckedChange={(checked) =>
+                        toggleMutation.mutate({ entityType: "repair_center", entityId: rc.id, enabled: checked })
+                      }
+                      data-testid={`switch-ai-rc-${rc.id}`}
+                    />
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
 
 export default function AdminSettings() {
   usePageTitle("Impostazioni");
@@ -338,6 +470,10 @@ export default function AdminSettings() {
           <TabsTrigger value="fiscale" className="gap-2" data-testid="tab-fiscale">
             <FileText className="h-4 w-4" />
             RT Fiscale
+          </TabsTrigger>
+          <TabsTrigger value="ai" className="gap-2" data-testid="tab-ai">
+            <Bot className="h-4 w-4" />
+            AI
           </TabsTrigger>
         </TabsList>
 
@@ -929,6 +1065,9 @@ export default function AdminSettings() {
         </TabsContent>
         <TabsContent value="fiscale" className="space-y-6">
           <AdminFiscalConfig />
+        </TabsContent>
+        <TabsContent value="ai" className="space-y-6">
+          <AiAccessManagement />
         </TabsContent>
       </Tabs>
     </div>

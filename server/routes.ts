@@ -51,6 +51,7 @@ import { canAccessObject, ObjectPermission } from "./objectAcl";
 import { generateAndStoreReturnDocuments, getSignedDownloadUrl, generateTransferDDT, TransferDdtData } from "./services/shippingDocuments";
 import { generatePosReceiptPdf } from "./services/posReceipt";
 import { getAvailableProviders, testRTConnection, submitTransactionToRT, getProvider } from "./services/fiscalRT";
+import OpenAI from "openai";
 
 // Helper: Attempt automatic RT submission for a completed POS transaction
 async function attemptAutoRtSubmission(transactionId: string, repairCenterId: string) {
@@ -47777,6 +47778,190 @@ export function registerRoutes(app: Express): Server {
       res.json(quote);
     } catch (error: any) {
       res.status(500).json({ error: error.message });
+    }
+  });
+
+  // ============ AI ASSISTANT ============
+
+  // Admin: toggle AI for a reseller
+  app.put("/api/admin/ai-access/:entityType/:entityId", requireRole("admin"), async (req, res) => {
+    try {
+      const { entityType, entityId } = req.params;
+      const { enabled } = req.body;
+      if (typeof enabled !== "boolean") return res.status(400).send("enabled must be boolean");
+      
+      if (entityType === "reseller") {
+        await storage.setResellerSetting(entityId, "ai_enabled", enabled.toString(), "Accesso assistente AI");
+        // Also handle sub-reseller propagation toggle
+        if (req.body.allowSubResellers !== undefined) {
+          await storage.setResellerSetting(entityId, "ai_sub_resellers_enabled", req.body.allowSubResellers.toString(), "AI abilitato per sub-resellers");
+        }
+      } else if (entityType === "repair_center") {
+        await storage.setRepairCenterSetting(entityId, "ai_enabled", enabled.toString(), "Accesso assistente AI");
+      } else {
+        return res.status(400).send("Tipo entità non valido");
+      }
+      
+      res.json({ success: true, enabled });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Admin: get AI access status for all entities
+  app.get("/api/admin/ai-access", requireRole("admin"), async (req, res) => {
+    try {
+      const resellers = await storage.listResellers();
+      const repairCenters = await storage.listRepairCenters();
+      
+      const resellerAccess = await Promise.all(
+        resellers.map(async (r: any) => {
+          const setting = await storage.getResellerSetting(r.id, "ai_enabled");
+          const subSetting = await storage.getResellerSetting(r.id, "ai_sub_resellers_enabled");
+          return {
+            id: r.id,
+            name: r.ragioneSociale || r.fullName || `Reseller ${r.id}`,
+            type: "reseller" as const,
+            aiEnabled: setting?.value === "true",
+            allowSubResellers: subSetting?.value === "true",
+          };
+        })
+      );
+      
+      const rcAccess = await Promise.all(
+        repairCenters.map(async (rc: any) => {
+          const setting = await storage.getRepairCenterSetting(rc.id, "ai_enabled");
+          return {
+            id: rc.id,
+            name: rc.ragioneSociale || rc.name || `Centro ${rc.id}`,
+            type: "repair_center" as const,
+            aiEnabled: setting?.value === "true",
+          };
+        })
+      );
+      
+      res.json({ resellers: resellerAccess, repairCenters: rcAccess });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Check if current user has AI access
+  app.get("/api/ai/status", requireAuth, async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      if (req.user.role === "admin") {
+        return res.json({ enabled: true });
+      }
+      
+      if (req.user.role === "reseller" || req.user.role === "reseller_collaborator" || req.user.role === "reseller_staff") {
+        const resellerId = req.user.resellerId;
+        if (!resellerId) return res.json({ enabled: false });
+        const setting = await storage.getResellerSetting(resellerId, "ai_enabled");
+        return res.json({ enabled: setting?.value === "true" });
+      }
+      
+      if (req.user.role === "sub_reseller") {
+        const resellerId = req.user.resellerId;
+        if (!resellerId) return res.json({ enabled: false });
+        // Check if parent reseller allows sub-resellers
+        const reseller = await storage.getReseller(resellerId);
+        if (reseller && reseller.parentResellerId) {
+          const parentSetting = await storage.getResellerSetting(reseller.parentResellerId, "ai_sub_resellers_enabled");
+          const parentEnabled = await storage.getResellerSetting(reseller.parentResellerId, "ai_enabled");
+          return res.json({ enabled: parentEnabled?.value === "true" && parentSetting?.value === "true" });
+        }
+        const setting = await storage.getResellerSetting(resellerId, "ai_enabled");
+        return res.json({ enabled: setting?.value === "true" });
+      }
+      
+      if (req.user.role === "repair_center" || req.user.role === "repair_center_staff") {
+        const rcId = req.user.repairCenterId;
+        if (!rcId) return res.json({ enabled: false });
+        const setting = await storage.getRepairCenterSetting(rcId, "ai_enabled");
+        return res.json({ enabled: setting?.value === "true" });
+      }
+      
+      return res.json({ enabled: false });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // AI Chat endpoint
+  app.post("/api/ai/chat", requireAuth, async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      
+      // Verify AI access
+      let hasAccess = false;
+      if (req.user.role === "admin") {
+        hasAccess = true;
+      } else if (req.user.role === "reseller" || req.user.role === "reseller_collaborator" || req.user.role === "reseller_staff") {
+        const setting = req.user.resellerId ? await storage.getResellerSetting(req.user.resellerId, "ai_enabled") : null;
+        hasAccess = setting?.value === "true";
+      } else if (req.user.role === "sub_reseller") {
+        const resellerId = req.user.resellerId;
+        if (resellerId) {
+          const reseller = await storage.getReseller(resellerId);
+          if (reseller && reseller.parentResellerId) {
+            const parentSetting = await storage.getResellerSetting(reseller.parentResellerId, "ai_sub_resellers_enabled");
+            const parentEnabled = await storage.getResellerSetting(reseller.parentResellerId, "ai_enabled");
+            hasAccess = parentEnabled?.value === "true" && parentSetting?.value === "true";
+          } else {
+            const setting = await storage.getResellerSetting(resellerId, "ai_enabled");
+            hasAccess = setting?.value === "true";
+          }
+        }
+      } else if (req.user.role === "repair_center" || req.user.role === "repair_center_staff") {
+        const setting = req.user.repairCenterId ? await storage.getRepairCenterSetting(req.user.repairCenterId, "ai_enabled") : null;
+        hasAccess = setting?.value === "true";
+      }
+      
+      if (!hasAccess) {
+        return res.status(403).json({ error: "Accesso AI non abilitato per la tua organizzazione" });
+      }
+      
+      const { messages } = req.body;
+      if (!Array.isArray(messages) || messages.length === 0) {
+        return res.status(400).send("messages è obbligatorio");
+      }
+      
+      const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+      
+      const systemPrompt = `Sei MonkeyPlan AI, un assistente intelligente per la piattaforma di gestione riparazioni MonkeyPlan. Aiuti gli utenti con:
+- Gestione ordini di riparazione e workflow
+- Inventario e magazzino
+- Fatturazione e preventivi
+- Ticketing e supporto clienti
+- Gestione garanzie e assicurazioni
+- Ordini B2B e supply chain
+- Configurazione del sistema
+
+Rispondi in italiano in modo professionale e conciso. Se non sei sicuro di qualcosa, dillo chiaramente. Non inventare informazioni specifiche sui dati dell'utente.`;
+
+      const completion = await openai.chat.completions.create({
+        model: "gpt-4o-mini",
+        messages: [
+          { role: "system", content: systemPrompt },
+          ...messages.slice(-20).map((m: any) => ({
+            role: m.role as "user" | "assistant",
+            content: m.content,
+          })),
+        ],
+        max_tokens: 1000,
+        temperature: 0.7,
+      });
+      
+      const reply = completion.choices[0]?.message?.content || "Mi dispiace, non sono riuscito a generare una risposta.";
+      res.json({ reply });
+    } catch (error: any) {
+      console.error("AI Chat error:", error);
+      if (error.status === 429) {
+        return res.status(429).json({ error: "Troppe richieste. Riprova tra qualche secondo." });
+      }
+      res.status(500).json({ error: "Errore nella comunicazione con l'assistente AI" });
     }
   });
 
