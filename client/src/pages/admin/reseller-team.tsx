@@ -23,26 +23,30 @@ import { StaffWizard } from "@/components/StaffWizard";
 import type { User } from "@shared/schema";
 import { useTranslation } from "react-i18next";
 
-const MODULES = [
-  { id: "repairs", name: t("admin.permissions.repairs"), description: t("admin.permissions.repairsDesc") },
-  { id: "customers", name: t("admin.permissions.customers"), description: t("admin.permissions.customersDesc") },
-  { id: "products", name: t("admin.permissions.products"), description: t("admin.permissions.productsDesc") },
-  { id: "inventory", name: t("admin.permissions.inventory"), description: t("admin.permissions.inventoryDesc") },
-  { id: "repair_centers", name: t("admin.permissions.repairCenters"), description: t("admin.permissions.repairCentersDesc") },
-  { id: "services", name: t("admin.permissions.services"), description: t("admin.permissions.servicesDesc") },
-  { id: "suppliers", name: t("admin.permissions.suppliers"), description: t("admin.permissions.suppliersDesc") },
-  { id: "supplier_orders", name: t("admin.permissions.supplierOrders"), description: t("admin.permissions.supplierOrdersDesc") },
-  { id: "appointments", name: t("admin.permissions.appointments"), description: t("admin.permissions.appointmentsDesc") },
-  { id: "invoices", name: t("admin.permissions.invoices"), description: t("admin.permissions.invoicesDesc") },
-  { id: "tickets", name: t("admin.permissions.tickets"), description: t("admin.permissions.ticketsDesc") },
-];
+function getModules(t: (key: string) => string) {
+  return [
+    { id: "repairs", name: t("admin.permissions.repairs"), description: t("admin.permissions.repairsDesc") },
+    { id: "customers", name: t("admin.permissions.customers"), description: t("admin.permissions.customersDesc") },
+    { id: "products", name: t("admin.permissions.products"), description: t("admin.permissions.productsDesc") },
+    { id: "inventory", name: t("admin.permissions.inventory"), description: t("admin.permissions.inventoryDesc") },
+    { id: "repair_centers", name: t("admin.permissions.repairCenters"), description: t("admin.permissions.repairCentersDesc") },
+    { id: "services", name: t("admin.permissions.services"), description: t("admin.permissions.servicesDesc") },
+    { id: "suppliers", name: t("admin.permissions.suppliers"), description: t("admin.permissions.suppliersDesc") },
+    { id: "supplier_orders", name: t("admin.permissions.supplierOrders"), description: t("admin.permissions.supplierOrdersDesc") },
+    { id: "appointments", name: t("admin.permissions.appointments"), description: t("admin.permissions.appointmentsDesc") },
+    { id: "invoices", name: t("admin.permissions.invoices"), description: t("admin.permissions.invoicesDesc") },
+    { id: "tickets", name: t("admin.permissions.tickets"), description: t("admin.permissions.ticketsDesc") },
+  ];
+}
 
-const PERMISSION_ACTIONS = [
-  { id: "canRead", label: "Lettura", icon: Eye },
-  { id: "canCreate", label: "Creazione", icon: FilePlus },
-  { id: "canUpdate", label: "Modifica", icon: Pencil },
-  { id: "canDelete", label: "Eliminazione", icon: Trash2 },
-];
+function getPermissionActions(t: (key: string) => string) {
+  return [
+    { id: "canRead", label: t("admin.permissions.read"), icon: Eye },
+    { id: "canCreate", label: t("admin.permissions.create"), icon: FilePlus },
+    { id: "canUpdate", label: t("admin.permissions.update"), icon: Pencil },
+    { id: "canDelete", label: t("admin.permissions.delete"), icon: Trash2 },
+  ];
+}
 
 interface RepairCenter {
   id: string;
@@ -84,6 +88,8 @@ type StaffFormValues = z.infer<typeof staffFormSchema>;
 
 export default function AdminResellerTeam() {
   const { t } = useTranslation();
+  const MODULES = getModules(t);
+  const PERMISSION_ACTIONS = getPermissionActions(t);
   const { resellerId } = useParams<{ resellerId: string }>();
   const [searchQuery, setSearchQuery] = useState("");
   const [wizardOpen, setWizardOpen] = useState(false);

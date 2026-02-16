@@ -3870,7 +3870,11 @@
       "canRead": "Lettura",
       "canCreate": "Creazione",
       "canUpdate": "Modifica",
-      "canDelete": "Eliminazione"
+      "canDelete": "Eliminazione",
+      "read": "Lettura",
+      "create": "Creazione",
+      "update": "Modifica",
+      "delete": "Eliminazione"
     },
     "common": {
       "newPassword": "Nuova Password",
