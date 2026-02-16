@@ -20,14 +20,16 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import type { SalesOrderPayment } from "@shared/schema";
 import { useTranslation } from "react-i18next";
 
-const statusLabels: Record<string, string> = {
-  pending: t("hr.pending"),
-  processing: "In elaborazione",
-  completed: t("common.completed"),
-  failed: "Fallito",
-  refunded: "Rimborsato",
-  partially_refunded: "Rimborsato parzialmente"
-};
+function getStatusLabels(t: (key: string) => string): Record<string, string> {
+  return {
+    pending: t("hr.pending"),
+    processing: "In elaborazione",
+    completed: t("common.completed"),
+    failed: "Fallito",
+    refunded: "Rimborsato",
+    partially_refunded: "Rimborsato parzialmente"
+  };
+}
 
 const statusColors: Record<string, string> = {
   pending: "secondary",
@@ -38,15 +40,17 @@ const statusColors: Record<string, string> = {
   partially_refunded: "secondary"
 };
 
-const methodLabels: Record<string, string> = {
-  cash: t("pos.cash"),
-  card: t("pos.card"),
-  bank_transfer: "Bonifico",
-  paypal: "PayPal",
-  stripe: "Stripe",
-  pos: t("sidebar.sections.posSection"),
-  credit: "Credito"
-};
+function getMethodLabels(t: (key: string) => string): Record<string, string> {
+  return {
+    cash: t("pos.cash"),
+    card: t("pos.card"),
+    bank_transfer: "Bonifico",
+    paypal: "PayPal",
+    stripe: "Stripe",
+    pos: t("sidebar.sections.posSection"),
+    credit: "Credito"
+  };
+}
 
 const methodIcons: Record<string, any> = {
   cash: Banknote,
@@ -60,6 +64,8 @@ const methodIcons: Record<string, any> = {
 
 export default function ResellerPayments() {
   const { t } = useTranslation();
+  const statusLabels = getStatusLabels(t);
+  const methodLabels = getMethodLabels(t);
   const { toast } = useToast();
   
   const [search, setSearch] = useState("");

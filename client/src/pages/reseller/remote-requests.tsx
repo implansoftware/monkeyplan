@@ -18,23 +18,26 @@ import { format } from "date-fns";
 import { it } from "date-fns/locale";
 import { useTranslation } from "react-i18next";
 
-const statusLabels: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
-  pending: { label: t("hr.pending"), variant: "secondary" },
-  assigned: { label: "Assegnata", variant: "outline" },
-  accepted: { label: t("remoteRequests.accepted"), variant: "default" },
-  rejected: { label: t("common.rejected"), variant: "destructive" },
-  awaiting_shipment: { label: "Attesa spedizione", variant: "outline" },
-  in_transit: { label: t("shipping.inTransit"), variant: "default" },
-  received: { label: t("repairs.status.received"), variant: "default" },
-  repair_created: { label: "Riparazione creata", variant: "default" },
-  cancelled: { label: t("common.cancelled"), variant: "destructive" },
-  quoted: { label: "Preventivo inviato", variant: "outline" },
-  quote_accepted: { label: "Preventivo accettato", variant: "default" },
-  quote_declined: { label: "Preventivo rifiutato", variant: "destructive" },
-};
+function getStatusLabels(t: (key: string) => string): Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> {
+  return {
+    pending: { label: t("hr.pending"), variant: "secondary" },
+    assigned: { label: "Assegnata", variant: "outline" },
+    accepted: { label: t("remoteRequests.accepted"), variant: "default" },
+    rejected: { label: t("common.rejected"), variant: "destructive" },
+    awaiting_shipment: { label: "Attesa spedizione", variant: "outline" },
+    in_transit: { label: t("shipping.inTransit"), variant: "default" },
+    received: { label: t("repairs.status.received"), variant: "default" },
+    repair_created: { label: "Riparazione creata", variant: "default" },
+    cancelled: { label: t("common.cancelled"), variant: "destructive" },
+    quoted: { label: "Preventivo inviato", variant: "outline" },
+    quote_accepted: { label: "Preventivo accettato", variant: "default" },
+    quote_declined: { label: "Preventivo rifiutato", variant: "destructive" },
+  };
+}
 
 export default function ResellerRemoteRequests() {
   const { t } = useTranslation();
+  const statusLabels = getStatusLabels(t);
   const { user } = useAuth();
   const { toast } = useToast();
   const [isAssignOpen, setIsAssignOpen] = useState(false);

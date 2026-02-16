@@ -66,17 +66,20 @@ type TransferRequest = {
   requesterWarehouse?: { id: string; name: string } | null;
 };
 
-const statusConfig: Record<string, { label: string; color: string; icon: any }> = {
-  pending: { label: t("common.pending"), color: "bg-yellow-500/20 text-yellow-700", icon: Clock },
-  approved: { label: t("common.approved"), color: "bg-blue-500/20 text-blue-700", icon: CheckCircle },
-  rejected: { label: t("common.rejected"), color: "bg-red-500/20 text-red-700", icon: XCircle },
-  shipped: { label: t("common.shipped"), color: "bg-purple-500/20 text-purple-700", icon: Truck },
-  received: { label: t("common.received"), color: "bg-green-500/20 text-green-700", icon: PackageCheck },
-  cancelled: { label: t("common.cancelled"), color: "bg-gray-500/20 text-gray-700", icon: Ban },
-};
+function getStatusConfig(t: (key: string) => string): Record<string, { label: string; color: string; icon: any }> {
+  return {
+    pending: { label: t("common.pending"), color: "bg-yellow-500/20 text-yellow-700", icon: Clock },
+    approved: { label: t("common.approved"), color: "bg-blue-500/20 text-blue-700", icon: CheckCircle },
+    rejected: { label: t("common.rejected"), color: "bg-red-500/20 text-red-700", icon: XCircle },
+    shipped: { label: t("common.shipped"), color: "bg-purple-500/20 text-purple-700", icon: Truck },
+    received: { label: t("common.received"), color: "bg-green-500/20 text-green-700", icon: PackageCheck },
+    cancelled: { label: t("common.cancelled"), color: "bg-gray-500/20 text-gray-700", icon: Ban },
+  };
+}
 
 export default function SubResellerTransferRequestsPage() {
   const { t } = useTranslation();
+  const statusConfig = getStatusConfig(t);
   const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");

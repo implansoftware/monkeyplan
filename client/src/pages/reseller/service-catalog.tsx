@@ -56,17 +56,19 @@ import {
 import type { ServiceItem, ServiceItemPrice, RepairCenter } from "@shared/schema";
 import { useTranslation } from "react-i18next";
 
-const SERVICE_CATEGORIES = [
-  { value: "display", label: "Display" },
-  { value: "batteria", label: t("settings.battery") },
-  { value: "software", label: "Software" },
-  { value: "hardware", label: "Hardware" },
-  { value: "diagnostica", label: t("sidebar.items.diagnostics") },
-  { value: "altro", label: t("common.other") },
-];
+function getServiceCategories(t: (key: string) => string) {
+  return [
+    { value: "display", label: "Display" },
+    { value: "batteria", label: t("settings.battery") },
+    { value: "software", label: "Software" },
+    { value: "hardware", label: "Hardware" },
+    { value: "diagnostica", label: t("sidebar.items.diagnostics") },
+    { value: "altro", label: t("common.other") },
+  ];
+}
 
-const getCategoryLabel = (category: string) => {
-  return SERVICE_CATEGORIES.find(c => c.value === category)?.label || category;
+const getCategoryLabel = (category: string, categories: { value: string; label: string }[]) => {
+  return categories.find(c => c.value === category)?.label || category;
 };
 
 const getCategoryColor = (category: string) => {
@@ -88,7 +90,7 @@ const formatCurrency = (cents: number) => {
   }).format(cents / 100);
 };
 
-const getOwnershipInfo = (item: ServiceItem, currentUserId: string | undefined, parentResellerId: string | undefined) => {
+function getOwnershipInfo(item: ServiceItem, currentUserId: string | undefined, parentResellerId: string | undefined, t: (key: string) => string) {
   if (!item.createdBy) {
     return { label: "Globale", icon: Globe, color: "text-blue-500" };
   }
@@ -99,7 +101,7 @@ const getOwnershipInfo = (item: ServiceItem, currentUserId: string | undefined, 
     return { label: t("roles.reseller"), icon: Users, color: "text-orange-500" };
   }
   return { label: t("common.other"), icon: Users, color: "text-muted-foreground" };
-};
+}
 
 interface ServiceCatalogItem extends ServiceItem {
   resellerPrice: ServiceItemPrice | null;
@@ -113,6 +115,7 @@ interface ServiceCatalogResponse {
 
 export default function ResellerServiceCatalog() {
   const { t } = useTranslation();
+  const SERVICE_CATEGORIES = getServiceCategories(t);
   const { toast } = useToast();
   const { user } = useAuth();
   
@@ -421,7 +424,7 @@ export default function ResellerServiceCatalog() {
       item.code.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesCategory = categoryFilter === "all" || item.category === categoryFilter;
     
-    const ownership = getOwnershipInfo(item, user?.id, (user as any)?.parentResellerId);
+    const ownership = getOwnershipInfo(item, user?.id, (user as any)?.parentResellerId, t);
     const matchesOrigin = originFilter === "all" || 
       (originFilter === "global" && ownership.label === "Globale") ||
       (originFilter === "mine" && ownership.label === "Mio") ||
@@ -584,7 +587,7 @@ export default function ResellerServiceCatalog() {
                         </TableCell>
                         <TableCell>
                           <Badge variant="secondary" className={getCategoryColor(item.category)}>
-                            {getCategoryLabel(item.category)}
+                            {getCategoryLabel(item.category, SERVICE_CATEGORIES)}
                           </Badge>
                         </TableCell>
                         <TableCell>
@@ -778,7 +781,7 @@ export default function ResellerServiceCatalog() {
                         const brand = deviceBrands.find(b => b.id === itemAny.brandId);
                         const model = deviceModels.find(m => m.id === itemAny.modelId);
                         const hasDeviceRestriction = itemAny.deviceTypeId || itemAny.brandId || itemAny.modelId;
-                        const ownership = getOwnershipInfo(item, user?.id, (user as any)?.parentResellerId);
+                        const ownership = getOwnershipInfo(item, user?.id, (user as any)?.parentResellerId, t);
                         const OwnerIcon = ownership.icon;
                         
                         return (
@@ -798,7 +801,7 @@ export default function ResellerServiceCatalog() {
                             </TableCell>
                             <TableCell>
                               <Badge variant="secondary" className={getCategoryColor(item.category)}>
-                                {getCategoryLabel(item.category)}
+                                {getCategoryLabel(item.category, SERVICE_CATEGORIES)}
                               </Badge>
                             </TableCell>
                             <TableCell>

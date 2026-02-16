@@ -24,15 +24,17 @@ import { useTranslation } from "react-i18next";
 
 type PracticeStatus = "bozza" | "inviata" | "in_lavorazione" | "attesa_documenti" | "completata" | "rifiutata" | "annullata";
 
-const statusLabels: Record<PracticeStatus, string> = {
-  bozza: t("invoices.draft"),
-  inviata: t("invoices.sent"),
-  in_lavorazione: t("repairs.inProgress"),
-  attesa_documenti: "Attesa Documenti",
-  completata: "Completata",
-  annullata: t("common.cancelled"),
-  rifiutata: t("common.rejected"),
-};
+function getStatusLabels(t: (key: string) => string): Record<PracticeStatus, string> {
+  return {
+    bozza: t("invoices.draft"),
+    inviata: t("invoices.sent"),
+    in_lavorazione: t("repairs.inProgress"),
+    attesa_documenti: "Attesa Documenti",
+    completata: "Completata",
+    annullata: t("common.cancelled"),
+    rifiutata: t("common.rejected"),
+  };
+}
 
 const statusColors: Record<PracticeStatus, string> = {
   bozza: "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300",
@@ -44,14 +46,16 @@ const statusColors: Record<PracticeStatus, string> = {
   rifiutata: "bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300",
 };
 
-const categoryLabels: Record<string, string> = {
-  fisso: "Fisso",
-  mobile: "Mobile",
-  centralino: "Centralino",
-  luce: "Luce",
-  gas: "Gas",
-  altro: t("common.other"),
-};
+function getCategoryLabels(t: (key: string) => string): Record<string, string> {
+  return {
+    fisso: "Fisso",
+    mobile: "Mobile",
+    centralino: "Centralino",
+    luce: "Luce",
+    gas: "Gas",
+    altro: t("common.other"),
+  };
+}
 
 const formatCurrency = (cents: number) => {
   return new Intl.NumberFormat("it-IT", {
@@ -72,6 +76,8 @@ interface PracticeProductItem {
 
 export default function ResellerUtilityPractices() {
   const { t } = useTranslation();
+  const statusLabels = getStatusLabels(t);
+  const categoryLabels = getCategoryLabels(t);
   const searchString = useSearch();
   const [, navigate] = useLocation();
   const [searchQuery, setSearchQuery] = useState("");

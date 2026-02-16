@@ -21,17 +21,20 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useTranslation } from "react-i18next";
 
-const categoryLabels: Record<string, string> = {
-  fisso: "Fisso",
-  mobile: "Mobile",
-  centralino: "Centralino",
-  luce: "Luce",
-  gas: "Gas",
-  altro: t("common.other"),
-};
+function getCategoryLabels(t: (key: string) => string): Record<string, string> {
+  return {
+    fisso: "Fisso",
+    mobile: "Mobile",
+    centralino: "Centralino",
+    luce: "Luce",
+    gas: "Gas",
+    altro: t("common.other"),
+  };
+}
 
 export default function ResellerUtilitySuppliers() {
   const { t } = useTranslation();
+  const categoryLabels = getCategoryLabels(t);
   const [searchQuery, setSearchQuery] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingSupplier, setEditingSupplier] = useState<UtilitySupplier | null>(null);

@@ -260,12 +260,14 @@ type WarrantyProductPOS = {
 
 // formatCurrency importato da @/lib/utils
 
-const paymentMethodLabels: Record<string, { label: string; icon: typeof CreditCard }> = {
-  cash: { label: t("pos.cash"), icon: Banknote },
-  stripe_link: { label: "Link Pagamento", icon: QrCode },
-  paypal: { label: "PayPal", icon: Wallet },
-  mixed: { label: "Misto", icon: Calculator },
-};
+function getPaymentMethodLabels(t: (key: string) => string): Record<string, { label: string; icon: typeof CreditCard }> {
+  return {
+    cash: { label: t("pos.cash"), icon: Banknote },
+    stripe_link: { label: "Link Pagamento", icon: QrCode },
+    paypal: { label: "PayPal", icon: Wallet },
+    mixed: { label: "Misto", icon: Calculator },
+  };
+}
 
 interface ResellerPaymentConfig {
   bankTransferEnabled?: boolean;
@@ -281,6 +283,7 @@ type RepairCenter = {
 
 export default function ResellerPosTerminal() {
   const { t } = useTranslation();
+  const paymentMethodLabels = getPaymentMethodLabels(t);
   const { toast } = useToast();
   const [, navigate] = useLocation();
   

@@ -23,17 +23,19 @@ import {
 import type { ServiceItem } from "@shared/schema";
 import { useTranslation } from "react-i18next";
 
-const SERVICE_CATEGORIES = [
-  { value: "display", label: "Display" },
-  { value: "batteria", label: "Batteria" },
-  { value: "software", label: "Software" },
-  { value: "hardware", label: "Hardware" },
-  { value: "diagnostica", label: "Diagnostica" },
-  { value: "altro", label: t("common.other") },
-];
+function getServiceCategories(t: (key: string) => string) {
+  return [
+    { value: "display", label: "Display" },
+    { value: "batteria", label: "Batteria" },
+    { value: "software", label: "Software" },
+    { value: "hardware", label: "Hardware" },
+    { value: "diagnostica", label: "Diagnostica" },
+    { value: "altro", label: t("common.other") },
+  ];
+}
 
-const getCategoryLabel = (category: string) => {
-  return SERVICE_CATEGORIES.find(c => c.value === category)?.label || category;
+const getCategoryLabel = (category: string, categories: { value: string; label: string }[]) => {
+  return categories.find(c => c.value === category)?.label || category;
 };
 
 const getCategoryColor = (category: string) => {
@@ -81,6 +83,7 @@ interface ServiceCatalogItem extends ServiceItem {
 
 export default function SubResellerServiceCatalog() {
   const { t } = useTranslation();
+  const SERVICE_CATEGORIES = getServiceCategories(t);
   const [searchQuery, setSearchQuery] = useState("");
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
 
@@ -207,7 +210,7 @@ export default function SubResellerServiceCatalog() {
                     </TableCell>
                     <TableCell>
                       <Badge className={getCategoryColor(item.category)}>
-                        {getCategoryLabel(item.category)}
+                        {getCategoryLabel(item.category, SERVICE_CATEGORIES)}
                       </Badge>
                     </TableCell>
                     <TableCell className="text-right">

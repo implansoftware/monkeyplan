@@ -52,26 +52,32 @@ interface StaffMember {
   fullName: string;
 }
 
-const leaveTypeLabels: Record<string, { label: string; color: string }> = {
-  ferie: { label: t("hr.vacation"), color: "bg-emerald-500" },
-  permesso_rol: { label: "Permesso ROL", color: "bg-purple-500" },
-  permesso_studio: { label: t("hr.studyLeave"), color: "bg-blue-500" },
-  permesso_medico: { label: t("hr.medicalLeave"), color: "bg-cyan-500" },
-  permesso_lutto: { label: t("hr.bereavementLeave"), color: "bg-gray-600" },
-  permesso_matrimonio: { label: t("hr.weddingLeave"), color: "bg-pink-500" },
-  congedo_parentale: { label: t("hr.parentalLeave"), color: "bg-amber-500" },
-  altro: { label: t("common.other"), color: "bg-gray-500" },
-};
+function getLeaveTypeLabels(t: (key: string) => string): Record<string, { label: string; color: string }> {
+  return {
+    ferie: { label: t("hr.vacation"), color: "bg-emerald-500" },
+    permesso_rol: { label: "Permesso ROL", color: "bg-purple-500" },
+    permesso_studio: { label: t("hr.studyLeave"), color: "bg-blue-500" },
+    permesso_medico: { label: t("hr.medicalLeave"), color: "bg-cyan-500" },
+    permesso_lutto: { label: t("hr.bereavementLeave"), color: "bg-gray-600" },
+    permesso_matrimonio: { label: t("hr.weddingLeave"), color: "bg-pink-500" },
+    congedo_parentale: { label: t("hr.parentalLeave"), color: "bg-amber-500" },
+    altro: { label: t("common.other"), color: "bg-gray-500" },
+  };
+}
 
-const statusLabels: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
-  pending: { label: t("common.pending"), variant: "secondary" },
-  approved: { label: t("common.approved"), variant: "default" },
-  rejected: { label: t("common.rejected"), variant: "destructive" },
-  cancelled: { label: t("common.cancelled"), variant: "outline" },
-};
+function getStatusLabels(t: (key: string) => string): Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> {
+  return {
+    pending: { label: t("common.pending"), variant: "secondary" },
+    approved: { label: t("common.approved"), variant: "default" },
+    rejected: { label: t("common.rejected"), variant: "destructive" },
+    cancelled: { label: t("common.cancelled"), variant: "outline" },
+  };
+}
 
 export default function HrLeaveRequests() {
   const { t } = useTranslation();
+  const leaveTypeLabels = getLeaveTypeLabels(t);
+  const statusLabels = getStatusLabels(t);
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);

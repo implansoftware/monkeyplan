@@ -52,6 +52,7 @@ function CheckoutForm({
   returnUrl: string;
   sellerResellerId?: string;
 }) {
+  const { t } = useTranslation();
   const stripe = useStripe();
   const elements = useElements();
   const [isProcessing, setIsProcessing] = useState(false);

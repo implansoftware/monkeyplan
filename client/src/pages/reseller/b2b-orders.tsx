@@ -28,50 +28,62 @@ interface B2BOrderWithItems extends ResellerPurchaseOrder {
   returns?: B2bReturn[];
 }
 
-const returnStatusLabels: Record<string, string> = {
-  requested: "Richiesto",
-  approved: t("repairs.status.approved"),
-  rejected: t("b2b.status.cancelled"),
-  awaiting_shipment: "In attesa spedizione",
-  shipped: t("b2b.status.shipped"),
-  received: t("repairs.status.received"),
-  inspecting: "In ispezione",
-  completed: t("common.completed"),
-  cancelled: t("repairs.status.cancelled"),
-};
+function getReturnStatusLabels(t: (key: string) => string): Record<string, string> {
+  return {
+    requested: "Richiesto",
+    approved: t("repairs.status.approved"),
+    rejected: t("b2b.status.cancelled"),
+    awaiting_shipment: "In attesa spedizione",
+    shipped: t("b2b.status.shipped"),
+    received: t("repairs.status.received"),
+    inspecting: "In ispezione",
+    completed: t("common.completed"),
+    cancelled: t("repairs.status.cancelled"),
+  };
+}
 
 function formatPrice(cents: number): string {
   return new Intl.NumberFormat('it-IT', { style: 'currency', currency: 'EUR' }).format(cents / 100);
 }
 
-const statusConfig: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline"; icon: any }> = {
-  draft: { label: t("invoices.draft"), variant: "outline", icon: Clock },
-  pending: { label: t("common.pending"), variant: "secondary", icon: Clock },
-  approved: { label: t("repairs.status.approved"), variant: "default", icon: CheckCircle },
-  rejected: { label: t("b2b.status.cancelled"), variant: "destructive", icon: XCircle },
-  shipped: { label: t("b2b.status.shipped"), variant: "default", icon: Truck },
-  received: { label: t("repairs.status.received"), variant: "default", icon: PackageCheck },
-  cancelled: { label: t("repairs.status.cancelled"), variant: "destructive", icon: XCircle },
-};
+function getStatusConfig(t: (key: string) => string): Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline"; icon: any }> {
+  return {
+    draft: { label: t("invoices.draft"), variant: "outline", icon: Clock },
+    pending: { label: t("common.pending"), variant: "secondary", icon: Clock },
+    approved: { label: t("repairs.status.approved"), variant: "default", icon: CheckCircle },
+    rejected: { label: t("b2b.status.cancelled"), variant: "destructive", icon: XCircle },
+    shipped: { label: t("b2b.status.shipped"), variant: "default", icon: Truck },
+    received: { label: t("repairs.status.received"), variant: "default", icon: PackageCheck },
+    cancelled: { label: t("repairs.status.cancelled"), variant: "destructive", icon: XCircle },
+  };
+}
 
-const paymentMethodLabels: Record<string, string> = {
-  bank_transfer: t("settings.bankTransfer"),
-  stripe: "Stripe",
-  credit: "Credito Reseller",
-};
+function getPaymentMethodLabels(t: (key: string) => string): Record<string, string> {
+  return {
+    bank_transfer: t("settings.bankTransfer"),
+    stripe: "Stripe",
+    credit: "Credito Reseller",
+  };
+}
 
-const returnReasons: Record<string, string> = {
-  defective: "Difettoso",
-  wrong_item: "Articolo errato",
-  not_as_described: "Non conforme alla descrizione",
-  damaged_in_transit: "Danneggiato in transito",
-  excess_stock: "Eccesso di stock",
-  quality_issue: "Problema qualità",
-  other: t("common.other"),
-};
+function getReturnReasons(t: (key: string) => string): Record<string, string> {
+  return {
+    defective: "Difettoso",
+    wrong_item: "Articolo errato",
+    not_as_described: "Non conforme alla descrizione",
+    damaged_in_transit: "Danneggiato in transito",
+    excess_stock: "Eccesso di stock",
+    quality_issue: "Problema qualità",
+    other: t("common.other"),
+  };
+}
 
 export default function ResellerB2BOrders() {
   const { t } = useTranslation();
+  const returnStatusLabels = getReturnStatusLabels(t);
+  const statusConfig = getStatusConfig(t);
+  const paymentMethodLabels = getPaymentMethodLabels(t);
+  const returnReasons = getReturnReasons(t);
   const [selectedOrder, setSelectedOrder] = useState<B2BOrderWithItems | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
   const [returnDialogOpen, setReturnDialogOpen] = useState(false);

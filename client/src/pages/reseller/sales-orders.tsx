@@ -22,17 +22,19 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import type { SalesOrder, SalesOrderItem, SalesOrderPayment, SalesOrderShipment } from "@shared/schema";
 import { useTranslation } from "react-i18next";
 
-const statusLabels: Record<string, string> = {
-  pending: t("hr.pending"),
-  confirmed: "Confermato",
-  processing: "In elaborazione",
-  ready_to_ship: "Pronto per spedizione",
-  shipped: t("b2b.status.shipped"),
-  delivered: t("repairs.status.delivered"),
-  completed: t("common.completed"),
-  cancelled: t("repairs.status.cancelled"),
-  refunded: "Rimborsato"
-};
+function getStatusLabels(t: (key: string) => string): Record<string, string> {
+  return {
+    pending: t("hr.pending"),
+    confirmed: "Confermato",
+    processing: "In elaborazione",
+    ready_to_ship: "Pronto per spedizione",
+    shipped: t("b2b.status.shipped"),
+    delivered: t("repairs.status.delivered"),
+    completed: t("common.completed"),
+    cancelled: t("repairs.status.cancelled"),
+    refunded: "Rimborsato"
+  };
+}
 
 const statusColors: Record<string, string> = {
   pending: "secondary",
@@ -67,6 +69,7 @@ interface OrderDetailResponse {
 
 export default function ResellerSalesOrders() {
   const { t } = useTranslation();
+  const statusLabels = getStatusLabels(t);
   const [, setLocation] = useLocation();
   const [, params] = useRoute("/reseller/sales-orders/:id");
   const orderId = params?.id;

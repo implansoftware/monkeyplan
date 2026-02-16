@@ -59,16 +59,19 @@ interface TeamMember {
   role: string;
 }
 
-const statusLabels: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
-  draft: { label: t("invoices.draft"), variant: "outline" },
-  pending: { label: t("common.pending"), variant: "secondary" },
-  approved: { label: t("common.approved"), variant: "default" },
-  rejected: { label: t("common.rejected"), variant: "destructive" },
-  paid: { label: t("invoices.paid"), variant: "default" },
-};
+function getStatusLabels(t: (key: string) => string): Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> {
+  return {
+    draft: { label: t("invoices.draft"), variant: "outline" },
+    pending: { label: t("common.pending"), variant: "secondary" },
+    approved: { label: t("common.approved"), variant: "default" },
+    rejected: { label: t("common.rejected"), variant: "destructive" },
+    paid: { label: t("invoices.paid"), variant: "default" },
+  };
+}
 
 export default function HrExpenses() {
   const { t } = useTranslation();
+  const statusLabels = getStatusLabels(t);
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);

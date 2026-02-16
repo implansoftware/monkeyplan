@@ -17,18 +17,20 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import type { SalesOrderReturn, SalesOrder } from "@shared/schema";
 
-const statusLabels: Record<string, string> = {
-  requested: "Richiesto",
-  approved: t("common.approved"),
-  rejected: "Rifiutato",
-  shipped: "Spedito",
-  received: "Ricevuto",
-  refunded: "Rimborsato",
-  partially_refunded: "Rimborsato parzialmente",
-  cancelled: t("common.cancelled"),
-  awaiting_shipment: "In attesa di spedizione",
-  inspecting: "In ispezione"
-};
+function getStatusLabels(t: (key: string) => string): Record<string, string> {
+  return {
+    requested: "Richiesto",
+    approved: t("common.approved"),
+    rejected: "Rifiutato",
+    shipped: "Spedito",
+    received: "Ricevuto",
+    refunded: "Rimborsato",
+    partially_refunded: "Rimborsato parzialmente",
+    cancelled: t("common.cancelled"),
+    awaiting_shipment: "In attesa di spedizione",
+    inspecting: "In ispezione"
+  };
+}
 
 const statusColors: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
   requested: "secondary",
@@ -43,14 +45,16 @@ const statusColors: Record<string, "default" | "secondary" | "destructive" | "ou
   inspecting: "secondary"
 };
 
-const reasonLabels: Record<string, string> = {
-  defective: "Prodotto difettoso",
-  wrong_item: "Articolo errato",
-  not_as_described: "Non conforme alla descrizione",
-  changed_mind: "Ripensamento",
-  damaged_in_transit: t("common.damagedInTransport"),
-  other: "Altro motivo"
-};
+function getReasonLabels(t: (key: string) => string): Record<string, string> {
+  return {
+    defective: "Prodotto difettoso",
+    wrong_item: "Articolo errato",
+    not_as_described: "Non conforme alla descrizione",
+    changed_mind: "Ripensamento",
+    damaged_in_transit: t("common.damagedInTransport"),
+    other: "Altro motivo"
+  };
+}
 
 const StatusIcon = ({ status }: { status: string }) => {
   switch (status) {
@@ -71,6 +75,8 @@ const StatusIcon = ({ status }: { status: string }) => {
 
 export default function CustomerSalesReturns() {
   const { t } = useTranslation();
+  const statusLabels = getStatusLabels(t);
+  const reasonLabels = getReasonLabels(t);
   const { toast } = useToast();
   
   const [selectedReturn, setSelectedReturn] = useState<SalesOrderReturn | null>(null);

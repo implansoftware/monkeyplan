@@ -65,22 +65,26 @@ interface PracticeProductItem {
   notes?: string;
 }
 
-const STEPS: { id: WizardStep; label: string; icon: any }[] = [
-  { id: "type", label: t("common.type"), icon: ClipboardList },
-  { id: "service", label: t("parts.service"), icon: FileCheck },
-  { id: "customer", label: t("common.customer"), icon: User },
-  { id: "pricing", label: t("common.price"), icon: Euro },
-  { id: "review", label: t("repair.summary"), icon: Check },
-];
+function getSteps(t: (key: string) => string): { id: WizardStep; label: string; icon: any }[] {
+  return [
+    { id: "type", label: t("common.type"), icon: ClipboardList },
+    { id: "service", label: t("parts.service"), icon: FileCheck },
+    { id: "customer", label: t("common.customer"), icon: User },
+    { id: "pricing", label: t("common.price"), icon: Euro },
+    { id: "review", label: t("repair.summary"), icon: Check },
+  ];
+}
 
-const categoryLabels: Record<string, string> = {
-  fisso: "Fisso",
-  mobile: "Mobile",
-  centralino: "Centralino",
-  luce: "Luce",
-  gas: "Gas",
-  altro: t("common.other"),
-};
+function getCategoryLabels(t: (key: string) => string): Record<string, string> {
+  return {
+    fisso: "Fisso",
+    mobile: "Mobile",
+    centralino: "Centralino",
+    luce: "Luce",
+    gas: "Gas",
+    altro: t("common.other"),
+  };
+}
 
 const formatCurrency = (cents: number) => {
   return new Intl.NumberFormat("it-IT", {
@@ -91,6 +95,8 @@ const formatCurrency = (cents: number) => {
 
 export function UtilityPracticeWizard({ open, onOpenChange, onSuccess, preselectedServiceId }: UtilityPracticeWizardProps) {
   const { t } = useTranslation();
+  const STEPS = getSteps(t);
+  const categoryLabels = getCategoryLabels(t);
   const { toast } = useToast();
   const { user } = useUser();
   const [currentStep, setCurrentStep] = useState<WizardStep>("type");

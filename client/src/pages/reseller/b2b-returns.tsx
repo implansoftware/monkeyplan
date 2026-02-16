@@ -27,30 +27,36 @@ function formatPrice(cents: number): string {
   return new Intl.NumberFormat('it-IT', { style: 'currency', currency: 'EUR' }).format(cents / 100);
 }
 
-const statusConfig: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline"; icon: any }> = {
-  requested: { label: t("common.pending"), variant: "secondary", icon: Clock },
-  approved: { label: t("repairs.status.approved"), variant: "default", icon: CheckCircle },
-  awaiting_shipment: { label: "Da Spedire", variant: "outline", icon: Send },
-  rejected: { label: t("b2b.status.cancelled"), variant: "destructive", icon: XCircle },
-  shipped: { label: t("b2b.status.shipped"), variant: "default", icon: Truck },
-  received: { label: t("repairs.status.received"), variant: "default", icon: PackageCheck },
-  inspecting: { label: "In Ispezione", variant: "secondary", icon: Eye },
-  completed: { label: t("common.completed"), variant: "default", icon: CheckCircle },
-  cancelled: { label: t("repairs.status.cancelled"), variant: "destructive", icon: XCircle },
-};
+function getStatusConfig(t: (key: string) => string): Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline"; icon: any }> {
+  return {
+    requested: { label: t("common.pending"), variant: "secondary", icon: Clock },
+    approved: { label: t("repairs.status.approved"), variant: "default", icon: CheckCircle },
+    awaiting_shipment: { label: "Da Spedire", variant: "outline", icon: Send },
+    rejected: { label: t("b2b.status.cancelled"), variant: "destructive", icon: XCircle },
+    shipped: { label: t("b2b.status.shipped"), variant: "default", icon: Truck },
+    received: { label: t("repairs.status.received"), variant: "default", icon: PackageCheck },
+    inspecting: { label: "In Ispezione", variant: "secondary", icon: Eye },
+    completed: { label: t("common.completed"), variant: "default", icon: CheckCircle },
+    cancelled: { label: t("repairs.status.cancelled"), variant: "destructive", icon: XCircle },
+  };
+}
 
-const reasonLabels: Record<string, string> = {
-  defective: "Difettoso",
-  wrong_item: "Articolo errato",
-  not_as_described: "Non conforme",
-  damaged_in_transit: "Danneggiato",
-  excess_stock: "Eccesso stock",
-  quality_issue: "Qualità",
-  other: t("common.other"),
-};
+function getReasonLabels(t: (key: string) => string): Record<string, string> {
+  return {
+    defective: "Difettoso",
+    wrong_item: "Articolo errato",
+    not_as_described: "Non conforme",
+    damaged_in_transit: "Danneggiato",
+    excess_stock: "Eccesso stock",
+    quality_issue: "Qualità",
+    other: t("common.other"),
+  };
+}
 
 export default function ResellerB2BReturns() {
   const { t } = useTranslation();
+  const statusConfig = getStatusConfig(t);
+  const reasonLabels = getReasonLabels(t);
   const [selectedReturn, setSelectedReturn] = useState<B2BReturnWithItems | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
   const [shipDialogOpen, setShipDialogOpen] = useState(false);

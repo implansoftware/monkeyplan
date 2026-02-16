@@ -98,18 +98,20 @@ type ProductCompatibility = {
   modelName: string | null;
 };
 
-const CATEGORIES = [
-  { value: "display", label: "Display/Schermo" },
-  { value: "batteria", label: t("settings.battery") },
-  { value: "scheda_madre", label: "Scheda Madre" },
-  { value: "fotocamera", label: "Fotocamera" },
-  { value: "altoparlante", label: "Altoparlante/Speaker" },
-  { value: "microfono", label: "Microfono" },
-  { value: "connettore", label: "Connettore Ricarica" },
-  { value: "cover", label: "Cover/Scocca" },
-  { value: "accessorio", label: t("products.accessory") },
-  { value: "altro", label: t("common.other") },
-];
+function getCategories(t: (key: string) => string) {
+  return [
+    { value: "display", label: "Display/Schermo" },
+    { value: "batteria", label: t("settings.battery") },
+    { value: "scheda_madre", label: "Scheda Madre" },
+    { value: "fotocamera", label: "Fotocamera" },
+    { value: "altoparlante", label: "Altoparlante/Speaker" },
+    { value: "microfono", label: "Microfono" },
+    { value: "connettore", label: "Connettore Ricarica" },
+    { value: "cover", label: "Cover/Scocca" },
+    { value: "accessorio", label: t("products.accessory") },
+    { value: "altro", label: t("common.other") },
+  ];
+}
 
 const BRANDS = [
   "Apple", "Samsung", "Xiaomi", "Huawei", "OPPO", "OnePlus",
@@ -118,6 +120,7 @@ const BRANDS = [
 
 export default function ResellerProducts() {
   const { t } = useTranslation();
+  const CATEGORIES = getCategories(t);
   const [searchQuery, setSearchQuery] = useState("");
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
   const [brandFilter, setBrandFilter] = useState<string>("all");

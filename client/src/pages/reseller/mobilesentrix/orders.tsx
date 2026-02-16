@@ -61,19 +61,22 @@ type OrderDetails = {
   }>;
 };
 
-const statusConfig: Record<string, { label: string; variant: "default" | "secondary" | "outline" | "destructive"; icon: typeof Clock }> = {
-  pending: { label: t("common.pending"), variant: "secondary", icon: Clock },
-  processing: { label: "In Elaborazione", variant: "default", icon: Package },
-  shipped: { label: t("b2b.status.shipped"), variant: "default", icon: Truck },
-  Shipped: { label: t("b2b.status.shipped"), variant: "default", icon: Truck },
-  complete: { label: t("common.completed"), variant: "default", icon: CheckCircle },
-  completed: { label: t("common.completed"), variant: "default", icon: CheckCircle },
-  cancelled: { label: t("repairs.status.cancelled"), variant: "destructive", icon: XCircle },
-  canceled: { label: t("repairs.status.cancelled"), variant: "destructive", icon: XCircle },
-};
+function getStatusConfigMap(t: (key: string) => string): Record<string, { label: string; variant: "default" | "secondary" | "outline" | "destructive"; icon: typeof Clock }> {
+  return {
+    pending: { label: t("common.pending"), variant: "secondary", icon: Clock },
+    processing: { label: "In Elaborazione", variant: "default", icon: Package },
+    shipped: { label: t("b2b.status.shipped"), variant: "default", icon: Truck },
+    Shipped: { label: t("b2b.status.shipped"), variant: "default", icon: Truck },
+    complete: { label: t("common.completed"), variant: "default", icon: CheckCircle },
+    completed: { label: t("common.completed"), variant: "default", icon: CheckCircle },
+    cancelled: { label: t("repairs.status.cancelled"), variant: "destructive", icon: XCircle },
+    canceled: { label: t("repairs.status.cancelled"), variant: "destructive", icon: XCircle },
+  };
+}
 
 export default function MobilesentrixOrdersPage() {
   const { t } = useTranslation();
+  const statusConfig = getStatusConfigMap(t);
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
   const [orderDetails, setOrderDetails] = useState<OrderDetails | null>(null);
   const [loadingDetails, setLoadingDetails] = useState(false);

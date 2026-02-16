@@ -20,16 +20,18 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import type { SalesOrderReturn } from "@shared/schema";
 import { useTranslation } from "react-i18next";
 
-const statusLabels: Record<string, string> = {
-  requested: "Richiesto",
-  approved: t("repairs.status.approved"),
-  rejected: t("b2b.status.cancelled"),
-  shipped: t("b2b.status.shipped"),
-  received: t("repairs.status.received"),
-  refunded: "Rimborsato",
-  partially_refunded: "Rimborsato parzialmente",
-  cancelled: t("repairs.status.cancelled")
-};
+function getStatusLabels(t: (key: string) => string): Record<string, string> {
+  return {
+    requested: "Richiesto",
+    approved: t("repairs.status.approved"),
+    rejected: t("b2b.status.cancelled"),
+    shipped: t("b2b.status.shipped"),
+    received: t("repairs.status.received"),
+    refunded: "Rimborsato",
+    partially_refunded: "Rimborsato parzialmente",
+    cancelled: t("repairs.status.cancelled")
+  };
+}
 
 const statusColors: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
   requested: "secondary",
@@ -42,24 +44,31 @@ const statusColors: Record<string, "default" | "secondary" | "destructive" | "ou
   cancelled: "destructive"
 };
 
-const reasonLabels: Record<string, string> = {
-  defective: "Difettoso",
-  wrong_item: "Articolo errato",
-  not_as_described: "Non conforme alla descrizione",
-  changed_mind: "Ripensamento",
-  damaged_in_transit: "Danneggiato in trasporto",
-  other: t("common.other")
-};
+function getReasonLabels(t: (key: string) => string): Record<string, string> {
+  return {
+    defective: "Difettoso",
+    wrong_item: "Articolo errato",
+    not_as_described: "Non conforme alla descrizione",
+    changed_mind: "Ripensamento",
+    damaged_in_transit: "Danneggiato in trasporto",
+    other: t("common.other")
+  };
+}
 
-const refundMethodLabels: Record<string, string> = {
-  original_method: "Metodo originale",
-  bank_transfer: "Bonifico",
-  store_credit: "Credito negozio",
-  cash: t("pos.cash")
-};
+function getRefundMethodLabels(t: (key: string) => string): Record<string, string> {
+  return {
+    original_method: "Metodo originale",
+    bank_transfer: "Bonifico",
+    store_credit: "Credito negozio",
+    cash: t("pos.cash")
+  };
+}
 
 export default function ResellerSalesReturns() {
   const { t } = useTranslation();
+  const statusLabels = getStatusLabels(t);
+  const reasonLabels = getReasonLabels(t);
+  const refundMethodLabels = getRefundMethodLabels(t);
   const { toast } = useToast();
   
   const [search, setSearch] = useState("");

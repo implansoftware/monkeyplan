@@ -8,17 +8,19 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Package, Eye, Calendar, CreditCard } from "lucide-react";
 import type { SalesOrder } from "@shared/schema";
 
-const statusLabels: Record<string, string> = {
-  pending: t("common.waiting"),
-  confirmed: t("common.confirmed"),
-  processing: "In elaborazione",
-  ready_to_ship: "Pronto per spedizione",
-  shipped: "Spedito",
-  delivered: t("common.delivered"),
-  completed: t("common.completed"),
-  cancelled: t("common.cancelled"),
-  refunded: "Rimborsato"
-};
+function getStatusLabels(t: (key: string) => string): Record<string, string> {
+  return {
+    pending: t("common.waiting"),
+    confirmed: t("common.confirmed"),
+    processing: "In elaborazione",
+    ready_to_ship: "Pronto per spedizione",
+    shipped: "Spedito",
+    delivered: t("common.delivered"),
+    completed: t("common.completed"),
+    cancelled: t("common.cancelled"),
+    refunded: "Rimborsato"
+  };
+}
 
 const statusColors: Record<string, string> = {
   pending: "secondary",
@@ -34,6 +36,7 @@ const statusColors: Record<string, string> = {
 
 export default function CustomerOrders() {
   const { t } = useTranslation();
+  const statusLabels = getStatusLabels(t);
   const [, setLocation] = useLocation();
   
   const { data: orders, isLoading } = useQuery<SalesOrder[]>({

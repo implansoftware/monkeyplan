@@ -25,11 +25,13 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
 import { useTranslation } from "react-i18next";
 
-const WIZARD_STEPS = [
-  { id: 1, title: t("admin.resellers.credentials"), icon: KeyRound },
-  { id: 2, title: t("admin.resellers.basicInfo"), icon: UserIcon },
-  { id: 3, title: t("profile.fiscalInfo"), icon: FileText },
-];
+function getWizardSteps(t: (key: string) => string) {
+  return [
+    { id: 1, title: t("admin.resellers.credentials"), icon: KeyRound },
+    { id: 2, title: t("admin.resellers.basicInfo"), icon: UserIcon },
+    { id: 3, title: t("profile.fiscalInfo"), icon: FileText },
+  ];
+}
 
 interface SubReseller {
   id: string;
@@ -118,6 +120,7 @@ function formatPrice(cents: number): string {
 
 export default function SubResellers() {
   const { t } = useTranslation();
+  const WIZARD_STEPS = getWizardSteps(t);
   const [searchQuery, setSearchQuery] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);

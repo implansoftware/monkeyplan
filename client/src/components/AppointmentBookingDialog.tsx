@@ -59,13 +59,15 @@ type Appointment = {
   createdAt: string;
 };
 
-const statusLabels: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
-  scheduled: { label: "Prenotato", variant: "secondary" },
-  confirmed: { label: t("common.confirmed"), variant: "default" },
-  cancelled: { label: t("common.cancelled"), variant: "destructive" },
-  completed: { label: t("common.completed"), variant: "outline" },
-  no_show: { label: "Non presentato", variant: "destructive" },
-};
+function getStatusLabels(t: (key: string) => string): Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> {
+  return {
+    scheduled: { label: t("common.booked"), variant: "secondary" },
+    confirmed: { label: t("common.confirmed"), variant: "default" },
+    cancelled: { label: t("common.cancelled"), variant: "destructive" },
+    completed: { label: t("common.completed"), variant: "outline" },
+    no_show: { label: t("common.noShow"), variant: "destructive" },
+  };
+}
 
 export function AppointmentBookingDialog({
   open,
@@ -76,6 +78,7 @@ export function AppointmentBookingDialog({
   onSuccess,
 }: AppointmentBookingDialogProps) {
   const { t } = useTranslation();
+  const statusLabels = getStatusLabels(t);
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);

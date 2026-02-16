@@ -46,12 +46,14 @@ type WarrantyDetail = {
   daysRemaining: number | null;
 };
 
-const statusConfig: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
-  offered: { label: t("common.pending"), variant: "secondary" },
-  accepted: { label: "Attiva", variant: "default" },
-  declined: { label: t("common.rejected"), variant: "destructive" },
-  expired: { label: t("invoices.overdue"), variant: "outline" },
-};
+function getStatusConfig(t: (key: string) => string): Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> {
+  return {
+    offered: { label: t("common.pending"), variant: "secondary" },
+    accepted: { label: "Attiva", variant: "default" },
+    declined: { label: t("common.rejected"), variant: "destructive" },
+    expired: { label: t("invoices.overdue"), variant: "outline" },
+  };
+}
 
 const coverageLabels: Record<string, string> = {
   basic: "Base",
@@ -61,6 +63,7 @@ const coverageLabels: Record<string, string> = {
 
 export default function ResellerWarrantyDetail() {
   const { t } = useTranslation();
+  const statusConfig = getStatusConfig(t);
   const { id } = useParams<{ id: string }>();
   const [, navigate] = useLocation();
   const { toast } = useToast();

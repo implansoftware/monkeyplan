@@ -56,15 +56,18 @@ interface StaffMember {
   fullName: string;
 }
 
-const eventTypeLabels: Record<string, { label: string; icon: any; color: string }> = {
-  entrata: { label: t("hr.entry"), icon: LogIn, color: "bg-emerald-500" },
-  uscita: { label: t("hr.exit"), icon: LogOut, color: "bg-red-500" },
-  pausa_inizio: { label: t("hr.breakStart"), icon: Coffee, color: "bg-amber-500" },
-  pausa_fine: { label: t("hr.breakEnd"), icon: Utensils, color: "bg-blue-500" },
-};
+function getEventTypeLabels(t: (key: string) => string): Record<string, { label: string; icon: any; color: string }> {
+  return {
+    entrata: { label: t("hr.entry"), icon: LogIn, color: "bg-emerald-500" },
+    uscita: { label: t("hr.exit"), icon: LogOut, color: "bg-red-500" },
+    pausa_inizio: { label: t("hr.breakStart"), icon: Coffee, color: "bg-amber-500" },
+    pausa_fine: { label: t("hr.breakEnd"), icon: Utensils, color: "bg-blue-500" },
+  };
+}
 
 export default function HrAttendance() {
   const { t } = useTranslation();
+  const eventTypeLabels = getEventTypeLabels(t);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedUser, setSelectedUser] = useState<string>("all");
   const [dialogOpen, setDialogOpen] = useState(false);

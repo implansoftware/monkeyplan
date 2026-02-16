@@ -29,12 +29,14 @@ import { useUser } from "@/hooks/use-user";
 import { ActionGuard } from "@/components/permission-guard";
 import { useTranslation } from "react-i18next";
 
-const WIZARD_STEPS = [
-  { id: 1, title: t("admin.resellers.basicInfo"), icon: Building },
-  { id: 2, title: t("common.address"), icon: MapPin },
-  { id: 3, title: t("profile.fiscalInfo"), icon: FileText },
-  { id: 4, title: t("sidebar.items.configuration"), icon: Settings },
-];
+function getWizardSteps(t: (key: string) => string) {
+  return [
+    { id: 1, title: t("admin.resellers.basicInfo"), icon: Building },
+    { id: 2, title: t("common.address"), icon: MapPin },
+    { id: 3, title: t("profile.fiscalInfo"), icon: FileText },
+    { id: 4, title: t("sidebar.items.configuration"), icon: Settings },
+  ];
+}
 
 type SubResellerCenter = {
   id: string;
@@ -105,6 +107,7 @@ type RepairCenterRepairsData = {
 
 export default function ResellerRepairCenters() {
   const { t } = useTranslation();
+  const WIZARD_STEPS = getWizardSteps(t);
   const [, setLocation] = useLocation();
   const [searchQuery, setSearchQuery] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);

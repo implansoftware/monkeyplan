@@ -26,14 +26,16 @@ interface UtilitySummary {
   supplierCount: number;
 }
 
-const categoryLabels: Record<string, string> = {
-  fisso: "Fisso",
-  mobile: "Mobile",
-  centralino: "Centralino",
-  luce: "Luce",
-  gas: "Gas",
-  altro: t("common.other"),
-};
+function getCategoryLabels(t: (key: string) => string): Record<string, string> {
+  return {
+    fisso: "Fisso",
+    mobile: "Mobile",
+    centralino: "Centralino",
+    luce: "Luce",
+    gas: "Gas",
+    altro: t("common.other"),
+  };
+}
 
 const formatCurrency = (cents: number) => {
   return new Intl.NumberFormat("it-IT", {
@@ -44,6 +46,7 @@ const formatCurrency = (cents: number) => {
 
 export default function ResellerUtility() {
   const { t } = useTranslation();
+  const categoryLabels = getCategoryLabels(t);
   const { data: summary, isLoading } = useQuery<UtilitySummary>({
     queryKey: ["/api/utility/reports/summary"],
   });

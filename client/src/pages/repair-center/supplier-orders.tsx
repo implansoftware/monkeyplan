@@ -28,15 +28,17 @@ type SupplierOrderWithDetails = {
   supplier: { id: string; name: string; code: string } | null;
 };
 
-const statusLabels: Record<string, string> = {
-  draft: t("common.draft"),
-  sent: "Inviato",
-  confirmed: t("common.confirmed"),
-  shipped: "Spedito",
-  partially_received: "Parziale",
-  received: "Ricevuto",
-  cancelled: t("common.cancelled"),
-};
+function getStatusLabels(t: (key: string) => string): Record<string, string> {
+  return {
+    draft: t("common.draft"),
+    sent: "Inviato",
+    confirmed: t("common.confirmed"),
+    shipped: "Spedito",
+    partially_received: "Parziale",
+    received: "Ricevuto",
+    cancelled: t("common.cancelled"),
+  };
+}
 
 const statusVariants: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
   draft: "secondary",
@@ -50,6 +52,7 @@ const statusVariants: Record<string, "default" | "secondary" | "destructive" | "
 
 export default function RepairCenterSupplierOrders() {
   const { t } = useTranslation();
+  const statusLabels = getStatusLabels(t);
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
 

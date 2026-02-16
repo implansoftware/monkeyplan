@@ -46,14 +46,16 @@ interface UtilitySummary {
   supplierCount: number;
 }
 
-const categoryLabels: Record<string, string> = {
-  fisso: "Fisso",
-  mobile: "Mobile",
-  centralino: "Centralino",
-  luce: "Luce",
-  gas: "Gas",
-  altro: t("common.other"),
-};
+function getCategoryLabels(t: (key: string) => string): Record<string, string> {
+  return {
+    fisso: "Fisso",
+    mobile: "Mobile",
+    centralino: "Centralino",
+    luce: "Luce",
+    gas: "Gas",
+    altro: t("common.other"),
+  };
+}
 
 const categoryIcons: Record<string, typeof Phone> = {
   fisso: Phone,
@@ -64,14 +66,16 @@ const categoryIcons: Record<string, typeof Phone> = {
   altro: Zap,
 };
 
-const statusLabels: Record<string, string> = {
-  bozza: t("invoices.draft"),
-  inviata: t("invoices.sent"),
-  in_lavorazione: t("repairs.inProgress"),
-  completata: "Completata",
-  annullata: t("common.cancelled"),
-  rifiutata: t("common.rejected"),
-};
+function getStatusLabels(t: (key: string) => string): Record<string, string> {
+  return {
+    bozza: t("invoices.draft"),
+    inviata: t("invoices.sent"),
+    in_lavorazione: t("repairs.inProgress"),
+    completata: "Completata",
+    annullata: t("common.cancelled"),
+    rifiutata: t("common.rejected"),
+  };
+}
 
 const COLORS = ["#0088FE", "#00C49F", "#FFBB28", "#FF8042", "#8884d8", "#82ca9d"];
 
@@ -84,6 +88,8 @@ const formatCurrency = (cents: number) => {
 
 export default function ResellerUtilityReports() {
   const { t } = useTranslation();
+  const categoryLabels = getCategoryLabels(t);
+  const statusLabels = getStatusLabels(t);
   const currentYear = new Date().getFullYear();
   const [selectedYear, setSelectedYear] = useState<number>(currentYear);
   const years = Array.from({ length: 5 }, (_, i) => currentYear - i);

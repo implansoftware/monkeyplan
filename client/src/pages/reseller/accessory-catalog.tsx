@@ -67,30 +67,36 @@ const MATERIAL_OPTIONS = [
   "Pelle sintetica", "Tessuto", "Metallo", "Carbonio", "Ibrido"
 ];
 
-const ACCESSORY_TYPES = [
-  { value: "cover", label: "Cover/Custodie", icon: Shield },
-  { value: "pellicola", label: "Pellicole Protettive", icon: Shield },
-  { value: "caricatore", label: "Caricatori", icon: Battery },
-  { value: "cavo", label: "Cavi", icon: Cable },
-  { value: "powerbank", label: "Power Bank", icon: Battery },
-  { value: "auricolari", label: "Auricolari/Cuffie", icon: Headphones },
-  { value: "supporto", label: "Supporti", icon: Package },
-  { value: "adattatore", label: "Adattatori", icon: Cable },
-  { value: "memoria", label: "Schede Memoria", icon: Package },
-  { value: "altro", label: t("common.other"), icon: Package },
-];
+function getAccessoryTypes(t: (key: string) => string) {
+  return [
+    { value: "cover", label: "Cover/Custodie", icon: Shield },
+    { value: "pellicola", label: "Pellicole Protettive", icon: Shield },
+    { value: "caricatore", label: "Caricatori", icon: Battery },
+    { value: "cavo", label: "Cavi", icon: Cable },
+    { value: "powerbank", label: "Power Bank", icon: Battery },
+    { value: "auricolari", label: "Auricolari/Cuffie", icon: Headphones },
+    { value: "supporto", label: "Supporti", icon: Package },
+    { value: "adattatore", label: "Adattatori", icon: Cable },
+    { value: "memoria", label: "Schede Memoria", icon: Package },
+    { value: "altro", label: t("common.other"), icon: Package },
+  ];
+}
 
-const CONDITION_OPTIONS = [
-  { value: "nuovo", label: t("common.new") },
-  { value: "ricondizionato", label: t("products.refurbished") },
-  { value: "usato", label: t("products.used") },
-  { value: "difettoso", label: "Difettoso" },
-];
+function getConditionOptions(t: (key: string) => string) {
+  return [
+    { value: "nuovo", label: t("common.new") },
+    { value: "ricondizionato", label: t("products.refurbished") },
+    { value: "usato", label: t("products.used") },
+    { value: "difettoso", label: "Difettoso" },
+  ];
+}
 
 const BRANDS = ["Apple", "Samsung", "Xiaomi", "Huawei", "OPPO", "OnePlus", "Google", "Universale", "Altro"];
 
 export default function AccessoryCatalog() {
   const { t } = useTranslation();
+  const ACCESSORY_TYPES = getAccessoryTypes(t);
+  const CONDITION_OPTIONS = getConditionOptions(t);
   const [searchQuery, setSearchQuery] = useState("");
   const [typeFilter, setTypeFilter] = useState<string>("all");
   const [dialogOpen, setDialogOpen] = useState(false);

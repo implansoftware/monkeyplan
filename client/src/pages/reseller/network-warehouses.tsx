@@ -40,14 +40,17 @@ type EnrichedMovement = WarehouseMovement & {
   relatedWarehouse?: { id: string; name: string } | null;
 };
 
-const OWNER_TYPE_LABELS: Record<string, { label: string; color: string }> = {
-  reseller: { label: t("roles.reseller"), color: "bg-blue-500/10 text-blue-500" },
-  sub_reseller: { label: t("roles.subReseller"), color: "bg-cyan-500/10 text-cyan-500" },
-  repair_center: { label: "Centro Riparazioni", color: "bg-orange-500/10 text-orange-500" },
-};
+function getOwnerTypeLabels(t: (key: string) => string): Record<string, { label: string; color: string }> {
+  return {
+    reseller: { label: t("roles.reseller"), color: "bg-blue-500/10 text-blue-500" },
+    sub_reseller: { label: t("roles.subReseller"), color: "bg-cyan-500/10 text-cyan-500" },
+    repair_center: { label: "Centro Riparazioni", color: "bg-orange-500/10 text-orange-500" },
+  };
+}
 
 export default function NetworkWarehousesPage() {
   const { t } = useTranslation();
+  const OWNER_TYPE_LABELS = getOwnerTypeLabels(t);
   const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedWarehouse, setSelectedWarehouse] = useState<NetworkWarehouse | null>(null);

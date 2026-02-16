@@ -54,17 +54,20 @@ interface PaymentConfigResponse {
   effectiveConfig: PaymentConfigItem | null;
 }
 
-const PAYMENT_METHODS = [
-  { value: "cash", label: t("pos.cash"), alwaysEnabled: true },
-  { value: "card", label: "Carta (POS fisico)" },
-  { value: "stripe_link", label: "Stripe Payment Link", requiresConfig: "stripeEnabled" },
-  { value: "paypal", label: "PayPal", requiresConfig: "paypalEnabled" },
-  { value: "pos_terminal", label: "Terminale POS" },
-  { value: "mixed", label: "Pagamento Misto" },
-];
+function getPaymentMethods(t: (key: string) => string) {
+  return [
+    { value: "cash", label: t("pos.cash"), alwaysEnabled: true },
+    { value: "card", label: "Carta (POS fisico)" },
+    { value: "stripe_link", label: "Stripe Payment Link", requiresConfig: "stripeEnabled" },
+    { value: "paypal", label: "PayPal", requiresConfig: "paypalEnabled" },
+    { value: "pos_terminal", label: "Terminale POS" },
+    { value: "mixed", label: "Pagamento Misto" },
+  ];
+}
 
 export default function ResellerPosRegisterSettingsPage() {
   const { t } = useTranslation();
+  const PAYMENT_METHODS = getPaymentMethods(t);
   const { id } = useParams<{ id: string }>();
   const [, navigate] = useLocation();
   const { toast } = useToast();

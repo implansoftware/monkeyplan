@@ -47,14 +47,17 @@ type WarrantyDetail = {
 };
 
 
-const coverageLabels: Record<string, string> = {
-  basic: "Base",
-  extended: t("warranties.extended"),
-  full: "Completa",
-};
+function getCoverageLabels(t: (key: string) => string): Record<string, string> {
+  return {
+    basic: "Base",
+    extended: t("warranties.extended"),
+    full: "Completa",
+  };
+}
 
 export default function RepairCenterWarrantyDetail() {
   const { t } = useTranslation();
+  const coverageLabels = getCoverageLabels(t);
   const statusConfig: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
     offered: { label: t("common.pending"), variant: "secondary" },
     accepted: { label: t("license.active"), variant: "default" },

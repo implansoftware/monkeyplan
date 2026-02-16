@@ -91,13 +91,15 @@ type Blackout = {
 
 const weekdayNames = ["Domenica", "Lunedì", "Martedì", "Mercoledì", "Giovedì", "Venerdì", "Sabato"];
 
-const statusLabels: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
-  scheduled: { label: "Prenotato", variant: "secondary" },
-  confirmed: { label: "Confermato", variant: "default" },
-  cancelled: { label: t("repairs.status.cancelled"), variant: "destructive" },
-  completed: { label: t("common.completed"), variant: "outline" },
-  no_show: { label: "Non presentato", variant: "destructive" },
-};
+function getStatusLabels(t: (key: string) => string): Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> {
+  return {
+    scheduled: { label: "Prenotato", variant: "secondary" },
+    confirmed: { label: "Confermato", variant: "default" },
+    cancelled: { label: t("repairs.status.cancelled"), variant: "destructive" },
+    completed: { label: t("common.completed"), variant: "outline" },
+    no_show: { label: "Non presentato", variant: "destructive" },
+  };
+}
 
 const defaultAvailability: Omit<Availability, "id" | "repairCenterId">[] = [
   { weekday: 0, startTime: "09:00", endTime: "13:00", slotDurationMinutes: 30, capacityPerSlot: 3, isClosed: true },
@@ -111,6 +113,7 @@ const defaultAvailability: Omit<Availability, "id" | "repairCenterId">[] = [
 
 export default function ResellerAppointments() {
   const { t } = useTranslation();
+  const statusLabels = getStatusLabels(t);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 

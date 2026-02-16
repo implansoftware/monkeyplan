@@ -19,16 +19,18 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import type { SalesOrderShipment } from "@shared/schema";
 import { useTranslation } from "react-i18next";
 
-const statusLabels: Record<string, string> = {
-  pending: t("shipping.preparing"),
-  picked_up: "Ritirato",
-  in_transit: t("shipping.inTransit"),
-  out_for_delivery: "In consegna",
-  delivered: t("repairs.status.delivered"),
-  failed_attempt: "Tentativo fallito",
-  returned: t("b2b.status.returned"),
-  lost: "Smarrito"
-};
+function getStatusLabels(t: (key: string) => string): Record<string, string> {
+  return {
+    pending: t("shipping.preparing"),
+    picked_up: "Ritirato",
+    in_transit: t("shipping.inTransit"),
+    out_for_delivery: "In consegna",
+    delivered: t("repairs.status.delivered"),
+    failed_attempt: "Tentativo fallito",
+    returned: t("b2b.status.returned"),
+    lost: "Smarrito"
+  };
+}
 
 const statusColors: Record<string, string> = {
   pending: "secondary",
@@ -50,11 +52,12 @@ const carriers = [
   { value: "poste", label: "Poste Italiane" },
   { value: "fedex", label: "FedEx" },
   { value: "sda", label: "SDA" },
-  { value: "altro", label: t("common.other") }
+  { value: "altro", label: "Altro" }
 ];
 
 export default function ResellerShipments() {
   const { t } = useTranslation();
+  const statusLabels = getStatusLabels(t);
   const { toast } = useToast();
   
   const [search, setSearch] = useState("");

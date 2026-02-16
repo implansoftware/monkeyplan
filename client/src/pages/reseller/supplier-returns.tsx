@@ -37,15 +37,17 @@ type RepairCenter = {
   city: string;
 };
 
-const statusLabels: Record<string, string> = {
-  draft: t("invoices.draft"),
-  requested: "Richiesto",
-  approved: t("repairs.status.approved"),
-  shipped: t("b2b.status.shipped"),
-  received: t("repairs.status.received"),
-  refunded: "Rimborsato",
-  rejected: t("b2b.status.cancelled"),
-};
+function getStatusLabels(t: (key: string) => string): Record<string, string> {
+  return {
+    draft: t("invoices.draft"),
+    requested: "Richiesto",
+    approved: t("repairs.status.approved"),
+    shipped: t("b2b.status.shipped"),
+    received: t("repairs.status.received"),
+    refunded: "Rimborsato",
+    rejected: t("b2b.status.cancelled"),
+  };
+}
 
 const statusVariants: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
   draft: "secondary",
@@ -57,16 +59,20 @@ const statusVariants: Record<string, "default" | "secondary" | "destructive" | "
   rejected: "destructive",
 };
 
-const reasonLabels: Record<string, string> = {
-  defective: "Difettoso",
-  wrong_item: "Articolo Errato",
-  damaged: "Danneggiato",
-  not_needed: "Non Necessario",
-  other: t("common.other"),
-};
+function getReasonLabels(t: (key: string) => string): Record<string, string> {
+  return {
+    defective: "Difettoso",
+    wrong_item: "Articolo Errato",
+    damaged: "Danneggiato",
+    not_needed: "Non Necessario",
+    other: t("common.other"),
+  };
+}
 
 export default function ResellerSupplierReturns() {
   const { t } = useTranslation();
+  const statusLabels = getStatusLabels(t);
+  const reasonLabels = getReasonLabels(t);
   const [searchQuery, setSearchQuery] = useState("");
   const [centerFilter, setCenterFilter] = useState<string>("all");
   const [statusFilter, setStatusFilter] = useState<string>("all");

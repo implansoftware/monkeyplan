@@ -37,12 +37,14 @@ type WarrantyItem = {
   daysRemaining: number | null;
 };
 
-const statusConfig: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
-  offered: { label: t("common.pending"), variant: "secondary" },
-  accepted: { label: "Attiva", variant: "default" },
-  declined: { label: t("common.rejected"), variant: "destructive" },
-  expired: { label: t("invoices.overdue"), variant: "outline" },
-};
+function getStatusConfig(t: (key: string) => string): Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> {
+  return {
+    offered: { label: t("common.pending"), variant: "secondary" },
+    accepted: { label: "Attiva", variant: "default" },
+    declined: { label: t("common.rejected"), variant: "destructive" },
+    expired: { label: t("invoices.overdue"), variant: "outline" },
+  };
+}
 
 const coverageLabels: Record<string, string> = {
   basic: "Base",
@@ -50,7 +52,7 @@ const coverageLabels: Record<string, string> = {
   full: "Completa",
 };
 
-function getDaysRemainingBadge(daysRemaining: number | null, status: string) {
+function getDaysRemainingBadge(daysRemaining: number | null, status: string, t: (key: string) => string) {
   if (status !== "accepted" || daysRemaining === null) return null;
   if (daysRemaining <= 0) {
     return <Badge variant="destructive" className="gap-1 text-xs"><AlertTriangle className="h-3 w-3" />{t("invoices.overdue")}</Badge>;
@@ -63,6 +65,7 @@ function getDaysRemainingBadge(daysRemaining: number | null, status: string) {
 
 export default function ResellerWarranties() {
   const { t } = useTranslation();
+  const statusConfig = getStatusConfig(t);
   const [, navigate] = useLocation();
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
@@ -271,7 +274,7 @@ export default function ResellerWarranties() {
                         </div>
                         <div className="flex flex-wrap items-center gap-2">
                           {isStandalone && <Badge variant="outline" className="text-xs">Diretta</Badge>}
-                          {getDaysRemainingBadge(w.daysRemaining, w.status)}
+                          {getDaysRemainingBadge(w.daysRemaining, w.status, t)}
                           <Badge variant={status.variant}>{status.label}</Badge>
                         </div>
                       </div>

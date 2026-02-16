@@ -45,13 +45,15 @@ import { it } from "date-fns/locale";
 import type { StandaloneQuote, StandaloneQuoteItem } from "@shared/schema";
 import { useTranslation } from "react-i18next";
 
-const statusLabels: Record<string, string> = {
-  draft: t("invoices.draft"),
-  sent: "Inviato",
-  accepted: t("standalone.accepted"),
-  rejected: t("b2b.status.cancelled"),
-  expired: t("standalone.expired"),
-};
+function getStatusLabels(t: (key: string) => string): Record<string, string> {
+  return {
+    draft: t("invoices.draft"),
+    sent: "Inviato",
+    accepted: t("standalone.accepted"),
+    rejected: t("b2b.status.cancelled"),
+    expired: t("standalone.expired"),
+  };
+}
 
 const statusClasses: Record<string, string> = {
   draft: "bg-muted text-muted-foreground",
@@ -72,6 +74,7 @@ type QuoteWithItems = StandaloneQuote & { items: StandaloneQuoteItem[] };
 
 export default function StandaloneQuotesList() {
   const { t } = useTranslation();
+  const statusLabels = getStatusLabels(t);
   const [, navigate] = useLocation();
   const { toast } = useToast();
   const { user } = useAuth();

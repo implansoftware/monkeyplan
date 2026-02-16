@@ -21,14 +21,16 @@ import { useTranslation } from "react-i18next";
 
 type ServiceCategory = "fisso" | "mobile" | "centralino" | "luce" | "gas" | "altro";
 
-const categoryLabels: Record<ServiceCategory, string> = {
-  fisso: "Fisso",
-  mobile: "Mobile",
-  centralino: "Centralino",
-  luce: "Luce",
-  gas: "Gas",
-  altro: t("common.other"),
-};
+function getCategoryLabels(t: (key: string) => string): Record<ServiceCategory, string> {
+  return {
+    fisso: "Fisso",
+    mobile: "Mobile",
+    centralino: "Centralino",
+    luce: "Luce",
+    gas: "Gas",
+    altro: t("common.other"),
+  };
+}
 
 const categoryColors: Record<ServiceCategory, string> = {
   fisso: "bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300",
@@ -82,6 +84,7 @@ const calculateCommission = (service: UtilityService): number => {
 
 export default function ResellerUtilityServices() {
   const { t } = useTranslation();
+  const categoryLabels = getCategoryLabels(t);
   const [searchQuery, setSearchQuery] = useState("");
   const [supplierFilter, setSupplierFilter] = useState<string>("all");
   const [categoryFilter, setCategoryFilter] = useState<string>("all");

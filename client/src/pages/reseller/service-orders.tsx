@@ -25,20 +25,24 @@ type ServiceOrderWithDetails = ServiceOrder & {
   serviceCode: string;
 };
 
-const statusLabels: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
-  pending: { label: t("hr.pending"), variant: "secondary" },
-  accepted: { label: t("standalone.accepted"), variant: "default" },
-  scheduled: { label: "Programmato", variant: "outline" },
-  in_progress: { label: t("tickets.status.inProgress"), variant: "default" },
-  completed: { label: t("common.completed"), variant: "default" },
-  cancelled: { label: t("repairs.status.cancelled"), variant: "destructive" },
-};
+function getStatusLabels(t: (key: string) => string): Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> {
+  return {
+    pending: { label: t("hr.pending"), variant: "secondary" },
+    accepted: { label: t("standalone.accepted"), variant: "default" },
+    scheduled: { label: "Programmato", variant: "outline" },
+    in_progress: { label: t("tickets.status.inProgress"), variant: "default" },
+    completed: { label: t("common.completed"), variant: "default" },
+    cancelled: { label: t("repairs.status.cancelled"), variant: "destructive" },
+  };
+}
 
-const paymentStatusLabels: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
-  pending: { label: "Da pagare", variant: "secondary" },
-  paid: { label: "Pagato", variant: "default" },
-  cancelled: { label: t("repairs.status.cancelled"), variant: "destructive" },
-};
+function getPaymentStatusLabels(t: (key: string) => string): Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> {
+  return {
+    pending: { label: "Da pagare", variant: "secondary" },
+    paid: { label: "Pagato", variant: "default" },
+    cancelled: { label: t("repairs.status.cancelled"), variant: "destructive" },
+  };
+}
 
 const paymentMethodLabels: Record<string, { label: string; icon: string }> = {
   in_person: { label: "In negozio", icon: "banknote" },
@@ -47,6 +51,8 @@ const paymentMethodLabels: Record<string, { label: string; icon: string }> = {
 
 export default function ResellerServiceOrders() {
   const { t } = useTranslation();
+  const statusLabels = getStatusLabels(t);
+  const paymentStatusLabels = getPaymentStatusLabels(t);
   const { user } = useAuth();
   const { toast } = useToast();
   const [selectedOrder, setSelectedOrder] = useState<ServiceOrderWithDetails | null>(null);

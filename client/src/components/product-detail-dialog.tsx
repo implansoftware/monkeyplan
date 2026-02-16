@@ -47,18 +47,22 @@ type ProductDetails = {
   }>;
 };
 
-const CONDITION_LABELS: Record<string, string> = {
-  nuovo: t("common.new"),
-  ricondizionato: "Ricondizionato",
-  usato: "Usato",
-  difettoso: "Difettoso",
-};
+function getConditionLabels(t: (key: string) => string): Record<string, string> {
+  return {
+    nuovo: t("common.new"),
+    ricondizionato: "Ricondizionato",
+    usato: "Usato",
+    difettoso: "Difettoso",
+  };
+}
 
-const NETWORK_LABELS: Record<string, string> = {
-  unlocked: t("products.unlocked"),
-  locked: t("products.carrierLocked"),
-  icloud_locked: t("products.icloudLocked"),
-};
+function getNetworkLabels(t: (key: string) => string): Record<string, string> {
+  return {
+    unlocked: t("products.unlocked"),
+    locked: t("products.carrierLocked"),
+    icloud_locked: t("products.icloudLocked"),
+  };
+}
 
 const OWNER_TYPE_LABELS: Record<string, string> = {
   admin: "Admin",
@@ -78,6 +82,8 @@ interface ProductDetailDialogProps {
 
 export function ProductDetailDialog({ open, onOpenChange, productId, hideStock = false, hidePrices = false, overridePrice }: ProductDetailDialogProps) {
   const { t } = useTranslation();
+  const CONDITION_LABELS = getConditionLabels(t);
+  const NETWORK_LABELS = getNetworkLabels(t);
   const { data, isLoading } = useQuery<ProductDetails>({
     queryKey: ["/api/products", productId, "details"],
     queryFn: async () => {

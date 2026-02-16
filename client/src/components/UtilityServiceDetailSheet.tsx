@@ -32,14 +32,16 @@ import type { UtilityService, UtilitySupplier } from "@shared/schema";
 
 type ServiceCategory = "fisso" | "mobile" | "centralino" | "luce" | "gas" | "altro";
 
-const categoryLabels: Record<ServiceCategory, string> = {
-  fisso: "Fisso",
-  mobile: "Mobile",
-  centralino: "Centralino",
-  luce: "Luce",
-  gas: "Gas",
-  altro: t("common.other"),
-};
+function getCategoryLabels(t: (key: string) => string): Record<ServiceCategory, string> {
+  return {
+    fisso: "Fisso",
+    mobile: "Mobile",
+    centralino: "Centralino",
+    luce: "Luce",
+    gas: "Gas",
+    altro: t("common.other"),
+  };
+}
 
 const categoryColors: Record<string, string> = {
   fisso: "bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300",
@@ -92,10 +94,10 @@ export function calculateServiceCommission(service: UtilityService): number {
   return commission;
 }
 
-export function inferServicePriceType(service: UtilityService): string {
+export function inferServicePriceType(service: UtilityService, t?: (key: string) => string): string {
   if (service.monthlyPriceCents && service.monthlyPriceCents > 0) return "Mensile";
   if (service.flatPriceCents && service.flatPriceCents > 0) return "Forfait";
-  if (service.activationFeeCents && service.activationFeeCents > 0) return t("utility.activation");
+  if (service.activationFeeCents && service.activationFeeCents > 0) return t ? t("utility.activation") : "Attivazione";
   return "Non definito";
 }
 
@@ -107,6 +109,7 @@ export function UtilityServiceDetailSheet({
   onCreatePractice,
 }: UtilityServiceDetailSheetProps) {
   const { t } = useTranslation();
+  const categoryLabels = getCategoryLabels(t);
   if (!service) {
     return (
       <Sheet open={open} onOpenChange={onOpenChange}>
@@ -124,7 +127,7 @@ export function UtilityServiceDetailSheet({
   const commission = calculateServiceCommission(service);
   const potential10 = commission * 10;
   const potential50 = commission * 50;
-  const inferredPriceType = inferServicePriceType(service);
+  const inferredPriceType = inferServicePriceType(service, t);
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>

@@ -68,16 +68,19 @@ function formatCurrency(cents: number): string {
   }).format(cents / 100);
 }
 
-const STEPS = [
-  { id: "device", label: t("repairs.device"), icon: Smartphone },
-  { id: "services", label: t("utility.services"), icon: Wrench },
-  { id: "products", label: t("products.title"), icon: Package },
-  { id: "customer", label: t("common.customer"), icon: User },
-  { id: "summary", label: t("reports.summary"), icon: CheckCircle },
-];
+function getSteps(t: (key: string) => string) {
+  return [
+    { id: "device", label: t("repairs.device"), icon: Smartphone },
+    { id: "services", label: t("utility.services"), icon: Wrench },
+    { id: "products", label: t("products.title"), icon: Package },
+    { id: "customer", label: t("common.customer"), icon: User },
+    { id: "summary", label: t("reports.summary"), icon: CheckCircle },
+  ];
+}
 
 export default function NewStandaloneQuote() {
   const { t } = useTranslation();
+  const STEPS = getSteps(t);
   const [, navigate] = useLocation();
   const { toast } = useToast();
   const { user } = useAuth();

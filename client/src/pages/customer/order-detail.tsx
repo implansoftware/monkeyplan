@@ -26,17 +26,19 @@ interface OrderDetailResponse {
   shipments: SalesOrderShipment[];
 }
 
-const statusLabels: Record<string, string> = {
-  pending: t("common.waiting"),
-  confirmed: t("common.confirmed"),
-  processing: "In elaborazione",
-  ready_to_ship: "Pronto per spedizione",
-  shipped: "Spedito",
-  delivered: t("common.delivered"),
-  completed: t("common.completed"),
-  cancelled: t("common.cancelled"),
-  refunded: "Rimborsato"
-};
+function getStatusLabels(t: (key: string) => string): Record<string, string> {
+  return {
+    pending: t("common.waiting"),
+    confirmed: t("common.confirmed"),
+    processing: "In elaborazione",
+    ready_to_ship: "Pronto per spedizione",
+    shipped: "Spedito",
+    delivered: t("common.delivered"),
+    completed: t("common.completed"),
+    cancelled: t("common.cancelled"),
+    refunded: "Rimborsato"
+  };
+}
 
 const statusColors: Record<string, string> = {
   pending: "secondary",
@@ -50,15 +52,19 @@ const statusColors: Record<string, string> = {
   refunded: "destructive"
 };
 
-const paymentStatusLabels: Record<string, string> = {
-  pending: t("common.waiting"),
-  partial: "Parziale",
-  paid: "Pagato",
-  refunded: "Rimborsato"
-};
+function getPaymentStatusLabels(t: (key: string) => string): Record<string, string> {
+  return {
+    pending: t("common.waiting"),
+    partial: "Parziale",
+    paid: "Pagato",
+    refunded: "Rimborsato"
+  };
+}
 
 export default function CustomerOrderDetail() {
   const { t } = useTranslation();
+  const statusLabels = getStatusLabels(t);
+  const paymentStatusLabels = getPaymentStatusLabels(t);
   const [, setLocation] = useLocation();
   const [, params] = useRoute("/customer/orders/:id");
   const orderId = params?.id;

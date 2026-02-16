@@ -62,22 +62,26 @@ const NETWORK_LOCK_OPTIONS = [
   { value: "locked", label: "Bloccato operatore" },
   { value: "icloud_locked", label: "Bloccato iCloud" },
 ];
-const CONDITION_OPTIONS = [
-  { value: "nuovo", label: t("common.new") },
-  { value: "ricondizionato", label: t("products.refurbished") },
-  { value: "usato", label: t("products.used") },
-  { value: "difettoso", label: "Difettoso" },
-];
+function getConditionOptions(t: (key: string) => string) {
+  return [
+    { value: "nuovo", label: t("common.new") },
+    { value: "ricondizionato", label: t("products.refurbished") },
+    { value: "usato", label: t("products.used") },
+    { value: "difettoso", label: "Difettoso" },
+  ];
+}
 // Categorie dispositivi
-const DEVICE_CATEGORIES = [
-  { value: "smartphone", label: "Smartphone" },
-  { value: "tablet", label: "Tablet" },
-  { value: "portatile", label: "PC Portatile" },
-  { value: "pc_fisso", label: "PC Fisso" },
-  { value: "smartwatch", label: "Smartwatch" },
-  { value: "console", label: "Console" },
-  { value: "altro", label: t("common.other") },
-];
+function getDeviceCategories(t: (key: string) => string) {
+  return [
+    { value: "smartphone", label: "Smartphone" },
+    { value: "tablet", label: "Tablet" },
+    { value: "portatile", label: "PC Portatile" },
+    { value: "pc_fisso", label: "PC Fisso" },
+    { value: "smartwatch", label: "Smartwatch" },
+    { value: "console", label: "Console" },
+    { value: "altro", label: t("common.other") },
+  ];
+}
 
 // Brand per dispositivi mobili
 const MOBILE_BRANDS = ["Apple", "Samsung", "Xiaomi", "Huawei", "OPPO", "OnePlus", "Google", "Motorola", "Sony", "Nokia", "Realme", "Vivo", "Honor", "Nothing", "Asus ROG", "Altro"];
@@ -124,6 +128,8 @@ const ACCESSORY_OPTIONS = [
 
 export default function SmartphoneCatalog() {
   const { t } = useTranslation();
+  const CONDITION_OPTIONS = getConditionOptions(t);
+  const DEVICE_CATEGORIES = getDeviceCategories(t);
   const [searchQuery, setSearchQuery] = useState("");
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
   const [brandFilter, setBrandFilter] = useState<string>("all");

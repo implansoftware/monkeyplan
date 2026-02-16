@@ -23,13 +23,15 @@ import { useTranslation } from "react-i18next";
 
 type CommissionStatus = "pending" | "accrued" | "invoiced" | "paid" | "cancelled";
 
-const statusLabels: Record<CommissionStatus, string> = {
-  pending: t("common.pending"),
-  accrued: "Maturata",
-  invoiced: "Fatturata",
-  paid: t("invoices.paid"),
-  cancelled: t("common.cancelled"),
-};
+function getStatusLabels(t: (key: string) => string): Record<CommissionStatus, string> {
+  return {
+    pending: t("common.pending"),
+    accrued: "Maturata",
+    invoiced: "Fatturata",
+    paid: t("invoices.paid"),
+    cancelled: t("common.cancelled"),
+  };
+}
 
 const statusColors: Record<CommissionStatus, string> = {
   pending: "bg-yellow-100 text-yellow-700 dark:bg-yellow-900 dark:text-yellow-300",
@@ -56,6 +58,7 @@ const formatCurrency = (cents: number) => {
 
 export default function ResellerUtilityCommissions() {
   const { t } = useTranslation();
+  const statusLabels = getStatusLabels(t);
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [yearFilter, setYearFilter] = useState<number>(new Date().getFullYear());

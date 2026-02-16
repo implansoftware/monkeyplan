@@ -35,15 +35,17 @@ type PracticeStatus = "bozza" | "inviata" | "in_lavorazione" | "attesa_documenti
 type TaskStatus = "da_fare" | "in_corso" | "completato" | "annullato";
 type Priority = "bassa" | "normale" | "alta" | "urgente";
 
-const statusLabels: Record<PracticeStatus, string> = {
-  bozza: t("invoices.draft"),
-  inviata: t("invoices.sent"),
-  in_lavorazione: t("repairs.inProgress"),
-  attesa_documenti: "Attesa Documenti",
-  completata: "Completata",
-  annullata: t("common.cancelled"),
-  rifiutata: t("common.rejected"),
-};
+function getStatusLabels(t: (key: string) => string): Record<PracticeStatus, string> {
+  return {
+    bozza: t("invoices.draft"),
+    inviata: t("invoices.sent"),
+    in_lavorazione: t("repairs.inProgress"),
+    attesa_documenti: "Attesa Documenti",
+    completata: "Completata",
+    annullata: t("common.cancelled"),
+    rifiutata: t("common.rejected"),
+  };
+}
 
 const statusColors: Record<PracticeStatus, string> = {
   bozza: "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300",
@@ -55,12 +57,14 @@ const statusColors: Record<PracticeStatus, string> = {
   rifiutata: "bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300",
 };
 
-const taskStatusLabels: Record<TaskStatus, string> = {
-  da_fare: "Da fare",
-  in_corso: "In corso",
-  completato: t("common.completed"),
-  annullato: t("repairs.status.cancelled"),
-};
+function getTaskStatusLabels(t: (key: string) => string): Record<TaskStatus, string> {
+  return {
+    da_fare: "Da fare",
+    in_corso: "In corso",
+    completato: t("common.completed"),
+    annullato: t("repairs.status.cancelled"),
+  };
+}
 
 const taskStatusIcons: Record<TaskStatus, typeof Circle> = {
   da_fare: Circle,
@@ -83,15 +87,17 @@ const priorityColors: Record<Priority, string> = {
   urgente: "bg-red-100 text-red-700",
 };
 
-const documentCategoryLabels: Record<string, string> = {
-  contratto: "Contratto",
-  documento_identita: "Documento Identità",
-  codice_fiscale: "Codice Fiscale",
-  bolletta: "Bolletta",
-  conferma_fornitore: "Conferma Fornitore",
-  fattura: t("common.invoice"),
-  altro: t("common.other"),
-};
+function getDocumentCategoryLabels(t: (key: string) => string): Record<string, string> {
+  return {
+    contratto: "Contratto",
+    documento_identita: "Documento Identità",
+    codice_fiscale: "Codice Fiscale",
+    bolletta: "Bolletta",
+    conferma_fornitore: "Conferma Fornitore",
+    fattura: t("common.invoice"),
+    altro: t("common.other"),
+  };
+}
 
 const formatCurrency = (cents: number | null | undefined) => {
   if (cents == null) return "-";
@@ -130,6 +136,9 @@ interface EnrichedPractice extends UtilityPractice {
 
 export default function ResellerUtilityPracticeDetail() {
   const { t } = useTranslation();
+  const statusLabels = getStatusLabels(t);
+  const taskStatusLabels = getTaskStatusLabels(t);
+  const documentCategoryLabels = getDocumentCategoryLabels(t);
   const params = useParams<{ id: string }>();
   const [, setLocation] = useLocation();
   const { toast } = useToast();

@@ -9,11 +9,13 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Search, Shield } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 
-const coverageLabels: Record<string, string> = {
-  basic: "Base",
-  extended: t("warranties.extended"),
-  full: "Completa",
-};
+function getCoverageLabels(t: (key: string) => string): Record<string, string> {
+  return {
+    basic: "Base",
+    extended: t("warranties.extended"),
+    full: "Completa",
+  };
+}
 
 const coverageVariants: Record<string, "default" | "secondary" | "outline"> = {
   basic: "outline",
@@ -23,6 +25,7 @@ const coverageVariants: Record<string, "default" | "secondary" | "outline"> = {
 
 export default function RepairCenterWarrantyProducts() {
   const { t } = useTranslation();
+  const coverageLabels = getCoverageLabels(t);
   const [searchQuery, setSearchQuery] = useState("");
 
   const { data: products = [], isLoading } = useQuery<WarrantyProduct[]>({
