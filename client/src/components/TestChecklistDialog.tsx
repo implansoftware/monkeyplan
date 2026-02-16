@@ -67,18 +67,20 @@ const testChecklistSchema = z.object({
 
 type TestChecklistFormData = z.infer<typeof testChecklistSchema>;
 
-const testItems = [
-  { key: "displayTest", label: "Display", icon: Monitor, description: "Schermo, colori, pixel morti" },
-  { key: "touchTest", label: "Touch", icon: Hand, description: t("repair.touchReactivity") },
-  { key: "batteryTest", label: t("repair.battery"), icon: Battery, description: "Salute batteria, cicli di ricarica" },
-  { key: "audioTest", label: "Audio", icon: Volume2, description: "Altoparlanti, microfono, capsula" },
-  { key: "cameraTest", label: t("repair.camera"), icon: Camera, description: "Fotocamere anteriore/posteriore, flash" },
-  { key: "connectivityTest", label: t("diagnosis.connectivity"), icon: Wifi, description: "WiFi, Bluetooth, rete cellulare" },
-  { key: "buttonsTest", label: "Pulsanti", icon: MousePointer2, description: "Tasti fisici, volume, accensione" },
-  { key: "sensorsTest", label: t("repair.sensors"), icon: Gauge, description: t("repair.proximityAccelerometer") },
-  { key: "chargingTest", label: t("repair.charging"), icon: Plug, description: "Porta di ricarica, ricarica wireless" },
-  { key: "softwareTest", label: "Software", icon: Smartphone, description: t("repair.osStability") },
-] as const;
+function getTestItems(t: (key: string) => string) {
+  return [
+    { key: "displayTest", label: "Display", icon: Monitor, description: "Schermo, colori, pixel morti" },
+    { key: "touchTest", label: "Touch", icon: Hand, description: t("repair.touchReactivity") },
+    { key: "batteryTest", label: t("repair.battery"), icon: Battery, description: "Salute batteria, cicli di ricarica" },
+    { key: "audioTest", label: "Audio", icon: Volume2, description: "Altoparlanti, microfono, capsula" },
+    { key: "cameraTest", label: t("repair.camera"), icon: Camera, description: "Fotocamere anteriore/posteriore, flash" },
+    { key: "connectivityTest", label: t("diagnosis.connectivity"), icon: Wifi, description: "WiFi, Bluetooth, rete cellulare" },
+    { key: "buttonsTest", label: "Pulsanti", icon: MousePointer2, description: "Tasti fisici, volume, accensione" },
+    { key: "sensorsTest", label: t("repair.sensors"), icon: Gauge, description: t("repair.proximityAccelerometer") },
+    { key: "chargingTest", label: t("repair.charging"), icon: Plug, description: "Porta di ricarica, ricarica wireless" },
+    { key: "softwareTest", label: "Software", icon: Smartphone, description: t("repair.osStability") },
+  ] as const;
+}
 
 export function TestChecklistDialog({
   open,
@@ -87,6 +89,7 @@ export function TestChecklistDialog({
   onSuccess,
 }: TestChecklistDialogProps) {
   const { t } = useTranslation();
+  const testItems = getTestItems(t);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 

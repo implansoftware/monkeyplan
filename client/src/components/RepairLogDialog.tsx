@@ -46,13 +46,13 @@ interface RepairLogDialogProps {
   onSuccess?: () => void;
 }
 
-const repairLogSchema = z.object({
-  logType: z.enum(["status_change", "technician_note", "parts_installed", "test_result", "customer_contact"]),
-  description: z.string().min(1, t("common.descriptionRequired")),
-  hoursWorked: z.coerce.number().min(0).optional(),
-});
-
-type RepairLogFormData = z.infer<typeof repairLogSchema>;
+function getRepairLogSchema(t: (key: string) => string) {
+  return z.object({
+    logType: z.enum(["status_change", "technician_note", "parts_installed", "test_result", "customer_contact"]),
+    description: z.string().min(1, t("common.descriptionRequired")),
+    hoursWorked: z.coerce.number().min(0).optional(),
+  });
+}
 
 const logTypeLabels: Record<string, { label: string; icon: typeof Clock }> = {
   status_change: { label: "Cambio Stato", icon: Clock },
@@ -69,6 +69,8 @@ export function RepairLogDialog({
   onSuccess,
 }: RepairLogDialogProps) {
   const { t } = useTranslation();
+  const repairLogSchema = getRepairLogSchema(t);
+  type RepairLogFormData = z.infer<typeof repairLogSchema>;
   const { toast } = useToast();
   const queryClient = useQueryClient();
 

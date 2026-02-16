@@ -129,59 +129,59 @@ interface DiagnosisFormDialogProps {
   onDataCollected?: (data: DiagnosisCollectedData) => void;
 }
 
-const diagnosisSchema = z.object({
-  selectedFindingIds: z.array(z.string()).min(1, t("diagnosis.selectAtLeastOneResult")),
-  otherFindingDescription: z.string().optional(),
-  selectedComponentIds: z.array(z.string()).default([]),
-  otherComponentDescription: z.string().optional(),
-  estimatedRepairTimeId: z.string().min(1, t("diagnosis.selectEstimatedTime")),
-  requiresExternalParts: z.boolean().default(false),
-  skipPhotos: z.boolean().default(false),
-  diagnosisNotes: z.string().optional(),
-  diagnosisOutcome: z.enum(["riparabile", "non_conveniente", "irriparabile"]).default("riparabile"),
-  unrepairableReasonId: z.string().optional(),
-  unrepairableReasonOther: z.string().optional(),
-  customerDataImportant: z.boolean().default(false),
-  suggestedPromotionIds: z.array(z.string()).default([]),
-  suggestedDeviceIds: z.array(z.string()).default([]),
-  dataRecoveryRequested: z.boolean().default(false),
-}).refine((data) => {
-  const hasOtherFinding = data.selectedFindingIds.some(id => id.includes("-other"));
-  if (hasOtherFinding && !data.otherFindingDescription?.trim()) {
-    return false;
-  }
-  return true;
-}, {
-  message: t("diagnosis.describeOtherProblem"),
-  path: ["otherFindingDescription"],
-}).refine((data) => {
-  const hasOtherComponent = data.selectedComponentIds.some(id => id.includes("-other"));
-  if (hasOtherComponent && !data.otherComponentDescription?.trim()) {
-    return false;
-  }
-  return true;
-}, {
-  message: t("diagnosis.describeOtherComponent"),
-  path: ["otherComponentDescription"],
-}).refine((data) => {
-  if (data.diagnosisOutcome === "irriparabile" && !data.unrepairableReasonId && !data.unrepairableReasonOther?.trim()) {
-    return false;
-  }
-  return true;
-}, {
-  message: t("diagnosis.selectIrrepairableReason"),
-  path: ["unrepairableReasonId"],
-}).refine((data) => {
-  if (data.diagnosisOutcome === "non_conveniente" && data.suggestedPromotionIds.length === 0) {
-    return false;
-  }
-  return true;
-}, {
-  message: t("diagnosis.selectAtLeastOnePromotion"),
-  path: ["suggestedPromotionIds"],
-});
-
-type DiagnosisFormData = z.infer<typeof diagnosisSchema>;
+function getDiagnosisSchema(t: (key: string) => string) {
+  return z.object({
+    selectedFindingIds: z.array(z.string()).min(1, t("diagnosis.selectAtLeastOneResult")),
+    otherFindingDescription: z.string().optional(),
+    selectedComponentIds: z.array(z.string()).default([]),
+    otherComponentDescription: z.string().optional(),
+    estimatedRepairTimeId: z.string().min(1, t("diagnosis.selectEstimatedTime")),
+    requiresExternalParts: z.boolean().default(false),
+    skipPhotos: z.boolean().default(false),
+    diagnosisNotes: z.string().optional(),
+    diagnosisOutcome: z.enum(["riparabile", "non_conveniente", "irriparabile"]).default("riparabile"),
+    unrepairableReasonId: z.string().optional(),
+    unrepairableReasonOther: z.string().optional(),
+    customerDataImportant: z.boolean().default(false),
+    suggestedPromotionIds: z.array(z.string()).default([]),
+    suggestedDeviceIds: z.array(z.string()).default([]),
+    dataRecoveryRequested: z.boolean().default(false),
+  }).refine((data) => {
+    const hasOtherFinding = data.selectedFindingIds.some(id => id.includes("-other"));
+    if (hasOtherFinding && !data.otherFindingDescription?.trim()) {
+      return false;
+    }
+    return true;
+  }, {
+    message: t("diagnosis.describeOtherProblem"),
+    path: ["otherFindingDescription"],
+  }).refine((data) => {
+    const hasOtherComponent = data.selectedComponentIds.some(id => id.includes("-other"));
+    if (hasOtherComponent && !data.otherComponentDescription?.trim()) {
+      return false;
+    }
+    return true;
+  }, {
+    message: t("diagnosis.describeOtherComponent"),
+    path: ["otherComponentDescription"],
+  }).refine((data) => {
+    if (data.diagnosisOutcome === "irriparabile" && !data.unrepairableReasonId && !data.unrepairableReasonOther?.trim()) {
+      return false;
+    }
+    return true;
+  }, {
+    message: t("diagnosis.selectIrrepairableReason"),
+    path: ["unrepairableReasonId"],
+  }).refine((data) => {
+    if (data.diagnosisOutcome === "non_conveniente" && data.suggestedPromotionIds.length === 0) {
+      return false;
+    }
+    return true;
+  }, {
+    message: t("diagnosis.selectAtLeastOnePromotion"),
+    path: ["suggestedPromotionIds"],
+  });
+}
 
 const getPromotionIcon = (iconName: string): LucideIcon => {
   switch (iconName) {
@@ -253,6 +253,8 @@ export function DiagnosisFormDialog({
   onDataCollected,
 }: DiagnosisFormDialogProps) {
   const { t } = useTranslation();
+  const diagnosisSchema = getDiagnosisSchema(t);
+  type DiagnosisFormData = z.infer<typeof diagnosisSchema>;
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [uploadedPhotos, setUploadedPhotos] = useState<string[]>([]);

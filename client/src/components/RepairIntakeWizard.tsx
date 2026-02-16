@@ -75,43 +75,44 @@ interface RepairIntakeWizardProps {
   onSuccess?: (order: any) => void;
 }
 
-// Wizard schema - includes acceptance flow fields
-const wizardSchema = z.object({
-  // Step 1: Device
-  deviceType: z.string().min(1, t("repair.selectDeviceType")),
-  deviceBrandId: z.string().optional(),
-  deviceModelId: z.string().optional(),
-  deviceModel: z.string().optional(),
-  brand: z.string().optional(),
-  imei: z.string().optional(),
-  serial: z.string().optional(),
-  // IMEI flags
-  imeiNotReadable: z.boolean().default(false),
-  imeiNotPresent: z.boolean().default(false),
-  issueDescription: z.string().optional().default(""),
-  
-  // Step 2: Customer & Assignment
-  customerId: z.string().min(1, t("common.selectCustomer")),
-  resellerId: z.string().optional(),
-  subResellerId: z.string().optional(),
-  repairCenterId: z.string().optional(),
-  
-  // Step 3: Conditions
-  aestheticCondition: z.string().optional(),
-  accessories: z.array(z.string()).default([]),
-  notes: z.string().optional(),
-});
+function getWizardSchema(t: (key: string) => string) {
+  return z.object({
+    // Step 1: Device
+    deviceType: z.string().min(1, t("repair.selectDeviceType")),
+    deviceBrandId: z.string().optional(),
+    deviceModelId: z.string().optional(),
+    deviceModel: z.string().optional(),
+    brand: z.string().optional(),
+    imei: z.string().optional(),
+    serial: z.string().optional(),
+    // IMEI flags
+    imeiNotReadable: z.boolean().default(false),
+    imeiNotPresent: z.boolean().default(false),
+    issueDescription: z.string().optional().default(""),
+    
+    // Step 2: Customer & Assignment
+    customerId: z.string().min(1, t("common.selectCustomer")),
+    resellerId: z.string().optional(),
+    subResellerId: z.string().optional(),
+    repairCenterId: z.string().optional(),
+    
+    // Step 3: Conditions
+    aestheticCondition: z.string().optional(),
+    accessories: z.array(z.string()).default([]),
+    notes: z.string().optional(),
+  });
+}
 
-type WizardData = z.infer<typeof wizardSchema>;
-
-const STEPS = [
-  { id: 1, name: t("repair.device"), icon: Smartphone },
-  { id: 2, name: t("common.customer"), icon: User },
-  { id: 3, name: t("common.condition"), icon: ClipboardCheck },
-  { id: 4, name: t("repair.diagnosis"), icon: FileText },
-  { id: 5, name: t("common.confirm"), icon: CheckCircle2 },
-  { id: 6, name: t("common.completed"), icon: PartyPopper },
-];
+function getSteps(t: (key: string) => string) {
+  return [
+    { id: 1, name: t("repair.device"), icon: Smartphone },
+    { id: 2, name: t("common.customer"), icon: User },
+    { id: 3, name: t("common.condition"), icon: ClipboardCheck },
+    { id: 4, name: t("repair.diagnosis"), icon: FileText },
+    { id: 5, name: t("common.confirm"), icon: CheckCircle2 },
+    { id: 6, name: t("common.completed"), icon: PartyPopper },
+  ];
+}
 
 const DEVICE_TYPE_ICONS: Record<string, any> = {
   smartphone: Smartphone,
@@ -165,6 +166,9 @@ export function RepairIntakeWizard({
   onSuccess 
 }: RepairIntakeWizardProps) {
   const { t } = useTranslation();
+  const wizardSchema = getWizardSchema(t);
+  type WizardData = z.infer<typeof wizardSchema>;
+  const STEPS = getSteps(t);
   const [currentStep, setCurrentStep] = useState(1);
   const [customerSearch, setCustomerSearch] = useState("");
   const [selectedTypeId, setSelectedTypeId] = useState("");

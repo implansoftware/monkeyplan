@@ -19,57 +19,59 @@ interface KanbanColumn {
   borderColor: string;
 }
 
-const PRACTICE_COLUMNS: KanbanColumn[] = [
-  {
-    key: "bozza",
-    label: t("common.draft"),
-    color: "text-gray-700 dark:text-gray-300",
-    bgColor: "bg-gray-50 dark:bg-gray-900/30",
-    borderColor: "border-gray-300 dark:border-gray-700",
-  },
-  {
-    key: "inviata",
-    label: t("common.sent"),
-    color: "text-blue-700 dark:text-blue-300",
-    bgColor: "bg-blue-50 dark:bg-blue-950/30",
-    borderColor: "border-blue-300 dark:border-blue-700",
-  },
-  {
-    key: "in_lavorazione",
-    label: "In Lavorazione",
-    color: "text-yellow-700 dark:text-yellow-300",
-    bgColor: "bg-yellow-50 dark:bg-yellow-950/30",
-    borderColor: "border-yellow-300 dark:border-yellow-700",
-  },
-  {
-    key: "attesa_documenti",
-    label: "Attesa Documenti",
-    color: "text-orange-700 dark:text-orange-300",
-    bgColor: "bg-orange-50 dark:bg-orange-950/30",
-    borderColor: "border-orange-300 dark:border-orange-700",
-  },
-  {
-    key: "completata",
-    label: t("common.completed"),
-    color: "text-green-700 dark:text-green-300",
-    bgColor: "bg-green-50 dark:bg-green-950/30",
-    borderColor: "border-green-300 dark:border-green-700",
-  },
-  {
-    key: "rifiutata",
-    label: t("common.rejected"),
-    color: "text-red-700 dark:text-red-300",
-    bgColor: "bg-red-50 dark:bg-red-950/30",
-    borderColor: "border-red-300 dark:border-red-700",
-  },
-  {
-    key: "annullata",
-    label: t("common.cancelled"),
-    color: "text-red-800 dark:text-red-400",
-    bgColor: "bg-red-50/50 dark:bg-red-950/20",
-    borderColor: "border-red-200 dark:border-red-800",
-  },
-];
+function getPracticeColumns(t: (key: string) => string): KanbanColumn[] {
+  return [
+    {
+      key: "bozza",
+      label: t("common.draft"),
+      color: "text-gray-700 dark:text-gray-300",
+      bgColor: "bg-gray-50 dark:bg-gray-900/30",
+      borderColor: "border-gray-300 dark:border-gray-700",
+    },
+    {
+      key: "inviata",
+      label: t("common.sent"),
+      color: "text-blue-700 dark:text-blue-300",
+      bgColor: "bg-blue-50 dark:bg-blue-950/30",
+      borderColor: "border-blue-300 dark:border-blue-700",
+    },
+    {
+      key: "in_lavorazione",
+      label: "In Lavorazione",
+      color: "text-yellow-700 dark:text-yellow-300",
+      bgColor: "bg-yellow-50 dark:bg-yellow-950/30",
+      borderColor: "border-yellow-300 dark:border-yellow-700",
+    },
+    {
+      key: "attesa_documenti",
+      label: "Attesa Documenti",
+      color: "text-orange-700 dark:text-orange-300",
+      bgColor: "bg-orange-50 dark:bg-orange-950/30",
+      borderColor: "border-orange-300 dark:border-orange-700",
+    },
+    {
+      key: "completata",
+      label: t("common.completed"),
+      color: "text-green-700 dark:text-green-300",
+      bgColor: "bg-green-50 dark:bg-green-950/30",
+      borderColor: "border-green-300 dark:border-green-700",
+    },
+    {
+      key: "rifiutata",
+      label: t("common.rejected"),
+      color: "text-red-700 dark:text-red-300",
+      bgColor: "bg-red-50 dark:bg-red-950/30",
+      borderColor: "border-red-300 dark:border-red-700",
+    },
+    {
+      key: "annullata",
+      label: t("common.cancelled"),
+      color: "text-red-800 dark:text-red-400",
+      bgColor: "bg-red-50/50 dark:bg-red-950/20",
+      borderColor: "border-red-200 dark:border-red-800",
+    },
+  ];
+}
 
 const formatCurrency = (cents: number | null | undefined) => {
   if (!cents) return null;
@@ -99,6 +101,7 @@ export function PracticesKanbanBoard({
   onCardClick,
 }: PracticesKanbanBoardProps) {
   const { t } = useTranslation();
+  const PRACTICE_COLUMNS = getPracticeColumns(t);
   const grouped = useMemo(() => {
     const groups: Record<string, UtilityPractice[]> = {};
     PRACTICE_COLUMNS.forEach((col) => {
@@ -189,6 +192,7 @@ interface PracticeKanbanCardProps {
 }
 
 function PracticeKanbanCard({ practice, services, suppliers, customers, products, onClick }: PracticeKanbanCardProps) {
+  const { t } = useTranslation();
   const service = services.find(s => s.id === practice.serviceId);
   const supplier = suppliers.find(s => s.id === practice.supplierId);
   const customer = customers.find(c => c.id === practice.customerId);

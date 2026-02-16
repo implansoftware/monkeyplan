@@ -47,15 +47,15 @@ interface DeliveryDialogProps {
   currentUser?: User | null;
 }
 
-const deliverySchema = z.object({
-  deliveredTo: z.string().min(1, t("delivery.recipientRequired")),
-  deliveryMethod: z.enum(["in_store", "courier", "pickup"]),
-  idDocumentType: z.string().optional(),
-  idDocumentNumber: z.string().optional(),
-  idDocumentPhoto: z.string().optional(),
-});
-
-type DeliveryFormData = z.infer<typeof deliverySchema>;
+function getDeliverySchema(t: (key: string) => string) {
+  return z.object({
+    deliveredTo: z.string().min(1, t("delivery.recipientRequired")),
+    deliveryMethod: z.enum(["in_store", "courier", "pickup"]),
+    idDocumentType: z.string().optional(),
+    idDocumentNumber: z.string().optional(),
+    idDocumentPhoto: z.string().optional(),
+  });
+}
 
 interface SignatureData {
   signature: string | null;
@@ -70,6 +70,8 @@ export function DeliveryDialog({
   currentUser,
 }: DeliveryDialogProps) {
   const { t } = useTranslation();
+  const deliverySchema = getDeliverySchema(t);
+  type DeliveryFormData = z.infer<typeof deliverySchema>;
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [documentPhotoPreview, setDocumentPhotoPreview] = useState<string | null>(null);

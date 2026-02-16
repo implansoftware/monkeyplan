@@ -48,58 +48,64 @@ interface SparePartWizardProps {
   editingProduct?: any;
 }
 
-const wizardSchema = z.object({
-  name: z.string().min(1, t("common.nameRequired")),
-  sku: z.string().optional(),
-  partCode: z.string().optional(),
-  description: z.string().optional(),
-  partType: z.string().min(1, t("common.selectType")),
-  quality: z.string().min(1, t("products.selectQuality")),
-  compatibleModels: z.string().optional(),
-  notes: z.string().optional(),
-  warrantyMonths: z.string().default("3"),
-  unitPrice: z.string().min(1, t("products.sellPriceRequired")),
-  costPrice: z.string().optional(),
-  supplierId: z.string().optional(),
-  initialStock: z.array(z.object({
-    warehouseId: z.string(),
-    quantity: z.number(),
-    location: z.string(),
-  })).default([]),
-});
+function getWizardSchema(t: (key: string) => string) {
+  return z.object({
+    name: z.string().min(1, t("common.nameRequired")),
+    sku: z.string().optional(),
+    partCode: z.string().optional(),
+    description: z.string().optional(),
+    partType: z.string().min(1, t("common.selectType")),
+    quality: z.string().min(1, t("products.selectQuality")),
+    compatibleModels: z.string().optional(),
+    notes: z.string().optional(),
+    warrantyMonths: z.string().default("3"),
+    unitPrice: z.string().min(1, t("products.sellPriceRequired")),
+    costPrice: z.string().optional(),
+    supplierId: z.string().optional(),
+    initialStock: z.array(z.object({
+      warehouseId: z.string(),
+      quantity: z.number(),
+      location: z.string(),
+    })).default([]),
+  });
+}
 
-type WizardData = z.infer<typeof wizardSchema>;
+function getSteps(t: (key: string) => string) {
+  return [
+    { id: 1, name: "Info Base", icon: Wrench },
+    { id: 2, name: t("products.priceAndStock"), icon: Euro },
+    { id: 3, name: t("common.confirm"), icon: CheckCircle2 },
+  ];
+}
 
-const STEPS = [
-  { id: 1, name: "Info Base", icon: Wrench },
-  { id: 2, name: t("products.priceAndStock"), icon: Euro },
-  { id: 3, name: t("common.confirm"), icon: CheckCircle2 },
-];
+function getPartTypes(t: (key: string) => string) {
+  return [
+    { value: "display", label: "Display / Schermo" },
+    { value: "batteria", label: t("repair.battery") },
+    { value: "fotocamera", label: t("repair.camera") },
+    { value: "connettore", label: "Connettore di Ricarica" },
+    { value: "altoparlante", label: "Altoparlante / Speaker" },
+    { value: "microfono", label: t("repair.microphone") },
+    { value: "tasto", label: "Tasto / Pulsante" },
+    { value: "flex", label: "Flat / Flex Cable" },
+    { value: "scheda_madre", label: "Scheda Madre" },
+    { value: "frame", label: "Frame / Telaio" },
+    { value: "vetro", label: "Vetro Posteriore" },
+    { value: "antenna", label: "Antenna" },
+    { value: "sensore", label: "Sensore" },
+    { value: "altro", label: t("common.other") },
+  ];
+}
 
-const PART_TYPES = [
-  { value: "display", label: "Display / Schermo" },
-  { value: "batteria", label: t("repair.battery") },
-  { value: "fotocamera", label: t("repair.camera") },
-  { value: "connettore", label: "Connettore di Ricarica" },
-  { value: "altoparlante", label: "Altoparlante / Speaker" },
-  { value: "microfono", label: t("repair.microphone") },
-  { value: "tasto", label: "Tasto / Pulsante" },
-  { value: "flex", label: "Flat / Flex Cable" },
-  { value: "scheda_madre", label: "Scheda Madre" },
-  { value: "frame", label: "Frame / Telaio" },
-  { value: "vetro", label: "Vetro Posteriore" },
-  { value: "antenna", label: "Antenna" },
-  { value: "sensore", label: "Sensore" },
-  { value: "altro", label: t("common.other") },
-];
-
-const QUALITY_OPTIONS = [
-  { value: "originale", label: "Originale (OEM)" },
-  { value: "originale_rigenerato", label: "Originale Rigenerato" },
-  { value: "compatibile_alta", label: t("products.highQualityCompatible") },
-  { value: "compatibile", label: "Compatibile Standard" },
-  { value: "aftermarket", label: "Aftermarket" },
-];
+function getQualityOptions(t: (key: string) => string) {
+  return [
+    { value: "originale", label: "Originale (OEM)" },
+    { value: "originale_rigenerato", label: "Originale Rigenerato" },
+    { value: "compatibile_alta", label: t("products.highQualityCompatible") },
+    { value: "compatibile", label: "Compatibile Standard" },
+    { value: "aftermarket", label: "Aftermarket" },
+  ];
+}
 
 
 export function SparePartWizard({ 
@@ -109,6 +115,11 @@ export function SparePartWizard({
   editingProduct 
 }: SparePartWizardProps) {
   const { t } = useTranslation();
+  const wizardSchema = getWizardSchema(t);
+  type WizardData = z.infer<typeof wizardSchema>;
+  const STEPS = getSteps(t);
+  const PART_TYPES = getPartTypes(t);
+  const QUALITY_OPTIONS = getQualityOptions(t);
   const [currentStep, setCurrentStep] = useState(1);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);

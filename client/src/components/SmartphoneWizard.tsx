@@ -50,43 +50,45 @@ interface SmartphoneWizardProps {
   editingProduct?: any;
 }
 
-const wizardSchema = z.object({
-  name: z.string().min(1, t("common.nameRequired")),
-  sku: z.string().optional(),
-  category: z.string().min(1, t("products.selectCategory")),
-  brand: z.string().min(1, t("products.selectBrand")),
-  description: z.string().optional(),
-  condition: z.string().min(1, t("common.selectCondition")),
-  storage: z.string().optional(), // Ora opzionale - validato dinamicamente in base alla categoria
-  batteryHealth: z.string().optional(),
-  grade: z.string().min(1, t("products.selectGrade")),
-  networkLock: z.string().default("unlocked"),
-  imei: z.string().optional(),
-  imei2: z.string().optional(),
-  serialNumber: z.string().optional(),
-  originalBox: z.boolean().default(false),
-  accessories: z.array(z.string()).default([]),
-  notes: z.string().optional(),
-  warrantyMonths: z.string().default("12"),
-  unitPrice: z.string().min(1, t("products.sellPriceRequired")),
-  costPrice: z.string().optional(),
-  supplierId: z.string().optional(),
-  initialStock: z.array(z.object({
-    warehouseId: z.string(),
-    quantity: z.number(),
-    location: z.string(),
-  })).default([]),
-});
+function getWizardSchema(t: (key: string) => string) {
+  return z.object({
+    name: z.string().min(1, t("common.nameRequired")),
+    sku: z.string().optional(),
+    category: z.string().min(1, t("products.selectCategory")),
+    brand: z.string().min(1, t("products.selectBrand")),
+    description: z.string().optional(),
+    condition: z.string().min(1, t("common.selectCondition")),
+    storage: z.string().optional(),
+    batteryHealth: z.string().optional(),
+    grade: z.string().min(1, t("products.selectGrade")),
+    networkLock: z.string().default("unlocked"),
+    imei: z.string().optional(),
+    imei2: z.string().optional(),
+    serialNumber: z.string().optional(),
+    originalBox: z.boolean().default(false),
+    accessories: z.array(z.string()).default([]),
+    notes: z.string().optional(),
+    warrantyMonths: z.string().default("12"),
+    unitPrice: z.string().min(1, t("products.sellPriceRequired")),
+    costPrice: z.string().optional(),
+    supplierId: z.string().optional(),
+    initialStock: z.array(z.object({
+      warehouseId: z.string(),
+      quantity: z.number(),
+      location: z.string(),
+    })).default([]),
+  });
+}
 
-type WizardData = z.infer<typeof wizardSchema>;
-
-const STEPS = [
-  { id: 1, name: "Info Base", icon: Smartphone },
-  { id: 2, name: "Specifiche", icon: Package },
-  { id: 3, name: t("products.priceAndStock"), icon: Euro },
-  { id: 4, name: t("products.compatibility"), icon: Link2 },
-  { id: 5, name: t("common.confirm"), icon: CheckCircle2 },
-];
+function getSteps(t: (key: string) => string) {
+  return [
+    { id: 1, name: "Info Base", icon: Smartphone },
+    { id: 2, name: "Specifiche", icon: Package },
+    { id: 3, name: t("products.priceAndStock"), icon: Euro },
+    { id: 4, name: t("products.compatibility"), icon: Link2 },
+    { id: 5, name: t("common.confirm"), icon: CheckCircle2 },
+  ];
+}
 
 interface CompatibilityEntry {
   deviceBrandId: string;
@@ -125,17 +127,21 @@ const GRADE_OPTIONS = [
   { value: "C", label: "C - Discreto" },
   { value: "D", label: "D - Danneggiato" },
 ];
-const CONDITION_OPTIONS = [
-  { value: "nuovo", label: t("common.new") },
-  { value: "ricondizionato", label: "Ricondizionato" },
-  { value: "usato", label: "Usato" },
-  { value: "difettoso", label: "Difettoso" },
-];
-const NETWORK_LOCK_OPTIONS = [
-  { value: "unlocked", label: t("products.unlocked") },
-  { value: "locked", label: t("products.carrierLocked") },
-  { value: "icloud_locked", label: t("products.icloudLocked") },
-];
+function getConditionOptions(t: (key: string) => string) {
+  return [
+    { value: "nuovo", label: t("common.new") },
+    { value: "ricondizionato", label: "Ricondizionato" },
+    { value: "usato", label: "Usato" },
+    { value: "difettoso", label: "Difettoso" },
+  ];
+}
+function getNetworkLockOptions(t: (key: string) => string) {
+  return [
+    { value: "unlocked", label: t("products.unlocked") },
+    { value: "locked", label: t("products.carrierLocked") },
+    { value: "icloud_locked", label: t("products.icloudLocked") },
+  ];
+}
 const BATTERY_OPTIONS = [
   { value: "100", label: "100%" },
   { value: "95-99", label: "95-99%" },
@@ -144,15 +150,17 @@ const BATTERY_OPTIONS = [
   { value: "80-84", label: "80-84%" },
   { value: "<80", label: "Meno di 80%" },
 ];
-const CATEGORY_OPTIONS = [
-  { value: "smartphone", label: t("repair.smartphone") },
-  { value: "tablet", label: t("repair.tablet") },
-  { value: "portatile", label: "PC Portatile" },
-  { value: "pc_fisso", label: "PC Fisso" },
-  { value: "smartwatch", label: "Smartwatch" },
-  { value: "console", label: t("repair.console") },
-  { value: "altro", label: t("common.other") },
-];
+function getCategoryOptions(t: (key: string) => string) {
+  return [
+    { value: "smartphone", label: t("repair.smartphone") },
+    { value: "tablet", label: t("repair.tablet") },
+    { value: "portatile", label: "PC Portatile" },
+    { value: "pc_fisso", label: "PC Fisso" },
+    { value: "smartwatch", label: "Smartwatch" },
+    { value: "console", label: t("repair.console") },
+    { value: "altro", label: t("common.other") },
+  ];
+}
 
 // Categorie che sono dispositivi (hanno specs tecniche)
 const DEVICE_CATEGORIES = ["smartphone", "tablet", "portatile", "pc_fisso", "smartwatch", "console"];
@@ -175,6 +183,12 @@ export function SmartphoneWizard({
   editingProduct 
 }: SmartphoneWizardProps) {
   const { t } = useTranslation();
+  const wizardSchema = getWizardSchema(t);
+  type WizardData = z.infer<typeof wizardSchema>;
+  const STEPS = getSteps(t);
+  const CONDITION_OPTIONS = getConditionOptions(t);
+  const NETWORK_LOCK_OPTIONS = getNetworkLockOptions(t);
+  const CATEGORY_OPTIONS = getCategoryOptions(t);
   const [currentStep, setCurrentStep] = useState(1);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);

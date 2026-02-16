@@ -80,37 +80,37 @@ interface AcceptanceWizardDialogProps {
 
 type WizardStep = "device-info" | "acceptance-checks" | "quote" | "review";
 
-const acceptanceWizardSchema = z.object({
-  customerId: z.string().min(1, t("common.selectCustomer")),
-  branchId: z.string().optional(),
-  repairCenterId: z.string().min(1, t("repair.selectRepairCenter")),
-  deviceType: z.string().min(1, t("repair.selectDeviceType")),
-  deviceModel: z.string().optional(),
-  brand: z.string().optional(),
-  deviceModelId: z.string().optional(), // FK to device catalog
-  deviceBrandId: z.string().optional(), // FK to device brand catalog
-  issueDescription: z.string().min(1, t("repair.selectAtLeastOneProblem")),
-  otherIssueDescription: z.string().optional(),
-  notes: z.string().optional(),
-  imei: z.string().optional(),
-  serial: z.string().optional(),
-  imeiNotReadable: z.boolean().optional(),
-  imeiNotPresent: z.boolean().optional(),
-  serialOnly: z.boolean().optional(),
-  acceptance: z.object({
-    declaredDefects: z.string().optional(),
-    aestheticCondition: z.string().optional(),
-    aestheticNotes: z.string().optional(),
-    aestheticPhotosMandatory: z.boolean().optional(),
-    accessories: z.string().optional(),
-    lockCode: z.string().optional(),
-    lockPattern: z.string().optional(),
-    hasLockCode: z.boolean().optional(),
-    accessoriesRemoved: z.boolean().optional(),
-  }),
-});
-
-type AcceptanceWizardData = z.infer<typeof acceptanceWizardSchema>;
+function getAcceptanceWizardSchema(t: (key: string) => string) {
+  return z.object({
+    customerId: z.string().min(1, t("common.selectCustomer")),
+    branchId: z.string().optional(),
+    repairCenterId: z.string().min(1, t("repair.selectRepairCenter")),
+    deviceType: z.string().min(1, t("repair.selectDeviceType")),
+    deviceModel: z.string().optional(),
+    brand: z.string().optional(),
+    deviceModelId: z.string().optional(),
+    deviceBrandId: z.string().optional(),
+    issueDescription: z.string().min(1, t("repair.selectAtLeastOneProblem")),
+    otherIssueDescription: z.string().optional(),
+    notes: z.string().optional(),
+    imei: z.string().optional(),
+    serial: z.string().optional(),
+    imeiNotReadable: z.boolean().optional(),
+    imeiNotPresent: z.boolean().optional(),
+    serialOnly: z.boolean().optional(),
+    acceptance: z.object({
+      declaredDefects: z.string().optional(),
+      aestheticCondition: z.string().optional(),
+      aestheticNotes: z.string().optional(),
+      aestheticPhotosMandatory: z.boolean().optional(),
+      accessories: z.string().optional(),
+      lockCode: z.string().optional(),
+      lockPattern: z.string().optional(),
+      hasLockCode: z.boolean().optional(),
+      accessoriesRemoved: z.boolean().optional(),
+    }),
+  });
+}
 
 const getIssueIcon = (issueName: string) => {
   const name = issueName.toLowerCase();
@@ -236,6 +236,8 @@ export function AcceptanceWizardDialog({
   customerId 
 }: AcceptanceWizardDialogProps) {
   const { t } = useTranslation();
+  const acceptanceWizardSchema = getAcceptanceWizardSchema(t);
+  type AcceptanceWizardData = z.infer<typeof acceptanceWizardSchema>;
   const [step, setStep] = useState<WizardStep>("device-info");
   const [selectedTypeId, setSelectedTypeId] = useState<string>("");
   const [selectedBrandId, setSelectedBrandId] = useState<string>("");

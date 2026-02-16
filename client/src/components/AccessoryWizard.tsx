@@ -48,29 +48,29 @@ interface AccessoryWizardProps {
   editingProduct?: any;
 }
 
-const wizardSchema = z.object({
-  name: z.string().min(1, t("common.nameRequired")),
-  sku: z.string().optional(),
-  brand: z.string().min(1, t("products.selectBrand")),
-  color: z.string().optional(),
-  description: z.string().optional(),
-  condition: z.string().min(1, t("common.selectCondition")),
-  accessoryType: z.string().min(1, t("common.selectType")),
-  material: z.string().optional(),
-  isUniversal: z.boolean().default(false),
-  notes: z.string().optional(),
-  warrantyMonths: z.string().default("12"),
-  unitPrice: z.string().min(1, t("products.sellPriceRequired")),
-  costPrice: z.string().optional(),
-  supplierId: z.string().optional(),
-  initialStock: z.array(z.object({
-    warehouseId: z.string(),
-    quantity: z.number(),
-    location: z.string(),
-  })).default([]),
-});
-
-type WizardData = z.infer<typeof wizardSchema>;
+function getWizardSchema(t: (key: string) => string) {
+  return z.object({
+    name: z.string().min(1, t("common.nameRequired")),
+    sku: z.string().optional(),
+    brand: z.string().min(1, t("products.selectBrand")),
+    color: z.string().optional(),
+    description: z.string().optional(),
+    condition: z.string().min(1, t("common.selectCondition")),
+    accessoryType: z.string().min(1, t("common.selectType")),
+    material: z.string().optional(),
+    isUniversal: z.boolean().default(false),
+    notes: z.string().optional(),
+    warrantyMonths: z.string().default("12"),
+    unitPrice: z.string().min(1, t("products.sellPriceRequired")),
+    costPrice: z.string().optional(),
+    supplierId: z.string().optional(),
+    initialStock: z.array(z.object({
+      warehouseId: z.string(),
+      quantity: z.number(),
+      location: z.string(),
+    })).default([]),
+  });
+}
 
 interface CompatibilityEntry {
   deviceBrandId: string;
@@ -96,30 +96,36 @@ interface Supplier {
   code: string;
 }
 
-const STEPS = [
-  { id: 1, name: "Info Base", icon: ShoppingBag },
-  { id: 2, name: t("products.priceAndStock"), icon: Euro },
-  { id: 3, name: t("products.compatibility"), icon: Link2 },
-  { id: 4, name: t("common.confirm"), icon: CheckCircle2 },
-];
+function getSteps(t: (key: string) => string) {
+  return [
+    { id: 1, name: "Info Base", icon: ShoppingBag },
+    { id: 2, name: t("products.priceAndStock"), icon: Euro },
+    { id: 3, name: t("products.compatibility"), icon: Link2 },
+    { id: 4, name: t("common.confirm"), icon: CheckCircle2 },
+  ];
+}
 
-const ACCESSORY_TYPES = [
-  { value: "cover", label: "Cover / Custodia" },
-  { value: "pellicola", label: "Pellicola protettiva" },
-  { value: "caricatore", label: t("repair.charger") },
-  { value: "cavo", label: "Cavo" },
-  { value: "auricolare", label: "Auricolari" },
-  { value: "powerbank", label: "Power Bank" },
-  { value: "supporto", label: "Supporto / Stand" },
-  { value: "adattatore", label: "Adattatore" },
-  { value: "altro", label: t("common.other") },
-];
+function getAccessoryTypes(t: (key: string) => string) {
+  return [
+    { value: "cover", label: "Cover / Custodia" },
+    { value: "pellicola", label: "Pellicola protettiva" },
+    { value: "caricatore", label: t("repair.charger") },
+    { value: "cavo", label: "Cavo" },
+    { value: "auricolare", label: "Auricolari" },
+    { value: "powerbank", label: "Power Bank" },
+    { value: "supporto", label: "Supporto / Stand" },
+    { value: "adattatore", label: "Adattatore" },
+    { value: "altro", label: t("common.other") },
+  ];
+}
 
-const CONDITION_OPTIONS = [
-  { value: "nuovo", label: t("common.new") },
-  { value: "ricondizionato", label: "Ricondizionato" },
-  { value: "usato", label: "Usato" },
-];
+function getConditionOptions(t: (key: string) => string) {
+  return [
+    { value: "nuovo", label: t("common.new") },
+    { value: "ricondizionato", label: "Ricondizionato" },
+    { value: "usato", label: "Usato" },
+  ];
+}
 
 const BRANDS = ["Apple", "Samsung", "Xiaomi", "Huawei", "Anker", "Belkin", "Spigen", "OtterBox", "Universale", "Altro"];
 
@@ -141,6 +147,11 @@ export function AccessoryWizard({
   editingProduct 
 }: AccessoryWizardProps) {
   const { t } = useTranslation();
+  const wizardSchema = getWizardSchema(t);
+  type WizardData = z.infer<typeof wizardSchema>;
+  const STEPS = getSteps(t);
+  const ACCESSORY_TYPES = getAccessoryTypes(t);
+  const CONDITION_OPTIONS = getConditionOptions(t);
   const [currentStep, setCurrentStep] = useState(1);
   const [compatibilities, setCompatibilities] = useState<CompatibilityEntry[]>([]);
   const [selectedBrandId, setSelectedBrandId] = useState<string>("");

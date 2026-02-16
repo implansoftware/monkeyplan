@@ -91,23 +91,23 @@ interface QuoteFormDialogProps {
   onDataCollected?: (data: QuoteCollectedData) => void;
 }
 
-const partSchema = z.object({
-  productId: z.string().optional(),
-  name: z.string().min(1, t("quote.partNameRequired")),
-  quantity: z.coerce.number().min(1, t("quote.quantityMinOne")),
-  unitPrice: z.coerce.number().min(0, "Il prezzo deve essere positivo"),
-  imageUrl: z.string().optional(),
-  source: z.string().optional(),
-});
+function getQuoteSchema(t: (key: string) => string) {
+  const partSchema = z.object({
+    productId: z.string().optional(),
+    name: z.string().min(1, t("quote.partNameRequired")),
+    quantity: z.coerce.number().min(1, t("quote.quantityMinOne")),
+    unitPrice: z.coerce.number().min(0, "Il prezzo deve essere positivo"),
+    imageUrl: z.string().optional(),
+    source: z.string().optional(),
+  });
 
-const quoteSchema = z.object({
-  parts: z.array(partSchema).optional(),
-  laborCost: z.coerce.number().min(0, "Il costo manodopera deve essere positivo").default(0),
-  validUntil: z.string().optional(),
-  notes: z.string().optional(),
-});
-
-type QuoteFormData = z.infer<typeof quoteSchema>;
+  return z.object({
+    parts: z.array(partSchema).optional(),
+    laborCost: z.coerce.number().min(0, "Il costo manodopera deve essere positivo").default(0),
+    validUntil: z.string().optional(),
+    notes: z.string().optional(),
+  });
+}
 
 export function QuoteFormDialog({
   open,
@@ -118,6 +118,8 @@ export function QuoteFormDialog({
   onDataCollected,
 }: QuoteFormDialogProps) {
   const { t } = useTranslation();
+  const quoteSchema = getQuoteSchema(t);
+  type QuoteFormData = z.infer<typeof quoteSchema>;
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [totalAmount, setTotalAmount] = useState(0);

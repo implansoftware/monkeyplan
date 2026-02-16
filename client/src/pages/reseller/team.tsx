@@ -22,26 +22,30 @@ import { z } from "zod";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useTranslation } from "react-i18next";
 
-const MODULES = [
-  { id: "repairs", name: "Lavorazioni", description: "Gestione riparazioni e ordini" },
-  { id: "customers", name: t("customers.title"), description: "Anagrafica clienti" },
-  { id: "products", name: "Prodotti", description: "Catalogo prodotti e ricambi" },
-  { id: "inventory", name: "Magazzino", description: "Gestione inventario" },
-  { id: "repair_centers", name: t("sidebar.items.repairCentersShort"), description: "Gestione centri" },
-  { id: "services", name: t("utility.services"), description: "Catalogo servizi" },
-  { id: "suppliers", name: t("suppliers.title"), description: "Gestione fornitori" },
-  { id: "supplier_orders", name: "Ordini Fornitori", description: "Ordini ai fornitori" },
-  { id: "appointments", name: "Appuntamenti", description: "Gestione appuntamenti" },
-  { id: "invoices", name: "Fatture", description: "Fatturazione" },
-  { id: "tickets", name: "Ticket Supporto", description: "Assistenza clienti" },
-];
+function getModules(t: (key: string) => string) {
+  return [
+    { id: "repairs", name: "Lavorazioni", description: "Gestione riparazioni e ordini" },
+    { id: "customers", name: t("customers.title"), description: "Anagrafica clienti" },
+    { id: "products", name: "Prodotti", description: "Catalogo prodotti e ricambi" },
+    { id: "inventory", name: "Magazzino", description: "Gestione inventario" },
+    { id: "repair_centers", name: t("sidebar.items.repairCentersShort"), description: "Gestione centri" },
+    { id: "services", name: t("utility.services"), description: "Catalogo servizi" },
+    { id: "suppliers", name: t("suppliers.title"), description: "Gestione fornitori" },
+    { id: "supplier_orders", name: "Ordini Fornitori", description: "Ordini ai fornitori" },
+    { id: "appointments", name: "Appuntamenti", description: "Gestione appuntamenti" },
+    { id: "invoices", name: "Fatture", description: "Fatturazione" },
+    { id: "tickets", name: "Ticket Supporto", description: "Assistenza clienti" },
+  ];
+}
 
-const PERMISSION_ACTIONS = [
-  { id: "canRead", label: "Lettura", icon: Eye },
-  { id: "canCreate", label: "Creazione", icon: FilePlus },
-  { id: "canUpdate", label: t("common.edit"), icon: Pencil },
-  { id: "canDelete", label: "Eliminazione", icon: Trash2 },
-];
+function getPermissionActions(t: (key: string) => string) {
+  return [
+    { id: "canRead", label: "Lettura", icon: Eye },
+    { id: "canCreate", label: "Creazione", icon: FilePlus },
+    { id: "canUpdate", label: t("common.edit"), icon: Pencil },
+    { id: "canDelete", label: "Eliminazione", icon: Trash2 },
+  ];
+}
 
 interface RepairCenter {
   id: string;
@@ -95,6 +99,8 @@ type EntityType = "own" | "sub-reseller" | "repair-center";
 
 export default function ResellerTeam() {
   const { t } = useTranslation();
+  const MODULES = getModules(t);
+  const PERMISSION_ACTIONS = getPermissionActions(t);
   const [searchQuery, setSearchQuery] = useState("");
   const [activeFilter, setActiveFilter] = useState<FilterType>("all");
   const [entityType, setEntityType] = useState<EntityType>("own");

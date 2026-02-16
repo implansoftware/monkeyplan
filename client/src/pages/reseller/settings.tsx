@@ -63,15 +63,17 @@ const phaseLabels: Record<string, string> = {
   pronto_ritiro: "7. Pronto Ritiro",
 };
 
-const phaseDescriptions: Record<string, string> = {
-  ingressato: t("settings.phase.ingressato"),
-  in_diagnosi: t("settings.phase.inDiagnosi"),
-  preventivo_emesso: t("settings.phase.preventivo"),
-  attesa_ricambi: t("settings.phase.attesaRicambi"),
-  in_riparazione: t("settings.phase.inRiparazione"),
-  in_test: t("settings.phase.inTest"),
-  pronto_ritiro: t("settings.phase.prontoRitiro"),
-};
+function getPhaseDescriptions(t: (key: string) => string): Record<string, string> {
+  return {
+    ingressato: t("settings.phase.ingressato"),
+    in_diagnosi: t("settings.phase.inDiagnosi"),
+    preventivo_emesso: t("settings.phase.preventivo"),
+    attesa_ricambi: t("settings.phase.attesaRicambi"),
+    in_riparazione: t("settings.phase.inRiparazione"),
+    in_test: t("settings.phase.inTest"),
+    pronto_ritiro: t("settings.phase.prontoRitiro"),
+  };
+}
 
 const PhaseIcons: Record<string, React.ComponentType<{ className?: string }>> = {
   ingressato: Download,
@@ -102,6 +104,7 @@ type PaymentFormData = z.infer<typeof paymentFormSchema>;
 
 export default function ResellerSettings() {
   const { t } = useTranslation();
+  const phaseDescriptions = getPhaseDescriptions(t);
   const { toast } = useToast();
   const [isConnectingStripe, setIsConnectingStripe] = useState(false);
   const [hourlyRateEuros, setHourlyRateEuros] = useState<string>("");

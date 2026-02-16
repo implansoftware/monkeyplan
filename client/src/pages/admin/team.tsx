@@ -20,29 +20,33 @@ import { z } from "zod";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useTranslation } from "react-i18next";
 
-const ADMIN_MODULES = [
-  { id: "users", name: t("admin.permissions.repairs"), description: t("admin.permissions.repairsDesc") },
-  { id: "resellers", name: t("sidebar.items.resellers"), description: t("admin.permissions.repairsDesc") },
-  { id: "repair_centers", name: t("admin.permissions.repairCenters"), description: t("admin.permissions.repairCentersDesc") },
-  { id: "repairs", name: t("admin.permissions.repairs"), description: t("admin.permissions.repairsDesc") },
-  { id: "products", name: t("admin.permissions.products"), description: t("admin.permissions.productsDesc") },
-  { id: "inventory", name: t("admin.permissions.inventory"), description: t("admin.permissions.inventoryDesc") },
-  { id: "suppliers", name: t("admin.permissions.suppliers"), description: t("admin.permissions.suppliersDesc") },
-  { id: "supplier_orders", name: t("admin.permissions.supplierOrders"), description: t("admin.permissions.supplierOrdersDesc") },
-  { id: "invoices", name: t("admin.permissions.invoices"), description: t("admin.permissions.invoicesDesc") },
-  { id: "tickets", name: t("admin.permissions.tickets"), description: t("admin.permissions.ticketsDesc") },
-  { id: "utility", name: t("sidebar.items.utility"), description: t("admin.permissions.servicesDesc") },
-  { id: "reports", name: t("sidebar.items.reports"), description: t("admin.permissions.repairsDesc") },
-  { id: "settings", name: t("sidebar.items.settings"), description: t("admin.permissions.servicesDesc") },
-  { id: "service_catalog", name: t("sidebar.items.priceList"), description: t("admin.permissions.servicesDesc") },
-];
+function getAdminModules(t: (key: string) => string) {
+  return [
+    { id: "users", name: t("admin.permissions.repairs"), description: t("admin.permissions.repairsDesc") },
+    { id: "resellers", name: t("sidebar.items.resellers"), description: t("admin.permissions.repairsDesc") },
+    { id: "repair_centers", name: t("admin.permissions.repairCenters"), description: t("admin.permissions.repairCentersDesc") },
+    { id: "repairs", name: t("admin.permissions.repairs"), description: t("admin.permissions.repairsDesc") },
+    { id: "products", name: t("admin.permissions.products"), description: t("admin.permissions.productsDesc") },
+    { id: "inventory", name: t("admin.permissions.inventory"), description: t("admin.permissions.inventoryDesc") },
+    { id: "suppliers", name: t("admin.permissions.suppliers"), description: t("admin.permissions.suppliersDesc") },
+    { id: "supplier_orders", name: t("admin.permissions.supplierOrders"), description: t("admin.permissions.supplierOrdersDesc") },
+    { id: "invoices", name: t("admin.permissions.invoices"), description: t("admin.permissions.invoicesDesc") },
+    { id: "tickets", name: t("admin.permissions.tickets"), description: t("admin.permissions.ticketsDesc") },
+    { id: "utility", name: t("sidebar.items.utility"), description: t("admin.permissions.servicesDesc") },
+    { id: "reports", name: t("sidebar.items.reports"), description: t("admin.permissions.repairsDesc") },
+    { id: "settings", name: t("sidebar.items.settings"), description: t("admin.permissions.servicesDesc") },
+    { id: "service_catalog", name: t("sidebar.items.priceList"), description: t("admin.permissions.servicesDesc") },
+  ];
+}
 
-const PERMISSION_ACTIONS = [
-  { id: "canRead", label: t("admin.permissions.canRead"), icon: Eye },
-  { id: "canCreate", label: t("admin.permissions.canCreate"), icon: FilePlus },
-  { id: "canUpdate", label: t("admin.permissions.canUpdate"), icon: Pencil },
-  { id: "canDelete", label: t("admin.permissions.canDelete"), icon: Trash2 },
-];
+function getPermissionActions(t: (key: string) => string) {
+  return [
+    { id: "canRead", label: t("admin.permissions.canRead"), icon: Eye },
+    { id: "canCreate", label: t("admin.permissions.canCreate"), icon: FilePlus },
+    { id: "canUpdate", label: t("admin.permissions.canUpdate"), icon: Pencil },
+    { id: "canDelete", label: t("admin.permissions.canDelete"), icon: Trash2 },
+  ];
+}
 
 interface AdminStaffMember {
   id: string;
@@ -66,18 +70,22 @@ interface AdminStaffPermission {
   canDelete: boolean;
 }
 
-const staffFormSchema = z.object({
-  username: z.string().min(3, t("form.minLength", { min: 3 })),
-  email: z.string().email(t("form.invalidEmail")),
-  fullName: z.string().min(2, t("form.required")),
-  phone: z.string().optional(),
-  password: z.string().min(6, t("form.minLength", { min: 6 })).optional(),
-});
-
-type StaffFormValues = z.infer<typeof staffFormSchema>;
+function getStaffFormSchema(t: (key: string) => string) {
+  return z.object({
+    username: z.string().min(3, t("form.minLength", { min: 3 })),
+    email: z.string().email(t("form.invalidEmail")),
+    fullName: z.string().min(2, t("form.required")),
+    phone: z.string().optional(),
+    password: z.string().min(6, t("form.minLength", { min: 6 })).optional(),
+  });
+}
 
 export default function AdminTeam() {
   const { t } = useTranslation();
+  const ADMIN_MODULES = getAdminModules(t);
+  const PERMISSION_ACTIONS = getPermissionActions(t);
+  const staffFormSchema = getStaffFormSchema(t);
+  type StaffFormValues = z.infer<typeof staffFormSchema>;
   const [searchQuery, setSearchQuery] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [permissionsDialogOpen, setPermissionsDialogOpen] = useState(false);

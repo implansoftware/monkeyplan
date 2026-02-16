@@ -14,17 +14,19 @@ import { useToast } from "@/hooks/use-toast";
 import { Users, Plus, Trash2, Loader2, Search, Heart } from "lucide-react";
 import type { User, CustomerRelationship } from "@shared/schema";
 
-const RELATIONSHIP_TYPES = [
-  { value: "genitore", label: "Genitore" },
-  { value: "figlio", label: "Figlio/a" },
-  { value: "coniuge", label: "Coniuge" },
-  { value: "fratello", label: "Fratello/Sorella" },
-  { value: "cugino", label: "Cugino/a" },
-  { value: "zio", label: "Zio/a" },
-  { value: "nipote", label: "Nipote" },
-  { value: "nonno", label: "Nonno/a" },
-  { value: "altro", label: t("common.other") },
-] as const;
+function getRelationshipTypes(t: (key: string) => string) {
+  return [
+    { value: "genitore", label: "Genitore" },
+    { value: "figlio", label: "Figlio/a" },
+    { value: "coniuge", label: "Coniuge" },
+    { value: "fratello", label: "Fratello/Sorella" },
+    { value: "cugino", label: "Cugino/a" },
+    { value: "zio", label: "Zio/a" },
+    { value: "nipote", label: "Nipote" },
+    { value: "nonno", label: "Nonno/a" },
+    { value: "altro", label: t("common.other") },
+  ];
+}
 
 interface CustomerRelationshipsCardProps {
   customerId: string;
@@ -38,6 +40,7 @@ interface RelationshipWithCustomer extends CustomerRelationship {
 
 export function CustomerRelationshipsCard({ customerId, resellerId, repairCenterId }: CustomerRelationshipsCardProps) {
   const { t } = useTranslation();
+  const RELATIONSHIP_TYPES = getRelationshipTypes(t);
   const { toast } = useToast();
   const [addDialogOpen, setAddDialogOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
@@ -114,7 +117,7 @@ export function CustomerRelationshipsCard({ customerId, resellerId, repairCenter
   );
 
   const getRelationshipLabel = (type: string) => {
-    return RELATIONSHIP_TYPES.find(t => t.value === type)?.label || type;
+    return RELATIONSHIP_TYPES.find(rt => rt.value === type)?.label || type;
   };
 
   const handleSubmit = () => {

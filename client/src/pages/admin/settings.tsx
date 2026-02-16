@@ -63,15 +63,17 @@ const phaseLabels: Record<string, string> = {
   pronto_ritiro: "7. Pronto Ritiro",
 };
 
-const phaseDescriptions: Record<string, string> = {
-  ingressato: t("settings.phase.ingressato"),
-  in_diagnosi: t("settings.phase.inDiagnosi"),
-  preventivo_emesso: t("settings.phase.preventivo"),
-  attesa_ricambi: t("settings.phase.attesaRicambi"),
-  in_riparazione: t("settings.phase.inRiparazione"),
-  in_test: t("settings.phase.inTest"),
-  pronto_ritiro: t("settings.phase.prontoRitiro"),
-};
+function getPhaseDescriptions(t: (key: string) => string): Record<string, string> {
+  return {
+    ingressato: t("settings.phase.ingressato"),
+    in_diagnosi: t("settings.phase.inDiagnosi"),
+    preventivo_emesso: t("settings.phase.preventivo"),
+    attesa_ricambi: t("settings.phase.attesaRicambi"),
+    in_riparazione: t("settings.phase.inRiparazione"),
+    in_test: t("settings.phase.inTest"),
+    pronto_ritiro: t("settings.phase.prontoRitiro"),
+  };
+}
 
 const PhaseIcons: Record<string, React.ComponentType<{ className?: string }>> = {
   ingressato: Download,
@@ -83,54 +85,54 @@ const PhaseIcons: Record<string, React.ComponentType<{ className?: string }>> = 
   pronto_ritiro: Truck,
 };
 
-const paymentFormSchema = z.object({
-  bankTransferEnabled: z.boolean().default(true),
-  accountHolder: z.string().optional(),
-  iban: z.string().optional(),
-  bic: z.string().optional(),
-  bankName: z.string().optional(),
-  stripeEnabled: z.boolean().default(false),
-  stripePublishableKey: z.string().optional(),
-  stripeSecretKey: z.string().optional(),
-  paypalEnabled: z.boolean().default(false),
-  paypalEmail: z.string().optional(),
-  paypalClientId: z.string().optional(),
-  paypalClientSecret: z.string().optional(),
-}).refine((data) => {
-  if (data.bankTransferEnabled) {
-    return data.iban && data.iban.trim().length > 0 && data.accountHolder && data.accountHolder.trim().length > 0;
-  }
-  return true;
-}, {
-  message: "IBAN e intestatario sono obbligatori quando il bonifico è abilitato",
-  path: ["iban"],
-}).refine((data) => {
-  if (data.paypalEnabled) {
-    return data.paypalEmail && data.paypalEmail.trim().length > 0;
-  }
-  return true;
-}, {
-  message: t("settings.paypalEmailRequired"),
-  path: ["paypalEmail"],
-}).refine((data) => {
-  if (data.paypalEnabled) {
-    return data.paypalClientId && data.paypalClientId.trim().length > 0;
-  }
-  return true;
-}, {
-  message: t("settings.paypalClientIdRequired"),
-  path: ["paypalClientId"],
-}).refine((data) => {
-  if (data.stripeEnabled) {
-    return data.stripePublishableKey && data.stripePublishableKey.trim().length > 0;
-  }
-  return true;
-}, {
-  message: t("settings.stripeKeyRequired"),
-  path: ["stripePublishableKey"],
-});
-
-type PaymentFormValues = z.infer<typeof paymentFormSchema>;
+function getPaymentFormSchema(t: (key: string) => string) {
+  return z.object({
+    bankTransferEnabled: z.boolean().default(true),
+    accountHolder: z.string().optional(),
+    iban: z.string().optional(),
+    bic: z.string().optional(),
+    bankName: z.string().optional(),
+    stripeEnabled: z.boolean().default(false),
+    stripePublishableKey: z.string().optional(),
+    stripeSecretKey: z.string().optional(),
+    paypalEnabled: z.boolean().default(false),
+    paypalEmail: z.string().optional(),
+    paypalClientId: z.string().optional(),
+    paypalClientSecret: z.string().optional(),
+  }).refine((data) => {
+    if (data.bankTransferEnabled) {
+      return data.iban && data.iban.trim().length > 0 && data.accountHolder && data.accountHolder.trim().length > 0;
+    }
+    return true;
+  }, {
+    message: "IBAN e intestatario sono obbligatori quando il bonifico è abilitato",
+    path: ["iban"],
+  }).refine((data) => {
+    if (data.paypalEnabled) {
+      return data.paypalEmail && data.paypalEmail.trim().length > 0;
+    }
+    return true;
+  }, {
+    message: t("settings.paypalEmailRequired"),
+    path: ["paypalEmail"],
+  }).refine((data) => {
+    if (data.paypalEnabled) {
+      return data.paypalClientId && data.paypalClientId.trim().length > 0;
+    }
+    return true;
+  }, {
+    message: t("settings.paypalClientIdRequired"),
+    path: ["paypalClientId"],
+  }).refine((data) => {
+    if (data.stripeEnabled) {
+      return data.stripePublishableKey && data.stripePublishableKey.trim().length > 0;
+    }
+    return true;
+  }, {
+    message: t("settings.stripeKeyRequired"),
+    path: ["stripePublishableKey"],
+  });
+}
 
 interface AiEntity {
   id: string;
@@ -291,6 +293,9 @@ function AiAccessManagement() {
 
 export default function AdminSettings() {
   const { t } = useTranslation();
+  const phaseDescriptions = getPhaseDescriptions(t);
+  const paymentFormSchema = getPaymentFormSchema(t);
+  type PaymentFormValues = z.infer<typeof paymentFormSchema>;
   usePageTitle(t("settings.title"));
   const { toast } = useToast();
   const [hourlyRateEuros, setHourlyRateEuros] = useState<string>("");

@@ -20,15 +20,18 @@ import { Progress } from "@/components/ui/progress";
 import { AddressAutocomplete } from "@/components/address-autocomplete";
 import { useTranslation } from "react-i18next";
 
-const WIZARD_STEPS = [
-  { id: 1, title: t("admin.repairCenters.infoBase"), icon: Building },
-  { id: 2, title: t("admin.repairCenters.address"), icon: MapPin },
-  { id: 3, title: t("admin.repairCenters.fiscalData"), icon: FileText },
-  { id: 4, title: t("admin.repairCenters.configuration"), icon: Settings },
-];
+function getWizardSteps(t: (key: string) => string) {
+  return [
+    { id: 1, title: t("admin.repairCenters.infoBase"), icon: Building },
+    { id: 2, title: t("admin.repairCenters.address"), icon: MapPin },
+    { id: 3, title: t("admin.repairCenters.fiscalData"), icon: FileText },
+    { id: 4, title: t("admin.repairCenters.configuration"), icon: Settings },
+  ];
+}
 
 export default function AdminRepairCenters() {
   const { t } = useTranslation();
+  const WIZARD_STEPS = getWizardSteps(t);
   const [searchQuery, setSearchQuery] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingCenter, setEditingCenter] = useState<RepairCenter | null>(null);

@@ -47,43 +47,49 @@ interface StaffWizardProps {
   onSuccess?: () => void;
 }
 
-const MODULES = [
-  { id: "repairs", name: "Lavorazioni", description: "Gestione riparazioni e ordini" },
-  { id: "customers", name: "Clienti", description: "Anagrafica clienti" },
-  { id: "products", name: t("staff.products"), description: t("staff.productsDesc") },
-  { id: "inventory", name: t("common.warehouse"), description: "Gestione inventario" },
-  { id: "repair_centers", name: t("customer.repairCenters"), description: "Gestione centri" },
-  { id: "services", name: t("staff.services"), description: t("staff.servicesDesc") },
-  { id: "suppliers", name: t("staff.suppliers"), description: t("staff.suppliersDesc") },
-  { id: "supplier_orders", name: t("staff.supplierOrders"), description: t("staff.supplierOrdersDesc") },
-  { id: "appointments", name: "Appuntamenti", description: "Gestione appuntamenti" },
-  { id: "invoices", name: t("staff.invoices"), description: t("staff.invoicesDesc") },
-  { id: "tickets", name: "Ticket Supporto", description: "Assistenza clienti" },
-];
+function getModules(t: (key: string) => string) {
+  return [
+    { id: "repairs", name: t("staff.repairs"), description: t("staff.repairsDesc") },
+    { id: "customers", name: t("staff.customers"), description: t("staff.customersDesc") },
+    { id: "products", name: t("staff.products"), description: t("staff.productsDesc") },
+    { id: "inventory", name: t("common.warehouse"), description: t("staff.inventoryDesc") },
+    { id: "repair_centers", name: t("customer.repairCenters"), description: t("staff.repairCentersDesc") },
+    { id: "services", name: t("staff.services"), description: t("staff.servicesDesc") },
+    { id: "suppliers", name: t("staff.suppliers"), description: t("staff.suppliersDesc") },
+    { id: "supplier_orders", name: t("staff.supplierOrders"), description: t("staff.supplierOrdersDesc") },
+    { id: "appointments", name: t("staff.appointments"), description: t("staff.appointmentsDesc") },
+    { id: "invoices", name: t("staff.invoices"), description: t("staff.invoicesDesc") },
+    { id: "tickets", name: t("staff.tickets"), description: t("staff.ticketsDesc") },
+  ];
+}
 
-const PERMISSION_ACTIONS = [
-  { id: "canRead", label: "Lettura", icon: Eye },
-  { id: "canCreate", label: t("staff.creation"), icon: FilePlus },
-  { id: "canUpdate", label: t("common.edit"), icon: Pencil },
-  { id: "canDelete", label: t("staff.deletion"), icon: Trash2 },
-];
+function getPermissionActions(t: (key: string) => string) {
+  return [
+    { id: "canRead", label: t("staff.read"), icon: Eye },
+    { id: "canCreate", label: t("staff.creation"), icon: FilePlus },
+    { id: "canUpdate", label: t("common.edit"), icon: Pencil },
+    { id: "canDelete", label: t("staff.deletion"), icon: Trash2 },
+  ];
+}
 
-const staffFormSchema = z.object({
-  username: z.string().min(3, "Username deve essere almeno 3 caratteri"),
-  email: z.string().email(t("customer.invalidEmail")),
-  fullName: z.string().min(2, t("customer.fullNameRequired")),
-  phone: z.string().optional(),
-  password: z.string().min(6, t("staff.passwordMinLength")),
-});
+function getStaffFormSchema(t: (key: string) => string) {
+  return z.object({
+    username: z.string().min(3, t("staff.usernameMinLength")),
+    email: z.string().email(t("customer.invalidEmail")),
+    fullName: z.string().min(2, t("customer.fullNameRequired")),
+    phone: z.string().optional(),
+    password: z.string().min(6, t("staff.passwordMinLength")),
+  });
+}
 
-type StaffFormValues = z.infer<typeof staffFormSchema>;
-
-const STEPS = [
-  { id: 1, name: "Dati Utente", icon: User },
-  { id: 2, name: "Centri", icon: Store },
-  { id: 3, name: t("common.permissions"), icon: Shield },
-  { id: 4, name: t("common.confirm"), icon: CheckCircle2 },
-];
+function getSteps(t: (key: string) => string) {
+  return [
+    { id: 1, name: t("staff.userData"), icon: User },
+    { id: 2, name: t("staff.centers"), icon: Store },
+    { id: 3, name: t("common.permissions"), icon: Shield },
+    { id: 4, name: t("common.confirm"), icon: CheckCircle2 },
+  ];
+}
 
 export function StaffWizard({ 
   open, 
@@ -94,6 +100,11 @@ export function StaffWizard({
   onSuccess 
 }: StaffWizardProps) {
   const { t } = useTranslation();
+  const MODULES = getModules(t);
+  const PERMISSION_ACTIONS = getPermissionActions(t);
+  const STEPS = getSteps(t);
+  const staffFormSchema = getStaffFormSchema(t);
+  type StaffFormValues = z.infer<typeof staffFormSchema>;
   const [currentStep, setCurrentStep] = useState(1);
   const [selectedCenters, setSelectedCenters] = useState<string[]>([]);
   const [permissions, setPermissions] = useState<Record<string, Record<string, boolean>>>({});
