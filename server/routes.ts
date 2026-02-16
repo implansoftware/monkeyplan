@@ -1592,7 +1592,7 @@ export function registerRoutes(app: Express): Server {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
       
-      const { code, name, description, category, deviceTypeId, defaultPriceCents, defaultLaborMinutes } = req.body;
+      const { code, name, description, category, deviceTypeId, brandId, modelId, defaultPriceCents, defaultLaborMinutes } = req.body;
       
       if (!code || !name || !category || defaultPriceCents === undefined) {
         return res.status(400).send("Code, name, category, and defaultPriceCents are required");
@@ -1604,6 +1604,8 @@ export function registerRoutes(app: Express): Server {
         description: description || null,
         category,
         deviceTypeId: deviceTypeId || null,
+        brandId: brandId || null,
+        modelId: modelId || null,
         defaultPriceCents,
         defaultLaborMinutes: defaultLaborMinutes || 60,
         createdBy: req.user.id,
@@ -1635,7 +1637,7 @@ export function registerRoutes(app: Express): Server {
         return res.status(403).send("Non puoi modificare questo intervento");
       }
       
-      const { code, name, description, category, deviceTypeId, defaultPriceCents, defaultLaborMinutes, isActive } = req.body;
+      const { code, name, description, category, deviceTypeId, brandId, modelId, defaultPriceCents, defaultLaborMinutes, isActive } = req.body;
       
       const updated = await storage.updateServiceItem(req.params.id, {
         ...(code !== undefined && { code }),
@@ -1643,6 +1645,8 @@ export function registerRoutes(app: Express): Server {
         ...(description !== undefined && { description }),
         ...(category !== undefined && { category }),
         ...(deviceTypeId !== undefined && { deviceTypeId }),
+        ...(brandId !== undefined && { brandId: brandId || null }),
+        ...(modelId !== undefined && { modelId: modelId || null }),
         ...(defaultPriceCents !== undefined && { defaultPriceCents }),
         ...(defaultLaborMinutes !== undefined && { defaultLaborMinutes }),
         ...(isActive !== undefined && { isActive }),
@@ -10289,7 +10293,7 @@ export function registerRoutes(app: Express): Server {
         return res.status(400).send("Repair center not found");
       }
       
-      const { code, name, description, category, defaultPriceCents, defaultLaborMinutes } = req.body;
+      const { code, name, description, category, deviceTypeId, brandId, modelId, defaultPriceCents, defaultLaborMinutes } = req.body;
       
       if (!code || !name || !category || defaultPriceCents === undefined) {
         return res.status(400).json({ error: "Missing required fields" });
@@ -10301,6 +10305,9 @@ export function registerRoutes(app: Express): Server {
         name,
         description: description || null,
         category,
+        deviceTypeId: deviceTypeId || null,
+        brandId: brandId || null,
+        modelId: modelId || null,
         defaultPriceCents,
         defaultLaborMinutes: defaultLaborMinutes || 60,
         repairCenterId,
@@ -10338,12 +10345,15 @@ export function registerRoutes(app: Express): Server {
         return res.status(403).send("Non autorizzato a modificare questo intervento");
       }
       
-      const { name, description, category, defaultPriceCents, defaultLaborMinutes, isActive } = req.body;
+      const { name, description, category, deviceTypeId, brandId, modelId, defaultPriceCents, defaultLaborMinutes, isActive } = req.body;
       
       const updated = await storage.updateServiceItem(id, {
         ...(name !== undefined && { name }),
         ...(description !== undefined && { description }),
         ...(category !== undefined && { category }),
+        ...(deviceTypeId !== undefined && { deviceTypeId }),
+        ...(brandId !== undefined && { brandId: brandId || null }),
+        ...(modelId !== undefined && { modelId: modelId || null }),
         ...(defaultPriceCents !== undefined && { defaultPriceCents }),
         ...(defaultLaborMinutes !== undefined && { defaultLaborMinutes }),
         ...(isActive !== undefined && { isActive }),
