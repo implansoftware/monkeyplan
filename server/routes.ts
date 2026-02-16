@@ -47949,42 +47949,65 @@ export function registerRoutes(app: Express): Server {
           : undefined;
 
         // Load service items scoped to the user's entity
+        // Includes both: services created by the user (createdBy) AND custom-priced services (service_item_prices)
         if (resellerId) {
+          const allServiceItems = await storage.listServiceItems();
+          const ownServices = allServiceItems.filter(s => s.createdBy === resellerId);
           const resellerPrices = await storage.listServiceItemPricesByReseller(resellerId);
-          if (resellerPrices.length > 0) {
-            const serviceIds = [...new Set(resellerPrices.map(p => p.serviceItemId))];
-            const services: any[] = [];
-            for (const sid of serviceIds.slice(0, 40)) {
-              const s = await storage.getServiceItem(sid);
-              if (s) {
-                const price = resellerPrices.find(p => p.serviceItemId === sid);
-                services.push({ ...s, customPrice: price?.priceCents });
-              }
+          const pricedServiceIds = new Set(resellerPrices.map(p => p.serviceItemId));
+          const pricedServices: any[] = [];
+          for (const sid of [...pricedServiceIds].slice(0, 40)) {
+            if (ownServices.some(s => s.id === sid)) continue;
+            const s = await storage.getServiceItem(sid);
+            if (s) {
+              const price = resellerPrices.find(p => p.serviceItemId === sid);
+              pricedServices.push({ ...s, customPrice: price?.priceCents });
             }
-            dataContext += `\n\n--- I TUOI SERVIZI (${services.length}) ---\n`;
-            dataContext += services.map(s => `- ${s.name}: ${s.description || "nessuna desc"}, prezzo: ${s.customPrice ? (Number(s.customPrice) / 100).toFixed(2) + "€" : (s.basePriceCents ? (Number(s.basePriceCents) / 100).toFixed(2) + "€ (base)" : "N/D")}, categoria: ${s.category || "N/D"}`).join("\n");
+          }
+          const combined = [
+            ...ownServices.map(s => ({ ...s, customPrice: resellerPrices.find(p => p.serviceItemId === s.id)?.priceCents })),
+            ...pricedServices,
+          ].slice(0, 50);
+          if (combined.length > 0) {
+            dataContext += `\n\n--- I TUOI SERVIZI (${combined.length}) ---\n`;
+            dataContext += combined.map(s => {
+              const price = s.customPrice ? (Number(s.customPrice) / 100).toFixed(2) + "€" : (s.defaultPriceCents ? (Number(s.defaultPriceCents) / 100).toFixed(2) + "€" : "N/D");
+              const brand = s.brandId ? "marca: sì" : "";
+              const model = s.modelId ? "modello: sì" : "";
+              return `- ${s.name}: ${s.description || "nessuna desc"}, prezzo: ${price}, categoria: ${s.category || "N/D"} ${brand} ${model}`.trim();
+            }).join("\n");
           }
         } else if (repairCenterId) {
+          const allServiceItems = await storage.listServiceItems();
+          const ownServices = allServiceItems.filter(s => s.repairCenterId === repairCenterId);
           const rcPrices = await storage.listServiceItemPricesByRepairCenter(repairCenterId);
-          if (rcPrices.length > 0) {
-            const serviceIds = [...new Set(rcPrices.map(p => p.serviceItemId))];
-            const services: any[] = [];
-            for (const sid of serviceIds.slice(0, 40)) {
-              const s = await storage.getServiceItem(sid);
-              if (s) {
-                const price = rcPrices.find(p => p.serviceItemId === sid);
-                services.push({ ...s, customPrice: price?.priceCents });
-              }
+          const pricedServiceIds = new Set(rcPrices.map(p => p.serviceItemId));
+          const pricedServices: any[] = [];
+          for (const sid of [...pricedServiceIds].slice(0, 40)) {
+            if (ownServices.some(s => s.id === sid)) continue;
+            const s = await storage.getServiceItem(sid);
+            if (s) {
+              const price = rcPrices.find(p => p.serviceItemId === sid);
+              pricedServices.push({ ...s, customPrice: price?.priceCents });
             }
-            dataContext += `\n\n--- I TUOI SERVIZI (${services.length}) ---\n`;
-            dataContext += services.map(s => `- ${s.name}: prezzo: ${s.customPrice ? (Number(s.customPrice) / 100).toFixed(2) + "€" : (s.basePriceCents ? (Number(s.basePriceCents) / 100).toFixed(2) + "€ (base)" : "N/D")}, categoria: ${s.category || "N/D"}`).join("\n");
+          }
+          const combined = [
+            ...ownServices.map(s => ({ ...s, customPrice: rcPrices.find(p => p.serviceItemId === s.id)?.priceCents })),
+            ...pricedServices,
+          ].slice(0, 50);
+          if (combined.length > 0) {
+            dataContext += `\n\n--- I TUOI SERVIZI (${combined.length}) ---\n`;
+            dataContext += combined.map(s => {
+              const price = s.customPrice ? (Number(s.customPrice) / 100).toFixed(2) + "€" : (s.defaultPriceCents ? (Number(s.defaultPriceCents) / 100).toFixed(2) + "€" : "N/D");
+              return `- ${s.name}: prezzo: ${price}, categoria: ${s.category || "N/D"}`;
+            }).join("\n");
           }
         } else if (userRole === "admin") {
           const allServices = await storage.listServiceItems();
           const servicesSlice = allServices.slice(0, 30);
           if (servicesSlice.length > 0) {
             dataContext += `\n\n--- CATALOGO SERVIZI (${allServices.length} totali) ---\n`;
-            dataContext += servicesSlice.map(s => `- ${s.name}: prezzo base: ${s.basePriceCents ? (Number(s.basePriceCents) / 100).toFixed(2) + "€" : "N/D"}, categoria: ${s.category || "N/D"}`).join("\n");
+            dataContext += servicesSlice.map(s => `- ${s.name}: prezzo base: ${s.defaultPriceCents ? (Number(s.defaultPriceCents) / 100).toFixed(2) + "€" : "N/D"}, categoria: ${s.category || "N/D"}`).join("\n");
             if (allServices.length > 30) dataContext += `\n... e altri ${allServices.length - 30} servizi`;
           }
         }
