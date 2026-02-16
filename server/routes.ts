@@ -47811,7 +47811,7 @@ export function registerRoutes(app: Express): Server {
   // Admin: get AI access status for all entities
   app.get("/api/admin/ai-access", requireRole("admin"), async (req, res) => {
     try {
-      const resellers = await storage.listResellers();
+      const resellers = await storage.getAllResellers();
       const repairCenters = await storage.listRepairCenters();
       
       const resellerAccess = await Promise.all(
@@ -47820,7 +47820,7 @@ export function registerRoutes(app: Express): Server {
           const subSetting = await storage.getResellerSetting(r.id, "ai_sub_resellers_enabled");
           return {
             id: r.id,
-            name: r.ragioneSociale || r.fullName || `Reseller ${r.id}`,
+            name: r.fullName || r.username || `Reseller ${r.id}`,
             type: "reseller" as const,
             aiEnabled: setting?.value === "true",
             allowSubResellers: subSetting?.value === "true",
