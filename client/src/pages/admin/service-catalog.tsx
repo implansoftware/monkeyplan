@@ -53,12 +53,12 @@ import { Smartphone } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
 const SERVICE_CATEGORIES = [
-  { value: "display", label: "Display" },
-  { value: "batteria", label: "Batteria" },
-  { value: "software", label: "Software" },
-  { value: "hardware", label: "Hardware" },
-  { value: "diagnostica", label: "Diagnostica" },
-  { value: "altro", label: "Altro" },
+  { value: "display", label: "display" },
+  { value: "batteria", label: "batteria" },
+  { value: "software", label: "software" },
+  { value: "hardware", label: "hardware" },
+  { value: "diagnostica", label: "diagnostica" },
+  { value: "altro", label: "altro" },
 ];
 
 const getCategoryLabel = (category: string) => {
@@ -272,7 +272,7 @@ export default function AdminServiceCatalog() {
   const handleSaveItem = () => {
     const cents = Math.round(parseFloat(priceEuros) * 100);
     if (isNaN(cents) || cents < 0) {
-      toast({ title: t("common.error"), description: "Inserisci un prezzo valido", variant: "destructive" });
+      toast({ title: t("common.error"), description: t("serviceCatalog.invalidPrice"), variant: "destructive" });
       return;
     }
 
@@ -305,7 +305,7 @@ export default function AdminServiceCatalog() {
     } else if (priceTargetType === "repair_center" && priceFormData.repairCenterId) {
       data.repairCenterId = priceFormData.repairCenterId;
     } else {
-      toast({ title: t("common.error"), description: "Seleziona un reseller o un centro riparazioni", variant: "destructive" });
+      toast({ title: t("common.error"), description: t("serviceCatalog.selectTarget"), variant: "destructive" });
       return;
     }
 
@@ -323,11 +323,11 @@ export default function AdminServiceCatalog() {
   const getEntityName = (price: ServiceItemPrice) => {
     if (price.resellerId) {
       const reseller = resellers?.find(r => r.id === price.resellerId);
-      return reseller?.ragioneSociale || reseller?.fullName || reseller?.username || "Reseller sconosciuto";
+      return reseller?.ragioneSociale || reseller?.fullName || reseller?.username || t("serviceCatalog.unknownReseller");
     }
     if (price.repairCenterId) {
       const center = repairCenters?.find(r => r.id === price.repairCenterId);
-      return center?.ragioneSociale || center?.name || "Centro sconosciuto";
+      return center?.ragioneSociale || center?.name || t("serviceCatalog.unknownCenter");
     }
     return "N/A";
   };
@@ -455,7 +455,7 @@ export default function AdminServiceCatalog() {
                         </TableCell>
                         <TableCell>
                           <Badge variant={item.isActive ? "default" : "secondary"}>
-                            {item.isActive ? "Attivo" : "Disattivo"}
+                            {item.isActive ? t("common.active") : t("serviceCatalog.disattivo")}
                           </Badge>
                         </TableCell>
                         <TableCell className="text-right">
@@ -464,7 +464,7 @@ export default function AdminServiceCatalog() {
                               size="icon"
                               variant="ghost"
                               onClick={() => { setSelectedItemForPrices(item); setActiveTab("prices"); }}
-                              title="Gestisci listini"
+                              title={t("serviceCatalog.managePrices")}
                               data-testid={`button-manage-prices-${item.id}`}
                             >
                               <Euro className="h-4 w-4" />
@@ -580,7 +580,7 @@ export default function AdminServiceCatalog() {
                           <TableRow key={price.id} data-testid={`row-price-${price.id}`}>
                             <TableCell>
                               <Badge variant="outline">
-                                {price.resellerId ? "Reseller" : "Centro"}
+                                {price.resellerId ? t("serviceCatalog.resellerLabel") : t("serviceCatalog.centerLabel")}
                               </Badge>
                             </TableCell>
                             <TableCell className="font-medium">
@@ -594,7 +594,7 @@ export default function AdminServiceCatalog() {
                             </TableCell>
                             <TableCell>
                               <Badge variant={price.isActive ? "default" : "secondary"}>
-                                {price.isActive ? "Attivo" : "Disattivo"}
+                                {price.isActive ? t("common.active") : t("serviceCatalog.disattivo")}
                               </Badge>
                             </TableCell>
                             <TableCell className="text-right">
@@ -623,12 +623,12 @@ export default function AdminServiceCatalog() {
         <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
             <DialogTitle>
-              {editingItem ? "Modifica Intervento" : "Nuovo Intervento"}
+              {editingItem ? t("serviceCatalog.editService") : t("serviceCatalog.newService")}
             </DialogTitle>
             <DialogDescription>
               {editingItem 
-                ? "Modifica i dettagli dell'intervento" 
-                : "Aggiungi un nuovo intervento al catalogo"}
+                ? t("serviceCatalog.editServiceDesc") 
+                : t("serviceCatalog.newServiceDesc")}
             </DialogDescription>
           </DialogHeader>
 
@@ -679,7 +679,7 @@ export default function AdminServiceCatalog() {
                   ))}
                 </SelectContent>
               </Select>
-              <p className="text-xs text-muted-foreground">Lascia "Tutti" se l'intervento è generico</p>
+              <p className="text-xs text-muted-foreground">{t("serviceCatalog.allGenericHint")}</p>
             </div>
 
             <div className="space-y-2">
@@ -759,7 +759,7 @@ export default function AdminServiceCatalog() {
               disabled={createItemMutation.isPending || updateItemMutation.isPending}
               data-testid="button-save-item"
             >
-              {editingItem ? "Salva Modifiche" : "Crea Intervento"}
+              {editingItem ? t("serviceCatalog.saveChanges") : t("serviceCatalog.createService")}
             </Button>
           </DialogFooter>
         </DialogContent>

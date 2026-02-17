@@ -577,7 +577,7 @@ export default function AdminTeam() {
                   disabled={createMutation.isPending || updateMutation.isPending}
                   data-testid="button-save-admin-staff"
                 >
-                  {isEditing ? "Salva Modifiche" : "Crea Collaboratore"}
+                  {isEditing ? t("team.saveChanges") : t("team.createCollaborator")}
                 </Button>
               </DialogFooter>
             </form>

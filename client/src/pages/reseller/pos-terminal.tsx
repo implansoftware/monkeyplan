@@ -101,7 +101,7 @@ function ProductImage({ category, imageUrl, size = "md" }: { category?: string |
       <div className={`${sizeClasses[size]} rounded-lg flex items-center justify-center flex-shrink-0 overflow-hidden bg-muted`}>
         <img 
           src={signedUrl} 
-          alt="Prodotto" 
+          alt={t("products.product")} 
           className="w-full h-full object-cover"
           onError={() => setImgError(true)}
         />
@@ -263,9 +263,9 @@ type WarrantyProductPOS = {
 function getPaymentMethodLabels(t: (key: string) => string): Record<string, { label: string; icon: typeof CreditCard }> {
   return {
     cash: { label: t("pos.cash"), icon: Banknote },
-    stripe_link: { label: "Link Pagamento", icon: QrCode },
+    stripe_link: { label: t("pos.paymentLink"), icon: QrCode },
     paypal: { label: "PayPal", icon: Wallet },
-    mixed: { label: "Misto", icon: Calculator },
+    mixed: { label: t("pos.mixed"), icon: Calculator },
   };
 }
 
@@ -339,7 +339,7 @@ export default function ResellerPosTerminal() {
     queryKey: ["/api/reseller/repair-centers", repairCenterId],
     queryFn: async () => {
       const res = await fetch(`/api/reseller/repair-centers/${repairCenterId}`, { credentials: "include" });
-      if (!res.ok) throw new Error("Centro non trovato");
+      if (!res.ok) throw new Error(t("pos.centerNotFound"));
       return res.json();
     },
     enabled: !!repairCenterId,
@@ -412,12 +412,12 @@ export default function ResellerPosTerminal() {
       <div className="flex items-center justify-center min-h-[60vh]">
         <Card className="max-w-md">
           <CardHeader>
-            <CardTitle className="text-destructive">Centro non specificato</CardTitle>
-            <CardDescription>Seleziona un centro riparazione dalla lista casse</CardDescription>
+            <CardTitle className="text-destructive">{t("pos.centerNotSpecified")}</CardTitle>
+            <CardDescription>{t("pos.selectCenterFromRegisters")}</CardDescription>
           </CardHeader>
           <CardFooter>
             <Link href="/reseller/pos-registers">
-              <Button>Vai alle Casse</Button>
+              <Button>{t("pos.goToRegisters")}</Button>
             </Link>
           </CardFooter>
         </Card>
@@ -511,7 +511,7 @@ export default function ResellerPosTerminal() {
   const { data: customers = [] } = useQuery<PosCustomerType[]>({
     queryFn: async () => {
       const res = await fetch(`/api/reseller/pos/${repairCenterId}/customers?search=${encodeURIComponent(customerSearch)}`, { credentials: "include" });
-      if (!res.ok) throw new Error("Errore caricamento clienti");
+      if (!res.ok) throw new Error(t("pos.errorLoadingCustomers"));
       return res.json();
     },
     queryKey: ["/api/reseller/pos", repairCenterId, "customers", customerSearch],
@@ -545,7 +545,7 @@ export default function ResellerPosTerminal() {
       setOpenSessionDialog(false);
       setOpeningCash("");
       setSessionNotes("");
-      toast({ title: "Cassa aperta", description: "Puoi iniziare a registrare vendite" });
+      toast({ title: t("pos.sessionOpen"), description: t("pos.canStartSelling") });
     },
     onError: (error: any) => {
       toast({ title: t("common.error"), description: error.message, variant: "destructive" });
@@ -562,7 +562,7 @@ export default function ResellerPosTerminal() {
       setCloseSessionDialog(false);
       setClosingCash("");
       setSessionNotes("");
-      toast({ title: "Cassa chiusa", description: "Sessione terminata con successo" });
+      toast({ title: t("pos.sessionClosed"), description: t("pos.sessionEndedSuccess") });
     },
     onError: (error: any) => {
       toast({ title: t("common.error"), description: error.message, variant: "destructive" });
@@ -582,7 +582,7 @@ export default function ResellerPosTerminal() {
       setNewCustomerName("");
       setNewCustomerEmail("");
       setNewCustomerPhone("");
-      toast({ title: t("utility.customerCreated"), description: `${customer.fullName} aggiunto con successo` });
+      toast({ title: t("utility.customerCreated"), description: `${customer.fullName} ${t("common.addedSuccessfully")}` });
     },
     onError: (error: any) => {
       toast({ title: t("common.error"), description: error.message, variant: "destructive" });
@@ -616,8 +616,8 @@ export default function ResellerPosTerminal() {
       
       if (data.invoice) {
         toast({ 
-          title: "Vendita con fattura", 
-          description: `Transazione e fattura ${data.invoice.invoiceNumber} create con successo` 
+          title: t("pos.saleWithInvoice"), 
+          description: `${t("pos.transactionAndInvoice")} ${data.invoice.invoiceNumber} ${t("common.createdSuccessfully")}` 
         });
       } else {
         // Per stripe_link o paypal, apri il dialog con link pagamento
@@ -636,7 +636,7 @@ export default function ResellerPosTerminal() {
           setPaymentDialog(false);
           createPaypalOrderMutation.mutate(data.transaction.id);
         } else {
-          toast({ title: "Vendita registrata", description: "Transazione completata" });
+          toast({ title: t("pos.saleRegistered"), description: t("pos.laTransazioneStataCompletata") });
         }
       }
     },
@@ -656,7 +656,7 @@ export default function ResellerPosTerminal() {
       setPaymentLinkStatus("ready");
     },
     onError: (error: any) => {
-      toast({ title: "Errore generazione link", description: error.message, variant: "destructive" });
+      toast({ title: t("pos.erroreGenerazioneLink"), description: error.message, variant: "destructive" });
       setPaymentLinkDialog(false);
     },
   });
@@ -671,16 +671,16 @@ export default function ResellerPosTerminal() {
       if (data.paid) {
         setPaymentLinkStatus("completed");
         queryClient.invalidateQueries({ queryKey: ["/api/reseller/pos", repairCenterId, "session-transactions", selectedRegisterId] });
-        toast({ title: "Pagamento ricevuto!", description: "Il pagamento è stato completato con successo" });
+        toast({ title: t("pos.paymentReceived"), description: t("pos.ilPagamentoStatoCompletatoConSuccesso") });
       } else if (data.status === "expired") {
         setPaymentLinkStatus("expired");
       } else {
         setPaymentLinkStatus("ready");
-        toast({ title: t("hr.pending"), description: "Il pagamento non è ancora stato completato" });
+        toast({ title: t("hr.pending"), description: t("pos.paymentNotCompleted") });
       }
     },
     onError: (error: any) => {
-      toast({ title: "Errore verifica", description: error.message, variant: "destructive" });
+      toast({ title: t("pos.errorVerification"), description: error.message, variant: "destructive" });
       setPaymentLinkStatus("ready");
     },
   });
@@ -694,10 +694,10 @@ export default function ResellerPosTerminal() {
     onSuccess: (data: { paymentUrl: string; sessionId: string; expiresAt: string }) => {
       setPaymentLinkUrl(data.paymentUrl);
       setPaymentLinkStatus("ready");
-      toast({ title: "Link rigenerato", description: "Nuovo link di pagamento disponibile" });
+      toast({ title: t("pos.linkRegenerated"), description: t("pos.newPaymentLinkAvailable") });
     },
     onError: (error: any) => {
-      toast({ title: "Errore rigenerazione", description: error.message, variant: "destructive" });
+      toast({ title: t("pos.errorRegeneration"), description: error.message, variant: "destructive" });
       setPaymentLinkStatus("expired");
     },
   });
@@ -713,7 +713,7 @@ export default function ResellerPosTerminal() {
       setPaymentLinkStatus("ready");
     },
     onError: (error: any) => {
-      toast({ title: "Errore creazione PayPal", description: error.message, variant: "destructive" });
+      toast({ title: t("pos.erroreCreazionePayPal"), description: error.message, variant: "destructive" });
       setPaymentLinkDialog(false);
     },
   });
@@ -728,14 +728,14 @@ export default function ResellerPosTerminal() {
       if (data.paid) {
         setPaymentLinkStatus("completed");
         queryClient.invalidateQueries({ queryKey: ["/api/reseller/pos", repairCenterId, "session-transactions", selectedRegisterId] });
-        toast({ title: "Pagamento PayPal ricevuto!", description: "Il pagamento è stato completato con successo" });
+        toast({ title: t("pos.paypalPaymentReceived"), description: t("pos.ilPagamentoStatoCompletatoConSuccesso") });
       } else {
         setPaymentLinkStatus("ready");
-        toast({ title: t("hr.pending"), description: "Il cliente non ha ancora completato il pagamento PayPal" });
+        toast({ title: t("hr.pending"), description: t("pos.customerNotCompletedPaypal") });
       }
     },
     onError: (error: any) => {
-      toast({ title: "Errore verifica PayPal", description: error.message, variant: "destructive" });
+      toast({ title: t("pos.erroreVerificaPayPal"), description: error.message, variant: "destructive" });
       setPaymentLinkStatus("ready");
     },
   });
@@ -765,7 +765,7 @@ export default function ResellerPosTerminal() {
     
     if (existing) {
       if (maxStock !== undefined && existing.quantity >= maxStock) {
-        toast({ title: "Stock insufficiente", description: `Disponibilità massima: ${maxStock}`, variant: "destructive" });
+        toast({ title: t("pos.insufficientStock"), description: `${t("pos.maxAvailability")}: ${maxStock}`, variant: "destructive" });
         return;
       }
       setCart(cart.map(item => 
@@ -915,7 +915,7 @@ export default function ResellerPosTerminal() {
       addToCart(found);
       setBarcodeInput("");
     } else {
-      toast({ title: "Non trovato", description: `Prodotto con codice ${barcodeInput} non trovato`, variant: "destructive" });
+      toast({ title: t("common.notFound"), description: `${t("pos.productWithCode")} ${barcodeInput} ${t("common.notFound").toLowerCase()}`, variant: "destructive" });
     }
     barcodeInputRef.current?.focus();
   };
@@ -926,11 +926,11 @@ export default function ResellerPosTerminal() {
     const price = Number.isFinite(parsed) ? Math.round(parsed * 100) : NaN;
     
     if (!name) {
-      toast({ title: t("common.error"), description: "Inserisci un nome per il prodotto", variant: "destructive" });
+      toast({ title: t("common.error"), description: t("pos.enterProductName"), variant: "destructive" });
       return;
     }
     if (!Number.isFinite(price) || price <= 0) {
-      toast({ title: t("common.error"), description: "Inserisci un prezzo valido", variant: "destructive" });
+      toast({ title: t("common.error"), description: t("pos.enterValidPrice"), variant: "destructive" });
       return;
     }
     
@@ -939,7 +939,7 @@ export default function ResellerPosTerminal() {
       name,
       sku: null,
       barcode: null,
-      category: "Temporaneo",
+      category: t("pos.temporary"),
       imageUrl: null,
       quantity: 1,
       unitPrice: price,
@@ -952,13 +952,13 @@ export default function ResellerPosTerminal() {
     setTempProductName("");
     setTempProductPrice("");
     setTempProductDialog(false);
-    toast({ title: "Aggiunto", description: `Prodotto temporaneo "${name}" aggiunto al carrello` });
+    toast({ title: t("common.added"), description: `${t("pos.tempProduct")} "${name}" ${t("pos.addedToCart")}` });
   };
 
   const handlePayment = () => {
     if (cart.length === 0) return;
     if (invoiceRequested && (customerType === "guest" || !selectedCustomerId)) {
-      toast({ title: t("common.error"), description: "Seleziona un cliente per la fattura", variant: "destructive" });
+      toast({ title: t("common.error"), description: t("pos.selezionaClientePerFattura"), variant: "destructive" });
       return;
     }
     
@@ -1058,15 +1058,15 @@ export default function ResellerPosTerminal() {
           <Select value={selectedRegisterId} onValueChange={setSelectedRegisterId}>
             <SelectTrigger className="w-full sm:w-[220px] h-10" data-testid="select-register-closed">
               <Store className="w-4 h-4 mr-2" />
-              <SelectValue placeholder="Seleziona cassa" />
+              <SelectValue placeholder={t("pos.selezionaCassa")} />
             </SelectTrigger>
             <SelectContent>
               {registers.filter(r => r.isActive).map(reg => (
                 <SelectItem key={reg.id} value={reg.id} data-testid={`select-register-closed-${reg.id}`}>
                   <span className="flex flex-wrap items-center gap-2">
                     <span className={`w-2 h-2 rounded-full ${reg.id === selectedRegisterId && currentSession ? "bg-green-500" : "bg-gray-300"}`} />
-                    {reg.name} {reg.isDefault && "(Default)"}
-                    {reg.id === selectedRegisterId && currentSession && <span className="text-xs text-green-600 ml-1">Aperta</span>}
+                    {reg.name} {reg.isDefault && t("common.default")}
+                    {reg.id === selectedRegisterId && currentSession && <span className="text-xs text-green-600 ml-1">{t("common.open")}</span>}
                   </span>
                 </SelectItem>
               ))}
@@ -1085,7 +1085,7 @@ export default function ResellerPosTerminal() {
             </div>
             <CardTitle className="text-2xl">{t("sidebar.items.pos")}</CardTitle>
             <CardDescription>
-              Apri la cassa per iniziare a registrare le vendite
+              {t("pos.openCashToStart")}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -1097,7 +1097,7 @@ export default function ResellerPosTerminal() {
               data-testid="button-open-session"
             >
               <DollarSign className="w-5 h-5 mr-2" />
-              Apri Cassa
+              {t("pos.openSession")}
             </Button>
           </CardFooter>
         </Card>
@@ -1105,12 +1105,12 @@ export default function ResellerPosTerminal() {
         <Dialog open={openSessionDialog} onOpenChange={setOpenSessionDialog}>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>Apertura Cassa</DialogTitle>
-              <DialogDescription>Inserisci il fondo cassa iniziale</DialogDescription>
+              <DialogTitle>{t("pos.openSession")}</DialogTitle>
+              <DialogDescription>{t("pos.enterOpeningCash")}</DialogDescription>
             </DialogHeader>
             <div className="space-y-4">
               <div>
-                <Label>Fondo Cassa (EUR)</Label>
+                <Label>{t("pos.openingCashEur")}</Label>
                 <Input
                   type="number"
                   placeholder="0.00"
@@ -1121,9 +1121,9 @@ export default function ResellerPosTerminal() {
                 />
               </div>
               <div>
-                <Label>Note (opzionale)</Label>
+                <Label>{t("common.notesOptional")}</Label>
                 <Textarea
-                  placeholder="Note apertura..."
+                  placeholder={t("pos.openingNotes")}
                   value={sessionNotes}
                   onChange={(e) => setSessionNotes(e.target.value)}
                   data-testid="input-session-notes"
@@ -1168,7 +1168,7 @@ export default function ResellerPosTerminal() {
                 <h1 className="text-xl sm:text-2xl font-bold text-white tracking-tight">{t("sidebar.sections.posSection")}</h1>
                 <div className="flex flex-wrap items-center gap-2 text-emerald-100 text-sm">
                   <div className="w-2 h-2 rounded-full bg-green-300 animate-pulse" />
-                  {selectedRegister?.name || "Cassa"} • dalle {format(new Date(currentSession.openedAt), "HH:mm", { locale: it })}
+                  {selectedRegister?.name || t("pos.register")} • {t("pos.from")} {format(new Date(currentSession.openedAt), "HH:mm", { locale: it })}
                 </div>
               </div>
             </div>
@@ -1176,7 +1176,7 @@ export default function ResellerPosTerminal() {
               <Select value={selectedRegisterId} onValueChange={setSelectedRegisterId}>
                 <SelectTrigger className="w-auto max-w-[140px] sm:max-w-[180px] h-8 bg-white/20 backdrop-blur-sm text-white border-white/30 truncate" data-testid="select-register">
                   <Store className="w-4 h-4 mr-1 flex-shrink-0" />
-                  <SelectValue placeholder="Cassa" className="truncate" />
+                  <SelectValue placeholder={t("pos.register")} className="truncate" />
                 </SelectTrigger>
                 <SelectContent>
                   {registers.filter(r => r.isActive).map(reg => (
@@ -1184,7 +1184,7 @@ export default function ResellerPosTerminal() {
                       <span className="flex flex-wrap items-center gap-2">
                         <span className={`w-2 h-2 rounded-full ${reg.id === selectedRegisterId && currentSession ? "bg-green-500" : "bg-gray-300"}`} />
                         {reg.name} {reg.isDefault && "(Default)"}
-                        {reg.id === selectedRegisterId && currentSession && <Badge variant="secondary" className="text-xs bg-green-100 text-green-700 ml-1">Aperta</Badge>}
+                        {reg.id === selectedRegisterId && currentSession && <Badge variant="secondary" className="text-xs bg-green-100 text-green-700 ml-1">{t("common.open")}</Badge>}
                       </span>
                     </SelectItem>
                   ))}
@@ -1198,7 +1198,7 @@ export default function ResellerPosTerminal() {
               <Link href="/reseller/pos/sessions">
                 <Button variant="outline" size="icon" className="h-8 w-8 sm:w-auto sm:px-3 bg-white/20 backdrop-blur-sm text-white border-white/30 hover:bg-white/30" data-testid="button-session-history">
                   <History className="w-4 h-4 sm:mr-1" />
-                  <span className="hidden sm:inline">Sessioni</span>
+                  <span className="hidden sm:inline">{t("pos.sessions")}</span>
                 </Button>
               </Link>
               <Button
@@ -1222,7 +1222,7 @@ export default function ResellerPosTerminal() {
                 <QrCode className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
                 <Input
                   ref={barcodeInputRef}
-                  placeholder="Scansiona barcode o digita SKU..."
+                  placeholder={t("pos.scanBarcodeOrSku")}
                   value={barcodeInput}
                   onChange={(e) => setBarcodeInput(e.target.value)}
                   onKeyDown={(e) => e.key === "Enter" && handleBarcodeSearch()}
@@ -1244,7 +1244,7 @@ export default function ResellerPosTerminal() {
                 onClick={() => setTempProductDialog(true)}
                 className="h-12 px-4"
                 data-testid="button-add-temp-product"
-                title="Aggiungi prodotto temporaneo"
+                title={t("pos.addTempProduct")}
               >
                 <Plus className="w-5 h-5 mr-1" />{t("common.other")}</Button>
             </div>
@@ -1258,7 +1258,7 @@ export default function ResellerPosTerminal() {
                 </TabsTrigger>
                 <TabsTrigger value="services" data-testid="tab-services" className="text-xs sm:text-sm px-2 sm:px-3">
                   <FileText className="w-3.5 h-3.5 sm:mr-1" />
-                  <span className="hidden sm:inline">Interventi</span>
+                  <span className="hidden sm:inline">{t("common.services")}</span>
                 </TabsTrigger>
                 <TabsTrigger value="warranties" data-testid="tab-warranties" className="text-xs sm:text-sm px-2 sm:px-3">
                   <Shield className="w-3.5 h-3.5 sm:mr-1" />
@@ -1266,16 +1266,16 @@ export default function ResellerPosTerminal() {
                 </TabsTrigger>
                 <TabsTrigger value="history" data-testid="tab-history" className="text-xs sm:text-sm px-2 sm:px-3">
                   <History className="w-3.5 h-3.5 sm:mr-1" />
-                  <span className="hidden sm:inline">Storico</span>
+                  <span className="hidden sm:inline">{t("pos.history")}</span>
                 </TabsTrigger>
               </TabsList>
               
               {/* Selezione Cliente */}
               <div className="space-y-2 mb-3">
                 <div className="flex flex-wrap items-center gap-2">
-                  <span className="text-sm text-muted-foreground">Cliente:</span>
+                  <span className="text-sm text-muted-foreground">{t("common.customer")}:</span>
                   {(["guest", "existing", "new"] as const).map((type) => {
-                    const labels = { guest: "Ospite", existing: "Esistente", new: t("common.new") };
+                    const labels = { guest: t("pos.guest"), existing: t("pos.existing"), new: t("common.new") };
                     return (
                       <Button
                         key={type}
@@ -1299,7 +1299,7 @@ export default function ResellerPosTerminal() {
                     {!selectedCustomer ? (
                       <>
                         <Input
-                          placeholder="Cerca cliente..."
+                          placeholder={t("pos.cercaCliente")}
                           value={customerSearch}
                           onChange={(e) => setCustomerSearch(e.target.value)}
                           className="h-8 text-sm"
@@ -1337,12 +1337,12 @@ export default function ResellerPosTerminal() {
 
                 {customerType === "new" && (
                   <div className="grid grid-cols-1 gap-1 p-2 rounded-md bg-muted/50">
-                    <Input placeholder="Nome *" value={newCustomerName} onChange={(e) => setNewCustomerName(e.target.value)} className="h-8 text-sm" data-testid="input-new-customer-name" />
+                    <Input placeholder={`${t("common.name")} *`} value={newCustomerName} onChange={(e) => setNewCustomerName(e.target.value)} className="h-8 text-sm" data-testid="input-new-customer-name" />
                     <Input placeholder={t("common.email")} type="email" value={newCustomerEmail} onChange={(e) => setNewCustomerEmail(e.target.value)} className="h-8 text-sm" data-testid="input-new-customer-email" />
                     <Input placeholder={t("common.phone")} value={newCustomerPhone} onChange={(e) => setNewCustomerPhone(e.target.value)} className="h-8 text-sm" data-testid="input-new-customer-phone" />
                     <Button size="sm" variant="outline" disabled={!newCustomerName.trim() || createCustomerMutation.isPending} onClick={() => createCustomerMutation.mutate({ fullName: newCustomerName.trim(), email: newCustomerEmail.trim() || undefined, phone: newCustomerPhone.trim() || undefined })} data-testid="button-create-customer">
                       {createCustomerMutation.isPending ? <Loader2 className="w-3 h-3 mr-1 animate-spin" /> : <UserPlus className="w-3 h-3 mr-1" />}
-                      Crea Cliente
+                      {t("pos.createCustomer")}
                     </Button>
                   </div>
                 )}
@@ -1352,10 +1352,10 @@ export default function ResellerPosTerminal() {
               {priceLists.length > 0 && (
                 <div className="space-y-1 mb-3">
                   <div className="flex items-center gap-2">
-                    <span className="text-sm text-muted-foreground">Listino:</span>
+                    <span className="text-sm text-muted-foreground">{t("pos.listino")}</span>
                     <Select value={selectedPriceListId} onValueChange={setSelectedPriceListId}>
                       <SelectTrigger className="flex-1 h-8" data-testid="select-price-list">
-                        <SelectValue placeholder="Seleziona listino" />
+                        <SelectValue placeholder={t("pos.selezionaListino")} />
                       </SelectTrigger>
                       <SelectContent>
                         {priceLists.map(list => (
@@ -1387,8 +1387,8 @@ export default function ResellerPosTerminal() {
                   ) : filteredProducts.length === 0 ? (
                     <div className="flex flex-col items-center justify-center h-40 text-muted-foreground">
                       <AlertCircle className="w-12 h-12 mb-2 opacity-50" />
-                      <span>Nessun prodotto in magazzino</span>
-                      <span className="text-sm">Aggiungi prodotti dal gestionale</span>
+                      <span>{t("pos.noProductsInStock")}</span>
+                      <span className="text-sm">{t("pos.addProductsFromManagement")}</span>
                     </div>
                   ) : (
                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
@@ -1430,7 +1430,7 @@ export default function ResellerPosTerminal() {
                                   variant={isOutOfStock ? "destructive" : "secondary"}
                                   className="text-xs"
                                 >
-                                  {isOutOfStock ? t("shop.outOfStock") : `${product.availableQuantity} disp.`}
+                                  {isOutOfStock ? t("shop.outOfStock") : `${product.availableQuantity} ${t("common.available")}`}
                                 </Badge>
                               )}
                             </div>
@@ -1461,8 +1461,8 @@ export default function ResellerPosTerminal() {
                   ) : filteredServices.length === 0 ? (
                     <div className="flex flex-col items-center justify-center h-40 text-muted-foreground">
                       <AlertCircle className="w-12 h-12 mb-2 opacity-50" />
-                      <span>Nessun intervento disponibile</span>
-                      <span className="text-sm">Configura il catalogo interventi</span>
+                      <span>{t("pos.nessunInterventoDisponibile")}</span>
+                      <span className="text-sm">{t("pos.configureServiceCatalog")}</span>
                     </div>
                   ) : (
                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
@@ -1517,8 +1517,8 @@ export default function ResellerPosTerminal() {
                   ) : filteredWarrantyProducts.length === 0 ? (
                     <div className="flex flex-col items-center justify-center h-40 text-muted-foreground">
                       <Shield className="w-12 h-12 mb-2 opacity-50" />
-                      <span>Nessuna garanzia disponibile</span>
-                      <span className="text-sm">Configura il catalogo garanzie</span>
+                      <span>{t("pos.nessunaGaranziaDisponibile")}</span>
+                      <span className="text-sm">{t("pos.configureWarrantyCatalog")}</span>
                     </div>
                   ) : (
                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
@@ -1535,10 +1535,10 @@ export default function ResellerPosTerminal() {
                             </div>
                             <div className="flex-1 min-w-0">
                               <div className="font-medium text-sm line-clamp-2">{wp.name}</div>
-                              <div className="text-xs text-muted-foreground mt-0.5">{wp.durationMonths} mesi</div>
+                              <div className="text-xs text-muted-foreground mt-0.5">{wp.durationMonths} {t("common.months")}</div>
                             </div>
                           </div>
-                          <Badge variant="outline" className="mb-2 text-xs">{wp.coverageType === 'basic' ? 'Base' : wp.coverageType === 'extended' ? 'Estesa' : wp.coverageType === 'premium' ? 'Premium' : wp.coverageType}</Badge>
+                          <Badge variant="outline" className="mb-2 text-xs">{wp.coverageType === 'basic' ? t("pos.coverageBasic") : wp.coverageType === 'extended' ? t("pos.coverageExtended") : wp.coverageType === 'premium' ? t("pos.coveragePremium") : wp.coverageType}</Badge>
                           <div className="flex items-center justify-between">
                             <div className="font-semibold text-primary">
                               {formatCurrency(wp.priceInCents)}
@@ -1559,7 +1559,7 @@ export default function ResellerPosTerminal() {
                     </div>
                   ) : transactions.length === 0 ? (
                     <div className="text-center text-muted-foreground py-8">
-                      Nessuna transazione in questa sessione
+                      {t("pos.noTransactionsInSession")}
                     </div>
                   ) : (
                     <div className="space-y-2">
@@ -1588,14 +1588,14 @@ export default function ResellerPosTerminal() {
                               {tx.invoiceRequested && (
                                 <Badge variant={tx.invoiceId ? "default" : "secondary"} className="text-xs">
                                   <FileText className="w-3 h-3 mr-1" />
-                                  {tx.invoiceId ? t("common.invoice") : "Da fatturare"}
+                                  {tx.invoiceId ? t("common.invoice") : t("pos.toInvoice")}
                                 </Badge>
                               )}
                               {tx.status === "refunded" && (
-                                <Badge variant="destructive" className="text-xs">Rimborsato</Badge>
+                                <Badge variant="destructive" className="text-xs">{t("pos.refunded")}</Badge>
                               )}
                               {tx.status === "partial_refund" && (
-                                <Badge variant="secondary" className="text-xs">Rimborso parziale</Badge>
+                                <Badge variant="secondary" className="text-xs">{t("pos.partialRefund")}</Badge>
                               )}
                               {tx.status === "voided" && (
                                 <Badge variant="destructive" className="text-xs">{t("common.cancelled")}</Badge>
@@ -1618,7 +1618,7 @@ export default function ResellerPosTerminal() {
         <CardHeader className="pb-2">
           <CardTitle className="flex flex-wrap items-center gap-2">
             <ShoppingCart className="w-5 h-5" />
-            Carrello
+            {t("pos.cart")}
             {cart.length > 0 && (
               <Badge variant="secondary" className="ml-auto">{cart.length}</Badge>
             )}
@@ -1654,7 +1654,7 @@ export default function ResellerPosTerminal() {
                           )}
                           {item.isTemporary && (
                             <Badge variant="outline" className="text-[10px] px-1 py-0 h-4 border-amber-500 text-amber-600 dark:text-amber-400">
-                              Temp
+                              {t("pos.temp")}
                             </Badge>
                           )}
                         </div>
@@ -1715,7 +1715,7 @@ export default function ResellerPosTerminal() {
         
         <div className="p-4 space-y-2">
           <div className="flex justify-between text-sm">
-            <span className="text-muted-foreground">Imponibile</span>
+            <span className="text-muted-foreground">{t("common.taxableAmount")}</span>
             <span>{formatCurrency(cartVatSummary.subtotal)}</span>
           </div>
           {discount > 0 && (
@@ -1738,7 +1738,7 @@ export default function ResellerPosTerminal() {
         <CardFooter className="flex-col gap-2 pt-0">
           <div className="w-full">
             <Input
-              placeholder="Sconto (EUR)"
+              placeholder={t("pos.discountEur")}
               type="number"
               value={discountAmount}
               onChange={(e) => setDiscountAmount(e.target.value)}
@@ -1753,7 +1753,7 @@ export default function ResellerPosTerminal() {
             data-testid="button-checkout"
           >
             <Calculator className="w-5 h-5 mr-2" />
-            Procedi al Pagamento
+            {t("pos.proceedToPayment")}
           </Button>
         </CardFooter>
       </Card>
@@ -1824,7 +1824,7 @@ export default function ResellerPosTerminal() {
 
             {/* Codice Lotteria degli Scontrini */}
             <Input
-              placeholder="Codice Lotteria (8 caratteri)"
+              placeholder={t("pos.lotteryCode")}
               value={lotteryCode}
               onChange={(e) => setLotteryCode(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 8))}
               maxLength={8}
@@ -1837,7 +1837,7 @@ export default function ResellerPosTerminal() {
                 {!selectedCustomer ? (
                   <>
                     <Input
-                      placeholder="Cerca cliente..."
+                      placeholder={t("pos.searchCustomer")}
                       value={customerSearch}
                       onChange={(e) => setCustomerSearch(e.target.value)}
                       className="h-8 text-sm"
@@ -1875,24 +1875,24 @@ export default function ResellerPosTerminal() {
 
             {customerType === "new" && (
               <div className="grid grid-cols-3 gap-1 p-2 rounded-md bg-muted/50">
-                <Input placeholder="Nome *" value={newCustomerName} onChange={(e) => setNewCustomerName(e.target.value)} className="h-8 text-sm" data-testid="input-new-customer-name" />
+                <Input placeholder={`${t("common.name")} *`} value={newCustomerName} onChange={(e) => setNewCustomerName(e.target.value)} className="h-8 text-sm" data-testid="input-new-customer-name" />
                 <Input placeholder={t("common.email")} type="email" value={newCustomerEmail} onChange={(e) => setNewCustomerEmail(e.target.value)} className="h-8 text-sm" data-testid="input-new-customer-email" />
                 <Input placeholder={t("common.phone")} value={newCustomerPhone} onChange={(e) => setNewCustomerPhone(e.target.value)} className="h-8 text-sm" data-testid="input-new-customer-phone" />
                 <Button size="sm" variant="outline" className="col-span-3" disabled={!newCustomerName.trim() || createCustomerMutation.isPending} onClick={() => createCustomerMutation.mutate({ fullName: newCustomerName.trim(), email: newCustomerEmail.trim() || undefined, phone: newCustomerPhone.trim() || undefined })} data-testid="button-create-customer">
                   {createCustomerMutation.isPending ? <Loader2 className="w-3 h-3 mr-1 animate-spin" /> : <UserPlus className="w-3 h-3 mr-1" />}
-                  Crea Cliente
+                  {t("pos.createCustomer")}
                 </Button>
               </div>
             )}
             
             {invoiceRequested && customerType === "guest" && (
-              <p className="text-xs text-amber-600">Fattura richiede cliente</p>
+              <p className="text-xs text-amber-600">{t("pos.invoiceRequiresCustomer")}</p>
             )}
             {invoiceRequested && customerType === "existing" && !selectedCustomerId && (
-              <p className="text-xs text-amber-600">Seleziona cliente per fattura</p>
+              <p className="text-xs text-amber-600">{t("pos.selezionaClientePerFattura")}</p>
             )}
             {invoiceRequested && customerType === "new" && !selectedCustomerId && (
-              <p className="text-xs text-amber-600">Crea cliente per fattura</p>
+              <p className="text-xs text-amber-600">{t("pos.creaClientePerFattura")}</p>
             )}
 
             {selectedPayment === "cash" && (
@@ -1934,12 +1934,12 @@ export default function ResellerPosTerminal() {
                   ))}
                   <Button variant="outline" size="sm" className="h-9 font-bold col-span-2" onClick={() => setCashReceived(prev => prev + "0")} data-testid="keypad-0">0</Button>
                   <Button variant="outline" size="sm" className="h-9 font-bold" onClick={() => setCashReceived(prev => prev + "00")} data-testid="keypad-00">00</Button>
-                  <Button size="sm" className="h-9 font-bold bg-gradient-to-r from-blue-500 to-cyan-500" onClick={() => setCashReceived((cartTotal / 100).toFixed(2))} data-testid="keypad-exact">Esatto</Button>
+                  <Button size="sm" className="h-9 font-bold bg-gradient-to-r from-blue-500 to-cyan-500" onClick={() => setCashReceived((cartTotal / 100).toFixed(2))} data-testid="keypad-exact">{t("pos.exact")}</Button>
                 </div>
 
                 {parseFloat(cashReceived || "0") * 100 >= cartTotal && (
                   <div className="p-2 rounded-md bg-gradient-to-r from-blue-500/10 to-cyan-500/10 border border-blue-500/30 text-center">
-                    <span className="text-xs text-muted-foreground mr-2">Resto:</span>
+                    <span className="text-xs text-muted-foreground mr-2">{t("pos.change")}:</span>
                     <span className="text-lg font-bold text-blue-600">{formatCurrency(changeAmount)}</span>
                   </div>
                 )}
@@ -1947,7 +1947,7 @@ export default function ResellerPosTerminal() {
             )}
 
             <Input
-              placeholder="Note (opzionale)"
+              placeholder={t("common.notesOptional")}
               value={transactionNotes}
               onChange={(e) => setTransactionNotes(e.target.value)}
               className="h-9"
@@ -1973,39 +1973,39 @@ export default function ResellerPosTerminal() {
       <Dialog open={closeSessionDialog} onOpenChange={setCloseSessionDialog}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Chiusura Cassa</DialogTitle>
-            <DialogDescription>Verifica il conteggio e chiudi la sessione</DialogDescription>
+            <DialogTitle>{t("pos.closeSession")}</DialogTitle>
+            <DialogDescription>{t("pos.verifyAndCloseSession")}</DialogDescription>
           </DialogHeader>
           
           <div className="space-y-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
               <div className="p-3 rounded bg-muted/50">
-                <div className="text-muted-foreground">Fondo Iniziale</div>
+                <div className="text-muted-foreground">{t("pos.openingBalance")}</div>
                 <div className="font-semibold">{formatCurrency(currentSession?.openingCash || 0)}</div>
               </div>
               <div className="p-3 rounded bg-muted/50">
-                <div className="text-muted-foreground">Vendite Contanti</div>
+                <div className="text-muted-foreground">{t("pos.cashSales")}</div>
                 <div className="font-semibold">{formatCurrency(currentSession?.totalCashSales || 0)}</div>
               </div>
               <div className="p-3 rounded bg-muted/50">
-                <div className="text-muted-foreground">Vendite Carta</div>
+                <div className="text-muted-foreground">{t("pos.cardSales")}</div>
                 <div className="font-semibold">{formatCurrency(currentSession?.totalCardSales || 0)}</div>
               </div>
               <div className="p-3 rounded bg-muted/50">
-                <div className="text-muted-foreground">Transazioni</div>
+                <div className="text-muted-foreground">{t("pos.transactions")}</div>
                 <div className="font-semibold">{currentSession?.totalTransactions || 0}</div>
               </div>
             </div>
 
             <div className="p-4 rounded bg-primary/10 text-center">
-              <div className="text-sm text-muted-foreground">Contanti Attesi</div>
+              <div className="text-sm text-muted-foreground">{t("pos.expectedCash")}</div>
               <div className="text-2xl font-bold">
                 {formatCurrency((currentSession?.openingCash || 0) + (currentSession?.totalCashSales || 0) - (currentSession?.totalRefunds || 0))}
               </div>
             </div>
 
             <div>
-              <Label>Contanti Contati (EUR)</Label>
+              <Label>{t("pos.countedCashEur")}</Label>
               <Input
                 type="number"
                 placeholder="0.00"
@@ -2015,13 +2015,13 @@ export default function ResellerPosTerminal() {
                 data-testid="input-closing-cash"
               />
               <p className="text-xs text-muted-foreground mt-2">
-                Inserisci l'importo che lasci in cassa. La differenza rispetto ai contanti attesi verrà registrata come prelievo.
+                {t("pos.closingCashMessage")}
               </p>
               {closingCash && parseFloat(closingCash) < ((currentSession?.openingCash || 0) + (currentSession?.totalCashSales || 0) - (currentSession?.totalRefunds || 0)) / 100 && (
                 <div className="mt-2 p-2 rounded bg-amber-500/10 border border-amber-500/20">
                   <p className="text-xs text-amber-600 dark:text-amber-400 flex items-center gap-1">
                     <Banknote className="h-3 w-3" />
-                    Prelievo: {formatCurrency(
+                    {t("pos.withdrawal")}: {formatCurrency(
                       ((currentSession?.openingCash || 0) + (currentSession?.totalCashSales || 0) - (currentSession?.totalRefunds || 0)) - 
                       Math.round(parseFloat(closingCash) * 100)
                     )}
@@ -2031,9 +2031,9 @@ export default function ResellerPosTerminal() {
             </div>
 
             <div>
-              <Label>Note Chiusura (opzionale)</Label>
+              <Label>{t("pos.closingNotesOptional")}</Label>
               <Textarea
-                placeholder="Note chiusura..."
+                placeholder={t("pos.closingNotes")}
                 value={sessionNotes}
                 onChange={(e) => setSessionNotes(e.target.value)}
                 data-testid="input-closing-notes"
@@ -2053,7 +2053,7 @@ export default function ResellerPosTerminal() {
               data-testid="button-confirm-close"
             >
               {closeSessionMutation.isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-              Chiudi Cassa
+              {t("pos.closeSession")}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -2065,7 +2065,7 @@ export default function ResellerPosTerminal() {
           <DialogHeader>
             <DialogTitle className="flex flex-wrap items-center gap-2">
               <Package className="w-5 h-5" />
-              Aggiungi Prodotto Temporaneo
+              {t("pos.addTempProduct")}
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-4 py-4">
@@ -2073,14 +2073,14 @@ export default function ResellerPosTerminal() {
               <Label htmlFor="temp-name">{t("products.productName")}</Label>
               <Input
                 id="temp-name"
-                placeholder="Es: Riparazione vetro, Servizio..."
+                placeholder={t("pos.tempProductExample")}
                 value={tempProductName}
                 onChange={(e) => setTempProductName(e.target.value)}
                 data-testid="input-temp-product-name"
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="temp-price">Prezzo (EUR)</Label>
+              <Label htmlFor="temp-price">{t("pos.prezzoEUR")}</Label>
               <Input
                 id="temp-price"
                 type="number"
@@ -2101,7 +2101,7 @@ export default function ResellerPosTerminal() {
             }}>{t("common.cancel")}</Button>
             <Button onClick={addTemporaryProduct} data-testid="button-confirm-temp-product">
               <Plus className="w-4 h-4 mr-2" />
-              Aggiungi al Carrello
+              {t("pos.addToCart")}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -2138,7 +2138,7 @@ export default function ResellerPosTerminal() {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               {paymentLinkType === "paypal" ? <Wallet className="w-5 h-5" /> : <QrCode className="w-5 h-5" />}
-              {paymentLinkType === "paypal" ? "Pagamento PayPal" : "Link Pagamento"}
+              {paymentLinkType === "paypal" ? t("pos.paypalPayment") : t("pos.paymentLink")}
             </DialogTitle>
           </DialogHeader>
           
@@ -2146,7 +2146,7 @@ export default function ResellerPosTerminal() {
             {paymentLinkStatus === "generating" && (
               <div className="flex flex-col items-center gap-3 py-8">
                 <Loader2 className="w-8 h-8 animate-spin text-primary" />
-                <span className="text-muted-foreground">Generazione link in corso...</span>
+                <span className="text-muted-foreground">{t("pos.generatingLink")}</span>
               </div>
             )}
             
@@ -2154,14 +2154,14 @@ export default function ResellerPosTerminal() {
               <>
                 <div className="text-center space-y-2">
                   <p className="text-sm text-muted-foreground">
-                    Scansiona il QR code o copia il link per pagare
+                    {t("pos.scanQrOrCopyLink")}
                   </p>
                 </div>
                 
                 <div className="flex justify-center p-4 bg-white rounded-lg">
                   <img 
                     src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(paymentLinkUrl)}`}
-                    alt="QR Code Pagamento"
+                    alt={t("pos.qrCodePayment")}
                     className="w-48 h-48"
                   />
                 </div>
@@ -2177,7 +2177,7 @@ export default function ResellerPosTerminal() {
                     variant="outline" 
                     onClick={() => {
                       navigator.clipboard.writeText(paymentLinkUrl);
-                      toast({ title: "Link copiato!" });
+                      toast({ title: t("common.copied") });
                     }}
                     data-testid="button-copy-link"
                   >{t("common.copy")}</Button>
@@ -2188,7 +2188,7 @@ export default function ResellerPosTerminal() {
                   onClick={() => window.open(paymentLinkUrl, '_blank')}
                   data-testid="button-open-payment-link"
                 >
-                  Apri Link Pagamento
+                  {t("pos.openPaymentLink")}
                 </Button>
                 
                 <Button 
@@ -2210,12 +2210,12 @@ export default function ResellerPosTerminal() {
                   {(checkPaymentStatusMutation.isPending || checkPaypalStatusMutation.isPending) ? (
                     <>
                       <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      Verifica in corso...
+                      {t("pos.verificationInProgress")}
                     </>
                   ) : (
                     <>
                       <RotateCcw className="w-4 h-4 mr-2" />
-                      Verifica Pagamento
+                      {t("pos.verifyPayment")}
                     </>
                   )}
                 </Button>
@@ -2225,7 +2225,7 @@ export default function ResellerPosTerminal() {
             {paymentLinkStatus === "checking" && (
               <div className="flex flex-col items-center gap-3 py-8">
                 <Loader2 className="w-8 h-8 animate-spin text-primary" />
-                <span className="text-muted-foreground">Verifica stato pagamento...</span>
+                <span className="text-muted-foreground">{t("pos.verifyingPaymentStatus")}</span>
               </div>
             )}
             
@@ -2235,7 +2235,7 @@ export default function ResellerPosTerminal() {
                   <Check className="w-8 h-8 text-green-600 dark:text-green-400" />
                 </div>
                 <span className="text-lg font-semibold text-green-600 dark:text-green-400">
-                  Pagamento Ricevuto!
+                  {t("pos.paymentReceived")}
                 </span>
                 <Button onClick={() => setPaymentLinkDialog(false)} data-testid="button-close-payment-success">{t("common.close")}</Button>
               </div>
@@ -2247,7 +2247,7 @@ export default function ResellerPosTerminal() {
                   <Clock className="w-8 h-8 text-orange-600 dark:text-orange-400" />
                 </div>
                 <span className="text-lg font-semibold text-orange-600 dark:text-orange-400">
-                  Link Scaduto
+                  {t("pos.linkExpired")}
                 </span>
                 <Button 
                   onClick={() => {
@@ -2262,12 +2262,12 @@ export default function ResellerPosTerminal() {
                   {regeneratePaymentLinkMutation.isPending ? (
                     <>
                       <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      Rigenerazione...
+                      {t("pos.regenerating")}
                     </>
                   ) : (
                     <>
                       <RotateCcw className="w-4 h-4 mr-2" />
-                      Rigenera Link
+                      {t("pos.regenerateLink")}
                     </>
                   )}
                 </Button>

@@ -153,12 +153,14 @@ function getBrandIcon(brandName: string) {
   return BRAND_ICONS[normalized] || null;
 }
 
-const AESTHETIC_CONDITIONS = [
-  { value: "new", label: "Come nuovo", color: "bg-green-500" },
-  { value: "good", label: "Buono", color: "bg-blue-500" },
-  { value: "fair", label: "Usura normale", color: "bg-yellow-500" },
-  { value: "poor", label: "Danneggiato", color: "bg-red-500" },
-];
+function getAestheticConditions(t: (key: string) => string) {
+  return [
+    { value: "new", label: t("repair.likeNew"), color: "bg-green-500" },
+    { value: "good", label: t("repair.good"), color: "bg-blue-500" },
+    { value: "fair", label: t("repair.normalWear"), color: "bg-yellow-500" },
+    { value: "poor", label: t("repair.damaged"), color: "bg-red-500" },
+  ];
+}
 
 export function RepairIntakeWizard({ 
   open, 
@@ -169,6 +171,7 @@ export function RepairIntakeWizard({
   const wizardSchema = getWizardSchema(t);
   type WizardData = z.infer<typeof wizardSchema>;
   const STEPS = getSteps(t);
+  const AESTHETIC_CONDITIONS = getAestheticConditions(t);
   const [currentStep, setCurrentStep] = useState(1);
   const [customerSearch, setCustomerSearch] = useState("");
   const [selectedTypeId, setSelectedTypeId] = useState("");
@@ -380,7 +383,7 @@ export function RepairIntakeWizard({
       form.setValue("deviceModelId", "");
       setShowNewBrandForm(false);
       setNewBrandName("");
-      toast({ title: t("products.brandCreated"), description: `${newBrand.name} aggiunta al catalogo` });
+      toast({ title: t("products.brandCreated"), description: t("products.addedToCatalog", { name: newBrand.name }) });
     },
     onError: (error: any) => {
       toast({ 
@@ -409,7 +412,7 @@ export function RepairIntakeWizard({
       form.setValue("deviceModelId", newModel.id);
       setShowNewModelForm(false);
       setNewModelName("");
-      toast({ title: t("products.modelCreated"), description: `${newModel.modelName} aggiunto al catalogo` });
+      toast({ title: t("products.modelCreated"), description: t("products.addedToCatalog", { name: newModel.modelName }) });
     },
     onError: (error: any) => {
       toast({ 
@@ -605,8 +608,8 @@ export function RepairIntakeWizard({
   }, {} as Record<string, DiagnosticFinding[]>);
 
   const categoryLabels: Record<string, string> = {
-    hardware: "Hardware",
-    software: "Software", 
+    hardware: t("diagnosis.hardware"),
+    software: t("diagnosis.software"), 
     connectivity: t("diagnosis.connectivity"),
     altro: t("common.other"),
   };
@@ -664,7 +667,7 @@ export function RepairIntakeWizard({
       const payload: Record<string, any> = {
         customerId: data.customerId,
         deviceType: selectedType?.name || data.deviceType,
-        deviceModel: selectedModel?.modelName || data.deviceModel || "Non specificato",
+        deviceModel: selectedModel?.modelName || data.deviceModel || t("common.notSpecified"),
         issueDescription: data.issueDescription,
         // IMEI flags - always include for acceptance flow
         imeiNotReadable: data.imeiNotReadable || false,
@@ -858,7 +861,7 @@ export function RepairIntakeWizard({
       }
       toast({ title: t("repair.deviceFound"), description: t("repair.deviceFoundDesc", { type: data.typeName || "", brand: data.brandName || "", model: data.modelName || "" }) });
     } catch (error) {
-      toast({ variant: "destructive", title: t("common.error"), description: "Impossibile cercare il codice mercato" });
+      toast({ variant: "destructive", title: t("common.error"), description: t("repair.cannotSearchMarketCode") });
     } finally {
       setMarketCodeLoading(false);
     }
@@ -875,7 +878,7 @@ export function RepairIntakeWizard({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent ref={dialogContentRef} className="w-[calc(100vw-2rem)] sm:w-full max-w-2xl max-h-[90vh] overflow-y-auto overflow-x-hidden p-3 sm:p-6">
         <DialogHeader>
-          <DialogTitle className="text-xl">Nuova Riparazione</DialogTitle>
+          <DialogTitle className="text-xl">{t("repair.newRepair")}</DialogTitle>
         </DialogHeader>
 
         {/* Step Indicator - show only first 4 steps (step 5 is success screen) */}
@@ -978,7 +981,7 @@ export function RepairIntakeWizard({
                             className="mt-2"
                           >
                             <UserPlus className="h-4 w-4 mr-1" />
-                            Crea nuovo cliente
+                            {t("customer.createNewCustomer")}
                           </Button>
                         </div>
                       ) : (
@@ -1016,7 +1019,7 @@ export function RepairIntakeWizard({
                   <Card>
                     <CardContent className="p-4 space-y-4">
                       <div className="flex items-center justify-between">
-                        <h4 className="font-medium">Dati Cliente</h4>
+                        <h4 className="font-medium">{t("customer.customerData")}</h4>
                         <Button
                           type="button"
                           variant="ghost"
@@ -1127,7 +1130,7 @@ export function RepairIntakeWizard({
                         >
                           <span className="flex items-center gap-2">
                             <Building2 className="h-4 w-4" />
-                            {newCustomerForm.customerType === "company" ? "Dati azienda (fiscali/indirizzo)" : "Dati completi (fiscali/indirizzo)"}
+                            {newCustomerForm.customerType === "company" ? t("customer.companyDataFiscal") : t("customer.completeDataFiscal")}
                           </span>
                           {showAdvancedCustomerFields ? (
                             <ChevronUp className="h-4 w-4" />
@@ -1153,7 +1156,7 @@ export function RepairIntakeWizard({
                             ) : (
                               <>
                                 <div>
-                                  <Label htmlFor="new-customer-ragione-sociale">Ragione Sociale *</Label>
+                                  <Label htmlFor="new-customer-ragione-sociale">{t("fiscal.companyName")} *</Label>
                                   <div className="relative mt-1">
                                     <Building className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                                     <Input
@@ -1168,7 +1171,7 @@ export function RepairIntakeWizard({
                                 </div>
                                 <div className="grid grid-cols-2 gap-3">
                                   <div>
-                                    <Label htmlFor="new-customer-partita-iva">Partita IVA *</Label>
+                                    <Label htmlFor="new-customer-partita-iva">{t("fiscal.vatNumber")} *</Label>
                                     <Input
                                       id="new-customer-partita-iva"
                                       placeholder="IT12345678901"
@@ -1260,7 +1263,7 @@ export function RepairIntakeWizard({
                                 />
                               </div>
                               <div>
-                                <Label htmlFor="new-customer-provincia">Prov.</Label>
+                                <Label htmlFor="new-customer-provincia">{t("common.province")}</Label>
                                 <Input
                                   id="new-customer-provincia"
                                   placeholder="RM"
@@ -1361,7 +1364,7 @@ export function RepairIntakeWizard({
                           </SelectContent>
                         </Select>
                         <p className="text-xs text-muted-foreground">
-                          Scegli a quale rivenditore assegnare la lavorazione
+                          {t("repair.chooseResellerForWork")}
                         </p>
                       </FormItem>
                     )}
@@ -1399,7 +1402,7 @@ export function RepairIntakeWizard({
                           </SelectContent>
                         </Select>
                         <p className="text-xs text-muted-foreground">
-                          Scegli a quale sub-rivenditore assegnare la lavorazione
+                          {t("repair.chooseSubResellerForWork")}
                         </p>
                       </FormItem>
                     )}
@@ -1440,7 +1443,7 @@ export function RepairIntakeWizard({
                                 {filteredRepairCenters.filter(c => c.isOwn).length > 0 && (
                                   <>
                                     <div className="px-2 py-1.5 text-xs font-medium text-muted-foreground">
-                                      I miei centri
+                                      {t("repair.myCenters")}
                                     </div>
                                     {filteredRepairCenters.filter(c => c.isOwn).map((rc) => (
                                       <SelectItem key={rc.id} value={rc.id}>
@@ -1453,7 +1456,7 @@ export function RepairIntakeWizard({
                                 {filteredRepairCenters.filter(c => c.isSubResellerCenter).length > 0 && (
                                   <>
                                     <div className="px-2 py-1.5 text-xs font-medium text-muted-foreground">
-                                      Centri della Rete
+                                      {t("repair.networkCenters")}
                                     </div>
                                     {filteredRepairCenters.filter(c => c.isSubResellerCenter).map((rc) => (
                                       <SelectItem key={rc.id} value={rc.id}>
@@ -1473,7 +1476,7 @@ export function RepairIntakeWizard({
                           </SelectContent>
                         </Select>
                         <p className="text-xs text-muted-foreground">
-                          Scegli a quale centro affidare la lavorazione
+                          {t("repair.chooseCenterForWork")}
                         </p>
                       </FormItem>
                     )}
@@ -1487,9 +1490,9 @@ export function RepairIntakeWizard({
               <div className="space-y-4 min-w-0">
                 <div className="text-center mb-4">
                   <Smartphone className="h-12 w-12 mx-auto text-primary mb-2" />
-                  <h3 className="text-lg font-semibold">Dati Dispositivo</h3>
+                  <h3 className="text-lg font-semibold">{t("repair.deviceData")}</h3>
                   <p className="text-sm text-muted-foreground">
-                    Seleziona il tipo di dispositivo e descrivi il problema
+                    {t("repair.selectDeviceType")} 
                   </p>
                 </div>
 
@@ -1498,7 +1501,7 @@ export function RepairIntakeWizard({
                   <Label>{t("repair.marketCodeOptional")}</Label>
                   <div className="flex gap-2">
                     <Input
-                      placeholder="es. A2633, SM-G998B"
+                      placeholder={t("repair.marketCodePlaceholder")}
                       value={marketCodeInput}
                       onChange={(e) => setMarketCodeInput(e.target.value.toUpperCase())}
                       onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), lookupMarketCode())}
@@ -1514,7 +1517,7 @@ export function RepairIntakeWizard({
                       {marketCodeLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
                     </Button>
                   </div>
-                  <p className="text-xs text-muted-foreground">Inserisci il codice mercato per auto-compilare tipo, marca e modello</p>
+                  <p className="text-xs text-muted-foreground">{t("repair.enterMarketCodeToAutofill")}</p>
                 </div>
 
                 {/* Device Type Selection */}
@@ -1664,7 +1667,7 @@ export function RepairIntakeWizard({
                       <Card className="border-primary/50">
                         <CardContent className="p-4">
                           <div className="flex items-center justify-between mb-3">
-                            <h4 className="font-medium text-sm">Nuova Marca</h4>
+                            <h4 className="font-medium text-sm">{t("products.newBrand")}</h4>
                             <Button
                               type="button"
                               variant="ghost"
@@ -1712,7 +1715,7 @@ export function RepairIntakeWizard({
                       <Card className="border-primary/50">
                         <CardContent className="p-4">
                           <div className="flex items-center justify-between mb-3">
-                            <h4 className="font-medium text-sm">Nuovo Modello</h4>
+                            <h4 className="font-medium text-sm">{t("products.newModel")}</h4>
                             <Button
                               type="button"
                               variant="ghost"
@@ -1769,7 +1772,7 @@ export function RepairIntakeWizard({
                         <FormControl>
                           <Input
                             {...field}
-                            placeholder="es. iPhone 14 Pro, Galaxy S23..."
+                            placeholder={t("repair.deviceModelPlaceholder")}
                             data-testid="input-device-model"
                           />
                         </FormControl>
@@ -1802,7 +1805,7 @@ export function RepairIntakeWizard({
                     name="serial"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Seriale</FormLabel>
+                        <FormLabel>{t("common.serialNumber")}</FormLabel>
                         <FormControl>
                           <Input
                             {...field}
@@ -1836,7 +1839,7 @@ export function RepairIntakeWizard({
                           />
                         </FormControl>
                         <FormLabel className="text-sm font-normal cursor-pointer">
-                          IMEI non leggibile
+                          {t("repair.imeiNotReadable")}
                         </FormLabel>
                       </FormItem>
                     )}
@@ -1860,7 +1863,7 @@ export function RepairIntakeWizard({
                           />
                         </FormControl>
                         <FormLabel className="text-sm font-normal cursor-pointer">
-                          IMEI non presente
+                          {t("repair.imeiNotPresent")}
                         </FormLabel>
                       </FormItem>
                     )}
@@ -1875,9 +1878,9 @@ export function RepairIntakeWizard({
               <div className="space-y-4">
                 <div className="text-center mb-4">
                   <ClipboardCheck className="h-12 w-12 mx-auto text-primary mb-2" />
-                  <h3 className="text-lg font-semibold">Condizioni e Accessori</h3>
+                  <h3 className="text-lg font-semibold">{t("repair.conditionsAndAccessories")}</h3>
                   <p className="text-sm text-muted-foreground">
-                    Documenta lo stato del dispositivo (opzionale)
+                    {t("repair.documentDeviceState")}
                   </p>
                 </div>
 
@@ -1944,7 +1947,7 @@ export function RepairIntakeWizard({
                           ))
                         ) : (
                           <p className="text-sm text-muted-foreground col-span-2">
-                            Nessun accessorio definito per questo tipo di dispositivo
+                            {t("repair.noAccessoriesDefined")}
                           </p>
                         )}
                       </div>
@@ -1959,9 +1962,9 @@ export function RepairIntakeWizard({
               <div className="space-y-4">
                 <div className="text-center mb-4">
                   <FileText className="h-12 w-12 mx-auto text-primary mb-2" />
-                  <h3 className="text-lg font-semibold">Diagnosi e Preventivo</h3>
+                  <h3 className="text-lg font-semibold">{t("repair.diagnosisAndQuote")}</h3>
                   <p className="text-sm text-muted-foreground">
-                    Esegui diagnosi e/o crea preventivo (opzionale)
+                    {t("repair.diagnosisQuoteOptional")}
                   </p>
                 </div>
 
@@ -1980,7 +1983,7 @@ export function RepairIntakeWizard({
                             )}
                           </div>
                           <div className="min-w-0">
-                            <p className="font-medium">Diagnosi Tecnica</p>
+                            <p className="font-medium">{t("diagnosis.technicalDiagnosis")}</p>
                             <p className="text-sm text-muted-foreground truncate">
                               {collectedDiagnosisData ? t("diagnosis.configured") : t("common.optional")}
                             </p>
@@ -2069,7 +2072,7 @@ export function RepairIntakeWizard({
                     {/* Info message */}
                     {!collectedDiagnosisData && !collectedQuoteData && (
                       <div className="text-center py-4 text-sm text-muted-foreground">
-                        <p>Puoi saltare questo passaggio e aggiungere diagnosi e preventivo in seguito.</p>
+                        <p>{t("repair.canSkipDiagnosisQuote")}</p>
                       </div>
                     )}
                   </CardContent>
@@ -2083,9 +2086,9 @@ export function RepairIntakeWizard({
               <div className="space-y-4">
                 <div className="text-center mb-4">
                   <CheckCircle2 className="h-12 w-12 mx-auto text-primary mb-2" />
-                  <h3 className="text-lg font-semibold">Conferma Dati</h3>
+                  <h3 className="text-lg font-semibold">{t("repair.confirmData")}</h3>
                   <p className="text-sm text-muted-foreground">
-                    Verifica i dati e conferma la creazione
+                    {t("repair.verifyAndConfirm")}
                   </p>
                 </div>
 
@@ -2131,7 +2134,7 @@ export function RepairIntakeWizard({
                       <div className="flex items-start gap-3">
                         <AlertCircle className="h-5 w-5 text-muted-foreground mt-0.5" />
                         <div>
-                          <p className="text-sm text-muted-foreground">Problema</p>
+                          <p className="text-sm text-muted-foreground">{t("repair.problem")}</p>
                           <p className="font-medium">{form.watch("issueDescription")}</p>
                         </div>
                       </div>
@@ -2142,7 +2145,7 @@ export function RepairIntakeWizard({
                       <div className="flex items-start gap-3">
                         <ClipboardCheck className="h-5 w-5 text-muted-foreground mt-0.5" />
                         <div>
-                          <p className="text-sm text-muted-foreground">Condizioni</p>
+                          <p className="text-sm text-muted-foreground">{t("common.condition")}</p>
                           {form.watch("aestheticCondition") && (
                             <Badge variant="secondary" className="mr-2">
                               {AESTHETIC_CONDITIONS.find(c => c.value === form.watch("aestheticCondition"))?.label}
@@ -2150,7 +2153,7 @@ export function RepairIntakeWizard({
                           )}
                           {(form.watch("accessories")?.length || 0) > 0 && (
                             <p className="text-sm mt-1">
-                              Accessori: {form.watch("accessories")?.join(", ")}
+                              {t("repair.deliveredAccessories")}: {form.watch("accessories")?.join(", ")}
                             </p>
                           )}
                         </div>
@@ -2167,7 +2170,7 @@ export function RepairIntakeWizard({
                       <p className="text-sm text-muted-foreground">{t("staff.reseller")}</p>
                       <p className="font-medium">
                         {resellers.find(r => r.id === form.watch("resellerId"))?.fullName || 
-                         resellers.find(r => r.id === form.watch("resellerId"))?.username || "Non selezionato"}
+                         resellers.find(r => r.id === form.watch("resellerId"))?.username || t("common.notSelected")}
                       </p>
                     </div>
                   </div>
@@ -2178,10 +2181,10 @@ export function RepairIntakeWizard({
                   <div className="flex items-start gap-3 p-3 bg-muted/50 rounded-lg">
                     <Store className="h-5 w-5 text-muted-foreground mt-0.5" />
                     <div>
-                      <p className="text-sm text-muted-foreground">Sub-Rivenditore</p>
+                      <p className="text-sm text-muted-foreground">{t("customer.subReseller")}</p>
                       <p className="font-medium">
                         {subResellers.find(sr => sr.id === form.watch("subResellerId"))?.fullName || 
-                         subResellers.find(sr => sr.id === form.watch("subResellerId"))?.username || "Non selezionato"}
+                         subResellers.find(sr => sr.id === form.watch("subResellerId"))?.username || t("common.notSelected")}
                       </p>
                     </div>
                   </div>
@@ -2194,7 +2197,7 @@ export function RepairIntakeWizard({
                     <div>
                       <p className="text-sm text-muted-foreground">{t("repair.repairCenter")}</p>
                       <p className="font-medium">
-                        {repairCenters.find(c => c.id === form.watch("repairCenterId"))?.name || "Non selezionato"}
+                        {repairCenters.find(c => c.id === form.watch("repairCenterId"))?.name || t("common.notSelected")}
                       </p>
                     </div>
                   </div>
@@ -2209,15 +2212,15 @@ export function RepairIntakeWizard({
                   <div className="mx-auto w-16 h-16 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mb-4">
                     <PartyPopper className="h-8 w-8 text-green-600 dark:text-green-400" />
                   </div>
-                  <h3 className="text-xl font-semibold text-green-600 dark:text-green-400">Riparazione Creata!</h3>
+                  <h3 className="text-xl font-semibold text-green-600 dark:text-green-400">{t("repair.repairCreated")}</h3>
                   <p className="text-muted-foreground mt-1">
-                    {t("parts.order")} <span className="font-mono font-semibold">{createdOrder.orderNumber}</span> registrato con successo
+                    {t("repair.orderRegistered", { orderNumber: "" })} <span className="font-mono font-semibold">{createdOrder.orderNumber}</span>
                   </p>
                 </div>
 
                 <Card>
                   <CardContent className="p-4">
-                    <p className="text-sm font-medium mb-3">Scarica i documenti:</p>
+                    <p className="text-sm font-medium mb-3">{t("repair.downloadDocuments")}:</p>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <Button
                         variant="outline"
@@ -2226,7 +2229,7 @@ export function RepairIntakeWizard({
                         data-testid="button-download-acceptance-wizard"
                       >
                         <Download className="mr-2 h-4 w-4" />
-                        Documento Accettazione
+                        {t("repair.acceptanceDocument")}
                       </Button>
                       <Button
                         className="w-full justify-start bg-blue-600 hover:bg-blue-700"
@@ -2234,14 +2237,14 @@ export function RepairIntakeWizard({
                         data-testid="button-download-labels-wizard"
                       >
                         <Tag className="mr-2 h-4 w-4" />
-                        Stampa Etichette
+                        {t("repair.printLabels")}
                       </Button>
                     </div>
                   </CardContent>
                 </Card>
 
                 <p className="text-xs text-center text-muted-foreground">
-                  Puoi sempre scaricare questi documenti dalla pagina dettaglio riparazione
+                  {t("repair.canAlwaysDownload")}
                 </p>
               </div>
             )}
@@ -2284,7 +2287,7 @@ export function RepairIntakeWizard({
                 ) : (
                   <>
                     <CheckCircle2 className="h-4 w-4 mr-2" />
-                    Crea Riparazione
+                    {t("repair.createRepair")}
                   </>
                 )}
               </Button>

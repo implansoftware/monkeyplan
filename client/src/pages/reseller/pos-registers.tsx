@@ -196,7 +196,7 @@ export default function ResellerPosRegistersPage() {
         ? "/api/reseller/pos/registers"
         : `/api/reseller/pos/registers?repairCenterId=${centerFilter}`;
       const res = await fetch(url, { credentials: "include" });
-      if (!res.ok) throw new Error("Errore caricamento casse");
+      if (!res.ok) throw new Error("t("pos.loadingError")");
       return res.json();
     },
   });
@@ -213,7 +213,7 @@ export default function ResellerPosRegistersPage() {
     },
     onSuccess: () => {
       invalidatePosQueries();
-      toast({ title: "Cassa creata", description: "La nuova cassa è stata creata con successo" });
+      toast({ title: t("pos.registerCreatedTitle"), description: t("pos.registerCreatedDesc") });
       closeDialog();
     },
     onError: (error: Error) => {
@@ -227,7 +227,7 @@ export default function ResellerPosRegistersPage() {
     },
     onSuccess: () => {
       invalidatePosQueries();
-      toast({ title: "Cassa aggiornata", description: "Le modifiche sono state salvate" });
+      toast({ title: t("pos.registerUpdatedTitle"), description: t("pos.changesSaved") });
       closeDialog();
     },
     onError: (error: Error) => {
@@ -241,7 +241,7 @@ export default function ResellerPosRegistersPage() {
     },
     onSuccess: () => {
       invalidatePosQueries();
-      toast({ title: "Cassa eliminata", description: "La cassa è stata eliminata" });
+      toast({ title: t("pos.registerDeletedTitle"), description: t("pos.registerDeletedDesc") });
       setDeleteRegister(null);
     },
     onError: (error: Error) => {
@@ -257,7 +257,7 @@ export default function ResellerPosRegistersPage() {
     },
     onSuccess: (session) => {
       invalidatePosQueries();
-      toast({ title: "Cassa aperta", description: "La sessione cassa è stata aperta con successo" });
+      toast({ title: t("pos.registerOpened"), description: "La sessione cassa è stata aperta con successo" });
       setOpenSessionDialog({ register: null as any, open: false });
       setOpeningCash("");
       setOpeningNotes("");
@@ -278,7 +278,7 @@ export default function ResellerPosRegistersPage() {
     },
     onSuccess: () => {
       invalidatePosQueries();
-      toast({ title: "Cassa chiusa", description: "La sessione cassa è stata chiusa con successo" });
+      toast({ title: t("pos.registerClosed"), description: "La sessione cassa è stata chiusa con successo" });
       setCloseSessionDialog({ session: null as any, register: null as any, open: false });
       setClosingCash("");
       setClosingNotes("");
@@ -353,7 +353,7 @@ export default function ResellerPosRegistersPage() {
       return;
     }
     if (!formData.repairCenterId) {
-      toast({ title: t("common.error"), description: "Seleziona un centro riparazione", variant: "destructive" });
+      toast({ title: t("common.error"), description: t("pos.selectRepairCenter"), variant: "destructive" });
       return;
     }
 
@@ -382,8 +382,8 @@ export default function ResellerPosRegistersPage() {
   const handleDelete = (register: PosRegister) => {
     if (register.isDefault) {
       toast({ 
-        title: "Impossibile eliminare", 
-        description: "Non puoi eliminare la cassa predefinita. Imposta prima un'altra cassa come predefinita.", 
+        title: t("pos.cannotDelete"), 
+        description: t("pos.cannotDeleteDefaultRegister"), 
         variant: "destructive" 
       });
       return;
@@ -430,14 +430,14 @@ export default function ResellerPosRegistersPage() {
             <div>
               <h1 className="text-2xl font-bold tracking-tight text-white">{t("sidebar.items.posRegisters")}</h1>
               <p className="text-sm text-white/80">
-                Configura i registri di cassa dei tuoi centri riparazione
+                {t("pos.configureRegistersDesc")}
               </p>
             </div>
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <Select value={centerFilter} onValueChange={setCenterFilter}>
               <SelectTrigger className="w-full sm:w-[200px] bg-white/20 backdrop-blur-sm border-white/30 text-white" data-testid="select-center-filter">
-                <SelectValue placeholder="Filtra per centro" />
+                <SelectValue placeholder={t("pos.filterByCenter")} />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">{t("common.allCenters")}</SelectItem>
@@ -459,7 +459,7 @@ export default function ResellerPosRegistersPage() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card className="rounded-2xl">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Totale Casse</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">{t("pos.totalRegisters")}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{registers.length}</div>
@@ -495,10 +495,10 @@ export default function ResellerPosRegistersPage() {
             <div className="text-center py-12 text-muted-foreground">
               <Store className="h-12 w-12 mx-auto mb-4 opacity-50" />
               {centerFilter === "all" ? (
-                <p>Seleziona un centro riparazione per visualizzare e gestire le casse</p>
+                <p>{t("pos.selectCenterToManage")}</p>
               ) : (
                 <>
-                  <p>Nessuna cassa configurata per questo centro</p>
+                  <p>{t("pos.noRegistersForCenter")}</p>
                   <Button onClick={openCreateDialog} variant="outline" className="mt-4">
                     <Plus className="h-4 w-4 mr-2" />
                     Crea la prima cassa
@@ -634,25 +634,25 @@ export default function ResellerPosRegistersPage() {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>
-              {editingRegister ? "Modifica Cassa" : "Nuova Cassa"}
+              {editingRegister ? t("pos.editCashRegister") : t("pos.newCashRegisterTitle")}
             </DialogTitle>
             <DialogDescription>
               {editingRegister 
-                ? "Modifica i dettagli della cassa selezionata"
-                : "Inserisci i dati per creare una nuova cassa"
+                ? "{t("pos.editRegisterDesc")}"
+                : "{t("pos.createRegisterDesc")}"
               }
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
             {!editingRegister && (
               <div className="space-y-2">
-                <Label htmlFor="repairCenter">Centro Riparazione *</Label>
+                <Label htmlFor="repairCenter">{t("pos.repairCenterLabel")} *</Label>
                 <Select 
                   value={formData.repairCenterId} 
                   onValueChange={(value) => setFormData({ ...formData, repairCenterId: value })}
                 >
                   <SelectTrigger data-testid="select-repair-center">
-                    <SelectValue placeholder="Seleziona centro" />
+                    <SelectValue placeholder={t("pos.selectCenterPlaceholder")} />
                   </SelectTrigger>
                   <SelectContent>
                     {repairCenters.map(center => (
@@ -663,10 +663,10 @@ export default function ResellerPosRegistersPage() {
               </div>
             )}
             <div className="space-y-2">
-              <Label htmlFor="name">Nome cassa *</Label>
+              <Label htmlFor="name">{t("pos.registerNameLabel")} *</Label>
               <Input
                 id="name"
-                placeholder="Es. Cassa 1, Cassa Principale..."
+                placeholder="{t("pos.registerNameExample")}"
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                 data-testid="input-register-name"
@@ -685,9 +685,9 @@ export default function ResellerPosRegistersPage() {
             </div>
             <div className="flex items-center justify-between">
               <div className="space-y-0.5">
-                <Label htmlFor="isDefault">Cassa predefinita</Label>
+                <Label htmlFor="isDefault">{t("pos.defaultRegister")}</Label>
                 <p className="text-sm text-muted-foreground">
-                  Questa cassa verrà selezionata automaticamente
+                  {t("pos.defaultRegisterDesc")}
                 </p>
               </div>
               <Switch
@@ -716,7 +716,7 @@ export default function ResellerPosRegistersPage() {
           <AlertDialogHeader>
             <AlertDialogTitle className="flex flex-wrap items-center gap-2">
               <AlertTriangle className="h-5 w-5 text-destructive" />
-              Eliminare questa cassa?
+              {t("pos.deleteRegisterConfirm")}
             </AlertDialogTitle>
             <AlertDialogDescription>
               Stai per eliminare la cassa "{deleteRegister?.name}". 
@@ -743,7 +743,7 @@ export default function ResellerPosRegistersPage() {
           <DialogHeader>
             <DialogTitle className="flex flex-wrap items-center gap-2">
               <PlayCircle className="h-5 w-5 text-green-500" />
-              Apri Cassa
+              {t("pos.openRegister")}
             </DialogTitle>
             <DialogDescription>
               Stai per aprire una sessione per la cassa "{openSessionDialog.register?.name}" 
@@ -752,7 +752,7 @@ export default function ResellerPosRegistersPage() {
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label htmlFor="openingCash">Fondo cassa iniziale (€)</Label>
+              <Label htmlFor="openingCash">{t("pos.openingCashLabel")} (€)</Label>
               <Input
                 id="openingCash"
                 type="number"
@@ -770,7 +770,7 @@ export default function ResellerPosRegistersPage() {
               <Label htmlFor="openingNotes">Note apertura</Label>
               <Textarea
                 id="openingNotes"
-                placeholder="Note opzionali..."
+                placeholder={t("common.optionalNotes")}
                 value={openingNotes}
                 onChange={(e) => setOpeningNotes(e.target.value)}
                 rows={2}
@@ -825,7 +825,7 @@ export default function ResellerPosRegistersPage() {
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label htmlFor="closingCash">Conteggio cassa finale (€) *</Label>
+              <Label htmlFor="closingCash">{t("pos.closingCashLabel")} (€) *</Label>
               <Input
                 id="closingCash"
                 type="number"
@@ -840,10 +840,10 @@ export default function ResellerPosRegistersPage() {
               </p>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="closingNotes">Note chiusura</Label>
+              <Label htmlFor="closingNotes">{t("pos.closingNotes")}</Label>
               <Textarea
                 id="closingNotes"
-                placeholder="Note opzionali..."
+                placeholder={t("common.optionalNotes")}
                 value={closingNotes}
                 onChange={(e) => setClosingNotes(e.target.value)}
                 rows={2}

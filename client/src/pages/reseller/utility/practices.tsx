@@ -29,8 +29,8 @@ function getStatusLabels(t: (key: string) => string): Record<PracticeStatus, str
     bozza: t("invoices.draft"),
     inviata: t("invoices.sent"),
     in_lavorazione: t("repairs.inProgress"),
-    attesa_documenti: "Attesa Documenti",
-    completata: "Completata",
+    attesa_documenti: t("utility.awaitingDocuments"),
+    completata: t("common.completed"),
     annullata: t("common.cancelled"),
     rifiutata: t("common.rejected"),
   };
@@ -48,11 +48,11 @@ const statusColors: Record<PracticeStatus, string> = {
 
 function getCategoryLabels(t: (key: string) => string): Record<string, string> {
   return {
-    fisso: "Fisso",
-    mobile: "Mobile",
-    centralino: "Centralino",
-    luce: "Luce",
-    gas: "Gas",
+    fisso: t("utility.landline"),
+    mobile: t("utility.mobile"),
+    centralino: t("utility.pbx"),
+    luce: t("utility.electricity"),
+    gas: t("utility.gas"),
     altro: t("common.other"),
   };
 }
@@ -236,7 +236,7 @@ export default function ResellerUtilityPractices() {
 
   const handleImportText = () => {
     if (!importText.trim()) {
-      toast({ title: "Nessun testo", description: "Incolla il testo dal documento", variant: "destructive" });
+      toast({ title: t("utility.noText"), description: t("utility.pasteDocumentText"), variant: "destructive" });
       return;
     }
     
@@ -298,17 +298,17 @@ export default function ResellerUtilityPractices() {
     setImportText("");
     
     const foundFields = [
-      parsed.supplierName && "Fornitore",
-      parsed.customerName && "Cliente", 
-      parsed.serviceName && "Servizio",
-      parsed.supplierReference && "Riferimento",
+      parsed.supplierName && t("common.supplier"),
+      parsed.customerName && t("common.customer"), 
+      parsed.serviceName && t("common.service"),
+      parsed.supplierReference && t("utility.reference"),
     ].filter(Boolean);
     
     toast({ 
-      title: "Dati importati", 
+      title: t("utility.dataImported"), 
       description: foundFields.length > 0 
-        ? `Trovati: ${foundFields.join(", ")}` 
-        : "Nessun dato riconosciuto nel testo"
+        ? `${t("utility.found")}: ${foundFields.join(", ")}` 
+        : t("utility.noDataRecognized")
     });
   };
 
@@ -354,7 +354,7 @@ export default function ResellerUtilityPractices() {
       queryClient.invalidateQueries({ queryKey: ["/api/utility/practices"] });
       setDialogOpen(false);
       setEditingPractice(null);
-      toast({ title: "Pratica creata con successo" });
+      toast({ title: t("utility.practiceCreated") });
     },
     onError: (error: Error) => {
       toast({ title: t("common.error"), description: error.message, variant: "destructive" });
@@ -370,7 +370,7 @@ export default function ResellerUtilityPractices() {
       queryClient.invalidateQueries({ queryKey: ["/api/utility/practices"] });
       setDialogOpen(false);
       setEditingPractice(null);
-      toast({ title: "Pratica aggiornata" });
+      toast({ title: t("utility.practiceUpdated") });
     },
     onError: (error: Error) => {
       toast({ title: t("common.error"), description: error.message, variant: "destructive" });
@@ -389,7 +389,7 @@ export default function ResellerUtilityPractices() {
       setNewCustomerName("");
       setNewCustomerEmail("");
       setNewCustomerPhone("");
-      toast({ title: "Cliente creato", description: `${newCustomer.fullName} aggiunto con successo` });
+      toast({ title: t("utility.customerCreated"), description: t("products.addedSuccessfully", { name: newCustomer.fullName }) });
     },
     onError: (error: Error) => {
       toast({ title: t("common.error"), description: error.message, variant: "destructive" });
@@ -398,7 +398,7 @@ export default function ResellerUtilityPractices() {
 
   const handleCreateCustomer = () => {
     if (!newCustomerName.trim()) {
-      toast({ title: t("common.error"), description: "Il nome è obbligatorio", variant: "destructive" });
+      toast({ title: t("common.error"), description: t("utility.nameRequired"), variant: "destructive" });
       return;
     }
     createCustomerMutation.mutate({
@@ -638,8 +638,8 @@ export default function ResellerUtilityPractices() {
               <FileCheck className="h-6 w-6 text-white" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold text-white">Pratiche Utility</h1>
-              <p className="text-white/80">Gestione pratiche attive</p>
+              <h1 className="text-2xl font-bold text-white">{t("utility.utilityPractices")}</h1>
+              <p className="text-white/80">{t("utility.activePracticesManagement")}</p>
             </div>
           </div>
         </div>
@@ -651,7 +651,7 @@ export default function ResellerUtilityPractices() {
             <div className="flex flex-wrap items-center gap-2">
               <Search className="h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Cerca per numero pratica..."
+                placeholder={t("utility.searchByPracticeNumber")}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="max-w-xs"
@@ -673,11 +673,11 @@ export default function ResellerUtilityPractices() {
               <TabsList>
                 <TabsTrigger value="pipeline" className="gap-1" data-testid="tab-pipeline">
                   <LayoutGrid className="h-4 w-4" />
-                  Pipeline
+                  {t("utility.pipelineView")}
                 </TabsTrigger>
                 <TabsTrigger value="table" className="gap-1" data-testid="tab-table">
                   <TableIcon className="h-4 w-4" />
-                  Tabella
+                  {t("utility.tableView")}
                 </TabsTrigger>
               </TabsList>
             </Tabs>
@@ -711,10 +711,10 @@ export default function ResellerUtilityPractices() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>N. Pratica</TableHead>
+                  <TableHead>{t("utility.practiceNumber")}</TableHead>
                   <TableHead>{t("common.customer")}</TableHead>
                   <TableHead>{t("common.type")}</TableHead>
-                  <TableHead>Servizio/Prodotto</TableHead>
+                  <TableHead>{t("utility.serviceProduct")}</TableHead>
                   <TableHead>{t("common.price")}</TableHead>
                   <TableHead>{t("common.status")}</TableHead>
                   <TableHead className="text-right">{t("common.actions")}</TableHead>
@@ -744,7 +744,7 @@ export default function ResellerUtilityPractices() {
                         <Badge variant="outline">
                           {itemType === "service" ? t("common.service") : 
                            itemType === "product" ? t("common.product") : 
-                           itemType === "service_with_products" ? "Servizio + Prodotti" : itemType}
+                           itemType === "service_with_products" ? t("utility.serviceAndProducts") : itemType}
                         </Badge>
                       </TableCell>
                       <TableCell>
@@ -755,7 +755,7 @@ export default function ResellerUtilityPractices() {
                                 {(practice as any).customServiceName || service?.name}
                               </span>
                               {(practice as any).customServiceName && (
-                                <Badge variant="outline" className="text-xs py-0 px-1">Temp.</Badge>
+                                <Badge variant="outline" className="text-xs py-0 px-1">{t("products.temp")}.</Badge>
                               )}
                             </div>
                             <span className="text-xs text-muted-foreground">
@@ -768,13 +768,13 @@ export default function ResellerUtilityPractices() {
                                   return (
                                     <div key={idx} className="flex flex-wrap items-center gap-1">
                                       <Package className="h-3 w-3 text-muted-foreground" />
-                                      <span className="text-xs">{prod?.name || "Prodotto"} x{pp.quantity}</span>
+                                      <span className="text-xs">{prod?.name || t("common.product")} x{pp.quantity}</span>
                                     </div>
                                   );
                                 })}
                                 {(practice as any).practiceProducts.length > 2 && (
                                   <span className="text-xs text-muted-foreground">
-                                    +{(practice as any).practiceProducts.length - 2} altri
+                                    +{(practice as any).practiceProducts.length - 2} {t("common.others")}
                                   </span>
                                 )}
                               </div>
@@ -789,13 +789,13 @@ export default function ResellerUtilityPractices() {
                                   return (
                                     <div key={idx} className="flex flex-wrap items-center gap-1">
                                       <Package className="h-3 w-3 text-muted-foreground" />
-                                      <span className="text-sm">{prod?.name || "Prodotto"} x{pp.quantity}</span>
+                                      <span className="text-sm">{prod?.name || t("common.product")} x{pp.quantity}</span>
                                     </div>
                                   );
                                 })}
                                 {(practice as any).practiceProducts.length > 2 && (
                                   <span className="text-xs text-muted-foreground">
-                                    +{(practice as any).practiceProducts.length - 2} altri prodotti
+                                    +{(practice as any).practiceProducts.length - 2} {t("common.others")}
                                   </span>
                                 )}
                               </>
@@ -812,7 +812,7 @@ export default function ResellerUtilityPractices() {
                         {practice.priceType === "forfait" && practice.flatPriceCents
                           ? formatCurrency(practice.flatPriceCents)
                           : practice.monthlyPriceCents 
-                            ? formatCurrency(practice.monthlyPriceCents) + "/mese"
+                            ? formatCurrency(practice.monthlyPriceCents) + `/${t("utility.month")}`
                             : "-"}
                       </TableCell>
                       <TableCell>
@@ -854,12 +854,12 @@ export default function ResellerUtilityPractices() {
         <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
-              {editingPractice ? "Modifica Pratica" : "Nuova Pratica Utility"}
+              {editingPractice ? t("utility.editPractice") : t("utility.newPracticeUtility")}
             </DialogTitle>
             <DialogDescription>
               {editingPractice 
-                ? "Modifica i dati della pratica."
-                : "Crea una nuova pratica di servizio utility."}
+                ? t("utility.editPracticeDesc")
+                : t("utility.createNewPracticeDesc")}
             </DialogDescription>
           </DialogHeader>
           
@@ -875,12 +875,12 @@ export default function ResellerUtilityPractices() {
                   data-testid="button-show-import"
                 >
                   <ClipboardPaste className="h-4 w-4 mr-2" />
-                  Importa da testo (copia/incolla)
+                  {t("utility.importFromText")}
                 </Button>
               ) : (
                 <div className="space-y-2 p-3 border rounded-lg bg-muted/50">
                   <div className="flex items-center justify-between">
-                    <Label className="text-sm font-medium">Incolla il testo dal documento</Label>
+                    <Label className="text-sm font-medium">{t("utility.pasteDocumentText")}</Label>
                     <Button
                       type="button"
                       variant="ghost"
@@ -895,7 +895,7 @@ export default function ResellerUtilityPractices() {
                     </Button>
                   </div>
                   <Textarea
-                    placeholder="Seleziona tutto il testo dal PDF (Ctrl+A), copia (Ctrl+C) e incolla qui (Ctrl+V)..."
+                    placeholder={t("utility.pasteDataPlaceholder")}
                     value={importText}
                     onChange={(e) => setImportText(e.target.value)}
                     rows={4}
@@ -911,7 +911,7 @@ export default function ResellerUtilityPractices() {
                     data-testid="button-import-text"
                   >
                     <ClipboardPaste className="h-4 w-4 mr-2" />
-                    Analizza e Importa
+                    {t("utility.analyzeAndImport")}
                   </Button>
                 </div>
               )}
@@ -920,7 +920,7 @@ export default function ResellerUtilityPractices() {
           
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
-              <Label>Tipo Pratica *</Label>
+              <Label>{t("utility.practiceType")} *</Label>
               <div className="flex flex-wrap gap-2">
                 <Button
                   type="button"
@@ -947,7 +947,7 @@ export default function ResellerUtilityPractices() {
                 >
                   <FileCheck className="h-4 w-4 mr-1" />
                   <Package className="h-4 w-4 mr-2" />
-                  Servizio + Prodotti
+                  {t("utility.serviceAndProducts")}
                 </Button>
               </div>
             </div>
@@ -956,7 +956,7 @@ export default function ResellerUtilityPractices() {
               <div className="space-y-4">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label>Fornitore *</Label>
+                    <Label>{t("common.supplier")} *</Label>
                     <div className="flex gap-2 mb-2">
                       <Button
                         type="button"
@@ -969,7 +969,7 @@ export default function ResellerUtilityPractices() {
                         className="flex-1"
                         data-testid="button-supplier-catalog"
                       >
-                        Da Catalogo
+                        {t("utility.fromCatalog")}
                       </Button>
                       <Button
                         type="button"
@@ -982,7 +982,7 @@ export default function ResellerUtilityPractices() {
                         className="flex-1"
                         data-testid="button-supplier-temporary"
                       >
-                        Temporaneo
+                        {t("utility.temporary")}
                       </Button>
                     </div>
                     {useTemporarySupplier ? (
@@ -990,7 +990,7 @@ export default function ResellerUtilityPractices() {
                         <Input
                           value={temporarySupplierName}
                           onChange={(e) => setTemporarySupplierName(e.target.value)}
-                          placeholder="Nome fornitore temporaneo"
+                          placeholder={t("utility.temporarySupplierName")}
                           required
                           data-testid="input-temporary-supplier-name"
                         />
@@ -1002,7 +1002,7 @@ export default function ResellerUtilityPractices() {
                           return (
                             <div className="absolute z-50 w-full mt-1 bg-popover border rounded-md shadow-lg max-h-48 overflow-auto">
                               <div className="p-1 text-xs text-muted-foreground border-b">
-                                Fornitori esistenti trovati:
+                                {t("utility.existingSuppliersFound")}:
                               </div>
                               {matches.map(supplier => (
                                 <button
@@ -1035,7 +1035,7 @@ export default function ResellerUtilityPractices() {
                         required
                       >
                         <SelectTrigger data-testid="select-supplier">
-                          <SelectValue placeholder="Seleziona fornitore" />
+                          <SelectValue placeholder={t("utility.selectSupplier")} />
                         </SelectTrigger>
                         <SelectContent>
                           {suppliers.filter(s => s.isActive).map((supplier) => (
@@ -1048,7 +1048,7 @@ export default function ResellerUtilityPractices() {
                     )}
                   </div>
                   <div className="space-y-2">
-                    <Label>Tipo Servizio</Label>
+                    <Label>{t("utility.serviceType")}</Label>
                     <div className="flex gap-2">
                       <Button
                         type="button"
@@ -1061,7 +1061,7 @@ export default function ResellerUtilityPractices() {
                         className="flex-1"
                         data-testid="button-service-catalog"
                       >
-                        Da Catalogo
+                        {t("utility.fromCatalog")}
                       </Button>
                       <Button
                         type="button"
@@ -1074,7 +1074,7 @@ export default function ResellerUtilityPractices() {
                         className="flex-1"
                         data-testid="button-service-custom"
                       >
-                        Temporaneo
+                        {t("utility.temporary")}
                       </Button>
                     </div>
                   </div>
@@ -1083,22 +1083,22 @@ export default function ResellerUtilityPractices() {
                 <div className="space-y-2">
                   {useCustomService ? (
                     <>
-                      <Label htmlFor="customServiceName">Nome Servizio Temporaneo *</Label>
+                      <Label htmlFor="customServiceName">{t("utility.temporaryServiceName")} *</Label>
                       <Input
                         id="customServiceName"
                         value={customServiceName}
                         onChange={(e) => setCustomServiceName(e.target.value)}
-                        placeholder="Es: Contratto speciale fibra 1Gbps"
+                        placeholder={t("utility.placeholderCustomServiceName")}
                         required
                         data-testid="input-custom-service-name"
                       />
                       <p className="text-xs text-muted-foreground">
-                        Inserisci una descrizione del servizio non presente nel catalogo
+                        {t("utility.customServiceDesc")}
                       </p>
                     </>
                   ) : (
                     <>
-                      <Label htmlFor="serviceId">Servizio *</Label>
+                      <Label htmlFor="serviceId">{t("common.service")} *</Label>
                       <Select 
                         name="serviceId" 
                         value={selectedServiceId}
@@ -1107,7 +1107,7 @@ export default function ResellerUtilityPractices() {
                         required
                       >
                         <SelectTrigger data-testid="select-service">
-                          <SelectValue placeholder="Seleziona servizio" />
+                          <SelectValue placeholder={t("utility.selectService")} />
                         </SelectTrigger>
                         <SelectContent>
                           {services.filter(s => s.isActive).map((service) => (
@@ -1126,7 +1126,7 @@ export default function ResellerUtilityPractices() {
             {(selectedItemType === "product" || selectedItemType === "service_with_products") && (
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
-                  <Label>Prodotti *</Label>
+                  <Label>{t("utility.productsLabel")} *</Label>
                   <Button
                     type="button"
                     variant="outline"
@@ -1135,7 +1135,7 @@ export default function ResellerUtilityPractices() {
                     data-testid="button-add-product"
                   >
                     <Plus className="h-4 w-4 mr-1" />
-                    Aggiungi Prodotto
+                    {t("utility.addProduct")}
                   </Button>
                 </div>
                 
@@ -1143,7 +1143,7 @@ export default function ResellerUtilityPractices() {
                   <div className="text-center py-4 border rounded-md border-dashed">
                     <Package className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
                     <p className="text-sm text-muted-foreground">
-                      Nessun prodotto aggiunto. Clicca "Aggiungi Prodotto" per iniziare.
+                      {t("utility.noProductsAdded")}
                     </p>
                   </div>
                 ) : (
@@ -1151,7 +1151,7 @@ export default function ResellerUtilityPractices() {
                     {practiceProducts.map((item, index) => (
                       <div key={index} className="border rounded-lg p-3 space-y-3">
                         <div className="flex items-center justify-between">
-                          <span className="text-sm font-medium">Prodotto {index + 1}</span>
+                          <span className="text-sm font-medium">{t("common.product")} {index + 1}</span>
                           <Button
                             type="button"
                             variant="ghost"
@@ -1170,7 +1170,7 @@ export default function ResellerUtilityPractices() {
                               onValueChange={(val) => updateProduct(index, "productId", val)}
                             >
                               <SelectTrigger data-testid={`select-product-${index}`}>
-                                <SelectValue placeholder="Seleziona prodotto" />
+                                <SelectValue placeholder={t("utility.selectProduct")} />
                               </SelectTrigger>
                               <SelectContent>
                                 {products.filter(p => p.isActive).map((product) => (
@@ -1192,7 +1192,7 @@ export default function ResellerUtilityPractices() {
                             />
                           </div>
                           <div>
-                            <Label className="text-xs">Prezzo Unit. (EUR)</Label>
+                            <Label className="text-xs">{t("utility.unitPriceEur")}</Label>
                             <Input
                               type="number"
                               step="0.01"
@@ -1215,7 +1215,7 @@ export default function ResellerUtilityPractices() {
                     {practiceProducts.length > 0 && (
                       <div className="flex justify-end pt-2 border-t">
                         <div className="text-right">
-                          <span className="text-sm text-muted-foreground mr-2">Totale Prodotti:</span>
+                          <span className="text-sm text-muted-foreground mr-2">{t("utility.productsTotal")}:</span>
                           <span className="font-bold">{formatCurrency(calculateProductsTotal())}</span>
                         </div>
                       </div>
@@ -1226,7 +1226,7 @@ export default function ResellerUtilityPractices() {
             )}
 
             <div className="space-y-2">
-              <Label>Cliente *</Label>
+              <Label>{t("common.customer")} *</Label>
               <div className="flex gap-2 mb-2">
                 <Button
                   type="button"
@@ -1241,7 +1241,7 @@ export default function ResellerUtilityPractices() {
                   className="flex-1"
                   data-testid="button-customer-catalog"
                 >
-                  Da Anagrafica
+                  {t("utility.fromRegistry")}
                 </Button>
                 <Button
                   type="button"
@@ -1254,17 +1254,17 @@ export default function ResellerUtilityPractices() {
                   className="flex-1"
                   data-testid="button-customer-temporary"
                 >
-                  Temporaneo
+                  {t("utility.temporary")}
                 </Button>
               </div>
               {useTemporaryCustomer ? (
                 <div className="space-y-2 p-3 border rounded-md bg-muted/30">
                   <div className="relative">
-                    <Label className="text-xs">Nome Cliente *</Label>
+                    <Label className="text-xs">{t("utility.customerName")} *</Label>
                     <Input
                       value={temporaryCustomerName}
                       onChange={(e) => setTemporaryCustomerName(e.target.value)}
-                      placeholder="Nome e cognome"
+                      placeholder={t("utility.fullNamePlaceholder")}
                       required
                       data-testid="input-temporary-customer-name"
                     />
@@ -1277,7 +1277,7 @@ export default function ResellerUtilityPractices() {
                       return (
                         <div className="absolute z-50 w-full mt-1 bg-popover border rounded-md shadow-lg max-h-48 overflow-auto">
                           <div className="p-1 text-xs text-muted-foreground border-b">
-                            Clienti esistenti trovati:
+                            {t("utility.existingCustomersFound")}:
                           </div>
                           {matches.map(customer => (
                             <button
@@ -1311,7 +1311,7 @@ export default function ResellerUtilityPractices() {
                         type="email"
                         value={temporaryCustomerEmail}
                         onChange={(e) => setTemporaryCustomerEmail(e.target.value)}
-                        placeholder="email@esempio.it"
+                        placeholder={t("utility.emailPlaceholder")}
                         data-testid="input-temporary-customer-email"
                       />
                     </div>
@@ -1320,7 +1320,7 @@ export default function ResellerUtilityPractices() {
                       <Input
                         value={temporaryCustomerPhone}
                         onChange={(e) => setTemporaryCustomerPhone(e.target.value)}
-                        placeholder="+39..."
+                        placeholder={t("utility.phonePlaceholder")}
                         data-testid="input-temporary-customer-phone"
                       />
                     </div>
@@ -1335,7 +1335,7 @@ export default function ResellerUtilityPractices() {
                     required
                   >
                     <SelectTrigger data-testid="select-customer" className="flex-1">
-                      <SelectValue placeholder="Seleziona cliente" />
+                      <SelectValue placeholder={t("utility.selectCustomer")} />
                     </SelectTrigger>
                     <SelectContent>
                       {customerUsers.map((customer) => (
@@ -1350,7 +1350,7 @@ export default function ResellerUtilityPractices() {
                     variant="outline"
                     size="icon"
                     onClick={() => setNewCustomerDialogOpen(true)}
-                    title="Nuovo cliente"
+                    title={t("customers.newCustomer")}
                     data-testid="button-new-customer"
                   >
                     <Plus className="h-4 w-4" />
@@ -1361,13 +1361,13 @@ export default function ResellerUtilityPractices() {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="supplierReference">Riferimento Fornitore</Label>
+                <Label htmlFor="supplierReference">{t("utility.supplierReference")}</Label>
                 <Input
                   id="supplierReference"
                   name="supplierReference"
                   value={supplierReferenceValue}
                   onChange={(e) => setSupplierReferenceValue(e.target.value)}
-                  placeholder="Codice pratica fornitore"
+                  placeholder={t("utility.supplierReferencePlaceholder")}
                   data-testid="input-supplier-reference"
                 />
               </div>
@@ -1390,7 +1390,7 @@ export default function ResellerUtilityPractices() {
             </div>
 
             <div className="space-y-2">
-              <Label>Tipo Prezzo *</Label>
+              <Label>{t("utility.priceType")} *</Label>
               <div className="flex gap-2">
                 <Button
                   type="button"
@@ -1400,7 +1400,7 @@ export default function ResellerUtilityPractices() {
                   data-testid="button-price-mensile"
                 >
                   <Calendar className="h-4 w-4 mr-2" />
-                  Mensile
+                  {t("utility.monthly")}
                 </Button>
                 <Button
                   type="button"
@@ -1410,7 +1410,7 @@ export default function ResellerUtilityPractices() {
                   data-testid="button-price-forfait"
                 >
                   <Euro className="h-4 w-4 mr-2" />
-                  Forfait
+                  {t("utility.flatRate")}
                 </Button>
               </div>
             </div>
@@ -1418,7 +1418,7 @@ export default function ResellerUtilityPractices() {
             <div className="space-y-2">
               {selectedPriceType === "mensile" ? (
                 <>
-                  <Label htmlFor="monthlyPriceCents">Prezzo Mensile (EUR)</Label>
+                  <Label htmlFor="monthlyPriceCents">{t("utility.monthlyPriceEur")}</Label>
                   <Input
                     id="monthlyPriceCents"
                     name="monthlyPriceCents"
@@ -1432,7 +1432,7 @@ export default function ResellerUtilityPractices() {
                 </>
               ) : (
                 <>
-                  <Label htmlFor="flatPriceCents">Prezzo Forfait (EUR)</Label>
+                  <Label htmlFor="flatPriceCents">{t("utility.flatPriceEur")}</Label>
                   <Input
                     id="flatPriceCents"
                     name="flatPriceCents"
@@ -1470,7 +1470,7 @@ export default function ResellerUtilityPractices() {
                 disabled={createMutation.isPending || updateMutation.isPending}
                 data-testid="button-save"
               >
-                {editingPractice ? t("profile.saveChanges") : "Crea Pratica"}
+                {editingPractice ? t("profile.saveChanges") : t("utility.createPractice")}
               </Button>
             </div>
           </form>
@@ -1483,38 +1483,38 @@ export default function ResellerUtilityPractices() {
           <DialogHeader>
             <DialogTitle>{t("customers.newCustomer")}</DialogTitle>
             <DialogDescription>
-              Crea rapidamente un nuovo cliente. Solo il nome è obbligatorio.
+              {t("utility.quickCreateCustomer")}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="newCustomerName">Nome Completo *</Label>
+              <Label htmlFor="newCustomerName">{t("profile.fullName")} *</Label>
               <Input
                 id="newCustomerName"
                 value={newCustomerName}
                 onChange={(e) => setNewCustomerName(e.target.value)}
-                placeholder="Mario Rossi"
+                placeholder={t("utility.namePlaceholder")}
                 data-testid="input-new-customer-name"
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="newCustomerEmail">Email (opzionale)</Label>
+              <Label htmlFor="newCustomerEmail">{t("common.email")} ({t("utility.optional")})</Label>
               <Input
                 id="newCustomerEmail"
                 type="email"
                 value={newCustomerEmail}
                 onChange={(e) => setNewCustomerEmail(e.target.value)}
-                placeholder="mario.rossi@email.com"
+                placeholder={t("utility.emailExamplePlaceholder")}
                 data-testid="input-new-customer-email"
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="newCustomerPhone">Telefono (opzionale)</Label>
+              <Label htmlFor="newCustomerPhone">{t("common.phone")} ({t("utility.optional")})</Label>
               <Input
                 id="newCustomerPhone"
                 value={newCustomerPhone}
                 onChange={(e) => setNewCustomerPhone(e.target.value)}
-                placeholder="+39 123 456 7890"
+                placeholder={t("utility.phoneExamplePlaceholder")}
                 data-testid="input-new-customer-phone"
               />
             </div>
@@ -1536,7 +1536,7 @@ export default function ResellerUtilityPractices() {
                 disabled={createCustomerMutation.isPending}
                 data-testid="button-save-new-customer"
               >
-                {createCustomerMutation.isPending ? "Creazione..." : "Crea Cliente"}
+                {createCustomerMutation.isPending ? t("common.creating") : t("utility.createCustomer")}
               </Button>
             </div>
           </div>

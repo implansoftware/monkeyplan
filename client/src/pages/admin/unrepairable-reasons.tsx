@@ -40,34 +40,34 @@ import {
   type LucideIcon
 } from "lucide-react";
 
-const AVAILABLE_ICONS: { name: string; icon: LucideIcon; label: string }[] = [
-  { name: "AlertTriangle", icon: AlertTriangle, label: "Attenzione" },
-  { name: "AlertCircle", icon: AlertCircle, label: "Avviso" },
-  { name: "Ban", icon: Ban, label: "Vietato" },
-  { name: "XCircle", icon: XCircle, label: "Errore" },
-  { name: "Flame", icon: Flame, label: "Bruciato" },
-  { name: "Droplets", icon: Droplets, label: "Ossidazione" },
-  { name: "Cpu", icon: Cpu, label: "CPU" },
-  { name: "Battery", icon: Battery, label: "Batteria" },
-  { name: "Zap", icon: Zap, label: "Corto circuito" },
-  { name: "Shield", icon: Shield, label: "Protezione" },
-  { name: "ShieldX", icon: ShieldX, label: "Non protetto" },
-  { name: "Wrench", icon: Wrench, label: "Meccanico" },
-  { name: "HardDrive", icon: HardDrive, label: "Storage" },
-  { name: "Smartphone", icon: Smartphone, label: "Display" },
-  { name: "Monitor", icon: Monitor, label: "Schermo" },
-  { name: "CircuitBoard", icon: CircuitBoard, label: "Scheda madre" },
-  { name: "Skull", icon: Skull, label: "Irreparabile" },
-  { name: "ThermometerSun", icon: ThermometerSun, label: "Surriscaldamento" },
-  { name: "Waves", icon: Waves, label: "Liquido" },
-  { name: "Bug", icon: Bug, label: "Difetto" },
-  { name: "Bomb", icon: Bomb, label: "Esplosione" },
-  { name: "CircleSlash", icon: CircleSlash, label: "Non disponibile" },
+const ICON_ENTRIES: { name: string; icon: LucideIcon; labelKey: string }[] = [
+  { name: "AlertTriangle", icon: AlertTriangle, labelKey: "icons.warning" },
+  { name: "AlertCircle", icon: AlertCircle, labelKey: "icons.alert" },
+  { name: "Ban", icon: Ban, labelKey: "icons.forbidden" },
+  { name: "XCircle", icon: XCircle, labelKey: "icons.error" },
+  { name: "Flame", icon: Flame, labelKey: "icons.burned" },
+  { name: "Droplets", icon: Droplets, labelKey: "icons.oxidation" },
+  { name: "Cpu", icon: Cpu, labelKey: "icons.cpu" },
+  { name: "Battery", icon: Battery, labelKey: "icons.battery" },
+  { name: "Zap", icon: Zap, labelKey: "icons.shortCircuit" },
+  { name: "Shield", icon: Shield, labelKey: "icons.protection" },
+  { name: "ShieldX", icon: ShieldX, labelKey: "icons.unprotected" },
+  { name: "Wrench", icon: Wrench, labelKey: "icons.mechanical" },
+  { name: "HardDrive", icon: HardDrive, labelKey: "icons.storage" },
+  { name: "Smartphone", icon: Smartphone, labelKey: "icons.display" },
+  { name: "Monitor", icon: Monitor, labelKey: "icons.screen" },
+  { name: "CircuitBoard", icon: CircuitBoard, labelKey: "icons.motherboard" },
+  { name: "Skull", icon: Skull, labelKey: "icons.unrepairable" },
+  { name: "ThermometerSun", icon: ThermometerSun, labelKey: "icons.overheating" },
+  { name: "Waves", icon: Waves, labelKey: "icons.liquid" },
+  { name: "Bug", icon: Bug, labelKey: "icons.defect" },
+  { name: "Bomb", icon: Bomb, labelKey: "icons.explosion" },
+  { name: "CircleSlash", icon: CircleSlash, labelKey: "icons.unavailable" },
 ];
 
 function getIconComponent(iconName: string | null | undefined): LucideIcon | null {
   if (!iconName) return null;
-  const found = AVAILABLE_ICONS.find(i => i.name === iconName);
+  const found = ICON_ENTRIES.find(i => i.name === iconName);
   return found?.icon || null;
 }
 import type { UnrepairableReason, DeviceType } from "@shared/schema";
@@ -133,7 +133,7 @@ export default function AdminUnrepairableReasons() {
     },
     onSuccess: () => {
       invalidateReasonQueries();
-      toast({ title: "Motivo aggiornato", description: t("common.savedSuccessfully") });
+      toast({ title: t("repairs.reasonUpdated"), description: t("common.savedSuccessfully") });
       closeDialog();
     },
     onError: (error: any) => {
@@ -199,7 +199,7 @@ export default function AdminUnrepairableReasons() {
 
   const handleSubmit = () => {
     if (!formData.name.trim()) {
-      toast({ variant: "destructive", title: t("common.error"), description: "Il nome è obbligatorio" });
+      toast({ variant: "destructive", title: t("common.error"), description: t("common.nameRequired") });
       return;
     }
     if (editingReason) {
@@ -226,7 +226,7 @@ export default function AdminUnrepairableReasons() {
       <div className="p-6 space-y-6">
         <div className="flex flex-wrap items-center gap-3">
           <AlertTriangle className="h-8 w-8 text-destructive" />
-          <h1 className="text-2xl font-bold">Motivi Irriparabilità</h1>
+          <h1 className="text-2xl font-bold">{t("repairs.unrepairableReasons")}</h1>
         </div>
         <Card>
           <CardContent className="p-6">
@@ -247,21 +247,21 @@ export default function AdminUnrepairableReasons() {
         <div className="flex flex-wrap items-center gap-3">
           <AlertTriangle className="h-8 w-8 text-destructive" />
           <div>
-            <h1 className="text-2xl font-bold">Motivi Irriparabilità</h1>
+            <h1 className="text-2xl font-bold">{t("repairs.unrepairableReasons")}</h1>
             <p className="text-muted-foreground">
-              Gestisci i motivi per cui un dispositivo può essere dichiarato irriparabile
+              {t("repairs.unrepairableReasonsDesc")}
             </p>
           </div>
         </div>
         <Button onClick={openCreateDialog} data-testid="button-add-reason">
           <Plus className="h-4 w-4 mr-2" />
-          Nuovo Motivo
+          {t("repairs.newReason")}
         </Button>
       </div>
 
       <Card>
         <CardHeader className="flex flex-row items-center justify-between gap-4 space-y-0">
-          <CardTitle>Elenco Motivi ({reasons.length})</CardTitle>
+          <CardTitle>{t("repairs.reasonList")} ({reasons.length})</CardTitle>
           <div className="flex flex-wrap items-center gap-2">
             <Filter className="h-4 w-4 text-muted-foreground" />
             <Select
@@ -287,7 +287,7 @@ export default function AdminUnrepairableReasons() {
             <TableHeader>
               <TableRow>
                 <TableHead className="w-12">#</TableHead>
-                <TableHead className="w-16">Icona</TableHead>
+                <TableHead className="w-16">{t("utility.icon")}</TableHead>
                 <TableHead>{t("common.name")}</TableHead>
                 <TableHead>{t("common.description")}</TableHead>
                 <TableHead>{t("products.deviceType")}</TableHead>
@@ -343,7 +343,7 @@ export default function AdminUnrepairableReasons() {
                         variant="ghost"
                         size="icon"
                         onClick={() => {
-                          if (confirm("Sei sicuro di voler eliminare questo motivo?")) {
+                          if (confirm(t("repairs.confirmDeleteReason"))) {
                             deleteMutation.mutate(reason.id);
                           }
                         }}
@@ -359,7 +359,7 @@ export default function AdminUnrepairableReasons() {
               {reasons.length === 0 && (
                 <TableRow>
                   <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
-                    Nessun motivo configurato. Clicca "Nuovo Motivo" per aggiungerne uno.
+                    {t("repairs.noReasonsConfigured")}
                   </TableCell>
                 </TableRow>
               )}
@@ -372,7 +372,7 @@ export default function AdminUnrepairableReasons() {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>
-              {editingReason ? "Modifica Motivo" : "Nuovo Motivo"}
+              {editingReason ? t("repairs.editReason") : t("repairs.newReason")}
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-4 py-4">
@@ -382,7 +382,7 @@ export default function AdminUnrepairableReasons() {
                 id="name"
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                placeholder="es. Ossidazione Diffusa"
+                placeholder={t("repairs.reasonNamePlaceholder")}
                 data-testid="input-reason-name"
               />
             </div>
@@ -402,7 +402,7 @@ export default function AdminUnrepairableReasons() {
                   <CircleSlash className="h-5 w-5" />
                   <span>{t("common.none")}</span>
                 </button>
-                {AVAILABLE_ICONS.map((iconItem) => {
+                {ICON_ENTRIES.map((iconItem) => {
                   const IconComp = iconItem.icon;
                   return (
                     <button
@@ -417,7 +417,7 @@ export default function AdminUnrepairableReasons() {
                       data-testid={`button-icon-${iconItem.name}`}
                     >
                       <IconComp className="h-5 w-5" />
-                      <span className="truncate w-full text-center">{iconItem.label}</span>
+                      <span className="truncate w-full text-center">{t(iconItem.labelKey)}</span>
                     </button>
                   );
                 })}
@@ -444,7 +444,7 @@ export default function AdminUnrepairableReasons() {
                   <SelectValue placeholder={t("settings.universalAllDevices")} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="_universal">Universale (tutti i dispositivi)</SelectItem>
+                  <SelectItem value="_universal">{t("settings.universalAllDevices")}</SelectItem>
                   {deviceTypes.map((dt) => (
                     <SelectItem key={dt.id} value={dt.id}>
                       {dt.name}
@@ -453,8 +453,7 @@ export default function AdminUnrepairableReasons() {
                 </SelectContent>
               </Select>
               <p className="text-xs text-muted-foreground">
-                Se selezioni un tipo specifico, questo motivo sarà visibile solo per quel tipo di dispositivo.
-                Lascia "Universale" per renderlo disponibile per tutti.
+                {t("repairs.deviceTypeHint")}
               </p>
             </div>
             <div className="space-y-2">
@@ -479,14 +478,14 @@ export default function AdminUnrepairableReasons() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={closeDialog}>
-              Annulla
+              {t("common.cancel")}
             </Button>
             <Button
               onClick={handleSubmit}
               disabled={createMutation.isPending || updateMutation.isPending}
               data-testid="button-save-reason"
             >
-              {editingReason ? "Salva Modifiche" : "Crea Motivo"}
+              {editingReason ? t("common.saveChanges") : t("repairs.createReason")}
             </Button>
           </DialogFooter>
         </DialogContent>

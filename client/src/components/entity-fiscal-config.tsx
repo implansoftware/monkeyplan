@@ -19,7 +19,7 @@ interface EntityFiscalConfigProps {
 export function EntityFiscalConfig({ entityType, basePath }: EntityFiscalConfigProps) {
   const { t } = useTranslation();
   const { toast } = useToast();
-  const entityLabel = entityType === "repair_center" ? "Centro Riparazione" : "Rivenditore";
+  const entityLabel = entityType === "repair_center" ? t("customer.repairCenter") : t("common.reseller");
 
   const { data: adminConfig, isLoading: adminLoading } = useQuery<{
     provider: string | null;
@@ -112,29 +112,29 @@ export function EntityFiscalConfig({ entityType, basePath }: EntityFiscalConfigP
         <CardHeader>
           <CardTitle className="flex items-center gap-2" data-testid="text-fiscal-title">
             <Shield className="h-5 w-5" />
-            Configurazione RT - {entityLabel}
+            {t("fiscal.rtConfigTitle")} - {entityLabel}
           </CardTitle>
           <CardDescription>
-            Gestisci la trasmissione telematica dei corrispettivi per il tuo punto vendita.
+            {t("fiscal.rtConfigDescription")}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
           <div className="rounded-md border p-4 space-y-2">
             <div className="flex items-center gap-2">
               <Info className="h-4 w-4 text-muted-foreground" />
-              <span className="text-sm font-medium">Configurazione Piattaforma</span>
+              <span className="text-sm font-medium">{t("fiscal.platformConfig")}</span>
             </div>
             <div className="grid grid-cols-2 gap-4 text-sm">
               <div>
-                <span className="text-muted-foreground">Provider RT:</span>{" "}
+                <span className="text-muted-foreground">{t("fiscal.rtProvider")}:</span>{" "}
                 <Badge variant="secondary" data-testid="badge-admin-provider">
-                  {adminConfig?.provider || "Non configurato"}
+                  {adminConfig?.provider || t("fiscal.notConfigured")}
                 </Badge>
               </div>
               <div>
-                <span className="text-muted-foreground">Modalità:</span>{" "}
+                <span className="text-muted-foreground">{t("fiscal.mode")}:</span>{" "}
                 <Badge variant={adminConfig?.sandboxMode ? "outline" : "default"} data-testid="badge-admin-mode">
-                  {adminConfig?.sandboxMode ? "Sandbox" : "Produzione"}
+                  {adminConfig?.sandboxMode ? t("fiscal.sandboxMode") : t("fiscal.productionMode")}
                 </Badge>
               </div>
             </div>
@@ -144,7 +144,7 @@ export function EntityFiscalConfig({ entityType, basePath }: EntityFiscalConfigP
             <div className="rounded-md border border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-950 p-4 space-y-1" data-testid="banner-inherited-config">
               <div className="flex items-center gap-2">
                 <Info className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-                <span className="text-sm font-medium text-blue-800 dark:text-blue-200">Configurazione ereditata dal Rivenditore</span>
+                <span className="text-sm font-medium text-blue-800 dark:text-blue-200">{t("fiscal.inheritedConfig")}</span>
               </div>
               <p className="text-sm text-blue-700 dark:text-blue-300">
                 {t("fiscal.rtActiveViaReseller")}
@@ -158,7 +158,7 @@ export function EntityFiscalConfig({ entityType, basePath }: EntityFiscalConfigP
               <p className="text-sm text-muted-foreground">
                 {entityConfig?.inherited
                   ? t("fiscal.overrideResellerConfig")
-                  : "Attiva l'invio automatico dei corrispettivi al Registratore Telematico"}
+                  : t("fiscal.activateAutoSending")}
               </p>
             </div>
             <Switch
@@ -174,20 +174,20 @@ export function EntityFiscalConfig({ entityType, basePath }: EntityFiscalConfigP
               <div className="rounded-md border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-950 p-3" data-testid="banner-own-credentials-required">
                 <div className="flex items-center gap-2">
                   <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400" />
-                  <span className="text-sm font-medium text-amber-800 dark:text-amber-200">Credenziali proprie obbligatorie</span>
+                  <span className="text-sm font-medium text-amber-800 dark:text-amber-200">{t("fiscal.ownCredentialsMandatory")}</span>
                 </div>
                 <p className="text-sm text-amber-700 dark:text-amber-300 mt-1">
-                  Inserisci le tue credenziali Fiskaly per utilizzare l'RT. Le credenziali dell'amministratore non vengono condivise.
+                  {t("fiscal.enterFiskalyCredentials")}
                 </p>
               </div>
 
               <div className="space-y-3 rounded-md border p-4">
                 <div className="flex items-center gap-2 mb-2">
                   <Key className="h-4 w-4" />
-                  <span className="text-sm font-medium">Credenziali RT</span>
+                  <span className="text-sm font-medium">{t("fiscal.rtCredentials")}</span>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="api-key">API Key</Label>
+                  <Label htmlFor="api-key">{t("fiscal.apiKey")}</Label>
                   <Input
                     id="api-key"
                     type="password"
@@ -198,7 +198,7 @@ export function EntityFiscalConfig({ entityType, basePath }: EntityFiscalConfigP
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="api-secret">API Secret</Label>
+                  <Label htmlFor="api-secret">{t("fiscal.apiSecret")}</Label>
                   <Input
                     id="api-secret"
                     type="password"
@@ -209,7 +209,7 @@ export function EntityFiscalConfig({ entityType, basePath }: EntityFiscalConfigP
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="endpoint">Endpoint</Label>
+                  <Label htmlFor="endpoint">{t("fiscal.endpoint")}</Label>
                   <Input
                     id="endpoint"
                     value={rtEndpoint}
@@ -221,22 +221,22 @@ export function EntityFiscalConfig({ entityType, basePath }: EntityFiscalConfigP
                 {adminConfig?.provider === "fiskaly" && (
                   <>
                     <div className="space-y-2">
-                      <Label htmlFor="entity-id">Entity ID Fiskaly</Label>
+                      <Label htmlFor="entity-id">{t("fiscal.fiskalyEntityId")}</Label>
                       <Input
                         id="entity-id"
                         value={rtEntityId}
                         onChange={(e) => setRtEntityId(e.target.value)}
-                        placeholder="UUIDv7 dal dashboard Fiskaly"
+                        placeholder={t("fiscal.fiskalyDashboardUUID")}
                         data-testid="input-rt-entity-id"
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="system-id">System ID Fiskaly</Label>
+                      <Label htmlFor="system-id">{t("fiscal.fiskalySystemId")}</Label>
                       <Input
                         id="system-id"
                         value={rtSystemId}
                         onChange={(e) => setRtSystemId(e.target.value)}
-                        placeholder="UUIDv7 dal dashboard Fiskaly"
+                        placeholder={t("fiscal.fiskalyDashboardUUID")}
                         data-testid="input-rt-system-id"
                       />
                     </div>
@@ -252,7 +252,7 @@ export function EntityFiscalConfig({ entityType, basePath }: EntityFiscalConfigP
             data-testid="button-save-fiscal-config"
           >
             {saveMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            Salva Configurazione
+            {t("fiscal.saveConfig")}
           </Button>
         </CardContent>
       </Card>
@@ -262,14 +262,14 @@ export function EntityFiscalConfig({ entityType, basePath }: EntityFiscalConfigP
           <CardHeader>
             <CardTitle className="flex items-center gap-2" data-testid="text-rt-stats-title">
               <Server className="h-5 w-5" />
-              Statistiche RT
+              {t("fiscal.rtStats")}
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-2 sm:grid-cols-5 gap-4">
               <div className="text-center">
                 <div className="text-2xl font-bold" data-testid="text-rt-total">{rtStats.total ?? 0}</div>
-                <div className="text-sm text-muted-foreground">Totali</div>
+                <div className="text-sm text-muted-foreground">{t("common.total")}</div>
               </div>
               <div className="text-center">
                 <div className="text-2xl font-bold text-yellow-600" data-testid="text-rt-pending">{rtStats.pending ?? 0}</div>
@@ -277,15 +277,15 @@ export function EntityFiscalConfig({ entityType, basePath }: EntityFiscalConfigP
               </div>
               <div className="text-center">
                 <div className="text-2xl font-bold text-blue-600" data-testid="text-rt-submitted">{rtStats.submitted ?? 0}</div>
-                <div className="text-sm text-muted-foreground">Inviati</div>
+                <div className="text-sm text-muted-foreground">{t("fiscal.submitted")}</div>
               </div>
               <div className="text-center">
                 <div className="text-2xl font-bold text-green-600" data-testid="text-rt-confirmed">{rtStats.confirmed ?? 0}</div>
-                <div className="text-sm text-muted-foreground">Confermati</div>
+                <div className="text-sm text-muted-foreground">{t("fiscal.confirmed")}</div>
               </div>
               <div className="text-center">
                 <div className="text-2xl font-bold text-red-600" data-testid="text-rt-failed">{rtStats.failed ?? 0}</div>
-                <div className="text-sm text-muted-foreground">Falliti</div>
+                <div className="text-sm text-muted-foreground">{t("fiscal.failed")}</div>
               </div>
             </div>
           </CardContent>
@@ -297,7 +297,7 @@ export function EntityFiscalConfig({ entityType, basePath }: EntityFiscalConfigP
           <CardHeader>
             <CardTitle className="flex items-center gap-2" data-testid="text-failed-title">
               <AlertTriangle className="h-5 w-5 text-destructive" />
-              Trasmissioni Fallite
+              {t("fiscal.failedTransmissions")}
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -305,13 +305,13 @@ export function EntityFiscalConfig({ entityType, basePath }: EntityFiscalConfigP
               {failedTransactions.map((tx: any) => (
                 <div key={tx.id} className="flex items-center justify-between gap-2 rounded-md border p-3">
                   <div className="flex-1 min-w-0">
-                    <div className="text-sm font-medium">Transazione #{tx.id}</div>
+                    <div className="text-sm font-medium">{t("fiscal.transaction")} #{tx.id}</div>
                     <div className="text-xs text-muted-foreground truncate">
                       {tx.rtErrorMessage || t("common.unknownError")}
                     </div>
                   </div>
                   <div className="flex items-center gap-2 flex-shrink-0">
-                    <Badge variant="secondary">Tentativi: {tx.rtRetryCount ?? 0}</Badge>
+                    <Badge variant="secondary">{t("fiscal.attempts")}: {tx.rtRetryCount ?? 0}</Badge>
                     {tx.rtStatus === "failed" ? (
                       <XCircle className="h-4 w-4 text-destructive" />
                     ) : (

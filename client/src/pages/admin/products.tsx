@@ -69,23 +69,23 @@ interface DeviceCompatibilityWithNames extends DeviceCompatibilityEntry {
 }
 
 const CATEGORIES = [
-  { value: "display", label: "Display/Schermo" },
-  { value: "batteria", label: "Batteria" },
-  { value: "scheda_madre", label: "Scheda Madre" },
-  { value: "fotocamera", label: "Fotocamera" },
-  { value: "altoparlante", label: "Altoparlante/Speaker" },
-  { value: "microfono", label: "Microfono" },
-  { value: "connettore", label: "Connettore Ricarica" },
-  { value: "tasto", label: "Tasti/Pulsanti" },
-  { value: "cover", label: "Cover/Scocca" },
-  { value: "vetro", label: "Vetro Posteriore" },
-  { value: "sensore", label: "Sensori" },
-  { value: "flex", label: "Flat/Flex Cable" },
-  { value: "antenna", label: "Antenna" },
-  { value: "vibrazione", label: "Motore Vibrazione" },
-  { value: "sim_tray", label: "Carrello SIM" },
-  { value: "accessorio", label: "Accessorio" },
-  { value: "altro", label: "Altro" },
+  { value: "display", labelKey: "products.categories.display" },
+  { value: "batteria", labelKey: "products.categories.battery" },
+  { value: "scheda_madre", labelKey: "products.categories.motherboard" },
+  { value: "fotocamera", labelKey: "products.categories.camera" },
+  { value: "altoparlante", labelKey: "products.categories.speaker" },
+  { value: "microfono", labelKey: "products.categories.microphone" },
+  { value: "connettore", labelKey: "products.categories.chargingConnector" },
+  { value: "tasto", labelKey: "products.categories.buttons" },
+  { value: "cover", labelKey: "products.categories.cover" },
+  { value: "vetro", labelKey: "products.categories.rearGlass" },
+  { value: "sensore", labelKey: "products.categories.sensors" },
+  { value: "flex", labelKey: "products.categories.flexCable" },
+  { value: "antenna", labelKey: "products.categories.antenna" },
+  { value: "vibrazione", labelKey: "products.categories.vibrationMotor" },
+  { value: "sim_tray", labelKey: "products.categories.simTray" },
+  { value: "accessorio", labelKey: "products.categories.accessory" },
+  { value: "altro", labelKey: "products.categories.other" },
 ];
 
 const BRANDS = [
@@ -95,8 +95,18 @@ const BRANDS = [
 ];
 
 const COLORS = [
-  "Nero", "Bianco", "Argento", "Oro", "Blu", "Verde", "Rosso",
-  "Viola", "Rosa", "Grigio", "Trasparente", "Altro"
+  { value: "Nero", labelKey: "colors.black" },
+  { value: "Bianco", labelKey: "colors.white" },
+  { value: "Argento", labelKey: "colors.silver" },
+  { value: "Oro", labelKey: "colors.gold" },
+  { value: "Blu", labelKey: "colors.blue" },
+  { value: "Verde", labelKey: "colors.green" },
+  { value: "Rosso", labelKey: "colors.red" },
+  { value: "Viola", labelKey: "colors.purple" },
+  { value: "Rosa", labelKey: "colors.pink" },
+  { value: "Grigio", labelKey: "colors.grey" },
+  { value: "Trasparente", labelKey: "colors.transparent" },
+  { value: "Altro", labelKey: "colors.other" },
 ];
 
 export default function AdminProducts() {
@@ -271,11 +281,11 @@ export default function AdminProducts() {
       queryClient.invalidateQueries({ queryKey: ["/api/products"] });
       queryClient.invalidateQueries({ queryKey: ["/api/products/with-stock"] });
       toast({ 
-        title: variables.isVisibleInShop ? "Prodotto visibile nello shop" : "Prodotto nascosto dallo shop"
+        title: variables.isVisibleInShop ? t("products.visibleInShop") : t("products.hiddenFromShop")
       });
     },
     onError: () => {
-      toast({ title: t("common.error"), description: "Impossibile modificare la visibilità", variant: "destructive" });
+      toast({ title: t("common.error"), description: t("products.cannotChangeVisibility"), variant: "destructive" });
     },
   });
 
@@ -321,7 +331,7 @@ export default function AdminProducts() {
       });
       if (!res.ok) {
         const text = await res.text();
-        throw new Error(text || "Errore upload immagine");
+        throw new Error(text || t("products.uploadImageError"));
       }
       return await res.json();
     },
@@ -346,7 +356,7 @@ export default function AdminProducts() {
       });
       if (!res.ok) {
         const text = await res.text();
-        throw new Error(text || "Errore eliminazione immagine");
+        throw new Error(text || t("products.deleteImageError"));
       }
     },
     onSuccess: () => {
@@ -446,7 +456,7 @@ export default function AdminProducts() {
       const data = await res.json();
       const enrichedData = data.map((ps: ProductSupplier) => ({
         ...ps,
-        supplierName: suppliers.find(s => s.id === ps.supplierId)?.name || "Fornitore sconosciuto"
+        supplierName: suppliers.find(s => s.id === ps.supplierId)?.name || t("products.unknownSupplier")
       }));
       setProductSuppliers(enrichedData);
     } catch {
@@ -860,7 +870,8 @@ export default function AdminProducts() {
   };
 
   const getCategoryLabel = (category: string) => {
-    return CATEGORIES.find(c => c.value === category)?.label || category;
+    const cat = CATEGORIES.find(c => c.value === category);
+    return cat ? t(cat.labelKey) : category;
   };
 
   const getStockBadge = (totalStock: number, minStock: number | null | undefined) => {
@@ -868,7 +879,7 @@ export default function AdminProducts() {
     if (totalStock === 0) {
       return <Badge variant="destructive"><AlertTriangle className="h-3 w-3 mr-1" />{t("warehouse.outOfStock")}</Badge>;
     } else if (totalStock <= min) {
-      return <Badge variant="secondary" className="bg-yellow-500/20 text-yellow-700 dark:text-yellow-400"><AlertTriangle className="h-3 w-3 mr-1" />Scorta Bassa</Badge>;
+      return <Badge variant="secondary" className="bg-yellow-500/20 text-yellow-700 dark:text-yellow-400"><AlertTriangle className="h-3 w-3 mr-1" />{t("warehouse.lowStock")}</Badge>;
     }
     return <Badge variant="outline">{totalStock}</Badge>;
   };
@@ -886,8 +897,8 @@ export default function AdminProducts() {
               <Package className="h-5 w-5" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold tracking-tight">Ricambi</h1>
-              <p className="text-sm text-muted-foreground">Gestisci il catalogo ricambi</p>
+              <h1 className="text-2xl font-bold tracking-tight">{t("products.spareParts")}</h1>
+              <p className="text-sm text-muted-foreground">{t("products.manageSparePartsCatalog")}</p>
             </div>
           </div>
         </div>
@@ -919,14 +930,14 @@ export default function AdminProducts() {
           <DialogTrigger asChild>
             <Button data-testid="button-new-product">
               <Plus className="h-4 w-4 mr-2" />
-              Nuovo Prodotto
+              {t("products.newProduct")}
             </Button>
           </DialogTrigger>
           <DialogContent className="max-w-2xl max-h-[90vh]">
             <DialogHeader>
               <DialogTitle className="flex flex-wrap items-center gap-2">
                 <Package className="h-5 w-5" />
-                Crea Nuovo Prodotto
+                {t("products.createNewProduct")}
               </DialogTitle>
             </DialogHeader>
             <ScrollArea className="max-h-[70vh] pr-4">
@@ -948,7 +959,7 @@ export default function AdminProducts() {
                           value={newProductName}
                           onChange={(e) => setNewProductName(e.target.value)}
                           required 
-                          placeholder="es. Display LCD iPhone 14"
+                          placeholder={t("products.namePlaceholder")}
                           data-testid="input-name" 
                         />
                       </div>
@@ -959,7 +970,7 @@ export default function AdminProducts() {
                           value={newProductSku}
                           onChange={(e) => setNewProductSku(e.target.value)}
                           required 
-                          placeholder="es. LCD-IP14-001"
+                          placeholder={t("products.skuPlaceholder")}
                           data-testid="input-sku" 
                         />
                       </div>
@@ -975,7 +986,7 @@ export default function AdminProducts() {
                           <SelectContent>
                             {CATEGORIES.map(cat => (
                               <SelectItem key={cat.value} value={cat.value}>
-                                {cat.label}
+                                {t(cat.labelKey)}
                               </SelectItem>
                             ))}
                           </SelectContent>
@@ -1020,7 +1031,7 @@ export default function AdminProducts() {
                           </SelectTrigger>
                           <SelectContent>
                             {COLORS.map(color => (
-                              <SelectItem key={color} value={color}>{color}</SelectItem>
+                              <SelectItem key={color.value} value={color.value}>{t(color.labelKey)}</SelectItem>
                             ))}
                           </SelectContent>
                         </Select>
@@ -1054,7 +1065,7 @@ export default function AdminProducts() {
                           ))}
                         </SelectContent>
                       </Select>
-                      <p className="text-xs text-muted-foreground">Categoria generale del dispositivo</p>
+                      <p className="text-xs text-muted-foreground">{t("products.deviceCategoryGeneral")}</p>
                     </div>
 
                     <div className="space-y-2">
@@ -1083,7 +1094,7 @@ export default function AdminProducts() {
                             data-testid="button-new-brand"
                           >
                             <Plus className="h-3 w-3 mr-1" />
-                            Brand
+                            {t("products.brand")}
                           </Button>
                           <Button
                             type="button"
@@ -1093,16 +1104,16 @@ export default function AdminProducts() {
                             data-testid="button-new-model"
                           >
                             <Plus className="h-3 w-3 mr-1" />
-                            Modello
+                            {t("products.model")}
                           </Button>
                         </div>
                       </div>
                       <p className="text-xs text-muted-foreground mb-2">
-                        Seleziona i brand e modelli di dispositivo con cui questo ricambio è compatibile
+                        {t("products.selectCompatibleDevices")}
                       </p>
                       <ScrollArea className="h-64 border rounded-md p-2">
                         {deviceBrands.length === 0 ? (
-                          <p className="text-sm text-muted-foreground p-2">Nessun brand di dispositivo disponibile</p>
+                          <p className="text-sm text-muted-foreground p-2">{t("products.noDeviceBrandsAvailable")}</p>
                         ) : (
                           <div className="space-y-1">
                             {deviceBrands.map((brand) => {
@@ -1127,7 +1138,7 @@ export default function AdminProducts() {
                                       <ChevronDown className={`h-4 w-4 transition-transform ${isExpanded ? 'rotate-0' : '-rotate-90'}`} />
                                       <span className="font-medium">{brand.name}</span>
                                       {hasBrandOnlyCompatibility && (
-                                        <Badge variant="outline" className="ml-2 text-xs">Tutti i modelli</Badge>
+                                        <Badge variant="outline" className="ml-2 text-xs">{t("products.allModels")}</Badge>
                                       )}
                                     </button>
                                     <Button
@@ -1158,7 +1169,7 @@ export default function AdminProducts() {
                                         );
                                       })}
                                       {models.length === 0 && (
-                                        <p className="text-xs text-muted-foreground italic">Nessun modello. Clicca + per aggiungerne uno.</p>
+                                        <p className="text-xs text-muted-foreground italic">{t("products.noModelsClickToAdd")}</p>
                                       )}
                                     </div>
                                   )}
@@ -1175,7 +1186,7 @@ export default function AdminProducts() {
                             const model = c.deviceModelId ? deviceModels.find(m => m.id === c.deviceModelId) : null;
                             return (
                               <Badge key={idx} variant="secondary">
-                                {brand?.name}{model ? ` - ${model.modelName}` : ' (tutti)'}
+                                {brand?.name}{model ? ` - ${model.modelName}` : ` (${t("products.allLabel")})`}
                               </Badge>
                             );
                           })}
@@ -1198,7 +1209,7 @@ export default function AdminProducts() {
                           placeholder="0.00"
                           data-testid="input-cost-price"
                         />
-                        <p className="text-xs text-muted-foreground">Costo dal fornitore</p>
+                        <p className="text-xs text-muted-foreground">{t("products.supplierCost")}</p>
                       </div>
                       <div className="space-y-2">
                         <Label htmlFor="unitPrice">{t("products.salePrice")} (€) *</Label>
@@ -1213,7 +1224,7 @@ export default function AdminProducts() {
                           placeholder="0.00"
                           data-testid="input-price"
                         />
-                        <p className="text-xs text-muted-foreground">Prezzo al cliente</p>
+                        <p className="text-xs text-muted-foreground">{t("products.customerPrice")}</p>
                       </div>
                     </div>
 
@@ -1273,14 +1284,14 @@ export default function AdminProducts() {
                           placeholder="5"
                           data-testid="input-min-stock"
                         />
-                        <p className="text-xs text-muted-foreground">Alert quando scende sotto</p>
+                        <p className="text-xs text-muted-foreground">{t("warehouse.alertWhenBelow")}</p>
                       </div>
                       <div className="space-y-2">
                         <Label htmlFor="location">{t("warehouse.location")}</Label>
                         <Input
                           id="location"
                           name="location"
-                          placeholder="es. Scaffale A3"
+                          placeholder={t("warehouse.locationPlaceholder")}
                           data-testid="input-location"
                         />
                       </div>
@@ -1352,7 +1363,7 @@ export default function AdminProducts() {
                       
                       {initialStock.length === 0 ? (
                         <p className="text-sm text-muted-foreground text-center py-4">
-                          Nessuna quantità iniziale. Seleziona un magazzino per aggiungere.
+                          {t("warehouse.noInitialQuantity")}
                         </p>
                       ) : (
                         <div className="space-y-2">
@@ -1362,7 +1373,7 @@ export default function AdminProducts() {
                               <div key={stock.warehouseId} className="flex flex-wrap items-center gap-3 p-3 border rounded-md">
                                 <Warehouse className="h-4 w-4 text-muted-foreground" />
                                 <div className="flex-1">
-                                  <span className="font-medium">{wh?.name || "Magazzino"}</span>
+                                  <span className="font-medium">{wh?.name || t("products.warehouseLabel")}</span>
                                   {wh && (
                                     <span className="text-xs text-muted-foreground ml-2">
                                       ({wh.ownerType === 'admin' ? 'Admin' : wh.owner?.fullName || wh.owner?.username})
@@ -1392,7 +1403,7 @@ export default function AdminProducts() {
                         </div>
                       )}
                       <p className="text-xs text-muted-foreground">
-                        Puoi assegnare quantità iniziali ai magazzini di Admin, Rivenditori e Centri Riparazione
+                        {t("warehouse.assignInitialQuantitiesDesc")}
                       </p>
                     </div>
                   </TabsContent>
@@ -1406,7 +1417,7 @@ export default function AdminProducts() {
                   disabled={createProductMutation.isPending}
                   data-testid="button-submit-product"
                 >
-                  {createProductMutation.isPending ? t("admin.repairCenters.creating") : "Crea Prodotto"}
+                  {createProductMutation.isPending ? t("admin.repairCenters.creating") : t("products.createProduct")}
                 </Button>
               </form>
             </ScrollArea>
@@ -1428,10 +1439,10 @@ export default function AdminProducts() {
             <DialogHeader>
               <DialogTitle className="flex flex-wrap items-center gap-2">
                 <Pencil className="h-5 w-5" />
-                Modifica Prodotto
+                {t("products.editProduct")}
               </DialogTitle>
               <DialogDescription>
-                Modifica i dettagli del prodotto
+                {t("products.editProductDesc")}
               </DialogDescription>
             </DialogHeader>
             {editingProduct && (
@@ -1485,7 +1496,7 @@ export default function AdminProducts() {
                                 ) : (
                                   <Upload className="h-4 w-4 mr-2" />
                                 )}
-                                Carica Immagine
+                                {t("products.uploadImage")}
                               </Button>
                             </div>
                             {editingProduct.imageUrl && (
@@ -1503,10 +1514,10 @@ export default function AdminProducts() {
                                 ) : (
                                   <Trash2 className="h-4 w-4 mr-2" />
                                 )}
-                                Rimuovi
+                                {t("common.remove")}
                               </Button>
                             )}
-                            <p className="text-xs text-muted-foreground">JPEG, PNG, WebP o GIF. Max 10MB</p>
+                            <p className="text-xs text-muted-foreground">{t("products.imageFormatHint")}</p>
                           </div>
                         </div>
                       </div>
@@ -1523,7 +1534,7 @@ export default function AdminProducts() {
                           />
                         </div>
                         <div className="space-y-2">
-                          <Label htmlFor="edit-sku">SKU/Codice *</Label>
+                          <Label htmlFor="edit-sku">SKU/{t("common.code")} *</Label>
                           <Input 
                             id="edit-sku" 
                             name="sku" 
@@ -1544,7 +1555,7 @@ export default function AdminProducts() {
                             <SelectContent>
                               {CATEGORIES.map(cat => (
                                 <SelectItem key={cat.value} value={cat.value}>
-                                  {cat.label}
+                                  {t(cat.labelKey)}
                                 </SelectItem>
                               ))}
                             </SelectContent>
@@ -1589,7 +1600,7 @@ export default function AdminProducts() {
                             </SelectTrigger>
                             <SelectContent>
                               {COLORS.map(color => (
-                                <SelectItem key={color} value={color}>{color}</SelectItem>
+                                <SelectItem key={color.value} value={color.value}>{t(color.labelKey)}</SelectItem>
                               ))}
                             </SelectContent>
                           </Select>
@@ -1636,7 +1647,7 @@ export default function AdminProducts() {
                             ))}
                           </SelectContent>
                         </Select>
-                        <p className="text-xs text-muted-foreground">Categoria generale del dispositivo</p>
+                        <p className="text-xs text-muted-foreground">{t("products.deviceCategoryGeneral")}</p>
                       </div>
 
                       <div className="space-y-2">
@@ -1665,7 +1676,7 @@ export default function AdminProducts() {
                               data-testid="edit-button-new-brand"
                             >
                               <Plus className="h-3 w-3 mr-1" />
-                              Brand
+                              {t("products.brand")}
                             </Button>
                             <Button
                               type="button"
@@ -1675,13 +1686,12 @@ export default function AdminProducts() {
                               data-testid="edit-button-new-model"
                             >
                               <Plus className="h-3 w-3 mr-1" />
-                              Modello
+                              {t("products.model")}
                             </Button>
                           </div>
                         </div>
                         <p className="text-xs text-muted-foreground mb-2">
-                          Seleziona i brand e modelli di dispositivo con cui questo ricambio è compatibile.
-                          Le modifiche saranno salvate quando aggiorni il prodotto.
+                          {t("products.selectCompatibleDevicesEdit")}
                         </p>
                         {isLoadingCompatibilities ? (
                           <div className="space-y-2">
@@ -1691,7 +1701,7 @@ export default function AdminProducts() {
                         ) : (
                           <ScrollArea className="h-64 border rounded-md p-2">
                             {deviceBrands.length === 0 ? (
-                              <p className="text-sm text-muted-foreground p-2">Nessun brand di dispositivo disponibile</p>
+                              <p className="text-sm text-muted-foreground p-2">{t("products.noDeviceBrandsAvailable")}</p>
                             ) : (
                               <div className="space-y-1">
                                 {deviceBrands.map((brand) => {
@@ -1716,7 +1726,7 @@ export default function AdminProducts() {
                                           <ChevronDown className={`h-4 w-4 transition-transform ${isExpanded ? 'rotate-0' : '-rotate-90'}`} />
                                           <span className="font-medium">{brand.name}</span>
                                           {hasBrandOnlyCompatibility && (
-                                            <Badge variant="outline" className="ml-2 text-xs">Tutti i modelli</Badge>
+                                            <Badge variant="outline" className="ml-2 text-xs">{t("products.allModels")}</Badge>
                                           )}
                                         </button>
                                         <Button
@@ -1747,7 +1757,7 @@ export default function AdminProducts() {
                                             );
                                           })}
                                           {models.length === 0 && (
-                                            <p className="text-xs text-muted-foreground italic">Nessun modello. Clicca + per aggiungerne uno.</p>
+                                            <p className="text-xs text-muted-foreground italic">{t("products.noModelsClickToAdd")}</p>
                                           )}
                                         </div>
                                       )}
@@ -1762,7 +1772,7 @@ export default function AdminProducts() {
                           <div className="flex flex-wrap gap-2 mt-2">
                             {editDeviceCompatibilities.map((c, idx) => (
                               <Badge key={idx} variant="secondary">
-                                {c.brandName || 'Brand'}{c.modelName ? ` - ${c.modelName}` : ' (tutti)'}
+                                {c.brandName || t("products.brand")}{c.modelName ? ` - ${c.modelName}` : ` (${t("products.allLabel")})`}
                               </Badge>
                             ))}
                           </div>
@@ -1899,7 +1909,7 @@ export default function AdminProducts() {
                                   variant="ghost"
                                   size="icon"
                                   onClick={() => {
-                                    if (confirm("Rimuovere questo fornitore dal prodotto?")) {
+                                    if (confirm(t("products.removeSupplierConfirm"))) {
                                       deleteProductSupplierMutation.mutate(ps.id);
                                     }
                                   }}
@@ -1918,7 +1928,7 @@ export default function AdminProducts() {
                         <DialogContent>
                           <DialogHeader>
                             <DialogTitle>
-                              {editingProductSupplier ? "Modifica Fornitore" : "Associa Fornitore"}
+                              {editingProductSupplier ? t("products.editSupplier") : t("products.associateSupplier")}
                             </DialogTitle>
                           </DialogHeader>
                           <form onSubmit={handleSupplierSubmit} className="space-y-4">
@@ -2029,13 +2039,13 @@ export default function AdminProducts() {
                                   <SelectItem value="true">
                                     <div className="flex flex-wrap items-center gap-1">
                                       <Star className="h-3 w-3" />
-                                      Si
+                                      {t("common.yes")}
                                     </div>
                                   </SelectItem>
                                   <SelectItem value="false">
                                     <div className="flex flex-wrap items-center gap-1">
                                       <StarOff className="h-3 w-3" />
-                                      No
+                                      {t("common.no")}
                                     </div>
                                   </SelectItem>
                                 </SelectContent>
@@ -2048,7 +2058,7 @@ export default function AdminProducts() {
                                 variant="outline"
                                 onClick={() => setSupplierDialogOpen(false)}
                               >
-                                Annulla
+                                {t("common.cancel")}
                               </Button>
                               <Button
                                 type="submit"
@@ -2057,7 +2067,7 @@ export default function AdminProducts() {
                               >
                                 {(createProductSupplierMutation.isPending || updateProductSupplierMutation.isPending)
                                   ? t("settings.savingRate")
-                                  : editingProductSupplier ? "Aggiorna" : "Associa"}
+                                  : editingProductSupplier ? t("common.update") : t("products.associate")}
                               </Button>
                             </div>
                           </form>
@@ -2085,7 +2095,7 @@ export default function AdminProducts() {
                         <div className="flex items-center justify-between gap-2 flex-wrap">
                           <Label className="flex flex-wrap items-center gap-2">
                             <Warehouse className="h-4 w-4" />
-                            Quantità per Magazzino
+                            {t("warehouse.quantityByWarehouse")}
                           </Label>
                           <Select onValueChange={addEditStock}>
                             <SelectTrigger className="w-56" data-testid="edit-select-add-warehouse">
@@ -2153,7 +2163,7 @@ export default function AdminProducts() {
                           </div>
                         ) : editStock.length === 0 ? (
                           <div className="text-center py-4 text-muted-foreground text-sm">
-                            Nessuna giacenza. Seleziona un magazzino per aggiungere quantità.
+                            {t("warehouse.noStockSelectWarehouse")}
                           </div>
                         ) : (
                           <div className="space-y-2">
@@ -2174,7 +2184,7 @@ export default function AdminProducts() {
                                       onClick={() => saveStockChange(stock.warehouseId)}
                                       data-testid={`edit-button-save-stock-${stock.warehouseId}`}
                                     >
-                                      {updateStockMutation.isPending ? "..." : "Salva"}
+                                      {updateStockMutation.isPending ? "..." : t("common.save")}
                                     </Button>
                                   </div>
                                   <div className="flex flex-wrap items-center gap-3">
@@ -2189,11 +2199,11 @@ export default function AdminProducts() {
                                       />
                                     </div>
                                     <div className="flex-1">
-                                      <Label className="text-xs text-muted-foreground">Ubicazione</Label>
+                                      <Label className="text-xs text-muted-foreground">{t("warehouse.location")}</Label>
                                       <Input
                                         value={stock.location}
                                         onChange={(e) => updateEditStockLocation(stock.warehouseId, e.target.value)}
-                                        placeholder="es. Scaffale A3"
+                                        placeholder={t("warehouse.locationPlaceholder")}
                                         data-testid={`edit-input-location-${stock.warehouseId}`}
                                       />
                                     </div>
@@ -2215,7 +2225,7 @@ export default function AdminProducts() {
                     disabled={updateProductMutation.isPending}
                     data-testid="button-update-product"
                   >
-                    {updateProductMutation.isPending ? t("settings.savingRate") : "Salva Modifiche"}
+                    {updateProductMutation.isPending ? t("settings.savingRate") : t("products.saveChanges")}
                   </Button>
                 </form>
               </ScrollArea>
@@ -2244,7 +2254,7 @@ export default function AdminProducts() {
               <SelectContent>
                 <SelectItem value="all">{t("products.allCategories")}</SelectItem>
                 {CATEGORIES.map(cat => (
-                  <SelectItem key={cat.value} value={cat.value}>{cat.label}</SelectItem>
+                  <SelectItem key={cat.value} value={cat.value}>{t(cat.labelKey)}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -2275,14 +2285,14 @@ export default function AdminProducts() {
                   <TableHead>
                     <div className="flex flex-wrap items-center gap-1">
                       <Warehouse className="h-4 w-4" />
-                      Giacenze
+                      {t("warehouse.stock")}
                     </div>
                   </TableHead>
                   <TableHead>{t("products.compatibility")}</TableHead>
                   <TableHead>
                     <div className="flex flex-wrap items-center gap-1">
                       <Store className="h-4 w-4" />
-                      Shop
+                      {t("products.shop")}
                     </div>
                   </TableHead>
                   <TableHead className="text-right">{t("common.actions")}</TableHead>
@@ -2336,7 +2346,7 @@ export default function AdminProducts() {
                           </TooltipTrigger>
                           <TooltipContent className="max-w-xs">
                             <div className="space-y-1">
-                              <div className="font-semibold mb-2">Giacenze per Magazzino:</div>
+                              <div className="font-semibold mb-2">{t("warehouse.stockByWarehouse")}:</div>
                               {stockByWarehouse.map((stock) => (
                                 <div key={stock.warehouseId} className="flex justify-between gap-4 text-sm">
                                   <span>{stock.warehouseName} ({stock.ownerName})</span>
@@ -2353,7 +2363,7 @@ export default function AdminProducts() {
                         </Tooltip>
                       ) : (
                         <Badge variant="outline" className="text-muted-foreground">
-                          Nessuna giacenza
+                          {t("warehouse.noStock")}
                         </Badge>
                       )}
                     </TableCell>
@@ -2369,9 +2379,9 @@ export default function AdminProducts() {
                                   if (uniqueBrands.length === 1 && modelCount === 0) {
                                     return uniqueBrands[0];
                                   } else if (uniqueBrands.length === 1) {
-                                    return `${uniqueBrands[0]} (${modelCount} modelli)`;
+                                    return `${uniqueBrands[0]} (${modelCount} ${t("products.modelsCount")})`;
                                   } else {
-                                    return `${uniqueBrands.length} brand`;
+                                    return `${uniqueBrands.length} ${t("products.brandsCount")}`;
                                   }
                                 })()}
                               </Badge>
@@ -2379,7 +2389,7 @@ export default function AdminProducts() {
                           </TooltipTrigger>
                           <TooltipContent className="max-w-xs">
                             <div className="space-y-1">
-                              <div className="font-semibold mb-2">Dispositivi Compatibili:</div>
+                              <div className="font-semibold mb-2">{t("products.compatibleDevicesLabel")}:</div>
                               {(() => {
                                 const brandMap = new Map<string, string[]>();
                                 compatibilities.forEach(c => {
@@ -2396,7 +2406,7 @@ export default function AdminProducts() {
                                     {models.length > 0 ? (
                                       <span className="text-muted-foreground">: {models.join(", ")}</span>
                                     ) : (
-                                      <span className="text-muted-foreground"> (tutti i modelli)</span>
+                                      <span className="text-muted-foreground"> ({t("products.allModels")})</span>
                                     )}
                                   </div>
                                 ));
@@ -2429,8 +2439,8 @@ export default function AdminProducts() {
                         </TooltipTrigger>
                         <TooltipContent>
                           {product.isVisibleInShop === false 
-                            ? "Nascosto dallo shop - clicca per mostrare" 
-                            : "Visibile nello shop - clicca per nascondere"}
+                            ? t("products.hiddenFromShopToggle") 
+                            : t("products.visibleInShopToggle")}
                         </TooltipContent>
                       </Tooltip>
                     </TableCell>
@@ -2589,7 +2599,7 @@ export default function AdminProducts() {
                               variant="ghost"
                               size="icon"
                               onClick={() => {
-                                if (confirm("Rimuovere il prezzo personalizzato? Verrà applicato il prezzo base.")) {
+                                if (confirm(t("products.removeCustomPriceConfirm"))) {
                                   deleteResellerPriceMutation.mutate(rp.customPrice!.id);
                                 }
                               }}
@@ -2637,14 +2647,14 @@ export default function AdminProducts() {
                 variant="outline" 
                 onClick={() => { setNewBrandDialogOpen(false); setNewBrandName(""); }}
               >
-                Annulla
+                {t("common.cancel")}
               </Button>
               <Button 
                 type="submit" 
                 disabled={createBrandMutation.isPending || !newBrandName.trim()}
                 data-testid="button-submit-new-brand"
               >
-                {createBrandMutation.isPending ? t("admin.repairCenters.creating") : "Crea Brand"}
+                {createBrandMutation.isPending ? t("admin.repairCenters.creating") : t("products.createBrand")}
               </Button>
             </div>
           </form>
@@ -2657,12 +2667,12 @@ export default function AdminProducts() {
           <DialogHeader>
             <DialogTitle>{t("products.newDeviceModel")}</DialogTitle>
             <DialogDescription>
-              Aggiungi un nuovo modello di dispositivo
+              {t("products.addNewDeviceModel")}
             </DialogDescription>
           </DialogHeader>
           <form onSubmit={handleCreateModel} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="newModelBrand">Brand *</Label>
+              <Label htmlFor="newModelBrand">{t("products.brand")} *</Label>
               <Select value={newModelBrandId} onValueChange={setNewModelBrandId}>
                 <SelectTrigger id="newModelBrand" data-testid="select-new-model-brand">
                   <SelectValue placeholder={t("products.selectBrand")} />
@@ -2680,7 +2690,7 @@ export default function AdminProducts() {
                 id="newModelName"
                 value={newModelName}
                 onChange={(e) => setNewModelName(e.target.value)}
-                placeholder="es. iPhone 15 Pro, Galaxy S24..."
+                placeholder={t("products.modelNamePlaceholder")}
                 required
                 data-testid="input-new-model-name"
               />
@@ -2691,14 +2701,14 @@ export default function AdminProducts() {
                 variant="outline" 
                 onClick={() => { setNewModelDialogOpen(false); setNewModelName(""); setNewModelBrandId(""); }}
               >
-                Annulla
+                {t("common.cancel")}
               </Button>
               <Button 
                 type="submit" 
                 disabled={createModelMutation.isPending || !newModelName.trim() || !newModelBrandId}
                 data-testid="button-submit-new-model"
               >
-                {createModelMutation.isPending ? t("admin.repairCenters.creating") : "Crea Modello"}
+                {createModelMutation.isPending ? t("admin.repairCenters.creating") : t("products.createModel")}
               </Button>
             </div>
           </form>

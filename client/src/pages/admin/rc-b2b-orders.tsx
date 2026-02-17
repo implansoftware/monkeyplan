@@ -29,19 +29,19 @@ function formatPrice(cents: number): string {
 }
 
 const statusConfig: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline"; icon: any }> = {
-  draft: { label: "Bozza", variant: "outline", icon: Clock },
-  pending: { label: "In Attesa", variant: "secondary", icon: Clock },
-  approved: { label: "Approvato", variant: "default", icon: CheckCircle },
-  rejected: { label: "Rifiutato", variant: "destructive", icon: XCircle },
-  shipped: { label: "Spedito", variant: "default", icon: Truck },
-  received: { label: "Ricevuto", variant: "default", icon: PackageCheck },
-  cancelled: { label: "Annullato", variant: "destructive", icon: XCircle },
+  draft: { label: "draft", variant: "outline", icon: Clock },
+  pending: { label: "pending", variant: "secondary", icon: Clock },
+  approved: { label: "approved", variant: "default", icon: CheckCircle },
+  rejected: { label: "rejected", variant: "destructive", icon: XCircle },
+  shipped: { label: "shipped", variant: "default", icon: Truck },
+  received: { label: "received", variant: "default", icon: PackageCheck },
+  cancelled: { label: "cancelled", variant: "destructive", icon: XCircle },
 };
 
 const paymentMethodLabels: Record<string, string> = {
-  bank_transfer: "Bonifico Bancario",
-  stripe: "Stripe",
-  credit: "Credito",
+  bank_transfer: "bankTransfer",
+  stripe: "stripe",
+  credit: "credit",
 };
 
 export default function AdminRCB2BOrders() {
@@ -78,13 +78,13 @@ export default function AdminRCB2BOrders() {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>N. Ordine</TableHead>
+              <TableHead>{t("b2b.orderNumber")}</TableHead>
               <TableHead>{t("roles.repairCenter")}</TableHead>
               <TableHead>{t("admin.resellers.reseller")}</TableHead>
               <TableHead>{t("common.date")}</TableHead>
-              <TableHead className="text-center">Articoli</TableHead>
+              <TableHead className="text-center">{t("b2b.items")}</TableHead>
               <TableHead className="text-right">{t("common.total")}</TableHead>
-              <TableHead className="text-center">Pagamento</TableHead>
+              <TableHead className="text-center">{t("common.payment")}</TableHead>
               <TableHead className="text-center">{t("common.status")}</TableHead>
               <TableHead className="text-right">{t("common.actions")}</TableHead>
             </TableRow>
@@ -121,19 +121,19 @@ export default function AdminRCB2BOrders() {
                   <TableCell className="text-right font-medium">{formatPrice(order.total)}</TableCell>
                   <TableCell className="text-center">
                     <Badge variant="outline">
-                      {order.paymentMethod ? (paymentMethodLabels[order.paymentMethod] || order.paymentMethod) : "N/D"}
+                      {order.paymentMethod ? (t(`common.paymentMethods.${order.paymentMethod}`) || order.paymentMethod) : "N/D"}
                     </Badge>
                   </TableCell>
                   <TableCell className="text-center">
                     <Badge variant={status.variant}>
                       <StatusIcon className="h-3 w-3 mr-1" />
-                      {status.label}
+                      {t(`common.statusLabels.${status.label}`)}
                     </Badge>
                   </TableCell>
                   <TableCell className="text-right">
                     <Button size="sm" variant="ghost" onClick={() => openDetail(order)} data-testid={`button-view-${order.id}`}>
                       <Eye className="h-4 w-4 mr-1" />
-                      Dettagli
+                      {t("common.details")}
                     </Button>
                   </TableCell>
                 </TableRow>
@@ -158,12 +158,12 @@ export default function AdminRCB2BOrders() {
               <Building className="h-5 w-5" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold tracking-tight" data-testid="text-page-title">Ordini B2B Centri Riparazione</h1>
-              <p className="text-sm text-muted-foreground">Visualizza gli ordini dei centri di riparazione (sola lettura)</p>
+              <h1 className="text-2xl font-bold tracking-tight" data-testid="text-page-title">{t("b2b.rcOrders")}</h1>
+              <p className="text-sm text-muted-foreground">{t("b2b.rcOrdersDesc")}</p>
             </div>
           </div>
           <Badge variant="outline" className="text-lg px-3 py-1">
-            {orders?.length || 0} Ordini
+            {orders?.length || 0} {t("common.orders")}
           </Badge>
         </div>
       </div>
@@ -176,7 +176,7 @@ export default function AdminRCB2BOrders() {
                 <Clock className="h-6 w-6 text-yellow-600" />
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">In Attesa</p>
+                <p className="text-sm text-muted-foreground">{t("common.pending")}</p>
                 <p className="text-2xl font-bold">{pendingOrders.length}</p>
               </div>
             </div>
@@ -189,7 +189,7 @@ export default function AdminRCB2BOrders() {
                 <CheckCircle className="h-6 w-6 text-blue-600" />
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">Approvati</p>
+                <p className="text-sm text-muted-foreground">{t("common.approvedPlural")}</p>
                 <p className="text-2xl font-bold">{approvedOrders.length}</p>
               </div>
             </div>
@@ -202,7 +202,7 @@ export default function AdminRCB2BOrders() {
                 <Truck className="h-6 w-6 text-purple-600" />
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">Spediti</p>
+                <p className="text-sm text-muted-foreground">{t("common.shippedPlural")}</p>
                 <p className="text-2xl font-bold">{shippedOrders.length}</p>
               </div>
             </div>
@@ -215,7 +215,7 @@ export default function AdminRCB2BOrders() {
                 <PackageCheck className="h-6 w-6 text-green-600" />
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">Completati</p>
+                <p className="text-sm text-muted-foreground">{t("common.completedPlural")}</p>
                 <p className="text-2xl font-bold">{completedOrders.length}</p>
               </div>
             </div>
@@ -237,19 +237,19 @@ export default function AdminRCB2BOrders() {
               <TabsList className="mb-4">
                 <TabsTrigger value="pending">
                   <Clock className="h-4 w-4 mr-2" />
-                  In Attesa ({pendingOrders.length})
+                  {t("common.pending")} ({pendingOrders.length})
                 </TabsTrigger>
                 <TabsTrigger value="approved">
                   <CheckCircle className="h-4 w-4 mr-2" />
-                  Approvati ({approvedOrders.length})
+                  {t("common.approvedPlural")} ({approvedOrders.length})
                 </TabsTrigger>
                 <TabsTrigger value="shipped">
                   <Truck className="h-4 w-4 mr-2" />
-                  Spediti ({shippedOrders.length})
+                  {t("common.shippedPlural")} ({shippedOrders.length})
                 </TabsTrigger>
                 <TabsTrigger value="completed">
                   <PackageCheck className="h-4 w-4 mr-2" />
-                  Completati ({completedOrders.length})
+                  {t("common.completedPlural")} ({completedOrders.length})
                 </TabsTrigger>
               </TabsList>
               <TabsContent value="pending">{renderOrdersTable(pendingOrders)}</TabsContent>
@@ -266,10 +266,10 @@ export default function AdminRCB2BOrders() {
           <DialogHeader>
             <DialogTitle className="flex flex-wrap items-center gap-2">
               <Package className="h-5 w-5" />
-              Ordine {selectedOrder?.orderNumber}
+              {t("b2b.orderDetailTitle")} {selectedOrder?.orderNumber}
             </DialogTitle>
             <DialogDescription>
-              Dettaglio ordine B2B centro riparazione (sola lettura)
+              {t("b2b.orderDetailDesc")}
             </DialogDescription>
           </DialogHeader>
           {selectedOrder && (
@@ -285,7 +285,7 @@ export default function AdminRCB2BOrders() {
                     <p className="text-sm text-muted-foreground">{selectedOrder.repairCenter?.city}</p>
                   </div>
                   <div>
-                    <Label className="text-muted-foreground">Reseller Fornitore</Label>
+                    <Label className="text-muted-foreground">{t("b2b.supplierReseller")}</Label>
                     <div className="flex flex-wrap items-center gap-2 mt-1">
                       <Store className="h-4 w-4" />
                       <span className="font-medium">{selectedOrder.reseller?.fullName}</span>
@@ -295,7 +295,7 @@ export default function AdminRCB2BOrders() {
                 </div>
                 <div className="space-y-4">
                   <div>
-                    <Label className="text-muted-foreground">Data Ordine</Label>
+                    <Label className="text-muted-foreground">{t("b2b.orderDate")}</Label>
                     <p className="font-medium">
                       {selectedOrder.createdAt ? format(new Date(selectedOrder.createdAt), "dd MMMM yyyy, HH:mm", { locale: it }) : "N/D"}
                     </p>
@@ -304,33 +304,33 @@ export default function AdminRCB2BOrders() {
                     <Label className="text-muted-foreground">{t("common.status")}</Label>
                     <div className="mt-1">
                       <Badge variant={statusConfig[selectedOrder.status]?.variant || "outline"}>
-                        {statusConfig[selectedOrder.status]?.label || selectedOrder.status}
+                        {t(`common.statusLabels.${selectedOrder.status}`) || selectedOrder.status}
                       </Badge>
                     </div>
                   </div>
                   <div>
-                    <Label className="text-muted-foreground">Metodo Pagamento</Label>
-                    <p className="font-medium">{selectedOrder.paymentMethod ? (paymentMethodLabels[selectedOrder.paymentMethod] || selectedOrder.paymentMethod) : "N/D"}</p>
+                    <Label className="text-muted-foreground">{t("b2b.paymentMethod")}</Label>
+                    <p className="font-medium">{selectedOrder.paymentMethod ? (t(`common.paymentMethods.${selectedOrder.paymentMethod}`) || selectedOrder.paymentMethod) : "N/D"}</p>
                   </div>
                 </div>
               </div>
 
               {selectedOrder.trackingNumber && (
                 <div>
-                  <Label className="text-muted-foreground">Tracking Spedizione</Label>
+                  <Label className="text-muted-foreground">{t("b2b.shippingTracking")}</Label>
                   <p className="font-medium">{selectedOrder.carrier}: {selectedOrder.trackingNumber}</p>
                 </div>
               )}
 
               <div>
-                <Label className="text-muted-foreground mb-2 block">Articoli Ordinati</Label>
+                <Label className="text-muted-foreground mb-2 block">{t("b2b.orderedItems")}</Label>
                 <div className="border rounded-lg">
                   <Table>
                     <TableHeader>
                       <TableRow>
                         <TableHead>{t("products.product")}</TableHead>
                         <TableHead className="text-center">{t("common.quantity")}</TableHead>
-                        <TableHead className="text-right">Prezzo Unit.</TableHead>
+                        <TableHead className="text-right">{t("b2b.unitPrice")}</TableHead>
                         <TableHead className="text-right">{t("common.total")}</TableHead>
                       </TableRow>
                     </TableHeader>
@@ -349,11 +349,11 @@ export default function AdminRCB2BOrders() {
                         </TableRow>
                       ))}
                       <TableRow>
-                        <TableCell colSpan={3} className="text-right text-muted-foreground">Imponibile</TableCell>
+                        <TableCell colSpan={3} className="text-right text-muted-foreground">{t("b2b.taxableAmount")}</TableCell>
                         <TableCell className="text-right">{formatPrice(selectedOrder.subtotal || selectedOrder.total)}</TableCell>
                       </TableRow>
                       <TableRow>
-                        <TableCell colSpan={3} className="text-right text-muted-foreground">IVA (22%)</TableCell>
+                        <TableCell colSpan={3} className="text-right text-muted-foreground">{t("b2b.vat22")}</TableCell>
                         <TableCell className="text-right">{formatPrice(Math.round((selectedOrder.subtotal || selectedOrder.total) * 0.22))}</TableCell>
                       </TableRow>
                       {(selectedOrder.shippingCost || 0) > 0 && (
@@ -363,7 +363,7 @@ export default function AdminRCB2BOrders() {
                         </TableRow>
                       )}
                       <TableRow className="border-t-2">
-                        <TableCell colSpan={3} className="text-right font-bold">Totale Ordine</TableCell>
+                        <TableCell colSpan={3} className="text-right font-bold">{t("b2b.orderTotal")}</TableCell>
                         <TableCell className="text-right font-bold text-lg">{formatPrice(selectedOrder.total)}</TableCell>
                       </TableRow>
                     </TableBody>
@@ -373,7 +373,7 @@ export default function AdminRCB2BOrders() {
 
               {selectedOrder.notes && (
                 <div>
-                  <Label className="text-muted-foreground">Note Centro Riparazione</Label>
+                  <Label className="text-muted-foreground">{t("b2b.rcNotes")}</Label>
                   <p className="mt-1 p-3 bg-muted rounded-lg">{selectedOrder.notes}</p>
                 </div>
               )}

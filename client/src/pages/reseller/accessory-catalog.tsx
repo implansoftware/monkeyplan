@@ -57,27 +57,51 @@ type AccessoryWithSpecs = Product & {
   supplier?: { id: string; name: string; code: string } | null;
 };
 
-const COLOR_OPTIONS = [
-  "Nero", "Bianco", "Trasparente", "Blu", "Rosso", "Verde", "Rosa", 
-  "Oro", "Argento", "Grigio", "Viola", "Arancione", "Giallo", "Marrone"
-];
+function getColorOptions(t: (key: string) => string) {
+  return [
+    { value: "Nero", label: t("products.colorBlack") },
+    { value: "Bianco", label: t("products.colorWhite") },
+    { value: "Trasparente", label: t("products.colorTransparent") },
+    { value: "Blu", label: t("products.colorBlue") },
+    { value: "Rosso", label: t("products.colorRed") },
+    { value: "Verde", label: t("products.colorGreen") },
+    { value: "Rosa", label: t("products.colorPink") },
+    { value: "Oro", label: t("products.colorGold") },
+    { value: "Argento", label: t("products.colorSilver") },
+    { value: "Grigio", label: t("products.colorGray") },
+    { value: "Viola", label: t("products.colorPurple") },
+    { value: "Arancione", label: t("products.colorOrange") },
+    { value: "Giallo", label: t("products.colorYellow") },
+    { value: "Marrone", label: t("products.colorBrown") },
+  ];
+}
 
-const MATERIAL_OPTIONS = [
-  "Silicone", "TPU", "Plastica", "Vetro temperato", "Pelle", 
-  "Pelle sintetica", "Tessuto", "Metallo", "Carbonio", "Ibrido"
-];
+function getMaterialOptions(t: (key: string) => string) {
+  return [
+    { value: "Silicone", label: t("products.materialSilicone") },
+    { value: "TPU", label: t("products.materialTPU") },
+    { value: "Plastica", label: t("products.materialPlastic") },
+    { value: "Vetro temperato", label: t("products.materialTemperedGlass") },
+    { value: "Pelle", label: t("products.materialLeather") },
+    { value: "Pelle sintetica", label: t("products.materialSyntheticLeather") },
+    { value: "Tessuto", label: t("products.materialFabric") },
+    { value: "Metallo", label: t("products.materialMetal") },
+    { value: "Carbonio", label: t("products.materialCarbon") },
+    { value: "Ibrido", label: t("products.materialHybrid") },
+  ];
+}
 
 function getAccessoryTypes(t: (key: string) => string) {
   return [
-    { value: "cover", label: "Cover/Custodie", icon: Shield },
-    { value: "pellicola", label: "Pellicole Protettive", icon: Shield },
-    { value: "caricatore", label: "Caricatori", icon: Battery },
-    { value: "cavo", label: "Cavi", icon: Cable },
-    { value: "powerbank", label: "Power Bank", icon: Battery },
-    { value: "auricolari", label: "Auricolari/Cuffie", icon: Headphones },
-    { value: "supporto", label: "Supporti", icon: Package },
-    { value: "adattatore", label: "Adattatori", icon: Cable },
-    { value: "memoria", label: "Schede Memoria", icon: Package },
+    { value: "cover", label: t("products.coverCases"), icon: Shield },
+    { value: "pellicola", label: t("products.screenProtectors"), icon: Shield },
+    { value: "caricatore", label: t("products.chargers"), icon: Battery },
+    { value: "cavo", label: t("products.cables"), icon: Cable },
+    { value: "powerbank", label: t("products.powerBanks"), icon: Battery },
+    { value: "auricolari", label: t("products.headphones"), icon: Headphones },
+    { value: "supporto", label: t("products.stands"), icon: Package },
+    { value: "adattatore", label: t("products.adapters"), icon: Cable },
+    { value: "memoria", label: t("products.memoryCards"), icon: Package },
     { value: "altro", label: t("common.other"), icon: Package },
   ];
 }
@@ -87,7 +111,7 @@ function getConditionOptions(t: (key: string) => string) {
     { value: "nuovo", label: t("common.new") },
     { value: "ricondizionato", label: t("products.refurbished") },
     { value: "usato", label: t("products.used") },
-    { value: "difettoso", label: "Difettoso" },
+    { value: "difettoso", label: t("products.defective") },
   ];
 }
 
@@ -97,6 +121,8 @@ export default function AccessoryCatalog() {
   const { t } = useTranslation();
   const ACCESSORY_TYPES = getAccessoryTypes(t);
   const CONDITION_OPTIONS = getConditionOptions(t);
+  const COLOR_OPTIONS = getColorOptions(t);
+  const MATERIAL_OPTIONS = getMaterialOptions(t);
   const [searchQuery, setSearchQuery] = useState("");
   const [typeFilter, setTypeFilter] = useState<string>("all");
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -193,7 +219,7 @@ export default function AccessoryCatalog() {
       queryClient.invalidateQueries({ queryKey: ["/api/device-brands"] });
       setNewBrandDialogOpen(false);
       setNewBrandName("");
-      toast({ title: t("products.brandCreated"), description: `"${newBrand.name}" aggiunto con successo` });
+      toast({ title: t("products.brandCreated"), description: t("products.addedSuccessfully", { name: newBrand.name }) });
     },
     onError: (error: Error) => {
       toast({ title: t("common.error"), description: error.message, variant: "destructive" });
@@ -217,7 +243,7 @@ export default function AccessoryCatalog() {
           return newSet;
         });
       }
-      toast({ title: t("products.modelCreated"), description: `"${newModel.modelName}" aggiunto con successo` });
+      toast({ title: t("products.modelCreated"), description: t("products.addedSuccessfully", { name: newModel.modelName }) });
     },
     onError: (error: Error) => {
       toast({ title: t("common.error"), description: error.message, variant: "destructive" });
@@ -357,7 +383,7 @@ export default function AccessoryCatalog() {
       setEditingAccessory(null);
       setEditStock([]);
       resetForm();
-      toast({ title: "Accessorio aggiornato", description: "Le modifiche sono state salvate." });
+      toast({ title: t("products.accessoryUpdated"), description: t("products.changesSaved") });
     },
     onError: (error: any) => {
       toast({ title: t("common.error"), description: error.message, variant: "destructive" });
@@ -379,7 +405,7 @@ export default function AccessoryCatalog() {
       queryClient.invalidateQueries({ queryKey: ["/api/accessories"] });
       setDeleteDialogOpen(false);
       setAccessoryToDelete(null);
-      toast({ title: t("pages.deleted"), description: "L'accessorio è stato rimosso dal catalogo." });
+      toast({ title: t("pages.deleted"), description: t("products.accessoryRemovedFromCatalog") });
     },
     onError: (error: any) => {
       toast({ title: t("common.error"), description: error.message, variant: "destructive" });
@@ -395,7 +421,7 @@ export default function AccessoryCatalog() {
       queryClient.invalidateQueries({ queryKey: ["/api/accessories"] });
       setMarketplaceDialogOpen(false);
       setMarketplaceProduct(null);
-      toast({ title: "Salvato", description: "Impostazioni Marketplace aggiornate." });
+      toast({ title: t("common.saved"), description: t("products.marketplaceSettingsUpdated") });
     },
     onError: (error: any) => {
       toast({ title: t("common.error"), description: error.message, variant: "destructive" });
@@ -424,11 +450,11 @@ export default function AccessoryCatalog() {
     const file = e.target.files?.[0];
     if (file) {
       if (!["image/jpeg", "image/png", "image/webp", "image/gif"].includes(file.type)) {
-        toast({ title: t("common.error"), description: "Formato non supportato. Usa JPEG, PNG, WebP o GIF.", variant: "destructive" });
+        toast({ title: t("common.error"), description: t("products.unsupportedFormat"), variant: "destructive" });
         return;
       }
       if (file.size > 10 * 1024 * 1024) {
-        toast({ title: t("common.error"), description: "Immagine troppo grande. Max 10MB.", variant: "destructive" });
+        toast({ title: t("common.error"), description: t("products.imageTooLarge"), variant: "destructive" });
         return;
       }
       setImageFile(file);
@@ -562,7 +588,7 @@ export default function AccessoryCatalog() {
   const addEditStock = (warehouseId: string) => {
     const warehouse = accessibleWarehouses.find(w => w.id === warehouseId);
     if (!warehouse) {
-      toast({ title: t("common.error"), description: "Magazzino non trovato", variant: "destructive" });
+      toast({ title: t("common.error"), description: t("products.warehouseNotFound"), variant: "destructive" });
       return;
     }
     setEditStock(prev => {
@@ -673,7 +699,7 @@ export default function AccessoryCatalog() {
           } catch (stockError: any) {
             toast({ 
               title: t("common.warning"), 
-              description: "Accessorio salvato ma alcune giacenze non sono state aggiornate", 
+              description: t("products.stockUpdatePartialError"), 
               variant: "destructive" 
             });
           }
@@ -720,24 +746,24 @@ export default function AccessoryCatalog() {
             </div>
             <div>
               <h1 className="text-2xl font-bold tracking-tight text-white">{t("products.accessoryCatalog")}</h1>
-              <p className="text-sm text-white/80">Gestisci cover, caricatori, cavi, auricolari e altri accessori</p>
+              <p className="text-sm text-white/80">{t("products.manageAccessoriesDesc")}</p>
             </div>
           </div>
           <Button onClick={() => setWizardOpen(true)} variant="secondary" className="bg-white/20 backdrop-blur-sm border border-white/30 text-white" data-testid="button-add-accessory">
             <Plus className="mr-2 h-4 w-4" />
-            Aggiungi Accessorio
+            {t("products.addAccessory")}
           </Button>
         </div>
       </div>
 
       <Card className="rounded-2xl">
         <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-4">
-          <CardTitle>Lista Accessori ({filteredAccessories.length})</CardTitle>
+          <CardTitle>{t("products.accessoryList")} ({filteredAccessories.length})</CardTitle>
           <div className="flex flex-wrap items-center gap-2 flex-wrap">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Cerca per nome o SKU..."
+                placeholder={t("products.searchByNameOrSku")}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-9 w-64"
@@ -768,7 +794,7 @@ export default function AccessoryCatalog() {
             <div className="text-center py-12 text-muted-foreground">
               <Package className="mx-auto h-12 w-12 mb-4 opacity-50" />
               <p>{t("products.noAccessories")}</p>
-              <p className="text-sm">Clicca "Aggiungi Accessorio" per iniziare</p>
+              <p className="text-sm">{t("products.clickAddAccessoryToStart")}</p>
             </div>
           ) : (
             <ScrollArea className="h-[500px]">
@@ -778,7 +804,7 @@ export default function AccessoryCatalog() {
                   <TableRow>
                     <TableHead className="w-16">{t("common.photo")}</TableHead>
                     <TableHead>{t("products.accessory")}</TableHead>
-                    <TableHead>Barcode</TableHead>
+                    <TableHead>{t("products.barcode")}</TableHead>
                     <TableHead>{t("common.type")}</TableHead>
                     <TableHead>{t("products.compatibility")}</TableHead>
                     <TableHead>{t("products.material")}</TableHead>
@@ -814,7 +840,7 @@ export default function AccessoryCatalog() {
                               {accessory.brand && `${accessory.brand} • `}
                               {accessory.specs?.color || accessory.color}
                             </div>
-                            <div className="text-xs text-muted-foreground">SKU: {accessory.sku}</div>
+                            <div className="text-xs text-muted-foreground">{t("products.sku")}: {accessory.sku}</div>
                           </div>
                         </TableCell>
                         <TableCell>
@@ -833,7 +859,7 @@ export default function AccessoryCatalog() {
                             <div className="flex flex-wrap gap-1">
                               {accessory.deviceCompatibilities.slice(0, 3).map((dc, i) => (
                                 <Badge key={i} variant="outline" className="text-xs">
-                                  {dc.deviceBrandName}{dc.deviceModelName ? ` ${dc.deviceModelName}` : " (tutti)"}
+                                  {dc.deviceBrandName}{dc.deviceModelName ? ` ${dc.deviceModelName}` : ` (${t("products.allDeviceModels")})`}
                                 </Badge>
                               ))}
                               {accessory.deviceCompatibilities.length > 3 && (
@@ -881,11 +907,11 @@ export default function AccessoryCatalog() {
                                   {(accessory as any).isMarketplaceEnabled ? (
                                     <Badge variant="default" className="text-xs">{t("common.active")}</Badge>
                                   ) : (
-                                    <Badge variant="secondary" className="text-xs">Off</Badge>
+                                    <Badge variant="secondary" className="text-xs">{t("products.marketplaceOff")}</Badge>
                                   )}
                                 </Button>
                               </TooltipTrigger>
-                              <TooltipContent>Configura vendita su Marketplace P2P</TooltipContent>
+                              <TooltipContent>{t("products.configureMarketplaceSale")}</TooltipContent>
                             </Tooltip>
                           ) : (
                             <span className="text-muted-foreground text-xs">-</span>
@@ -925,31 +951,31 @@ export default function AccessoryCatalog() {
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>{editingAccessory ? "Modifica Accessorio" : "Aggiungi Accessorio"}</DialogTitle>
+            <DialogTitle>{editingAccessory ? t("products.editAccessory") : t("products.addAccessory")}</DialogTitle>
             <DialogDescription>
-              {editingAccessory ? "Modifica i dettagli dell'accessorio" : "Inserisci i dettagli del nuovo accessorio"}
+              {editingAccessory ? t("products.editAccessoryDetails") : t("products.insertNewAccessoryDetails")}
             </DialogDescription>
           </DialogHeader>
 
           <div className="grid gap-4 py-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="name">Nome accessorio *</Label>
+                <Label htmlFor="name">{t("products.accessoryName")} *</Label>
                 <Input
                   id="name"
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  placeholder="es. Cover Silicone iPhone 15"
+                  placeholder={t("products.placeholderAccessoryName")}
                   data-testid="input-accessory-name"
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="sku">SKU *</Label>
+                <Label htmlFor="sku">{t("products.sku")} *</Label>
                 <Input
                   id="sku"
                   value={formData.sku}
                   onChange={(e) => setFormData({ ...formData, sku: e.target.value })}
-                  placeholder="es. CVR-IP15-BLK"
+                  placeholder={t("products.placeholderSku")}
                   data-testid="input-accessory-sku"
                 />
               </div>
@@ -957,7 +983,7 @@ export default function AccessoryCatalog() {
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="accessoryType">Tipo Accessorio *</Label>
+                <Label htmlFor="accessoryType">{t("products.accessoryType")} *</Label>
                 <Select value={formData.accessoryType} onValueChange={(v) => setFormData({ ...formData, accessoryType: v })}>
                   <SelectTrigger data-testid="select-accessory-type">
                     <SelectValue />
@@ -1006,7 +1032,7 @@ export default function AccessoryCatalog() {
                   </SelectTrigger>
                   <SelectContent>
                     {COLOR_OPTIONS.map((c) => (
-                      <SelectItem key={c} value={c}>{c}</SelectItem>
+                      <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -1019,7 +1045,7 @@ export default function AccessoryCatalog() {
                   </SelectTrigger>
                   <SelectContent>
                     {MATERIAL_OPTIONS.map((m) => (
-                      <SelectItem key={m} value={m}>{m}</SelectItem>
+                      <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -1035,7 +1061,7 @@ export default function AccessoryCatalog() {
                   data-testid="checkbox-accessory-universal"
                 />
                 <Label htmlFor="isUniversal" className="text-sm cursor-pointer">
-                  Compatibile con tutti i dispositivi (universale)
+                  {t("products.universalCompatibility")}
                 </Label>
               </div>
             </div>
@@ -1053,7 +1079,7 @@ export default function AccessoryCatalog() {
                       data-testid="button-new-brand"
                     >
                       <Plus className="h-3 w-3 mr-1" />
-                      Brand
+                      {t("products.brand")}
                     </Button>
                     <Button
                       type="button"
@@ -1066,11 +1092,11 @@ export default function AccessoryCatalog() {
                   </div>
                 </div>
                 <p className="text-xs text-muted-foreground mb-2">
-                  Seleziona i brand e modelli di dispositivo con cui questo accessorio è compatibile
+                  {t("products.selectCompatibleDevicesDesc")}
                 </p>
                 <ScrollArea className="h-64 border rounded-md p-2">
                   {deviceBrands.length === 0 ? (
-                    <p className="text-sm text-muted-foreground p-2">Nessun brand di dispositivo disponibile</p>
+                    <p className="text-sm text-muted-foreground p-2">{t("products.noDeviceBrandsAvailable")}</p>
                   ) : (
                     <div className="space-y-1">
                       {deviceBrands.map((brand) => {
@@ -1095,7 +1121,7 @@ export default function AccessoryCatalog() {
                                 <ChevronDown className={`h-4 w-4 transition-transform ${isExpanded ? 'rotate-0' : '-rotate-90'}`} />
                                 <span className="font-medium">{brand.name}</span>
                                 {hasBrandOnlyCompatibility && (
-                                  <Badge variant="outline" className="ml-2 text-xs">Tutti i modelli</Badge>
+                                  <Badge variant="outline" className="ml-2 text-xs">{t("products.allDeviceModels")}</Badge>
                                 )}
                               </button>
                               <Button
@@ -1126,7 +1152,7 @@ export default function AccessoryCatalog() {
                                   );
                                 })}
                                 {models.length === 0 && (
-                                  <p className="text-xs text-muted-foreground italic">Nessun modello. Clicca + per aggiungerne uno.</p>
+                                  <p className="text-xs text-muted-foreground italic">{t("products.noModelsClickToAdd")}</p>
                                 )}
                               </div>
                             )}
@@ -1140,7 +1166,7 @@ export default function AccessoryCatalog() {
                   <div className="flex flex-wrap gap-2 mt-2">
                     {deviceCompatibilities.map((c, idx) => (
                       <Badge key={idx} variant="secondary">
-                        {c.brandName || "?"}{c.modelName ? ` - ${c.modelName}` : " (tutti)"}
+                        {c.brandName || "?"}{c.modelName ? ` - ${c.modelName}` : ` (${t("products.allDeviceModels")})`}
                       </Badge>
                     ))}
                   </div>
@@ -1150,26 +1176,26 @@ export default function AccessoryCatalog() {
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="unitPrice">Prezzo Vendita *</Label>
+                <Label htmlFor="unitPrice">{t("products.sellingPrice")} *</Label>
                 <Input
                   id="unitPrice"
                   type="number"
                   step="0.01"
                   value={formData.unitPrice}
                   onChange={(e) => setFormData({ ...formData, unitPrice: e.target.value })}
-                  placeholder="es. 19.90"
+                  placeholder={t("products.placeholderSellingPrice")}
                   data-testid="input-accessory-price"
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="costPrice">Prezzo Costo</Label>
+                <Label htmlFor="costPrice">{t("products.costPrice")}</Label>
                 <Input
                   id="costPrice"
                   type="number"
                   step="0.01"
                   value={formData.costPrice}
                   onChange={(e) => setFormData({ ...formData, costPrice: e.target.value })}
-                  placeholder="es. 8.00"
+                  placeholder={t("products.placeholderCostPrice")}
                   data-testid="input-accessory-cost"
                 />
               </div>
@@ -1190,7 +1216,7 @@ export default function AccessoryCatalog() {
               <Label htmlFor="supplierId">{t("products.preferredSupplier")}</Label>
               <Select value={formData.supplierId || "none"} onValueChange={(v) => setFormData({ ...formData, supplierId: v === "none" ? "" : v })}>
                 <SelectTrigger data-testid="select-accessory-supplier">
-                  <SelectValue placeholder="Seleziona fornitore (opzionale)" />
+                  <SelectValue placeholder={t("products.selectSupplierOptional")} />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="none">{t("common.none")}</SelectItem>
@@ -1214,7 +1240,7 @@ export default function AccessoryCatalog() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="notes">Note interne</Label>
+              <Label htmlFor="notes">{t("products.internalNotesLabel")}</Label>
               <Textarea
                 id="notes"
                 value={formData.notes}
@@ -1226,13 +1252,13 @@ export default function AccessoryCatalog() {
             </div>
 
             <div className="space-y-2">
-                <Label>Immagine prodotto</Label>
+                <Label>{t("products.productImage")}</Label>
                 <div className="flex items-start gap-4">
                   {imagePreview ? (
                     <div className="relative">
                       <img
                         src={imagePreview}
-                        alt="Preview"
+                        alt={t("products.imagePreview")}
                         className="h-24 w-24 object-cover rounded-lg border"
                       />
                       <Button
@@ -1250,7 +1276,7 @@ export default function AccessoryCatalog() {
                     <div className="relative">
                       <img
                         src={editingAccessory.imageUrl}
-                        alt="Existing"
+                        alt={t("products.existingImage")}
                         className="h-24 w-24 object-cover rounded-lg border"
                       />
                       <Button
@@ -1289,7 +1315,7 @@ export default function AccessoryCatalog() {
                       data-testid="button-select-image"
                     >
                       <ImagePlus className="mr-2 h-4 w-4" />
-                      Seleziona immagine
+                      {t("products.selectImage")}
                     </Button>
                     {editingAccessory && imageFile && (
                       <Button
@@ -1300,10 +1326,10 @@ export default function AccessoryCatalog() {
                         data-testid="button-upload-image"
                       >
                         {uploadingImage && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                        Carica immagine
+                        {t("products.uploadImage")}
                       </Button>
                     )}
-                    <p className="text-xs text-muted-foreground">JPEG, PNG, WebP o GIF. Max 10MB.</p>
+                    <p className="text-xs text-muted-foreground">{t("products.imageFormatInfo")}</p>
                   </div>
                 </div>
               </div>
@@ -1314,7 +1340,7 @@ export default function AccessoryCatalog() {
                 <div className="flex items-center justify-between">
                   <Label className="text-base font-medium flex items-center gap-2">
                     <Package className="h-4 w-4" />
-                    Giacenza Magazzini
+                    {t("products.warehouseStock")}
                   </Label>
                   <Select
                     value=""
@@ -1343,11 +1369,11 @@ export default function AccessoryCatalog() {
                 {loadingEditStock ? (
                   <div className="flex items-center justify-center py-4">
                     <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-                    <span className="ml-2 text-sm text-muted-foreground">Caricamento giacenze...</span>
+                    <span className="ml-2 text-sm text-muted-foreground">{t("products.loadingStock")}</span>
                   </div>
                 ) : editStock.length === 0 ? (
                   <p className="text-sm text-muted-foreground italic py-2">
-                    Nessuna giacenza configurata. Seleziona un magazzino per aggiungere stock.
+                    {t("products.noStockConfigured")}
                   </p>
                 ) : (
                   <div className="space-y-2">
@@ -1408,7 +1434,7 @@ export default function AccessoryCatalog() {
                         </div>
                         {stock.quantity !== stock.originalQuantity && (
                           <span className="text-xs text-muted-foreground">
-                            (era: {stock.originalQuantity})
+                            ({t("products.was")}: {stock.originalQuantity})
                           </span>
                         )}
                       </div>
@@ -1438,7 +1464,7 @@ export default function AccessoryCatalog() {
           <DialogHeader>
             <DialogTitle>{t("admin.teams.deleteConfirm")}</DialogTitle>
             <DialogDescription>
-              Sei sicuro di voler eliminare "{accessoryToDelete?.name}"? Questa azione non può essere annullata.
+              {t("products.deleteConfirmAccessoryDesc", { name: accessoryToDelete?.name })}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
@@ -1450,7 +1476,7 @@ export default function AccessoryCatalog() {
               data-testid="button-confirm-delete"
             >
               {deleteMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Elimina
+              {t("common.delete")}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -1461,7 +1487,7 @@ export default function AccessoryCatalog() {
           <DialogHeader>
             <DialogTitle>{t("products.newDeviceBrand")}</DialogTitle>
             <DialogDescription>
-              Crea un nuovo brand di dispositivo per le compatibilità accessori
+              {t("products.newBrandDesc")}
             </DialogDescription>
           </DialogHeader>
           <form onSubmit={handleCreateBrand} className="space-y-4">
@@ -1471,7 +1497,7 @@ export default function AccessoryCatalog() {
                 id="newBrandName"
                 value={newBrandName}
                 onChange={(e) => setNewBrandName(e.target.value)}
-                placeholder="es. Apple, Samsung, Xiaomi..."
+                placeholder={t("products.placeholderBrandName")}
                 data-testid="input-new-brand-name"
               />
             </div>
@@ -1479,7 +1505,7 @@ export default function AccessoryCatalog() {
               <Button type="button" variant="outline" onClick={() => setNewBrandDialogOpen(false)}>{t("common.cancel")}</Button>
               <Button type="submit" disabled={!newBrandName.trim() || createBrandMutation.isPending} data-testid="button-create-brand">
                 {createBrandMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Crea Brand
+                {t("products.createBrand")}
               </Button>
             </DialogFooter>
           </form>
@@ -1494,10 +1520,10 @@ export default function AccessoryCatalog() {
           </DialogHeader>
           <form onSubmit={handleCreateModel} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="modelBrand">Brand</Label>
+              <Label htmlFor="modelBrand">{t("products.brand")}</Label>
               <Select value={newModelBrandId} onValueChange={setNewModelBrandId}>
                 <SelectTrigger data-testid="select-model-brand">
-                  <SelectValue placeholder="Seleziona brand" />
+                  <SelectValue placeholder={t("products.selectBrand")} />
                 </SelectTrigger>
                 <SelectContent>
                   {deviceBrands.map(brand => (
@@ -1512,7 +1538,7 @@ export default function AccessoryCatalog() {
                 id="newModelName"
                 value={newModelName}
                 onChange={(e) => setNewModelName(e.target.value)}
-                placeholder="es. iPhone 15 Pro, Galaxy S24 Ultra..."
+                placeholder={t("products.placeholderModelName")}
                 data-testid="input-new-model-name"
               />
             </div>
@@ -1524,7 +1550,7 @@ export default function AccessoryCatalog() {
                 data-testid="button-create-model"
               >
                 {createModelMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Crea Modello
+                {t("products.createModel")}
               </Button>
             </DialogFooter>
           </form>
@@ -1537,10 +1563,10 @@ export default function AccessoryCatalog() {
           <DialogHeader>
             <DialogTitle className="flex flex-wrap items-center gap-2">
               <Store className="h-5 w-5" />
-              Impostazioni Marketplace P2P
+              {t("products.marketplaceP2PSettings")}
             </DialogTitle>
             <DialogDescription>
-              Configura la vendita di questo accessorio ad altri rivenditori nel marketplace.
+              {t("products.configureMarketplaceDesc")}
             </DialogDescription>
           </DialogHeader>
           {marketplaceProduct && (
@@ -1548,7 +1574,7 @@ export default function AccessoryCatalog() {
               <div className="flex items-center justify-between">
                 <div>
                   <div className="font-medium">{marketplaceProduct.name}</div>
-                  <div className="text-sm text-muted-foreground">SKU: {marketplaceProduct.sku}</div>
+                  <div className="text-sm text-muted-foreground">{t("products.sku")}: {marketplaceProduct.sku}</div>
                 </div>
               </div>
               
@@ -1556,9 +1582,9 @@ export default function AccessoryCatalog() {
               
               <div className="flex items-center justify-between">
                 <div>
-                  <Label className="text-base">Attivo su Marketplace</Label>
+                  <Label className="text-base">{t("products.activeOnMarketplace")}</Label>
                   <p className="text-sm text-muted-foreground">
-                    Rendi visibile questo prodotto agli altri rivenditori
+                    {t("products.makeVisibleToResellers")}
                   </p>
                 </div>
                 <Switch
@@ -1571,7 +1597,7 @@ export default function AccessoryCatalog() {
               {marketplaceEnabled && (
                 <>
                   <div className="space-y-2">
-                    <Label htmlFor="marketplace-accessory-price">Prezzo Marketplace (opzionale)</Label>
+                    <Label htmlFor="marketplace-accessory-price">{t("products.marketplacePriceOptional")}</Label>
                     <div className="flex flex-wrap items-center gap-2">
                       <span className="text-muted-foreground">€</span>
                       <Input
@@ -1586,12 +1612,12 @@ export default function AccessoryCatalog() {
                       />
                     </div>
                     <p className="text-xs text-muted-foreground">
-                      Se vuoto, verrà usato il prezzo standard del prodotto
+                      {t("products.defaultPriceIfEmpty")}
                     </p>
                   </div>
                   
                   <div className="space-y-2">
-                    <Label htmlFor="marketplace-accessory-min-qty">Quantità Minima Ordine</Label>
+                    <Label htmlFor="marketplace-accessory-min-qty">{t("products.minimumOrderQuantity")}</Label>
                     <Input
                       id="marketplace-accessory-min-qty"
                       type="number"

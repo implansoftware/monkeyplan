@@ -76,7 +76,7 @@ export function ShippingMethodsTab({
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [apiBase] });
-      toast({ title: "Metodo di consegna creato" });
+      toast({ title: t("shipping.methodCreated") });
       setDialogOpen(false);
       resetForm();
     },
@@ -91,7 +91,7 @@ export function ShippingMethodsTab({
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [apiBase] });
-      toast({ title: "Metodo di consegna aggiornato" });
+      toast({ title: t("shipping.methodUpdated") });
       setDialogOpen(false);
       resetForm();
     },
@@ -106,7 +106,7 @@ export function ShippingMethodsTab({
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [apiBase] });
-      toast({ title: "Metodo di consegna eliminato" });
+      toast({ title: t("shipping.methodDeleted") });
       setDeleteConfirmId(null);
     },
     onError: (error: any) => {
@@ -194,7 +194,7 @@ export function ShippingMethodsTab({
         </div>
         <Button onClick={openCreateDialog} data-testid="button-create-shipping">
           <Plus className="h-4 w-4 mr-2" />
-          Nuovo Metodo
+          {t("shipping.newMethod")}
         </Button>
       </div>
 
@@ -215,10 +215,10 @@ export function ShippingMethodsTab({
               <CardHeader>
                 <CardTitle className="text-lg flex items-center gap-2">
                   <Copy className="h-5 w-5" />
-                  Template Globali
+                  {t("shipping.globalTemplates")}
                 </CardTitle>
                 <CardDescription>
-                  Questi template sono disponibili per reseller e centri riparazione
+                  {t("shipping.templatesAvailable")}
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -228,7 +228,7 @@ export function ShippingMethodsTab({
                       <TableHead>{t("common.name")}</TableHead>
                       <TableHead>{t("common.code")}</TableHead>
                       <TableHead>{t("common.price")}</TableHead>
-                      <TableHead>Giorni</TableHead>
+                      <TableHead>{t("shipping.days")}</TableHead>
                       <TableHead>{t("common.type")}</TableHead>
                       <TableHead>{t("common.status")}</TableHead>
                       <TableHead className="text-right">{t("common.actions")}</TableHead>
@@ -246,7 +246,7 @@ export function ShippingMethodsTab({
                           {method.estimatedDays ? (
                             <span className="flex items-center gap-1">
                               <Clock className="h-3 w-3" />
-                              {method.estimatedDays}g
+                              {method.estimatedDays}{t("shipping.daysSuffix")}
                             </span>
                           ) : "-"}
                         </TableCell>
@@ -265,7 +265,7 @@ export function ShippingMethodsTab({
                         </TableCell>
                         <TableCell>
                           <Badge variant={method.isActive ? "default" : "secondary"}>
-                            {method.isActive ? t("common.active") : "Inattivo"}
+                            {method.isActive ? t("common.active") : t("common.inactive")}
                           </Badge>
                         </TableCell>
                         <TableCell className="text-right">
@@ -301,10 +301,10 @@ export function ShippingMethodsTab({
               <CardHeader>
                 <CardTitle className="text-lg flex items-center gap-2">
                   <Building2 className="h-5 w-5" />
-                  Metodi del Reseller
+                  {t("shipping.resellerMethods")}
                 </CardTitle>
                 <CardDescription>
-                  Questi metodi sono ereditati dal tuo reseller di riferimento
+                  {t("shipping.inheritedFromReseller")}
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -314,7 +314,7 @@ export function ShippingMethodsTab({
                       <TableHead>{t("common.name")}</TableHead>
                       <TableHead>{t("common.code")}</TableHead>
                       <TableHead>{t("common.price")}</TableHead>
-                      <TableHead>Giorni</TableHead>
+                      <TableHead>{t("shipping.days")}</TableHead>
                       <TableHead>{t("common.type")}</TableHead>
                       <TableHead>{t("common.status")}</TableHead>
                     </TableRow>
@@ -331,7 +331,7 @@ export function ShippingMethodsTab({
                           {method.estimatedDays ? (
                             <span className="flex items-center gap-1">
                               <Clock className="h-3 w-3" />
-                              {method.estimatedDays}g
+                              {method.estimatedDays}{t("shipping.daysSuffix")}
                             </span>
                           ) : "-"}
                         </TableCell>
@@ -350,7 +350,7 @@ export function ShippingMethodsTab({
                         </TableCell>
                         <TableCell>
                           <Badge variant={method.isActive ? "default" : "secondary"}>
-                            {method.isActive ? t("common.active") : "Inattivo"}
+                            {method.isActive ? t("common.active") : t("common.inactive")}
                           </Badge>
                         </TableCell>
                       </TableRow>
@@ -365,11 +365,11 @@ export function ShippingMethodsTab({
             <CardHeader>
               <CardTitle className="text-lg flex items-center gap-2">
                 <Truck className="h-5 w-5" />
-                {role === "repair_center" ? "I Tuoi Metodi Personalizzati" : "I Tuoi Metodi di Consegna"} ({ownMethods.length})
+                {role === "repair_center" ? t("shipping.yourCustomMethods") : t("shipping.yourDeliveryMethods")} ({ownMethods.length})
               </CardTitle>
               {role === "repair_center" && (
                 <CardDescription>
-                  Metodi di consegna specifici per il tuo centro riparazioni
+                  {t("shipping.specificForYourCenter")}
                 </CardDescription>
               )}
             </CardHeader>
@@ -380,12 +380,12 @@ export function ShippingMethodsTab({
                   <p>{t("shipping.noDeliveryMethodsConfigured")}</p>
                   <p className="text-sm mt-2">
                     {role === "repair_center" 
-                      ? "Puoi aggiungere metodi specifici per il tuo centro oltre a quelli ereditati dal reseller"
-                      : "I clienti vedranno le opzioni di consegna durante il checkout"}
+                      ? t("shipping.canAddSpecificMethods")
+                      : t("shipping.customersWillSeeOptions")}
                   </p>
                   <Button variant="outline" className="mt-4" onClick={openCreateDialog}>
                     <Plus className="h-4 w-4 mr-2" />
-                    Crea il primo metodo
+                    {t("shipping.createFirstMethod")}
                   </Button>
                 </div>
               ) : (
@@ -395,7 +395,7 @@ export function ShippingMethodsTab({
                       <TableHead>{t("common.name")}</TableHead>
                       <TableHead>{t("common.code")}</TableHead>
                       <TableHead>{t("common.price")}</TableHead>
-                      <TableHead>Giorni</TableHead>
+                      <TableHead>{t("shipping.days")}</TableHead>
                       <TableHead>{t("common.type")}</TableHead>
                       <TableHead>{t("common.status")}</TableHead>
                       <TableHead className="text-right">{t("common.actions")}</TableHead>
@@ -413,7 +413,7 @@ export function ShippingMethodsTab({
                           {method.estimatedDays ? (
                             <span className="flex items-center gap-1">
                               <Clock className="h-3 w-3" />
-                              {method.estimatedDays}g
+                              {method.estimatedDays}{t("shipping.daysSuffix")}
                             </span>
                           ) : "-"}
                         </TableCell>
@@ -432,7 +432,7 @@ export function ShippingMethodsTab({
                         </TableCell>
                         <TableCell>
                           <Badge variant={method.isActive ? "default" : "secondary"}>
-                            {method.isActive ? t("common.active") : "Inattivo"}
+                            {method.isActive ? t("common.active") : t("common.inactive")}
                           </Badge>
                         </TableCell>
                         <TableCell className="text-right">
@@ -469,10 +469,10 @@ export function ShippingMethodsTab({
         <DialogContent className="max-w-lg">
           <DialogHeader>
             <DialogTitle>
-              {editingMethod ? t("shipping.editMethod") : "Nuovo Metodo di Consegna"}
+              {editingMethod ? t("shipping.editMethod") : t("shipping.newDeliveryMethod")}
             </DialogTitle>
             <DialogDescription>
-              Configura i dettagli del metodo di spedizione o ritiro
+              {t("shipping.configureMethodDetails")}
             </DialogDescription>
           </DialogHeader>
 
@@ -484,7 +484,7 @@ export function ShippingMethodsTab({
                   id="name"
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  placeholder="es. Spedizione Standard"
+                  placeholder={t("shipping.exampleStandard")}
                   data-testid="input-shipping-name"
                 />
               </div>
@@ -494,7 +494,7 @@ export function ShippingMethodsTab({
                   id="code"
                   value={formData.code}
                   onChange={(e) => setFormData({ ...formData, code: e.target.value })}
-                  placeholder="es. STD"
+                  placeholder={t("shipping.egCode")}
                   data-testid="input-shipping-code"
                 />
               </div>
@@ -526,14 +526,14 @@ export function ShippingMethodsTab({
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="days">Giorni Stimati</Label>
+                <Label htmlFor="days">{t("shipping.estimatedDays")}</Label>
                 <Input
                   id="days"
                   type="number"
                   min="0"
                   value={formData.estimatedDays || ""}
                   onChange={(e) => setFormData({ ...formData, estimatedDays: e.target.value ? parseInt(e.target.value) : null })}
-                  placeholder="es. 3"
+                  placeholder={t("shipping.egDays")}
                   data-testid="input-shipping-days"
                 />
               </div>
@@ -555,7 +555,7 @@ export function ShippingMethodsTab({
               <div className="flex items-center justify-between">
                 <div>
                   <Label htmlFor="isPickup">{t("delivery.pickupAtOffice")}</Label>
-                  <p className="text-sm text-muted-foreground">Il cliente ritira presso un punto fisico</p>
+                  <p className="text-sm text-muted-foreground">{t("shipping.customerPicksUpAtLocation")}</p>
                 </div>
                 <Switch
                   id="isPickup"
@@ -568,8 +568,8 @@ export function ShippingMethodsTab({
               {showTemplateToggle && (
                 <div className="flex items-center justify-between">
                   <div>
-                    <Label htmlFor="isTemplate">Template Globale</Label>
-                    <p className="text-sm text-muted-foreground">Disponibile come modello per altre entità</p>
+                    <Label htmlFor="isTemplate">{t("shipping.globalTemplate")}</Label>
+                    <p className="text-sm text-muted-foreground">{t("shipping.availableAsTemplate")}</p>
                   </div>
                   <Switch
                     id="isTemplate"
@@ -583,7 +583,7 @@ export function ShippingMethodsTab({
               <div className="flex items-center justify-between">
                 <div>
                   <Label htmlFor="isActive">{t("common.active")}</Label>
-                  <p className="text-sm text-muted-foreground">Visibile durante il checkout</p>
+                  <p className="text-sm text-muted-foreground">{t("shipping.visibleDuringCheckout")}</p>
                 </div>
                 <Switch
                   id="isActive"
@@ -604,7 +604,7 @@ export function ShippingMethodsTab({
               disabled={createMutation.isPending || updateMutation.isPending}
               data-testid="button-save-shipping"
             >
-              {createMutation.isPending || updateMutation.isPending ? t("common.saving") : "Salva"}
+              {createMutation.isPending || updateMutation.isPending ? t("common.saving") : t("common.save")}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -615,7 +615,7 @@ export function ShippingMethodsTab({
           <DialogHeader>
             <DialogTitle>{t("common.confirmDeletion")}</DialogTitle>
             <DialogDescription>
-              Sei sicuro di voler eliminare questo metodo di consegna? L'azione non può essere annullata.
+              {t("shipping.confirmDeleteMethod")}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>

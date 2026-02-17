@@ -51,12 +51,12 @@ interface CustomModel {
 }
 
 const brandFormSchema = z.object({
-  name: z.string().min(1, "Nome brand obbligatorio"),
+  name: z.string().min(1, t("catalog.brandNameRequired")),
   logoUrl: z.string().optional(),
 });
 
 const modelFormSchema = z.object({
-  modelName: z.string().min(1, "Nome modello obbligatorio"),
+  modelName: z.string().min(1, t("catalog.modelNameRequired")),
   brandId: z.string().optional(),
   brandName: z.string().optional(),
   typeId: z.string().optional(),
@@ -103,7 +103,7 @@ export default function DeviceCatalog() {
     queryKey: ["/api/reseller/device-brands", { includeGlobal: true }],
     queryFn: async () => {
       const res = await fetch("/api/reseller/device-brands?includeGlobal=true");
-      if (!res.ok) throw new Error("Errore caricamento brand");
+      if (!res.ok) throw new Error("t("catalog.brandLoadError")");
       return res.json();
     },
   });
@@ -112,7 +112,7 @@ export default function DeviceCatalog() {
     queryKey: ["/api/reseller/device-models", { includeGlobal: true }],
     queryFn: async () => {
       const res = await fetch("/api/reseller/device-models?includeGlobal=true");
-      if (!res.ok) throw new Error("Errore caricamento modelli");
+      if (!res.ok) throw new Error("t("catalog.modelLoadError")");
       return res.json();
     },
   });
@@ -131,13 +131,13 @@ export default function DeviceCatalog() {
       brandForm.reset();
       toast({
         title: t("products.brandCreated"),
-        description: "Il nuovo brand è stato aggiunto con successo.",
+        description: t("catalog.brandAdded"),
       });
     },
     onError: (error: any) => {
       toast({
         title: t("common.error"),
-        description: error.message || "Impossibile creare il brand",
+        description: error.message || t("catalog.brandCreateError"),
         variant: "destructive",
       });
     },
@@ -154,14 +154,14 @@ export default function DeviceCatalog() {
       setIsEditing(false);
       brandForm.reset();
       toast({
-        title: "Brand aggiornato",
-        description: "Le modifiche sono state salvate con successo.",
+        title: t("catalog.brandUpdated"),
+        description: t("common.changesSavedSuccess"),
       });
     },
     onError: (error: any) => {
       toast({
         title: t("common.error"),
-        description: error.message || "Impossibile aggiornare il brand",
+        description: error.message || t("catalog.brandUpdateError"),
         variant: "destructive",
       });
     },
@@ -176,14 +176,14 @@ export default function DeviceCatalog() {
       setDeleteBrandDialogOpen(false);
       setSelectedBrand(null);
       toast({
-        title: "Brand eliminato",
-        description: "Il brand è stato rimosso con successo.",
+        title: t("catalog.brandDeleted"),
+        description: t("catalog.brandRemoved"),
       });
     },
     onError: (error: any) => {
       toast({
         title: t("common.error"),
-        description: error.message || "Impossibile eliminare il brand",
+        description: error.message || t("catalog.brandDeleteError"),
         variant: "destructive",
       });
     },
@@ -199,13 +199,13 @@ export default function DeviceCatalog() {
       modelForm.reset();
       toast({
         title: t("products.modelCreated"),
-        description: "Il nuovo modello è stato aggiunto con successo.",
+        description: t("catalog.modelAdded"),
       });
     },
     onError: (error: any) => {
       toast({
         title: t("common.error"),
-        description: error.message || "Impossibile creare il modello",
+        description: error.message || t("catalog.modelCreateError"),
         variant: "destructive",
       });
     },
@@ -223,13 +223,13 @@ export default function DeviceCatalog() {
       modelForm.reset();
       toast({
         title: t("products.modelUpdated"),
-        description: "Le modifiche sono state salvate con successo.",
+        description: t("common.changesSavedSuccess"),
       });
     },
     onError: (error: any) => {
       toast({
         title: t("common.error"),
-        description: error.message || "Impossibile aggiornare il modello",
+        description: error.message || t("catalog.modelUpdateError"),
         variant: "destructive",
       });
     },
@@ -245,13 +245,13 @@ export default function DeviceCatalog() {
       setSelectedModel(null);
       toast({
         title: t("products.modelDeleted"),
-        description: "Il modello è stato rimosso con successo.",
+        description: t("catalog.modelRemoved"),
       });
     },
     onError: (error: any) => {
       toast({
         title: t("common.error"),
-        description: error.message || "Impossibile eliminare il modello",
+        description: error.message || t("catalog.modelDeleteError"),
         variant: "destructive",
       });
     },
@@ -382,7 +382,7 @@ export default function DeviceCatalog() {
           <Card className="rounded-2xl">
             <CardHeader className="flex flex-row items-center justify-between gap-4">
               <div>
-                <CardTitle>Brand Dispositivi</CardTitle>
+                <CardTitle>{t("catalog.deviceBrands")}</CardTitle>
                 <CardDescription>
                   I brand globali sono gestiti dall'amministratore. Puoi aggiungere brand personalizzati.
                 </CardDescription>
@@ -397,7 +397,7 @@ export default function DeviceCatalog() {
                 <div className="relative flex-1 max-w-sm">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input
-                    placeholder="Cerca brand..."
+                    placeholder="{t("catalog.searchBrand")}"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     className="pl-9"
@@ -497,7 +497,7 @@ export default function DeviceCatalog() {
                 <div className="relative flex-1 max-w-sm">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input
-                    placeholder="Cerca modello..."
+                    placeholder="{t("catalog.searchModel")}"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     className="pl-9"
@@ -608,11 +608,11 @@ export default function DeviceCatalog() {
       <Dialog open={brandDialogOpen} onOpenChange={setBrandDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>{isEditing ? "Modifica Brand" : "Nuovo Brand"}</DialogTitle>
+            <DialogTitle>{isEditing ? t("catalog.editBrandTitle") : t("catalog.newBrandTitle")}</DialogTitle>
             <DialogDescription>
               {isEditing
-                ? "Modifica i dettagli del brand personalizzato"
-                : "Aggiungi un nuovo brand personalizzato al tuo catalogo"}
+                ? "{t("catalog.editBrandDesc")}"
+                : "{t("catalog.addBrandDesc")}"}
             </DialogDescription>
           </DialogHeader>
           <Form {...brandForm}>
@@ -622,7 +622,7 @@ export default function DeviceCatalog() {
                 name="name"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Nome Brand *</FormLabel>
+                    <FormLabel>{t("catalog.brandNameRequired")}</FormLabel>
                     <FormControl>
                       <Input
                         {...field}
@@ -666,7 +666,7 @@ export default function DeviceCatalog() {
                     ? t("profile.saving")
                     : isEditing
                     ? t("profile.saveChanges")
-                    : "Crea Brand"}
+                    : "{t("catalog.createBrand")}"}
                 </Button>
               </DialogFooter>
             </form>
@@ -681,8 +681,8 @@ export default function DeviceCatalog() {
             <DialogTitle>{isEditing ? t("products.editModel") : t("products.newModel")}</DialogTitle>
             <DialogDescription>
               {isEditing
-                ? "Modifica i dettagli del modello personalizzato"
-                : "Aggiungi un nuovo modello personalizzato al tuo catalogo"}
+                ? "{t("catalog.editModelDesc")}"
+                : "{t("catalog.addModelDesc")}"}
             </DialogDescription>
           </DialogHeader>
           <Form {...modelForm}>
@@ -692,7 +692,7 @@ export default function DeviceCatalog() {
                 name="modelName"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Nome Modello *</FormLabel>
+                    <FormLabel>{t("catalog.modelNameRequired")}</FormLabel>
                     <FormControl>
                       <Input
                         {...field}
@@ -713,7 +713,7 @@ export default function DeviceCatalog() {
                     <Select onValueChange={field.onChange} value={field.value}>
                       <FormControl>
                         <SelectTrigger data-testid="select-model-brand">
-                          <SelectValue placeholder="Seleziona brand..." />
+                          <SelectValue placeholder="{t("catalog.selectBrand")}" />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
@@ -737,7 +737,7 @@ export default function DeviceCatalog() {
                     <Select onValueChange={field.onChange} value={field.value}>
                       <FormControl>
                         <SelectTrigger data-testid="select-model-type">
-                          <SelectValue placeholder="Seleziona tipo..." />
+                          <SelectValue placeholder="{t("catalog.selectType")}" />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
@@ -822,7 +822,7 @@ export default function DeviceCatalog() {
                     ? t("profile.saving")
                     : isEditing
                     ? t("profile.saveChanges")
-                    : "Crea Modello"}
+                    : "{t("catalog.createModel")}"}
                 </Button>
               </DialogFooter>
             </form>
@@ -834,7 +834,7 @@ export default function DeviceCatalog() {
       <Dialog open={deleteBrandDialogOpen} onOpenChange={setDeleteBrandDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Elimina Brand</DialogTitle>
+            <DialogTitle>{t("catalog.deleteBrand")}</DialogTitle>
             <DialogDescription>
               Sei sicuro di voler eliminare il brand "{selectedBrand?.name}"? Questa azione non può essere annullata.
             </DialogDescription>

@@ -222,7 +222,7 @@ export function PartsOrderDialog({
     };
     setCart(prev => [...prev, newItem]);
     toast({
-      title: "Aggiunto al carrello",
+      title: t("parts.addedToCart"),
       description: `${part.name} (${part.quantity}x)`,
     });
   };
@@ -271,7 +271,7 @@ export function PartsOrderDialog({
     onSuccess: () => {
       toast({
         title: t("parts.orderCreated"),
-        description: `Ordine con ${cart.length} articoli creato con successo`,
+        description: t("parts.orderCreatedWithItems", { count: cart.length }),
       });
       queryClient.invalidateQueries({ queryKey: ["/api/repair-orders", repairOrderId, "parts"] });
       queryClient.invalidateQueries({ queryKey: ["/api/repair-orders", repairOrderId, "purchase-orders"] });
@@ -309,7 +309,7 @@ export function PartsOrderDialog({
       case "ordered":
         return <Badge variant="outline"><Clock className="h-3 w-3 mr-1" />{t("parts.ordered")}</Badge>;
       case "in_transit":
-        return <Badge variant="secondary"><Truck className="h-3 w-3 mr-1" />In Transito</Badge>;
+        return <Badge variant="secondary"><Truck className="h-3 w-3 mr-1" />{t("parts.inTransit")}</Badge>;
       case "received":
         return <Badge variant="default"><CheckCircle className="h-3 w-3 mr-1" />{t("parts.received")}</Badge>;
       case "cancelled":
@@ -337,9 +337,9 @@ export function PartsOrderDialog({
               <Package className="h-5 w-5 text-orange-600 dark:text-orange-400" />
             </div>
             <div>
-              <span className="text-lg font-semibold">Gestione Ordini Ricambi</span>
+              <span className="text-lg font-semibold">{t("parts.partsOrderManagement")}</span>
               <DialogDescription className="mt-0.5">
-                Crea ordini raggruppati per i ricambi della riparazione
+                {t("parts.createGroupedOrders")}
               </DialogDescription>
             </div>
           </DialogTitle>
@@ -349,14 +349,14 @@ export function PartsOrderDialog({
           <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="order" className="flex flex-wrap items-center gap-2" data-testid="tab-new-order">
               <ShoppingCart className="h-4 w-4" />
-              Nuovo Ordine
+              {t("parts.newOrder")}
               {cart.length > 0 && (
                 <Badge variant="secondary" className="ml-1">{cart.length}</Badge>
               )}
             </TabsTrigger>
             <TabsTrigger value="existing" className="flex flex-wrap items-center gap-2" data-testid="tab-existing">
               <FileText className="h-4 w-4" />
-              Ordini Esistenti
+              {t("parts.existingOrders")}
               {purchaseOrders.length > 0 && (
                 <Badge variant="outline" className="ml-1">{purchaseOrders.length}</Badge>
               )}
@@ -372,10 +372,10 @@ export function PartsOrderDialog({
                     <div className="h-6 w-6 rounded-md bg-orange-500/10 flex items-center justify-center">
                       <FileText className="h-3.5 w-3.5 text-orange-600 dark:text-orange-400" />
                     </div>
-                    Ricambi dal Preventivo
+                    {t("parts.partsFromQuote")}
                   </CardTitle>
                   <p className="text-sm text-muted-foreground">
-                    Seleziona i ricambi da aggiungere al carrello
+                    {t("parts.selectPartsToAdd")}
                   </p>
                 </CardHeader>
                 <CardContent className="space-y-2">
@@ -400,7 +400,7 @@ export function PartsOrderDialog({
                         <div className="flex flex-col">
                           <span className="font-medium">{part.name}</span>
                           <span className="text-sm text-muted-foreground">
-                            Qtà: {part.quantity} - {formatCurrency(part.unitPrice)}
+                            {t("parts.qty")}: {part.quantity} - {formatCurrency(part.unitPrice)}
                           </span>
                         </div>
                       </div>
@@ -428,7 +428,7 @@ export function PartsOrderDialog({
                     <Package className="h-6 w-6 text-slate-400" />
                   </div>
                   <p>{t("parts.noPartsFromQuote")}</p>
-                  <p className="text-sm mt-2">Tutti i ricambi sono già stati ordinati.</p>
+                  <p className="text-sm mt-2">{t("parts.allPartsOrdered")}</p>
                 </CardContent>
               </Card>
             )}
@@ -441,7 +441,7 @@ export function PartsOrderDialog({
                     <div className="h-6 w-6 rounded-md bg-blue-500/10 flex items-center justify-center">
                       <ShoppingCart className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400" />
                     </div>
-                    Carrello ({cart.length} articoli)
+                    {t("parts.cart", { count: cart.length })}
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-2">
@@ -458,7 +458,7 @@ export function PartsOrderDialog({
                         <div className="flex flex-col">
                           <span className="font-medium">{item.partName}</span>
                           <span className="text-sm text-muted-foreground">
-                            Qtà: {item.quantity} - {formatCurrency(item.unitCost)}
+                            {t("parts.qty")}: {item.quantity} - {formatCurrency(item.unitCost)}
                           </span>
                         </div>
                       </div>
@@ -480,7 +480,7 @@ export function PartsOrderDialog({
                   ))}
                 </CardContent>
                 <CardFooter className="flex justify-between border-t pt-4">
-                  <span className="font-medium">Totale:</span>
+                  <span className="font-medium">{t("common.total")}:</span>
                   <span className="text-lg font-bold">{formatCurrency(cartTotal)}</span>
                 </CardFooter>
               </Card>
@@ -494,7 +494,7 @@ export function PartsOrderDialog({
                     <div className="h-6 w-6 rounded-md bg-emerald-500/10 flex items-center justify-center">
                       <Building className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
                     </div>
-                    Destinatario Ordine
+                    {t("parts.orderRecipient")}
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
@@ -513,8 +513,8 @@ export function PartsOrderDialog({
                         <div className="h-10 w-10 rounded-xl bg-orange-500/10 flex items-center justify-center mx-auto mb-2">
                           <Truck className="h-5 w-5 text-orange-600 dark:text-orange-400" />
                         </div>
-                        <h4 className="font-medium">Fornitore Esterno</h4>
-                        <p className="text-xs text-muted-foreground">Ordina da un fornitore</p>
+                        <h4 className="font-medium">{t("parts.externalSupplier")}</h4>
+                        <p className="text-xs text-muted-foreground">{t("parts.orderFromSupplier")}</p>
                       </CardContent>
                     </Card>
                     <Card 
@@ -531,8 +531,8 @@ export function PartsOrderDialog({
                         <div className="h-10 w-10 rounded-xl bg-blue-500/10 flex items-center justify-center mx-auto mb-2">
                           <Warehouse className="h-5 w-5 text-blue-600 dark:text-blue-400" />
                         </div>
-                        <h4 className="font-medium">Magazzino Interno</h4>
-                        <p className="text-xs text-muted-foreground">Trasferimento da magazzino</p>
+                        <h4 className="font-medium">{t("parts.internalWarehouse")}</h4>
+                        <p className="text-xs text-muted-foreground">{t("parts.warehouseTransfer")}</p>
                       </CardContent>
                     </Card>
                   </div>
@@ -566,7 +566,7 @@ export function PartsOrderDialog({
                       </div>
                       {selectedSupplierId === "custom" && (
                         <div>
-                          <label className="text-sm font-medium">Nome Fornitore</label>
+                          <label className="text-sm font-medium">{t("parts.supplierName")}</label>
                           <Input
                             placeholder={t("parts.enterSupplierName")}
                             value={supplierName}
@@ -580,7 +580,7 @@ export function PartsOrderDialog({
 
                   {destinationType === "internal_warehouse" && warehouses.length > 0 && (
                     <div>
-                      <label className="text-sm font-medium">Magazzino Origine</label>
+                      <label className="text-sm font-medium">{t("parts.sourceWarehouse")}</label>
                       <Select value={sourceWarehouseId} onValueChange={setSourceWarehouseId}>
                         <SelectTrigger data-testid="select-warehouse">
                           <SelectValue placeholder={t("quote.selectWarehouse")} />
@@ -600,7 +600,7 @@ export function PartsOrderDialog({
                     <div>
                       <label className="text-sm font-medium flex items-center gap-1">
                         <Calendar className="h-4 w-4" />
-                        Data Arrivo Prevista
+                        {t("parts.expectedArrivalDate")}
                       </label>
                       <Input
                         type="date"
@@ -612,7 +612,7 @@ export function PartsOrderDialog({
                   </div>
 
                   <div>
-                    <label className="text-sm font-medium">Note Ordine</label>
+                    <label className="text-sm font-medium">{t("parts.orderNotes")}</label>
                     <Textarea
                       placeholder={t("parts.additionalOrderNotes")}
                       value={orderNotes}
@@ -628,7 +628,7 @@ export function PartsOrderDialog({
                     onClick={() => setCart([])}
                     data-testid="button-clear-cart"
                   >
-                    Svuota Carrello
+                    {t("parts.clearCart")}
                   </Button>
                   <Button
                     onClick={() => createPurchaseOrderMutation.mutate()}
@@ -643,7 +643,7 @@ export function PartsOrderDialog({
                     ) : (
                       <>
                         <Send className="h-4 w-4 mr-2" />
-                        Conferma Ordine
+                        {t("parts.confirmOrder")}
                       </>
                     )}
                   </Button>
@@ -666,7 +666,7 @@ export function PartsOrderDialog({
                           {po.destinationType === "internal_warehouse" ? (
                             <Badge variant="outline" className="text-xs">
                               <Warehouse className="h-3 w-3 mr-1" />
-                              Magazzino Interno
+                              {t("parts.internalWarehouse")}
                             </Badge>
                           ) : (
                             <Badge variant="secondary" className="text-xs">
@@ -683,13 +683,13 @@ export function PartsOrderDialog({
                           {po.status === "shipped" && <Truck className="h-3 w-3 mr-1" />}
                           {po.status === "received" && <CheckCircle className="h-3 w-3 mr-1" />}
                           {po.status === "submitted" ? t("common.sent") : 
-                           po.status === "processing" ? "In Elaborazione" :
-                           po.status === "shipped" ? "Spedito" :
+                           po.status === "processing" ? t("parts.processing") :
+                           po.status === "shipped" ? t("parts.shipped") :
                            po.status === "received" ? t("common.received") : po.status}
                         </Badge>
                       </div>
                       <div className="text-sm text-muted-foreground">
-                        Totale: {formatCurrency(po.totalAmount)} - {po.items.length} articoli
+                        {t("common.total")}: {formatCurrency(po.totalAmount)} - {po.items.length} {t("parts.items")}
                       </div>
                     </CardHeader>
                     <CardContent className="pt-0">

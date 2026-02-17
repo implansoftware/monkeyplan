@@ -22,12 +22,12 @@ import { Link } from "wouter";
 import { useTranslation } from "react-i18next";
 
 const categoryLabels: Record<string, string> = {
-  fisso: "Fisso",
-  mobile: "Mobile",
-  centralino: "Centralino",
-  luce: "Luce",
-  gas: "Gas",
-  altro: "Altro",
+  fisso: "fisso",
+  mobile: "mobile",
+  centralino: "centralino",
+  luce: "luce",
+  gas: "gas",
+  altro: "altro",
 };
 
 export default function AdminUtilitySuppliers() {
@@ -276,7 +276,7 @@ export default function AdminUtilitySuppliers() {
         <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
-              {editingSupplier ? "Modifica Fornitore Utility" : "Nuovo Fornitore Utility"}
+              {editingSupplier ? t("utility.editSupplier") : t("utility.newSupplier")}
             </DialogTitle>
             <DialogDescription>
               {editingSupplier 
@@ -426,7 +426,7 @@ export default function AdminUtilitySuppliers() {
                 disabled={createMutation.isPending || updateMutation.isPending}
                 data-testid="button-save"
               >
-                {editingSupplier ? "Salva Modifiche" : "Crea Fornitore"}
+                {editingSupplier ? t("utility.saveChangesBtn") : t("utility.createSupplierBtn")}
               </Button>
             </div>
           </form>

@@ -82,8 +82,8 @@ function getWizardSchema(t: (key: string) => string) {
 
 function getSteps(t: (key: string) => string) {
   return [
-    { id: 1, name: "Info Base", icon: Smartphone },
-    { id: 2, name: "Specifiche", icon: Package },
+    { id: 1, name: t("products.basicInfo"), icon: Smartphone },
+    { id: 2, name: t("products.technicalSpecs"), icon: Package },
     { id: 3, name: t("products.priceAndStock"), icon: Euro },
     { id: 4, name: t("products.compatibility"), icon: Link2 },
     { id: 5, name: t("common.confirm"), icon: CheckCircle2 },
@@ -121,18 +121,18 @@ const getBrandsForCategory = (category: string): string[] => {
 };
 
 const GRADE_OPTIONS = [
-  { value: "A+", label: "A+ - Come nuovo" },
-  { value: "A", label: "A - Ottimo" },
-  { value: "B", label: "B - Buono" },
-  { value: "C", label: "C - Discreto" },
-  { value: "D", label: "D - Danneggiato" },
+  { value: "A+", label: t("products.gradeAPlus") },
+  { value: "A", label: t("products.gradeA") },
+  { value: "B", label: t("products.gradeB") },
+  { value: "C", label: t("products.gradeC") },
+  { value: "D", label: t("products.gradeD") },
 ];
 function getConditionOptions(t: (key: string) => string) {
   return [
     { value: "nuovo", label: t("common.new") },
-    { value: "ricondizionato", label: "Ricondizionato" },
-    { value: "usato", label: "Usato" },
-    { value: "difettoso", label: "Difettoso" },
+    { value: "ricondizionato", label: t("products.refurbished") },
+    { value: "usato", label: t("products.used") },
+    { value: "difettoso", label: t("products.defective") },
   ];
 }
 function getNetworkLockOptions(t: (key: string) => string) {
@@ -148,15 +148,15 @@ const BATTERY_OPTIONS = [
   { value: "90-94", label: "90-94%" },
   { value: "85-89", label: "85-89%" },
   { value: "80-84", label: "80-84%" },
-  { value: "<80", label: "Meno di 80%" },
+  { value: "<80", label: t("products.lessThan80") },
 ];
 function getCategoryOptions(t: (key: string) => string) {
   return [
     { value: "smartphone", label: t("repair.smartphone") },
     { value: "tablet", label: t("repair.tablet") },
-    { value: "portatile", label: "PC Portatile" },
-    { value: "pc_fisso", label: "PC Fisso" },
-    { value: "smartwatch", label: "Smartwatch" },
+    { value: "portatile", label: t("repair.laptop") },
+    { value: "pc_fisso", label: t("repair.desktop") },
+    { value: "smartwatch", label: t("repair.smartwatch") },
     { value: "console", label: t("repair.console") },
     { value: "altro", label: t("common.other") },
   ];
@@ -166,13 +166,13 @@ function getCategoryOptions(t: (key: string) => string) {
 const DEVICE_CATEGORIES = ["smartphone", "tablet", "portatile", "pc_fisso", "smartwatch", "console"];
 const isDeviceCategory = (category: string) => DEVICE_CATEGORIES.includes(category);
 const ACCESSORY_OPTIONS = [
-  "Caricatore originale",
-  "Cavo USB",
-  "Auricolari",
-  "Cover",
-  "Pellicola",
-  "Scatola originale",
-  "Manuale",
+  t("products.originalCharger"),
+  t("products.usbCable"),
+  t("products.earphones"),
+  t("products.cover"),
+  t("products.screenProtector"),
+  t("products.originalBox"),
+  t("products.manual"),
 ];
 
 
@@ -433,7 +433,7 @@ export function SmartphoneWizard({
         }
       }
       queryClient.invalidateQueries({ queryKey: ["/api/smartphones"] });
-      toast({ title: t("products.deviceCreated"), description: `${form.getValues("name")} aggiunto al catalogo` });
+      toast({ title: t("products.deviceCreated"), description: t("products.addedToCatalog", { name: form.getValues("name") }) });
       handleClose();
       onSuccess?.(newProduct);
     },
@@ -564,7 +564,7 @@ export function SmartphoneWizard({
                 <div className="text-center mb-4">
                   <Smartphone className="h-12 w-12 mx-auto text-primary mb-2" />
                   <h3 className="text-lg font-medium">{t("products.basicInfo")}</h3>
-                  <p className="text-sm text-muted-foreground">Inserisci i dati principali del dispositivo</p>
+                  <p className="text-sm text-muted-foreground">{t("products.enterMainDeviceData")}</p>
                 </div>
 
                 <div className="flex justify-center mb-4">
@@ -577,7 +577,7 @@ export function SmartphoneWizard({
                   />
                   {imagePreview ? (
                     <div className="relative">
-                      <img src={imagePreview} alt="Preview" className="w-32 h-32 object-cover rounded-lg" />
+                      <img src={imagePreview} alt={t("common.preview")} className="w-32 h-32 object-cover rounded-lg" />
                       <Button
                         type="button"
                         size="icon"
@@ -609,7 +609,7 @@ export function SmartphoneWizard({
                       <FormItem>
                         <FormLabel>{t("products.productName")} *</FormLabel>
                         <FormControl>
-                          <Input placeholder="es. iPhone 14 Pro 128GB" {...field} data-testid="input-smartphone-name" />
+                          <Input placeholder={t("products.deviceNamePlaceholder")} {...field} data-testid="input-smartphone-name" />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -698,9 +698,9 @@ export function SmartphoneWizard({
                   name="sku"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>SKU / Codice</FormLabel>
+                      <FormLabel>{t("products.skuCode")}</FormLabel>
                       <FormControl>
-                        <Input placeholder="Codice interno (opzionale)" {...field} data-testid="input-smartphone-sku" />
+                        <Input placeholder={t("products.internalCodeOptional")} {...field} data-testid="input-smartphone-sku" />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -716,7 +716,7 @@ export function SmartphoneWizard({
                 <div className="text-center mb-4">
                   <Package className="h-12 w-12 mx-auto text-primary mb-2" />
                   <h3 className="text-lg font-medium">{t("products.technicalSpecs")}</h3>
-                  <p className="text-sm text-muted-foreground">Dettagli tecnici e identificativi</p>
+                  <p className="text-sm text-muted-foreground">{t("products.technicalDetails")}</p>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -726,7 +726,7 @@ export function SmartphoneWizard({
                       name="storage"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Memoria *</FormLabel>
+                          <FormLabel>{t("products.storage")} *</FormLabel>
                           <Select onValueChange={field.onChange} value={field.value}>
                             <FormControl>
                               <SelectTrigger data-testid="select-smartphone-storage">
@@ -783,7 +783,7 @@ export function SmartphoneWizard({
                             <Select onValueChange={field.onChange} value={field.value}>
                               <FormControl>
                                 <SelectTrigger data-testid="select-smartphone-battery">
-                                  <SelectValue placeholder="Salute batteria" />
+                                  <SelectValue placeholder={t("products.batteryHealth")} />
                                 </SelectTrigger>
                               </FormControl>
                               <SelectContent>
@@ -804,7 +804,7 @@ export function SmartphoneWizard({
                         name="networkLock"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Blocco Rete</FormLabel>
+                            <FormLabel>{t("products.networkLock")}</FormLabel>
                             <Select onValueChange={field.onChange} value={field.value}>
                               <FormControl>
                                 <SelectTrigger data-testid="select-smartphone-network">
@@ -848,7 +848,7 @@ export function SmartphoneWizard({
                       name="serialNumber"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Numero di Serie</FormLabel>
+                          <FormLabel>{t("common.serialNumber")}</FormLabel>
                           <FormControl>
                             <Input placeholder="S/N" {...field} data-testid="input-smartphone-serial" />
                           </FormControl>
@@ -872,7 +872,7 @@ export function SmartphoneWizard({
                             data-testid="checkbox-original-box"
                           />
                         </FormControl>
-                        <FormLabel className="!mt-0">Scatola originale inclusa</FormLabel>
+                        <FormLabel className="!mt-0">{t("products.originalBoxIncluded")}</FormLabel>
                       </FormItem>
                     )}
                   />
@@ -1011,10 +1011,10 @@ export function SmartphoneWizard({
                         </FormControl>
                         <SelectContent>
                           <SelectItem value="0">{t("common.noneFem")}</SelectItem>
-                          <SelectItem value="3">3 mesi</SelectItem>
-                          <SelectItem value="6">6 mesi</SelectItem>
-                          <SelectItem value="12">12 mesi</SelectItem>
-                          <SelectItem value="24">24 mesi</SelectItem>
+                          <SelectItem value="3">{t("products.nMonths", { count: 3 })}</SelectItem>
+                          <SelectItem value="6">{t("products.nMonths", { count: 6 })}</SelectItem>
+                          <SelectItem value="12">{t("products.nMonths", { count: 12 })}</SelectItem>
+                          <SelectItem value="24">{t("products.nMonths", { count: 24 })}</SelectItem>
                         </SelectContent>
                       </Select>
                       <FormMessage />
@@ -1027,7 +1027,7 @@ export function SmartphoneWizard({
                     <Label className="text-base font-medium">{t("warehouse.initialStock")}</Label>
                     <Button type="button" variant="outline" size="sm" onClick={addWarehouseStock}>
                       <Warehouse className="h-4 w-4 mr-1" />
-                      Aggiungi Magazzino
+                      {t("warehouse.addWarehouse")}
                     </Button>
                   </div>
 
@@ -1071,7 +1071,7 @@ export function SmartphoneWizard({
                           <div className="flex-1">
                             <Label className="text-xs">{t("warehouse.position")}</Label>
                             <Input
-                              placeholder="es. A-01"
+                              placeholder={t("warehouse.positionExample")}
                               value={stock.location}
                               onChange={(e) => {
                                 const current = form.getValues("initialStock");
@@ -1102,7 +1102,7 @@ export function SmartphoneWizard({
                   <Link2 className="h-12 w-12 mx-auto text-blue-500 mb-2" />
                   <h3 className="text-lg font-medium">{t("products.deviceCompatibility")}</h3>
                   <p className="text-sm text-muted-foreground">
-                    Seleziona i dispositivi compatibili con questo prodotto (opzionale)
+                    {t("products.selectCompatibleDevices")}
                   </p>
                 </div>
 
@@ -1110,7 +1110,7 @@ export function SmartphoneWizard({
                   <CardContent className="p-4 space-y-4">
                     <div className="flex gap-2 flex-wrap">
                       <div className="flex-1 min-w-[200px]">
-                        <Label className="text-xs mb-1 block">Marca Dispositivo</Label>
+                        <Label className="text-xs mb-1 block">{t("products.deviceBrand")}</Label>
                         <Select value={selectedBrandId} onValueChange={setSelectedBrandId}>
                           <SelectTrigger>
                             <SelectValue placeholder={t("common.selectBrand")} />
@@ -1134,14 +1134,14 @@ export function SmartphoneWizard({
                           data-testid="button-add-brand-compat"
                         >
                           <Plus className="h-4 w-4 mr-1" />
-                          Tutti i modelli
+                          {t("products.allModels")}
                         </Button>
                       </div>
                     </div>
 
                     {selectedBrandId && deviceModels.length > 0 && (
                       <div>
-                        <Label className="text-xs mb-2 block">Oppure seleziona modelli specifici:</Label>
+                        <Label className="text-xs mb-2 block">{t("products.orSelectSpecificModels")}:</Label>
                         <div className="flex flex-wrap gap-1 max-h-32 overflow-y-auto">
                           {deviceModels.map((model) => {
                             const isSelected = compatibilities.some(
@@ -1167,7 +1167,7 @@ export function SmartphoneWizard({
                     {compatibilities.length > 0 && (
                       <div className="pt-4 border-t">
                         <Label className="text-xs text-muted-foreground mb-2 block">
-                          Compatibilità selezionate ({compatibilities.length})
+                          {t("products.selectedCompatibilities", { count: compatibilities.length })}
                         </Label>
                         <div className="flex flex-wrap gap-2">
                           {compatibilities.map((compat, index) => {
@@ -1200,7 +1200,7 @@ export function SmartphoneWizard({
 
                     {compatibilities.length === 0 && (
                       <p className="text-sm text-muted-foreground text-center py-4">
-                        Nessuna compatibilità selezionata. Puoi saltare questo passaggio.
+                        {t("products.noCompatibilitySelected")}
                       </p>
                     )}
                   </CardContent>
@@ -1213,17 +1213,17 @@ export function SmartphoneWizard({
                 <div className="text-center mb-4">
                   <CheckCircle2 className="h-12 w-12 mx-auto text-green-500 mb-2" />
                   <h3 className="text-lg font-medium">{t("repair.summary")}</h3>
-                  <p className="text-sm text-muted-foreground">Verifica i dati prima di salvare</p>
+                  <p className="text-sm text-muted-foreground">{t("products.verifyBeforeSaving")}</p>
                 </div>
 
                 <Card>
                   <CardContent className="p-4 space-y-3">
                     <div className="flex flex-wrap items-center gap-4">
                       {imagePreview && (
-                        <img src={imagePreview} alt="Preview" className="w-20 h-20 object-cover rounded-lg" />
+                        <img src={imagePreview} alt={t("common.preview")} className="w-20 h-20 object-cover rounded-lg" />
                       )}
                       <div>
-                        <h4 className="font-semibold text-lg" data-testid="text-summary-name">{values.name || "Nome non inserito"}</h4>
+                        <h4 className="font-semibold text-lg" data-testid="text-summary-name">{values.name || t("products.nameNotEntered")}</h4>
                         {values.sku && (
                           <p className="text-xs text-muted-foreground" data-testid="text-summary-sku">SKU: {values.sku}</p>
                         )}
@@ -1254,7 +1254,7 @@ export function SmartphoneWizard({
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4 border-t">
                       <div>
-                        <Label className="text-xs text-muted-foreground">Grado</Label>
+                        <Label className="text-xs text-muted-foreground">{t("products.grade")}</Label>
                         <p className="font-medium">{values.grade}</p>
                       </div>
                       <div>
@@ -1262,7 +1262,7 @@ export function SmartphoneWizard({
                         <p className="font-medium">{values.batteryHealth || "-"}</p>
                       </div>
                       <div>
-                        <Label className="text-xs text-muted-foreground">Blocco Rete</Label>
+                        <Label className="text-xs text-muted-foreground">{t("products.networkLock")}</Label>
                         <p className="font-medium">{NETWORK_LOCK_OPTIONS.find(o => o.value === values.networkLock)?.label}</p>
                       </div>
                     </div>
@@ -1303,7 +1303,7 @@ export function SmartphoneWizard({
 
                     {values.accessories.length > 0 && (
                       <div className="pt-4 border-t">
-                        <Label className="text-xs text-muted-foreground">Accessori</Label>
+                        <Label className="text-xs text-muted-foreground">{t("products.accessories")}</Label>
                         <div className="flex flex-wrap gap-1 mt-1">
                           {values.accessories.map(acc => (
                             <Badge key={acc} variant="outline" className="text-xs">{acc}</Badge>
@@ -1360,7 +1360,7 @@ export function SmartphoneWizard({
                   data-testid="button-wizard-submit"
                 >
                   {createMutation.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-                  Salva Dispositivo
+                  {t("products.saveDevice")}
                 </Button>
               )}
             </div>

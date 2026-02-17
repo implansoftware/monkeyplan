@@ -36,17 +36,17 @@ interface EnrichedLicense {
 }
 
 const STATUS_MAP: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
-  active: { label: "Attiva", variant: "default" },
-  expired: { label: "Scaduta", variant: "destructive" },
-  cancelled: { label: "Cancellata", variant: "secondary" },
-  pending: { label: "In attesa", variant: "outline" },
+  active: { label: "active", variant: "default" },
+  expired: { label: "expired", variant: "destructive" },
+  cancelled: { label: "cancelled", variant: "secondary" },
+  pending: { label: "pending", variant: "outline" },
 };
 
 const PAYMENT_LABELS: Record<string, string> = {
-  stripe: "Stripe",
-  paypal: "PayPal",
-  manual: "Manuale",
-  free: "Gratuita",
+  stripe: "stripe",
+  paypal: "paypal",
+  manual: "manual",
+  free: "free",
 };
 
 export default function AdminLicenses() {
@@ -66,7 +66,7 @@ export default function AdminLicenses() {
       const params = new URLSearchParams();
       if (statusFilter && statusFilter !== "all") params.set("status", statusFilter);
       const res = await fetch(`/api/admin/licenses?${params}`);
-      if (!res.ok) throw new Error("Errore nel caricamento");
+      if (!res.ok) throw new Error(t("licenses.loadError"));
       return res.json();
     },
   });
@@ -214,7 +214,7 @@ export default function AdminLicenses() {
                   paymentMethod: grantPaymentMethod,
                   notes: grantNotes || null,
                 })} disabled={!grantResellerId || !grantPlanId || grantMutation.isPending} data-testid="button-confirm-grant">
-                  {grantMutation.isPending ? "Assegnazione..." : "Assegna"}
+                  {grantMutation.isPending ? t("licenses.assigning") : t("licenses.assign")}
                 </Button>
               </div>
             </div>
@@ -323,7 +323,7 @@ export default function AdminLicenses() {
                         </p>
                         {lic.status === "active" && (
                           <p className={isExpiring ? "text-amber-600 font-medium" : "text-muted-foreground"}>
-                            {daysLeft > 0 ? `${daysLeft} giorni rimasti` : "Scaduta oggi"}
+                            {daysLeft > 0 ? `${daysLeft} ${t("licenses.daysRemaining")}` : t("licenses.expiredToday")}
                           </p>
                         )}
                       </div>

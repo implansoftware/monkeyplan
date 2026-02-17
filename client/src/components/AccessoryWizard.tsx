@@ -98,7 +98,7 @@ interface Supplier {
 
 function getSteps(t: (key: string) => string) {
   return [
-    { id: 1, name: "Info Base", icon: ShoppingBag },
+    { id: 1, name: t("products.basicInfo"), icon: ShoppingBag },
     { id: 2, name: t("products.priceAndStock"), icon: Euro },
     { id: 3, name: t("products.compatibility"), icon: Link2 },
     { id: 4, name: t("common.confirm"), icon: CheckCircle2 },
@@ -107,14 +107,14 @@ function getSteps(t: (key: string) => string) {
 
 function getAccessoryTypes(t: (key: string) => string) {
   return [
-    { value: "cover", label: "Cover / Custodia" },
-    { value: "pellicola", label: "Pellicola protettiva" },
+    { value: "cover", label: t("products.accessoryTypes.cover") },
+    { value: "pellicola", label: t("products.accessoryTypes.protectiveFilm") },
     { value: "caricatore", label: t("repair.charger") },
-    { value: "cavo", label: "Cavo" },
-    { value: "auricolare", label: "Auricolari" },
-    { value: "powerbank", label: "Power Bank" },
-    { value: "supporto", label: "Supporto / Stand" },
-    { value: "adattatore", label: "Adattatore" },
+    { value: "cavo", label: t("products.accessoryTypes.cable") },
+    { value: "auricolare", label: t("products.accessoryTypes.earphones") },
+    { value: "powerbank", label: t("products.accessoryTypes.powerBank") },
+    { value: "supporto", label: t("products.accessoryTypes.standSupport") },
+    { value: "adattatore", label: t("products.accessoryTypes.adapter") },
     { value: "altro", label: t("common.other") },
   ];
 }
@@ -122,23 +122,66 @@ function getAccessoryTypes(t: (key: string) => string) {
 function getConditionOptions(t: (key: string) => string) {
   return [
     { value: "nuovo", label: t("common.new") },
-    { value: "ricondizionato", label: "Ricondizionato" },
-    { value: "usato", label: "Usato" },
+    { value: "ricondizionato", label: t("products.refurbished") },
+    { value: "usato", label: t("common.used") },
   ];
 }
 
-const BRANDS = ["Apple", "Samsung", "Xiaomi", "Huawei", "Anker", "Belkin", "Spigen", "OtterBox", "Universale", "Altro"];
+function getBrandOptions(t: (key: string) => string) {
+  return [
+    { value: "Apple", label: "Apple" },
+    { value: "Samsung", label: "Samsung" },
+    { value: "Xiaomi", label: "Xiaomi" },
+    { value: "Huawei", label: "Huawei" },
+    { value: "Anker", label: "Anker" },
+    { value: "Belkin", label: "Belkin" },
+    { value: "Spigen", label: "Spigen" },
+    { value: "OtterBox", label: "OtterBox" },
+    { value: "Universale", label: t("products.brands.universal") },
+    { value: "Altro", label: t("common.other") },
+  ];
+}
 
-const COLOR_OPTIONS = [
-  "Nero", "Bianco", "Argento", "Grigio", "Oro", "Oro Rosa", "Blu", "Blu Notte", 
-  "Verde", "Rosso", "Giallo", "Arancione", "Rosa", "Viola", "Marrone", 
-  "Trasparente", "Multicolore", "Altro"
-];
+function getColorOptions(t: (key: string) => string) {
+  return [
+    { value: "Nero", label: t("products.colors.black") },
+    { value: "Bianco", label: t("products.colors.white") },
+    { value: "Argento", label: t("products.colors.silver") },
+    { value: "Grigio", label: t("products.colors.grey") },
+    { value: "Oro", label: t("products.colors.gold") },
+    { value: "Oro Rosa", label: t("products.colors.roseGold") },
+    { value: "Blu", label: t("products.colors.blue") },
+    { value: "Blu Notte", label: t("products.colors.nightBlue") },
+    { value: "Verde", label: t("products.colors.green") },
+    { value: "Rosso", label: t("products.colors.red") },
+    { value: "Giallo", label: t("products.colors.yellow") },
+    { value: "Arancione", label: t("products.colors.orange") },
+    { value: "Rosa", label: t("products.colors.pink") },
+    { value: "Viola", label: t("products.colors.purple") },
+    { value: "Marrone", label: t("products.colors.brown") },
+    { value: "Trasparente", label: t("products.colors.transparent") },
+    { value: "Multicolore", label: t("products.colors.multicolor") },
+    { value: "Altro", label: t("common.other") },
+  ];
+}
 
-const MATERIAL_OPTIONS = [
-  "Silicone", "TPU", "Plastica", "Policarbonato", "Pelle", "Pelle sintetica",
-  "Vetro temperato", "Metallo", "Alluminio", "Tessuto", "Legno", "Carbonio", "Altro"
-];
+function getMaterialOptions(t: (key: string) => string) {
+  return [
+    { value: "Silicone", label: t("products.materials.silicone") },
+    { value: "TPU", label: t("products.materials.tpu") },
+    { value: "Plastica", label: t("products.materials.plastic") },
+    { value: "Policarbonato", label: t("products.materials.polycarbonate") },
+    { value: "Pelle", label: t("products.materials.leather") },
+    { value: "Pelle sintetica", label: t("products.materials.syntheticLeather") },
+    { value: "Vetro temperato", label: t("products.materials.temperedGlass") },
+    { value: "Metallo", label: t("products.materials.metal") },
+    { value: "Alluminio", label: t("products.materials.aluminum") },
+    { value: "Tessuto", label: t("products.materials.fabric") },
+    { value: "Legno", label: t("products.materials.wood") },
+    { value: "Carbonio", label: t("products.materials.carbon") },
+    { value: "Altro", label: t("common.other") },
+  ];
+}
 
 export function AccessoryWizard({ 
   open, 
@@ -152,6 +195,9 @@ export function AccessoryWizard({
   const STEPS = getSteps(t);
   const ACCESSORY_TYPES = getAccessoryTypes(t);
   const CONDITION_OPTIONS = getConditionOptions(t);
+  const BRAND_OPTIONS = getBrandOptions(t);
+  const COLOR_OPTIONS = getColorOptions(t);
+  const MATERIAL_OPTIONS = getMaterialOptions(t);
   const [currentStep, setCurrentStep] = useState(1);
   const [compatibilities, setCompatibilities] = useState<CompatibilityEntry[]>([]);
   const [selectedBrandId, setSelectedBrandId] = useState<string>("");
@@ -203,7 +249,7 @@ export function AccessoryWizard({
     queryKey: [warehouseEndpoint],
     queryFn: async () => {
       const res = await fetch(warehouseEndpoint, { credentials: "include" });
-      if (!res.ok) throw new Error("Failed to fetch warehouses");
+      if (!res.ok) throw new Error(t("products.loadError"));
       return res.json();
     },
   });
@@ -221,7 +267,7 @@ export function AccessoryWizard({
     queryFn: async () => {
       if (!selectedBrandId) return [];
       const res = await fetch(`/api/device-models?brandId=${selectedBrandId}`);
-      if (!res.ok) throw new Error("Failed to fetch models");
+      if (!res.ok) throw new Error(t("products.loadError"));
       return res.json();
     },
     enabled: !!selectedBrandId,
@@ -340,7 +386,7 @@ export function AccessoryWizard({
       }
       queryClient.invalidateQueries({ queryKey: ["/api/accessories"] });
       queryClient.invalidateQueries({ queryKey: ["/api/products"] });
-      toast({ title: t("products.accessoryCreated"), description: `${form.getValues("name")} aggiunto al catalogo` });
+      toast({ title: t("products.accessoryCreated"), description: t("products.addedToCatalog", { name: form.getValues("name") }) });
       handleClose();
       onSuccess?.(newProduct);
     },
@@ -460,7 +506,7 @@ export function AccessoryWizard({
                 <div className="text-center mb-4">
                   <ShoppingBag className="h-12 w-12 mx-auto text-primary mb-2" />
                   <h3 className="text-lg font-medium">{t("products.basicInfo")}</h3>
-                  <p className="text-sm text-muted-foreground">Inserisci i dati principali dell'accessorio</p>
+                  <p className="text-sm text-muted-foreground">{t("products.enterAccessoryData")}</p>
                 </div>
 
                 <div className="flex justify-center mb-4">
@@ -473,7 +519,7 @@ export function AccessoryWizard({
                   />
                   {imagePreview ? (
                     <div className="relative">
-                      <img src={imagePreview} alt="Preview" className="w-32 h-32 object-cover rounded-lg" />
+                      <img src={imagePreview} alt={t("common.preview")} className="w-32 h-32 object-cover rounded-lg" />
                       <Button
                         type="button"
                         size="icon"
@@ -531,7 +577,7 @@ export function AccessoryWizard({
                     <FormItem>
                       <FormLabel>{t("products.productName")} *</FormLabel>
                       <FormControl>
-                        <Input placeholder="es. Cover Silicone iPhone 14" {...field} data-testid="input-accessory-name" />
+                        <Input placeholder={t("products.accessoryNamePlaceholder")} {...field} data-testid="input-accessory-name" />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -552,8 +598,8 @@ export function AccessoryWizard({
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            {BRANDS.map(brand => (
-                              <SelectItem key={brand} value={brand}>{brand}</SelectItem>
+                            {BRAND_OPTIONS.map(opt => (
+                              <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
                             ))}
                           </SelectContent>
                         </Select>
@@ -575,8 +621,8 @@ export function AccessoryWizard({
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            {COLOR_OPTIONS.map(color => (
-                              <SelectItem key={color} value={color}>{color}</SelectItem>
+                            {COLOR_OPTIONS.map(opt => (
+                              <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
                             ))}
                           </SelectContent>
                         </Select>
@@ -615,7 +661,7 @@ export function AccessoryWizard({
                     name="material"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Materiale</FormLabel>
+                        <FormLabel>{t("products.material")}</FormLabel>
                         <Select onValueChange={field.onChange} value={field.value}>
                           <FormControl>
                             <SelectTrigger data-testid="select-accessory-material">
@@ -623,8 +669,8 @@ export function AccessoryWizard({
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            {MATERIAL_OPTIONS.map(mat => (
-                              <SelectItem key={mat} value={mat}>{mat}</SelectItem>
+                            {MATERIAL_OPTIONS.map(opt => (
+                              <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
                             ))}
                           </SelectContent>
                         </Select>
@@ -639,9 +685,9 @@ export function AccessoryWizard({
                   name="sku"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>SKU / Codice</FormLabel>
+                      <FormLabel>{t("products.skuInternalCode")}</FormLabel>
                       <FormControl>
-                        <Input placeholder="Codice interno (opzionale)" {...field} data-testid="input-accessory-sku" />
+                        <Input placeholder={t("products.internalCodeOptional")} {...field} data-testid="input-accessory-sku" />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -732,10 +778,10 @@ export function AccessoryWizard({
                         </FormControl>
                         <SelectContent>
                           <SelectItem value="0">{t("common.noneFem")}</SelectItem>
-                          <SelectItem value="3">3 mesi</SelectItem>
-                          <SelectItem value="6">6 mesi</SelectItem>
-                          <SelectItem value="12">12 mesi</SelectItem>
-                          <SelectItem value="24">24 mesi</SelectItem>
+                          <SelectItem value="3">{t("products.monthCount", { count: 3 })}</SelectItem>
+                          <SelectItem value="6">{t("products.monthCount", { count: 6 })}</SelectItem>
+                          <SelectItem value="12">{t("products.monthCount", { count: 12 })}</SelectItem>
+                          <SelectItem value="24">{t("products.monthCount", { count: 24 })}</SelectItem>
                         </SelectContent>
                       </Select>
                       <FormMessage />
@@ -748,7 +794,7 @@ export function AccessoryWizard({
                     <Label className="text-base font-medium">{t("warehouse.initialStock")}</Label>
                     <Button type="button" variant="outline" size="sm" onClick={addWarehouseStock}>
                       <Warehouse className="h-4 w-4 mr-1" />
-                      Aggiungi Magazzino
+                      {t("warehouse.addWarehouse")}
                     </Button>
                   </div>
 
@@ -792,7 +838,7 @@ export function AccessoryWizard({
                           <div className="flex-1">
                             <Label className="text-xs">{t("warehouse.position")}</Label>
                             <Input
-                              placeholder="es. A-01"
+                              placeholder={t("warehouse.positionExample")}
                               value={stock.location}
                               onChange={(e) => {
                                 const current = form.getValues("initialStock");
@@ -822,7 +868,7 @@ export function AccessoryWizard({
                 <div className="text-center mb-4">
                   <Link2 className="h-12 w-12 mx-auto text-primary mb-2" />
                   <h3 className="text-lg font-medium">{t("products.deviceCompatibility")}</h3>
-                  <p className="text-sm text-muted-foreground">Seleziona i dispositivi compatibili con questo accessorio</p>
+                  <p className="text-sm text-muted-foreground">{t("products.selectCompatibleDevices")}</p>
                 </div>
 
                 <div className="space-y-4">
@@ -838,13 +884,13 @@ export function AccessoryWizard({
                       </SelectContent>
                     </Select>
                     <Button type="button" variant="outline" onClick={addBrandCompatibility} disabled={!selectedBrandId} data-testid="button-add-brand">
-                      Aggiungi Marca
+                      {t("products.addBrand")}
                     </Button>
                   </div>
 
                   {selectedBrandId && deviceModels.length > 0 && (
                     <div className="border rounded-lg p-3 space-y-2">
-                      <Label className="text-sm font-medium">Modelli disponibili:</Label>
+                      <Label className="text-sm font-medium">{t("products.availableModels")}:</Label>
                       <div className="flex flex-wrap gap-2">
                         {deviceModels.map((model) => (
                           <Button
@@ -865,11 +911,11 @@ export function AccessoryWizard({
 
                   {compatibilities.length > 0 && (
                     <div className="space-y-2">
-                      <Label className="text-sm font-medium">Compatibilità selezionate:</Label>
+                      <Label className="text-sm font-medium">{t("products.selectedCompatibilities")}:</Label>
                       <div className="flex flex-wrap gap-2">
                         {compatibilities.map((compat, index) => (
                           <Badge key={index} variant="secondary" className="flex flex-wrap items-center gap-1">
-                            {compat.deviceBrandName}{compat.deviceModelName ? ` - ${compat.deviceModelName}` : " (tutti i modelli)"}
+                            {compat.deviceBrandName}{compat.deviceModelName ? ` - ${compat.deviceModelName}` : ` (${t("products.allModels")})`}
                             <X className="h-3 w-3 cursor-pointer" onClick={() => removeCompatibility(index)} />
                           </Badge>
                         ))}
@@ -879,7 +925,7 @@ export function AccessoryWizard({
 
                   {compatibilities.length === 0 && (
                     <p className="text-sm text-muted-foreground text-center py-4">
-                      Nessuna compatibilità selezionata. Puoi saltare questo step se l'accessorio è universale.
+                      {t("products.noCompatibilitySelected")}
                     </p>
                   )}
                 </div>
@@ -891,17 +937,17 @@ export function AccessoryWizard({
                 <div className="text-center mb-4">
                   <CheckCircle2 className="h-12 w-12 mx-auto text-green-500 mb-2" />
                   <h3 className="text-lg font-medium">{t("repair.summary")}</h3>
-                  <p className="text-sm text-muted-foreground">Verifica i dati prima di salvare</p>
+                  <p className="text-sm text-muted-foreground">{t("products.verifyBeforeSaving")}</p>
                 </div>
 
                 <Card>
                   <CardContent className="p-4 space-y-3">
                     <div className="flex flex-wrap items-center gap-4">
                       {imagePreview && (
-                        <img src={imagePreview} alt="Preview" className="w-20 h-20 object-cover rounded-lg" />
+                        <img src={imagePreview} alt={t("common.preview")} className="w-20 h-20 object-cover rounded-lg" />
                       )}
                       <div>
-                        <h4 className="font-semibold text-lg">{values.name || "Nome non inserito"}</h4>
+                        <h4 className="font-semibold text-lg">{values.name || t("products.nameNotEntered")}</h4>
                         <div className="flex gap-2 mt-1">
                           <Badge variant="secondary">{values.brand}</Badge>
                           <Badge variant="outline">
@@ -918,14 +964,14 @@ export function AccessoryWizard({
                         <p className="font-medium">{values.color || "-"}</p>
                       </div>
                       <div>
-                        <Label className="text-xs text-muted-foreground">Materiale</Label>
+                        <Label className="text-xs text-muted-foreground">{t("products.material")}</Label>
                         <p className="font-medium">{values.material || "-"}</p>
                       </div>
                     </div>
 
                     <div className="pt-4 border-t">
-                      <Label className="text-xs text-muted-foreground">Universale</Label>
-                      <Badge className="mt-1">{values.isUniversal ? "Sì" : "No"}</Badge>
+                      <Label className="text-xs text-muted-foreground">{t("products.universal")}</Label>
+                      <Badge className="mt-1">{values.isUniversal ? t("common.yes") : t("common.no")}</Badge>
                     </div>
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4 border-t">
@@ -955,7 +1001,7 @@ export function AccessoryWizard({
                             return (
                               <div key={i} className="flex justify-between text-sm">
                                 <span>{wh?.name || t("common.warehouse")}</span>
-                                <span className="font-medium">{stock.quantity} pz</span>
+                                <span className="font-medium">{t("products.pcsCount", { count: stock.quantity })}</span>
                               </div>
                             );
                           })}
@@ -965,11 +1011,11 @@ export function AccessoryWizard({
 
                     {compatibilities.length > 0 && (
                       <div className="pt-4 border-t">
-                        <Label className="text-xs text-muted-foreground">Compatibilità</Label>
+                        <Label className="text-xs text-muted-foreground">{t("products.compatibility")}</Label>
                         <div className="flex flex-wrap gap-1 mt-1">
                           {compatibilities.map((compat, i) => (
                             <Badge key={i} variant="outline" className="text-xs">
-                              {compat.deviceBrandName}{compat.deviceModelName ? ` ${compat.deviceModelName}` : " (tutti)"}
+                              {compat.deviceBrandName}{compat.deviceModelName ? ` ${compat.deviceModelName}` : ` (${t("products.allModelsShort")})`}
                             </Badge>
                           ))}
                         </div>
@@ -1004,7 +1050,7 @@ export function AccessoryWizard({
                   data-testid="button-wizard-submit"
                 >
                   {createMutation.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-                  Salva Accessorio
+                  {t("products.saveAccessory")}
                 </Button>
               )}
             </div>

@@ -54,13 +54,15 @@ function getRepairLogSchema(t: (key: string) => string) {
   });
 }
 
-const logTypeLabels: Record<string, { label: string; icon: typeof Clock }> = {
-  status_change: { label: "Cambio Stato", icon: Clock },
-  technician_note: { label: "Nota Tecnico", icon: MessageSquare },
-  parts_installed: { label: "Parti Installate", icon: Wrench },
-  test_result: { label: "Risultato Test", icon: TestTube },
-  customer_contact: { label: "Contatto Cliente", icon: Phone },
-};
+function getLogTypeLabels(t: (key: string) => string): Record<string, { label: string; icon: typeof Clock }> {
+  return {
+    status_change: { label: t("repair.statusChange"), icon: Clock },
+    technician_note: { label: t("repair.technicianNote"), icon: MessageSquare },
+    parts_installed: { label: t("repair.partsInstalled"), icon: Wrench },
+    test_result: { label: t("repair.testResult"), icon: TestTube },
+    customer_contact: { label: t("repair.customerContact"), icon: Phone },
+  };
+}
 
 export function RepairLogDialog({
   open,
@@ -69,6 +71,7 @@ export function RepairLogDialog({
   onSuccess,
 }: RepairLogDialogProps) {
   const { t } = useTranslation();
+  const logTypeLabels = getLogTypeLabels(t);
   const repairLogSchema = getRepairLogSchema(t);
   type RepairLogFormData = z.infer<typeof repairLogSchema>;
   const { toast } = useToast();
@@ -105,7 +108,7 @@ export function RepairLogDialog({
     },
     onSuccess: () => {
       toast({
-        title: "Log aggiunto",
+        title: t("repair.logAdded"),
         description: t("repair.repairLogAddedSuccess"),
       });
       queryClient.invalidateQueries({ queryKey: ["/api/repair-orders", repairOrderId, "logs"] });
@@ -155,9 +158,9 @@ export function RepairLogDialog({
               <ClipboardList className="h-5 w-5 text-amber-600 dark:text-amber-400" />
             </div>
             <div>
-              <span className="text-lg font-semibold">Log Attività Riparazione</span>
+              <span className="text-lg font-semibold">{t("repair.repairActivityLog")}</span>
               <DialogDescription className="mt-0.5">
-                Traccia le attività del tecnico e l'avanzamento della riparazione
+                {t("repair.trackTechnicianActivities")}
               </DialogDescription>
             </div>
           </DialogTitle>
@@ -171,7 +174,7 @@ export function RepairLogDialog({
                 <div className="h-6 w-6 rounded-md bg-amber-500/10 flex items-center justify-center">
                   <Clock className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400" />
                 </div>
-                Storico Attività
+                {t("repair.activityHistory")}
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -193,7 +196,7 @@ export function RepairLogDialog({
                           </Badge>
                           {log.hoursWorked && (
                             <span className="text-xs text-muted-foreground">
-                              {log.hoursWorked}h lavorate
+                              {log.hoursWorked}h {t("repair.worked")}
                             </span>
                           )}
                         </div>
@@ -217,7 +220,7 @@ export function RepairLogDialog({
               <div className="h-6 w-6 rounded-md bg-blue-500/10 flex items-center justify-center">
                 <Wrench className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400" />
               </div>
-              Aggiungi Nuova Voce
+              {t("repair.addNewEntry")}
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -237,11 +240,11 @@ export function RepairLogDialog({
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            <SelectItem value="technician_note">Nota Tecnico</SelectItem>
-                            <SelectItem value="parts_installed">Parti Installate</SelectItem>
-                            <SelectItem value="test_result">Risultato Test</SelectItem>
-                            <SelectItem value="customer_contact">Contatto Cliente</SelectItem>
-                            <SelectItem value="status_change">Cambio Stato</SelectItem>
+                            <SelectItem value="technician_note">{t("repair.technicianNote")}</SelectItem>
+                            <SelectItem value="parts_installed">{t("repair.partsInstalled")}</SelectItem>
+                            <SelectItem value="test_result">{t("repair.testResult")}</SelectItem>
+                            <SelectItem value="customer_contact">{t("repair.customerContact")}</SelectItem>
+                            <SelectItem value="status_change">{t("repair.statusChange")}</SelectItem>
                           </SelectContent>
                         </Select>
                         <FormMessage />
@@ -264,7 +267,7 @@ export function RepairLogDialog({
                             data-testid="input-hours-worked"
                           />
                         </FormControl>
-                        <FormDescription>Tracciamento tempo opzionale</FormDescription>
+                        <FormDescription>{t("repair.optionalTimeTracking")}</FormDescription>
                         <FormMessage />
                       </FormItem>
                     )}
@@ -304,7 +307,7 @@ export function RepairLogDialog({
                     disabled={createLogMutation.isPending}
                     data-testid="button-add-log"
                   >
-                    {createLogMutation.isPending ? t("common.saving") : "Aggiungi Log"}
+                    {createLogMutation.isPending ? t("common.saving") : t("repair.addLog")}
                   </Button>
                 </div>
               </form>

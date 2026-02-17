@@ -22,13 +22,13 @@ import type { SalesOrderPayment } from "@shared/schema";
 import { useTranslation } from "react-i18next";
 
 const statusLabels: Record<string, string> = {
-  pending: "In attesa",
-  processing: "In elaborazione",
-  completed: "Completato",
-  paid: "Pagato",
-  failed: "Fallito",
-  refunded: "Rimborsato",
-  partially_refunded: "Rimborso parziale"
+  pending: "pending",
+  processing: "processing",
+  completed: "completed",
+  paid: "paid",
+  failed: "failed",
+  refunded: "refunded",
+  partially_refunded: "partially_refunded"
 };
 
 const orderTypeLabels: Record<string, string> = {
@@ -51,13 +51,13 @@ const statusColors: Record<string, string> = {
 };
 
 const methodLabels: Record<string, string> = {
-  cash: "Contanti",
-  card: "Carta",
-  bank_transfer: "Bonifico",
-  paypal: "PayPal",
-  stripe: "Stripe",
+  cash: "cash",
+  card: "card",
+  bank_transfer: "bank_transfer",
+  paypal: "paypal",
+  stripe: "stripe",
   pos: "POS",
-  credit: "Credito"
+  credit: "credit"
 };
 
 const methodIcons: Record<string, any> = {
@@ -162,7 +162,7 @@ export default function AdminPayments() {
     if (!selectedPayment) return;
     const amount = parseFloat(refundAmount);
     if (isNaN(amount) || amount <= 0 || amount > selectedPayment.amount) {
-      toast({ title: t("common.error"), description: "Importo non valido", variant: "destructive" });
+      toast({ title: t("common.error"), description: t("payments.invalidAmount"), variant: "destructive" });
       return;
     }
     
@@ -469,13 +469,13 @@ export default function AdminPayments() {
                   <Label className="text-muted-foreground">{t("common.status")}</Label>
                   <div className="mt-1">
                     <Badge variant={statusColors[selectedPayment.status] as any}>
-                      {statusLabels[selectedPayment.status]}
+                      {t(`payments.statuses.${selectedPayment.status}`)}
                     </Badge>
                   </div>
                 </div>
                 <div>
                   <Label className="text-muted-foreground">Metodo</Label>
-                  <p>{methodLabels[selectedPayment.method]}</p>
+                  <p>{t(`payments.methods.${selectedPayment.method}`)}</p>
                 </div>
                 <div>
                   <Label className="text-muted-foreground">{t("common.date")}</Label>

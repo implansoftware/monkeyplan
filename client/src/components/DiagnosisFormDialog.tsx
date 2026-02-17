@@ -340,8 +340,8 @@ export function DiagnosisFormDialog({
   }, [diagnosticFindings]);
 
   const categoryLabels: Record<string, string> = {
-    hardware: "Hardware",
-    software: "Software",
+    hardware: t("diagnosis.hardware"),
+    software: t("diagnosis.software"),
     connectivity: t("diagnosis.connectivity"),
     altro: t("common.other"),
   };
@@ -606,7 +606,7 @@ export function DiagnosisFormDialog({
               <Stethoscope className="h-5 w-5 text-violet-600 dark:text-violet-400" />
             </div>
             <div>
-              <span className="text-lg font-semibold">{isEditMode ? "Modifica Diagnosi Tecnica" : "Diagnosi Tecnica"}</span>
+              <span className="text-lg font-semibold">{isEditMode ? t("diagnosis.editTechnicalDiagnosis") : t("diagnosis.technicalDiagnosis")}</span>
               <DialogDescription className="mt-0.5">
                 {isEditMode 
                   ? t("diagnosis.editDiagnosisResults")
@@ -625,7 +625,7 @@ export function DiagnosisFormDialog({
                   <div className="h-6 w-6 rounded-md bg-violet-500/10 flex items-center justify-center">
                     <AlertCircle className="h-3.5 w-3.5 text-violet-600 dark:text-violet-400" />
                   </div>
-                  Risultati Diagnosi
+                  {t("diagnosis.diagnosisResults")}
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -642,9 +642,9 @@ export function DiagnosisFormDialog({
                     };
                     return (
                       <FormItem>
-                        <FormLabel>Problemi Riscontrati *</FormLabel>
+                        <FormLabel>{t("diagnosis.issuesFound")} *</FormLabel>
                         <FormDescription>
-                          Seleziona tutti i problemi identificati durante la diagnosi
+                          {t("diagnosis.selectAllIssues")}
                         </FormDescription>
                         <ScrollArea className="h-[200px] border rounded-md p-3">
                           <div className="space-y-4">
@@ -708,12 +708,12 @@ export function DiagnosisFormDialog({
                       <FormItem>
                         <FormLabel className="flex flex-wrap items-center gap-1">
                           <AlertCircle className="h-4 w-4 text-orange-500" />
-                          Descrivi altro problema *
+                          {t("diagnosis.describeOtherIssue")} *
                         </FormLabel>
                         <FormControl>
                           <Input
                             {...field}
-                            placeholder="Descrivi il problema non presente in lista..."
+                            placeholder={t("diagnosis.describeIssuePlaceholder")}
                             data-testid="input-other-finding"
                           />
                         </FormControl>
@@ -736,9 +736,9 @@ export function DiagnosisFormDialog({
                     };
                     return (
                       <FormItem>
-                        <FormLabel>Componenti Danneggiati</FormLabel>
+                        <FormLabel>{t("diagnosis.damagedComponents")}</FormLabel>
                         <FormDescription>
-                          Seleziona i componenti che necessitano riparazione o sostituzione
+                          {t("diagnosis.selectComponentsForRepair")}
                         </FormDescription>
                         <ScrollArea className="h-[220px] border rounded-md p-3">
                           <div className="grid grid-cols-1 md:grid-cols-1 sm:grid-cols-2 gap-2">
@@ -793,12 +793,12 @@ export function DiagnosisFormDialog({
                       <FormItem>
                         <FormLabel className="flex flex-wrap items-center gap-1">
                           <AlertCircle className="h-4 w-4 text-orange-500" />
-                          Descrivi altro componente *
+                          {t("diagnosis.describeOtherComp")} *
                         </FormLabel>
                         <FormControl>
                           <Input
                             {...field}
-                            placeholder="Descrivi il componente non presente in lista..."
+                            placeholder={t("diagnosis.describeCompPlaceholder")}
                             data-testid="input-other-component"
                           />
                         </FormControl>
@@ -817,7 +817,7 @@ export function DiagnosisFormDialog({
                   <div className="h-6 w-6 rounded-md bg-blue-500/10 flex items-center justify-center">
                     <Scan className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400" />
                   </div>
-                  Valutazione
+                  {t("diagnosis.evaluation")}
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -826,7 +826,7 @@ export function DiagnosisFormDialog({
                   name="estimatedRepairTimeId"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Tempo Stimato di Riparazione *</FormLabel>
+                      <FormLabel>{t("diagnosis.estimatedRepairTime")} *</FormLabel>
                       <Select
                         onValueChange={field.onChange}
                         value={field.value}
@@ -845,7 +845,7 @@ export function DiagnosisFormDialog({
                         </SelectContent>
                       </Select>
                       <FormDescription>
-                        Tempo stimato per completare la riparazione
+                        {t("diagnosis.estimatedTimeDescription")}
                       </FormDescription>
                       <FormMessage />
                     </FormItem>
@@ -857,10 +857,10 @@ export function DiagnosisFormDialog({
                 <div className="space-y-3">
                   <div className="flex flex-wrap items-center gap-2">
                     <Camera className="h-4 w-4" />
-                    <span className="text-sm font-medium">Foto Diagnosi</span>
+                    <span className="text-sm font-medium">{t("diagnosis.diagnosisPhotos")}</span>
                   </div>
                   <p className="text-sm text-muted-foreground">
-                    Carica foto del dispositivo e dei componenti danneggiati
+                    {t("diagnosis.uploadDevicePhotos")}
                   </p>
                   
                   <FormField
@@ -882,9 +882,9 @@ export function DiagnosisFormDialog({
                           {field.value && <span className="text-primary-foreground text-xs">✓</span>}
                         </div>
                         <div className="space-y-1 leading-none">
-                          <FormLabel className="cursor-pointer">Non voglio caricare foto della diagnosi</FormLabel>
+                          <FormLabel className="cursor-pointer">{t("diagnosis.skipPhotoUpload")}</FormLabel>
                           <FormDescription>
-                            Spunta se non vuoi allegare foto alla diagnosi
+                            {t("diagnosis.skipPhotoDescription")}
                           </FormDescription>
                         </div>
                       </FormItem>
@@ -909,7 +909,7 @@ export function DiagnosisFormDialog({
                   <div className="h-6 w-6 rounded-md bg-amber-500/10 flex items-center justify-center">
                     <Stethoscope className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400" />
                   </div>
-                  Esito Diagnosi
+                  {t("diagnosis.diagnosisOutcome")}
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -920,7 +920,7 @@ export function DiagnosisFormDialog({
                     <FormItem>
                       <FormLabel>{t("diagnosis.selectOutcome")} *</FormLabel>
                       <FormDescription>
-                        Indica se il dispositivo è riparabile o meno
+                        {t("diagnosis.indicateRepairable")}
                       </FormDescription>
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-3 pt-2">
                         <div
@@ -934,8 +934,8 @@ export function DiagnosisFormDialog({
                         >
                           <CheckCircle2 className={`h-12 w-12 ${field.value === "riparabile" ? "text-emerald-500" : "text-muted-foreground"}`} />
                           <div className="text-center">
-                            <div className="font-semibold">Riparabile</div>
-                            <div className="text-xs text-muted-foreground">Il dispositivo può essere riparato</div>
+                            <div className="font-semibold">{t("diagnosis.repairable")}</div>
+                            <div className="text-xs text-muted-foreground">{t("diagnosis.repairableDesc")}</div>
                           </div>
                         </div>
                         <div
@@ -949,8 +949,8 @@ export function DiagnosisFormDialog({
                         >
                           <XCircle className={`h-12 w-12 ${field.value === "non_conveniente" ? "text-amber-500" : "text-muted-foreground"}`} />
                           <div className="text-center">
-                            <div className="font-semibold">Non Conveniente</div>
-                            <div className="text-xs text-muted-foreground">Costo riparazione troppo alto</div>
+                            <div className="font-semibold">{t("diagnosis.notConvenient")}</div>
+                            <div className="text-xs text-muted-foreground">{t("diagnosis.notConvenientDesc")}</div>
                           </div>
                         </div>
                         <div
@@ -964,8 +964,8 @@ export function DiagnosisFormDialog({
                         >
                           <Ban className={`h-12 w-12 ${field.value === "irriparabile" ? "text-red-500" : "text-muted-foreground"}`} />
                           <div className="text-center">
-                            <div className="font-semibold">Irriparabile</div>
-                            <div className="text-xs text-muted-foreground">Tecnicamente non riparabile</div>
+                            <div className="font-semibold">{t("diagnosis.irreparable")}</div>
+                            <div className="text-xs text-muted-foreground">{t("diagnosis.irreparableDesc")}</div>
                           </div>
                         </div>
                       </div>
@@ -978,7 +978,7 @@ export function DiagnosisFormDialog({
                   <div className="space-y-4 pt-4 border-t">
                     <div className="bg-amber-500/10 p-3 rounded-lg border border-amber-500/30">
                       <p className="text-sm text-amber-700 dark:text-amber-300 font-medium">
-                        Il costo della riparazione supera il valore del dispositivo. Proponi al cliente delle alternative:
+                        {t("diagnosis.repairCostExceedsValue")}
                       </p>
                     </div>
                     
@@ -995,9 +995,9 @@ export function DiagnosisFormDialog({
                         };
                         return (
                           <FormItem>
-                            <FormLabel>Promozioni Suggerite</FormLabel>
+                            <FormLabel>{t("diagnosis.suggestedPromotions")}</FormLabel>
                             <FormDescription>
-                              Seleziona le promozioni da proporre al cliente
+                              {t("diagnosis.selectPromotionsForCustomer")}
                             </FormDescription>
                             <div className="grid grid-cols-1 md:grid-cols-1 sm:grid-cols-2 gap-2">
                               {promotions.map((promo) => {
@@ -1053,10 +1053,10 @@ export function DiagnosisFormDialog({
                           <div className="space-y-1 leading-none flex-1">
                             <div className="flex flex-wrap items-center gap-2">
                               <Database className="h-5 w-5 text-blue-500" />
-                              <FormLabel className="cursor-pointer font-semibold">Il cliente ha dati importanti sul dispositivo</FormLabel>
+                              <FormLabel className="cursor-pointer font-semibold">{t("diagnosis.customerHasImportantData")}</FormLabel>
                             </div>
                             <FormDescription>
-                              Spunta se il cliente necessita del recupero dati prima di procedere
+                              {t("diagnosis.checkIfDataRecoveryNeeded")}
                             </FormDescription>
                           </div>
                         </FormItem>
@@ -1081,10 +1081,10 @@ export function DiagnosisFormDialog({
                             <div className="space-y-1 leading-none flex-1">
                               <div className="flex flex-wrap items-center gap-2">
                                 <HardDrive className="h-5 w-5 text-blue-600" />
-                                <FormLabel className="cursor-pointer font-semibold text-blue-700 dark:text-blue-300">Richiedi Recupero Dati</FormLabel>
+                                <FormLabel className="cursor-pointer font-semibold text-blue-700 dark:text-blue-300">{t("diagnosis.requestDataRecovery")}</FormLabel>
                               </div>
                               <FormDescription className="text-blue-600 dark:text-blue-400">
-                                Il servizio di recupero dati verrà attivato prima della restituzione
+                                {t("diagnosis.dataRecoveryServiceDescription")}
                               </FormDescription>
                             </div>
                           </FormItem>
@@ -1098,7 +1098,7 @@ export function DiagnosisFormDialog({
                   <div className="space-y-4 pt-4 border-t">
                     <div className="bg-red-500/10 p-3 rounded-lg border border-red-500/30">
                       <p className="text-sm text-red-700 dark:text-red-300 font-medium">
-                        Il dispositivo presenta danni tecnici che ne impediscono la riparazione. Seleziona il motivo:
+                        {t("diagnosis.deviceHasTechnicalDamage")}
                       </p>
                     </div>
 
@@ -1107,9 +1107,9 @@ export function DiagnosisFormDialog({
                       name="unrepairableReasonId"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Motivo Irriparabilità *</FormLabel>
+                          <FormLabel>{t("diagnosis.irrepairableReason")} *</FormLabel>
                           <FormDescription>
-                            Seleziona il motivo tecnico per cui il dispositivo non può essere riparato
+                            {t("diagnosis.selectTechnicalReason")}
                           </FormDescription>
                           <div className="grid grid-cols-1 gap-2">
                             {unrepairableReasons.map((reason) => {
@@ -1155,7 +1155,7 @@ export function DiagnosisFormDialog({
                                 {field.value === "altro" && <div className="w-2.5 h-2.5 rounded-full bg-red-500" />}
                               </div>
                               <AlertCircle className={`h-5 w-5 flex-shrink-0 ${field.value === "altro" ? "text-red-500" : "text-muted-foreground"}`} />
-                              <div className="font-medium text-sm">Altro motivo</div>
+                              <div className="font-medium text-sm">{t("diagnosis.otherReason")}</div>
                             </div>
                           </div>
                           <FormMessage />
@@ -1171,7 +1171,7 @@ export function DiagnosisFormDialog({
                           <FormItem>
                             <FormLabel className="flex flex-wrap items-center gap-1">
                               <AlertCircle className="h-4 w-4 text-red-500" />
-                              Descrivi il motivo *
+                              {t("diagnosis.describeReason")} *
                             </FormLabel>
                             <FormControl>
                               <Textarea
@@ -1204,10 +1204,10 @@ export function DiagnosisFormDialog({
                           <div className="space-y-1 leading-none flex-1">
                             <div className="flex flex-wrap items-center gap-2">
                               <Database className="h-5 w-5 text-blue-500" />
-                              <FormLabel className="cursor-pointer font-semibold">Il cliente ha dati importanti sul dispositivo</FormLabel>
+                              <FormLabel className="cursor-pointer font-semibold">{t("diagnosis.customerHasImportantData")}</FormLabel>
                             </div>
                             <FormDescription>
-                              Spunta se il cliente necessita del recupero dati prima di procedere
+                              {t("diagnosis.checkIfDataRecoveryNeeded")}
                             </FormDescription>
                           </div>
                         </FormItem>
@@ -1232,10 +1232,10 @@ export function DiagnosisFormDialog({
                             <div className="space-y-1 leading-none flex-1">
                               <div className="flex flex-wrap items-center gap-2">
                                 <HardDrive className="h-5 w-5 text-blue-600" />
-                                <FormLabel className="cursor-pointer font-semibold text-blue-700 dark:text-blue-300">Richiedi Recupero Dati</FormLabel>
+                                <FormLabel className="cursor-pointer font-semibold text-blue-700 dark:text-blue-300">{t("diagnosis.requestDataRecovery")}</FormLabel>
                               </div>
                               <FormDescription className="text-blue-600 dark:text-blue-400">
-                                Il servizio di recupero dati verrà attivato prima della restituzione
+                                {t("diagnosis.dataRecoveryServiceDescription")}
                               </FormDescription>
                             </div>
                           </FormItem>
@@ -1253,16 +1253,16 @@ export function DiagnosisFormDialog({
                             <div className="flex flex-wrap items-center gap-2 mb-2">
                               <Smartphone className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
                               <FormLabel className="font-semibold text-emerald-700 dark:text-emerald-300">
-                                Suggerisci Smartphone Sostitutivi
+                                {t("diagnosis.suggestReplacementDevices")}
                               </FormLabel>
                             </div>
                             <FormDescription className="text-emerald-600 dark:text-emerald-400 mb-3">
-                              Seleziona smartphone dal tuo catalogo da proporre al cliente come sostituzione
+                              {t("diagnosis.selectReplacementFromCatalog")}
                             </FormDescription>
                             
                             {smartphoneProducts.length === 0 ? (
                               <p className="text-sm text-muted-foreground italic">
-                                Nessuno smartphone disponibile nel catalogo
+                                {t("diagnosis.noSmartphoneAvailable")}
                               </p>
                             ) : (
                               <div className="grid grid-cols-1 gap-2 max-h-[200px] overflow-y-auto">
@@ -1315,7 +1315,7 @@ export function DiagnosisFormDialog({
                             
                             {field.value && field.value.length > 0 && (
                               <p className="text-xs text-emerald-600 dark:text-emerald-400 mt-2">
-                                {field.value.length} smartphone selezionat{field.value.length === 1 ? 'o' : 'i'}
+                                {t("diagnosis.smartphoneSelectedCount", { count: field.value.length })}
                               </p>
                             )}
                           </div>
@@ -1335,7 +1335,7 @@ export function DiagnosisFormDialog({
                 onClick={handleExplicitCancel}
                 data-testid="button-cancel"
               >
-                Annulla e Chiudi
+                {t("common.cancelAndClose")}
               </Button>
               <Button
                 type="submit"

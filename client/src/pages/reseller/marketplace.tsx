@@ -77,7 +77,7 @@ export default function ResellerMarketplace() {
       return res.json();
     },
     onSuccess: () => {
-      toast({ title: "Ordine creato", description: "Il tuo ordine è stato inviato al rivenditore" });
+      toast({ title: t("marketplace.orderCreated"), description: t("marketplace.orderSentToSeller") });
       setCart([]);
       setCheckoutOpen(false);
       setNotes("");
@@ -111,7 +111,7 @@ export default function ResellerMarketplace() {
     if (cartSellerId && cartSellerId !== item.sellerResellerId) {
       toast({ 
         title: t("common.warning"), 
-        description: "Puoi acquistare solo da un rivenditore alla volta. Svuota il carrello per cambiare rivenditore.",
+        description: t("marketplace.oneResellerAtATime"),
         variant: "destructive"
       });
       return;
@@ -225,7 +225,7 @@ export default function ResellerMarketplace() {
 
   const handleCheckout = () => {
     if (cart.length === 0) {
-      toast({ title: t("pos.emptyCart"), description: "Aggiungi prodotti al carrello", variant: "destructive" });
+      toast({ title: t("pos.emptyCart"), description: t("marketplace.addProductsToCart"), variant: "destructive" });
       return;
     }
     setCheckoutOpen(true);
@@ -235,7 +235,7 @@ export default function ResellerMarketplace() {
     // Validate shipping method is selected and belongs to current seller
     const validShippingMethods = shippingMethods?.map(m => m.id) || [];
     if (!selectedShippingMethod || !validShippingMethods.includes(selectedShippingMethod)) {
-      toast({ title: t("common.error"), description: "Seleziona un metodo di spedizione valido", variant: "destructive" });
+      toast({ title: t("common.error"), description: t("marketplace.selectValidShipping"), variant: "destructive" });
       return;
     }
 
@@ -280,7 +280,7 @@ export default function ResellerMarketplace() {
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Cerca prodotti o rivenditori..."
+                placeholder={t("marketplace.searchProductsResellers")}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-9 w-72"
@@ -312,10 +312,10 @@ export default function ResellerMarketplace() {
               <Store className="h-5 w-5 text-emerald-600 dark:text-emerald-400 mt-0.5 shrink-0" />
               <div>
                 <p className="text-sm font-medium text-emerald-900 dark:text-emerald-100">
-                  Stai acquistando da altri rivenditori della rete
+                  {t("marketplace.buyingFromResellers")}
                 </p>
                 <p className="text-xs text-emerald-700 dark:text-emerald-300 mt-0.5">
-                  Qui trovi i prodotti pubblicati da altri rivenditori che hanno stock disponibile.
+                  {t("marketplace.resellersStockDesc")}
                 </p>
               </div>
             </div>
@@ -528,7 +528,7 @@ export default function ResellerMarketplace() {
               ) : (
                 <Select value={selectedShippingMethod} onValueChange={(val) => { setSelectedShippingMethod(val); setUserSelectedShipping(true); }}>
                   <SelectTrigger data-testid="select-shipping-method">
-                    <SelectValue placeholder="Seleziona metodo di spedizione" />
+                    <SelectValue placeholder={t("marketplace.selectShippingMethod")} />
                   </SelectTrigger>
                   <SelectContent>
                     {shippingMethods.map(method => (
@@ -553,7 +553,7 @@ export default function ResellerMarketplace() {
               ) : (
                 <Select value={paymentMethod} onValueChange={setPaymentMethod}>
                   <SelectTrigger data-testid="select-payment-method">
-                    <SelectValue placeholder="Seleziona metodo di pagamento" />
+                    <SelectValue placeholder={t("marketplace.selectPaymentMethodNoEllipsis")} />
                   </SelectTrigger>
                   <SelectContent>
                     {paymentConfig?.bankTransfer?.enabled && (
@@ -597,7 +597,7 @@ export default function ResellerMarketplace() {
             <div className="space-y-2">
               <Label>Note per il venditore</Label>
               <Textarea 
-                placeholder="Aggiungi note all'ordine..."
+                placeholder={t("marketplace.addOrderNotes")}
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
                 data-testid="textarea-buyer-notes"
@@ -624,7 +624,7 @@ export default function ResellerMarketplace() {
                 }}
                 onError={(error) => {
                   toast({
-                    title: "Errore PayPal",
+                    title: t("marketplace.paypalError"),
                     description: error,
                     variant: "destructive",
                   });
@@ -632,7 +632,7 @@ export default function ResellerMarketplace() {
                 onCancel={() => {
                   toast({
                     title: t("license.paymentCancelled"),
-                    description: "Hai annullato il pagamento PayPal",
+                    description: t("marketplace.paypalCancelled"),
                   });
                 }}
               />
@@ -650,7 +650,7 @@ export default function ResellerMarketplace() {
                   queryClient.invalidateQueries({ queryKey: ["/api/reseller/marketplace/orders"] });
                   setCheckoutOpen(false);
                   setCart([]);
-                  toast({ title: "Ordine completato", description: "Pagamento ricevuto con successo" });
+                  toast({ title: t("marketplace.orderComplete"), description: t("marketplace.paymentReceived") });
                 }}
                 onError={(error) => {
                   toast({ title: t("common.error"), description: error, variant: "destructive" });
@@ -663,7 +663,7 @@ export default function ResellerMarketplace() {
                 data-testid="button-submit-marketplace-order"
               >
                 <Send className="h-4 w-4 mr-2" />
-                {createOrderMutation.isPending ? t("pages.sending") : "Invia Ordine"}
+                {createOrderMutation.isPending ? t("pages.sending") : t("marketplace.submitOrder")}
               </Button>
             )}
           </DialogFooter>

@@ -128,7 +128,7 @@ export function StaffWizard({
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/resellers", resellerId, "team"] });
       toast({
-        title: "Collaboratore creato",
+        title: t("staff.collaboratorCreated"),
         description: t("staff.teamMemberAddedSuccess"),
       });
       handleClose();
@@ -276,8 +276,8 @@ export function StaffWizard({
   const renderStep1 = () => (
     <div className="space-y-4">
       <div className="text-center mb-4">
-        <h3 className="text-lg font-semibold">Dati Collaboratore</h3>
-        <p className="text-sm text-muted-foreground">Inserisci le informazioni del nuovo membro del team</p>
+        <h3 className="text-lg font-semibold">{t("staff.collaboratorData")}</h3>
+        <p className="text-sm text-muted-foreground">{t("staff.insertNewTeamMember")}</p>
       </div>
 
       <Form {...form}>
@@ -289,7 +289,7 @@ export function StaffWizard({
               <FormItem>
                 <FormLabel>{t("customer.fullName")} *</FormLabel>
                 <FormControl>
-                  <Input {...field} placeholder="Mario Rossi" data-testid="wizard-input-fullname" />
+                  <Input {...field} placeholder={t("staff.placeholderName")} data-testid="wizard-input-fullname" />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -303,7 +303,7 @@ export function StaffWizard({
               <FormItem>
                 <FormLabel>{t("common.email")} *</FormLabel>
                 <FormControl>
-                  <Input {...field} type="email" placeholder="mario@esempio.it" data-testid="wizard-input-email" />
+                  <Input {...field} type="email" placeholder={t("staff.placeholderEmail")} data-testid="wizard-input-email" />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -315,9 +315,9 @@ export function StaffWizard({
             name="username"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Username *</FormLabel>
+                <FormLabel>{t("common.username")} *</FormLabel>
                 <FormControl>
-                  <Input {...field} placeholder="mario.rossi" data-testid="wizard-input-username" />
+                  <Input {...field} placeholder={t("staff.placeholderUsername")} data-testid="wizard-input-username" />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -345,7 +345,7 @@ export function StaffWizard({
               <FormItem className="col-span-2">
                 <FormLabel>{t("common.phoneOptional")}</FormLabel>
                 <FormControl>
-                  <Input {...field} placeholder="+39 333 1234567" data-testid="wizard-input-phone" />
+                  <Input {...field} placeholder={t("staff.placeholderPhone")} data-testid="wizard-input-phone" />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -359,8 +359,8 @@ export function StaffWizard({
   const renderStep2 = () => (
     <div className="space-y-4">
       <div className="text-center mb-4">
-        <h3 className="text-lg font-semibold">Centri di Riparazione</h3>
-        <p className="text-sm text-muted-foreground">Seleziona i centri a cui il collaboratore avrà accesso</p>
+        <h3 className="text-lg font-semibold">{t("customer.repairCenters")}</h3>
+        <p className="text-sm text-muted-foreground">{t("staff.selectCentersAccess")}</p>
       </div>
 
       {repairCenters.length === 0 ? (
@@ -368,15 +368,15 @@ export function StaffWizard({
           <CardContent className="py-8 text-center text-muted-foreground">
             <Store className="w-12 h-12 mx-auto mb-3 opacity-50" />
             <p>{t("repair.noRepairCenterAvailable")}</p>
-            <p className="text-sm">Puoi procedere senza assegnare centri</p>
+            <p className="text-sm">{t("staff.proceedWithoutCenters")}</p>
           </CardContent>
         </Card>
       ) : (
         <div className="space-y-3">
           <div className="flex items-center justify-between">
-            <Label className="text-base">Centri Disponibili</Label>
+            <Label className="text-base">{t("staff.availableCenters")}</Label>
             <Badge variant="secondary">
-              {selectedCenters.length} selezionati
+              {t("common.selectedCount", { count: selectedCenters.length })}
             </Badge>
           </div>
           <div className="border rounded-lg p-4 max-h-64 overflow-y-auto space-y-2">
@@ -424,14 +424,14 @@ export function StaffWizard({
   const renderStep3 = () => (
     <div className="space-y-4">
       <div className="text-center mb-4">
-        <h3 className="text-lg font-semibold">Permessi Moduli</h3>
-        <p className="text-sm text-muted-foreground">Configura quali operazioni può eseguire il collaboratore</p>
+        <h3 className="text-lg font-semibold">{t("staff.modulePermissions")}</h3>
+        <p className="text-sm text-muted-foreground">{t("staff.configureOperations")}</p>
       </div>
 
       <div className="flex items-center justify-between mb-2">
-        <Label className="text-base">Moduli Sistema</Label>
+        <Label className="text-base">{t("staff.systemModules")}</Label>
         <Badge variant="secondary">
-          {getActiveModulesCount()} moduli attivi
+          {t("staff.activeModulesCount", { count: getActiveModulesCount() })}
         </Badge>
       </div>
 
@@ -493,7 +493,7 @@ export function StaffWizard({
       <div className="space-y-4">
         <div className="text-center mb-4">
           <h3 className="text-lg font-semibold">{t("repair.summary")}</h3>
-          <p className="text-sm text-muted-foreground">Verifica i dati prima di creare il collaboratore</p>
+          <p className="text-sm text-muted-foreground">{t("staff.verifyBeforeCreating")}</p>
         </div>
 
         <div className="space-y-4">
@@ -501,18 +501,18 @@ export function StaffWizard({
             <CardContent className="pt-4">
               <div className="flex flex-wrap items-center gap-2 mb-3">
                 <User className="w-4 h-4 text-primary" />
-                <span className="font-medium">Dati Collaboratore</span>
+                <span className="font-medium">{t("staff.collaboratorData")}</span>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm">
-                <div className="text-muted-foreground">Nome:</div>
+                <div className="text-muted-foreground">{t("common.name")}:</div>
                 <div className="font-medium">{values.fullName}</div>
-                <div className="text-muted-foreground">Email:</div>
+                <div className="text-muted-foreground">{t("common.email")}:</div>
                 <div className="font-medium">{values.email}</div>
-                <div className="text-muted-foreground">Username:</div>
+                <div className="text-muted-foreground">{t("common.username")}:</div>
                 <div className="font-medium">{values.username}</div>
                 {values.phone && (
                   <>
-                    <div className="text-muted-foreground">Telefono:</div>
+                    <div className="text-muted-foreground">{t("common.phone")}:</div>
                     <div className="font-medium">{values.phone}</div>
                   </>
                 )}
@@ -524,7 +524,7 @@ export function StaffWizard({
             <CardContent className="pt-4">
               <div className="flex flex-wrap items-center gap-2 mb-3">
                 <Store className="w-4 h-4 text-primary" />
-                <span className="font-medium">Centri Assegnati</span>
+                <span className="font-medium">{t("staff.assignedCenters")}</span>
                 <Badge variant="secondary" className="ml-auto">
                   {selectedCenters.length}
                 </Badge>
@@ -536,7 +536,7 @@ export function StaffWizard({
                   ))}
                 </div>
               ) : (
-                <p className="text-sm text-muted-foreground">Nessun centro assegnato</p>
+                <p className="text-sm text-muted-foreground">{t("staff.noCenterAssigned")}</p>
               )}
             </CardContent>
           </Card>
@@ -547,7 +547,7 @@ export function StaffWizard({
                 <Shield className="w-4 h-4 text-primary" />
                 <span className="font-medium">{t("staff.permissions")}</span>
                 <Badge variant="secondary" className="ml-auto">
-                  {getPermissionCount()} permessi
+                  {t("staff.permissionCount", { count: getPermissionCount() })}
                 </Badge>
               </div>
               {getActiveModulesCount() > 0 ? (
@@ -557,7 +557,7 @@ export function StaffWizard({
                     .map(([moduleId, perms]) => {
                       const module = MODULES.find(m => m.id === moduleId);
                       const activePerms = [];
-                      if (perms.canRead) activePerms.push("Lettura");
+                      if (perms.canRead) activePerms.push(t("staff.read"));
                       if (perms.canCreate) activePerms.push(t("staff.creation"));
                       if (perms.canUpdate) activePerms.push(t("common.edit"));
                       if (perms.canDelete) activePerms.push(t("staff.deletion"));
@@ -571,7 +571,7 @@ export function StaffWizard({
                     })}
                 </div>
               ) : (
-                <p className="text-sm text-muted-foreground">Nessun permesso configurato</p>
+                <p className="text-sm text-muted-foreground">{t("staff.noPermissionConfigured")}</p>
               )}
             </CardContent>
           </Card>
@@ -585,7 +585,7 @@ export function StaffWizard({
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
         <DialogHeader>
           <DialogTitle className="text-center">
-            Nuovo Collaboratore {resellerName && `per ${resellerName}`}
+            {t("staff.newCollaborator")} {resellerName && `${t("common.for")} ${resellerName}`}
           </DialogTitle>
         </DialogHeader>
 
@@ -627,7 +627,7 @@ export function StaffWizard({
               ) : (
                 <>
                   <CheckCircle2 className="w-4 h-4 mr-2" />
-                  Crea Collaboratore
+                  {t("staff.createCollaborator")}
                 </>
               )}
             </Button>

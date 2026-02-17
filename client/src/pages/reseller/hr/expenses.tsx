@@ -100,7 +100,7 @@ export default function HrExpenses() {
     queryKey: ["/api/reseller/hr/expense-reports", entityType, selectedEntityId],
     queryFn: async () => {
       const res = await fetch(`/api/reseller/hr/expense-reports${queryParams}`);
-      if (!res.ok) throw new Error("Errore nel caricamento");
+      if (!res.ok) throw new Error(t("common.loadingError"));
       return res.json();
     },
   });
@@ -136,7 +136,7 @@ export default function HrExpenses() {
       setDialogOpen(false);
       setNewReport({ title: "", description: "", userId: "", amountEuro: "" });
       setNewReportFile(null);
-      toast({ title: "Nota spese creata", description: "La nota spese è stata creata con successo." });
+      toast({ title: t("hr.expenseCreated"), description: "La nota spese è stata creata con successo." });
     },
     onError: (error: any) => {
       toast({ title: t("common.error"), description: error.message, variant: "destructive" });
@@ -291,7 +291,7 @@ export default function HrExpenses() {
             <Link href="/reseller/hr">
               <Button variant="secondary" data-testid="button-back-to-hr">
                 <ArrowLeft className="h-4 w-4 mr-2" />
-                Torna a HR
+                {t("hr.backToHr")}
               </Button>
             </Link>
             {!readOnly && (
@@ -311,7 +311,7 @@ export default function HrExpenses() {
         {readOnly && (
           <div className="mt-3 flex items-center gap-2 text-sm text-white/80">
             <Eye className="h-4 w-4" />
-            <span>Modalità sola lettura - Visualizzazione dati esterni</span>
+            <span>{t("hr.readOnlyMode")}</span>
           </div>
         )}
       </div>
@@ -423,7 +423,7 @@ export default function HrExpenses() {
                                   size="icon"
                                   variant="ghost"
                                   onClick={() => deleteReceiptMutation.mutate(report.id)}
-                                  title="Rimuovi allegato"
+                                  title={t("hr.removeAttachment")}
                                   data-testid={`button-delete-receipt-${report.id}`}
                                 >
                                   <X className="h-4 w-4 text-orange-600" />
@@ -447,7 +447,7 @@ export default function HrExpenses() {
                                 variant="ghost"
                                 asChild
                                 disabled={uploadingReportId === report.id}
-                                title="Carica giustificativo"
+                                title={t("hr.uploadReceipt")}
                               >
                                 <span>
                                   {uploadingReportId === report.id ? (
@@ -482,7 +482,7 @@ export default function HrExpenses() {
                                 size="icon"
                                 variant="ghost"
                                 onClick={() => updateStatusMutation.mutate({ id: report.id, status: 'pending' })}
-                                title="Invia per approvazione"
+                                title={t("hr.submitForApprovalTooltip")}
                                 data-testid={`button-submit-${report.id}`}
                               >
                                 <Send className="h-4 w-4 text-blue-600" />
@@ -546,7 +546,7 @@ export default function HrExpenses() {
               >
                 <SelectTrigger data-testid="select-employee">
                   <User className="h-4 w-4 mr-2 text-muted-foreground" />
-                  <SelectValue placeholder="Seleziona dipendente" />
+                  <SelectValue placeholder={t("hr.selectEmployeePlaceholder")} />
                 </SelectTrigger>
                 <SelectContent>
                   {employees.map((emp) => (
@@ -558,7 +558,7 @@ export default function HrExpenses() {
               </Select>
             </div>
             <div className="space-y-2">
-              <Label>Titolo *</Label>
+              <Label>{t("hr.titleRequired")}</Label>
               <Input
                 value={newReport.title}
                 onChange={(e) => setNewReport({ ...newReport, title: e.target.value })}
@@ -567,7 +567,7 @@ export default function HrExpenses() {
               />
             </div>
             <div className="space-y-2">
-              <Label>Importo Totale (EUR) *</Label>
+              <Label>{t("hr.totalAmountRequired")}</Label>
               <div className="relative">
                 <Euro className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
@@ -583,11 +583,11 @@ export default function HrExpenses() {
               </div>
             </div>
             <div className="space-y-2">
-              <Label>Descrizione (opzionale)</Label>
+              <Label>{t("hr.descriptionOptional")}</Label>
               <Textarea
                 value={newReport.description}
                 onChange={(e) => setNewReport({ ...newReport, description: e.target.value })}
-                placeholder="Descrizione della nota spese..."
+                placeholder={t("hr.expenseDescPlaceholder")}
                 data-testid="input-description"
               />
             </div>
@@ -669,7 +669,7 @@ export default function HrExpenses() {
               <Textarea
                 value={editForm.description}
                 onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
-                placeholder="Descrizione della nota spese..."
+                placeholder={t("hr.expenseDescPlaceholder")}
                 data-testid="input-edit-description"
               />
             </div>

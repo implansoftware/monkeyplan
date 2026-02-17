@@ -16,14 +16,14 @@ import type { User, CustomerRelationship } from "@shared/schema";
 
 function getRelationshipTypes(t: (key: string) => string) {
   return [
-    { value: "genitore", label: "Genitore" },
-    { value: "figlio", label: "Figlio/a" },
-    { value: "coniuge", label: "Coniuge" },
-    { value: "fratello", label: "Fratello/Sorella" },
-    { value: "cugino", label: "Cugino/a" },
-    { value: "zio", label: "Zio/a" },
-    { value: "nipote", label: "Nipote" },
-    { value: "nonno", label: "Nonno/a" },
+    { value: "genitore", label: t("customer.parent") },
+    { value: "figlio", label: t("customer.child") },
+    { value: "coniuge", label: t("customer.spouse") },
+    { value: "fratello", label: t("customer.sibling") },
+    { value: "cugino", label: t("customer.cousin") },
+    { value: "zio", label: t("customer.uncle") },
+    { value: "nipote", label: t("customer.grandchild") },
+    { value: "nonno", label: t("customer.grandparent") },
     { value: "altro", label: t("common.other") },
   ];
 }
@@ -122,7 +122,7 @@ export function CustomerRelationshipsCard({ customerId, resellerId, repairCenter
 
   const handleSubmit = () => {
     if (!selectedCustomerId || !relationshipType) {
-      toast({ title: t("common.error"), description: "Seleziona un cliente e un tipo di parentela.", variant: "destructive" });
+      toast({ title: t("common.error"), description: t("customer.selectCustomerAndType"), variant: "destructive" });
       return;
     }
     createMutation.mutate({
@@ -138,7 +138,7 @@ export function CustomerRelationshipsCard({ customerId, resellerId, repairCenter
         <CardHeader className="flex flex-row items-center justify-between gap-2 pb-2">
           <CardTitle className="flex items-center gap-2 text-base">
             <Heart className="h-4 w-4" />
-            Parentele
+            {t("customer.relationships")}
           </CardTitle>
           <Button size="sm" onClick={() => setAddDialogOpen(true)} data-testid="button-add-relationship">
             <Plus className="h-4 w-4 mr-1" />
@@ -152,7 +152,7 @@ export function CustomerRelationshipsCard({ customerId, resellerId, repairCenter
             </div>
           ) : relationships.length === 0 ? (
             <p className="text-sm text-muted-foreground text-center py-4">
-              Nessuna parentela registrata
+              {t("customer.noRelationships")}
             </p>
           ) : (
             <div className="space-y-2">
@@ -227,7 +227,7 @@ export function CustomerRelationshipsCard({ customerId, resellerId, repairCenter
                 <SelectContent>
                   {availableCustomers.length === 0 ? (
                     <div className="p-2 text-sm text-muted-foreground text-center">
-                      Nessun cliente disponibile
+                      {t("customer.noCustomersAvailable")}
                     </div>
                   ) : (
                     availableCustomers.slice(0, 20).map((customer) => (
@@ -278,7 +278,7 @@ export function CustomerRelationshipsCard({ customerId, resellerId, repairCenter
               {createMutation.isPending ? (
                 <Loader2 className="h-4 w-4 animate-spin mr-2" />
               ) : null}
-              Conferma
+              {t("common.confirm")}
             </Button>
           </DialogFooter>
         </DialogContent>

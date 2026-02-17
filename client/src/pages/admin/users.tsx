@@ -45,9 +45,9 @@ export default function AdminUsers() {
 
   const getResellerCategoryLabel = (category: string | null | undefined) => {
     switch (category) {
-      case "franchising": return "Franchising";
+      case "franchising": return t("users.categoryLabels.franchising");
       case "gdo": return "GDO";
-      case "standard": return "Standard";
+      case "standard": return t("users.categoryLabels.standard");
       default: return "Standard";
     }
   };

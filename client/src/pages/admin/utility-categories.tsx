@@ -46,81 +46,81 @@ import { useToast } from "@/hooks/use-toast";
 import type { UtilityCategory } from "@shared/schema";
 import { useTranslation } from "react-i18next";
 
-const ICON_OPTIONS: { value: string; label: string; icon: LucideIcon; tags: string[] }[] = [
-  { value: "Phone", label: "Telefono", icon: Phone, tags: ["telefono", "fisso", "chiamata"] },
-  { value: "Smartphone", label: "Smartphone", icon: Smartphone, tags: ["cellulare", "mobile", "telefono"] },
-  { value: "Building2", label: "Edificio", icon: Building2, tags: ["palazzo", "ufficio", "centralino"] },
-  { value: "Lightbulb", label: "Lampadina", icon: Lightbulb, tags: ["luce", "energia", "elettrico"] },
-  { value: "Flame", label: "Fiamma", icon: Flame, tags: ["gas", "fuoco", "riscaldamento"] },
-  { value: "Zap", label: "Fulmine", icon: Zap, tags: ["elettricità", "energia", "luce"] },
-  { value: "Wifi", label: "WiFi", icon: Wifi, tags: ["internet", "wireless", "rete"] },
-  { value: "Router", label: "Router", icon: Router, tags: ["internet", "rete", "modem"] },
-  { value: "Globe", label: "Globo", icon: Globe, tags: ["internet", "mondo", "web"] },
-  { value: "Server", label: "Server", icon: Server, tags: ["hosting", "cloud", "dati"] },
-  { value: "Monitor", label: "Monitor", icon: Monitor, tags: ["schermo", "computer", "display"] },
-  { value: "Laptop", label: "Laptop", icon: Laptop, tags: ["portatile", "computer", "notebook"] },
-  { value: "Tablet", label: "Tablet", icon: Tablet, tags: ["ipad", "tavoletta", "mobile"] },
-  { value: "Tv", label: "TV", icon: Tv, tags: ["televisione", "schermo", "video"] },
-  { value: "Radio", label: "Radio", icon: Radio, tags: ["audio", "musica", "onde"] },
-  { value: "Headphones", label: "Cuffie", icon: Headphones, tags: ["audio", "musica", "ascolto"] },
-  { value: "Camera", label: "Fotocamera", icon: Camera, tags: ["foto", "video", "sicurezza"] },
-  { value: "Printer", label: "Stampante", icon: Printer, tags: ["stampa", "ufficio", "documento"] },
-  { value: "HardDrive", label: "Hard Disk", icon: HardDrive, tags: ["memoria", "storage", "dati"] },
-  { value: "Cloud", label: "Cloud", icon: Cloud, tags: ["nuvola", "storage", "online"] },
-  { value: "Signal", label: "Segnale", icon: Signal, tags: ["rete", "copertura", "mobile"] },
-  { value: "Cable", label: "Cavo", icon: Cable, tags: ["fibra", "connessione", "ethernet"] },
-  { value: "Plug", label: "Spina", icon: Plug, tags: ["corrente", "elettricità", "presa"] },
-  { value: "Battery", label: "Batteria", icon: Battery, tags: ["energia", "autonomia", "carica"] },
-  { value: "Power", label: "Accensione", icon: Power, tags: ["on", "off", "alimentazione"] },
-  { value: "Sun", label: "Sole", icon: Sun, tags: ["solare", "fotovoltaico", "energia"] },
-  { value: "Thermometer", label: "Termometro", icon: Thermometer, tags: ["temperatura", "clima", "riscaldamento"] },
-  { value: "Droplet", label: "Goccia", icon: Droplet, tags: ["acqua", "idrico", "liquido"] },
-  { value: "Wind", label: "Vento", icon: Wind, tags: ["eolico", "aria", "ventilazione"] },
-  { value: "Snowflake", label: "Fiocco Neve", icon: Snowflake, tags: ["freddo", "climatizzazione", "aria"] },
-  { value: "Home", label: "Casa", icon: Home, tags: ["abitazione", "domestico", "residenziale"] },
-  { value: "Building", label: "Palazzo", icon: Building, tags: ["condominio", "ufficio", "commerciale"] },
-  { value: "Factory", label: "Fabbrica", icon: Factory, tags: ["industria", "produzione", "manifattura"] },
-  { value: "Store", label: "Negozio", icon: Store, tags: ["commercio", "retail", "vendita"] },
-  { value: "Warehouse", label: "Magazzino", icon: Warehouse, tags: ["deposito", "logistica", "stoccaggio"] },
-  { value: "Hospital", label: "Ospedale", icon: Hospital, tags: ["sanità", "medico", "salute"] },
-  { value: "Car", label: "Auto", icon: Car, tags: ["veicolo", "trasporto", "mobilità"] },
-  { value: "Fuel", label: "Carburante", icon: Fuel, tags: ["benzina", "diesel", "rifornimento"] },
-  { value: "CreditCard", label: "Carta Credito", icon: CreditCard, tags: ["pagamento", "banca", "finanza"] },
-  { value: "Wallet", label: "Portafoglio", icon: Wallet, tags: ["soldi", "pagamento", "finanza"] },
-  { value: "Coins", label: "Monete", icon: Coins, tags: ["soldi", "denaro", "risparmio"] },
-  { value: "Receipt", label: "Ricevuta", icon: Receipt, tags: ["fattura", "bolletta", "pagamento"] },
-  { value: "FileText", label: "Documento", icon: FileText, tags: ["contratto", "pratica", "testo"] },
-  { value: "Package", label: "Pacco", icon: Package, tags: ["spedizione", "consegna", "prodotto"] },
-  { value: "ShoppingCart", label: "Carrello", icon: ShoppingCart, tags: ["acquisto", "spesa", "ecommerce"] },
-  { value: "Clock", label: "Orologio", icon: Clock, tags: ["tempo", "orario", "durata"] },
-  { value: "Calendar", label: "Calendario", icon: Calendar, tags: ["data", "appuntamento", "scadenza"] },
-  { value: "Bell", label: "Campanella", icon: Bell, tags: ["notifica", "avviso", "allarme"] },
-  { value: "Mail", label: "Email", icon: Mail, tags: ["posta", "messaggio", "comunicazione"] },
-  { value: "MessageSquare", label: "Messaggio", icon: MessageSquare, tags: ["chat", "sms", "comunicazione"] },
-  { value: "Lock", label: "Lucchetto", icon: Lock, tags: ["sicurezza", "protezione", "accesso"] },
-  { value: "Shield", label: "Scudo", icon: Shield, tags: ["sicurezza", "protezione", "difesa"] },
-  { value: "User", label: "Utente", icon: User, tags: ["persona", "account", "profilo"] },
-  { value: "Users", label: "Utenti", icon: Users, tags: ["gruppo", "team", "persone"] },
-  { value: "Briefcase", label: "Valigetta", icon: Briefcase, tags: ["lavoro", "business", "ufficio"] },
-  { value: "Wrench", label: "Chiave Inglese", icon: Wrench, tags: ["riparazione", "manutenzione", "tecnico", "attrezzo"] },
-  { value: "Hammer", label: "Martello", icon: Hammer, tags: ["riparazione", "costruzione", "lavoro"] },
-  { value: "Settings", label: "Impostazioni", icon: Settings, tags: ["configurazione", "opzioni", "sistema"] },
-  { value: "Link", label: "Link", icon: Link, tags: ["collegamento", "connessione", "url"] },
-  { value: "CheckCircle", label: "Spunta", icon: CheckCircle, tags: ["conferma", "ok", "approvato"] },
-  { value: "AlertCircle", label: "Attenzione", icon: AlertCircle, tags: ["avviso", "errore", "problema"] },
-  { value: "Info", label: "Info", icon: Info, tags: ["informazione", "aiuto", "dettagli"] },
-  { value: "HelpCircle", label: "Aiuto", icon: HelpCircle, tags: ["domanda", "supporto", "assistenza"] },
+const ICON_OPTIONS: { value: string; labelKey: string; icon: LucideIcon; tags: string[] }[] = [
+  { value: "Phone", labelKey: "icons.phone", icon: Phone, tags: ["telefono", "fisso", "chiamata", "phone", "call"] },
+  { value: "Smartphone", labelKey: "icons.smartphone", icon: Smartphone, tags: ["cellulare", "mobile", "telefono", "smartphone"] },
+  { value: "Building2", labelKey: "icons.building", icon: Building2, tags: ["palazzo", "ufficio", "centralino", "building", "office"] },
+  { value: "Lightbulb", labelKey: "icons.lightbulb", icon: Lightbulb, tags: ["luce", "energia", "elettrico", "light", "bulb"] },
+  { value: "Flame", labelKey: "icons.flame", icon: Flame, tags: ["gas", "fuoco", "riscaldamento", "fire", "flame"] },
+  { value: "Zap", labelKey: "icons.lightning", icon: Zap, tags: ["elettricità", "energia", "luce", "electricity", "lightning"] },
+  { value: "Wifi", labelKey: "icons.wifi", icon: Wifi, tags: ["internet", "wireless", "rete", "wifi"] },
+  { value: "Router", labelKey: "icons.router", icon: Router, tags: ["internet", "rete", "modem", "router"] },
+  { value: "Globe", labelKey: "icons.globe", icon: Globe, tags: ["internet", "mondo", "web", "globe", "world"] },
+  { value: "Server", labelKey: "icons.server", icon: Server, tags: ["hosting", "cloud", "dati", "server", "data"] },
+  { value: "Monitor", labelKey: "icons.monitor", icon: Monitor, tags: ["schermo", "computer", "display", "monitor", "screen"] },
+  { value: "Laptop", labelKey: "icons.laptop", icon: Laptop, tags: ["portatile", "computer", "notebook", "laptop"] },
+  { value: "Tablet", labelKey: "icons.tablet", icon: Tablet, tags: ["ipad", "tavoletta", "mobile", "tablet"] },
+  { value: "Tv", labelKey: "icons.tv", icon: Tv, tags: ["televisione", "schermo", "video", "tv", "television"] },
+  { value: "Radio", labelKey: "icons.radio", icon: Radio, tags: ["audio", "musica", "onde", "radio"] },
+  { value: "Headphones", labelKey: "icons.headphones", icon: Headphones, tags: ["audio", "musica", "ascolto", "headphones"] },
+  { value: "Camera", labelKey: "icons.camera", icon: Camera, tags: ["foto", "video", "sicurezza", "camera", "photo"] },
+  { value: "Printer", labelKey: "icons.printer", icon: Printer, tags: ["stampa", "ufficio", "documento", "printer"] },
+  { value: "HardDrive", labelKey: "icons.hardDrive", icon: HardDrive, tags: ["memoria", "storage", "dati", "hard drive", "disk"] },
+  { value: "Cloud", labelKey: "icons.cloud", icon: Cloud, tags: ["nuvola", "storage", "online", "cloud"] },
+  { value: "Signal", labelKey: "icons.signal", icon: Signal, tags: ["rete", "copertura", "mobile", "signal", "network"] },
+  { value: "Cable", labelKey: "icons.cable", icon: Cable, tags: ["fibra", "connessione", "ethernet", "cable", "fiber"] },
+  { value: "Plug", labelKey: "icons.plug", icon: Plug, tags: ["corrente", "elettricità", "presa", "plug", "socket"] },
+  { value: "Battery", labelKey: "icons.battery", icon: Battery, tags: ["energia", "autonomia", "carica", "battery"] },
+  { value: "Power", labelKey: "icons.power", icon: Power, tags: ["on", "off", "alimentazione", "power"] },
+  { value: "Sun", labelKey: "icons.sun", icon: Sun, tags: ["solare", "fotovoltaico", "energia", "sun", "solar"] },
+  { value: "Thermometer", labelKey: "icons.thermometer", icon: Thermometer, tags: ["temperatura", "clima", "riscaldamento", "thermometer", "temperature"] },
+  { value: "Droplet", labelKey: "icons.droplet", icon: Droplet, tags: ["acqua", "idrico", "liquido", "water", "droplet"] },
+  { value: "Wind", labelKey: "icons.wind", icon: Wind, tags: ["eolico", "aria", "ventilazione", "wind"] },
+  { value: "Snowflake", labelKey: "icons.snowflake", icon: Snowflake, tags: ["freddo", "climatizzazione", "aria", "snowflake", "cold"] },
+  { value: "Home", labelKey: "icons.home", icon: Home, tags: ["abitazione", "domestico", "residenziale", "home", "house"] },
+  { value: "Building", labelKey: "icons.palazzo", icon: Building, tags: ["condominio", "ufficio", "commerciale", "building", "office"] },
+  { value: "Factory", labelKey: "icons.factory", icon: Factory, tags: ["industria", "produzione", "manifattura", "factory", "industry"] },
+  { value: "Store", labelKey: "icons.store", icon: Store, tags: ["commercio", "retail", "vendita", "store", "shop"] },
+  { value: "Warehouse", labelKey: "icons.warehouse", icon: Warehouse, tags: ["deposito", "logistica", "stoccaggio", "warehouse"] },
+  { value: "Hospital", labelKey: "icons.hospital", icon: Hospital, tags: ["sanità", "medico", "salute", "hospital", "health"] },
+  { value: "Car", labelKey: "icons.car", icon: Car, tags: ["veicolo", "trasporto", "mobilità", "car", "vehicle"] },
+  { value: "Fuel", labelKey: "icons.fuel", icon: Fuel, tags: ["benzina", "diesel", "rifornimento", "fuel", "gas"] },
+  { value: "CreditCard", labelKey: "icons.creditCard", icon: CreditCard, tags: ["pagamento", "banca", "finanza", "credit card", "payment"] },
+  { value: "Wallet", labelKey: "icons.wallet", icon: Wallet, tags: ["soldi", "pagamento", "finanza", "wallet", "money"] },
+  { value: "Coins", labelKey: "icons.coins", icon: Coins, tags: ["soldi", "denaro", "risparmio", "coins", "money"] },
+  { value: "Receipt", labelKey: "icons.receipt", icon: Receipt, tags: ["fattura", "bolletta", "pagamento", "receipt", "invoice"] },
+  { value: "FileText", labelKey: "icons.document", icon: FileText, tags: ["contratto", "pratica", "testo", "document", "file"] },
+  { value: "Package", labelKey: "icons.package", icon: Package, tags: ["spedizione", "consegna", "prodotto", "package", "delivery"] },
+  { value: "ShoppingCart", labelKey: "icons.shoppingCart", icon: ShoppingCart, tags: ["acquisto", "spesa", "ecommerce", "cart", "shopping"] },
+  { value: "Clock", labelKey: "icons.clock", icon: Clock, tags: ["tempo", "orario", "durata", "clock", "time"] },
+  { value: "Calendar", labelKey: "icons.calendar", icon: Calendar, tags: ["data", "appuntamento", "scadenza", "calendar", "date"] },
+  { value: "Bell", labelKey: "icons.bell", icon: Bell, tags: ["notifica", "avviso", "allarme", "bell", "notification"] },
+  { value: "Mail", labelKey: "icons.mail", icon: Mail, tags: ["posta", "messaggio", "comunicazione", "email", "mail"] },
+  { value: "MessageSquare", labelKey: "icons.message", icon: MessageSquare, tags: ["chat", "sms", "comunicazione", "message", "chat"] },
+  { value: "Lock", labelKey: "icons.lock", icon: Lock, tags: ["sicurezza", "protezione", "accesso", "lock", "security"] },
+  { value: "Shield", labelKey: "icons.shield", icon: Shield, tags: ["sicurezza", "protezione", "difesa", "shield", "security"] },
+  { value: "User", labelKey: "icons.user", icon: User, tags: ["persona", "account", "profilo", "user", "person"] },
+  { value: "Users", labelKey: "icons.users", icon: Users, tags: ["gruppo", "team", "persone", "users", "group"] },
+  { value: "Briefcase", labelKey: "icons.briefcase", icon: Briefcase, tags: ["lavoro", "business", "ufficio", "briefcase", "work"] },
+  { value: "Wrench", labelKey: "icons.wrench", icon: Wrench, tags: ["riparazione", "manutenzione", "tecnico", "attrezzo", "wrench", "repair"] },
+  { value: "Hammer", labelKey: "icons.hammer", icon: Hammer, tags: ["riparazione", "costruzione", "lavoro", "hammer", "repair"] },
+  { value: "Settings", labelKey: "icons.settings", icon: Settings, tags: ["configurazione", "opzioni", "sistema", "settings", "config"] },
+  { value: "Link", labelKey: "icons.link", icon: Link, tags: ["collegamento", "connessione", "url", "link"] },
+  { value: "CheckCircle", labelKey: "icons.checkCircle", icon: CheckCircle, tags: ["conferma", "ok", "approvato", "check", "confirm"] },
+  { value: "AlertCircle", labelKey: "icons.alertCircle", icon: AlertCircle, tags: ["avviso", "errore", "problema", "alert", "warning"] },
+  { value: "Info", labelKey: "icons.info", icon: Info, tags: ["informazione", "aiuto", "dettagli", "info", "information"] },
+  { value: "HelpCircle", labelKey: "icons.helpCircle", icon: HelpCircle, tags: ["domanda", "supporto", "assistenza", "help", "support"] },
 ];
 
 const COLOR_OPTIONS = [
-  { value: "#0088FE", label: "Blu" },
-  { value: "#00C49F", label: "Verde Acqua" },
-  { value: "#FFBB28", label: "Giallo" },
-  { value: "#FF8042", label: "Arancione" },
-  { value: "#8884d8", label: "Viola" },
-  { value: "#82ca9d", label: "Verde" },
-  { value: "#e74c3c", label: "Rosso" },
-  { value: "#3498db", label: "Azzurro" },
+  { value: "#0088FE", labelKey: "colors.blue" },
+  { value: "#00C49F", labelKey: "colors.aquaGreen" },
+  { value: "#FFBB28", labelKey: "colors.yellow" },
+  { value: "#FF8042", labelKey: "colors.orange" },
+  { value: "#8884d8", labelKey: "colors.purple" },
+  { value: "#82ca9d", labelKey: "colors.green" },
+  { value: "#e74c3c", labelKey: "colors.red" },
+  { value: "#3498db", labelKey: "colors.lightBlue" },
 ];
 
 function getIconComponent(iconName: string | null) {
@@ -129,6 +129,7 @@ function getIconComponent(iconName: string | null) {
 }
 
 function IconPicker({ value, onChange }: { value: string; onChange: (value: string) => void }) {
+  const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
   
@@ -137,7 +138,7 @@ function IconPicker({ value, onChange }: { value: string; onChange: (value: stri
     const searchLower = search.toLowerCase();
     return ICON_OPTIONS.filter(
       (opt) =>
-        opt.label.toLowerCase().includes(searchLower) ||
+        t(opt.labelKey).toLowerCase().includes(searchLower) ||
         opt.value.toLowerCase().includes(searchLower) ||
         opt.tags.some((tag) => tag.includes(searchLower))
     );
@@ -158,7 +159,7 @@ function IconPicker({ value, onChange }: { value: string; onChange: (value: stri
         >
           <div className="flex flex-wrap items-center gap-2">
             <SelectedIcon className="h-4 w-4" />
-            <span>{selectedOption?.label || "Seleziona icona"}</span>
+            <span>{selectedOption ? t(selectedOption.labelKey) : t("utility.selectIcon")}</span>
           </div>
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
@@ -191,7 +192,7 @@ function IconPicker({ value, onChange }: { value: string; onChange: (value: stri
                           setOpen(false);
                           setSearch("");
                         }}
-                        title={option.label}
+                        title={t(option.labelKey)}
                         data-testid={`button-icon-${option.value}`}
                       >
                         <IconComp className="h-4 w-4" />
@@ -324,7 +325,7 @@ export default function AdminUtilityCategories() {
 
   const handleSubmit = () => {
     if (!form.name.trim() || !form.slug.trim()) {
-      toast({ title: t("common.error"), description: "Nome e slug sono obbligatori", variant: "destructive" });
+      toast({ title: t("common.error"), description: t("utility.nameAndSlugRequired"), variant: "destructive" });
       return;
     }
     
@@ -354,8 +355,8 @@ export default function AdminUtilityCategories() {
         <div className="flex flex-wrap items-center gap-3 mb-6">
           <FolderOpen className="h-8 w-8 text-primary" />
           <div>
-            <h1 className="text-2xl font-bold">Catalogo Categorie Utility</h1>
-            <p className="text-muted-foreground">Gestione categorie per servizi utility</p>
+            <h1 className="text-2xl font-bold">{t("utility.utilityCategoryCatalog")}</h1>
+            <p className="text-muted-foreground">{t("utility.manageCategoriesForUtility")}</p>
           </div>
         </div>
         <Card>
@@ -373,35 +374,35 @@ export default function AdminUtilityCategories() {
         <div className="flex flex-wrap items-center gap-3">
           <FolderOpen className="h-8 w-8 text-primary" />
           <div>
-            <h1 className="text-2xl font-bold">Catalogo Categorie Utility</h1>
-            <p className="text-muted-foreground">Gestione categorie per servizi utility</p>
+            <h1 className="text-2xl font-bold">{t("utility.utilityCategoryCatalog")}</h1>
+            <p className="text-muted-foreground">{t("utility.manageCategoriesForUtility")}</p>
           </div>
         </div>
         <Button onClick={openCreateDialog} data-testid="button-add-category">
           <Plus className="h-4 w-4 mr-2" />
-          Nuova Categoria
+          {t("utility.newCategory")}
         </Button>
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-lg">Categorie ({categories.length})</CardTitle>
+          <CardTitle className="text-lg">{t("utility.categoriesCount")} ({categories.length})</CardTitle>
         </CardHeader>
         <CardContent>
           {sortedCategories.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">
               <FolderOpen className="h-12 w-12 mx-auto mb-4 opacity-50" />
               <p>{t("utility.noCategories")}</p>
-              <p className="text-sm">Crea la prima categoria per iniziare</p>
+              <p className="text-sm">{t("utility.createFirstCategory")}</p>
             </div>
           ) : (
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="w-12">Ordine</TableHead>
+                  <TableHead className="w-12">{t("utility.order")}</TableHead>
                   <TableHead>{t("utility.icon")}</TableHead>
                   <TableHead>{t("common.name")}</TableHead>
-                  <TableHead>Slug</TableHead>
+                  <TableHead>{t("utility.slugLabel")}</TableHead>
                   <TableHead>{t("common.description")}</TableHead>
                   <TableHead>{t("products.color")}</TableHead>
                   <TableHead>{t("common.active")}</TableHead>
@@ -483,7 +484,7 @@ export default function AdminUtilityCategories() {
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>
-              {editingCategory ? "Modifica Categoria" : "Nuova Categoria"}
+              {editingCategory ? t("utility.editCategory") : t("utility.newCategory")}
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
@@ -493,16 +494,16 @@ export default function AdminUtilityCategories() {
                 <Input
                   value={form.name}
                   onChange={(e) => setForm({ ...form, name: e.target.value })}
-                  placeholder="es. Telefonia Fissa"
+                  placeholder={t("utility.examplePhoneName")}
                   data-testid="input-name"
                 />
               </div>
               <div className="space-y-2">
-                <Label>Slug *</Label>
+                <Label>{t("utility.slugLabel")} *</Label>
                 <Input
                   value={form.slug}
                   onChange={(e) => setForm({ ...form, slug: e.target.value.toLowerCase().replace(/\s+/g, '_') })}
-                  placeholder="es. fisso"
+                  placeholder={t("utility.slugPlaceholder")}
                   disabled={!!editingCategory}
                   data-testid="input-slug"
                 />
@@ -541,7 +542,7 @@ export default function AdminUtilityCategories() {
                       }`}
                       style={{ backgroundColor: option.value }}
                       onClick={() => setForm({ ...form, color: option.value })}
-                      title={option.label}
+                      title={t(option.labelKey)}
                       data-testid={`button-color-${option.value}`}
                     />
                   ))}
@@ -562,7 +563,7 @@ export default function AdminUtilityCategories() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDialogOpen(false)}>
-              Annulla
+              {t("common.cancel")}
             </Button>
             <Button 
               onClick={handleSubmit}
@@ -572,7 +573,7 @@ export default function AdminUtilityCategories() {
               {(createMutation.isPending || updateMutation.isPending) && (
                 <Loader2 className="h-4 w-4 mr-2 animate-spin" />
               )}
-              {editingCategory ? "Salva" : "Crea"}
+              {editingCategory ? t("common.save") : t("common.create")}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -583,13 +584,12 @@ export default function AdminUtilityCategories() {
           <DialogHeader>
             <DialogTitle>{t("common.confirmDeleteTitle")}</DialogTitle>
             <DialogDescription>
-              Sei sicuro di voler eliminare la categoria "{categoryToDelete?.name}"?
-              Questa azione non può essere annullata.
+              {t("utility.deleteCategoryConfirm", { name: categoryToDelete?.name })}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>
-              Annulla
+              {t("common.cancel")}
             </Button>
             <Button 
               variant="destructive" 
@@ -598,7 +598,7 @@ export default function AdminUtilityCategories() {
               data-testid="button-confirm-delete"
             >
               {deleteMutation.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-              Elimina
+              {t("common.delete")}
             </Button>
           </DialogFooter>
         </DialogContent>

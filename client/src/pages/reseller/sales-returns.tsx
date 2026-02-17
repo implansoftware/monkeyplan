@@ -22,13 +22,13 @@ import { useTranslation } from "react-i18next";
 
 function getStatusLabels(t: (key: string) => string): Record<string, string> {
   return {
-    requested: "Richiesto",
+    requested: t("salesReturns.requested"),
     approved: t("repairs.status.approved"),
     rejected: t("b2b.status.cancelled"),
     shipped: t("b2b.status.shipped"),
     received: t("repairs.status.received"),
-    refunded: "Rimborsato",
-    partially_refunded: "Rimborsato parzialmente",
+    refunded: t("salesReturns.refunded"),
+    partially_refunded: t("salesReturns.partiallyRefunded"),
     cancelled: t("repairs.status.cancelled")
   };
 }
@@ -46,20 +46,20 @@ const statusColors: Record<string, "default" | "secondary" | "destructive" | "ou
 
 function getReasonLabels(t: (key: string) => string): Record<string, string> {
   return {
-    defective: "Difettoso",
-    wrong_item: "Articolo errato",
-    not_as_described: "Non conforme alla descrizione",
-    changed_mind: "Ripensamento",
-    damaged_in_transit: "Danneggiato in trasporto",
+    defective: t("salesReturns.defective"),
+    wrong_item: t("salesReturns.wrongItem"),
+    not_as_described: t("salesReturns.notAsDescribed"),
+    changed_mind: t("salesReturns.changedMind"),
+    damaged_in_transit: t("salesReturns.damagedInTransit"),
     other: t("common.other")
   };
 }
 
 function getRefundMethodLabels(t: (key: string) => string): Record<string, string> {
   return {
-    original_method: "Metodo originale",
-    bank_transfer: "Bonifico",
-    store_credit: "Credito negozio",
+    original_method: t("salesReturns.originalMethod"),
+    bank_transfer: t("salesReturns.bankTransfer"),
+    store_credit: t("salesReturns.storeCredit"),
     cash: t("pos.cash")
   };
 }
@@ -276,7 +276,7 @@ export default function ResellerSalesReturns() {
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input 
-                placeholder="Cerca per numero reso..."
+                placeholder={t("salesReturns.searchByReturnNumber")}
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 className="pl-9"
@@ -437,21 +437,21 @@ export default function ResellerSalesReturns() {
             {['refunded', 'partially_refunded'].includes(updateData.status) && (
               <>
                 <div>
-                  <Label>Metodo Rimborso</Label>
+                  <Label>{t("salesReturns.refundMethod")}</Label>
                   <Select value={updateData.refundMethod} onValueChange={(v) => setUpdateData(prev => ({ ...prev, refundMethod: v }))}>
                     <SelectTrigger data-testid="select-refund-method">
-                      <SelectValue placeholder="Seleziona metodo" />
+                      <SelectValue placeholder={t("salesReturns.selectMethod")} />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="original_method">Metodo originale</SelectItem>
-                      <SelectItem value="bank_transfer">Bonifico</SelectItem>
-                      <SelectItem value="store_credit">Credito negozio</SelectItem>
+                      <SelectItem value="original_method">{t("salesReturns.originalMethod")}</SelectItem>
+                      <SelectItem value="bank_transfer">{t("salesReturns.bankTransfer")}</SelectItem>
+                      <SelectItem value="store_credit">{t("salesReturns.storeCredit")}</SelectItem>
                       <SelectItem value="cash">{t("pos.cash")}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
                 <div>
-                  <Label>Importo Rimborso (EUR)</Label>
+                  <Label>{t("salesReturns.refundAmountEur")}</Label>
                   <Input 
                     type="number"
                     step="0.01"
@@ -469,7 +469,7 @@ export default function ResellerSalesReturns() {
               <Textarea 
                 value={updateData.internalNotes}
                 onChange={(e) => setUpdateData(prev => ({ ...prev, internalNotes: e.target.value }))}
-                placeholder="Aggiungi note interne..."
+                placeholder={t("common.addInternalNotes")}
                 data-testid="textarea-internal-notes"
               />
             </div>

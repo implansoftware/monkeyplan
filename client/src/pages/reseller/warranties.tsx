@@ -40,17 +40,19 @@ type WarrantyItem = {
 function getStatusConfig(t: (key: string) => string): Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> {
   return {
     offered: { label: t("common.pending"), variant: "secondary" },
-    accepted: { label: "Attiva", variant: "default" },
+    accepted: { label: t("warranties.active"), variant: "default" },
     declined: { label: t("common.rejected"), variant: "destructive" },
     expired: { label: t("invoices.overdue"), variant: "outline" },
   };
 }
 
-const coverageLabels: Record<string, string> = {
-  basic: "Base",
-  extended: "Estesa",
-  full: "Completa",
-};
+function getCoverageLabels(t: (key: string) => string): Record<string, string> {
+  return {
+    basic: t("warranties.coverageBasic"),
+    extended: t("warranties.coverageExtended"),
+    full: t("warranties.coverageFull"),
+  };
+}
 
 function getDaysRemainingBadge(daysRemaining: number | null, status: string, t: (key: string) => string) {
   if (status !== "accepted" || daysRemaining === null) return null;

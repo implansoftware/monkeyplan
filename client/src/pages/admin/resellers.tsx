@@ -231,11 +231,11 @@ export default function AdminResellers() {
     
     const validTypes = ['image/jpeg', 'image/png', 'image/webp'];
     if (!validTypes.includes(file.type)) {
-      toast({ title: t("common.error"), description: "Formato non valido. Usa JPEG, PNG o WebP", variant: "destructive" });
+      toast({ title: t("common.error"), description: t("admin.invalidFormat"), variant: "destructive" });
       return;
     }
     if (file.size > 2 * 1024 * 1024) {
-      toast({ title: t("common.error"), description: "File troppo grande. Max 2MB", variant: "destructive" });
+      toast({ title: t("common.error"), description: t("admin.fileTooLarge"), variant: "destructive" });
       return;
     }
 
@@ -255,7 +255,7 @@ export default function AdminResellers() {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/resellers"] });
       toast({ title: t("admin.resellers.logoUploaded"), description: t("admin.resellers.logoUpdatedDesc") });
     } catch (error: any) {
-      toast({ title: t("common.error"), description: error.message || "Impossibile caricare il logo", variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message || t("admin.cannotUploadLogo"), variant: "destructive" });
     } finally {
       setLogoUploading(false);
       if (logoInputRef.current) logoInputRef.current.value = '';
@@ -277,7 +277,7 @@ export default function AdminResellers() {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/resellers"] });
       toast({ title: t("admin.resellers.logoRemoved"), description: t("admin.resellers.logoRemovedDesc") });
     } catch (error: any) {
-      toast({ title: t("common.error"), description: error.message || "Impossibile eliminare il logo", variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message || t("admin.cannotDeleteLogo"), variant: "destructive" });
     } finally {
       setLogoDeleting(false);
     }
@@ -450,12 +450,12 @@ export default function AdminResellers() {
             </div>
             <div>
               <h1 className="text-2xl sm:text-3xl font-bold text-white tracking-tight" data-testid="text-page-title">{t("sidebar.items.resellers")}</h1>
-              <p className="text-blue-100/80 mt-1">Gestisci i rivenditori e visualizza i loro clienti</p>
+              <p className="text-blue-100/80 mt-1">{t("admin.resellers.manageResellersDesc")}</p>
             </div>
           </div>
           <Button onClick={() => { setEditingReseller(null); resetWizard(); setDialogOpen(true); }} className="bg-white text-blue-700 hover:bg-white/90 shadow-lg" data-testid="button-add-reseller">
             <Plus className="mr-2 h-4 w-4" />
-            Nuovo Rivenditore
+            {t("admin.newResellerTitle")}
           </Button>
         </div>
       </div>
@@ -469,7 +469,7 @@ export default function AdminResellers() {
       }}>
           <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto" data-testid="dialog-reseller-form">
             <DialogHeader>
-              <DialogTitle>{editingReseller ? "Modifica Rivenditore" : "Nuovo Rivenditore"}</DialogTitle>
+              <DialogTitle>{editingReseller ? t("admin.editResellerTitle") : t("admin.newResellerTitle")}</DialogTitle>
             </DialogHeader>
             
             <div className="space-y-4">
@@ -501,7 +501,7 @@ export default function AdminResellers() {
               <div className="min-h-[280px]">
                 {wizardStep === 1 && !editingReseller && (
                   <div className="space-y-4">
-                    <p className="text-sm text-muted-foreground">Inserisci le credenziali di accesso per il nuovo rivenditore.</p>
+                    <p className="text-sm text-muted-foreground">{t("admin.resellers.enterCredentials")}</p>
                     <div className="space-y-2">
                       <Label htmlFor="username" className="text-slate-700 dark:text-slate-300">{t("auth.username")}</Label>
                       <Input 
@@ -528,9 +528,9 @@ export default function AdminResellers() {
 
                 {wizardStep === 2 && (
                   <div className="space-y-4">
-                    <p className="text-sm text-muted-foreground">Informazioni di base del rivenditore.</p>
+                    <p className="text-sm text-muted-foreground">{t("admin.resellers.basicInfoDesc")}</p>
                     <div className="space-y-2">
-                      <Label htmlFor="fullName" className="text-slate-700 dark:text-slate-300">Nome Completo *</Label>
+                      <Label htmlFor="fullName" className="text-slate-700 dark:text-slate-300">{t("common.fullName")} *</Label>
                       <Input 
                         id="fullName"
                         className="h-11 rounded-xl"
@@ -602,7 +602,7 @@ export default function AdminResellers() {
                               ) : (
                                 <Upload className="h-4 w-4 mr-2" />
                               )}
-                              {resellers.find(r => r.id === editingReseller.id)?.logoUrl ? 'Cambia Logo' : 'Carica Logo'}
+                              {resellers.find(r => r.id === editingReseller.id)?.logoUrl ? t("admin.resellers.changeLogo") : t("admin.resellers.uploadLogo")}
                             </Button>
                             {resellers.find(r => r.id === editingReseller.id)?.logoUrl && (
                               <Button
@@ -619,12 +619,12 @@ export default function AdminResellers() {
                                 ) : (
                                   <X className="h-4 w-4 mr-2" />
                                 )}
-                                Rimuovi Logo
+                                {t("admin.resellers.removeLogo")}
                               </Button>
                             )}
                           </div>
                         </div>
-                        <p className="text-xs text-muted-foreground">Max 2MB. Formati: JPEG, PNG, WebP</p>
+                        <p className="text-xs text-muted-foreground">{t("admin.resellers.logoFormats")}</p>
                       </div>
                     )}
                   </div>
@@ -632,10 +632,10 @@ export default function AdminResellers() {
 
                 {wizardStep === 3 && (
                   <div className="space-y-4">
-                    <p className="text-sm text-muted-foreground">Dati fiscali e fatturazione (opzionali).</p>
+                    <p className="text-sm text-muted-foreground">{t("admin.fiscalDataOptional")}</p>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <div className="space-y-2">
-                        <Label htmlFor="ragioneSociale" className="text-slate-700 dark:text-slate-300">Ragione Sociale</Label>
+                        <Label htmlFor="ragioneSociale" className="text-slate-700 dark:text-slate-300">{t("admin.ragioneSociale")}</Label>
                         <Input 
                           id="ragioneSociale"
                           className="h-11 rounded-xl"
@@ -645,7 +645,7 @@ export default function AdminResellers() {
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="partitaIva" className="text-slate-700 dark:text-slate-300">Partita IVA</Label>
+                        <Label htmlFor="partitaIva" className="text-slate-700 dark:text-slate-300">{t("admin.partitaIva")}</Label>
                         <Input 
                           id="partitaIva"
                           className="h-11 rounded-xl"
@@ -655,7 +655,7 @@ export default function AdminResellers() {
                         />
                       </div>
                       <div className="space-y-2 col-span-2">
-                        <Label htmlFor="codiceFiscale" className="text-slate-700 dark:text-slate-300">Codice Fiscale</Label>
+                        <Label htmlFor="codiceFiscale" className="text-slate-700 dark:text-slate-300">{t("admin.codiceFiscale")}</Label>
                         <Input 
                           id="codiceFiscale"
                           className="h-11 rounded-xl"
@@ -682,7 +682,7 @@ export default function AdminResellers() {
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="citta" className="text-slate-700 dark:text-slate-300">Città</Label>
+                        <Label htmlFor="citta" className="text-slate-700 dark:text-slate-300">{t("common.city")}</Label>
                         <Input 
                           id="citta"
                           className="h-11 rounded-xl"
@@ -703,7 +703,7 @@ export default function AdminResellers() {
                           />
                         </div>
                         <div className="space-y-2">
-                          <Label htmlFor="provincia" className="text-slate-700 dark:text-slate-300">Prov.</Label>
+                          <Label htmlFor="provincia" className="text-slate-700 dark:text-slate-300">{t("admin.province")}</Label>
                           <Input 
                             id="provincia"
                             maxLength={2}
@@ -716,14 +716,14 @@ export default function AdminResellers() {
                         </div>
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="codiceUnivoco" className="text-slate-700 dark:text-slate-300">Codice SDI</Label>
+                        <Label htmlFor="codiceUnivoco" className="text-slate-700 dark:text-slate-300">{t("admin.codiceSDI")}</Label>
                         <Input 
                           id="codiceUnivoco"
                           maxLength={7}
                           className="h-11 rounded-xl"
                           value={formData.codiceUnivoco}
                           onChange={(e) => setFormData(prev => ({ ...prev, codiceUnivoco: e.target.value }))}
-                          placeholder="7 caratteri"
+                          placeholder={t("admin.sdiPlaceholder")}
                           data-testid="input-codiceUnivoco" 
                         />
                       </div>
@@ -756,7 +756,7 @@ export default function AdminResellers() {
 
                 {wizardStep === 4 && (
                   <div className="space-y-4">
-                    <p className="text-sm text-muted-foreground">Configurazione categoria e affiliazione.</p>
+                    <p className="text-sm text-muted-foreground">{t("admin.resellers.categoryConfigDesc")}</p>
                     <div className="space-y-2">
                       <Label htmlFor="resellerCategory" className="text-slate-700 dark:text-slate-300">{t("common.category")}</Label>
                       <Select value={selectedCategory} onValueChange={(val) => {
@@ -767,20 +767,20 @@ export default function AdminResellers() {
                           <SelectValue placeholder={t("utility.selectCategory")} />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="standard">Standard</SelectItem>
-                          <SelectItem value="franchising">Franchising</SelectItem>
-                          <SelectItem value="gdo">GDO (Grande Distribuzione)</SelectItem>
+                          <SelectItem value="standard">{t("admin.resellers.catStandard")}</SelectItem>
+                          <SelectItem value="franchising">{t("admin.resellers.catFranchising")}</SelectItem>
+                          <SelectItem value="gdo">{t("admin.resellers.catGDO")}</SelectItem>
                         </SelectContent>
                       </Select>
                       <div className="mt-3 p-3 bg-muted/50 rounded-md text-xs text-muted-foreground space-y-1.5">
-                        <p><strong className="text-foreground">Standard:</strong> Rivenditore singolo, può avere un rivenditore padre (Franchising/GDO) a cui essere affiliato.</p>
-                        <p><strong className="text-foreground">Franchising:</strong> Rete di rivenditori affiliati. Può avere sotto-rivenditori Standard e visualizzare le loro attività.</p>
-                        <p><strong className="text-foreground">GDO:</strong> Grande Distribuzione Organizzata. Come Franchising, gestisce una rete di punti vendita affiliati.</p>
+                        <p><strong className="text-foreground">{t("admin.resellers.catStandard")}:</strong> {t("admin.resellers.catStandardDesc")}</p>
+                        <p><strong className="text-foreground">{t("admin.resellers.catFranchising")}:</strong> {t("admin.resellers.catFranchisingDesc")}</p>
+                        <p><strong className="text-foreground">{t("admin.resellers.catGDO")}:</strong> {t("admin.resellers.catGDODesc")}</p>
                       </div>
                     </div>
                     {selectedCategory === 'standard' && parentResellers.length > 0 && (
                       <div className="space-y-2">
-                        <Label htmlFor="parentResellerId" className="text-slate-700 dark:text-slate-300">Rivenditore Padre (opzionale)</Label>
+                        <Label htmlFor="parentResellerId" className="text-slate-700 dark:text-slate-300">{t("admin.resellers.parentResellerOptional")}</Label>
                         <Select value={selectedParentResellerId || "none"} onValueChange={(val) => setSelectedParentResellerId(val === "none" ? "" : val)}>
                           <SelectTrigger id="parentResellerId" className="h-11 rounded-xl" data-testid="select-parent-reseller">
                             <SelectValue placeholder={t("admin.resellers.noParentReseller")} />
@@ -802,14 +802,13 @@ export default function AdminResellers() {
                 {wizardStep === 5 && (
                   <div className="space-y-4">
                     <p className="text-sm text-muted-foreground">
-                      Seleziona i centri di riparazione da assegnare a questo rivenditore.
-                      Sono disponibili solo i centri non ancora assegnati ad altri rivenditori.
+                      {t("admin.resellers.selectRepairCentersDesc")}
                     </p>
                     {availableRepairCenters.length === 0 ? (
                       <div className="text-center py-6 text-muted-foreground border rounded-md">
                         <Wrench className="h-8 w-8 mx-auto mb-2 opacity-50" />
                         <p>{t("admin.resellers.noRepairCenters")}</p>
-                        <p className="text-xs mt-1">Tutti i centri sono già assegnati ad altri rivenditori</p>
+                        <p className="text-xs mt-1">{t("admin.resellers.allCentersAssigned")}</p>
                       </div>
                     ) : (
                       <ScrollArea className="h-[240px] border rounded-md p-3">
@@ -844,7 +843,7 @@ export default function AdminResellers() {
                                 </p>
                               </div>
                               {center.resellerId === editingReseller?.id && (
-                                <Badge variant="secondary" className="text-xs">Assegnato</Badge>
+                                <Badge variant="secondary" className="text-xs">{t("common.assigned")}</Badge>
                               )}
                             </div>
                           ))}
@@ -852,7 +851,7 @@ export default function AdminResellers() {
                       </ScrollArea>
                     )}
                     <p className="text-xs text-muted-foreground">
-                      {selectedRepairCenterIds.length} centro/i selezionato/i
+                      {t("admin.resellers.centersSelected", { count: selectedRepairCenterIds.length })}
                     </p>
                   </div>
                 )}
@@ -868,7 +867,7 @@ export default function AdminResellers() {
                   data-testid="button-wizard-prev"
                 >
                   <ChevronLeft className="mr-1 h-4 w-4" />
-                  Indietro
+                  {t("common.back")}
                 </Button>
                 {isLastStep() ? (
                   <Button 
@@ -879,7 +878,7 @@ export default function AdminResellers() {
                     data-testid="button-submit"
                   >
                     <Check className="mr-1 h-4 w-4" />
-                    {editingReseller ? "Aggiorna" : "Crea"} Rivenditore
+                    {editingReseller ? t("common.update") : t("common.create")} {t("admin.resellers.reseller")}
                   </Button>
                 ) : (
                   <Button 
@@ -889,7 +888,7 @@ export default function AdminResellers() {
                     disabled={!canProceedToNextStep()}
                     data-testid="button-wizard-next"
                   >
-                    Avanti
+                    {t("common.next")}
                     <ChevronRight className="ml-1 h-4 w-4" />
                   </Button>
                 )}
@@ -902,7 +901,7 @@ export default function AdminResellers() {
         <CardHeader>
           <CardTitle className="flex flex-wrap items-center gap-2 text-slate-900 dark:text-white">
             <Store className="h-5 w-5" />
-            Elenco Rivenditori
+            {t("admin.resellers.resellerList")}
           </CardTitle>
           <div className="flex gap-4 items-center">
             <div className="relative flex-1">
@@ -926,7 +925,7 @@ export default function AdminResellers() {
             </div>
           ) : filteredResellers.length === 0 ? (
             <div className="text-center py-8 text-slate-500">
-              Nessun rivenditore trovato
+              {t("admin.resellers.noResellersFound")}
             </div>
           ) : (
             <div className="rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
@@ -937,9 +936,9 @@ export default function AdminResellers() {
                   <TableHead className="text-slate-600 dark:text-slate-400">{t("common.email")}</TableHead>
                   <TableHead className="text-slate-600 dark:text-slate-400">{t("common.phone")}</TableHead>
                   <TableHead className="text-slate-600 dark:text-slate-400">{t("common.category")}</TableHead>
-                  <TableHead className="text-slate-600 dark:text-slate-400">Rivenditore Padre</TableHead>
+                  <TableHead className="text-slate-600 dark:text-slate-400">{t("admin.resellers.parentReseller")}</TableHead>
                   <TableHead className="text-slate-600 dark:text-slate-400">{t("sidebar.items.customers")}</TableHead>
-                  <TableHead className="text-slate-600 dark:text-slate-400">Centri Rip.</TableHead>
+                  <TableHead className="text-slate-600 dark:text-slate-400">{t("admin.resellers.repairCentersShort")}</TableHead>
                   <TableHead className="text-slate-600 dark:text-slate-400">Sub-Reseller</TableHead>
                   <TableHead className="text-slate-600 dark:text-slate-400">{t("common.status")}</TableHead>
                   <TableHead className="text-right text-slate-600 dark:text-slate-400">{t("common.actions")}</TableHead>
@@ -1020,7 +1019,7 @@ export default function AdminResellers() {
                           data-testid={`switch-status-${reseller.id}`}
                         />
                         <span className={`text-sm ${reseller.isActive ? 'text-green-600' : 'text-muted-foreground'}`}>
-                          {reseller.isActive ? "Attivo" : "Inattivo"}
+                          {reseller.isActive ? t("common.active") : t("common.inactive")}
                         </span>
                       </div>
                     </TableCell>
@@ -1031,7 +1030,7 @@ export default function AdminResellers() {
                             variant="ghost"
                             size="icon"
                             className="hover:bg-blue-100 hover:text-blue-600"
-                            title="Visualizza dettagli"
+                            title={t("products.viewDetails")}
                             data-testid={`button-detail-${reseller.id}`}
                           >
                             <Eye className="h-4 w-4" />
@@ -1071,7 +1070,7 @@ export default function AdminResellers() {
                             setWizardStep(2);
                             setDialogOpen(true);
                           }}
-                          title="Modifica rivenditore"
+                          title={t("admin.editResellerTooltip")}
                           data-testid={`button-edit-${reseller.id}`}
                         >
                           <Pencil className="h-4 w-4" />
@@ -1081,7 +1080,7 @@ export default function AdminResellers() {
                           size="icon"
                           className="hover:bg-blue-100 hover:text-blue-600"
                           onClick={() => handleResetPasswordClick(reseller)}
-                          title="Reset password"
+                          title={t("admin.resetPasswordTooltip")}
                           data-testid={`button-reset-password-${reseller.id}`}
                         >
                           <KeyRound className="h-4 w-4" />
@@ -1091,7 +1090,7 @@ export default function AdminResellers() {
                           size="icon"
                           className="hover:bg-red-100 hover:text-red-600"
                           onClick={() => handleDeleteClick(reseller)}
-                          title="Elimina rivenditore"
+                          title={t("admin.deleteResellerTooltip")}
                           data-testid={`button-delete-${reseller.id}`}
                         >
                           <Trash2 className="h-4 w-4" />
@@ -1136,7 +1135,7 @@ export default function AdminResellers() {
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
               data-testid="button-confirm-delete"
             >
-              {deleteResellerMutation.isPending ? t("admin.resellers.deleting") : "Elimina"}
+              {deleteResellerMutation.isPending ? t("admin.resellers.deleting") : t("common.delete")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -1181,7 +1180,7 @@ export default function AdminResellers() {
                 disabled={newPassword.length < 4 || resetPasswordMutation.isPending}
                 data-testid="button-confirm-reset-password"
               >
-                {resetPasswordMutation.isPending ? t("admin.common.updating") : "Conferma Reset"}
+                {resetPasswordMutation.isPending ? t("admin.common.updating") : t("admin.confirmReset")}
               </Button>
             </div>
           </div>
@@ -1269,7 +1268,7 @@ const SubResellersDialog = ({ open, onOpenChange, reseller }: SubResellersDialog
                       <TableCell>{sub.phone || '-'}</TableCell>
                       <TableCell>
                         <Badge variant={sub.isActive ? "default" : "secondary"}>
-                          {sub.isActive ? "Attivo" : "Inattivo"}
+                          {sub.isActive ? t("common.active") : t("common.inactive")}
                         </Badge>
                       </TableCell>
                     </TableRow>

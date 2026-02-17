@@ -24,12 +24,12 @@ import { useTranslation } from "react-i18next";
 type ServiceCategory = "fisso" | "mobile" | "centralino" | "luce" | "gas" | "altro";
 
 const categoryLabels: Record<ServiceCategory, string> = {
-  fisso: "Fisso",
-  mobile: "Mobile",
-  centralino: "Centralino",
-  luce: "Luce",
-  gas: "Gas",
-  altro: "Altro",
+  fisso: "fisso",
+  mobile: "mobile",
+  centralino: "centralino",
+  luce: "luce",
+  gas: "gas",
+  altro: "altro",
 };
 
 const categoryColors: Record<ServiceCategory, string> = {
@@ -314,7 +314,7 @@ export default function AdminUtilityServices() {
                       </TableCell>
                       <TableCell>
                         <Badge variant={service.isActive ? "default" : "secondary"}>
-                          {service.isActive ? "Attivo" : "Inattivo"}
+                          {service.isActive ? t("common.active") : t("common.inactive")}
                         </Badge>
                       </TableCell>
                       <TableCell className="text-right">
@@ -354,7 +354,7 @@ export default function AdminUtilityServices() {
         <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
-              {editingService ? "Modifica Servizio" : "Nuovo Servizio Utility"}
+              {editingService ? t("utility.editService") : t("utility.newService")}
             </DialogTitle>
             <DialogDescription>
               {editingService 
@@ -536,7 +536,7 @@ export default function AdminUtilityServices() {
                     data-testid="switch-active"
                   />
                   <span className="text-sm">
-                    {isActive ? "Attivo" : "Inattivo"}
+                    {isActive ? t("common.active") : t("common.inactive")}
                   </span>
                 </div>
               </div>
@@ -556,7 +556,7 @@ export default function AdminUtilityServices() {
                 disabled={createMutation.isPending || updateMutation.isPending}
                 data-testid="button-save"
               >
-                {editingService ? "Salva Modifiche" : "Crea Servizio"}
+                {editingService ? t("utility.saveChangesBtn") : t("utility.createServiceBtn")}
               </Button>
             </div>
           </form>

@@ -50,10 +50,10 @@ const typeColors: Record<string, string> = {
 };
 
 const typeLabels: Record<string, string> = {
-  entry: "Entrata",
-  exit: "Uscita",
-  break_start: "Inizio Pausa",
-  break_end: "Fine Pausa",
+  entry: "entry",
+  exit: "exit",
+  break_start: "break_start",
+  break_end: "break_end",
 };
 
 const typeIcons: Record<string, JSX.Element> = {
@@ -249,7 +249,7 @@ export default function AdminAttendancePage() {
           />
           <div className="flex flex-wrap items-center gap-2 pt-2 border-t">
             <CalendarIcon className="h-5 w-5 text-muted-foreground" />
-            <span className="font-medium">{isToday ? "Oggi" : "Data selezionata"}:</span>
+            <span className="font-medium">{isToday ? t("hr.attendance.today") : t("hr.attendance.selectedDate")}:</span>
             <Button size="icon" variant="ghost" onClick={goToPreviousDay} data-testid="button-prev-day">
               <ChevronLeft className="h-4 w-4" />
             </Button>
@@ -293,7 +293,7 @@ export default function AdminAttendancePage() {
           ) : events.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">
               <Clock className="h-12 w-12 mx-auto mb-4 opacity-50" />
-              <p>{isToday ? "Nessuna timbratura registrata oggi" : `Nessuna timbratura per il ${format(selectedDate, "d MMMM yyyy", { locale: it })}`}</p>
+              <p>{isToday ? t("hr.attendance.noStampsToday") : `Nessuna timbratura per il ${format(selectedDate, "d MMMM yyyy", { locale: it })}`}</p>
             </div>
           ) : (
             <Table>
@@ -427,7 +427,7 @@ export default function AdminAttendancePage() {
               Annulla
             </Button>
             <Button onClick={handleEdit} disabled={editMutation.isPending} data-testid="button-save-edit">
-              {editMutation.isPending ? t("settings.savingRate") : "Salva"}
+              {editMutation.isPending ? t("settings.savingRate") : t("common.save")}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -499,7 +499,7 @@ export default function AdminAttendancePage() {
               disabled={!newEvent.userId || createMutation.isPending}
               data-testid="button-confirm-create"
             >
-              {createMutation.isPending ? t("settings.savingRate") : "Crea Timbratura"}
+              {createMutation.isPending ? t("settings.savingRate") : t("hr.attendance.createStamp")}
             </Button>
           </DialogFooter>
         </DialogContent>

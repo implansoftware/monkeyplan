@@ -153,7 +153,7 @@ export default function AdminRepairCenters() {
       setBackfillResult(data);
       toast({ 
         title: t("admin.repairCenters.accountsCreated"), 
-        description: `Creati ${data.created.length} account` 
+        description: t("admin.accountsCreatedCount", { count: data.created.length }) 
       });
     },
     onError: (error: Error) => {
@@ -222,7 +222,7 @@ export default function AdminRepairCenters() {
 
   const handleFinalSubmit = () => {
     if (!addressData.address.trim() || !addressData.city.trim()) {
-      toast({ title: t("common.error"), description: "Indirizzo e Città sono campi obbligatori", variant: "destructive" });
+      toast({ title: t("common.error"), description: t("admin.addressCityRequired"), variant: "destructive" });
       return;
     }
     
@@ -296,7 +296,7 @@ export default function AdminRepairCenters() {
             </div>
             <div>
               <h1 className="text-2xl sm:text-3xl font-bold text-white tracking-tight">{t("admin.repairCenters.title")}</h1>
-              <p className="text-blue-100/80 mt-1">Gestisci tutti i centri della rete</p>
+              <p className="text-blue-100/80 mt-1">{t("admin.repairCenters.manageAllCenters")}</p>
             </div>
           </div>
           <div className="flex flex-wrap items-center gap-2 flex-wrap">
@@ -308,7 +308,7 @@ export default function AdminRepairCenters() {
                 data-testid="button-backfill-accounts"
               >
                 <AlertTriangle className="h-4 w-4 mr-2 text-orange-300" />
-                {orphansData.orphanCount} centri senza account
+                {t("admin.repairCenters.centersWithoutAccount", { count: orphansData.orphanCount })}
               </Button>
             )}
             <Button 
@@ -317,7 +317,7 @@ export default function AdminRepairCenters() {
               data-testid="button-new-center"
             >
               <Plus className="h-4 w-4 mr-2" />
-              Nuovo Centro
+              {t("admin.newRepairCenterTitle")}
             </Button>
           </div>
         </div>
@@ -332,7 +332,7 @@ export default function AdminRepairCenters() {
         }}>
           <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto" data-testid="dialog-center-form">
             <DialogHeader>
-              <DialogTitle>{editingCenter ? "Modifica Centro" : "Nuovo Centro di Riparazione"}</DialogTitle>
+              <DialogTitle>{editingCenter ? t("admin.editCenterTitle") : t("admin.newRepairCenterTitle")}</DialogTitle>
             </DialogHeader>
             
             <div className="space-y-4">
@@ -364,9 +364,9 @@ export default function AdminRepairCenters() {
               <div className="min-h-[280px]">
                 {wizardStep === 1 && (
                   <div className="space-y-4">
-                    <p className="text-sm text-muted-foreground">Informazioni di base del centro di riparazione.</p>
+                    <p className="text-sm text-muted-foreground">{t("admin.repairCenters.basicInfoDesc")}</p>
                     <div className="space-y-2">
-                      <Label htmlFor="name" className="text-slate-700 dark:text-slate-300">Nome Centro *</Label>
+                      <Label htmlFor="name" className="text-slate-700 dark:text-slate-300">{t("admin.repairCenters.centerName")} *</Label>
                       <Input 
                         id="name"
                         className="h-11 rounded-xl"
@@ -376,7 +376,7 @@ export default function AdminRepairCenters() {
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="email" className="text-slate-700 dark:text-slate-300">Email *</Label>
+                      <Label htmlFor="email" className="text-slate-700 dark:text-slate-300">{t("common.email")} *</Label>
                       <Input 
                         id="email"
                         type="email"
@@ -387,7 +387,7 @@ export default function AdminRepairCenters() {
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="phone" className="text-slate-700 dark:text-slate-300">Telefono *</Label>
+                      <Label htmlFor="phone" className="text-slate-700 dark:text-slate-300">{t("common.phone")} *</Label>
                       <Input 
                         id="phone"
                         type="tel"
@@ -399,7 +399,7 @@ export default function AdminRepairCenters() {
                     </div>
                     {!editingCenter && (
                       <div className="space-y-2">
-                        <Label htmlFor="password" className="text-slate-700 dark:text-slate-300">Password Account * (min 6 caratteri)</Label>
+                        <Label htmlFor="password" className="text-slate-700 dark:text-slate-300">{t("admin.repairCenters.passwordLabel")}</Label>
                         <Input 
                           id="password"
                           type="password"
@@ -410,7 +410,7 @@ export default function AdminRepairCenters() {
                           data-testid="input-password" 
                         />
                         <p className="text-xs text-muted-foreground">
-                          Questa password verrà usata dal centro per accedere al sistema
+                          {t("admin.repairCenters.passwordHint")}
                         </p>
                       </div>
                     )}
@@ -419,9 +419,9 @@ export default function AdminRepairCenters() {
 
                 {wizardStep === 2 && (
                   <div className="space-y-4">
-                    <p className="text-sm text-muted-foreground">Indirizzo e ubicazione del centro.</p>
+                    <p className="text-sm text-muted-foreground">{t("admin.repairCenters.addressDesc")}</p>
                     <div className="space-y-2">
-                      <Label className="text-slate-700 dark:text-slate-300">Indirizzo *</Label>
+                      <Label className="text-slate-700 dark:text-slate-300">{t("common.address")} *</Label>
                       <AddressAutocomplete
                         value={addressData.address}
                         onChange={(val) => setAddressData(prev => ({ ...prev, address: val }))}
@@ -440,7 +440,7 @@ export default function AdminRepairCenters() {
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <div className="space-y-2">
-                        <Label htmlFor="city" className="text-slate-700 dark:text-slate-300">Città *</Label>
+                        <Label htmlFor="city" className="text-slate-700 dark:text-slate-300">{t("common.city")} *</Label>
                         <Input 
                           id="city"
                           className="h-11 rounded-xl"
@@ -451,7 +451,7 @@ export default function AdminRepairCenters() {
                       </div>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                         <div className="space-y-2">
-                          <Label htmlFor="cap" className="text-slate-700 dark:text-slate-300">CAP</Label>
+                          <Label htmlFor="cap" className="text-slate-700 dark:text-slate-300">{t("admin.cap")}</Label>
                           <Input 
                             id="cap"
                             className="h-11 rounded-xl"
@@ -461,7 +461,7 @@ export default function AdminRepairCenters() {
                           />
                         </div>
                         <div className="space-y-2">
-                          <Label htmlFor="provincia" className="text-slate-700 dark:text-slate-300">Prov.</Label>
+                          <Label htmlFor="provincia" className="text-slate-700 dark:text-slate-300">{t("admin.province")}</Label>
                           <Input 
                             id="provincia"
                             maxLength={2}
@@ -479,10 +479,10 @@ export default function AdminRepairCenters() {
 
                 {wizardStep === 3 && (
                   <div className="space-y-4">
-                    <p className="text-sm text-muted-foreground">Dati fiscali e fatturazione (opzionali).</p>
+                    <p className="text-sm text-muted-foreground">{t("admin.fiscalDataOptional")}</p>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <div className="space-y-2">
-                        <Label htmlFor="ragioneSociale" className="text-slate-700 dark:text-slate-300">Ragione Sociale</Label>
+                        <Label htmlFor="ragioneSociale" className="text-slate-700 dark:text-slate-300">{t("admin.ragioneSociale")}</Label>
                         <Input 
                           id="ragioneSociale"
                           className="h-11 rounded-xl"
@@ -492,7 +492,7 @@ export default function AdminRepairCenters() {
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="partitaIva" className="text-slate-700 dark:text-slate-300">Partita IVA</Label>
+                        <Label htmlFor="partitaIva" className="text-slate-700 dark:text-slate-300">{t("admin.partitaIva")}</Label>
                         <Input 
                           id="partitaIva"
                           className="h-11 rounded-xl"
@@ -502,7 +502,7 @@ export default function AdminRepairCenters() {
                         />
                       </div>
                       <div className="space-y-2 col-span-2">
-                        <Label htmlFor="codiceFiscale" className="text-slate-700 dark:text-slate-300">Codice Fiscale</Label>
+                        <Label htmlFor="codiceFiscale" className="text-slate-700 dark:text-slate-300">{t("admin.codiceFiscale")}</Label>
                         <Input 
                           id="codiceFiscale"
                           className="h-11 rounded-xl"
@@ -512,14 +512,14 @@ export default function AdminRepairCenters() {
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="codiceUnivoco" className="text-slate-700 dark:text-slate-300">Codice SDI</Label>
+                        <Label htmlFor="codiceUnivoco" className="text-slate-700 dark:text-slate-300">{t("admin.codiceSDI")}</Label>
                         <Input 
                           id="codiceUnivoco"
                           maxLength={7}
                           className="h-11 rounded-xl"
                           value={formData.codiceUnivoco}
                           onChange={(e) => setFormData(prev => ({ ...prev, codiceUnivoco: e.target.value }))}
-                          placeholder="7 caratteri"
+                          placeholder={t("admin.sdiPlaceholder")}
                           data-testid="input-codiceUnivoco" 
                         />
                       </div>
@@ -552,9 +552,9 @@ export default function AdminRepairCenters() {
 
                 {wizardStep === 4 && (
                   <div className="space-y-4">
-                    <p className="text-sm text-muted-foreground">Configurazione affiliazione e tariffe.</p>
+                    <p className="text-sm text-muted-foreground">{t("admin.repairCenters.affiliationConfigDesc")}</p>
                     <div className="space-y-2">
-                      <Label htmlFor="resellerId" className="text-slate-700 dark:text-slate-300">Rivenditore di Appartenenza</Label>
+                      <Label htmlFor="resellerId" className="text-slate-700 dark:text-slate-300">{t("admin.repairCenters.belongingReseller")}</Label>
                       <Select 
                         value={selectedResellerId} 
                         onValueChange={(value) => {
@@ -574,13 +574,13 @@ export default function AdminRepairCenters() {
                         </SelectContent>
                       </Select>
                       <p className="text-xs text-muted-foreground">
-                        Il rivenditore a cui il centro è affiliato potrà gestire questo centro e visualizzare le sue attività.
+                        {t("admin.repairCenters.resellerAffiliationDesc")}
                       </p>
                     </div>
                     
                     {selectedResellerId && subResellers.length > 0 && (
                       <div className="space-y-2">
-                        <Label htmlFor="subResellerId" className="text-slate-700 dark:text-slate-300">Sub-Reseller di Riferimento</Label>
+                        <Label htmlFor="subResellerId" className="text-slate-700 dark:text-slate-300">{t("admin.repairCenters.subResellerReference")}</Label>
                         <Select 
                           value={selectedSubResellerId || "none"} 
                           onValueChange={(value) => setSelectedSubResellerId(value === "none" ? "" : value)}
@@ -598,7 +598,7 @@ export default function AdminRepairCenters() {
                           </SelectContent>
                         </Select>
                         <p className="text-xs text-muted-foreground">
-                          Assegna questo centro a un sub-reseller specifico del rivenditore selezionato.
+                          {t("admin.repairCenters.subResellerDesc")}
                         </p>
                       </div>
                     )}
@@ -606,7 +606,7 @@ export default function AdminRepairCenters() {
                     <div className="border-t pt-4 mt-4">
                       <h4 className="font-medium text-sm text-muted-foreground mb-3 flex items-center gap-2">
                         <Clock className="h-4 w-4" />
-                        Tariffa Manodopera
+                        {t("admin.repairCenters.laborRate")}
                       </h4>
                       <div className="space-y-2">
                         <Label htmlFor="hourlyRate" className="text-slate-700 dark:text-slate-300">{t("settings.hourlyRateLabel")}</Label>
@@ -625,8 +625,7 @@ export default function AdminRepairCenters() {
                           />
                         </div>
                         <p className="text-xs text-muted-foreground">
-                          Tariffa oraria per il calcolo del costo manodopera. 
-                          Se non specificata, verrà usata la tariffa di sistema.
+                          {t("admin.repairCenters.laborRateDesc")}
                         </p>
                       </div>
                     </div>
@@ -644,7 +643,7 @@ export default function AdminRepairCenters() {
                   data-testid="button-wizard-prev"
                 >
                   <ChevronLeft className="mr-1 h-4 w-4" />
-                  Indietro
+                  {t("common.back")}
                 </Button>
                 {isLastStep() ? (
                   <Button 
@@ -655,7 +654,7 @@ export default function AdminRepairCenters() {
                     data-testid="button-submit-center"
                   >
                     <Check className="mr-1 h-4 w-4" />
-                    {editingCenter ? "Aggiorna" : "Crea"} Centro
+                    {editingCenter ? t("common.update") : t("common.create")} {t("admin.center")}
                   </Button>
                 ) : (
                   <Button 
@@ -665,7 +664,7 @@ export default function AdminRepairCenters() {
                     disabled={!canProceedToNextStep()}
                     data-testid="button-wizard-next"
                   >
-                    Avanti
+                    {t("common.next")}
                     <ChevronRight className="ml-1 h-4 w-4" />
                   </Button>
                 )}
@@ -680,15 +679,15 @@ export default function AdminRepairCenters() {
           <AlertDialogHeader>
             <AlertDialogTitle className="flex flex-wrap items-center gap-2">
               <UserPlus className="h-5 w-5" />
-              Centri senza Account
+              {t("admin.repairCenters.centersWithoutAccountTitle")}
             </AlertDialogTitle>
             <AlertDialogDescription>
               {backfillResult ? (
                 <div className="space-y-4 text-left">
                   <p className="font-medium text-foreground">
                     {backfillResult.created.length > 0 
-                      ? `Creati ${backfillResult.created.length} account. Salva le credenziali!`
-                      : "Nessun account creato."}
+                      ? t("admin.repairCenters.accountsCreatedSave", { count: backfillResult.created.length })
+                      : t("admin.noAccountCreated")}
                   </p>
                   {backfillResult.created.length > 0 && (
                     <div className="border rounded-md overflow-hidden">
@@ -716,7 +715,7 @@ export default function AdminRepairCenters() {
                   )}
                   {backfillResult.errors.length > 0 && (
                     <div className="border border-destructive rounded-md p-3">
-                      <p className="font-medium text-destructive mb-2">Errori:</p>
+                      <p className="font-medium text-destructive mb-2">{t("common.errors")}:</p>
                       {backfillResult.errors.map((err, i) => (
                         <p key={i} className="text-sm">{err.centerName}: {err.error}</p>
                       ))}
@@ -725,24 +724,24 @@ export default function AdminRepairCenters() {
                 </div>
               ) : (
                 <div className="space-y-3 text-left">
-                  <p>Sono stati trovati <strong>{orphansData?.orphanCount || 0} centri</strong> senza account utente.</p>
-                  <p>Questi centri sono stati creati prima del fix e non possono accedere al sistema.</p>
-                  <p>Cliccando "Crea Account" verranno generati automaticamente username e password temporanee per ogni centro.</p>
-                  <p className="text-orange-600 font-medium">Importante: Dovrai salvare e comunicare le password ai centri!</p>
+                  <p>{t("admin.repairCenters.orphansFound", { count: orphansData?.orphanCount || 0 })}</p>
+                  <p>{t("admin.repairCenters.orphansCannotAccess")}</p>
+                  <p>{t("admin.backfillDesc")}</p>
+                  <p className="text-orange-600 font-medium">{t("admin.repairCenters.importantSavePasswords")}</p>
                 </div>
               )}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel onClick={() => setBackfillResult(null)}>
-              {backfillResult ? "Chiudi" : "Annulla"}
+              {backfillResult ? t("admin.closeButton") : t("common.cancel")}
             </AlertDialogCancel>
             {!backfillResult && (
               <AlertDialogAction 
                 onClick={() => backfillAccountsMutation.mutate()}
                 disabled={backfillAccountsMutation.isPending}
               >
-                {backfillAccountsMutation.isPending ? t("admin.repairCenters.creating") : "Crea Account"}
+                {backfillAccountsMutation.isPending ? t("admin.repairCenters.creating") : t("admin.createAccount")}
               </AlertDialogAction>
             )}
           </AlertDialogFooter>
@@ -756,7 +755,7 @@ export default function AdminRepairCenters() {
               <div className="p-2 rounded-xl bg-gradient-to-br from-blue-500 to-cyan-600">
                 <Building className="h-5 w-5 text-white" />
               </div>
-              <h2 className="text-lg font-semibold">Elenco Centri</h2>
+              <h2 className="text-lg font-semibold">{t("admin.repairCenters.centerList")}</h2>
             </div>
           </div>
           <div className="relative">
@@ -789,9 +788,9 @@ export default function AdminRepairCenters() {
                   <TableRow className="bg-slate-50 dark:bg-slate-800/50">
                     <TableHead className="w-14 text-slate-600 dark:text-slate-400">Logo</TableHead>
                     <TableHead className="text-slate-600 dark:text-slate-400">{t("common.name")}</TableHead>
-                    <TableHead className="text-slate-600 dark:text-slate-400">Località</TableHead>
+                    <TableHead className="text-slate-600 dark:text-slate-400">{t("common.location")}</TableHead>
                     <TableHead className="text-slate-600 dark:text-slate-400">{t("roles.reseller")}</TableHead>
-                    <TableHead className="text-slate-600 dark:text-slate-400">Contatti</TableHead>
+                    <TableHead className="text-slate-600 dark:text-slate-400">{t("common.contacts")}</TableHead>
                     <TableHead className="text-slate-600 dark:text-slate-400">{t("common.status")}</TableHead>
                     <TableHead className="text-slate-600 dark:text-slate-400 text-right">{t("common.actions")}</TableHead>
                   </TableRow>
@@ -822,7 +821,7 @@ export default function AdminRepairCenters() {
                       <TableCell>
                         {center.resellerId ? (
                           <Badge className="bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300">
-                            {resellers.find(r => r.id === center.resellerId)?.fullName || 'Rivenditore'}
+                            {resellers.find(r => r.id === center.resellerId)?.fullName || t("roles.reseller")}
                           </Badge>
                         ) : (
                           <span className="text-muted-foreground text-sm">-</span>
@@ -842,7 +841,7 @@ export default function AdminRepairCenters() {
                       </TableCell>
                       <TableCell>
                         <Badge className={center.isActive ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300" : "bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300"}>
-                          {center.isActive ? "Attivo" : "Inattivo"}
+                          {center.isActive ? t("common.active") : t("common.inactive")}
                         </Badge>
                       </TableCell>
                       <TableCell className="text-right">
@@ -896,7 +895,7 @@ export default function AdminRepairCenters() {
                             size="icon"
                             className="hover:bg-blue-100 hover:text-blue-600 dark:hover:bg-blue-900/30"
                             onClick={() => handleResetPasswordClick(center)}
-                            title="Reset password"
+                            title={t("admin.resetPasswordTooltip")}
                             data-testid={`button-reset-password-${center.id}`}
                           >
                             <KeyRound className="h-4 w-4" />
@@ -927,12 +926,12 @@ export default function AdminRepairCenters() {
           <DialogHeader>
             <DialogTitle className="flex flex-wrap items-center gap-2">
               <KeyRound className="h-5 w-5" />
-              Reset Password
+              {t("admin.resetPassword")}
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
             <p className="text-sm text-muted-foreground">
-              Stai per resettare la password del centro <strong>{centerToResetPassword?.name}</strong>.
+              {t("admin.repairCenters.resetPasswordDesc", { name: centerToResetPassword?.name })}
             </p>
             <div className="space-y-2">
               <Label htmlFor="newPassword">{t("admin.common.newPassword")}</Label>
@@ -951,14 +950,14 @@ export default function AdminRepairCenters() {
                 onClick={() => setResetPasswordDialogOpen(false)}
                 data-testid="button-cancel-reset-password"
               >
-                Annulla
+                {t("common.cancel")}
               </Button>
               <Button
                 onClick={confirmResetPassword}
                 disabled={newPassword.length < 4 || resetPasswordMutation.isPending}
                 data-testid="button-confirm-reset-password"
               >
-                {resetPasswordMutation.isPending ? t("admin.common.updating") : "Conferma Reset"}
+                {resetPasswordMutation.isPending ? t("admin.common.updating") : t("admin.confirmReset")}
               </Button>
             </div>
           </div>

@@ -40,7 +40,7 @@ export default function HrDashboard() {
   const quickActions = [
     {
       title: t("hr.attendance"),
-      description: "Gestione timbrature e orari",
+      description: t("hr.attendanceManagement"),
       icon: Clock,
       href: "/reseller/hr/attendance",
       color: "from-blue-500/10 to-blue-600/5",
@@ -48,7 +48,7 @@ export default function HrDashboard() {
     },
     {
       title: t("sidebar.items.leaveRequests"),
-      description: "Richieste ferie, permessi, ROL",
+      description: t("hr.leaveRequestsDesc"),
       icon: CalendarDays,
       href: "/reseller/hr/leave-requests",
       color: "from-emerald-500/10 to-emerald-600/5",
@@ -56,7 +56,7 @@ export default function HrDashboard() {
     },
     {
       title: t("sidebar.items.sickLeave"),
-      description: "Certificati e assenze malattia",
+      description: t("hr.sickLeaveDesc"),
       icon: Thermometer,
       href: "/reseller/hr/sick-leave",
       color: "from-red-500/10 to-red-600/5",
@@ -64,7 +64,7 @@ export default function HrDashboard() {
     },
     {
       title: t("sidebar.items.expenseReimbursement"),
-      description: "Note spese e trasferte",
+      description: t("hr.expenseDesc"),
       icon: Receipt,
       href: "/reseller/hr/expenses",
       color: "from-amber-500/10 to-amber-600/5",
@@ -72,7 +72,7 @@ export default function HrDashboard() {
     },
     {
       title: t("sidebar.items.workProfiles"),
-      description: "Configurazione orari lavoro",
+      description: t("hr.workProfilesDesc"),
       icon: Briefcase,
       href: "/reseller/hr/work-profiles",
       color: "from-purple-500/10 to-purple-600/5",
@@ -80,23 +80,23 @@ export default function HrDashboard() {
     },
     {
       title: t("sidebar.items.teamCalendar"),
-      description: "Visualizzazione assenze team",
+      description: t("hr.teamCalendarDesc"),
       icon: Calendar,
       href: "/reseller/hr/calendar",
       color: "from-cyan-500/10 to-cyan-600/5",
       iconColor: "text-cyan-600 dark:text-cyan-400"
     },
     {
-      title: "Comunicazioni",
-      description: "Notifiche e messaggi HR",
+      title: t("hr.communications"),
+      description: t("hr.communicationsDesc"),
       icon: Bell,
       href: "/reseller/hr/notifications",
       color: "from-indigo-500/10 to-indigo-600/5",
       iconColor: "text-indigo-600 dark:text-indigo-400"
     },
     {
-      title: "Registro Audit",
-      description: "Storico modifiche HR",
+      title: t("hr.auditLog"),
+      description: t("hr.auditLogDesc"),
       icon: FileSpreadsheet,
       href: "/reseller/hr/audit-logs",
       color: "from-slate-500/10 to-slate-600/5",
@@ -124,7 +124,7 @@ export default function HrDashboard() {
                 <Users className="h-6 w-6 text-white" />
               </div>
               <div>
-                <h1 className="text-2xl font-bold text-white" data-testid="text-hr-title">Gestione Risorse Umane</h1>
+                <h1 className="text-2xl font-bold text-white" data-testid="text-hr-title">{t("hr.humanResources")}</h1>
                 <p className="text-white/80">Presenze, ferie, permessi e amministrazione personale</p>
               </div>
             </div>
@@ -146,7 +146,7 @@ export default function HrDashboard() {
           <CardContent className="relative pt-5 pb-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1">Ferie in Attesa</p>
+                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1">{t("hr.pendingVacations")}</p>
                 {isLoading ? (
                   <Skeleton className="h-8 w-16" />
                 ) : (
@@ -184,7 +184,7 @@ export default function HrDashboard() {
           <CardContent className="relative pt-5 pb-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1">Timbrature Oggi</p>
+                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1">{t("hr.clockEntriesToday")}</p>
                 {isLoading ? (
                   <Skeleton className="h-8 w-16" />
                 ) : (
@@ -203,7 +203,7 @@ export default function HrDashboard() {
           <CardContent className="relative pt-5 pb-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1">Assenze da Gestire</p>
+                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1">{t("hr.absencesToManage")}</p>
                 {isLoading ? (
                   <Skeleton className="h-8 w-16" />
                 ) : (
@@ -255,13 +255,13 @@ export default function HrDashboard() {
               <Activity className="h-5 w-5 text-muted-foreground" />
               Attivit Recenti
             </CardTitle>
-            <CardDescription>Ultime azioni nel modulo HR</CardDescription>
+            <CardDescription>{t("hr.latestHrActions")}</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="text-center py-8 text-muted-foreground">
               <ClipboardList className="h-12 w-12 mx-auto mb-3 opacity-50" />
-              <p>Nessuna attivit recente</p>
-              <p className="text-sm">Le attivit HR appariranno qui</p>
+              <p>{t("hr.noRecentActivity")}</p>
+              <p className="text-sm">{t("hr.hrActivitiesWillAppear")}</p>
             </div>
           </CardContent>
         </Card>
@@ -272,28 +272,28 @@ export default function HrDashboard() {
               <TrendingUp className="h-5 w-5 text-muted-foreground" />
               Riepilogo Mensile
             </CardTitle>
-            <CardDescription>Statistiche del mese corrente</CardDescription>
+            <CardDescription>{t("hr.currentMonthStats")}</CardDescription>
           </CardHeader>
           <CardContent className="pt-4">
             <div className="space-y-4">
               <div className="flex items-center justify-between p-3 bg-gradient-to-r from-emerald-50/50 to-teal-50/50 dark:from-emerald-950/30 dark:to-teal-950/30 rounded-xl">
                 <div className="flex flex-wrap items-center gap-2">
                   <UserCheck className="h-4 w-4 text-emerald-600" />
-                  <span className="text-sm">Presenze registrate</span>
+                  <span className="text-sm">{t("hr.registeredAttendances")}</span>
                 </div>
                 <Badge variant="secondary">-</Badge>
               </div>
               <div className="flex items-center justify-between p-3 bg-gradient-to-r from-blue-50/50 to-cyan-50/50 dark:from-blue-950/30 dark:to-cyan-950/30 rounded-xl">
                 <div className="flex flex-wrap items-center gap-2">
                   <CalendarDays className="h-4 w-4 text-blue-600" />
-                  <span className="text-sm">Giorni ferie richiesti</span>
+                  <span className="text-sm">{t("hr.vacationDaysRequested")}</span>
                 </div>
                 <Badge variant="secondary">-</Badge>
               </div>
               <div className="flex items-center justify-between p-3 bg-gradient-to-r from-amber-50/50 to-orange-50/50 dark:from-amber-950/30 dark:to-orange-950/30 rounded-xl">
                 <div className="flex flex-wrap items-center gap-2">
                   <Receipt className="h-4 w-4 text-amber-600" />
-                  <span className="text-sm">Totale rimborsi</span>
+                  <span className="text-sm">{t("hr.totalReimbursements")}</span>
                 </div>
                 <Badge variant="secondary">-</Badge>
               </div>

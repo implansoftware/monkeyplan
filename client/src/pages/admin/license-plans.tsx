@@ -18,44 +18,44 @@ import { Plus, Pencil, Trash2, CreditCard, Clock, Users, Tag, Wrench, Package, F
 import type { LicensePlan } from "@shared/schema";
 import { useTranslation } from "react-i18next";
 
-const TARGET_LABELS: Record<string, string> = {
-  all: "Tutti",
-  standard: "Standard",
-  franchising: "Franchising",
-  gdo: "GDO",
+const TARGET_LABEL_KEYS: Record<string, string> = {
+  all: "license.targetAll",
+  standard: "admin.resellers.standard",
+  franchising: "admin.resellers.franchising",
+  gdo: "admin.resellers.gdo",
 };
 
-const DURATION_LABELS: Record<number, string> = {
-  1: "1 Mese",
-  3: "3 Mesi",
-  6: "6 Mesi",
-  12: "12 Mesi",
+const DURATION_LABEL_KEYS: Record<number, string> = {
+  1: "license.durationLabel1",
+  3: "license.months3",
+  6: "license.months6",
+  12: "license.months12",
 };
 
 const AVAILABLE_FEATURES = [
-  { id: "repairs", label: "Gestione riparazioni", icon: Wrench },
-  { id: "warehouse", label: "Magazzino e inventario", icon: Package },
-  { id: "invoicing", label: "Fatturazione", icon: FileText },
-  { id: "pos", label: "POS e corrispettivi", icon: Receipt },
-  { id: "fiscal_rt", label: "Registratore Telematico (RT)", icon: Receipt },
-  { id: "b2b_orders", label: "Ordini B2B", icon: ShoppingCart },
-  { id: "marketplace", label: "Marketplace P2P", icon: Store },
-  { id: "analytics", label: "Statistiche e report", icon: BarChart3 },
-  { id: "ticketing", label: "Ticketing e supporto", icon: Headphones },
-  { id: "warranty", label: "Garanzie e assicurazioni", icon: Shield },
-  { id: "push_notifications", label: "Notifiche push", icon: Smartphone },
-  { id: "crm", label: "Gestione clienti", icon: Users },
-  { id: "payments", label: "Pagamenti online", icon: CreditCard },
+  { id: "repairs", label: "Gestione riparazioni", labelKey: "license.featureRepairs", icon: Wrench },
+  { id: "warehouse", label: "Magazzino e inventario", labelKey: "license.featureWarehouse", icon: Package },
+  { id: "invoicing", label: "Fatturazione", labelKey: "license.featureInvoicing", icon: FileText },
+  { id: "pos", label: "POS e corrispettivi", labelKey: "license.featurePos", icon: Receipt },
+  { id: "fiscal_rt", label: "Registratore Telematico (RT)", labelKey: "license.featureFiscalRt", icon: Receipt },
+  { id: "b2b_orders", label: "Ordini B2B", labelKey: "license.featureB2bOrders", icon: ShoppingCart },
+  { id: "marketplace", label: "Marketplace P2P", labelKey: "license.featureMarketplace", icon: Store },
+  { id: "analytics", label: "Statistiche e report", labelKey: "license.featureAnalytics", icon: BarChart3 },
+  { id: "ticketing", label: "Ticketing e supporto", labelKey: "license.featureTicketing", icon: Headphones },
+  { id: "warranty", label: "Garanzie e assicurazioni", labelKey: "license.featureWarranty", icon: Shield },
+  { id: "push_notifications", label: "Notifiche push", labelKey: "license.featurePushNotifications", icon: Smartphone },
+  { id: "crm", label: "Gestione clienti", labelKey: "license.featureCrm", icon: Users },
+  { id: "payments", label: "Pagamenti online", labelKey: "license.featurePayments", icon: CreditCard },
 ];
 
 const MAX_STAFF_OPTIONS = [
-  { value: "1", label: "1 utente" },
-  { value: "3", label: "3 utenti" },
-  { value: "5", label: "5 utenti" },
-  { value: "10", label: "10 utenti" },
-  { value: "25", label: "25 utenti" },
-  { value: "50", label: "50 utenti" },
-  { value: "unlimited", label: "Illimitati" },
+  { value: "1", labelKey: "license.user1" },
+  { value: "3", labelKey: "license.users3" },
+  { value: "5", labelKey: "license.users5" },
+  { value: "10", labelKey: "license.users10" },
+  { value: "25", labelKey: "license.users25" },
+  { value: "50", labelKey: "license.users50" },
+  { value: "unlimited", labelKey: "license.unlimited" },
 ];
 
 function parseExistingFeatures(features: string | null | undefined): { selected: Set<string>; custom: string[] } {
@@ -77,6 +77,7 @@ function parseExistingFeatures(features: string | null | undefined): { selected:
 }
 
 function PlanForm({ plan, onSave, onCancel }: { plan?: LicensePlan; onSave: (data: any) => void; onCancel: () => void }) {
+  const { t } = useTranslation();
   const [name, setName] = useState(plan?.name || "");
   const [description, setDescription] = useState(plan?.description || "");
   const [targetCategory, setTargetCategory] = useState<string>(plan?.targetCategory || "all");
@@ -137,10 +138,10 @@ function PlanForm({ plan, onSave, onCancel }: { plan?: LicensePlan; onSave: (dat
     <ScrollArea className="max-h-[70vh]">
       <div className="space-y-5 pr-4">
         <div className="space-y-4">
-          <p className="text-sm font-medium text-muted-foreground uppercase tracking-wide">Informazioni base</p>
+          <p className="text-sm font-medium text-muted-foreground uppercase tracking-wide">{t("license.basicInfo")}</p>
           <div className="space-y-2">
-            <Label>Nome piano *</Label>
-            <Input value={name} onChange={e => setName(e.target.value)} placeholder="es. Standard Mensile" data-testid="input-plan-name" />
+            <Label>{t("license.planNameLabel")}</Label>
+            <Input value={name} onChange={e => setName(e.target.value)} placeholder={t("license.planNamePlaceholder")} data-testid="input-plan-name" />
           </div>
           <div className="space-y-2">
             <Label>{t("common.description")}</Label>
@@ -155,9 +156,9 @@ function PlanForm({ plan, onSave, onCancel }: { plan?: LicensePlan; onSave: (dat
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">{t("common.allMasc")}</SelectItem>
-                  <SelectItem value="standard">Standard</SelectItem>
-                  <SelectItem value="franchising">Franchising</SelectItem>
-                  <SelectItem value="gdo">GDO</SelectItem>
+                  <SelectItem value="standard">{t("admin.resellers.standard")}</SelectItem>
+                  <SelectItem value="franchising">{t("admin.resellers.franchising")}</SelectItem>
+                  <SelectItem value="gdo">{t("admin.resellers.gdo")}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -168,10 +169,10 @@ function PlanForm({ plan, onSave, onCancel }: { plan?: LicensePlan; onSave: (dat
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="1">1 Mese</SelectItem>
-                  <SelectItem value="3">3 Mesi</SelectItem>
-                  <SelectItem value="6">6 Mesi</SelectItem>
-                  <SelectItem value="12">12 Mesi</SelectItem>
+                  <SelectItem value="1">{t("license.month1")}</SelectItem>
+                  <SelectItem value="3">{t("license.months3")}</SelectItem>
+                  <SelectItem value="6">{t("license.months6")}</SelectItem>
+                  <SelectItem value="12">{t("license.months12")}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -181,10 +182,10 @@ function PlanForm({ plan, onSave, onCancel }: { plan?: LicensePlan; onSave: (dat
         <Separator />
 
         <div className="space-y-4">
-          <p className="text-sm font-medium text-muted-foreground uppercase tracking-wide">Prezzo e limiti</p>
+          <p className="text-sm font-medium text-muted-foreground uppercase tracking-wide">{t("license.priceAndLimits")}</p>
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label>Prezzo (EUR) *</Label>
+              <Label>{t("license.priceEur")}</Label>
               <Input type="number" step="0.01" min="0" value={priceCents} onChange={e => setPriceCents(e.target.value)} placeholder="29.99" data-testid="input-plan-price" />
             </div>
             <div className="space-y-2">
@@ -195,7 +196,7 @@ function PlanForm({ plan, onSave, onCancel }: { plan?: LicensePlan; onSave: (dat
                 </SelectTrigger>
                 <SelectContent>
                   {MAX_STAFF_OPTIONS.map(opt => (
-                    <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                    <SelectItem key={opt.value} value={opt.value}>{t(opt.labelKey)}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -207,13 +208,13 @@ function PlanForm({ plan, onSave, onCancel }: { plan?: LicensePlan; onSave: (dat
 
         <div className="space-y-3">
           <div className="flex flex-wrap items-center justify-between gap-2">
-            <p className="text-sm font-medium text-muted-foreground uppercase tracking-wide">Funzionalità incluse</p>
+            <p className="text-sm font-medium text-muted-foreground uppercase tracking-wide">{t("license.featuresIncluded")}</p>
             <div className="flex items-center gap-2">
               <Button variant="ghost" size="sm" onClick={selectAllFeatures} data-testid="button-select-all-features">
-                Seleziona tutto
+                {t("license.selectAll")}
               </Button>
               <Button variant="ghost" size="sm" onClick={clearAllFeatures} data-testid="button-clear-all-features">
-                Deseleziona
+                {t("license.deselectAll")}
               </Button>
             </div>
           </div>
@@ -231,20 +232,20 @@ function PlanForm({ plan, onSave, onCancel }: { plan?: LicensePlan; onSave: (dat
                     onCheckedChange={() => toggleFeature(feature.id)}
                   />
                   <Icon className="w-4 h-4 text-muted-foreground shrink-0" />
-                  <span className="text-sm">{feature.label}</span>
+                  <span className="text-sm">{t(feature.labelKey)}</span>
                 </label>
               );
             })}
           </div>
           <p className="text-xs text-muted-foreground">
-            {selectedFeatures.size} di {AVAILABLE_FEATURES.length} funzionalità selezionate
+            {t("license.featuresSelected", { selected: selectedFeatures.size, total: AVAILABLE_FEATURES.length })}
           </p>
         </div>
 
         <Separator />
 
         <div className="space-y-4">
-          <p className="text-sm font-medium text-muted-foreground uppercase tracking-wide">Opzioni</p>
+          <p className="text-sm font-medium text-muted-foreground uppercase tracking-wide">{t("license.optionsLabel")}</p>
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label>{t("settings.displayOrder")}</Label>
@@ -260,7 +261,7 @@ function PlanForm({ plan, onSave, onCancel }: { plan?: LicensePlan; onSave: (dat
         <div className="flex justify-end gap-2 pt-4">
           <Button variant="outline" onClick={onCancel} data-testid="button-cancel-plan">{t("common.cancel")}</Button>
           <Button onClick={handleSubmit} disabled={!name.trim() || !priceCents} data-testid="button-save-plan">
-            {plan ? "Aggiorna" : "Crea Piano"}
+            {plan ? t("license.update") : t("license.createPlan")}
           </Button>
         </div>
       </div>
@@ -337,12 +338,12 @@ export default function AdminLicensePlans() {
     <div className="p-6 space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold" data-testid="text-page-title">Piani Licenza</h1>
-          <p className="text-sm text-muted-foreground">Gestisci i piani di abbonamento per i rivenditori</p>
+          <h1 className="text-2xl font-bold" data-testid="text-page-title">{t("license.licensePlans")}</h1>
+          <p className="text-sm text-muted-foreground">{t("license.managePlansDesc")}</p>
         </div>
         <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
           <DialogTrigger asChild>
-            <Button data-testid="button-create-plan"><Plus className="w-4 h-4 mr-2" /> Nuovo Piano</Button>
+            <Button data-testid="button-create-plan"><Plus className="w-4 h-4 mr-2" /> {t("license.newPlan")}</Button>
           </DialogTrigger>
           <DialogContent className="max-w-lg">
             <DialogHeader>
@@ -360,8 +361,8 @@ export default function AdminLicensePlans() {
         <Card>
           <CardContent className="py-12 text-center text-muted-foreground">
             <CreditCard className="w-12 h-12 mx-auto mb-4 opacity-50" />
-            <p className="text-lg font-medium">Nessun piano creato</p>
-            <p className="text-sm mt-1">Crea il primo piano licenza per i tuoi rivenditori</p>
+            <p className="text-lg font-medium">{t("license.noPlansCreated")}</p>
+            <p className="text-sm mt-1">{t("license.createFirstPlan")}</p>
           </CardContent>
         </Card>
       ) : (
@@ -374,9 +375,9 @@ export default function AdminLicensePlans() {
                   <div className="flex flex-wrap items-center gap-2 mt-1">
                     <Badge variant="outline" className="text-xs">
                       <Tag className="w-3 h-3 mr-1" />
-                      {TARGET_LABELS[plan.targetCategory] || plan.targetCategory}
+                      {t(TARGET_LABEL_KEYS[plan.targetCategory] || "common.allMasc")}
                     </Badge>
-                    {!plan.isActive && <Badge variant="secondary" className="text-xs">Disattivo</Badge>}
+                    {!plan.isActive && <Badge variant="secondary" className="text-xs">{t("license.inactive")}</Badge>}
                   </div>
                 </div>
                 <div className="flex items-center gap-1 shrink-0">
@@ -400,7 +401,7 @@ export default function AdminLicensePlans() {
                     </DialogContent>
                   </Dialog>
                   <Button size="icon" variant="ghost" onClick={() => {
-                    if (confirm("Sei sicuro di voler eliminare questo piano?")) {
+                    if (confirm(t("license.confirmDeletePlan"))) {
                       deleteMutation.mutate(plan.id);
                     }
                   }} data-testid={`button-delete-plan-${plan.id}`}>
@@ -413,7 +414,7 @@ export default function AdminLicensePlans() {
                   <span className="text-3xl font-bold">{(plan.priceCents / 100).toFixed(2)} EUR</span>
                   <span className="text-sm text-muted-foreground flex items-center gap-1">
                     <Clock className="w-3 h-3" />
-                    {DURATION_LABELS[plan.durationMonths] || `${plan.durationMonths} Mesi`}
+                    {t(DURATION_LABEL_KEYS[plan.durationMonths] || "license.months12")}
                   </span>
                 </div>
                 {plan.description && (
@@ -422,7 +423,7 @@ export default function AdminLicensePlans() {
                 {plan.maxStaffUsers && (
                   <div className="flex items-center gap-1 text-sm text-muted-foreground">
                     <Users className="w-3 h-3" />
-                    Max {plan.maxStaffUsers} utenti staff
+                    {t("license.maxStaffLabel", { count: plan.maxStaffUsers })}
                   </div>
                 )}
                 {plan.features && (

@@ -225,7 +225,7 @@ export default function SubResellers() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/reseller/sub-resellers"] });
-      toast({ title: "Sub-reseller creato con successo" });
+      toast({ title: t("subResellers.createdSuccess") });
       handleCloseDialog();
     },
     onError: (error: Error) => {
@@ -240,7 +240,7 @@ export default function SubResellers() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/reseller/sub-resellers"] });
-      toast({ title: "Sub-reseller aggiornato con successo" });
+      toast({ title: t("subResellers.updatedSuccess") });
       handleCloseDialog();
     },
     onError: (error: Error) => {
@@ -255,7 +255,7 @@ export default function SubResellers() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/reseller/sub-resellers"] });
-      toast({ title: "Sub-reseller eliminato con successo" });
+      toast({ title: t("subResellers.deletedSuccess") });
       setDeleteDialogOpen(false);
       setDeletingReseller(null);
     },
@@ -317,8 +317,8 @@ export default function SubResellers() {
     const validTypes = ['image/jpeg', 'image/png', 'image/webp'];
     if (!validTypes.includes(file.type)) {
       toast({
-        title: "Formato non valido",
-        description: "Il file deve essere in formato JPEG, PNG o WebP.",
+        title: t("common.invalidFormat"),
+        description: t("subResellers.fileMustBeImage"),
         variant: "destructive",
       });
       return;
@@ -327,7 +327,7 @@ export default function SubResellers() {
     if (file.size > 2 * 1024 * 1024) {
       toast({
         title: t("profile.fileTooLarge"),
-        description: "Il file non può superare i 2MB.",
+        description: t("subResellers.fileMaxSize"),
         variant: "destructive",
       });
       return;
@@ -364,12 +364,12 @@ export default function SubResellers() {
       setLogoPreview(null);
       toast({
         title: t("profile.logoUploaded"),
-        description: "Il logo è stato aggiornato con successo.",
+        description: t("subResellers.logoUpdatedDesc"),
       });
     } catch (error: any) {
       toast({
         title: t("common.error"),
-        description: error.message || "Impossibile caricare il logo.",
+        description: error.message || t("subResellers.cannotUploadLogo"),
         variant: "destructive",
       });
     } finally {
@@ -391,12 +391,12 @@ export default function SubResellers() {
       await queryClient.invalidateQueries({ queryKey: ["/api/reseller/sub-resellers"] });
       toast({
         title: t("profile.logoRemoved"),
-        description: "Il logo è stato rimosso con successo.",
+        description: t("subResellers.logoRemovedDesc"),
       });
     } catch (error: any) {
       toast({
         title: t("common.error"),
-        description: error.message || "Impossibile rimuovere il logo.",
+        description: error.message || t("subResellers.cannotRemoveLogo"),
         variant: "destructive",
       });
     }
@@ -427,7 +427,7 @@ export default function SubResellers() {
       updateMutation.mutate({ id: editingReseller.id, data: updateData });
     } else {
       if (!formData.password) {
-        toast({ title: t("common.error"), description: "La password è obbligatoria", variant: "destructive" });
+        toast({ title: t("common.error"), description: t("subResellers.passwordRequired"), variant: "destructive" });
         return;
       }
       createMutation.mutate(formData);
@@ -478,13 +478,13 @@ export default function SubResellers() {
             <div>
               <h1 className="text-2xl font-bold tracking-tight text-white" data-testid="text-page-title">{t("roles.subReseller")}</h1>
               <p className="text-sm text-white/80">
-                Gestisci i tuoi rivenditori affiliati
+                {t("subResellers.manageAffiliated")}
               </p>
             </div>
           </div>
           <Button onClick={handleOpenCreate} className="bg-white/20 backdrop-blur-sm border border-white/30 text-white shadow-lg" data-testid="button-add-subreseller">
             <Plus className="h-4 w-4 mr-2" />
-            Nuovo Sub-Reseller
+            {t("subResellers.newSubReseller")}
           </Button>
         </div>
       </div>
@@ -497,14 +497,14 @@ export default function SubResellers() {
                 <Store className="h-6 w-6 text-blue-600" />
               </div>
               <div className="flex-1">
-                <p className="text-sm font-medium text-muted-foreground">Totale Sub-Reseller</p>
+                <p className="text-sm font-medium text-muted-foreground">{t("subResellers.totalSubResellers")}</p>
                 <div className="text-2xl font-bold" data-testid="text-total-subresellers">
                   {isLoading ? <Skeleton className="h-8 w-16" /> : subResellers.length}
                 </div>
               </div>
             </div>
             <p className="text-xs text-muted-foreground mt-2 pl-16">
-              {activeResellers} attivi
+              {activeResellers} {t("subResellers.activeCount")}
             </p>
           </CardContent>
         </Card>
@@ -523,7 +523,7 @@ export default function SubResellers() {
               </div>
             </div>
             <p className="text-xs text-muted-foreground mt-2 pl-16">
-              tra tutti i sub-reseller
+              {t("subResellers.acrossAll")}
             </p>
           </CardContent>
         </Card>
@@ -542,7 +542,7 @@ export default function SubResellers() {
               </div>
             </div>
             <p className="text-xs text-muted-foreground mt-2 pl-16">
-              tra tutti i sub-reseller
+              {t("subResellers.acrossAll")}
             </p>
           </CardContent>
         </Card>
@@ -554,7 +554,7 @@ export default function SubResellers() {
                 <Network className="h-6 w-6 text-violet-600" />
               </div>
               <div className="flex-1">
-                <p className="text-sm font-medium text-muted-foreground">Attivi</p>
+                <p className="text-sm font-medium text-muted-foreground">{t("subResellers.activeLabel")}</p>
                 <div className="text-2xl font-bold" data-testid="text-active-resellers">
                   {isLoading ? (
                     <Skeleton className="h-8 w-16" />
@@ -565,7 +565,7 @@ export default function SubResellers() {
               </div>
             </div>
             <p className="text-xs text-muted-foreground mt-2 pl-16">
-              sub-reseller attivi
+              {t("subResellers.activeSubResellers")}
             </p>
           </CardContent>
         </Card>
@@ -578,10 +578,10 @@ export default function SubResellers() {
                 <div>
                   <CardTitle className="flex flex-wrap items-center gap-2 text-lg">
                     <Store className="h-5 w-5 text-primary" />
-                    Elenco Sub-Reseller
+                    {t("subResellers.subResellerList")}
                   </CardTitle>
                   <CardDescription>
-                    Visualizza e gestisci i rivenditori affiliati alla tua rete
+                    {t("subResellers.viewAndManage")}
                   </CardDescription>
                 </div>
                 <div className="relative w-72">
@@ -612,13 +612,13 @@ export default function SubResellers() {
                   <p className="text-lg font-semibold">{t("admin.resellers.noSubResellers")}</p>
                   <p className="text-sm text-muted-foreground mt-1">
                     {searchQuery
-                      ? "Prova a modificare i criteri di ricerca"
-                      : "Non hai ancora rivenditori affiliati"}
+                      ? t("subResellers.modifySearchCriteria")
+                      : t("subResellers.noAffiliatedYet")}
                   </p>
                   {!searchQuery && (
                     <Button onClick={handleOpenCreate} className="mt-4" variant="outline">
                       <Plus className="h-4 w-4 mr-2" />
-                      Aggiungi il primo
+                      {t("subResellers.addFirst")}
                     </Button>
                   )}
                 </div>
@@ -632,7 +632,7 @@ export default function SubResellers() {
                         <TableHead className="font-semibold">{t("common.phone")}</TableHead>
                         <TableHead className="font-semibold">{t("common.category")}</TableHead>
                         <TableHead className="text-center font-semibold">{t("customers.title")}</TableHead>
-                        <TableHead className="text-center font-semibold">Centri</TableHead>
+                        <TableHead className="text-center font-semibold">{t("subResellers.centers")}</TableHead>
                         <TableHead className="font-semibold">{t("common.status")}</TableHead>
                         <TableHead className="font-semibold">{t("common.creationDate")}</TableHead>
                         <TableHead className="text-right font-semibold">{t("common.actions")}</TableHead>
@@ -735,10 +735,10 @@ export default function SubResellers() {
               <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-primary/80 text-primary-foreground">
                 {editingReseller ? <Pencil className="h-5 w-5" /> : <Plus className="h-5 w-5" />}
               </div>
-              {editingReseller ? "Modifica Sub-Reseller" : "Nuovo Sub-Reseller"}
+              {editingReseller ? t("subResellers.editSubReseller") : t("subResellers.newSubReseller")}
             </DialogTitle>
             <DialogDescription>
-              {editingReseller ? "Aggiorna le informazioni del sub-reseller" : "Compila i dati per creare un nuovo sub-reseller"}
+              {editingReseller ? t("subResellers.updateInfo") : t("subResellers.fillDataToCreate")}
             </DialogDescription>
           </DialogHeader>
           
@@ -771,9 +771,9 @@ export default function SubResellers() {
             <div className="min-h-[300px]">
               {wizardStep === 1 && !editingReseller && (
                 <div className="space-y-4">
-                  <p className="text-sm text-muted-foreground">Inserisci le credenziali di accesso per il nuovo sub-reseller.</p>
+                  <p className="text-sm text-muted-foreground">{t("subResellers.enterCredentials")}</p>
                   <div className="space-y-2">
-                    <Label htmlFor="username">Username *</Label>
+                    <Label htmlFor="username">{t("subResellers.usernameRequired")}</Label>
                     <Input 
                       id="username" 
                       value={formData.username}
@@ -782,7 +782,7 @@ export default function SubResellers() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="password">Password * (min. 6 caratteri)</Label>
+                    <Label htmlFor="password">{t("subResellers.passwordMinChars")}</Label>
                     <Input 
                       id="password" 
                       type="password"
@@ -796,9 +796,9 @@ export default function SubResellers() {
 
               {wizardStep === 2 && (
                 <div className="space-y-4">
-                  <p className="text-sm text-muted-foreground">Informazioni di base del sub-reseller.</p>
+                  <p className="text-sm text-muted-foreground">{t("subResellers.basicInfo")}</p>
                   <div className="space-y-2">
-                    <Label htmlFor="fullName">Nome Completo *</Label>
+                    <Label htmlFor="fullName">{t("subResellers.fullNameRequired")}</Label>
                     <Input 
                       id="fullName"
                       value={formData.fullName}
@@ -807,7 +807,7 @@ export default function SubResellers() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="email">Email *</Label>
+                    <Label htmlFor="email">{t("subResellers.emailRequired")}</Label>
                     <Input 
                       id="email"
                       type="email"
@@ -854,9 +854,9 @@ export default function SubResellers() {
                   </div>
                   <div className="flex items-center justify-between pt-2">
                     <div className="flex flex-col gap-1">
-                      <Label htmlFor="hasAutonomousInvoicing">Fatturazione Autonoma</Label>
+                      <Label htmlFor="hasAutonomousInvoicing">{t("subResellers.autonomousInvoicing")}</Label>
                       <span className="text-xs text-muted-foreground">
-                        Se attivo, il sub-reseller emette fatture proprie
+                        {t("subResellers.autonomousInvoicingDesc")}
                       </span>
                     </div>
                     <Switch
@@ -873,7 +873,7 @@ export default function SubResellers() {
                       <div>
                         <Label className="text-base font-medium">{t("profile.companyLogo")}</Label>
                         <p className="text-xs text-muted-foreground mt-1">
-                          Carica il logo del sub-reseller (JPEG, PNG o WebP, max 2MB)
+                          {t("subResellers.uploadLogoDesc")}
                         </p>
                       </div>
                       
@@ -924,7 +924,7 @@ export default function SubResellers() {
                                 ) : (
                                   <Upload className="h-4 w-4 mr-2" />
                                 )}
-                                Carica
+                                {t("common.upload")}
                               </Button>
                             )}
                             
@@ -952,13 +952,13 @@ export default function SubResellers() {
 
                   {editingReseller && (
                     <div className="space-y-2 pt-2 border-t">
-                      <Label htmlFor="password">Password (lascia vuoto per mantenere)</Label>
+                      <Label htmlFor="password">{t("subResellers.passwordLeaveEmpty")}</Label>
                       <Input 
                         id="password" 
                         type="password"
                         value={formData.password}
                         onChange={(e) => setFormData(prev => ({ ...prev, password: e.target.value }))}
-                        placeholder="Lascia vuoto per mantenere"
+                        placeholder={t("subResellers.leaveEmptyToKeep")}
                         data-testid="input-password" 
                       />
                     </div>
@@ -969,7 +969,7 @@ export default function SubResellers() {
               {wizardStep === 3 && (
                 <div className="space-y-4">
                   <div className="flex items-center justify-between">
-                    <p className="text-sm text-muted-foreground">Dati fiscali e fatturazione (opzionali).</p>
+                    <p className="text-sm text-muted-foreground">{t("subResellers.fiscalDataOptional")}</p>
                     {!editingReseller && (
                       <div className="flex flex-wrap items-center gap-2">
                         <Checkbox
@@ -980,7 +980,7 @@ export default function SubResellers() {
                         />
                         <Label htmlFor="useParentData" className="text-xs font-normal cursor-pointer flex items-center gap-1">
                           <Copy className="h-3 w-3" />
-                          Copia i miei dati
+                          {t("subResellers.copyMyData")}
                         </Label>
                       </div>
                     )}
@@ -1042,7 +1042,7 @@ export default function SubResellers() {
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="provincia">Prov.</Label>
+                        <Label htmlFor="provincia">{t("subResellers.provAbbr")}</Label>
                         <Input 
                           id="provincia"
                           maxLength={2}
@@ -1060,7 +1060,7 @@ export default function SubResellers() {
                         maxLength={7}
                         value={formData.codiceUnivoco}
                         onChange={(e) => setFormData(prev => ({ ...prev, codiceUnivoco: e.target.value.toUpperCase() }))}
-                        placeholder="7 caratteri"
+                        placeholder={t("subResellers.sevenChars")}
                         data-testid="input-codice-univoco" 
                       />
                     </div>
@@ -1087,13 +1087,13 @@ export default function SubResellers() {
                 data-testid="button-prev"
               >
                 <ChevronLeft className="h-4 w-4 mr-1" />
-                {isFirstStep ? 'Annulla' : 'Indietro'}
+                {isFirstStep ? t("common.cancel") : t("common.back")}
               </Button>
               
               {isLastStep ? (
                 <Button onClick={handleSubmit} disabled={isPending} data-testid="button-submit">
                   {isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-                  {editingReseller ? t("profile.saveChanges") : "Crea Sub-Reseller"}
+                  {editingReseller ? t("profile.saveChanges") : t("subResellers.createSubReseller")}
                 </Button>
               ) : (
                 <Button onClick={nextStep} disabled={!canProceedToNextStep()} data-testid="button-next">{t("common.next")}<ChevronRight className="h-4 w-4 ml-1" />
@@ -1109,8 +1109,7 @@ export default function SubResellers() {
           <AlertDialogHeader>
             <AlertDialogTitle>{t("admin.teams.deleteConfirm")}</AlertDialogTitle>
             <AlertDialogDescription>
-              Sei sicuro di voler eliminare il sub-reseller "{deletingReseller?.fullName}"?
-              Questa azione non può essere annullata.
+              {t("subResellers.deleteConfirmation", { name: deletingReseller?.fullName })}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -1121,7 +1120,7 @@ export default function SubResellers() {
               data-testid="button-confirm-delete"
             >
               {deleteMutation.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-              Elimina
+              {t("common.delete")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -1173,10 +1172,10 @@ const SubResellerDetailDialog = ({ open, onOpenChange, reseller }: SubResellerDe
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 text-white">
               <Eye className="h-5 w-5" />
             </div>
-            Dettagli Sub-Reseller
+            {t("subResellers.detailsTitle")}
           </DialogTitle>
           <DialogDescription>
-            Informazioni complete del sub-reseller
+            {t("subResellers.completeInfo")}
           </DialogDescription>
         </DialogHeader>
         
@@ -1248,7 +1247,7 @@ const SubResellerDetailDialog = ({ open, onOpenChange, reseller }: SubResellerDe
                   <p className="text-sm font-medium">{data.codiceFiscale || "-"}</p>
                 </div>
                 <div className="space-y-1">
-                  <Label className="text-xs text-muted-foreground">Codice Univoco (SDI)</Label>
+                  <Label className="text-xs text-muted-foreground">{t("subResellers.sdiCode")}</Label>
                   <p className="text-sm font-medium">{data.codiceUnivoco || "-"}</p>
                 </div>
                 <div className="col-span-2 space-y-1">
@@ -1265,7 +1264,7 @@ const SubResellerDetailDialog = ({ open, onOpenChange, reseller }: SubResellerDe
                 </div>{t("common.address")}</h4>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="col-span-2 space-y-1">
-                  <Label className="text-xs text-muted-foreground">Via/Indirizzo</Label>
+                  <Label className="text-xs text-muted-foreground">{t("subResellers.streetAddress")}</Label>
                   <p className="text-sm font-medium">{data.indirizzo || "-"}</p>
                 </div>
                 <div className="space-y-1">
@@ -1316,13 +1315,13 @@ const SubResellerDetailDialog = ({ open, onOpenChange, reseller }: SubResellerDe
                   <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/10">
                     <ShoppingCart className="h-4 w-4 text-primary" />
                   </div>
-                  Performance E-commerce
+                  {t("subResellers.ecommercePerformance")}
                 </h4>
                 {ecommerce && (
                   <Link href={`/shop/${reseller?.id}`}>
                     <Button size="sm" variant="outline" data-testid="button-view-shop">
                       <Eye className="h-4 w-4 mr-1" />
-                      Vedi Shop
+                      {t("subResellers.viewShop")}
                     </Button>
                   </Link>
                 )}
@@ -1335,7 +1334,7 @@ const SubResellerDetailDialog = ({ open, onOpenChange, reseller }: SubResellerDe
                       <span className="text-xs text-muted-foreground">{t("products.title")}</span>
                     </div>
                     <p className="text-lg font-bold">{ecommerce.productsPublished}/{ecommerce.productsAssigned}</p>
-                    <p className="text-xs text-muted-foreground">pubblicati/assegnati</p>
+                    <p className="text-xs text-muted-foreground">{t("subResellers.publishedAssigned")}</p>
                   </div>
                   <div className="p-3 rounded-lg bg-blue-500/5 border border-blue-500/10">
                     <div className="flex flex-wrap items-center gap-2 mb-1">
@@ -1344,13 +1343,13 @@ const SubResellerDetailDialog = ({ open, onOpenChange, reseller }: SubResellerDe
                     </div>
                     <p className="text-lg font-bold">{ecommerce.totalOrders}</p>
                     {ecommerce.pendingOrders > 0 && (
-                      <p className="text-xs text-amber-600">{ecommerce.pendingOrders} in attesa</p>
+                      <p className="text-xs text-amber-600">{ecommerce.pendingOrders} {t("subResellers.pending")}</p>
                     )}
                   </div>
                   <div className="p-3 rounded-lg bg-emerald-500/5 border border-emerald-500/10">
                     <div className="flex flex-wrap items-center gap-2 mb-1">
                       <DollarSign className="h-4 w-4 text-emerald-600" />
-                      <span className="text-xs text-muted-foreground">Fatturato</span>
+                      <span className="text-xs text-muted-foreground">{t("subResellers.revenue")}</span>
                     </div>
                     <p className="text-lg font-bold">{formatPrice(ecommerce.totalRevenue)}</p>
                   </div>
@@ -1362,14 +1361,14 @@ const SubResellerDetailDialog = ({ open, onOpenChange, reseller }: SubResellerDe
                     <p className="text-sm font-medium">
                       {ecommerce.lastOrderDate 
                         ? format(new Date(ecommerce.lastOrderDate), "dd MMM yyyy", { locale: it })
-                        : "Nessun ordine"}
+                        : t("subResellers.noOrders")}
                     </p>
                   </div>
                 </div>
               ) : (
                 <div className="text-center py-6 text-muted-foreground">
                   <ShoppingCart className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                  <p className="text-sm">Nessuna attività e-commerce</p>
+                  <p className="text-sm">{t("subResellers.noEcommerceActivity")}</p>
                 </div>
               )}
             </div>

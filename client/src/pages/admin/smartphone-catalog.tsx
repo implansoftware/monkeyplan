@@ -60,22 +60,22 @@ interface CompatibilityEntry {
 
 const STORAGE_OPTIONS = ["16GB", "32GB", "64GB", "128GB", "256GB", "512GB", "1TB", "2TB"];
 const GRADE_OPTIONS = [
-  { value: "A+", label: "A+ - Come nuovo" },
-  { value: "A", label: "A - Ottimo" },
-  { value: "B", label: "B - Buono" },
-  { value: "C", label: "C - Discreto" },
-  { value: "D", label: "D - Danneggiato" },
+  { value: "A+", label: "A+ - Come nuovo", labelKey: "products.gradeAPlus" },
+  { value: "A", label: "A - Ottimo", labelKey: "products.gradeA" },
+  { value: "B", label: "B - Buono", labelKey: "products.gradeB" },
+  { value: "C", label: "C - Discreto", labelKey: "products.gradeC" },
+  { value: "D", label: "D - Danneggiato", labelKey: "products.gradeD" },
 ];
 const NETWORK_LOCK_OPTIONS = [
-  { value: "unlocked", label: "Sbloccato" },
-  { value: "locked", label: "Bloccato operatore" },
-  { value: "icloud_locked", label: "Bloccato iCloud" },
+  { value: "unlocked", label: "Sbloccato", labelKey: "products.unlocked" },
+  { value: "locked", label: "Bloccato operatore", labelKey: "products.lockedCarrier" },
+  { value: "icloud_locked", label: "Bloccato iCloud", labelKey: "products.icloudLocked" },
 ];
 const CONDITION_OPTIONS = [
-  { value: "nuovo", label: "Nuovo" },
-  { value: "ricondizionato", label: "Ricondizionato" },
-  { value: "usato", label: "Usato" },
-  { value: "difettoso", label: "Difettoso" },
+  { value: "nuovo", label: "Nuovo", labelKey: "products.conditionNew" },
+  { value: "ricondizionato", label: "Ricondizionato", labelKey: "products.conditionRefurbished" },
+  { value: "usato", label: "Usato", labelKey: "products.conditionUsed" },
+  { value: "difettoso", label: "Difettoso", labelKey: "products.conditionDefective" },
 ];
 const BRANDS = ["Apple", "Samsung", "Xiaomi", "Huawei", "OPPO", "OnePlus", "Google", "Motorola", "Sony", "Nokia", "Altro"];
 
@@ -86,30 +86,30 @@ const COLOR_OPTIONS = [
 ];
 
 const BATTERY_OPTIONS = [
-  { value: "100", label: "100%" },
-  { value: "95-99", label: "95-99%" },
-  { value: "90-94", label: "90-94%" },
-  { value: "85-89", label: "85-89%" },
-  { value: "80-84", label: "80-84%" },
-  { value: "<80", label: "Meno di 80%" },
+  { value: "100", label: "100%", labelKey: "products.battery100" },
+  { value: "95-99", label: "95-99%", labelKey: "products.battery95" },
+  { value: "90-94", label: "90-94%", labelKey: "products.battery90" },
+  { value: "85-89", label: "85-89%", labelKey: "products.battery85" },
+  { value: "80-84", label: "80-84%", labelKey: "products.battery80" },
+  { value: "<80", label: "Meno di 80%", labelKey: "products.batteryBelow80" },
 ];
 
 const CATEGORY_OPTIONS = [
-  { value: "smartphone", label: "Smartphone" },
-  { value: "tablet", label: "Tablet" },
-  { value: "portatile", label: "PC Portatile" },
-  { value: "pc_fisso", label: "PC Fisso" },
-  { value: "smartwatch", label: "Smartwatch" },
-  { value: "console", label: "Console" },
-  { value: "altro", label: "Altro" },
+  { value: "smartphone", label: "Smartphone", labelKey: "products.catSmartphone" },
+  { value: "tablet", label: "Tablet", labelKey: "products.catTablet" },
+  { value: "portatile", label: "PC Portatile", labelKey: "products.catLaptop" },
+  { value: "pc_fisso", label: "PC Fisso", labelKey: "products.catDesktop" },
+  { value: "smartwatch", label: "Smartwatch", labelKey: "products.catSmartwatch" },
+  { value: "console", label: "Console", labelKey: "products.catConsole" },
+  { value: "altro", label: "Altro", labelKey: "products.catOther" },
 ];
 
-const ACCESSORY_OPTIONS = [
-  "Caricatore originale",
-  "Cavo USB",
-  "Auricolari",
-  "Cover",
-  "Pellicola",
+const ACCESSORY_OPTIONS_KEYS = [
+  { label: "Caricatore originale", labelKey: "products.accOriginalCharger" },
+  { label: "Cavo USB", labelKey: "products.accUsbCable" },
+  { label: "Auricolari", labelKey: "products.accEarphones" },
+  { label: "Cover", labelKey: "products.accCover" },
+  { label: "Pellicola", labelKey: "products.accScreenProtector" },
 ];
 
 export default function AdminSmartphoneCatalog() {
@@ -388,8 +388,8 @@ export default function AdminSmartphoneCatalog() {
     },
     onSuccess: (_, { isVisibleInShop }) => {
       toast({
-        title: isVisibleInShop ? "Visibile nello shop" : "Nascosto dallo shop",
-        description: isVisibleInShop ? "Lo smartphone è ora visibile negli shop." : "Lo smartphone è stato nascosto dagli shop.",
+        title: isVisibleInShop ? t("products.visibleInShopLabel") : t("products.hiddenFromShopLabel"),
+        description: isVisibleInShop ? t("products.visibleInShopDesc") : t("products.hiddenFromShopDesc"),
       });
     },
     onSettled: () => {
@@ -401,11 +401,11 @@ export default function AdminSmartphoneCatalog() {
     const file = e.target.files?.[0];
     if (file) {
       if (!["image/jpeg", "image/png", "image/webp", "image/gif"].includes(file.type)) {
-        toast({ title: t("common.error"), description: "Formato non supportato. Usa JPEG, PNG, WebP o GIF.", variant: "destructive" });
+        toast({ title: t("common.error"), description: t("products.unsupportedFormat"), variant: "destructive" });
         return;
       }
       if (file.size > 10 * 1024 * 1024) {
-        toast({ title: t("common.error"), description: "Immagine troppo grande. Max 10MB.", variant: "destructive" });
+        toast({ title: t("common.error"), description: t("products.imageTooLarge"), variant: "destructive" });
         return;
       }
       setImageFile(file);
@@ -774,9 +774,9 @@ export default function AdminSmartphoneCatalog() {
 
   const getNetworkLockBadge = (lock: string | null | undefined) => {
     switch (lock) {
-      case "unlocked": return <Badge variant="outline" className="text-green-600 border-green-600">Sbloccato</Badge>;
-      case "locked": return <Badge variant="outline" className="text-yellow-600 border-yellow-600">Operatore</Badge>;
-      case "icloud_locked": return <Badge variant="destructive">iCloud Lock</Badge>;
+      case "unlocked": return <Badge variant="outline" className="text-green-600 border-green-600">{t("products.unlocked")}</Badge>;
+      case "locked": return <Badge variant="outline" className="text-yellow-600 border-yellow-600">{t("products.lockedCarrier")}</Badge>;
+      case "icloud_locked": return <Badge variant="destructive">{t("products.icloudLocked")}</Badge>;
       default: return null;
     }
   };
@@ -794,20 +794,20 @@ export default function AdminSmartphoneCatalog() {
               <Smartphone className="h-5 w-5" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold tracking-tight">Catalogo Dispositivi (Admin)</h1>
-              <p className="text-sm text-muted-foreground">Visualizza e gestisci tutti i dispositivi di tutti i rivenditori</p>
+              <h1 className="text-2xl font-bold tracking-tight">{t("products.deviceCatalogAdmin")}</h1>
+              <p className="text-sm text-muted-foreground">{t("products.deviceCatalogAdminDesc")}</p>
             </div>
           </div>
           <Button onClick={() => setWizardOpen(true)} data-testid="button-add-device" className="shadow-lg shadow-primary/25">
             <Plus className="mr-2 h-4 w-4" />
-            Aggiungi Dispositivo
+            {t("products.addDevice")}
           </Button>
         </div>
       </div>
 
       <Card>
         <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-4">
-          <CardTitle>Lista Dispositivi ({filteredSmartphones.length})</CardTitle>
+          <CardTitle>{t("products.deviceList")} ({filteredSmartphones.length})</CardTitle>
           <div className="flex flex-wrap items-center gap-2 flex-wrap">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -826,7 +826,7 @@ export default function AdminSmartphoneCatalog() {
               <SelectContent>
                 <SelectItem value="all">{t("products.allCategories")}</SelectItem>
                 {CATEGORY_OPTIONS.map((c) => (
-                  <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>
+                  <SelectItem key={c.value} value={c.value}>{t(c.labelKey)}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -848,7 +848,7 @@ export default function AdminSmartphoneCatalog() {
               <SelectContent>
                 <SelectItem value="all">{t("products.allGrades")}</SelectItem>
                 {GRADE_OPTIONS.map((g) => (
-                  <SelectItem key={g.value} value={g.value}>{g.label}</SelectItem>
+                  <SelectItem key={g.value} value={g.value}>{t(g.labelKey)}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -878,7 +878,7 @@ export default function AdminSmartphoneCatalog() {
                     <TableHead>{t("common.category")}</TableHead>
                     <TableHead>{t("roles.reseller")}</TableHead>
                     <TableHead className="text-right">{t("common.price")}</TableHead>
-                    <TableHead className="text-center">Shop</TableHead>
+                    <TableHead className="text-center">{t("products.shop")}</TableHead>
                     <TableHead className="w-24">{t("common.actions")}</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -914,7 +914,7 @@ export default function AdminSmartphoneCatalog() {
                       <TableCell>
                         {smartphone.category ? (
                           <Badge variant="outline" className="text-xs">
-                            {CATEGORY_OPTIONS.find(c => c.value === smartphone.category)?.label || smartphone.category}
+                            {CATEGORY_OPTIONS.find(c => c.value === smartphone.category) ? t(CATEGORY_OPTIONS.find(c => c.value === smartphone.category)!.labelKey) : smartphone.category}
                           </Badge>
                         ) : (
                           <span className="text-muted-foreground text-sm">-</span>
@@ -971,7 +971,7 @@ export default function AdminSmartphoneCatalog() {
                             variant="ghost"
                             size="icon"
                             onClick={() => { setDetailProductId(smartphone.id); setDetailDialogOpen(true); }}
-                            title="Visualizza dettagli"
+                            title={t("products.viewDetails")}
                             data-testid={`button-detail-smartphone-${smartphone.id}`}
                           >
                             <Search className="h-4 w-4 text-primary" />
@@ -985,7 +985,7 @@ export default function AdminSmartphoneCatalog() {
                               setAssignCostPrice(smartphone.costPrice ? (smartphone.costPrice / 100).toFixed(2) : "");
                               setAssignDialogOpen(true); 
                             }}
-                            title="Assegna a rivenditore"
+                            title={t("products.assignToReseller")}
                             data-testid={`button-assign-smartphone-${smartphone.id}`}
                           >
                             <UserPlus className="h-4 w-4 text-blue-500" />
@@ -1021,9 +1021,9 @@ export default function AdminSmartphoneCatalog() {
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>{editingSmartphone ? "Modifica Smartphone" : "Aggiungi Smartphone"}</DialogTitle>
+            <DialogTitle>{editingSmartphone ? t("products.editSmartphone") : t("products.addSmartphone")}</DialogTitle>
             <DialogDescription>
-              {editingSmartphone ? "Modifica i dettagli dello smartphone" : "Inserisci i dettagli del nuovo smartphone"}
+              {editingSmartphone ? t("products.editSmartphoneDesc") : t("products.addSmartphoneDesc")}
             </DialogDescription>
           </DialogHeader>
 
@@ -1099,7 +1099,7 @@ export default function AdminSmartphoneCatalog() {
                   </SelectTrigger>
                   <SelectContent>
                     {CONDITION_OPTIONS.map((c) => (
-                      <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>
+                      <SelectItem key={c.value} value={c.value}>{t(c.labelKey)}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -1108,7 +1108,7 @@ export default function AdminSmartphoneCatalog() {
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="storage">Storage *</Label>
+                <Label htmlFor="storage">{t("products.storage")} *</Label>
                 <Select value={formData.storage} onValueChange={(v) => setFormData({ ...formData, storage: v })}>
                   <SelectTrigger data-testid="select-smartphone-storage">
                     <SelectValue />
@@ -1128,7 +1128,7 @@ export default function AdminSmartphoneCatalog() {
                   </SelectTrigger>
                   <SelectContent>
                     {GRADE_OPTIONS.map((g) => (
-                      <SelectItem key={g.value} value={g.value}>{g.label}</SelectItem>
+                      <SelectItem key={g.value} value={g.value}>{t(g.labelKey)}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -1141,7 +1141,7 @@ export default function AdminSmartphoneCatalog() {
                   </SelectTrigger>
                   <SelectContent>
                     {NETWORK_LOCK_OPTIONS.map((n) => (
-                      <SelectItem key={n.value} value={n.value}>{n.label}</SelectItem>
+                      <SelectItem key={n.value} value={n.value}>{t(n.labelKey)}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -1157,7 +1157,7 @@ export default function AdminSmartphoneCatalog() {
                   </SelectTrigger>
                   <SelectContent>
                     {BATTERY_OPTIONS.map((b) => (
-                      <SelectItem key={b.value} value={b.value}>{b.label}</SelectItem>
+                      <SelectItem key={b.value} value={b.value}>{t(b.labelKey)}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -1260,7 +1260,7 @@ export default function AdminSmartphoneCatalog() {
               <div className="flex items-center justify-between">
                 <Label className="flex flex-wrap items-center gap-2">
                   <Warehouse className="h-4 w-4" />
-                  {editingSmartphone ? "Gestione stock" : "Quantità iniziali per magazzino"}
+                  {editingSmartphone ? t("products.manageStock") : t("products.initialStockQuantities")}
                 </Label>
                 <Select onValueChange={editingSmartphone ? addEditStock : addInitialStock}>
                   <SelectTrigger className="w-56" data-testid="select-add-stock-warehouse">
@@ -1330,7 +1330,7 @@ export default function AdminSmartphoneCatalog() {
                   </div>
                 ) : editStock.length === 0 ? (
                   <p className="text-sm text-muted-foreground text-center py-4">
-                    Nessuna giacenza. Seleziona un magazzino per aggiungere quantità.
+                    {t("warehouse.noStockSelectWarehouse")}
                   </p>
                 ) : (
                   <div className="space-y-2">
@@ -1351,7 +1351,7 @@ export default function AdminSmartphoneCatalog() {
                               onClick={() => saveStockChange(stock.warehouseId)}
                               data-testid={`edit-button-save-stock-${stock.warehouseId}`}
                             >
-                              {updateStockMutation.isPending ? "..." : "Salva"}
+                              {updateStockMutation.isPending ? "..." : t("common.save")}
                             </Button>
                           </div>
                           <div className="flex flex-wrap items-center gap-3">
@@ -1366,11 +1366,11 @@ export default function AdminSmartphoneCatalog() {
                               />
                             </div>
                             <div className="flex-1">
-                              <Label className="text-xs text-muted-foreground">Ubicazione</Label>
+                              <Label className="text-xs text-muted-foreground">{t("warehouse.location")}</Label>
                               <Input
                                 value={stock.location}
                                 onChange={(e) => updateEditStockLocation(stock.warehouseId, e.target.value)}
-                                placeholder="es. Scaffale A3"
+                                placeholder={t("warehouse.locationPlaceholder")}
                                 data-testid={`edit-input-location-${stock.warehouseId}`}
                               />
                             </div>
@@ -1384,7 +1384,7 @@ export default function AdminSmartphoneCatalog() {
                 // Create mode: show initialStock
                 initialStock.length === 0 ? (
                   <p className="text-sm text-muted-foreground text-center py-4">
-                    Nessuna quantità iniziale. Seleziona un magazzino per aggiungere.
+                    {t("warehouse.noInitialStock")}
                   </p>
                 ) : (
                   <div className="space-y-2">
@@ -1395,7 +1395,7 @@ export default function AdminSmartphoneCatalog() {
                           <div className="flex items-center justify-between">
                             <div className="flex flex-wrap items-center gap-2">
                               <Warehouse className="h-4 w-4 text-muted-foreground" />
-                              <span className="font-medium">{wh?.name || "Magazzino"}</span>
+                              <span className="font-medium">{wh?.name || t("products.warehouseLabel")}</span>
                               {wh && (
                                 <span className="text-xs text-muted-foreground">
                                   ({wh.ownerType === 'admin' ? 'Admin' : wh.owner?.fullName || wh.owner?.username})
@@ -1424,11 +1424,11 @@ export default function AdminSmartphoneCatalog() {
                               />
                             </div>
                             <div className="flex-1">
-                              <Label className="text-xs text-muted-foreground">Ubicazione</Label>
+                              <Label className="text-xs text-muted-foreground">{t("warehouse.location")}</Label>
                               <Input
                                 value={stock.location}
                                 onChange={(e) => updateInitialStockLocation(stock.warehouseId, e.target.value)}
-                                placeholder="es. Scaffale A3"
+                                placeholder={t("warehouse.locationPlaceholder")}
                                 data-testid={`input-location-${stock.warehouseId}`}
                               />
                             </div>
@@ -1454,21 +1454,21 @@ export default function AdminSmartphoneCatalog() {
             <div className="space-y-2">
               <Label>{t("products.includedAccessories")}</Label>
               <div className="flex flex-wrap gap-4">
-                {ACCESSORY_OPTIONS.map((acc) => (
-                  <div key={acc} className="flex flex-wrap items-center gap-2">
+                {ACCESSORY_OPTIONS_KEYS.map((acc) => (
+                  <div key={acc.label} className="flex flex-wrap items-center gap-2">
                     <Checkbox
-                      id={`acc-${acc}`}
-                      checked={formData.accessories.includes(acc)}
+                      id={`acc-${acc.label}`}
+                      checked={formData.accessories.includes(acc.label)}
                       onCheckedChange={(checked) => {
                         if (checked) {
-                          setFormData({ ...formData, accessories: [...formData.accessories, acc] });
+                          setFormData({ ...formData, accessories: [...formData.accessories, acc.label] });
                         } else {
-                          setFormData({ ...formData, accessories: formData.accessories.filter(a => a !== acc) });
+                          setFormData({ ...formData, accessories: formData.accessories.filter(a => a !== acc.label) });
                         }
                       }}
-                      data-testid={`checkbox-accessory-${acc.replace(/\s/g, '-').toLowerCase()}`}
+                      data-testid={`checkbox-accessory-${acc.label.replace(/\s/g, '-').toLowerCase()}`}
                     />
-                    <Label htmlFor={`acc-${acc}`} className="text-sm">{acc}</Label>
+                    <Label htmlFor={`acc-${acc.label}`} className="text-sm">{t(acc.labelKey)}</Label>
                   </div>
                 ))}
               </div>
@@ -1553,7 +1553,7 @@ export default function AdminSmartphoneCatalog() {
                       data-testid="button-select-image"
                     >
                       <ImagePlus className="mr-2 h-4 w-4" />
-                      Seleziona immagine
+                      {t("products.selectImage")}
                     </Button>
                     {editingSmartphone && imageFile && (
                       <Button
@@ -1564,10 +1564,10 @@ export default function AdminSmartphoneCatalog() {
                         data-testid="button-upload-image"
                       >
                         {uploadingImage && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                        Carica immagine
+                        {t("products.uploadImage")}
                       </Button>
                     )}
-                    <p className="text-xs text-muted-foreground">JPEG, PNG, WebP o GIF. Max 10MB.</p>
+                    <p className="text-xs text-muted-foreground">{t("products.imageFormats")}</p>
                   </div>
                 </div>
               </div>
@@ -1576,10 +1576,10 @@ export default function AdminSmartphoneCatalog() {
               <div className="space-y-3 border-t pt-4">
                 <Label className="flex flex-wrap items-center gap-2">
                   <Link2 className="h-4 w-4" />
-                  Compatibilità Dispositivi
+                  {t("products.deviceCompatibility")}
                 </Label>
                 <p className="text-xs text-muted-foreground">
-                  Seleziona i dispositivi con cui questo smartphone è compatibile (es. cover, accessori)
+                  {t("products.deviceCompatibilityDesc")}
                 </p>
                 
                 <div className="flex gap-2 flex-wrap">
@@ -1606,13 +1606,13 @@ export default function AdminSmartphoneCatalog() {
                     data-testid="button-add-brand-compat"
                   >
                     <Plus className="h-4 w-4 mr-1" />
-                    Tutti i modelli
+                    {t("products.allModels")}
                   </Button>
                 </div>
 
                 {selectedDeviceBrandId && deviceModels.length > 0 && (
                   <div>
-                    <Label className="text-xs mb-2 block">Oppure seleziona modelli specifici:</Label>
+                    <Label className="text-xs mb-2 block">{t("products.orSelectSpecificModels")}</Label>
                     <div className="flex flex-wrap gap-1 max-h-24 overflow-y-auto">
                       {deviceModels.map((model) => {
                         const isSelected = editCompatibilities.some(
@@ -1638,13 +1638,13 @@ export default function AdminSmartphoneCatalog() {
                 {editCompatibilities.length > 0 && (
                   <div className="pt-2 border-t">
                     <Label className="text-xs text-muted-foreground mb-2 block">
-                      Compatibilità selezionate ({editCompatibilities.length})
+                      {t("products.selectedCompatibilities")} ({editCompatibilities.length})
                     </Label>
                     <div className="flex flex-wrap gap-2">
                       {editCompatibilities.map((compat, index) => {
                         const label = compat.deviceModelName 
                           ? `${compat.deviceBrandName || ''} ${compat.deviceModelName}`
-                          : `${compat.deviceBrandName || 'Marca'} (tutti)`;
+                          : `${compat.deviceBrandName || t("products.brandLabel")} (${t("common.all")})`;
                         return (
                           <Badge key={index} variant="secondary" className="gap-1">
                             {label}
@@ -1665,7 +1665,7 @@ export default function AdminSmartphoneCatalog() {
 
                 {editCompatibilities.length === 0 && (
                   <p className="text-xs text-muted-foreground text-center py-2">
-                    Nessuna compatibilità selezionata
+                    {t("products.noCompatibilitySelected")}
                   </p>
                 )}
               </div>
@@ -1674,7 +1674,7 @@ export default function AdminSmartphoneCatalog() {
 
           <DialogFooter>
             <Button variant="outline" onClick={() => setDialogOpen(false)} data-testid="button-cancel">
-              Annulla
+              {t("common.cancel")}
             </Button>
             <Button
               onClick={handleSubmit}
@@ -1682,7 +1682,7 @@ export default function AdminSmartphoneCatalog() {
               data-testid="button-save-smartphone"
             >
               {(createMutation.isPending || updateMutation.isPending) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              {editingSmartphone ? "Salva modifiche" : "Aggiungi"}
+              {editingSmartphone ? t("products.saveModifications") : t("products.addItem")}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -1693,12 +1693,12 @@ export default function AdminSmartphoneCatalog() {
           <DialogHeader>
             <DialogTitle>{t("common.confirmDelete")}</DialogTitle>
             <DialogDescription>
-              Sei sicuro di voler eliminare "{smartphoneToDelete?.name}"? Questa azione non può essere annullata.
+              {t("common.confirmDeleteMessage", { name: smartphoneToDelete?.name })}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDeleteDialogOpen(false)} data-testid="button-cancel-delete">
-              Annulla
+              {t("common.cancel")}
             </Button>
             <Button
               variant="destructive"
@@ -1707,7 +1707,7 @@ export default function AdminSmartphoneCatalog() {
               data-testid="button-confirm-delete"
             >
               {deleteMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Elimina
+              {t("common.delete")}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -1718,10 +1718,10 @@ export default function AdminSmartphoneCatalog() {
           <DialogHeader>
             <DialogTitle className="flex flex-wrap items-center gap-2">
               <Users className="h-5 w-5" />
-              Assegna a Rivenditore
+              {t("products.assignToReseller")}
             </DialogTitle>
             <DialogDescription>
-              Assegna "{smartphoneToAssign?.name}" a uno o più rivenditori con prezzi personalizzati.
+              {t("products.assignDescription", { name: smartphoneToAssign?.name })}
             </DialogDescription>
           </DialogHeader>
 
@@ -1817,14 +1817,14 @@ export default function AdminSmartphoneCatalog() {
               >
                 {assignMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 <UserPlus className="mr-2 h-4 w-4" />
-                Assegna
+                {t("products.assign")}
               </Button>
             </div>
           </div>
 
           <DialogFooter>
             <Button variant="outline" onClick={() => setAssignDialogOpen(false)} data-testid="button-close-assign">
-              Chiudi
+              {t("common.close")}
             </Button>
           </DialogFooter>
         </DialogContent>

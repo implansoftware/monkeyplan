@@ -26,11 +26,11 @@ import { useTranslation } from "react-i18next";
 type CommissionStatus = "pending" | "accrued" | "invoiced" | "paid" | "cancelled";
 
 const statusLabels: Record<CommissionStatus, string> = {
-  pending: "In Attesa",
-  accrued: "Maturata",
-  invoiced: "Fatturata",
-  paid: "Pagata",
-  cancelled: "Annullata",
+  pending: "pending",
+  accrued: "accrued",
+  invoiced: "invoiced",
+  paid: "paid",
+  cancelled: "cancelled",
 };
 
 const statusColors: Record<CommissionStatus, string> = {
@@ -225,18 +225,18 @@ export default function AdminUtilityCommissions() {
   const currentYear = new Date().getFullYear();
   const years = Array.from({ length: 5 }, (_, i) => currentYear - i);
   const months = [
-    { value: 1, label: "Gennaio" },
-    { value: 2, label: "Febbraio" },
-    { value: 3, label: "Marzo" },
-    { value: 4, label: "Aprile" },
-    { value: 5, label: "Maggio" },
-    { value: 6, label: "Giugno" },
-    { value: 7, label: "Luglio" },
-    { value: 8, label: "Agosto" },
-    { value: 9, label: "Settembre" },
-    { value: 10, label: "Ottobre" },
-    { value: 11, label: "Novembre" },
-    { value: 12, label: "Dicembre" },
+    { value: 1, label: t("months.january") },
+    { value: 2, label: t("months.february") },
+    { value: 3, label: t("months.march") },
+    { value: 4, label: t("months.april") },
+    { value: 5, label: t("months.may") },
+    { value: 6, label: t("months.june") },
+    { value: 7, label: t("months.july") },
+    { value: 8, label: t("months.august") },
+    { value: 9, label: t("months.september") },
+    { value: 10, label: t("months.october") },
+    { value: 11, label: t("months.november") },
+    { value: 12, label: t("months.december") },
   ];
 
   return (
@@ -257,8 +257,8 @@ export default function AdminUtilityCommissions() {
               <Coins className="h-5 w-5" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold tracking-tight">Compensi Utility</h1>
-              <p className="text-sm text-muted-foreground">Gestisci commissioni e pagamenti</p>
+              <h1 className="text-2xl font-bold tracking-tight">{t("utility.commissionsTitle")}</h1>
+              <p className="text-sm text-muted-foreground">{t("utility.commissionsDesc")}</p>
             </div>
           </div>
         </div>
@@ -267,7 +267,7 @@ export default function AdminUtilityCommissions() {
       <div className="grid gap-4 md:grid-cols-3">
         <Card data-testid="card-total-pending">
           <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">In Attesa</CardTitle>
+            <CardTitle className="text-sm font-medium">{t("utility.pendingLabel")}</CardTitle>
             <Clock className="h-4 w-4 text-yellow-500" />
           </CardHeader>
           <CardContent>
@@ -280,7 +280,7 @@ export default function AdminUtilityCommissions() {
 
         <Card data-testid="card-total-paid">
           <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Pagate</CardTitle>
+            <CardTitle className="text-sm font-medium">{t("utility.paidLabel")}</CardTitle>
             <CheckCircle2 className="h-4 w-4 text-green-500" />
           </CardHeader>
           <CardContent>
@@ -293,7 +293,7 @@ export default function AdminUtilityCommissions() {
 
         <Card data-testid="card-total">
           <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Totale Anno</CardTitle>
+            <CardTitle className="text-sm font-medium">{t("utility.yearTotal")}</CardTitle>
             <Coins className="h-4 w-4 text-primary" />
           </CardHeader>
           <CardContent>
@@ -360,7 +360,7 @@ export default function AdminUtilityCommissions() {
           ) : filteredCommissions.length === 0 ? (
             <div className="text-center py-8">
               <Coins className="h-12 w-12 mx-auto text-muted-foreground mb-3" />
-              <p className="text-muted-foreground">Nessuna commissione trovata</p>
+              <p className="text-muted-foreground">{t("utility.noCommissions")}</p>
             </div>
           ) : (
             <Table>
@@ -400,7 +400,7 @@ export default function AdminUtilityCommissions() {
                       <TableCell>
                         <Badge className={statusColors[commission.status]}>
                           <StatusIcon className="h-3 w-3 mr-1" />
-                          {statusLabels[commission.status]}
+                          {t(`utility.commissionStatuses.${commission.status}`)}
                         </Badge>
                       </TableCell>
                       <TableCell>
@@ -419,7 +419,7 @@ export default function AdminUtilityCommissions() {
                                 disabled={approveMutation.isPending}
                                 className="text-green-600"
                                 data-testid={`button-approve-${commission.id}`}
-                                title="Approva"
+                                title={t("utility.approve")}
                               >
                                 <Check className="h-4 w-4" />
                               </Button>
@@ -430,7 +430,7 @@ export default function AdminUtilityCommissions() {
                                 disabled={rejectMutation.isPending}
                                 className="text-red-600"
                                 data-testid={`button-reject-${commission.id}`}
-                                title="Rifiuta"
+                                title={t("utility.reject")}
                               >
                                 <X className="h-4 w-4" />
                               </Button>
@@ -471,7 +471,7 @@ export default function AdminUtilityCommissions() {
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>
-              {editingCommission ? "Modifica Commissione" : "Nuova Commissione"}
+              {editingCommission ? t("utility.editCommission") : t("utility.newCommission")}
             </DialogTitle>
             <DialogDescription>
               {editingCommission 
@@ -481,7 +481,7 @@ export default function AdminUtilityCommissions() {
           </DialogHeader>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="practiceId">Pratica *</Label>
+              <Label htmlFor="practiceId">{t("utility.practiceLabel")} *</Label>
               <Select 
                 name="practiceId" 
                 defaultValue={editingCommission?.practiceId}
@@ -502,7 +502,7 @@ export default function AdminUtilityCommissions() {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="periodMonth">Mese *</Label>
+                <Label htmlFor="periodMonth">{t("utility.monthLabel")} *</Label>
                 <Select 
                   name="periodMonth" 
                   defaultValue={editingCommission?.periodMonth?.toString() || (new Date().getMonth() + 1).toString()}
@@ -521,7 +521,7 @@ export default function AdminUtilityCommissions() {
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="periodYear">Anno *</Label>
+                <Label htmlFor="periodYear">{t("utility.yearLabel")} *</Label>
                 <Select 
                   name="periodYear" 
                   defaultValue={editingCommission?.periodYear?.toString() || currentYear.toString()}
@@ -541,7 +541,7 @@ export default function AdminUtilityCommissions() {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="amountCents">Importo (EUR) *</Label>
+                <Label htmlFor="amountCents">{t("utility.amountEur")} *</Label>
                 <Input
                   id="amountCents"
                   name="amountCents"
@@ -597,7 +597,7 @@ export default function AdminUtilityCommissions() {
                 disabled={createMutation.isPending || updateMutation.isPending}
                 data-testid="button-save"
               >
-                {editingCommission ? "Salva Modifiche" : "Crea Commissione"}
+                {editingCommission ? t("utility.saveChanges") : t("utility.createCommission")}
               </Button>
             </div>
           </form>
@@ -615,7 +615,7 @@ export default function AdminUtilityCommissions() {
           </DialogHeader>
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="rejectReason">Motivazione *</Label>
+              <Label htmlFor="rejectReason">{t("utility.rejectReason")} *</Label>
               <Textarea
                 id="rejectReason"
                 value={rejectReason}

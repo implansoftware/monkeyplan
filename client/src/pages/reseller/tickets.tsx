@@ -81,7 +81,7 @@ export default function ResellerTickets() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/internal-tickets"] });
-      toast({ title: "Ticket creato con successo" });
+      toast({ title: t("tickets.ticketCreated") });
       setIsDialogOpen(false);
       setNewTicket({
         subject: "",
@@ -113,7 +113,7 @@ export default function ResellerTickets() {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case "open": return <Badge>Aperto</Badge>;
-      case "in_progress": return <Badge variant="secondary">In lavorazione</Badge>;
+      case "in_progress": return <Badge variant="secondary">{t("tickets.statusInProgress")}</Badge>;
       case "closed": return <Badge variant="outline">Chiuso</Badge>;
       default: return <Badge variant="outline">{status}</Badge>;
     }
@@ -123,7 +123,7 @@ export default function ResellerTickets() {
     switch (priority) {
       case "high": return <Badge variant="destructive">Alta</Badge>;
       case "medium": return <Badge variant="secondary">Media</Badge>;
-      case "low": return <Badge variant="outline">Bassa</Badge>;
+      case "low": return <Badge variant="outline">{t("tickets.priorityLow")}</Badge>;
       default: return <Badge variant="outline">{priority}</Badge>;
     }
   };
@@ -132,7 +132,7 @@ export default function ResellerTickets() {
     if (ticket.targetType === "admin") return "Admin";
     if (ticket.targetType === "repair_center") {
       const center = repairCenters.find(c => c.id === ticket.targetId);
-      return center?.name || "Centro Riparazione";
+      return center?.name || t("tickets.repairCenter");
     }
     return ticket.targetType;
   };
@@ -141,7 +141,7 @@ export default function ResellerTickets() {
     if (!newTicket.subject || !newTicket.description) {
       toast({ 
         title: t("common.error"), 
-        description: "Compila tutti i campi obbligatori",
+        description: t("common.fillRequiredFields"),
         variant: "destructive" 
       });
       return;
@@ -150,7 +150,7 @@ export default function ResellerTickets() {
     if (newTicket.targetType === "repair_center" && !newTicket.targetId) {
       toast({ 
         title: t("common.error"), 
-        description: "Seleziona un centro riparazione",
+        description: t("tickets.selectRepairCenter"),
         variant: "destructive" 
       });
       return;
@@ -197,23 +197,23 @@ export default function ResellerTickets() {
               </DialogTrigger>
               <DialogContent className="sm:max-w-[500px]">
                 <DialogHeader>
-                  <DialogTitle>Crea Nuovo Ticket Interno</DialogTitle>
+                  <DialogTitle>{t("tickets.createNewInternalTicket")}</DialogTitle>
                 </DialogHeader>
                 <div className="space-y-4 mt-4">
                   <div className="space-y-2">
-                    <Label>Destinatario *</Label>
+                    <Label>{t("tickets.recipientRequired")}</Label>
                     <Select 
                       value={newTicket.targetType} 
                       onValueChange={(v) => setNewTicket({ ...newTicket, targetType: v, targetId: "" })}
                     >
                       <SelectTrigger data-testid="select-target-type">
-                        <SelectValue placeholder="Seleziona destinatario" />
+                        <SelectValue placeholder="{t("tickets.selectRecipient")}" />
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="admin">
                           <div className="flex flex-wrap items-center gap-2">
                             <Building2 className="h-4 w-4" />
-                            Amministrazione
+                            {t("tickets.administration")}
                           </div>
                         </SelectItem>
                         <SelectItem value="repair_center">
@@ -226,13 +226,13 @@ export default function ResellerTickets() {
                   
                   {newTicket.targetType === "repair_center" && (
                     <div className="space-y-2">
-                      <Label>Centro Riparazione *</Label>
+                      <Label>{t("tickets.repairCenterRequired")}</Label>
                       <Select 
                         value={newTicket.targetId} 
                         onValueChange={(v) => setNewTicket({ ...newTicket, targetId: v })}
                       >
                         <SelectTrigger data-testid="select-repair-center">
-                          <SelectValue placeholder="Seleziona centro" />
+                          <SelectValue placeholder={t("tickets.selectCenter")} />
                         </SelectTrigger>
                         <SelectContent>
                           {repairCenters.map((center) => (
@@ -246,21 +246,21 @@ export default function ResellerTickets() {
                   )}
                   
                   <div className="space-y-2">
-                    <Label>Oggetto *</Label>
+                    <Label>{t("tickets.subjectRequired")}</Label>
                     <Input
                       value={newTicket.subject}
                       onChange={(e) => setNewTicket({ ...newTicket, subject: e.target.value })}
-                      placeholder="Oggetto del ticket"
+                      placeholder={t("tickets.ticketSubjectPlaceholder")}
                       data-testid="input-ticket-subject"
                     />
                   </div>
                   
                   <div className="space-y-2">
-                    <Label>Descrizione *</Label>
+                    <Label>{t("tickets.descriptionRequired")}</Label>
                     <Textarea
                       value={newTicket.description}
                       onChange={(e) => setNewTicket({ ...newTicket, description: e.target.value })}
-                      placeholder="Descrivi il problema o la richiesta..."
+                      placeholder={t("tickets.describeIssuePlaceholder")}
                       rows={4}
                       data-testid="input-ticket-description"
                     />
@@ -290,7 +290,7 @@ export default function ResellerTickets() {
                       disabled={createMutation.isPending}
                       data-testid="button-submit-ticket"
                     >
-                      {createMutation.isPending ? "Invio..." : "Invia Ticket"}
+                      {createMutation.isPending ? t("common.sending") : t("tickets.submitTicket")}
                     </Button>
                   </div>
                 </div>
@@ -325,7 +325,7 @@ export default function ResellerTickets() {
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Cerca per numero o oggetto..."
+                placeholder={t("tickets.searchByNumberOrSubject")}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-9"
@@ -380,17 +380,17 @@ export default function ResellerTickets() {
               )}
               <p className="text-lg font-medium mb-1">
                 {searchQuery || statusFilter !== "all" 
-                  ? "Nessun ticket trovato" 
+                  ? t("tickets.noTicketsFoundMsg") 
                   : activeTab === "customers" 
-                    ? "Nessun ticket dai clienti"
-                    : "Nessun ticket interno"
+                    ? t("tickets.noCustomerTickets")
+                    : t("tickets.noInternalTickets")
                 }
               </p>
               <p className="text-sm mb-4">
                 {!searchQuery && statusFilter === "all" && (
                   activeTab === "customers" 
                     ? "I ticket di assistenza dei tuoi clienti appariranno qui"
-                    : "Crea il tuo primo ticket per comunicare con Admin o i tuoi Centri Riparazione"
+                    : t("tickets.createFirstTicketDesc")
                 )}
               </p>
               {!searchQuery && statusFilter === "all" && activeTab === "internal" && (

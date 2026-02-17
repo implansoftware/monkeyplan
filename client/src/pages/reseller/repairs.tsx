@@ -21,7 +21,7 @@ import { it } from "date-fns/locale";
 import type { DateRange } from "react-day-picker";
 import { RepairIntakeWizard } from "@/components/RepairIntakeWizard";
 import { useLocation } from "wouter";
-import { RepairsKanbanBoard } from "@/components/RepairsKanbanBoard";
+import { Repairs{t("common.kanban")}Board } from "@/components/RepairsKanbanBoard";
 import { ActionGuard } from "@/components/permission-guard";
 import { useTranslation } from "react-i18next";
 
@@ -162,11 +162,11 @@ export default function ResellerRepairs() {
 
   const getStatusBadge = (status: string) => {
     switch (status) {
-      case "ingressato": return <Badge variant="secondary">Ingressato</Badge>;
+      case "ingressato": return <Badge variant="secondary">{t("repairs.status.received")}</Badge>;
       case "in_diagnosi": return <Badge variant="outline">In Diagnosi</Badge>;
       case "preventivo_emesso": return <Badge variant="outline">Preventivo Emesso</Badge>;
       case "preventivo_accettato": return <Badge>Preventivo Accettato</Badge>;
-      case "preventivo_rifiutato": return <Badge variant="destructive">Preventivo Rifiutato</Badge>;
+      case "preventivo_rifiutato": return <Badge variant="destructive">{t("repairs.status.quoteRejected")}</Badge>;
       case "attesa_ricambi": return <Badge variant="outline">Attesa Ricambi</Badge>;
       case "in_riparazione": return <Badge>In Riparazione</Badge>;
       case "in_test": return <Badge>In Test</Badge>;
@@ -203,7 +203,7 @@ export default function ResellerRepairs() {
       
       toast({
         title: t("reports.exportCompleted"),
-        description: "Il file Excel è stato scaricato con successo",
+        description: t("repairs.excelDownloaded"),
       });
     } catch (error) {
       toast({
@@ -252,7 +252,7 @@ export default function ResellerRepairs() {
             <div>
               <h1 className="text-2xl font-bold tracking-tight text-white">{t("sidebar.items.jobs")}</h1>
               <p className="text-sm text-white/80">
-                Monitora e gestisci tutte le riparazioni
+                {t("repairs.monitorDesc")}
               </p>
             </div>
           </div>
@@ -261,7 +261,7 @@ export default function ResellerRepairs() {
               <TabsList>
                 <TabsTrigger value="table" className="gap-2" data-testid="toggle-table-view">
                   <TableIcon className="h-4 w-4" />
-                  Tabella
+                  {t("common.table")}
                 </TabsTrigger>
                 <TabsTrigger value="kanban" className="gap-2" data-testid="toggle-kanban-view">
                   <LayoutGrid className="h-4 w-4" />
@@ -364,7 +364,7 @@ export default function ResellerRepairs() {
             <div className="flex-1 relative min-w-[200px]">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Cerca lavorazione..."
+                placeholder={t("repairs.searchWork")}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-9"
@@ -437,7 +437,7 @@ export default function ResellerRepairs() {
             <Select value={deviceTypeFilter} onValueChange={setDeviceTypeFilter}>
               <SelectTrigger className="w-full sm:w-44" data-testid="select-filter-device-type">
                 <Smartphone className="h-4 w-4 shrink-0" />
-                <SelectValue placeholder="Tipo dispositivo" />
+                <SelectValue placeholder={t("repairs.deviceType")} />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">{t("products.allDevices")}</SelectItem>
@@ -459,7 +459,7 @@ export default function ResellerRepairs() {
                       format(dateRange.from, "dd MMM yyyy", { locale: it })
                     )
                   ) : (
-                    "Seleziona periodo"
+                    t("common.selectPeriod")
                   )}
                 </Button>
               </PopoverTrigger>

@@ -89,7 +89,7 @@ export default function TrovausatiMarketplacePage() {
     queryKey: ["/api/trovausati/marketplace/products", page],
     queryFn: async () => {
       const res = await fetch(`/api/trovausati/marketplace/products?page=${page}&limit=25`);
-      if (!res.ok) throw new Error("Errore nel caricamento prodotti");
+      if (!res.ok) throw new Error(t("trovausati.errorLoadingProducts"));
       return res.json();
     },
     enabled: !!credential?.isActive && !!credential?.marketplaceId,
@@ -116,8 +116,8 @@ export default function TrovausatiMarketplacePage() {
       setShowCheckout(false);
       setOrderReference("");
       toast({ 
-        title: "Ordine effettuato", 
-        description: `Ordine #${data.id || "N/A"} creato con successo` 
+        title: t("trovausati.orderPlaced"), 
+        description: t("trovausati.orderCreatedSuccess", { id: data.id || "N/A" }) 
       });
       setActiveTab("orders");
     },
@@ -128,11 +128,11 @@ export default function TrovausatiMarketplacePage() {
 
   const addToCart = (product: MarketplaceProduct) => {
     if (cart.find(p => p.id === product.id)) {
-      toast({ title: "Già nel carrello", description: "Questo prodotto è già nel carrello" });
+      toast({ title: t("trovausati.alreadyInCart"), description: t("trovausati.productAlreadyInCart") });
       return;
     }
     setCart([...cart, product]);
-    toast({ title: "Aggiunto al carrello", description: `${product.attributes.brand} ${product.attributes.model}` });
+    toast({ title: t("products.addedToCart"), description: `${product.attributes.brand} ${product.attributes.model}` });
   };
 
   const removeFromCart = (productId: number) => {
@@ -153,11 +153,11 @@ export default function TrovausatiMarketplacePage() {
 
   const getConditionBadge = (condition: string) => {
     const conditionMap: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
-      "never_used": { label: "Mai usato", variant: "default" },
-      "great": { label: "Ottimo", variant: "default" },
-      "good": { label: "Buono", variant: "secondary" },
-      "average": { label: "Medio", variant: "outline" },
-      "poor": { label: "Discreto", variant: "destructive" },
+      "never_used": { label: t("trovausati.conditionNeverUsed"), variant: "default" },
+      "great": { label: t("trovausati.conditionGreat"), variant: "default" },
+      "good": { label: t("trovausati.conditionGood"), variant: "secondary" },
+      "average": { label: t("trovausati.conditionAverage"), variant: "outline" },
+      "poor": { label: t("trovausati.conditionPoor"), variant: "destructive" },
     };
     const config = conditionMap[condition] || { label: condition, variant: "secondary" as const };
     return <Badge variant={config.variant}>{config.label}</Badge>;
@@ -165,8 +165,8 @@ export default function TrovausatiMarketplacePage() {
 
   const getStatusBadge = (status: string) => {
     const statusMap: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
-      "pending": { label: "In attesa", variant: "outline" },
-      "confirmed": { label: "Confermato", variant: "default" },
+      "pending": { label: t("common.pending"), variant: "outline" },
+      "confirmed": { label: t("trovausati.confirmed"), variant: "default" },
       "shipped": { label: t("b2b.status.shipped"), variant: "secondary" },
       "delivered": { label: t("repairs.status.delivered"), variant: "default" },
     };
@@ -188,8 +188,8 @@ export default function TrovausatiMarketplacePage() {
         <Alert>
           <AlertTriangle className="h-4 w-4" />
           <AlertDescription>
-            Il Marketplace B2B non è configurato o attivo. 
-            <a href="/reseller/trovausati/settings" className="ml-1 underline">Configura le credenziali</a>
+            {t("trovausati.marketplaceNotConfigured")} 
+            <a href="/reseller/trovausati/settings" className="ml-1 underline">{t("trovausati.configureCredentials")}</a>
           </AlertDescription>
         </Alert>
       </div>
@@ -202,7 +202,7 @@ export default function TrovausatiMarketplacePage() {
         <Alert>
           <AlertTriangle className="h-4 w-4" />
           <AlertDescription>
-            Marketplace ID non configurato. Contatta l'assistenza TrovaUsati per ottenere il tuo ID marketplace.
+            {t("trovausati.marketplaceIdNotConfigured")}
           </AlertDescription>
         </Alert>
       </div>
@@ -222,8 +222,8 @@ export default function TrovausatiMarketplacePage() {
               <ShoppingBag className="h-5 w-5" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold tracking-tight">Marketplace B2B TrovaUsati</h1>
-              <p className="text-sm text-muted-foreground">Acquista dispositivi usati certificati</p>
+              <h1 className="text-2xl font-bold tracking-tight">{t("trovausati.marketplaceTitle")}</h1>
+              <p className="text-sm text-muted-foreground">{t("trovausati.marketplaceDesc")}</p>
             </div>
           </div>
           <Button 
@@ -233,7 +233,7 @@ export default function TrovausatiMarketplacePage() {
             data-testid="button-open-cart"
           >
             <ShoppingCart className="h-4 w-4 mr-2" />
-            Carrello
+            {t("sidebar.items.cart")}
             {cart.length > 0 && (
               <Badge className="absolute -top-2 -right-2 h-5 w-5 p-0 flex items-center justify-center">
                 {cart.length}
@@ -247,11 +247,11 @@ export default function TrovausatiMarketplacePage() {
         <TabsList>
           <TabsTrigger value="products" className="flex flex-wrap items-center gap-2" data-testid="tab-products">
             <Package className="h-4 w-4" />
-            Prodotti
+            {t("common.products")}
           </TabsTrigger>
           <TabsTrigger value="orders" className="flex flex-wrap items-center gap-2" data-testid="tab-orders">
             <Truck className="h-4 w-4" />
-            I Miei Ordini
+            {t("sidebar.items.myOrders")}
           </TabsTrigger>
         </TabsList>
 
@@ -263,7 +263,7 @@ export default function TrovausatiMarketplacePage() {
                   <div className="relative">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     <Input
-                      placeholder="Cerca per marca, modello, colore..."
+                      placeholder={t("trovausati.searchByBrandModelColor")}
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
                       className="pl-10"
@@ -283,7 +283,7 @@ export default function TrovausatiMarketplacePage() {
               ) : filteredProducts.length === 0 ? (
                 <div className="text-center py-12 text-muted-foreground">
                   <Package className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                  <p>Nessun prodotto trovato</p>
+                  <p>{t("products.noProductsFound")}</p>
                 </div>
               ) : (
                 <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
@@ -348,7 +348,7 @@ export default function TrovausatiMarketplacePage() {
                           data-testid={`button-add-to-cart-${product.id}`}
                         >
                           <ShoppingCart className="h-4 w-4 mr-1" />
-                          {cart.some(p => p.id === product.id) ? "Nel carrello" : t("common.add")}
+                          {cart.some(p => p.id === product.id) ? t("trovausati.inCart") : t("common.add")}
                         </Button>
                       </CardFooter>
                     </Card>
@@ -365,9 +365,9 @@ export default function TrovausatiMarketplacePage() {
                 data-testid="button-prev-page"
               >
                 <ChevronLeft className="h-4 w-4 mr-1" />
-                Precedente
+                {t("common.previous")}
               </Button>
-              <span className="text-sm text-muted-foreground">Pagina {page + 1}</span>
+              <span className="text-sm text-muted-foreground">{t("common.page")} {page + 1}</span>
               <Button
                 variant="outline"
                 size="sm"
@@ -375,7 +375,7 @@ export default function TrovausatiMarketplacePage() {
                 disabled={products.length < 25}
                 data-testid="button-next-page"
               >
-                Successiva
+                {t("common.next")}
                 <ChevronRight className="h-4 w-4 ml-1" />
               </Button>
             </CardFooter>
@@ -387,9 +387,9 @@ export default function TrovausatiMarketplacePage() {
             <CardHeader>
               <CardTitle className="flex flex-wrap items-center gap-2">
                 <Truck className="h-5 w-5" />
-                Storico Ordini
+                {t("trovausati.orderHistory")}
               </CardTitle>
-              <CardDescription>I tuoi ordini sul marketplace TrovaUsati</CardDescription>
+              <CardDescription>{t("trovausati.yourMarketplaceOrders")}</CardDescription>
             </CardHeader>
             <CardContent>
               {loadingOrders ? (
@@ -399,7 +399,7 @@ export default function TrovausatiMarketplacePage() {
               ) : orders.length === 0 ? (
                 <div className="text-center py-12 text-muted-foreground">
                   <Package className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                  <p>Nessun ordine effettuato</p>
+                  <p>{t("trovausati.noOrdersPlaced")}</p>
                 </div>
               ) : (
                 <div className="space-y-4">
@@ -409,12 +409,12 @@ export default function TrovausatiMarketplacePage() {
                         <div className="flex items-center justify-between">
                           <div>
                             <div className="flex flex-wrap items-center gap-2">
-                              <span className="font-semibold">Ordine #{order.id}</span>
+                              <span className="font-semibold">{t("common.order")} #{order.id}</span>
                               {getStatusBadge(order.attributes.status)}
                             </div>
                             {order.attributes.reference && (
                               <p className="text-sm text-muted-foreground mt-1">
-                                Rif: {order.attributes.reference}
+                                {t("trovausati.ref")}: {order.attributes.reference}
                               </p>
                             )}
                           </div>
@@ -423,7 +423,7 @@ export default function TrovausatiMarketplacePage() {
                               €{(order.attributes.price / 100).toFixed(2)}
                             </p>
                             <p className="text-sm text-muted-foreground">
-                              {order.attributes.total_products} prodotti
+                              {order.attributes.total_products} {t("common.products")}
                             </p>
                           </div>
                         </div>
@@ -468,16 +468,16 @@ export default function TrovausatiMarketplacePage() {
                   <div className="space-y-2">
                     <div className="flex flex-wrap items-center gap-2">
                       <Battery className="h-4 w-4 text-muted-foreground" />
-                      <span>Batteria: {selectedProduct.attributes.battery_perc}% - {selectedProduct.attributes.battery_condition}</span>
+                      <span>{t("trovausati.battery")}: {selectedProduct.attributes.battery_perc}% - {selectedProduct.attributes.battery_condition}</span>
                     </div>
                     <div className="flex flex-wrap items-center gap-2">
                       <Monitor className="h-4 w-4 text-muted-foreground" />
-                      <span>Schermo: {selectedProduct.attributes.screen_condition}</span>
+                      <span>{t("trovausati.screen")}: {selectedProduct.attributes.screen_condition}</span>
                     </div>
                     {selectedProduct.attributes.warranty && (
                       <div className="flex flex-wrap items-center gap-2">
                         <CheckCircle className="h-4 w-4 text-muted-foreground" />
-                        <span>Garanzia: {selectedProduct.attributes.warranty}</span>
+                        <span>{t("common.warranty")}: {selectedProduct.attributes.warranty}</span>
                       </div>
                     )}
                   </div>
@@ -489,7 +489,7 @@ export default function TrovausatiMarketplacePage() {
                   )}
                   {selectedProduct.attributes.anomalies && (
                     <div>
-                      <Label>Anomalie</Label>
+                      <Label>{t("trovausati.anomalies")}</Label>
                       <p className="text-sm text-muted-foreground">{selectedProduct.attributes.anomalies}</p>
                     </div>
                   )}
@@ -514,7 +514,7 @@ export default function TrovausatiMarketplacePage() {
                       data-testid="button-add-to-cart-detail"
                     >
                       <ShoppingCart className="h-4 w-4 mr-2" />
-                      {cart.some(p => p.id === selectedProduct.id) ? "Nel carrello" : "Aggiungi al carrello"}
+                      {cart.some(p => p.id === selectedProduct.id) ? t("trovausati.inCart") : t("trovausati.addToCart")}
                     </Button>
                   </div>
                 </div>
@@ -529,13 +529,13 @@ export default function TrovausatiMarketplacePage() {
           <DialogHeader>
             <DialogTitle className="flex flex-wrap items-center gap-2">
               <ShoppingCart className="h-5 w-5" />
-              Carrello ({cart.length})
+              {t("sidebar.items.cart")} ({cart.length})
             </DialogTitle>
           </DialogHeader>
           {cart.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">
               <ShoppingCart className="h-12 w-12 mx-auto mb-4 opacity-50" />
-              <p>Il carrello è vuoto</p>
+              <p>{t("trovausati.cartEmpty")}</p>
             </div>
           ) : (
             <>
@@ -588,10 +588,10 @@ export default function TrovausatiMarketplacePage() {
               </div>
               <DialogFooter>
                 <Button variant="outline" onClick={() => setShowCart(false)}>
-                  Continua acquisti
+                  {t("trovausati.continueShopping")}
                 </Button>
                 <Button onClick={() => { setShowCart(false); setShowCheckout(true); }} data-testid="button-checkout">
-                  Procedi all'ordine
+                  {t("trovausati.proceedToOrder")}
                 </Button>
               </DialogFooter>
             </>
@@ -602,14 +602,14 @@ export default function TrovausatiMarketplacePage() {
       <Dialog open={showCheckout} onOpenChange={setShowCheckout}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Conferma Ordine</DialogTitle>
+            <DialogTitle>{t("trovausati.confirmOrder")}</DialogTitle>
             <DialogDescription>
-              Stai per ordinare {cart.length} prodotti per un totale di €{(cartTotal / 100).toFixed(2)}
+              {t("trovausati.aboutToOrder", { count: cart.length, total: (cartTotal / 100).toFixed(2) })}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label htmlFor="orderReference">Riferimento ordine (opzionale)</Label>
+              <Label htmlFor="orderReference">{t("trovausati.orderReferenceOptional")}</Label>
               <Input
                 id="orderReference"
                 placeholder="Es. ORD-2026-001"
@@ -621,7 +621,7 @@ export default function TrovausatiMarketplacePage() {
             <Alert>
               <AlertTriangle className="h-4 w-4" />
               <AlertDescription>
-                Confermando l'ordine, i prodotti saranno riservati e riceverai le istruzioni per il pagamento.
+                {t("trovausati.orderConfirmationWarning")}
               </AlertDescription>
             </Alert>
           </div>
@@ -637,7 +637,7 @@ export default function TrovausatiMarketplacePage() {
               ) : (
                 <CheckCircle className="h-4 w-4 mr-2" />
               )}
-              Conferma Ordine
+              {t("trovausati.confirmOrder")}
             </Button>
           </DialogFooter>
         </DialogContent>

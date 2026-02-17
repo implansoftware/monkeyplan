@@ -79,7 +79,7 @@ export default function AdminProductAssignments() {
       await apiRequest('DELETE', `/api/admin/products/${productId}/assign/${resellerId}`);
     },
     onSuccess: () => {
-      toast({ title: t("common.success"), description: "Assegnazione rimossa" });
+      toast({ title: t("common.success"), description: t("productAssignments.assignmentRemoved") });
       queryClient.invalidateQueries({ queryKey: ['/api/admin/global-products'] });
       queryClient.invalidateQueries({ queryKey: ['/api/admin/products', selectedProduct?.id, 'reseller-assignments'] });
     },

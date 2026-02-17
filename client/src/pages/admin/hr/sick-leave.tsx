@@ -59,9 +59,9 @@ const statusColors: Record<string, string> = {
 };
 
 const statusLabels: Record<string, string> = {
-  pending: "In Attesa Certificato",
-  uploaded: "Certificato Caricato",
-  validated: "Verificata",
+  pending: "pending",
+  uploaded: "uploaded",
+  validated: "validated",
 };
 
 export default function AdminSickLeavePage() {
@@ -309,7 +309,7 @@ export default function AdminSickLeavePage() {
               Annulla
             </Button>
             <Button onClick={handleEdit} disabled={editMutation.isPending} data-testid="button-save-edit">
-              {editMutation.isPending ? t("settings.savingRate") : "Salva"}
+              {editMutation.isPending ? t("settings.savingRate") : t("common.save")}
             </Button>
           </DialogFooter>
         </DialogContent>

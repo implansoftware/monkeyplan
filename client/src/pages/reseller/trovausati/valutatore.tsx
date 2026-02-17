@@ -92,15 +92,18 @@ interface Coupon {
   };
 }
 
-const CONDITIONS = [
-  { value: "never_used", label: "Mai usato", description: "Dispositivo nuovo, mai acceso" },
-  { value: "great", label: "Ottimo", description: "Nessun segno visibile, funzionante al 100%" },
-  { value: "good", label: "Buono", description: "Lievi segni d'uso, funzionante al 100%" },
-  { value: "average", label: "Medio", description: "Segni d'uso evidenti ma funzionante" },
-];
+function getConditions(t: (key: string) => string) {
+  return [
+    { value: "never_used", label: t("trovausati.neverUsed"), description: t("trovausati.neverUsedDesc") },
+    { value: "great", label: t("trovausati.great"), description: t("trovausati.greatDesc") },
+    { value: "good", label: t("trovausati.good"), description: t("trovausati.goodDesc") },
+    { value: "average", label: t("trovausati.average"), description: t("trovausati.averageDesc") },
+  ];
+}
 
 export default function TrovausatiValutatorePage() {
   const { t } = useTranslation();
+  const CONDITIONS = getConditions(t);
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState("valutazione");
   const [searchTerm, setSearchTerm] = useState("");
@@ -148,7 +151,7 @@ export default function TrovausatiValutatorePage() {
 
   const getValuationMutation = useMutation({
     mutationFn: async () => {
-      if (!selectedModel) throw new Error("Seleziona un modello");
+      if (!selectedModel) throw new Error(t("trovausati.selectModel"));
       const res = await apiRequest("GET", `/api/trovausati/models/${selectedModel.id}/valuation`);
       return res.json();
     },
@@ -163,7 +166,7 @@ export default function TrovausatiValutatorePage() {
   const emitCouponMutation = useMutation({
     mutationFn: async () => {
       if (!selectedModel || !imei || !selectedShopId) {
-        throw new Error("Compila tutti i campi obbligatori");
+        throw new Error(t("trovausati.fillRequiredFields"));
       }
       const price = valuation?.attributes.prices?.[selectedCondition as keyof typeof valuation.attributes.prices] || 0;
       const res = await apiRequest("POST", "/api/trovausati/coupons", {
@@ -180,8 +183,8 @@ export default function TrovausatiValutatorePage() {
       setShowEmitCoupon(false);
       setSelectedCoupon(data);
       toast({ 
-        title: "Coupon emesso", 
-        description: `Codice: ${data.attributes?.coupon_code || data.coupon_code || "N/A"}` 
+        title: t("trovausati.couponIssued"), 
+        description: `${t("trovausati.couponCode")}: ${data.attributes?.coupon_code || data.coupon_code || "N/A"}` 
       });
       setActiveTab("coupon");
     },
@@ -192,7 +195,7 @@ export default function TrovausatiValutatorePage() {
 
   const consumeCouponMutation = useMutation({
     mutationFn: async (code: string) => {
-      if (!selectedShopId) throw new Error("Seleziona un negozio");
+      if (!selectedShopId) throw new Error(t("trovausati.selectShop"));
       const res = await apiRequest("PATCH", `/api/trovausati/coupons/${code}/consume`, {
         shopId: selectedShopId,
       });
@@ -201,7 +204,7 @@ export default function TrovausatiValutatorePage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/trovausati/coupons"] });
       setSelectedCoupon(null);
-      toast({ title: "Coupon consumato" });
+      toast({ title: t("trovausati.couponConsumed") });
     },
     onError: (error: Error) => {
       toast({ title: t("common.error"), description: error.message, variant: "destructive" });
@@ -210,7 +213,7 @@ export default function TrovausatiValutatorePage() {
 
   const cancelCouponMutation = useMutation({
     mutationFn: async (code: string) => {
-      if (!selectedShopId) throw new Error("Seleziona un negozio");
+      if (!selectedShopId) throw new Error(t("trovausati.selectShop"));
       const res = await apiRequest("PATCH", `/api/trovausati/coupons/${code}/cancel`, {
         shopId: selectedShopId,
       });
@@ -219,7 +222,7 @@ export default function TrovausatiValutatorePage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/trovausati/coupons"] });
       setSelectedCoupon(null);
-      toast({ title: "Coupon annullato" });
+      toast({ title: t("trovausati.couponCancelled") });
     },
     onError: (error: Error) => {
       toast({ title: t("common.error"), description: error.message, variant: "destructive" });
@@ -228,10 +231,10 @@ export default function TrovausatiValutatorePage() {
 
   const getStatusBadge = (status: string) => {
     const statusMap: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
-      "issued": { label: "Emesso", variant: "default" },
-      "used": { label: "Utilizzato", variant: "secondary" },
+      "issued": { label: t("trovausati.issued"), variant: "default" },
+      "used": { label: t("trovausati.used"), variant: "secondary" },
       "cancelled": { label: t("repairs.status.cancelled"), variant: "destructive" },
-      "expired": { label: "Scaduto", variant: "outline" },
+      "expired": { label: t("trovausati.expired"), variant: "outline" },
     };
     const config = statusMap[status] || { label: status, variant: "secondary" as const };
     return <Badge variant={config.variant}>{config.label}</Badge>;
@@ -244,7 +247,7 @@ export default function TrovausatiValutatorePage() {
 
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
-    toast({ title: "Copiato", description: "Codice copiato negli appunti" });
+    toast({ title: t("trovausati.copied"), description: t("trovausati.codeCopied") });
   };
 
   if (loadingCredential) {
@@ -261,8 +264,8 @@ export default function TrovausatiValutatorePage() {
         <Alert>
           <AlertTriangle className="h-4 w-4" />
           <AlertDescription>
-            Il Valutatore non è configurato o attivo. 
-            <a href="/reseller/trovausati/settings" className="ml-1 underline">Configura le credenziali</a>
+            {t("trovausati.evaluatorNotConfigured")} 
+            <a href="/reseller/trovausati/settings" className="ml-1 underline">{t("trovausati.configureCredentials")}</a>
           </AlertDescription>
         </Alert>
       </div>
@@ -282,20 +285,20 @@ export default function TrovausatiValutatorePage() {
               <Tag className="h-5 w-5" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold tracking-tight">Valutatore TrovaUsati</h1>
-              <p className="text-sm text-muted-foreground">Valuta dispositivi e gestisci coupon GDS</p>
+              <h1 className="text-2xl font-bold tracking-tight">{t("trovausati.evaluatorTitle")}</h1>
+              <p className="text-sm text-muted-foreground">{t("trovausati.evaluatorDesc")}</p>
             </div>
           </div>
           {shops.length > 0 && (
             <Select value={selectedShopId} onValueChange={setSelectedShopId}>
               <SelectTrigger className="w-48" data-testid="select-shop">
                 <Store className="h-4 w-4 mr-2" />
-                <SelectValue placeholder="Seleziona negozio" />
+                <SelectValue placeholder={t("trovausati.selectShop")} />
               </SelectTrigger>
               <SelectContent>
                 {shops.map((shop) => (
                   <SelectItem key={shop.id} value={shop.shopId}>
-                    {shop.shopName || `Negozio ${shop.shopId}`}
+                    {shop.shopName || `${t("trovausati.shop")} ${shop.shopId}`}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -308,9 +311,9 @@ export default function TrovausatiValutatorePage() {
         <Alert>
           <AlertTriangle className="h-4 w-4" />
           <AlertDescription>
-            Nessun negozio configurato. 
-            <a href="/reseller/trovausati/settings" className="ml-1 underline">Aggiungi un negozio</a>
-            per poter emettere coupon.
+            {t("trovausati.noShopsConfigured")} 
+            <a href="/reseller/trovausati/settings" className="ml-1 underline">{t("trovausati.addShop")}</a>
+            {t("trovausati.toIssueCoupons")}
           </AlertDescription>
         </Alert>
       )}
@@ -319,11 +322,11 @@ export default function TrovausatiValutatorePage() {
         <TabsList>
           <TabsTrigger value="valutazione" className="flex flex-wrap items-center gap-2" data-testid="tab-valutazione">
             <Euro className="h-4 w-4" />
-            Valutazione
+            {t("trovausati.valuation")}
           </TabsTrigger>
           <TabsTrigger value="coupon" className="flex flex-wrap items-center gap-2" data-testid="tab-coupon">
             <Ticket className="h-4 w-4" />
-            Coupon GDS
+            {t("trovausati.couponGDS")}
           </TabsTrigger>
         </TabsList>
 
@@ -333,17 +336,17 @@ export default function TrovausatiValutatorePage() {
               <CardHeader>
                 <CardTitle className="flex flex-wrap items-center gap-2">
                   <Search className="h-5 w-5" />
-                  Cerca Dispositivo
+                  {t("trovausati.searchDevice")}
                 </CardTitle>
-                <CardDescription>Cerca il modello da valutare</CardDescription>
+                <CardDescription>{t("trovausati.searchModelToEvaluate")}</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-2">
-                  <Label>Cerca modello</Label>
+                  <Label>{t("trovausati.searchModel")}</Label>
                   <div className="relative">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     <Input
-                      placeholder="Es. iPhone 13 Pro, Samsung Galaxy S23..."
+                      placeholder={t("trovausati.searchPlaceholder")}
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
                       className="pl-10"
@@ -407,7 +410,7 @@ export default function TrovausatiValutatorePage() {
                   ) : (
                     <Euro className="h-4 w-4 mr-2" />
                   )}
-                  Ottieni Valutazione
+                  {t("trovausati.getValuation")}
                 </Button>
               </CardFooter>
             </Card>
@@ -416,15 +419,15 @@ export default function TrovausatiValutatorePage() {
               <CardHeader>
                 <CardTitle className="flex flex-wrap items-center gap-2">
                   <Euro className="h-5 w-5" />
-                  Risultato Valutazione
+                  {t("trovausati.valuationResult")}
                 </CardTitle>
-                <CardDescription>Prezzi in base alle condizioni</CardDescription>
+                <CardDescription>{t("trovausati.pricesByCondition")}</CardDescription>
               </CardHeader>
               <CardContent>
                 {!valuation ? (
                   <div className="text-center py-12 text-muted-foreground">
                     <Euro className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                    <p>Cerca un dispositivo e clicca su "Ottieni Valutazione"</p>
+                    <p>{t("trovausati.searchAndGetValuation")}</p>
                   </div>
                 ) : (
                   <div className="space-y-4">
@@ -469,7 +472,7 @@ export default function TrovausatiValutatorePage() {
                       <Alert className="border-green-500 bg-green-50 dark:bg-green-950">
                         <CheckCircle className="h-4 w-4 text-green-600" />
                         <AlertDescription>
-                          <strong>Supervalutazione disponibile!</strong>
+                          <strong>{t("trovausati.supervaluationAvailable")}</strong>
                           <br />
                           +€{valuation.attributes.supervaluation.attributes.price.toFixed(2)} - {valuation.attributes.supervaluation.attributes.description}
                         </AlertDescription>
@@ -479,9 +482,9 @@ export default function TrovausatiValutatorePage() {
                     <Separator />
 
                     <div className="space-y-2">
-                      <Label>IMEI / Numero di Serie *</Label>
+                      <Label>{t("trovausati.imeiSerialNumber")} *</Label>
                       <Input
-                        placeholder="Inserisci IMEI o S/N"
+                        placeholder={t("trovausati.enterImeiOrSn")}
                         value={imei}
                         onChange={(e) => setImei(e.target.value)}
                         data-testid="input-imei"
@@ -499,7 +502,7 @@ export default function TrovausatiValutatorePage() {
                     data-testid="button-emit-coupon"
                   >
                     <Ticket className="h-4 w-4 mr-2" />
-                    Emetti Coupon - €{getPrice(selectedCondition).toFixed(2)}
+                    {t("trovausati.emitCoupon")} - €{getPrice(selectedCondition).toFixed(2)}
                   </Button>
                 </CardFooter>
               )}
@@ -514,9 +517,9 @@ export default function TrovausatiValutatorePage() {
                 <div>
                   <CardTitle className="flex flex-wrap items-center gap-2">
                     <Ticket className="h-5 w-5" />
-                    Coupon Emessi
+                    {t("trovausati.issuedCoupons")}
                   </CardTitle>
-                  <CardDescription>Gestisci i coupon GDS emessi</CardDescription>
+                  <CardDescription>{t("trovausati.manageCouponsDesc")}</CardDescription>
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
                   <Select value={couponStatusFilter} onValueChange={setCouponStatusFilter}>
@@ -525,10 +528,10 @@ export default function TrovausatiValutatorePage() {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="all">{t("common.allMasc")}</SelectItem>
-                      <SelectItem value="issued">Emessi</SelectItem>
-                      <SelectItem value="used">Utilizzati</SelectItem>
-                      <SelectItem value="cancelled">Annullati</SelectItem>
-                      <SelectItem value="expired">Scaduti</SelectItem>
+                      <SelectItem value="issued">{t("trovausati.issuedPlural")}</SelectItem>
+                      <SelectItem value="used">{t("trovausati.usedPlural")}</SelectItem>
+                      <SelectItem value="cancelled">{t("trovausati.cancelledPlural")}</SelectItem>
+                      <SelectItem value="expired">{t("trovausati.expiredPlural")}</SelectItem>
                     </SelectContent>
                   </Select>
                   <Button variant="outline" onClick={() => refetchCoupons()} data-testid="button-refresh-coupons">
@@ -545,7 +548,7 @@ export default function TrovausatiValutatorePage() {
               ) : !couponsData?.coupons?.length ? (
                 <div className="text-center py-12 text-muted-foreground">
                   <Ticket className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                  <p>Nessun coupon trovato</p>
+                  <p>{t("trovausati.noCouponsFound")}</p>
                 </div>
               ) : (
                 <div className="space-y-3">
@@ -573,7 +576,7 @@ export default function TrovausatiValutatorePage() {
                                 {coupon.attributes.brand} {coupon.attributes.model}
                               </p>
                               <p className="text-xs text-muted-foreground">
-                                IMEI: {coupon.attributes.imei_or_sn}
+                                {t("common.imei")}: {coupon.attributes.imei_or_sn}
                               </p>
                             </div>
                           </div>
@@ -599,31 +602,31 @@ export default function TrovausatiValutatorePage() {
       <Dialog open={showEmitCoupon} onOpenChange={setShowEmitCoupon}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Conferma Emissione Coupon</DialogTitle>
+            <DialogTitle>{t("trovausati.confirmCouponIssuance")}</DialogTitle>
             <DialogDescription>
-              Stai per emettere un coupon GDS per il ritiro del dispositivo
+              {t("trovausati.aboutToIssueCoupon")}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
             {selectedModel && (
               <div className="p-4 bg-muted rounded-lg space-y-2">
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">Dispositivo</span>
+                  <span className="text-muted-foreground">{t("trovausati.device")}</span>
                   <span className="font-medium">{selectedModel.brand} {selectedModel.model}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">Condizione</span>
+                  <span className="text-muted-foreground">{t("trovausati.condition")}</span>
                   <span className="font-medium">
                     {CONDITIONS.find(c => c.value === selectedCondition)?.label}
                   </span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">IMEI/S.N.</span>
+                  <span className="text-muted-foreground">{t("trovausati.imeiSn")}</span>
                   <span className="font-mono">{imei}</span>
                 </div>
                 <Separator />
                 <div className="flex justify-between text-lg">
-                  <span className="font-semibold">Valore Coupon</span>
+                  <span className="font-semibold">{t("trovausati.couponValue")}</span>
                   <span className="font-bold text-primary">
                     €{getPrice(selectedCondition).toFixed(2)}
                   </span>
@@ -633,7 +636,7 @@ export default function TrovausatiValutatorePage() {
             <Alert>
               <AlertTriangle className="h-4 w-4" />
               <AlertDescription>
-                Confermando, verrà generato un coupon GDS valido per la spesa presso i rivenditori convenzionati.
+                {t("trovausati.couponConfirmDesc")}
               </AlertDescription>
             </Alert>
           </div>
@@ -649,7 +652,7 @@ export default function TrovausatiValutatorePage() {
               ) : (
                 <Ticket className="h-4 w-4 mr-2" />
               )}
-              Emetti Coupon
+              {t("trovausati.issueCoupon")}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -662,7 +665,7 @@ export default function TrovausatiValutatorePage() {
               <DialogHeader>
                 <DialogTitle className="flex flex-wrap items-center gap-2">
                   <Ticket className="h-5 w-5" />
-                  Dettaglio Coupon
+                  {t("trovausati.couponDetail")}
                 </DialogTitle>
               </DialogHeader>
               <div className="space-y-4">
@@ -693,24 +696,24 @@ export default function TrovausatiValutatorePage() {
                     {getStatusBadge(selectedCoupon.attributes.status)}
                   </div>
                   <div className="flex justify-between py-2 border-b">
-                    <span className="text-muted-foreground">Valore</span>
+                    <span className="text-muted-foreground">{t("trovausati.value")}</span>
                     <span className="font-bold">€{selectedCoupon.attributes.value.toFixed(2)}</span>
                   </div>
                   <div className="flex justify-between py-2 border-b">
-                    <span className="text-muted-foreground">Dispositivo</span>
+                    <span className="text-muted-foreground">{t("trovausati.device")}</span>
                     <span>{selectedCoupon.attributes.brand} {selectedCoupon.attributes.model}</span>
                   </div>
                   <div className="flex justify-between py-2 border-b">
-                    <span className="text-muted-foreground">IMEI/S.N.</span>
+                    <span className="text-muted-foreground">{t("trovausati.imeiSn")}</span>
                     <span className="font-mono text-sm">{selectedCoupon.attributes.imei_or_sn}</span>
                   </div>
                   <div className="flex justify-between py-2 border-b">
-                    <span className="text-muted-foreground">Data emissione</span>
+                    <span className="text-muted-foreground">{t("trovausati.issuanceDate")}</span>
                     <span>{new Date(selectedCoupon.attributes.created_at).toLocaleString("it-IT")}</span>
                   </div>
                   {selectedCoupon.attributes.consumed_at && (
                     <div className="flex justify-between py-2 border-b">
-                      <span className="text-muted-foreground">Data utilizzo</span>
+                      <span className="text-muted-foreground">{t("trovausati.usageDate")}</span>
                       <span>{new Date(selectedCoupon.attributes.consumed_at).toLocaleString("it-IT")}</span>
                     </div>
                   )}
@@ -730,7 +733,7 @@ export default function TrovausatiValutatorePage() {
                       ) : (
                         <XCircle className="h-4 w-4 mr-2" />
                       )}
-                      Annulla
+                      {t("common.cancel")}
                     </Button>
                     <Button
                       className="flex-1"
@@ -743,7 +746,7 @@ export default function TrovausatiValutatorePage() {
                       ) : (
                         <CheckCircle className="h-4 w-4 mr-2" />
                       )}
-                      Utilizza
+                      {t("trovausati.use")}
                     </Button>
                   </div>
                 )}

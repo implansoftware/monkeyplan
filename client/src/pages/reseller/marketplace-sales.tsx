@@ -58,12 +58,12 @@ function formatPrice(cents: number): string {
   return new Intl.NumberFormat('it-IT', { style: 'currency', currency: 'EUR' }).format(cents / 100);
 }
 
-function getStatusBadge(status: string) {
+function getStatusBadge(status: string, t: (key: string) => string) {
   const statusConfig: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
     pending: { label: t("hr.pending"), variant: "secondary" },
     approved: { label: t("repairs.status.approved"), variant: "default" },
     rejected: { label: t("b2b.status.cancelled"), variant: "destructive" },
-    processing: { label: "In elaborazione", variant: "secondary" },
+    processing: { label: t("marketplace.processing"), variant: "secondary" },
     shipped: { label: t("b2b.status.shipped"), variant: "default" },
     received: { label: t("repairs.status.received"), variant: "default" },
     cancelled: { label: t("repairs.status.cancelled"), variant: "destructive" },
@@ -106,19 +106,19 @@ export default function ResellerMarketplaceSales() {
     bank_transfer: t("settings.bankTransfer"),
     stripe: t("suppliers.creditCard"),
     paypal: "PayPal",
-    credit: "Credito/Fido",
+    credit: t("marketplace.creditFido"),
   };
 
   const getPaymentMethodName = (method: string | null | undefined): string => {
-    if (!method) return "Non specificato";
+    if (!method) return t("common.notSpecified");
     return paymentMethodLabels[method] || method;
   };
 
   const getShippingMethodName = (order: MarketplaceOrder): string => {
     if (order.shippingMethodName) return order.shippingMethodName;
-    if (!order.shippingMethodId) return "Non specificato";
+    if (!order.shippingMethodId) return t("common.notSpecified");
     const method = shippingMethods?.find(m => m.id === order.shippingMethodId);
-    return method?.name || "Metodo sconosciuto";
+    return method?.name || t("common.unknownMethod");
   };
 
   const approveMutation = useMutation({
@@ -161,7 +161,7 @@ export default function ResellerMarketplaceSales() {
       return res.json();
     },
     onSuccess: () => {
-      toast({ title: "Spedizione confermata", description: "L'acquirente è stato notificato della spedizione" });
+      toast({ title: "t("shipping.shipmentConfirmed")", description: "t("shipping.buyerNotified")" });
       queryClient.invalidateQueries({ queryKey: ['/api/reseller/marketplace/sales'] });
       setShipDialogOpen(false);
       setSelectedOrder(null);
@@ -214,7 +214,7 @@ export default function ResellerMarketplaceSales() {
               <TrendingUp className="h-6 w-6 text-white" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold tracking-tight text-white">Vendite Marketplace</h1>
+              <h1 className="text-2xl font-bold tracking-tight text-white">{t("marketplace.sales")}</h1>
               <p className="text-sm text-white/80">Ordini ricevuti da altri rivenditori</p>
             </div>
           </div>
@@ -239,7 +239,7 @@ export default function ResellerMarketplaceSales() {
         <Card className="rounded-2xl">
           <CardContent className="py-12 text-center">
             <TrendingUp className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-            <h3 className="text-lg font-semibold mb-2">Nessuna vendita</h3>
+            <h3 className="text-lg font-semibold mb-2">{t("marketplace.noSales")}</h3>
             <p className="text-muted-foreground">
               Non hai ancora ricevuto ordini nel marketplace.
             </p>
@@ -268,7 +268,7 @@ export default function ResellerMarketplaceSales() {
                   <TableCell>
                     <div className="flex flex-wrap items-center gap-2">
                       {getStatusIcon(order.status)}
-                      {getStatusBadge(order.status)}
+                      {getStatusBadge(order.status, t)}
                     </div>
                   </TableCell>
                   <TableCell className="text-right">
@@ -303,7 +303,7 @@ export default function ResellerMarketplaceSales() {
               <div className="flex items-center justify-between">
                 <div className="flex flex-wrap items-center gap-2">
                   {getStatusIcon(selectedOrder.status)}
-                  {getStatusBadge(selectedOrder.status)}
+                  {getStatusBadge(selectedOrder.status, t)}
                 </div>
                 <span className="text-sm text-muted-foreground">
                   {format(new Date(selectedOrder.createdAt), 'dd MMMM yyyy HH:mm', { locale: it })}
@@ -359,7 +359,7 @@ export default function ResellerMarketplaceSales() {
                 </div>
                 {selectedOrder.shippingCost > 0 && (
                   <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">Spedizione:</span>
+                    <span className="text-muted-foreground">{t("shipping.shippingLabel")}:</span>
                     <span>{formatPrice(selectedOrder.shippingCost)}</span>
                   </div>
                 )}
@@ -392,7 +392,7 @@ export default function ResellerMarketplaceSales() {
                 <div className="space-y-2">
                   <Label>Note per l'acquirente (opzionale)</Label>
                   <Textarea 
-                    placeholder="Aggiungi note..."
+                    placeholder="{t("common.addNotesPlaceholder")}"
                     value={sellerNotes}
                     onChange={(e) => setSellerNotes(e.target.value)}
                     data-testid="textarea-seller-notes"
@@ -450,15 +450,15 @@ export default function ResellerMarketplaceSales() {
           <DialogHeader>
             <DialogTitle>{t("b2b.rejectOrder")}</DialogTitle>
             <DialogDescription>
-              Inserisci il motivo del rifiuto
+              {t("marketplace.enterRejectReason")}
             </DialogDescription>
           </DialogHeader>
           
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label>Motivo del rifiuto *</Label>
+              <Label>{t("marketplace.rejectReasonRequired")}</Label>
               <Textarea 
-                placeholder="Es: Prodotto non più disponibile..."
+                placeholder={t("marketplace.cancelReasonPlaceholder")}
                 value={rejectionReason}
                 onChange={(e) => setRejectionReason(e.target.value)}
                 data-testid="textarea-rejection-reason"
@@ -483,7 +483,7 @@ export default function ResellerMarketplaceSales() {
               disabled={!rejectionReason.trim() || rejectMutation.isPending}
               data-testid="button-confirm-reject"
             >
-              {rejectMutation.isPending ? "Rifiuto..." : "Conferma Rifiuto"}
+              {rejectMutation.isPending ? t("common.rejecting") : t("common.confirmReject")}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -492,9 +492,9 @@ export default function ResellerMarketplaceSales() {
       <Dialog open={shipDialogOpen} onOpenChange={setShipDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Conferma Spedizione</DialogTitle>
+            <DialogTitle>{t("shipping.confirmShipment")}</DialogTitle>
             <DialogDescription>
-              Inserisci i dettagli della spedizione
+              {t("shipping.enterShipmentDetails")}
             </DialogDescription>
           </DialogHeader>
           
@@ -510,9 +510,9 @@ export default function ResellerMarketplaceSales() {
             </div>
             
             <div className="space-y-2">
-              <Label>Numero di tracking</Label>
+              <Label>{t("shipping.trackingNumber")}</Label>
               <Input 
-                placeholder="Numero di tracciamento..."
+                placeholder={t("shipping.trackingPlaceholder")}
                 value={trackingNumber}
                 onChange={(e) => setTrackingNumber(e.target.value)}
                 data-testid="input-tracking-number"
@@ -528,7 +528,7 @@ export default function ResellerMarketplaceSales() {
               data-testid="button-confirm-ship"
             >
               <Send className="h-4 w-4 mr-2" />
-              {shipMutation.isPending ? "Confermo..." : "Conferma Spedizione"}
+              {shipMutation.isPending ? t("common.confirming") : t("shipping.confirmShipment")}
             </Button>
           </DialogFooter>
         </DialogContent>

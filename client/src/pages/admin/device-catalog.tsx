@@ -305,7 +305,7 @@ export default function AdminDeviceCatalog() {
       const result = await response.json();
       
       if (!response.ok) {
-        throw new Error(result.error || "Errore durante import");
+        throw new Error(result.error || t("deviceCatalog.importError"));
       }
       
       setImportResult(result);
@@ -694,9 +694,9 @@ export default function AdminDeviceCatalog() {
       <Dialog open={typeDialogOpen} onOpenChange={setTypeDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>{editingType ? "Modifica Tipo" : "Nuovo Tipo Dispositivo"}</DialogTitle>
+            <DialogTitle>{editingType ? t("deviceCatalog.editType") : t("deviceCatalog.newType")}</DialogTitle>
             <DialogDescription>
-              {editingType ? "Modifica i dettagli del tipo dispositivo" : "Crea un nuovo tipo di dispositivo"}
+              {editingType ? t("deviceCatalog.editTypeDesc") : t("deviceCatalog.newTypeDesc")}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
@@ -739,7 +739,7 @@ export default function AdminDeviceCatalog() {
               {(createTypeMutation.isPending || updateTypeMutation.isPending) && (
                 <Loader2 className="h-4 w-4 mr-2 animate-spin" />
               )}
-              {editingType ? "Salva" : "Crea"}
+              {editingType ? t("common.save") : t("common.create")}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -774,9 +774,9 @@ export default function AdminDeviceCatalog() {
       <Dialog open={brandDialogOpen} onOpenChange={setBrandDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>{editingBrand ? "Modifica Marca" : "Nuova Marca"}</DialogTitle>
+            <DialogTitle>{editingBrand ? t("deviceCatalog.editBrand") : t("deviceCatalog.newBrand")}</DialogTitle>
             <DialogDescription>
-              {editingBrand ? "Modifica i dettagli della marca" : "Crea una nuova marca di dispositivi"}
+              {editingBrand ? t("deviceCatalog.editBrandDesc") : t("deviceCatalog.newBrandDesc")}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
@@ -819,7 +819,7 @@ export default function AdminDeviceCatalog() {
               {(createBrandMutation.isPending || updateBrandMutation.isPending) && (
                 <Loader2 className="h-4 w-4 mr-2 animate-spin" />
               )}
-              {editingBrand ? "Salva" : "Crea"}
+              {editingBrand ? t("common.save") : t("common.create")}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -854,9 +854,9 @@ export default function AdminDeviceCatalog() {
       <Dialog open={modelDialogOpen} onOpenChange={setModelDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>{editingModel ? "Modifica Modello" : "Nuovo Modello"}</DialogTitle>
+            <DialogTitle>{editingModel ? t("deviceCatalog.editModel") : t("deviceCatalog.newModel")}</DialogTitle>
             <DialogDescription>
-              {editingModel ? "Modifica i dettagli del modello" : "Crea un nuovo modello di dispositivo"}
+              {editingModel ? t("deviceCatalog.editModelDesc") : t("deviceCatalog.newModelDesc")}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
@@ -992,7 +992,7 @@ export default function AdminDeviceCatalog() {
               {(createModelMutation.isPending || updateModelMutation.isPending) && (
                 <Loader2 className="h-4 w-4 mr-2 animate-spin" />
               )}
-              {editingModel ? "Salva" : "Crea"}
+              {editingModel ? t("common.save") : t("common.create")}
             </Button>
           </DialogFooter>
         </DialogContent>

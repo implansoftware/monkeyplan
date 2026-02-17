@@ -69,13 +69,13 @@ export default function ResellerInvoices() {
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["/api/sibill/documents"] });
       toast({
-        title: "Sincronizzazione completata",
+        title: t("invoices.syncCompleted"),
         description: `Importati ${data.syncedCount} documenti da ${data.companiesProcessed} aziende`,
       });
     },
     onError: (error: Error) => {
       toast({
-        title: "Errore sincronizzazione",
+        title: t("invoices.syncError"),
         description: error.message,
         variant: "destructive",
       });
@@ -155,7 +155,7 @@ export default function ResellerInvoices() {
       
       toast({
         title: t("reports.exportCompleted"),
-        description: "Il file CSV è stato scaricato con successo",
+        description: t("invoices.csvDownloaded"),
       });
     } catch (error) {
       toast({
@@ -183,7 +183,7 @@ export default function ResellerInvoices() {
             <div>
               <h1 className="text-2xl font-semibold text-white">Le Mie Fatture</h1>
               <p className="text-white/80">
-                Visualizza e gestisci le fatture associate ai tuoi ordini
+                {t("invoices.viewAndManageDesc")}
               </p>
             </div>
           </div>
@@ -195,7 +195,7 @@ export default function ResellerInvoices() {
               data-testid="button-sync-sibill"
             >
               <RefreshCw className={`h-4 w-4 mr-2 ${syncSibillMutation.isPending ? 'animate-spin' : ''}`} />
-              {syncSibillMutation.isPending ? "Sincronizzazione..." : "Importa da Sibill"}
+              {syncSibillMutation.isPending ? t("invoices.syncingLabel") : t("invoices.importFromSibill")}
             </Button>
           )}
         </div>
@@ -265,7 +265,7 @@ export default function ResellerInvoices() {
                   <div className="flex-1 relative min-w-[200px]">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     <Input
-                      placeholder="Cerca fattura..."
+                      placeholder={t("invoices.searchPlaceholder")}
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
                       className="pl-9"
@@ -286,10 +286,10 @@ export default function ResellerInvoices() {
                   </Select>
                   <Select value={sourceFilter} onValueChange={setSourceFilter}>
                     <SelectTrigger className="w-full sm:w-[180px]" data-testid="select-source-filter">
-                      <SelectValue placeholder="Fonte" />
+                      <SelectValue placeholder="{t("invoices.source")}" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="all">Tutte le fonti</SelectItem>
+                      <SelectItem value="all">{t("invoices.allSources")}</SelectItem>
                       <SelectItem value="repair">{t("common.repair")}</SelectItem>
                       <SelectItem value="pos">{t("sidebar.sections.posSection")}</SelectItem>
                       <SelectItem value="marketplace">{t("marketplace.title")}</SelectItem>
@@ -310,7 +310,7 @@ export default function ResellerInvoices() {
                             format(dateRange.from, "dd/MM/yyyy")
                           )
                         ) : (
-                          "Periodo"
+                          t("common.period")
                         )}
                       </Button>
                     </PopoverTrigger>
@@ -343,7 +343,7 @@ export default function ResellerInvoices() {
               ) : filteredInvoices.length === 0 ? (
                 <div className="text-center py-12 text-muted-foreground">
                   <FileText className="h-12 w-12 mx-auto mb-4 opacity-20" />
-                  <p>Nessuna fattura trovata</p>
+                  <p>{t("invoices.noInvoicesFound")}</p>
                 </div>
               ) : (
                 <Table>
@@ -430,7 +430,7 @@ export default function ResellerInvoices() {
                   <div className="text-center py-12 text-muted-foreground">
                     <Building2 className="h-12 w-12 mx-auto mb-4 opacity-20" />
                     <p>Nessun documento Sibill importato</p>
-                    <p className="text-sm mt-2">Clicca "Importa da Sibill" per sincronizzare i documenti</p>
+                    <p className="text-sm mt-2">{t("invoices.clickImportSibillHint")}</p>
                   </div>
                 ) : (
                   <Table>
@@ -439,7 +439,7 @@ export default function ResellerInvoices() {
                         <TableHead>{t("common.number")}</TableHead>
                         <TableHead>{t("common.type")}</TableHead>
                         <TableHead>{t("common.date")}</TableHead>
-                        <TableHead>Controparte</TableHead>
+                        <TableHead>{t("invoices.counterparty")}</TableHead>
                         <TableHead>{t("common.amount")}</TableHead>
                         <TableHead>{t("common.status")}</TableHead>
                       </TableRow>
@@ -502,7 +502,7 @@ export default function ResellerInvoices() {
               Dettagli Documento Sibill
             </DialogTitle>
             <DialogDescription>
-              {selectedSibillDoc?.documentNumber || "Documento"}
+              {selectedSibillDoc?.documentNumber || t("invoices.document")}
             </DialogDescription>
           </DialogHeader>
           
@@ -556,13 +556,13 @@ export default function ResellerInvoices() {
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <p className="text-sm text-muted-foreground">Importo Totale</p>
+                  <p className="text-sm text-muted-foreground">{t("invoices.totalAmount")}</p>
                   <p className="text-2xl font-bold text-primary">
                     {selectedSibillDoc.totalAmount ? formatCurrency(selectedSibillDoc.totalAmount) : "N/D"}
                   </p>
                 </div>
                 <div>
-                  <p className="text-sm text-muted-foreground">Valuta</p>
+                  <p className="text-sm text-muted-foreground">{t("invoices.currency")}</p>
                   <p className="font-medium">{selectedSibillDoc.currency || "EUR"}</p>
                 </div>
                 <div>
@@ -572,7 +572,7 @@ export default function ResellerInvoices() {
                   </Badge>
                 </div>
                 <div>
-                  <p className="text-sm text-muted-foreground">ID Esterno</p>
+                  <p className="text-sm text-muted-foreground">{t("invoices.externalId")}</p>
                   <p className="font-mono text-xs">{selectedSibillDoc.externalId || "-"}</p>
                 </div>
               </div>

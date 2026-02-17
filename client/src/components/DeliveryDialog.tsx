@@ -117,7 +117,7 @@ export function DeliveryDialog({
     if (!file.type.startsWith('image/')) {
       toast({
         title: t("common.error"),
-        description: "Per favore seleziona un file immagine",
+        description: t("delivery.selectImageFile"),
         variant: "destructive",
       });
       return;
@@ -126,7 +126,7 @@ export function DeliveryDialog({
     if (file.size > 10 * 1024 * 1024) {
       toast({
         title: t("common.error"),
-        description: "L'immagine deve essere inferiore a 10MB",
+        description: t("delivery.imageMustBeLessThan10MB"),
         variant: "destructive",
       });
       return;
@@ -195,7 +195,7 @@ export function DeliveryDialog({
     },
     onSuccess: (data: { delivery: any; invoice: any | null }) => {
       const invoiceMsg = data.invoice 
-        ? ` - Fattura ${data.invoice.invoiceNumber} generata` 
+        ? ` - ${t("delivery.invoiceGenerated", { number: data.invoice.invoiceNumber })}` 
         : "";
       toast({
         title: t("delivery.deliveryCompleted"),
@@ -237,11 +237,11 @@ export function DeliveryDialog({
   const getMethodLabel = (method: string) => {
     switch (method) {
       case "in_store":
-        return "Ritiro in Negozio";
+        return t("delivery.inStorePickup");
       case "courier":
         return t("shipping.courierShipping");
       case "pickup":
-        return "Ritiro Cliente";
+        return t("delivery.customerPickup");
       default:
         return method;
     }
@@ -258,9 +258,9 @@ export function DeliveryDialog({
                 <PackageCheck className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
               </div>
               <div>
-                <span className="text-lg font-semibold">Consegna Completata</span>
+                <span className="text-lg font-semibold">{t("delivery.deliveryCompleted")}</span>
                 <DialogDescription className="mt-0.5">
-                  Questo dispositivo è già stato consegnato
+                  {t("delivery.deviceAlreadyDelivered")}
                 </DialogDescription>
               </div>
             </DialogTitle>
@@ -278,11 +278,11 @@ export function DeliveryDialog({
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
                 <div>
-                  <div className="text-muted-foreground">Destinatario</div>
+                  <div className="text-muted-foreground">{t("delivery.recipient")}</div>
                   <div className="font-medium">{existingDelivery.deliveredTo}</div>
                 </div>
                 <div>
-                  <div className="text-muted-foreground">Metodo</div>
+                  <div className="text-muted-foreground">{t("common.method")}</div>
                   <div className="font-medium flex items-center gap-1">
                     {getMethodIcon(existingDelivery.deliveryMethod)}
                     {getMethodLabel(existingDelivery.deliveryMethod)}
@@ -313,7 +313,7 @@ export function DeliveryDialog({
 
               {existingDelivery.idDocumentPhoto && (
                 <div>
-                  <div className="text-muted-foreground text-sm mb-2">Foto Documento</div>
+                  <div className="text-muted-foreground text-sm mb-2">{t("delivery.documentPhoto")}</div>
                   <a 
                     href={existingDelivery.idDocumentPhoto} 
                     target="_blank" 
@@ -339,7 +339,7 @@ export function DeliveryDialog({
               data-testid="button-download-document"
             >
               <Download className="h-4 w-4" />
-              Scarica Documento
+              {t("delivery.downloadDocument")}
             </Button>
             <Button variant="outline" onClick={() => onOpenChange(false)} data-testid="button-close">
               {t("common.close")}
@@ -362,7 +362,7 @@ export function DeliveryDialog({
             <div>
               <span className="text-lg font-semibold">{t("delivery.completeDelivery")}</span>
               <DialogDescription className="mt-0.5">
-                Registra la consegna del dispositivo al cliente
+                {t("delivery.registerDeliveryDescription")}
               </DialogDescription>
             </div>
           </DialogTitle>
@@ -394,7 +394,7 @@ export function DeliveryDialog({
               name="deliveryMethod"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Metodo Consegna *</FormLabel>
+                  <FormLabel>{t("delivery.deliveryMethod")} *</FormLabel>
                   <Select onValueChange={field.onChange} defaultValue={field.value}>
                     <FormControl>
                       <SelectTrigger data-testid="select-delivery-method">
@@ -405,19 +405,19 @@ export function DeliveryDialog({
                       <SelectItem value="in_store">
                         <div className="flex flex-wrap items-center gap-2">
                           <Store className="h-4 w-4" />
-                          Ritiro in Negozio
+                          {t("delivery.inStorePickup")}
                         </div>
                       </SelectItem>
                       <SelectItem value="courier">
                         <div className="flex flex-wrap items-center gap-2">
                           <Truck className="h-4 w-4" />
-                          Spedizione Corriere
+                          {t("shipping.courierShipping")}
                         </div>
                       </SelectItem>
                       <SelectItem value="pickup">
                         <div className="flex flex-wrap items-center gap-2">
                           <UserCheck className="h-4 w-4" />
-                          Ritiro Cliente
+                          {t("delivery.customerPickup")}
                         </div>
                       </SelectItem>
                     </SelectContent>
@@ -442,8 +442,8 @@ export function DeliveryDialog({
                       </FormControl>
                       <SelectContent>
                         <SelectItem value="carta_identita">{t("delivery.idCard")}</SelectItem>
-                        <SelectItem value="patente">Patente</SelectItem>
-                        <SelectItem value="passaporto">Passaporto</SelectItem>
+                        <SelectItem value="patente">{t("delivery.drivingLicense")}</SelectItem>
+                        <SelectItem value="passaporto">{t("delivery.passport")}</SelectItem>
                         <SelectItem value="altro">{t("common.other")}</SelectItem>
                       </SelectContent>
                     </Select>
@@ -456,11 +456,11 @@ export function DeliveryDialog({
                 name="idDocumentNumber"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Numero Documento</FormLabel>
+                    <FormLabel>{t("delivery.documentNumber")}</FormLabel>
                     <FormControl>
                       <Input
                         {...field}
-                        placeholder="Numero documento"
+                        placeholder={t("delivery.documentNumber")}
                         data-testid="input-id-number"
                       />
                     </FormControl>
@@ -471,7 +471,7 @@ export function DeliveryDialog({
             </div>
 
             <div>
-              <FormLabel className="block mb-2">Foto Documento</FormLabel>
+              <FormLabel className="block mb-2">{t("delivery.documentPhoto")}</FormLabel>
               <input
                 type="file"
                 accept="image/*"
@@ -484,7 +484,7 @@ export function DeliveryDialog({
                 <div className="relative inline-block">
                   <img 
                     src={documentPhotoPreview} 
-                    alt="Anteprima documento" 
+                    alt={t("delivery.documentPreview")} 
                     className="max-h-32 rounded border"
                   />
                   <Button
@@ -512,13 +512,13 @@ export function DeliveryDialog({
                   ) : (
                     <>
                       <Camera className="h-4 w-4" />
-                      Carica Foto Documento
+                      {t("delivery.uploadDocumentPhoto")}
                     </>
                   )}
                 </Button>
               )}
               <p className="text-xs text-muted-foreground mt-1">
-                Carica una foto del documento di identità (opzionale)
+                {t("delivery.uploadDocumentPhotoDescription")}
               </p>
             </div>
 

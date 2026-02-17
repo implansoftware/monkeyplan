@@ -31,11 +31,11 @@ function getStatusConfig(t: (key: string) => string): Record<string, { label: st
   return {
     requested: { label: t("common.pending"), variant: "secondary", icon: Clock },
     approved: { label: t("repairs.status.approved"), variant: "default", icon: CheckCircle },
-    awaiting_shipment: { label: "Da Spedire", variant: "outline", icon: Send },
+    awaiting_shipment: { label: t("b2b.toShip"), variant: "outline", icon: Send },
     rejected: { label: t("b2b.status.cancelled"), variant: "destructive", icon: XCircle },
     shipped: { label: t("b2b.status.shipped"), variant: "default", icon: Truck },
     received: { label: t("repairs.status.received"), variant: "default", icon: PackageCheck },
-    inspecting: { label: "In Ispezione", variant: "secondary", icon: Eye },
+    inspecting: { label: t("b2b.inspecting"), variant: "secondary", icon: Eye },
     completed: { label: t("common.completed"), variant: "default", icon: CheckCircle },
     cancelled: { label: t("repairs.status.cancelled"), variant: "destructive", icon: XCircle },
   };
@@ -43,12 +43,12 @@ function getStatusConfig(t: (key: string) => string): Record<string, { label: st
 
 function getReasonLabels(t: (key: string) => string): Record<string, string> {
   return {
-    defective: "Difettoso",
-    wrong_item: "Articolo errato",
-    not_as_described: "Non conforme",
-    damaged_in_transit: "Danneggiato",
-    excess_stock: "Eccesso stock",
-    quality_issue: "Qualità",
+    defective: t("b2b.reasonDefective"),
+    wrong_item: t("b2b.reasonWrongItem"),
+    not_as_described: t("b2b.reasonNotAsDescribed"),
+    damaged_in_transit: t("b2b.reasonDamaged"),
+    excess_stock: t("b2b.reasonExcessStock"),
+    quality_issue: t("b2b.reasonQuality"),
     other: t("common.other"),
   };
 }
@@ -74,7 +74,7 @@ export default function ResellerB2BReturns() {
       return res.json();
     },
     onSuccess: () => {
-      toast({ title: t("warehouse.shipmentRegistered"), description: "Il reso è stato marcato come spedito" });
+      toast({ title: t("warehouse.shipmentRegistered"), description: t("b2b.returnMarkedShipped") });
       queryClient.invalidateQueries({ queryKey: ['/api/reseller/b2b-returns'] });
       setShipDialogOpen(false);
       setDetailOpen(false);
@@ -126,7 +126,7 @@ export default function ResellerB2BReturns() {
         </CardHeader>
         <CardContent className="space-y-2">
           <div className="flex justify-between text-sm">
-            <span className="text-muted-foreground">Motivo:</span>
+            <span className="text-muted-foreground">{t("common.reason")}:</span>
             <span>{reasonLabels[ret.reason] || ret.reason}</span>
           </div>
         </CardContent>
@@ -162,7 +162,7 @@ export default function ResellerB2BReturns() {
             </div>
             <div>
               <h1 className="text-2xl font-bold tracking-tight text-white">{t("sidebar.items.myB2BReturns")}</h1>
-              <p className="text-sm text-white/80">Gestisci le tue richieste di reso per ordini B2B</p>
+              <p className="text-sm text-white/80">{t("b2b.manageReturnRequests")}</p>
             </div>
           </div>
         </div>
@@ -171,13 +171,13 @@ export default function ResellerB2BReturns() {
       <Tabs defaultValue="pending">
         <TabsList>
           <TabsTrigger value="pending" data-testid="tab-pending">
-            In Attesa ({pendingReturns.length})
+            {t("common.pending")} ({pendingReturns.length})
           </TabsTrigger>
           <TabsTrigger value="active" data-testid="tab-active">
-            In Corso ({activeReturns.length})
+            {t("b2b.inProgress")} ({activeReturns.length})
           </TabsTrigger>
           <TabsTrigger value="completed" data-testid="tab-completed">
-            Completati ({completedReturns.length})
+            {t("common.completed")} ({completedReturns.length})
           </TabsTrigger>
         </TabsList>
 
@@ -186,7 +186,7 @@ export default function ResellerB2BReturns() {
             <Card className="rounded-2xl">
               <CardContent className="py-12 text-center">
                 <Clock className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                <p className="text-muted-foreground">Nessun reso in attesa di approvazione</p>
+                <p className="text-muted-foreground">{t("b2b.noPendingReturns")}</p>
               </CardContent>
             </Card>
           ) : (
@@ -201,7 +201,7 @@ export default function ResellerB2BReturns() {
             <Card className="rounded-2xl">
               <CardContent className="py-12 text-center">
                 <Truck className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                <p className="text-muted-foreground">Nessun reso in corso</p>
+                <p className="text-muted-foreground">{t("b2b.noActiveReturns")}</p>
               </CardContent>
             </Card>
           ) : (
@@ -216,7 +216,7 @@ export default function ResellerB2BReturns() {
             <Card className="rounded-2xl">
               <CardContent className="py-12 text-center">
                 <CheckCircle className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                <p className="text-muted-foreground">Nessun reso completato</p>
+                <p className="text-muted-foreground">{t("b2b.noCompletedReturns")}</p>
               </CardContent>
             </Card>
           ) : (
@@ -235,9 +235,9 @@ export default function ResellerB2BReturns() {
               <DialogHeader>
                 <div className="flex items-center justify-between">
                   <div>
-                    <DialogTitle>Reso {selectedReturn.returnNumber}</DialogTitle>
+                    <DialogTitle>{t("b2b.returnLabel")} {selectedReturn.returnNumber}</DialogTitle>
                     <DialogDescription>
-                      Richiesto il {selectedReturn.requestedAt && format(new Date(selectedReturn.requestedAt), "d MMMM yyyy 'alle' HH:mm", { locale: it })}
+                      {t("b2b.requestedOn")} {selectedReturn.requestedAt && format(new Date(selectedReturn.requestedAt), "d MMMM yyyy 'alle' HH:mm", { locale: it })}
                     </DialogDescription>
                   </div>
                   <Badge variant={statusConfig[selectedReturn.status]?.variant || "secondary"}>
@@ -248,7 +248,7 @@ export default function ResellerB2BReturns() {
 
               <div className="space-y-4">
                 <div className="bg-muted p-3 rounded-lg">
-                  <p className="text-sm font-medium">Motivo: {reasonLabels[selectedReturn.reason] || selectedReturn.reason}</p>
+                  <p className="text-sm font-medium">{t("common.reason")}: {reasonLabels[selectedReturn.reason] || selectedReturn.reason}</p>
                   {selectedReturn.reasonDetails && (
                     <p className="text-sm text-muted-foreground mt-1">{selectedReturn.reasonDetails}</p>
                   )}
@@ -286,34 +286,34 @@ export default function ResellerB2BReturns() {
                 <Separator />
 
                 <div className="flex justify-between text-lg font-semibold">
-                  <span>Totale Reso:</span>
+                  <span>{t("b2b.returnTotal")}:</span>
                   <span className="text-primary">{formatPrice(selectedReturn.totalAmount || 0)}</span>
                 </div>
 
                 {selectedReturn.resellerNotes && (
                   <div className="bg-muted p-3 rounded-lg">
-                    <p className="text-sm font-medium">Le tue note:</p>
+                    <p className="text-sm font-medium">{t("b2b.yourNotes")}:</p>
                     <p className="text-sm text-muted-foreground">{selectedReturn.resellerNotes}</p>
                   </div>
                 )}
 
                 {selectedReturn.adminNotes && (
                   <div className="bg-blue-50 dark:bg-blue-950/30 p-3 rounded-lg">
-                    <p className="text-sm font-medium">Note amministratore:</p>
+                    <p className="text-sm font-medium">{t("b2b.adminNotes")}:</p>
                     <p className="text-sm text-muted-foreground">{selectedReturn.adminNotes}</p>
                   </div>
                 )}
 
                 {selectedReturn.rejectionReason && (
                   <div className="bg-destructive/10 p-3 rounded-lg">
-                    <p className="text-sm font-medium text-destructive">Motivo rifiuto:</p>
+                    <p className="text-sm font-medium text-destructive">{t("b2b.rejectionReason")}:</p>
                     <p className="text-sm">{selectedReturn.rejectionReason}</p>
                   </div>
                 )}
 
                 {selectedReturn.trackingNumber && (
                   <div className="bg-green-50 dark:bg-green-950/30 p-3 rounded-lg">
-                    <p className="text-sm font-medium">Tracking spedizione:</p>
+                    <p className="text-sm font-medium">{t("b2b.shippingTracking")}:</p>
                     <p className="text-sm">
                       {selectedReturn.carrier && <span className="text-muted-foreground">{selectedReturn.carrier}: </span>}
                       {selectedReturn.trackingNumber}
@@ -323,7 +323,7 @@ export default function ResellerB2BReturns() {
 
                 {selectedReturn.creditAmount && selectedReturn.status === 'completed' && (
                   <div className="bg-green-50 dark:bg-green-950/30 p-3 rounded-lg">
-                    <p className="text-sm font-medium">Importo accreditato:</p>
+                    <p className="text-sm font-medium">{t("b2b.creditedAmount")}:</p>
                     <p className="text-lg font-semibold text-green-600">{formatPrice(selectedReturn.creditAmount)}</p>
                   </div>
                 )}
@@ -333,7 +333,7 @@ export default function ResellerB2BReturns() {
                   <div className="bg-blue-50 dark:bg-blue-950/30 p-3 rounded-lg space-y-2">
                     <p className="text-sm font-medium flex items-center gap-2">
                       <FileText className="h-4 w-4" />
-                      Documenti per la spedizione
+                      {t("b2b.shippingDocuments")}
                     </p>
                     <div className="flex flex-wrap gap-2">
                       {selectedReturn.shippingLabelPath && (
@@ -349,7 +349,7 @@ export default function ResellerB2BReturns() {
                             data-testid="button-download-label"
                           >
                             <Tag className="h-4 w-4 mr-2" />
-                            Scarica Etichetta
+                            {t("b2b.downloadLabel")}
                           </a>
                         </Button>
                       )}
@@ -366,13 +366,13 @@ export default function ResellerB2BReturns() {
                             data-testid="button-download-ddt"
                           >
                             <Download className="h-4 w-4 mr-2" />
-                            Scarica DDT
+                            {t("b2b.downloadDDT")}
                           </a>
                         </Button>
                       )}
                     </div>
                     <p className="text-xs text-muted-foreground">
-                      Stampa questi documenti e allegali al pacco per la spedizione del reso.
+                      {t("b2b.printShippingDocuments")}
                     </p>
                   </div>
                 )}
@@ -394,9 +394,9 @@ export default function ResellerB2BReturns() {
       <Dialog open={shipDialogOpen} onOpenChange={setShipDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Registra Spedizione Reso</DialogTitle>
+            <DialogTitle>{t("b2b.registerReturnShipment")}</DialogTitle>
             <DialogDescription>
-              Inserisci i dati di tracking per la spedizione del reso
+              {t("b2b.enterTrackingData")}
             </DialogDescription>
           </DialogHeader>
 
@@ -411,11 +411,11 @@ export default function ResellerB2BReturns() {
               />
             </div>
             <div className="space-y-2">
-              <Label>Numero Tracking *</Label>
+              <Label>{t("b2b.trackingNumber")} *</Label>
               <Input
                 value={trackingNumber}
                 onChange={(e) => setTrackingNumber(e.target.value)}
-                placeholder="Inserisci il numero di tracking"
+                placeholder={t("b2b.enterTrackingNumber")}
                 data-testid="input-tracking"
               />
             </div>
@@ -428,7 +428,7 @@ export default function ResellerB2BReturns() {
               disabled={!trackingNumber || shipReturnMutation.isPending}
               data-testid="button-confirm-ship"
             >
-              {shipReturnMutation.isPending ? t("pages.sending") : "Conferma Spedizione"}
+              {shipReturnMutation.isPending ? t("pages.sending") : t("b2b.confirmShipment")}
             </Button>
           </DialogFooter>
         </DialogContent>

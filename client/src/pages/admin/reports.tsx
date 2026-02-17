@@ -202,7 +202,7 @@ export default function AdminReports() {
                         format(repairDateRange.from, "dd MMM yyyy", { locale: it })
                       )
                     ) : (
-                      "Seleziona periodo"
+                      t("reports.selectPeriod")
                     )}
                   </Button>
                 </PopoverTrigger>
@@ -225,7 +225,7 @@ export default function AdminReports() {
               data-testid="button-export-repairs"
             >
               <Download className="h-4 w-4 mr-2" />
-              {isExportingRepairs ? "Esportazione..." : "Esporta Riparazioni"}
+              {isExportingRepairs ? t("reports.exporting") : t("reports.exportRepairs")}
             </Button>
           </CardContent>
         </Card>
@@ -295,7 +295,7 @@ export default function AdminReports() {
               data-testid="button-export-inventory"
             >
               <Download className="h-4 w-4 mr-2" />
-              {isExportingInventory ? "Esportazione..." : "Esporta Inventario"}
+              {isExportingInventory ? t("reports.exporting") : t("reports.exportInventory")}
             </Button>
           </CardContent>
         </Card>

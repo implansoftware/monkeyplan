@@ -72,7 +72,7 @@ function getWizardSchema(t: (key: string) => string) {
 
 function getSteps(t: (key: string) => string) {
   return [
-    { id: 1, name: "Info Base", icon: Wrench },
+    { id: 1, name: t("products.basicInfo"), icon: Wrench },
     { id: 2, name: t("products.priceAndStock"), icon: Euro },
     { id: 3, name: t("common.confirm"), icon: CheckCircle2 },
   ];
@@ -80,30 +80,30 @@ function getSteps(t: (key: string) => string) {
 
 function getPartTypes(t: (key: string) => string) {
   return [
-    { value: "display", label: "Display / Schermo" },
+    { value: "display", label: t("products.partTypes.display") },
     { value: "batteria", label: t("repair.battery") },
     { value: "fotocamera", label: t("repair.camera") },
-    { value: "connettore", label: "Connettore di Ricarica" },
-    { value: "altoparlante", label: "Altoparlante / Speaker" },
+    { value: "connettore", label: t("products.partTypes.chargingConnector") },
+    { value: "altoparlante", label: t("products.partTypes.speaker") },
     { value: "microfono", label: t("repair.microphone") },
-    { value: "tasto", label: "Tasto / Pulsante" },
-    { value: "flex", label: "Flat / Flex Cable" },
-    { value: "scheda_madre", label: "Scheda Madre" },
-    { value: "frame", label: "Frame / Telaio" },
-    { value: "vetro", label: "Vetro Posteriore" },
-    { value: "antenna", label: "Antenna" },
-    { value: "sensore", label: "Sensore" },
+    { value: "tasto", label: t("products.partTypes.button") },
+    { value: "flex", label: t("products.partTypes.flexCable") },
+    { value: "scheda_madre", label: t("products.partTypes.motherboard") },
+    { value: "frame", label: t("products.partTypes.frame") },
+    { value: "vetro", label: t("products.partTypes.rearGlass") },
+    { value: "antenna", label: t("products.partTypes.antenna") },
+    { value: "sensore", label: t("products.partTypes.sensor") },
     { value: "altro", label: t("common.other") },
   ];
 }
 
 function getQualityOptions(t: (key: string) => string) {
   return [
-    { value: "originale", label: "Originale (OEM)" },
-    { value: "originale_rigenerato", label: "Originale Rigenerato" },
+    { value: "originale", label: t("products.qualityOptions.originalOEM") },
+    { value: "originale_rigenerato", label: t("products.qualityOptions.originalRefurbished") },
     { value: "compatibile_alta", label: t("products.highQualityCompatible") },
-    { value: "compatibile", label: "Compatibile Standard" },
-    { value: "aftermarket", label: "Aftermarket" },
+    { value: "compatibile", label: t("products.qualityOptions.compatibleStandard") },
+    { value: "aftermarket", label: t("products.qualityOptions.aftermarket") },
   ];
 }
 
@@ -240,7 +240,7 @@ export function SparePartWizard({
     onSuccess: (newProduct) => {
       queryClient.invalidateQueries({ queryKey: ["/api/spare-parts"] });
       queryClient.invalidateQueries({ queryKey: ["/api/products"] });
-      toast({ title: t("products.sparePartCreated"), description: `${form.getValues("name")} aggiunto al catalogo` });
+      toast({ title: t("products.sparePartCreated"), description: t("products.addedToCatalog", { name: form.getValues("name") }) });
       handleClose();
       onSuccess?.(newProduct);
     },
@@ -358,7 +358,7 @@ export function SparePartWizard({
                 <div className="text-center mb-4">
                   <Wrench className="h-12 w-12 mx-auto text-primary mb-2" />
                   <h3 className="text-lg font-medium">{t("products.basicInfo")}</h3>
-                  <p className="text-sm text-muted-foreground">Inserisci i dati principali del ricambio</p>
+                  <p className="text-sm text-muted-foreground">{t("products.enterSparePartData")}</p>
                 </div>
 
                 <div className="flex justify-center mb-4">
@@ -371,7 +371,7 @@ export function SparePartWizard({
                   />
                   {imagePreview ? (
                     <div className="relative">
-                      <img src={imagePreview} alt="Preview" className="w-32 h-32 object-cover rounded-lg" />
+                      <img src={imagePreview} alt={t("common.preview")} className="w-32 h-32 object-cover rounded-lg" />
                       <Button
                         type="button"
                         size="icon"
@@ -429,7 +429,7 @@ export function SparePartWizard({
                     <FormItem>
                       <FormLabel>{t("products.sparePartName")} *</FormLabel>
                       <FormControl>
-                        <Input placeholder="es. Display iPhone 14 Pro OLED" {...field} data-testid="input-part-name" />
+                        <Input placeholder={t("products.sparePartNamePlaceholder")} {...field} data-testid="input-part-name" />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -441,7 +441,7 @@ export function SparePartWizard({
                   name="quality"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Qualità *</FormLabel>
+                      <FormLabel>{t("products.quality")} *</FormLabel>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                         {QUALITY_OPTIONS.map(opt => (
                           <Card
@@ -469,9 +469,9 @@ export function SparePartWizard({
                     name="sku"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>SKU / Codice Interno</FormLabel>
+                        <FormLabel>{t("products.skuInternalCode")}</FormLabel>
                         <FormControl>
-                          <Input placeholder="Codice interno" {...field} data-testid="input-part-sku" />
+                          <Input placeholder={t("products.internalCodeOptional")} {...field} data-testid="input-part-sku" />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -485,7 +485,7 @@ export function SparePartWizard({
                       <FormItem>
                         <FormLabel>{t("products.supplierCode")}</FormLabel>
                         <FormControl>
-                          <Input placeholder="Codice originale" {...field} data-testid="input-part-code" />
+                          <Input placeholder={t("products.originalCode")} {...field} data-testid="input-part-code" />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -559,10 +559,10 @@ export function SparePartWizard({
                         </FormControl>
                         <SelectContent>
                           <SelectItem value="0">{t("common.noneFem")}</SelectItem>
-                          <SelectItem value="1">1 mese</SelectItem>
-                          <SelectItem value="3">3 mesi</SelectItem>
-                          <SelectItem value="6">6 mesi</SelectItem>
-                          <SelectItem value="12">12 mesi</SelectItem>
+                          <SelectItem value="1">{t("products.monthCount", { count: 1 })}</SelectItem>
+                          <SelectItem value="3">{t("products.monthCount", { count: 3 })}</SelectItem>
+                          <SelectItem value="6">{t("products.monthCount", { count: 6 })}</SelectItem>
+                          <SelectItem value="12">{t("products.monthCount", { count: 12 })}</SelectItem>
                         </SelectContent>
                       </Select>
                       <FormMessage />
@@ -599,7 +599,7 @@ export function SparePartWizard({
                     <Label className="text-base font-medium">{t("warehouse.initialStock")}</Label>
                     <Button type="button" variant="outline" size="sm" onClick={addWarehouseStock}>
                       <Warehouse className="h-4 w-4 mr-1" />
-                      Aggiungi Magazzino
+                      {t("warehouse.addWarehouse")}
                     </Button>
                   </div>
 
@@ -643,7 +643,7 @@ export function SparePartWizard({
                           <div className="flex-1">
                             <Label className="text-xs">{t("warehouse.position")}</Label>
                             <Input
-                              placeholder="es. A-01"
+                              placeholder={t("warehouse.positionExample")}
                               value={stock.location}
                               onChange={(e) => {
                                 const current = form.getValues("initialStock");
@@ -673,17 +673,17 @@ export function SparePartWizard({
                 <div className="text-center mb-4">
                   <CheckCircle2 className="h-12 w-12 mx-auto text-green-500 mb-2" />
                   <h3 className="text-lg font-medium">{t("repair.summary")}</h3>
-                  <p className="text-sm text-muted-foreground">Verifica i dati prima di salvare</p>
+                  <p className="text-sm text-muted-foreground">{t("products.verifyBeforeSaving")}</p>
                 </div>
 
                 <Card>
                   <CardContent className="p-4 space-y-3">
                     <div className="flex flex-wrap items-center gap-4">
                       {imagePreview && (
-                        <img src={imagePreview} alt="Preview" className="w-20 h-20 object-cover rounded-lg" />
+                        <img src={imagePreview} alt={t("common.preview")} className="w-20 h-20 object-cover rounded-lg" />
                       )}
                       <div>
-                        <h4 className="font-semibold text-lg">{values.name || "Nome non inserito"}</h4>
+                        <h4 className="font-semibold text-lg">{values.name || t("products.nameNotEntered")}</h4>
                         <div className="flex gap-2 mt-1">
                           <Badge variant="secondary">
                             {PART_TYPES.find(t => t.value === values.partType)?.label}
@@ -701,14 +701,14 @@ export function SparePartWizard({
                         <p className="font-medium">{values.sku || "-"}</p>
                       </div>
                       <div>
-                        <Label className="text-xs text-muted-foreground">Codice Fornitore</Label>
+                        <Label className="text-xs text-muted-foreground">{t("products.supplierCode")}</Label>
                         <p className="font-medium">{values.partCode || "-"}</p>
                       </div>
                     </div>
 
                     {values.compatibleModels && (
                       <div className="pt-4 border-t">
-                        <Label className="text-xs text-muted-foreground">Note Compatibilità</Label>
+                        <Label className="text-xs text-muted-foreground">{t("products.compatibilityNotes")}</Label>
                         <p className="text-sm mt-1">{values.compatibleModels}</p>
                       </div>
                     )}
@@ -733,7 +733,7 @@ export function SparePartWizard({
                             return (
                               <div key={i} className="flex justify-between text-sm">
                                 <span>{wh?.name || t("common.warehouse")}</span>
-                                <span className="font-medium">{stock.quantity} pz</span>
+                                <span className="font-medium">{t("products.pcsCount", { count: stock.quantity })}</span>
                               </div>
                             );
                           })}
@@ -769,7 +769,7 @@ export function SparePartWizard({
                   data-testid="button-wizard-submit"
                 >
                   {createMutation.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-                  Salva Ricambio
+                  {t("products.saveSparePart")}
                 </Button>
               )}
             </div>

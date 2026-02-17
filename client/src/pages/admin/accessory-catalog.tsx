@@ -65,21 +65,21 @@ type AccessoryWithSpecs = Product & {
 };
 
 const ACCESSORY_TYPES = [
-  { value: "cover", label: "Cover / Custodia" },
-  { value: "pellicola", label: "Pellicola protettiva" },
-  { value: "caricatore", label: "Caricatore" },
-  { value: "cavo", label: "Cavo" },
-  { value: "auricolare", label: "Auricolari" },
-  { value: "powerbank", label: "Power Bank" },
-  { value: "supporto", label: "Supporto / Stand" },
-  { value: "adattatore", label: "Adattatore" },
-  { value: "altro", label: "Altro" },
+  { value: "cover", label: "Cover / Custodia", labelKey: "products.typeCover" },
+  { value: "pellicola", label: "Pellicola protettiva", labelKey: "products.typeScreenProtector" },
+  { value: "caricatore", label: "Caricatore", labelKey: "products.typeCharger" },
+  { value: "cavo", label: "Cavo", labelKey: "products.typeCable" },
+  { value: "auricolare", label: "Auricolari", labelKey: "products.typeEarphones" },
+  { value: "powerbank", label: "Power Bank", labelKey: "products.typePowerBank" },
+  { value: "supporto", label: "Supporto / Stand", labelKey: "products.typeStand" },
+  { value: "adattatore", label: "Adattatore", labelKey: "products.typeAdapter" },
+  { value: "altro", label: "Altro", labelKey: "products.typeOther" },
 ];
 
 const CONDITION_OPTIONS = [
-  { value: "nuovo", label: "Nuovo" },
-  { value: "ricondizionato", label: "Ricondizionato" },
-  { value: "usato", label: "Usato" },
+  { value: "nuovo", label: "Nuovo", labelKey: "products.conditionNew" },
+  { value: "ricondizionato", label: "Ricondizionato", labelKey: "products.conditionRefurbished" },
+  { value: "usato", label: "Usato", labelKey: "products.conditionUsed" },
 ];
 
 const BRANDS = ["Apple", "Samsung", "Xiaomi", "Huawei", "Anker", "Belkin", "Spigen", "OtterBox", "Universale", "Altro"];
@@ -260,7 +260,7 @@ export default function AdminAccessoryCatalog() {
       queryClient.invalidateQueries({ queryKey: ["/api/device-brands"] });
       setNewBrandDialogOpen(false);
       setNewBrandName("");
-      toast({ title: t("products.brandCreated"), description: `"${newBrand.name}" aggiunto con successo` });
+      toast({ title: t("products.brandCreated"), description: t("products.addedSuccessfully", { name: newBrand.name }) });
     },
     onError: (error: Error) => {
       toast({ title: t("common.error"), description: error.message, variant: "destructive" });
@@ -284,7 +284,7 @@ export default function AdminAccessoryCatalog() {
           return newSet;
         });
       }
-      toast({ title: t("products.modelCreated"), description: `"${newModel.modelName}" aggiunto con successo` });
+      toast({ title: t("products.modelCreated"), description: t("products.addedSuccessfully", { name: newModel.modelName }) });
     },
     onError: (error: Error) => {
       toast({ title: t("common.error"), description: error.message, variant: "destructive" });
@@ -523,7 +523,7 @@ export default function AdminAccessoryCatalog() {
       setDialogOpen(false);
       setEditingAccessory(null);
       resetForm();
-      toast({ title: "Accessorio aggiornato", description: t("common.savedSuccessfully") });
+      toast({ title: t("products.accessoryUpdated"), description: t("common.savedSuccessfully") });
     },
     onError: (error: any) => {
       toast({ title: t("common.error"), description: error.message, variant: "destructive" });
@@ -554,7 +554,7 @@ export default function AdminAccessoryCatalog() {
       queryClient.invalidateQueries({ queryKey: ["/api/accessories"] });
       setDeleteDialogOpen(false);
       setAccessoryToDelete(null);
-      toast({ title: t("common.deletedSuccessfully"), description: "L'accessorio è stato rimosso dal catalogo." });
+      toast({ title: t("common.deletedSuccessfully"), description: t("products.accessoryRemovedDesc") });
     },
     onError: (error: any) => {
       toast({ title: t("common.error"), description: error.message, variant: "destructive" });
@@ -582,8 +582,8 @@ export default function AdminAccessoryCatalog() {
     },
     onSuccess: (_, { isVisibleInShop }) => {
       toast({
-        title: isVisibleInShop ? "Visibile nello shop" : "Nascosto dallo shop",
-        description: isVisibleInShop ? "L'accessorio è ora visibile negli shop." : "L'accessorio è stato nascosto dagli shop.",
+        title: isVisibleInShop ? t("products.visibleInShopLabel") : t("products.hiddenFromShopLabel"),
+        description: isVisibleInShop ? t("products.accessoryVisibleDesc") : t("products.accessoryHiddenDesc"),
       });
     },
     onSettled: () => {
@@ -595,11 +595,11 @@ export default function AdminAccessoryCatalog() {
     const file = e.target.files?.[0];
     if (file) {
       if (!["image/jpeg", "image/png", "image/webp", "image/gif"].includes(file.type)) {
-        toast({ title: t("common.error"), description: "Formato non supportato. Usa JPEG, PNG, WebP o GIF.", variant: "destructive" });
+        toast({ title: t("common.error"), description: t("products.unsupportedFormat"), variant: "destructive" });
         return;
       }
       if (file.size > 10 * 1024 * 1024) {
-        toast({ title: t("common.error"), description: "Immagine troppo grande. Max 10MB.", variant: "destructive" });
+        toast({ title: t("common.error"), description: t("products.imageTooLarge"), variant: "destructive" });
         return;
       }
       setImageFile(file);
@@ -777,7 +777,8 @@ export default function AdminAccessoryCatalog() {
   });
 
   const getTypeLabel = (type: string | null | undefined) => {
-    return ACCESSORY_TYPES.find(t => t.value === type)?.label || type || "-";
+    const found = ACCESSORY_TYPES.find(at => at.value === type);
+    return found ? t(found.labelKey) : type || "-";
   };
 
   return (
@@ -793,20 +794,20 @@ export default function AdminAccessoryCatalog() {
               <ShoppingBag className="h-5 w-5" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold tracking-tight">Catalogo Accessori (Admin)</h1>
-              <p className="text-sm text-muted-foreground">Visualizza e gestisci tutti gli accessori di tutti i rivenditori</p>
+              <h1 className="text-2xl font-bold tracking-tight">{t("products.accessoryCatalogAdmin")}</h1>
+              <p className="text-sm text-muted-foreground">{t("products.accessoryCatalogAdminDesc")}</p>
             </div>
           </div>
           <Button onClick={() => setWizardOpen(true)} data-testid="button-add-accessory" className="shadow-lg shadow-primary/25">
             <Plus className="mr-2 h-4 w-4" />
-            Aggiungi Accessorio
+            {t("products.addAccessory")}
           </Button>
         </div>
       </div>
 
       <Card>
         <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-4">
-          <CardTitle>Lista Accessori ({filteredAccessories.length})</CardTitle>
+          <CardTitle>{t("products.accessoryList")} ({filteredAccessories.length})</CardTitle>
           <div className="flex flex-wrap items-center gap-2 flex-wrap">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -824,8 +825,8 @@ export default function AdminAccessoryCatalog() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">{t("common.allTypes")}</SelectItem>
-                {ACCESSORY_TYPES.map((t) => (
-                  <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>
+                {ACCESSORY_TYPES.map((at) => (
+                  <SelectItem key={at.value} value={at.value}>{t(at.labelKey)}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -856,7 +857,7 @@ export default function AdminAccessoryCatalog() {
                     <TableHead>{t("products.compatibility")}</TableHead>
                     <TableHead>{t("products.condition")}</TableHead>
                     <TableHead className="text-right">{t("common.price")}</TableHead>
-                    <TableHead className="text-center">Shop</TableHead>
+                    <TableHead className="text-center">{t("products.shop")}</TableHead>
                     <TableHead className="w-24">{t("common.actions")}</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -924,7 +925,7 @@ export default function AdminAccessoryCatalog() {
                       </TableCell>
                       <TableCell>
                         <Badge variant={accessory.condition === "nuovo" ? "default" : "secondary"}>
-                          {accessory.condition === "nuovo" ? "Nuovo" : accessory.condition === "ricondizionato" ? "Ricondizionato" : "Usato"}
+                          {accessory.condition === "nuovo" ? t("products.conditionNew") : accessory.condition === "ricondizionato" ? t("products.conditionRefurbished") : t("products.conditionUsed")}
                         </Badge>
                       </TableCell>
                       <TableCell className="text-right font-medium">
@@ -953,7 +954,7 @@ export default function AdminAccessoryCatalog() {
                             variant="ghost"
                             size="icon"
                             onClick={() => { setDetailProductId(accessory.id); setDetailDialogOpen(true); }}
-                            title="Visualizza dettagli"
+                            title={t("products.viewDetails")}
                             data-testid={`button-detail-accessory-${accessory.id}`}
                           >
                             <Search className="h-4 w-4 text-primary" />
@@ -962,7 +963,7 @@ export default function AdminAccessoryCatalog() {
                             variant="ghost"
                             size="icon"
                             onClick={() => { setAccessoryToAssign(accessory); setSelectedResellerId(""); setAssignPrice(""); setAssignCostPrice(""); setAssignDialogOpen(true); }}
-                            title="Assegna a rivenditore"
+                            title={t("products.assignToReseller")}
                             data-testid={`button-assign-accessory-${accessory.id}`}
                           >
                             <UserPlus className="h-4 w-4" />
@@ -997,9 +998,9 @@ export default function AdminAccessoryCatalog() {
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>{editingAccessory ? "Modifica Accessorio" : "Aggiungi Accessorio"}</DialogTitle>
+            <DialogTitle>{editingAccessory ? t("products.editAccessory") : t("products.addAccessory")}</DialogTitle>
             <DialogDescription>
-              {editingAccessory ? "Modifica i dettagli dell'accessorio" : "Inserisci i dettagli del nuovo accessorio"}
+              {editingAccessory ? t("products.editAccessoryDesc") : t("products.addAccessoryDesc")}
             </DialogDescription>
           </DialogHeader>
 
@@ -1285,7 +1286,7 @@ export default function AdminAccessoryCatalog() {
               <div className="flex items-center justify-between">
                 <Label className="flex flex-wrap items-center gap-2">
                   <Warehouse className="h-4 w-4" />
-                  {editingAccessory ? "Gestione stock" : "Quantità iniziali per magazzino"}
+                  {editingAccessory ? t("products.manageStock") : t("products.initialStockQuantities")}
                 </Label>
                 <Select onValueChange={editingAccessory ? addEditStock : addInitialStock}>
                   <SelectTrigger className="w-56" data-testid="select-add-stock-warehouse">
@@ -1376,7 +1377,7 @@ export default function AdminAccessoryCatalog() {
                               onClick={() => saveStockChange(stock.warehouseId)}
                               data-testid={`edit-button-save-stock-${stock.warehouseId}`}
                             >
-                              {updateStockMutation.isPending ? "..." : "Salva"}
+                              {updateStockMutation.isPending ? "..." : t("common.save")}
                             </Button>
                           </div>
                           <div className="flex flex-wrap items-center gap-3">
@@ -1420,7 +1421,7 @@ export default function AdminAccessoryCatalog() {
                           <div className="flex items-center justify-between">
                             <div className="flex flex-wrap items-center gap-2">
                               <Warehouse className="h-4 w-4 text-muted-foreground" />
-                              <span className="font-medium">{wh?.name || "Magazzino"}</span>
+                              <span className="font-medium">{wh?.name || t("products.warehouseLabel")}</span>
                               {wh && (
                                 <span className="text-xs text-muted-foreground">
                                   ({wh.ownerType === 'admin' ? 'Admin' : wh.owner?.fullName || wh.owner?.username})
@@ -1575,7 +1576,7 @@ export default function AdminAccessoryCatalog() {
               data-testid="button-save-accessory"
             >
               {(createMutation.isPending || updateMutation.isPending) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              {editingAccessory ? "Salva modifiche" : "Aggiungi"}
+              {editingAccessory ? t("products.saveModifications") : t("products.addItem")}
             </Button>
           </DialogFooter>
         </DialogContent>

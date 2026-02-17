@@ -104,7 +104,7 @@ export default function FonedayCartPage() {
     },
     onSuccess: () => {
       refetchCart();
-      toast({ title: "Rimosso dal carrello" });
+      toast({ title: t("cart.removedFromCart") });
     },
     onError: (error: Error) => {
       toast({ title: t("common.error"), description: error.message, variant: "destructive" });
@@ -140,7 +140,7 @@ export default function FonedayCartPage() {
       setNotes("");
       setSelectedShipping("");
       toast({
-        title: "Ordine inviato",
+        title: t("cart.orderSubmitted"),
         description: `Ordine #${data.order_number} creato con successo`,
       });
     },
@@ -224,14 +224,14 @@ export default function FonedayCartPage() {
         <div className="flex flex-wrap items-center gap-3">
           <ShoppingCart className="h-8 w-8" />
           <div>
-            <h1 className="text-2xl font-bold">Carrello Foneday</h1>
+            <h1 className="text-2xl font-bold">{t("cart.fonedayCart")}</h1>
             <p className="text-muted-foreground">Gestisci i prodotti nel carrello e completa l'ordine</p>
           </div>
         </div>
         <Link href="/reseller/foneday/catalog">
           <Button variant="outline">
             <ArrowLeft className="h-4 w-4 mr-2" />
-            Torna al Catalogo
+            {t("cart.backToCatalog")}
           </Button>
         </Link>
       </div>
@@ -253,7 +253,7 @@ export default function FonedayCartPage() {
             <Link href="/reseller/foneday/catalog">
               <Button>
                 <Package className="h-4 w-4 mr-2" />
-                Vai al Catalogo
+                {t("cart.goToCatalog")}
               </Button>
             </Link>
           </CardContent>
@@ -276,7 +276,7 @@ export default function FonedayCartPage() {
                       <h3 className="font-medium">{item.title}</h3>
                       <p className="text-sm text-muted-foreground">SKU: {item.sku}</p>
                       {item.note && (
-                        <p className="text-sm text-muted-foreground">Nota: {item.note}</p>
+                        <p className="text-sm text-muted-foreground">{t("common.note")}: {item.note}</p>
                       )}
                       <p className="text-sm font-medium mt-1">{formatPrice(item.price)}</p>
                     </div>
@@ -341,12 +341,12 @@ export default function FonedayCartPage() {
                     data-testid="button-checkout"
                   >
                     <CreditCard className="h-4 w-4 mr-2" />
-                    Procedi al Checkout
+                    {t("cart.proceedToCheckout")}
                   </Button>
                 ) : (
                   <div className="space-y-4">
                     <Separator />
-                    <h3 className="font-medium">Indirizzo di Spedizione</h3>
+                    <h3 className="font-medium">{t("cart.shippingAddress")}</h3>
                     
                     <div className="space-y-3">
                       <div>
@@ -363,7 +363,7 @@ export default function FonedayCartPage() {
                         <Input
                           value={address.company}
                           onChange={(e) => setAddress({ ...address, company: e.target.value })}
-                          placeholder="Nome azienda (opzionale)"
+                          placeholder={t("cart.companyNameOptional")}
                           data-testid="input-shipping-company"
                         />
                       </div>
@@ -372,7 +372,7 @@ export default function FonedayCartPage() {
                         <Input
                           value={address.address_line1}
                           onChange={(e) => setAddress({ ...address, address_line1: e.target.value })}
-                          placeholder="Via e numero civico"
+                          placeholder={t("cart.streetAddress")}
                           data-testid="input-shipping-address1"
                         />
                       </div>
@@ -381,7 +381,7 @@ export default function FonedayCartPage() {
                         <Input
                           value={address.address_line2}
                           onChange={(e) => setAddress({ ...address, address_line2: e.target.value })}
-                          placeholder="Appartamento, scala, etc."
+                          placeholder={t("cart.apartmentScalePlaceholder")}
                           data-testid="input-shipping-address2"
                         />
                       </div>
@@ -428,10 +428,10 @@ export default function FonedayCartPage() {
 
                     {shippingMethods.length > 0 && (
                       <div>
-                        <Label>Metodo di Spedizione *</Label>
+                        <Label>{t("cart.shippingMethodRequired")}</Label>
                         <Select value={selectedShipping} onValueChange={setSelectedShipping}>
                           <SelectTrigger data-testid="select-shipping-method">
-                            <SelectValue placeholder="Seleziona metodo" />
+                            <SelectValue placeholder={t("cart.selectMethodPlaceholder")} />
                           </SelectTrigger>
                           <SelectContent>
                             {shippingMethods.map((method) => (
@@ -449,7 +449,7 @@ export default function FonedayCartPage() {
                       <Textarea
                         value={notes}
                         onChange={(e) => setNotes(e.target.value)}
-                        placeholder="Note per l'ordine (opzionale)"
+                        placeholder={t("cart.orderNotesPlaceholder")}
                         data-testid="input-order-notes"
                       />
                     </div>
@@ -472,7 +472,7 @@ export default function FonedayCartPage() {
                         ) : (
                           <Send className="h-4 w-4 mr-2" />
                         )}
-                        Invia Ordine
+                        {t("cart.submitOrder")}
                       </Button>
                     </div>
                   </div>

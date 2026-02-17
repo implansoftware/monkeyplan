@@ -49,21 +49,24 @@ type WarrantyDetail = {
 function getStatusConfig(t: (key: string) => string): Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> {
   return {
     offered: { label: t("common.pending"), variant: "secondary" },
-    accepted: { label: "Attiva", variant: "default" },
+    accepted: { label: t("warranties.active"), variant: "default" },
     declined: { label: t("common.rejected"), variant: "destructive" },
     expired: { label: t("invoices.overdue"), variant: "outline" },
   };
 }
 
-const coverageLabels: Record<string, string> = {
-  basic: "Base",
-  extended: "Estesa",
-  full: "Completa",
-};
+function getCoverageLabels(t: (key: string) => string): Record<string, string> {
+  return {
+    basic: t("warranties.coverageBasic"),
+    extended: t("warranties.coverageExtended"),
+    full: t("warranties.coverageFull"),
+  };
+}
 
 export default function ResellerWarrantyDetail() {
   const { t } = useTranslation();
   const statusConfig = getStatusConfig(t);
+  const coverageLabels = getCoverageLabels(t);
   const { id } = useParams<{ id: string }>();
   const [, navigate] = useLocation();
   const { toast } = useToast();
@@ -82,7 +85,7 @@ export default function ResellerWarrantyDetail() {
     queryKey: ["/api/reseller/warranties", id],
     queryFn: async () => {
       const res = await fetch(`/api/reseller/warranties/${id}`);
-      if (!res.ok) throw new Error("Errore caricamento garanzia");
+      if (!res.ok) throw new Error(t("warranties.errorLoading"));
       return res.json();
     },
     enabled: !!id,
@@ -97,10 +100,10 @@ export default function ResellerWarrantyDetail() {
       queryClient.invalidateQueries({ queryKey: ["/api/reseller/warranties", id] });
       queryClient.invalidateQueries({ queryKey: ["/api/reseller/warranties"] });
       setIsEditing(false);
-      toast({ title: "Garanzia aggiornata", description: "Le modifiche sono state salvate con successo." });
+      toast({ title: t("warranties.warrantyUpdated"), description: t("warranties.changesSavedSuccess") });
     },
     onError: (error: any) => {
-      toast({ title: t("common.error"), description: error.message || "Impossibile aggiornare la garanzia", variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message || t("warranties.cannotUpdate"), variant: "destructive" });
     },
   });
 
@@ -110,11 +113,11 @@ export default function ResellerWarrantyDetail() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/reseller/warranties"] });
-      toast({ title: "Garanzia cancellata", description: "La garanzia è stata rimossa con successo." });
+      toast({ title: t("warranties.warrantyDeleted"), description: t("warranties.warrantyRemovedSuccess") });
       navigate("/reseller/warranties");
     },
     onError: (error: any) => {
-      toast({ title: t("common.error"), description: error.message || "Impossibile cancellare la garanzia", variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message || t("warranties.cannotDelete"), variant: "destructive" });
     },
   });
 
@@ -163,12 +166,12 @@ export default function ResellerWarrantyDetail() {
       <div className="space-y-6">
         <Button variant="ghost" onClick={() => navigate("/reseller/warranties")} data-testid="button-back">
           <ArrowLeft className="h-4 w-4 mr-2" />
-          Torna alle garanzie
+          {t("warranties.backToWarranties")}
         </Button>
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-12">
             <Shield className="h-12 w-12 text-muted-foreground mb-4" />
-            <p className="text-lg font-medium">Garanzia non trovata</p>
+            <p className="text-lg font-medium">{t("warranties.warrantyNotFound")}</p>
           </CardContent>
         </Card>
       </div>
@@ -185,7 +188,7 @@ export default function ResellerWarrantyDetail() {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <Button variant="ghost" onClick={() => navigate("/reseller/warranties")} data-testid="button-back">
           <ArrowLeft className="h-4 w-4 mr-2" />
-          Torna alle garanzie
+          {t("warranties.backToWarranties")}
         </Button>
         <div className="flex flex-wrap items-center gap-2">
           {canEdit && !isEditing && (
@@ -205,7 +208,7 @@ export default function ResellerWarrantyDetail() {
           {canDelete && !isEditing && (
             <Button variant="destructive" onClick={() => setShowDeleteDialog(true)} data-testid="button-delete-warranty">
               <Trash2 className="h-4 w-4 mr-2" />
-              Cancella
+              {t("common.delete")}
             </Button>
           )}
         </div>
@@ -222,7 +225,7 @@ export default function ResellerWarrantyDetail() {
               <h1 className="text-2xl font-bold tracking-tight text-white" data-testid="text-warranty-name">
                 {warranty.productName}
               </h1>
-              <p className="text-sm text-white/80">Ordine #{warranty.orderNumber}</p>
+              <p className="text-sm text-white/80">{t("common.order")} #{warranty.orderNumber}</p>
             </div>
           </div>
           <div className="flex flex-wrap items-center gap-2">
@@ -237,7 +240,7 @@ export default function ResellerWarrantyDetail() {
                 {warranty.daysRemaining <= 0 ? (
                   <><AlertTriangle className="h-3 w-3" />{t("invoices.overdue")}</>
                 ) : (
-                  <><CheckCircle2 className="h-3 w-3" />{warranty.daysRemaining}g rimasti</>
+                  <><CheckCircle2 className="h-3 w-3" />{t("warranties.daysRemaining", { days: warranty.daysRemaining })}</>
                 )}
               </Badge>
             )}
@@ -251,7 +254,7 @@ export default function ResellerWarrantyDetail() {
           <CardHeader>
             <CardTitle className="text-base flex items-center gap-2">
               <User className="h-4 w-4" />
-              Informazioni Cliente
+              {t("warranties.customerInfo")}
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
@@ -282,7 +285,7 @@ export default function ResellerWarrantyDetail() {
           <CardHeader>
             <CardTitle className="text-base flex items-center gap-2">
               <Smartphone className="h-4 w-4" />
-              Dispositivo
+              {t("common.device")}
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
@@ -292,20 +295,20 @@ export default function ResellerWarrantyDetail() {
                 <p className="font-medium" data-testid="text-device-type">{warranty.deviceType || "N/A"}</p>
               </div>
               <div>
-                <p className="text-muted-foreground mb-1">Marca e Modello</p>
+                <p className="text-muted-foreground mb-1">{t("warranties.brandAndModel")}</p>
                 <p className="font-medium" data-testid="text-device-model">
                   {[warranty.brand, warranty.deviceModel].filter(Boolean).join(" ") || "N/A"}
                 </p>
               </div>
               <div>
-                <p className="text-muted-foreground mb-1">Numero Seriale</p>
+                <p className="text-muted-foreground mb-1">{t("common.serialNumber")}</p>
                 <div className="flex items-center gap-1.5">
                   <Hash className="h-3.5 w-3.5 text-muted-foreground" />
                   <p className="font-medium" data-testid="text-serial-number">{warranty.serialNumber || "N/A"}</p>
                 </div>
               </div>
               <div>
-                <p className="text-muted-foreground mb-1">Ordine Riparazione</p>
+                <p className="text-muted-foreground mb-1">{t("common.repairOrder")}</p>
                 <p className="font-medium" data-testid="text-order-number">#{warranty.orderNumber}</p>
               </div>
             </div>
@@ -317,7 +320,7 @@ export default function ResellerWarrantyDetail() {
         <CardHeader>
           <CardTitle className="text-base flex items-center gap-2">
             <Shield className="h-4 w-4" />
-            Dettagli Garanzia
+            {t("warranties.warrantyDetails")}
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -327,7 +330,7 @@ export default function ResellerWarrantyDetail() {
                 {warranty.status === "offered" && (
                   <>
                     <div className="space-y-2">
-                      <Label htmlFor="productName">Nome Prodotto</Label>
+                      <Label htmlFor="productName">{t("warranties.productName")}</Label>
                       <Input
                         id="productName"
                         value={editForm.productName}
@@ -336,7 +339,7 @@ export default function ResellerWarrantyDetail() {
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="coverageType">Tipo Copertura</Label>
+                      <Label htmlFor="coverageType">{t("warranties.coverageType")}</Label>
                       <Select
                         value={editForm.coverageType}
                         onValueChange={(v) => setEditForm(prev => ({ ...prev, coverageType: v }))}
@@ -345,14 +348,14 @@ export default function ResellerWarrantyDetail() {
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="basic">Base</SelectItem>
-                          <SelectItem value="extended">Estesa</SelectItem>
-                          <SelectItem value="full">Completa</SelectItem>
+                          <SelectItem value="basic">{t("warranties.coverageBasic")}</SelectItem>
+                          <SelectItem value="extended">{t("warranties.coverageExtended")}</SelectItem>
+                          <SelectItem value="full">{t("warranties.coverageFull")}</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="durationMonths">Durata (mesi)</Label>
+                      <Label htmlFor="durationMonths">{t("warranties.durationMonths")}</Label>
                       <Input
                         id="durationMonths"
                         type="number"
@@ -363,7 +366,7 @@ export default function ResellerWarrantyDetail() {
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="price">Prezzo (EUR)</Label>
+                      <Label htmlFor="price">{t("warranties.priceEur")}</Label>
                       <Input
                         id="price"
                         type="number"
@@ -397,12 +400,12 @@ export default function ResellerWarrantyDetail() {
                   <p className="font-medium" data-testid="text-product-name">{warranty.productName}</p>
                 </div>
                 <div>
-                  <p className="text-muted-foreground mb-1">Copertura</p>
+                  <p className="text-muted-foreground mb-1">{t("warranties.coverage")}</p>
                   <p className="font-medium" data-testid="text-coverage">{coverageLabels[warranty.coverageType] || warranty.coverageType}</p>
                 </div>
                 <div>
-                  <p className="text-muted-foreground mb-1">Durata</p>
-                  <p className="font-medium" data-testid="text-duration">{warranty.durationMonths} mesi</p>
+                  <p className="text-muted-foreground mb-1">{t("common.duration")}</p>
+                  <p className="font-medium" data-testid="text-duration">{warranty.durationMonths} {t("warranties.months")}</p>
                 </div>
                 <div>
                   <p className="text-muted-foreground mb-1">{t("common.price")}</p>
@@ -427,7 +430,7 @@ export default function ResellerWarrantyDetail() {
         <CardHeader>
           <CardTitle className="text-base flex items-center gap-2">
             <Calendar className="h-4 w-4" />
-            Cronologia
+            {t("warranties.timeline")}
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -437,7 +440,7 @@ export default function ResellerWarrantyDetail() {
                 <Clock className="h-4 w-4 text-blue-600 dark:text-blue-400" />
               </div>
               <div>
-                <p className="font-medium">Offerta inviata</p>
+                <p className="font-medium">{t("warranties.offerSent")}</p>
                 <p className="text-muted-foreground">{format(new Date(warranty.offeredAt), "dd MMMM yyyy 'alle' HH:mm", { locale: it })}</p>
               </div>
             </div>
@@ -448,7 +451,7 @@ export default function ResellerWarrantyDetail() {
                   <CheckCircle2 className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
                 </div>
                 <div>
-                  <p className="font-medium">Accettata dal cliente</p>
+                  <p className="font-medium">{t("warranties.acceptedByCustomer")}</p>
                   <p className="text-muted-foreground">{format(new Date(warranty.acceptedAt), "dd MMMM yyyy 'alle' HH:mm", { locale: it })}</p>
                 </div>
               </div>
@@ -460,7 +463,7 @@ export default function ResellerWarrantyDetail() {
                   <X className="h-4 w-4 text-red-600 dark:text-red-400" />
                 </div>
                 <div>
-                  <p className="font-medium">Rifiutata dal cliente</p>
+                  <p className="font-medium">{t("warranties.rejectedByCustomer")}</p>
                   <p className="text-muted-foreground">{format(new Date(warranty.declinedAt), "dd MMMM yyyy 'alle' HH:mm", { locale: it })}</p>
                 </div>
               </div>
@@ -476,7 +479,7 @@ export default function ResellerWarrantyDetail() {
               }`}>
                 <Calendar className="h-4 w-4 shrink-0" />
                 <div>
-                  <p className="font-medium">Periodo di validità</p>
+                  <p className="font-medium">{t("warranties.validityPeriod")}</p>
                   <p className="text-muted-foreground">
                     Dal {format(new Date(warranty.startsAt), "dd/MM/yyyy", { locale: it })} al {format(new Date(warranty.endsAt), "dd/MM/yyyy", { locale: it })}
                   </p>
@@ -490,15 +493,15 @@ export default function ResellerWarrantyDetail() {
       <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Conferma Cancellazione</DialogTitle>
+            <DialogTitle>{t("common.confirmDeletion")}</DialogTitle>
             <DialogDescription>
-              Sei sicuro di voler cancellare questa garanzia? Questa azione non può essere annullata.
+              {t("warranties.confirmDeleteWarranty")}
             </DialogDescription>
           </DialogHeader>
           <div className="p-4 rounded-md bg-destructive/10 text-sm">
             <p className="font-medium">{warranty.productName}</p>
-            <p className="text-muted-foreground">Cliente: {warranty.customerName}</p>
-            <p className="text-muted-foreground">Ordine: #{warranty.orderNumber}</p>
+            <p className="text-muted-foreground">{t("common.customer")}: {warranty.customerName}</p>
+            <p className="text-muted-foreground">{t("common.order")}: #{warranty.orderNumber}</p>
           </div>
           <DialogFooter className="gap-2">
             <Button variant="outline" onClick={() => setShowDeleteDialog(false)} data-testid="button-cancel-delete">{t("common.cancel")}</Button>
@@ -509,7 +512,7 @@ export default function ResellerWarrantyDetail() {
               data-testid="button-confirm-delete"
             >
               <Trash2 className="h-4 w-4 mr-2" />
-              {deleteMutation.isPending ? "Cancellazione..." : "Cancella Garanzia"}
+              {deleteMutation.isPending ? t("common.deleting") : t("warranties.deleteWarranty")}
             </Button>
           </DialogFooter>
         </DialogContent>

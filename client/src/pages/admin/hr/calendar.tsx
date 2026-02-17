@@ -26,11 +26,11 @@ const eventTypeColors: Record<string, string> = {
 };
 
 const eventTypeLabels: Record<string, string> = {
-  vacation: "Ferie",
-  permit: "Permesso",
+  vacation: "vacation",
+  permit: "permit",
   rol: "ROL",
-  sick: "Malattia",
-  other: "Altro",
+  sick: "sick",
+  other: "other",
 };
 
 export default function AdminCalendarPage() {
@@ -123,7 +123,7 @@ export default function AdminCalendarPage() {
             </div>
           ) : (
             <div className="grid grid-cols-7 gap-1">
-              {["Lun", "Mar", "Mer", "Gio", "Ven", "Sab", "Dom"].map(day => (
+              {t("hr.calendar.dayNames").split(",").map(day => (
                 <div key={day} className="text-center font-medium text-sm py-2 text-muted-foreground">
                   {day}
                 </div>

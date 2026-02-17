@@ -108,7 +108,7 @@ export default function HrLeaveRequests() {
     queryKey: ["/api/reseller/hr/leave-requests", entityType, selectedEntityId],
     queryFn: async () => {
       const res = await fetch(`/api/reseller/hr/leave-requests${queryParams}`);
-      if (!res.ok) throw new Error("Errore nel caricamento");
+      if (!res.ok) throw new Error(t("common.loadingError"));
       return res.json();
     },
   });
@@ -135,7 +135,7 @@ export default function HrLeaveRequests() {
       queryClient.invalidateQueries({ queryKey: ["/api/reseller/hr/leave-requests"] });
       setDialogOpen(false);
       setNewRequest({ leaveType: "ferie", startDate: "", endDate: "", reason: "", userId: "" });
-      toast({ title: "Richiesta inviata", description: "La richiesta ferie è stata inviata con successo." });
+      toast({ title: t("hr.requestSent"), description: t("hr.leaveRequestSentSuccess") });
     },
     onError: (error: any) => {
       toast({ title: t("common.error"), description: error.message, variant: "destructive" });
@@ -148,7 +148,7 @@ export default function HrLeaveRequests() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/reseller/hr/leave-requests"] });
-      toast({ title: "Richiesta aggiornata", description: "Lo stato della richiesta è stato aggiornato." });
+      toast({ title: t("hr.requestUpdated"), description: t("hr.requestStatusUpdated") });
     },
     onError: (error: any) => {
       toast({ title: t("common.error"), description: error.message, variant: "destructive" });
@@ -163,7 +163,7 @@ export default function HrLeaveRequests() {
       queryClient.invalidateQueries({ queryKey: ["/api/reseller/hr/leave-requests"] });
       setEditDialogOpen(false);
       setEditingRequest(null);
-      toast({ title: "Richiesta modificata", description: "Le modifiche sono state salvate." });
+      toast({ title: t("hr.requestModified"), description: t("hr.changesSaved") });
     },
     onError: (error: any) => {
       toast({ title: t("common.error"), description: error.message, variant: "destructive" });
@@ -202,7 +202,7 @@ export default function HrLeaveRequests() {
               </div>
               <div>
                 <h1 className="text-2xl font-bold text-white" data-testid="text-leave-title">{t("sidebar.items.leaveRequests")}</h1>
-                <p className="text-white/80">Gestione richieste ferie, permessi e ROL</p>
+                <p className="text-white/80">{t("hr.manageLeaveRequests")}</p>
               </div>
             </div>
           </div>
@@ -210,7 +210,7 @@ export default function HrLeaveRequests() {
             <Link href="/reseller/hr">
               <Button variant="secondary" data-testid="button-back-to-hr">
                 <ArrowLeft className="h-4 w-4 mr-2" />
-                Torna a HR
+                {t("hr.backToHR")}
               </Button>
             </Link>
             {!readOnly && (
@@ -230,7 +230,7 @@ export default function HrLeaveRequests() {
         {readOnly && (
           <div className="mt-3 flex items-center gap-2 text-sm text-white/80">
             <Eye className="h-4 w-4" />
-            <span>Modalità sola lettura - Visualizzazione dati esterni</span>
+            <span>{t("hr.readOnlyMode")}</span>
           </div>
         )}
       </div>
@@ -242,8 +242,8 @@ export default function HrLeaveRequests() {
               <Clock className="h-5 w-5 text-amber-600" />
             </div>
             <div>
-              <p className="font-medium">Richieste in attesa di approvazione</p>
-              <p className="text-sm text-muted-foreground">{pendingCount} richieste da valutare</p>
+              <p className="font-medium">{t("hr.pendingApproval")}</p>
+              <p className="text-sm text-muted-foreground">{t("hr.requestsToReview", { count: pendingCount })}</p>
             </div>
           </CardContent>
         </Card>
@@ -255,9 +255,9 @@ export default function HrLeaveRequests() {
             <div>
               <CardTitle className="flex flex-wrap items-center gap-2">
                 <Calendar className="h-5 w-5 text-muted-foreground" />
-                Richieste Ferie e Permessi
+                {t("hr.leaveAndPermitRequests")}
               </CardTitle>
-              <CardDescription>Elenco di tutte le richieste</CardDescription>
+              <CardDescription>{t("hr.allRequestsList")}</CardDescription>
             </div>
             <div className="flex gap-2">
               <Select value={statusFilter} onValueChange={setStatusFilter}>

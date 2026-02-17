@@ -24,12 +24,12 @@ import { useTranslation } from "react-i18next";
 type AuthMethod = 'bearer_token' | 'api_key_header' | 'api_key_query' | 'basic_auth' | 'oauth2' | 'none';
 
 const authMethodLabels: Record<AuthMethod, string> = {
-  bearer_token: "Bearer Token",
+  bearer_token: "bearerToken",
   api_key_header: "API Key (Header)",
   api_key_query: "API Key (Query String)",
-  basic_auth: "Basic Auth",
+  basic_auth: "basicAuth",
   oauth2: "OAuth 2.0",
-  none: "Nessuna",
+  none: "noAuth",
 };
 
 export default function AdminExternalIntegrations() {
@@ -164,12 +164,12 @@ export default function AdminExternalIntegrations() {
             <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>
-                {editingIntegration ? `Modifica ${editingIntegration.name}` : "Nuova Integrazione Esterna"}
+                {editingIntegration ? `${t("integrations.editIntegration")} ${editingIntegration.name}` : t("integrations.newIntegration")}
               </DialogTitle>
               <DialogDescription>
                 {editingIntegration 
-                  ? "Modifica le configurazioni dell'integrazione" 
-                  : "Configura una nuova integrazione con fornitore API esterno"}
+                  ? t("integrations.editDesc") 
+                  : t("integrations.newDesc")}
               </DialogDescription>
             </DialogHeader>
             <form onSubmit={handleSubmit}>
@@ -379,7 +379,7 @@ export default function AdminExternalIntegrations() {
                 >
                   {(createMutation.isPending || updateMutation.isPending) 
                     ? t("settings.savingRate") 
-                    : editingIntegration ? "Aggiorna" : "Crea Integrazione"}
+                    : editingIntegration ? t("integrations.update") : t("integrations.createIntegration")}
                 </Button>
               </div>
             </form>

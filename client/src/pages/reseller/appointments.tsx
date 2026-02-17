@@ -89,15 +89,15 @@ type Blackout = {
   reason: string | null;
 };
 
-const weekdayNames = ["Domenica", "Lunedì", "Martedì", "Mercoledì", "Giovedì", "Venerdì", "Sabato"];
+const weekdayNames = [t("time.sunday"), t("time.monday"), t("time.tuesday"), t("time.wednesday"), t("time.thursday"), t("time.friday"), t("time.saturday")];
 
 function getStatusLabels(t: (key: string) => string): Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> {
   return {
-    scheduled: { label: "Prenotato", variant: "secondary" },
-    confirmed: { label: "Confermato", variant: "default" },
+    scheduled: { label: t("appointments.booked"), variant: "secondary" },
+    confirmed: { label: t("appointments.confirmed"), variant: "default" },
     cancelled: { label: t("repairs.status.cancelled"), variant: "destructive" },
     completed: { label: t("common.completed"), variant: "outline" },
-    no_show: { label: "Non presentato", variant: "destructive" },
+    no_show: { label: t("appointments.noShow"), variant: "destructive" },
   };
 }
 
@@ -199,7 +199,7 @@ export default function ResellerAppointments() {
       });
     },
     onSuccess: () => {
-      toast({ title: "Disponibilità salvata", description: "Gli orari sono stati aggiornati" });
+      toast({ title: "t("appointments.availabilitySaved")", description: "t("appointments.hoursUpdated")" });
       queryClient.invalidateQueries({ queryKey: ["/api/repair-centers", selectedCenterId, "availability"] });
       setEditingAvailability(false);
     },
@@ -217,7 +217,7 @@ export default function ResellerAppointments() {
       });
     },
     onSuccess: () => {
-      toast({ title: "Chiusura aggiunta", description: "La data di chiusura è stata aggiunta" });
+      toast({ title: "t("appointments.closureAdded")", description: "t("appointments.closureDateAdded")" });
       queryClient.invalidateQueries({ queryKey: ["/api/repair-centers", selectedCenterId, "blackouts"] });
       setBlackoutDialogOpen(false);
       setNewBlackout({ date: "", reason: "" });
@@ -233,7 +233,7 @@ export default function ResellerAppointments() {
       return await apiRequest("DELETE", `/api/repair-centers/${selectedCenterId}/blackouts/${blackoutId}`);
     },
     onSuccess: () => {
-      toast({ title: "Chiusura rimossa", description: "La data di chiusura è stata rimossa" });
+      toast({ title: "t("appointments.closureRemoved")", description: "t("appointments.closureDateRemoved")" });
       queryClient.invalidateQueries({ queryKey: ["/api/repair-centers", selectedCenterId, "blackouts"] });
     },
     onError: (error: any) => {
@@ -246,7 +246,7 @@ export default function ResellerAppointments() {
       return await apiRequest("PATCH", `/api/appointments/${id}`, { status });
     },
     onSuccess: () => {
-      toast({ title: "Appuntamento aggiornato" });
+      toast({ title: t("appointments.appointmentUpdated") });
       queryClient.invalidateQueries({ queryKey: ["/api/repair-centers", selectedCenterId, "appointments"] });
       setAppointmentDetailOpen(false);
     },
@@ -294,9 +294,9 @@ export default function ResellerAppointments() {
         <Card>
           <CardContent className="py-12 text-center">
             <Building className="h-12 w-12 mx-auto mb-4 opacity-50" />
-            <p className="text-muted-foreground">Nessun centro riparazione associato</p>
+            <p className="text-muted-foreground">{t("appointments.noRepairCenters")}</p>
             <p className="text-sm text-muted-foreground mt-2">
-              Crea un centro riparazione dalla sezione "Centri Riparazione"
+              {t("appointments.createRepairCenterHint")}
             </p>
           </CardContent>
         </Card>
@@ -347,7 +347,7 @@ export default function ResellerAppointments() {
             <Select value={selectedCenterId} onValueChange={setSelectedCenterId}>
               <SelectTrigger className="w-full sm:w-56 bg-white/20 backdrop-blur-sm border-white/30 text-white" data-testid="select-repair-center">
                 <Building className="h-4 w-4 mr-2" />
-                <SelectValue placeholder="Seleziona centro" />
+                <SelectValue placeholder={t("appointments.selectCenterPlaceholder")} />
               </SelectTrigger>
               <SelectContent>
                 {repairCenters.map((center) => (
@@ -395,7 +395,7 @@ export default function ResellerAppointments() {
           <CardContent className="relative pt-5 pb-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1">Confermati</p>
+                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1">{t("appointments.confirmedCount")}</p>
                 <p className="text-3xl font-bold tabular-nums text-emerald-600 dark:text-emerald-400">{confirmedAppointments}</p>
                 <p className="text-xs text-muted-foreground mt-1">
                   Appuntamenti confermati
@@ -442,7 +442,7 @@ export default function ResellerAppointments() {
                 <CardHeader className="pb-2">
                   <CardTitle className="text-base flex items-center gap-2">
                     <CalendarIcon className="h-4 w-4" />
-                    Seleziona Data
+                    {t("appointments.selectDate")}
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
@@ -482,7 +482,7 @@ export default function ResellerAppointments() {
                   ) : appointmentsForSelectedDate.length === 0 ? (
                     <div className="text-center py-8 text-muted-foreground">
                       <CalendarCheck className="h-12 w-12 mx-auto mb-2 opacity-50" />
-                      <p>Nessun appuntamento in questa data</p>
+                      <p>{t("appointments.noAppointmentsOnDate")}</p>
                     </div>
                   ) : (
                     <div className="space-y-3">
@@ -507,7 +507,7 @@ export default function ResellerAppointments() {
                                 <div>
                                   <div className="font-medium flex items-center gap-2">
                                     <Wrench className="h-4 w-4" />
-                                    {appointment.repairOrder?.orderNumber || "Ordine"}
+                                    {appointment.repairOrder?.orderNumber || t("appointments.order")}
                                   </div>
                                   {appointment.repairOrder?.deviceType && (
                                     <p className="text-xs text-muted-foreground mt-0.5">
@@ -680,7 +680,7 @@ export default function ResellerAppointments() {
                 <div className="flex items-center justify-between flex-wrap gap-2">
                   <CardTitle className="text-base flex items-center gap-2">
                     <XCircle className="h-4 w-4" />
-                    Date di Chiusura Straordinaria
+                    {t("appointments.extraordinaryClosureDates")}
                   </CardTitle>
                   <Button
                     variant="outline"
@@ -700,7 +700,7 @@ export default function ResellerAppointments() {
                   </div>
                 ) : !blackouts || blackouts.length === 0 ? (
                   <div className="text-center py-6 text-muted-foreground">
-                    <p>Nessuna data di chiusura programmata</p>
+                    <p>{t("appointments.noClosureDatesPlanned")}</p>
                   </div>
                 ) : (
                   <div className="space-y-2">
@@ -741,9 +741,9 @@ export default function ResellerAppointments() {
       <Dialog open={blackoutDialogOpen} onOpenChange={setBlackoutDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Aggiungi Chiusura Straordinaria</DialogTitle>
+            <DialogTitle>{t("appointments.addExtraordinaryClosure")}</DialogTitle>
             <DialogDescription>
-              Seleziona una data in cui il centro rimarrà chiuso
+              {t("appointments.selectClosureDate")}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
@@ -761,7 +761,7 @@ export default function ResellerAppointments() {
               <Input
                 value={newBlackout.reason}
                 onChange={(e) => setNewBlackout(prev => ({ ...prev, reason: e.target.value }))}
-                placeholder="Es: Ferie estive"
+                placeholder="{t("appointments.closureReasonExample")}"
                 data-testid="input-blackout-reason"
               />
             </div>
@@ -786,7 +786,7 @@ export default function ResellerAppointments() {
       <Dialog open={appointmentDetailOpen} onOpenChange={setAppointmentDetailOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Dettaglio Appuntamento</DialogTitle>
+            <DialogTitle>{t("appointments.detail")}</DialogTitle>
           </DialogHeader>
           {selectedAppointment && (
             <div className="space-y-4">
@@ -809,7 +809,7 @@ export default function ResellerAppointments() {
                     )}
                     {selectedAppointment.repairOrder.deviceModel && (
                       <div>
-                        <span className="text-muted-foreground">Modello: </span>
+                        <span className="text-muted-foreground">{t("appointments.model")}: </span>
                         <span>{selectedAppointment.repairOrder.deviceModel}</span>
                       </div>
                     )}

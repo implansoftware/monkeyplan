@@ -40,8 +40,8 @@ function getStatusLabels(t: (key: string) => string): Record<PracticeStatus, str
     bozza: t("invoices.draft"),
     inviata: t("invoices.sent"),
     in_lavorazione: t("repairs.inProgress"),
-    attesa_documenti: "Attesa Documenti",
-    completata: "Completata",
+    attesa_documenti: t("utility.awaitingDocuments"),
+    completata: t("common.completed"),
     annullata: t("common.cancelled"),
     rifiutata: t("common.rejected"),
   };
@@ -59,8 +59,8 @@ const statusColors: Record<PracticeStatus, string> = {
 
 function getTaskStatusLabels(t: (key: string) => string): Record<TaskStatus, string> {
   return {
-    da_fare: "Da fare",
-    in_corso: "In corso",
+    da_fare: t("utility.toDo"),
+    in_corso: t("utility.inProgress"),
     completato: t("common.completed"),
     annullato: t("repairs.status.cancelled"),
   };
@@ -73,12 +73,14 @@ const taskStatusIcons: Record<TaskStatus, typeof Circle> = {
   annullato: XCircle,
 };
 
-const priorityLabels: Record<Priority, string> = {
-  bassa: "Bassa",
-  normale: "Normale",
-  alta: "Alta",
-  urgente: "Urgente",
-};
+function getPriorityLabels(t: (key: string) => string): Record<Priority, string> {
+  return {
+    bassa: t("utility.low"),
+    normale: t("utility.normal"),
+    alta: t("utility.high"),
+    urgente: t("utility.urgent"),
+  };
+}
 
 const priorityColors: Record<Priority, string> = {
   bassa: "bg-gray-100 text-gray-700",
@@ -89,11 +91,11 @@ const priorityColors: Record<Priority, string> = {
 
 function getDocumentCategoryLabels(t: (key: string) => string): Record<string, string> {
   return {
-    contratto: "Contratto",
-    documento_identita: "Documento Identità",
-    codice_fiscale: "Codice Fiscale",
-    bolletta: "Bolletta",
-    conferma_fornitore: "Conferma Fornitore",
+    contratto: t("utility.contract"),
+    documento_identita: t("utility.identityDocument"),
+    codice_fiscale: t("profile.codiceFiscale"),
+    bolletta: t("utility.bill"),
+    conferma_fornitore: t("utility.supplierConfirmation"),
     fattura: t("common.invoice"),
     altro: t("common.other"),
   };
@@ -139,6 +141,7 @@ export default function ResellerUtilityPracticeDetail() {
   const statusLabels = getStatusLabels(t);
   const taskStatusLabels = getTaskStatusLabels(t);
   const documentCategoryLabels = getDocumentCategoryLabels(t);
+  const priorityLabels = getPriorityLabels(t);
   const params = useParams<{ id: string }>();
   const [, setLocation] = useLocation();
   const { toast } = useToast();
@@ -218,7 +221,7 @@ export default function ResellerUtilityPracticeDetail() {
       setTaskDialogOpen(false);
       setNewTaskTitle("");
       setNewTaskDescription("");
-      toast({ title: "Attività creata" });
+      toast({ title: t("utility.taskCreated") });
     },
   });
 
@@ -230,7 +233,7 @@ export default function ResellerUtilityPracticeDetail() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/utility/practices", params.id, "tasks"] });
       queryClient.invalidateQueries({ queryKey: ["/api/utility/practices", params.id, "timeline"] });
-      toast({ title: "Attività aggiornata" });
+      toast({ title: t("utility.taskUpdated") });
     },
   });
 
@@ -240,7 +243,7 @@ export default function ResellerUtilityPracticeDetail() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/utility/practices", params.id, "tasks"] });
-      toast({ title: "Attività eliminata" });
+      toast({ title: t("utility.taskDeleted") });
     },
   });
 
@@ -255,7 +258,7 @@ export default function ResellerUtilityPracticeDetail() {
       setNoteDialogOpen(false);
       setNewNoteBody("");
       setNewNoteVisibility("internal");
-      toast({ title: "Nota aggiunta" });
+      toast({ title: t("utility.noteAdded") });
     },
   });
 
@@ -265,7 +268,7 @@ export default function ResellerUtilityPracticeDetail() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/utility/practices", params.id, "notes"] });
-      toast({ title: "Nota eliminata" });
+      toast({ title: t("utility.noteDeleted") });
     },
   });
 
@@ -283,9 +286,9 @@ export default function ResellerUtilityPracticeDetail() {
       setStatusDialogOpen(false);
       setStatusReason("");
       const invoiceMsg = data.invoice 
-        ? ` - Fattura ${data.invoice.invoiceNumber} generata`
+        ? ` - ${t("utility.invoiceGenerated", { number: data.invoice.invoiceNumber })}`
         : "";
-      toast({ title: `Stato aggiornato${invoiceMsg}` });
+      toast({ title: t("utility.statusUpdated") + invoiceMsg });
     },
   });
 
@@ -296,7 +299,7 @@ export default function ResellerUtilityPracticeDetail() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/utility/practices", params.id, "documents"] });
       queryClient.invalidateQueries({ queryKey: ["/api/utility/practices", params.id, "timeline"] });
-      toast({ title: "Documento eliminato" });
+      toast({ title: t("utility.documentDeleted") });
     },
   });
 
@@ -318,16 +321,16 @@ export default function ResellerUtilityPracticeDetail() {
       
       if (!res.ok) {
         const errorText = await res.text();
-        throw new Error(errorText || 'Errore durante il caricamento');
+        throw new Error(errorText || t("utility.uploadError"));
       }
       
       queryClient.invalidateQueries({ queryKey: ["/api/utility/practices", params.id, "documents"] });
       queryClient.invalidateQueries({ queryKey: ["/api/utility/practices", params.id, "timeline"] });
-      toast({ title: "Documento caricato con successo" });
+      toast({ title: t("utility.documentUploaded") });
     } catch (error: any) {
       toast({ 
         title: t("common.error"), 
-        description: error.message || "Impossibile caricare il documento",
+        description: error.message || t("utility.cannotUploadDocument"),
         variant: "destructive" 
       });
     } finally {
@@ -352,9 +355,9 @@ export default function ResellerUtilityPracticeDetail() {
       <div className="p-6">
         <div className="text-center py-12">
           <AlertCircle className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-          <h2 className="text-xl font-semibold mb-2">Pratica non trovata</h2>
+          <h2 className="text-xl font-semibold mb-2">{t("utility.practiceNotFound")}</h2>
           <Link href="/reseller/utility/practices">
-            <Button variant="outline">Torna alle pratiche</Button>
+            <Button variant="outline">{t("utility.backToPractices")}</Button>
           </Link>
         </div>
       </div>
@@ -377,7 +380,7 @@ export default function ResellerUtilityPracticeDetail() {
             <h1 className="text-2xl font-bold" data-testid="text-practice-number">{practice.practiceNumber}</h1>
             <p className="text-muted-foreground">
               {practice.itemType === "product" 
-                ? product?.name || "Prodotto" 
+                ? product?.name || t("common.product") 
                 : `${supplier?.name || ""} - ${(practice as any).customServiceName || service?.name || ""}`}
             </p>
           </div>
@@ -395,7 +398,7 @@ export default function ResellerUtilityPracticeDetail() {
             }}
             data-testid="button-change-status"
           >
-            Cambia Stato
+            {t("utility.changeStatus")}
           </Button>
         </div>
       </div>
@@ -404,23 +407,23 @@ export default function ResellerUtilityPracticeDetail() {
         <TabsList className="grid w-full grid-cols-5" data-testid="tabs-practice">
           <TabsTrigger value="panoramica" className="flex flex-wrap items-center gap-2" data-testid="tab-panoramica">
             <FileText className="h-4 w-4" />
-            Panoramica
+            {t("utility.overview")}
           </TabsTrigger>
           <TabsTrigger value="attivita" className="flex flex-wrap items-center gap-2" data-testid="tab-attivita">
             <CheckSquare className="h-4 w-4" />
-            Attività ({completedTasks}/{totalTasks})
+            {t("utility.tasks")} ({completedTasks}/{totalTasks})
           </TabsTrigger>
           <TabsTrigger value="documenti" className="flex flex-wrap items-center gap-2" data-testid="tab-documenti">
             <Upload className="h-4 w-4" />
-            Documenti ({documents.length})
+            {t("utility.documents")} ({documents.length})
           </TabsTrigger>
           <TabsTrigger value="cronologia" className="flex flex-wrap items-center gap-2" data-testid="tab-cronologia">
             <Clock className="h-4 w-4" />
-            Cronologia
+            {t("utility.timeline")}
           </TabsTrigger>
           <TabsTrigger value="note" className="flex flex-wrap items-center gap-2" data-testid="tab-note">
             <MessageSquare className="h-4 w-4" />
-            Note ({notes.length})
+            {t("common.notes")} ({notes.length})
           </TabsTrigger>
         </TabsList>
 
@@ -428,7 +431,7 @@ export default function ResellerUtilityPracticeDetail() {
           <div className="grid gap-4 md:grid-cols-2">
             <Card>
               <CardHeader>
-                <CardTitle className="text-lg">Informazioni Cliente</CardTitle>
+                <CardTitle className="text-lg">{t("utility.customerInfo")}</CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
                 <div className="flex flex-wrap items-center gap-2">
@@ -436,8 +439,8 @@ export default function ResellerUtilityPracticeDetail() {
                   <span className="font-medium" data-testid="text-customer-name">{customer?.fullName || "-"}</span>
                 </div>
                 <div className="text-sm text-muted-foreground">
-                  <p>Email: {customer?.email || "-"}</p>
-                  <p>Telefono: {customer?.phone || "-"}</p>
+                  <p>{t("common.email")}: {customer?.email || "-"}</p>
+                  <p>{t("common.phone")}: {customer?.phone || "-"}</p>
                 </div>
               </CardContent>
             </Card>
@@ -445,9 +448,9 @@ export default function ResellerUtilityPracticeDetail() {
             <Card>
               <CardHeader>
                 <CardTitle className="text-lg">
-                  {practice.itemType === "product" ? "Dettagli Prodotti" : 
-                   practice.itemType === "service_with_products" ? "Dettagli Servizio + Prodotti" : 
-                   "Dettagli Servizio"}
+                  {practice.itemType === "product" ? t("utility.productDetails") : 
+                   practice.itemType === "service_with_products" ? t("utility.serviceAndProductDetails") : 
+                   t("utility.serviceDetails")}
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
@@ -458,9 +461,9 @@ export default function ResellerUtilityPracticeDetail() {
                     {practice.itemType === "product" ? (
                       <><Package className="h-3 w-3 mr-1" />{t("common.product")}</>
                     ) : practice.itemType === "service_with_products" ? (
-                      <><FileText className="h-3 w-3 mr-1" /><Package className="h-3 w-3 mr-1" />Servizio + Prodotti</>
+                      <><FileText className="h-3 w-3 mr-1" /><Package className="h-3 w-3 mr-1" />{t("utility.serviceAndProducts")}</>
                     ) : (
-                      <>Servizio Utility</>
+                      <>{t("utility.utilityService")}</>
                     )}
                   </Badge>
                 </div>
@@ -479,7 +482,7 @@ export default function ResellerUtilityPracticeDetail() {
                           {(practice as any).customServiceName || service?.name || "-"}
                         </p>
                         {(practice as any).customServiceName && (
-                          <Badge variant="outline" className="text-xs">Temporaneo</Badge>
+                          <Badge variant="outline" className="text-xs">{t("utility.temporary")}</Badge>
                         )}
                       </div>
                     </div>
@@ -491,14 +494,14 @@ export default function ResellerUtilityPracticeDetail() {
                   <>
                     {practiceProducts.length > 0 ? (
                       <div className="space-y-2">
-                        <p className="text-sm text-muted-foreground">Prodotti ({practiceProducts.length})</p>
+                        <p className="text-sm text-muted-foreground">{t("utility.productsCount", { count: practiceProducts.length })}</p>
                         <div className="border rounded-md overflow-hidden">
                           <table className="w-full text-sm">
                             <thead className="bg-muted/50">
                               <tr>
                                 <th className="text-left p-2 font-medium">{t("common.product")}</th>
-                                <th className="text-right p-2 font-medium">Qtà</th>
-                                <th className="text-right p-2 font-medium">Prezzo Unit.</th>
+                                <th className="text-right p-2 font-medium">{t("common.quantity")}</th>
+                                <th className="text-right p-2 font-medium">{t("utility.unitPrice")}</th>
                                 <th className="text-right p-2 font-medium">{t("common.total")}</th>
                               </tr>
                             </thead>
@@ -519,7 +522,7 @@ export default function ResellerUtilityPracticeDetail() {
                             </tbody>
                             <tfoot className="bg-muted/50 border-t">
                               <tr>
-                                <td colSpan={3} className="p-2 text-right font-medium">Totale Prodotti:</td>
+                                <td colSpan={3} className="p-2 text-right font-medium">{t("utility.productsTotal")}:</td>
                                 <td className="p-2 text-right font-bold" data-testid="text-products-total">
                                   {formatCurrency(practiceProducts.reduce((sum, pp) => sum + (pp.quantity * pp.unitPriceCents), 0))}
                                 </td>
@@ -533,7 +536,7 @@ export default function ResellerUtilityPracticeDetail() {
                         <p className="text-sm text-muted-foreground">{t("common.product")}</p>
                         <p className="font-medium" data-testid="text-product-name">{product?.name || "-"}</p>
                         {product?.sku && (
-                          <p className="text-xs text-muted-foreground">SKU: {product.sku}</p>
+                          <p className="text-xs text-muted-foreground">{t("products.sku")}: {product.sku}</p>
                         )}
                       </div>
                     ) : null}
@@ -542,7 +545,7 @@ export default function ResellerUtilityPracticeDetail() {
 
                 <div>
                   <p className="text-sm text-muted-foreground">
-                    {practice.priceType === "forfait" ? "Prezzo Forfait" : "Canone Mensile"}
+                    {practice.priceType === "forfait" ? t("utility.flatPrice") : t("utility.monthlyFee")}
                   </p>
                   <p className="font-medium" data-testid="text-price">
                     {practice.priceType === "forfait" 
@@ -555,24 +558,24 @@ export default function ResellerUtilityPracticeDetail() {
 
             <Card>
               <CardHeader>
-                <CardTitle className="text-lg">Date Importanti</CardTitle>
+                <CardTitle className="text-lg">{t("utility.importantDates")}</CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <p className="text-sm text-muted-foreground">Creata il</p>
+                    <p className="text-sm text-muted-foreground">{t("utility.createdOn")}</p>
                     <p className="font-medium">{formatDateShort(practice.createdAt)}</p>
                   </div>
                   <div>
-                    <p className="text-sm text-muted-foreground">Inviata il</p>
+                    <p className="text-sm text-muted-foreground">{t("utility.sentOn")}</p>
                     <p className="font-medium">{formatDateShort(practice.submittedAt)}</p>
                   </div>
                   <div>
-                    <p className="text-sm text-muted-foreground">Attivazione Prevista</p>
+                    <p className="text-sm text-muted-foreground">{t("utility.expectedActivation")}</p>
                     <p className="font-medium">{formatDateShort(practice.expectedActivationDate)}</p>
                   </div>
                   <div>
-                    <p className="text-sm text-muted-foreground">Attivata il</p>
+                    <p className="text-sm text-muted-foreground">{t("utility.activatedOn")}</p>
                     <p className="font-medium">{formatDateShort(practice.activatedAt)}</p>
                   </div>
                 </div>
@@ -581,11 +584,11 @@ export default function ResellerUtilityPracticeDetail() {
 
             <Card>
               <CardHeader>
-                <CardTitle className="text-lg">Riferimenti</CardTitle>
+                <CardTitle className="text-lg">{t("utility.references")}</CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
                 <div>
-                  <p className="text-sm text-muted-foreground">Riferimento Fornitore</p>
+                  <p className="text-sm text-muted-foreground">{t("utility.supplierReference")}</p>
                   <p className="font-medium">{practice.supplierReference || "-"}</p>
                 </div>
                 <div>
@@ -595,7 +598,7 @@ export default function ResellerUtilityPracticeDetail() {
                   </Badge>
                 </div>
                 <div>
-                  <p className="text-sm text-muted-foreground">Canale Comunicazione</p>
+                  <p className="text-sm text-muted-foreground">{t("utility.communicationChannel")}</p>
                   <p className="font-medium">{practice.communicationChannel || "-"}</p>
                 </div>
               </CardContent>
@@ -605,7 +608,7 @@ export default function ResellerUtilityPracticeDetail() {
           {practice.notes && (
             <Card>
               <CardHeader>
-                <CardTitle className="text-lg">Note Pratica</CardTitle>
+                <CardTitle className="text-lg">{t("utility.practiceNotes")}</CardTitle>
               </CardHeader>
               <CardContent>
                 <p className="whitespace-pre-wrap">{practice.notes}</p>
@@ -617,14 +620,14 @@ export default function ResellerUtilityPracticeDetail() {
         <TabsContent value="attivita" className="space-y-4">
           <div className="flex justify-between items-center">
             <div>
-              <h3 className="text-lg font-semibold">Attività da completare</h3>
+              <h3 className="text-lg font-semibold">{t("utility.tasksToComplete")}</h3>
               <p className="text-sm text-muted-foreground">
-                {completedTasks} di {totalTasks} completate
+                {t("utility.completedOf", { completed: completedTasks, total: totalTasks })}
               </p>
             </div>
             <Button onClick={() => setTaskDialogOpen(true)} data-testid="button-add-task">
               <Plus className="h-4 w-4 mr-2" />
-              Nuova Attività
+              {t("utility.newTask")}
             </Button>
           </div>
 
@@ -632,7 +635,7 @@ export default function ResellerUtilityPracticeDetail() {
             <CardContent className="p-0">
               {tasks.length === 0 ? (
                 <div className="text-center py-8 text-muted-foreground">
-                  Nessuna attività. Aggiungi la prima attività per iniziare.
+                  {t("utility.noTasks")}
                 </div>
               ) : (
                 <div className="divide-y">
@@ -702,8 +705,8 @@ export default function ResellerUtilityPracticeDetail() {
           />
           <div className="flex justify-between items-center">
             <div>
-              <h3 className="text-lg font-semibold">Documenti allegati</h3>
-              <p className="text-sm text-muted-foreground">{documents.length} documenti</p>
+              <h3 className="text-lg font-semibold">{t("utility.attachedDocuments")}</h3>
+              <p className="text-sm text-muted-foreground">{documents.length} {t("utility.documents").toLowerCase()}</p>
             </div>
             <Button 
               variant="outline" 
@@ -712,7 +715,7 @@ export default function ResellerUtilityPracticeDetail() {
               data-testid="button-upload-document"
             >
               <Upload className="h-4 w-4 mr-2" />
-              {isUploading ? t("common.loading") : "Carica Documento"}
+              {isUploading ? t("common.loading") : t("utility.uploadDocument")}
             </Button>
           </div>
 
@@ -720,7 +723,7 @@ export default function ResellerUtilityPracticeDetail() {
             <CardContent className="p-0">
               {documents.length === 0 ? (
                 <div className="text-center py-8 text-muted-foreground">
-                  Nessun documento allegato.
+                  {t("utility.noDocuments")}
                 </div>
               ) : (
                 <div className="divide-y">
@@ -769,8 +772,8 @@ export default function ResellerUtilityPracticeDetail() {
         <TabsContent value="cronologia" className="space-y-4">
           <div className="flex justify-between items-center">
             <div>
-              <h3 className="text-lg font-semibold">Cronologia eventi</h3>
-              <p className="text-sm text-muted-foreground">{timeline.length} eventi</p>
+              <h3 className="text-lg font-semibold">{t("utility.eventTimeline")}</h3>
+              <p className="text-sm text-muted-foreground">{timeline.length} {t("utility.events")}</p>
             </div>
           </div>
 
@@ -779,13 +782,13 @@ export default function ResellerUtilityPracticeDetail() {
               <CardHeader>
                 <CardTitle className="text-base flex items-center gap-2">
                   <History className="h-4 w-4" />
-                  Storico Stati
+                  {t("utility.stateHistory")}
                 </CardTitle>
               </CardHeader>
               <CardContent className="p-0">
                 {stateHistory.length === 0 ? (
                   <div className="text-center py-4 text-muted-foreground text-sm">
-                    Nessun cambio di stato registrato.
+                    {t("utility.noStateChanges")}
                   </div>
                 ) : (
                   <div className="divide-y">
@@ -815,13 +818,13 @@ export default function ResellerUtilityPracticeDetail() {
               <CardHeader>
                 <CardTitle className="text-base flex items-center gap-2">
                   <Clock className="h-4 w-4" />
-                  Timeline Eventi
+                  {t("utility.eventTimeline")}
                 </CardTitle>
               </CardHeader>
               <CardContent className="p-0">
                 {timeline.length === 0 ? (
                   <div className="text-center py-8 text-muted-foreground">
-                    Nessun evento registrato.
+                    {t("utility.noEvents")}
                   </div>
                 ) : (
                   <ScrollArea className="h-[400px]">
@@ -838,7 +841,7 @@ export default function ResellerUtilityPracticeDetail() {
                             <div className="flex flex-wrap items-center gap-2 mt-2 text-xs text-muted-foreground">
                               <span>{formatDate(event.createdAt)}</span>
                               <span>•</span>
-                              <span>{users.find(u => u.id === event.createdBy)?.fullName || "Sistema"}</span>
+                              <span>{users.find(u => u.id === event.createdBy)?.fullName || t("utility.system")}</span>
                             </div>
                           </div>
                         </div>
@@ -854,12 +857,12 @@ export default function ResellerUtilityPracticeDetail() {
         <TabsContent value="note" className="space-y-4">
           <div className="flex justify-between items-center">
             <div>
-              <h3 className="text-lg font-semibold">Note e comunicazioni</h3>
-              <p className="text-sm text-muted-foreground">{notes.length} note</p>
+              <h3 className="text-lg font-semibold">{t("utility.notesAndCommunications")}</h3>
+              <p className="text-sm text-muted-foreground">{notes.length} {t("common.notes").toLowerCase()}</p>
             </div>
             <Button onClick={() => setNoteDialogOpen(true)} data-testid="button-add-note">
               <Plus className="h-4 w-4 mr-2" />
-              Nuova Nota
+              {t("utility.newNote")}
             </Button>
           </div>
 
@@ -867,7 +870,7 @@ export default function ResellerUtilityPracticeDetail() {
             <CardContent className="p-0">
               {notes.length === 0 ? (
                 <div className="text-center py-8 text-muted-foreground">
-                  Nessuna nota. Aggiungi la prima nota.
+                  {t("utility.noNotes")}
                 </div>
               ) : (
                 <div className="divide-y">
@@ -881,7 +884,7 @@ export default function ResellerUtilityPracticeDetail() {
                         <div className="flex-1">
                           <div className="flex flex-wrap items-center gap-2 mb-2">
                             <Badge variant={note.visibility === "internal" ? "secondary" : "outline"}>
-                              {note.visibility === "internal" ? "Interna" : t("common.customer")}
+                              {note.visibility === "internal" ? t("utility.internal") : t("common.customer")}
                             </Badge>
                             <span className="text-xs text-muted-foreground">
                               {formatDate(note.createdAt)}
@@ -889,7 +892,7 @@ export default function ResellerUtilityPracticeDetail() {
                           </div>
                           <p className="whitespace-pre-wrap">{note.body}</p>
                           <p className="text-xs text-muted-foreground mt-2">
-                            di {users.find(u => u.id === note.createdBy)?.fullName || "Sistema"}
+                            {t("utility.by")} {users.find(u => u.id === note.createdBy)?.fullName || t("utility.system")}
                           </p>
                         </div>
                         <Button 
@@ -913,17 +916,17 @@ export default function ResellerUtilityPracticeDetail() {
       <Dialog open={taskDialogOpen} onOpenChange={setTaskDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Nuova Attività</DialogTitle>
-            <DialogDescription>Aggiungi un'attività da completare per questa pratica.</DialogDescription>
+            <DialogTitle>{t("utility.newTask")}</DialogTitle>
+            <DialogDescription>{t("utility.addTaskDesc")}</DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div>
-              <Label htmlFor="task-title">Titolo *</Label>
+              <Label htmlFor="task-title">{t("common.title")} *</Label>
               <Input
                 id="task-title"
                 value={newTaskTitle}
                 onChange={(e) => setNewTaskTitle(e.target.value)}
-                placeholder="Es: Richiedere documento identità"
+                placeholder={t("utility.placeholderTaskTitle")}
                 data-testid="input-task-title"
               />
             </div>
@@ -933,7 +936,7 @@ export default function ResellerUtilityPracticeDetail() {
                 id="task-description"
                 value={newTaskDescription}
                 onChange={(e) => setNewTaskDescription(e.target.value)}
-                placeholder="Descrizione opzionale..."
+                placeholder={t("utility.optionalDescription")}
                 data-testid="input-task-description"
               />
             </div>
@@ -952,29 +955,29 @@ export default function ResellerUtilityPracticeDetail() {
       <Dialog open={noteDialogOpen} onOpenChange={setNoteDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Nuova Nota</DialogTitle>
-            <DialogDescription>Aggiungi una nota o comunicazione per questa pratica.</DialogDescription>
+            <DialogTitle>{t("utility.newNote")}</DialogTitle>
+            <DialogDescription>{t("utility.addNoteDesc")}</DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div>
-              <Label htmlFor="note-visibility">Visibilità</Label>
+              <Label htmlFor="note-visibility">{t("utility.visibility")}</Label>
               <Select value={newNoteVisibility} onValueChange={(v) => setNewNoteVisibility(v as "internal" | "customer")}>
                 <SelectTrigger data-testid="select-note-visibility">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="internal">Interna (solo operatori)</SelectItem>
-                  <SelectItem value="customer">Cliente (visibile al cliente)</SelectItem>
+                  <SelectItem value="internal">{t("utility.internalOnly")}</SelectItem>
+                  <SelectItem value="customer">{t("utility.visibleToCustomer")}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
             <div>
-              <Label htmlFor="note-body">Contenuto *</Label>
+              <Label htmlFor="note-body">{t("utility.content")} *</Label>
               <Textarea
                 id="note-body"
                 value={newNoteBody}
                 onChange={(e) => setNewNoteBody(e.target.value)}
-                placeholder="Scrivi la nota..."
+                placeholder={t("utility.writeNote")}
                 rows={4}
                 data-testid="input-note-body"
               />
@@ -994,12 +997,12 @@ export default function ResellerUtilityPracticeDetail() {
       <Dialog open={statusDialogOpen} onOpenChange={setStatusDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Cambia Stato Pratica</DialogTitle>
-            <DialogDescription>Seleziona il nuovo stato per la pratica.</DialogDescription>
+            <DialogTitle>{t("utility.changeStatusTitle")}</DialogTitle>
+            <DialogDescription>{t("utility.changeStatusDesc")}</DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div>
-              <Label>Nuovo Stato</Label>
+              <Label>{t("utility.newStatus")}</Label>
               <Select value={newStatus} onValueChange={(v) => setNewStatus(v as PracticeStatus)}>
                 <SelectTrigger data-testid="select-new-status">
                   <SelectValue />
@@ -1012,12 +1015,12 @@ export default function ResellerUtilityPracticeDetail() {
               </Select>
             </div>
             <div>
-              <Label htmlFor="status-reason">Motivo (opzionale)</Label>
+              <Label htmlFor="status-reason">{t("utility.reasonOptional")}</Label>
               <Textarea
                 id="status-reason"
                 value={statusReason}
                 onChange={(e) => setStatusReason(e.target.value)}
-                placeholder="Motivo del cambio stato..."
+                placeholder={t("utility.reasonForStatusChange")}
                 data-testid="input-status-reason"
               />
             </div>

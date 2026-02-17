@@ -23,7 +23,7 @@ import { useTranslation } from "react-i18next";
 
 const formSchema = z.object({
   id: z.string().optional(),
-  name: z.string().min(1, "Nome richiesto"),
+  name: z.string().min(1, t("diagnosis.nameRequired")),
   description: z.string().optional(),
   category: z.string().optional(),
   deviceTypeId: z.string().optional(),
@@ -71,7 +71,7 @@ export default function DiagnosisSettings() {
       return res.json();
     },
     onSuccess: () => {
-      toast({ title: t("common.success"), description: "Problema diagnostico creato" });
+      toast({ title: t("common.success"), description: t("diagnosis.findingCreated") });
       queryClient.invalidateQueries({ queryKey: ['/api/admin/diagnostic-findings'] });
       setDialogOpen(false);
       form.reset();
@@ -87,7 +87,7 @@ export default function DiagnosisSettings() {
       return res.json();
     },
     onSuccess: () => {
-      toast({ title: t("common.success"), description: "Problema diagnostico aggiornato" });
+      toast({ title: t("common.success"), description: t("diagnosis.findingUpdated") });
       queryClient.invalidateQueries({ queryKey: ['/api/admin/diagnostic-findings'] });
       setDialogOpen(false);
       form.reset();
@@ -102,7 +102,7 @@ export default function DiagnosisSettings() {
       await apiRequest('DELETE', `/api/admin/diagnostic-findings/${id}`);
     },
     onSuccess: () => {
-      toast({ title: t("common.success"), description: "Problema diagnostico eliminato" });
+      toast({ title: t("common.success"), description: t("diagnosis.findingDeleted") });
       queryClient.invalidateQueries({ queryKey: ['/api/admin/diagnostic-findings'] });
       setDeleteDialogOpen(false);
       setItemToDelete(null);
@@ -118,7 +118,7 @@ export default function DiagnosisSettings() {
       return res.json();
     },
     onSuccess: () => {
-      toast({ title: t("common.success"), description: "Componente creato" });
+      toast({ title: t("common.success"), description: t("diagnosis.componentCreated") });
       queryClient.invalidateQueries({ queryKey: ['/api/admin/damaged-component-types'] });
       setDialogOpen(false);
       form.reset();
@@ -134,7 +134,7 @@ export default function DiagnosisSettings() {
       return res.json();
     },
     onSuccess: () => {
-      toast({ title: t("common.success"), description: "Componente aggiornato" });
+      toast({ title: t("common.success"), description: t("diagnosis.componentUpdated") });
       queryClient.invalidateQueries({ queryKey: ['/api/admin/damaged-component-types'] });
       setDialogOpen(false);
       form.reset();
@@ -149,7 +149,7 @@ export default function DiagnosisSettings() {
       await apiRequest('DELETE', `/api/admin/damaged-component-types/${id}`);
     },
     onSuccess: () => {
-      toast({ title: t("common.success"), description: "Componente eliminato" });
+      toast({ title: t("common.success"), description: t("diagnosis.componentDeleted") });
       queryClient.invalidateQueries({ queryKey: ['/api/admin/damaged-component-types'] });
       setDeleteDialogOpen(false);
       setItemToDelete(null);
@@ -224,7 +224,7 @@ export default function DiagnosisSettings() {
   };
 
   const getDeviceTypeName = (id: string | null) => {
-    if (!id) return "Tutti";
+    if (!id) return t("diagnosis.allDevices");
     return deviceTypes?.find(dt => dt.id === id)?.name || id;
   };
 
@@ -322,7 +322,7 @@ export default function DiagnosisSettings() {
                         <TableCell>{finding.sortOrder}</TableCell>
                         <TableCell>
                           <Badge variant={finding.isActive ? "default" : "secondary"}>
-                            {finding.isActive ? "Attivo" : "Disattivato"}
+                            {finding.isActive ? t("common.active") : t("priceListDetail.deactivated")}
                           </Badge>
                         </TableCell>
                         <TableCell className="text-right">
@@ -382,7 +382,7 @@ export default function DiagnosisSettings() {
                         <TableCell>{component.sortOrder}</TableCell>
                         <TableCell>
                           <Badge variant={component.isActive ? "default" : "secondary"}>
-                            {component.isActive ? "Attivo" : "Disattivato"}
+                            {component.isActive ? t("common.active") : t("priceListDetail.deactivated")}
                           </Badge>
                         </TableCell>
                         <TableCell className="text-right">
@@ -409,7 +409,7 @@ export default function DiagnosisSettings() {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>
-              {form.watch("id") ? "Modifica" : "Nuovo"} {activeTab === "findings" ? "Problema Diagnostico" : "Componente"}
+              {form.watch("id") ? t("diagnosis.edit") : t("diagnosis.new")} {activeTab === "findings" ? t("diagnosis.diagnosticFinding") : t("diagnosis.component")}
             </DialogTitle>
             <DialogDescription>
               {activeTab === "findings" 

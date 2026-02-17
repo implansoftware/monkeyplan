@@ -116,7 +116,7 @@ export default function AdminResellerDetail() {
         <Card className="border-0 shadow-lg">
           <CardContent className="py-16 text-center">
             <Store className="h-16 w-16 mx-auto mb-4 text-slate-300" />
-            <p className="text-slate-500 text-lg">Rivenditore non trovato</p>
+            <p className="text-slate-500 text-lg">{t("reseller.notFound")}</p>
           </CardContent>
         </Card>
       </div>
@@ -124,8 +124,8 @@ export default function AdminResellerDetail() {
   }
 
   const { reseller, subResellers, repairCenters, customers, staff } = data;
-  const categoryLabel = reseller.resellerCategory === 'franchising' ? 'Franchising' : 
-                        reseller.resellerCategory === 'gdo' ? 'GDO' : 'Standard';
+  const categoryLabel = reseller.resellerCategory === 'franchising' ? t('reseller.franchising') : 
+                        reseller.resellerCategory === 'gdo' ? t('reseller.gdo') : t('reseller.standard');
 
   return (
     <div className="space-y-6" data-testid="page-reseller-detail">
@@ -174,7 +174,7 @@ export default function AdminResellerDetail() {
                 data-testid="badge-reseller-status"
               >
                 <Activity className="h-3 w-3 mr-1" />
-                {reseller.isActive ? "Attivo" : "Inattivo"}
+                {reseller.isActive ? t("common.active") : t("common.inactive")}
               </Badge>
               <Button
                 variant="outline"
@@ -212,7 +212,7 @@ export default function AdminResellerDetail() {
                 <p className="font-semibold text-slate-900 dark:text-white font-mono" data-testid="text-reseller-username">{reseller.username}</p>
               </div>
               <div className="p-4 bg-slate-50 dark:bg-slate-800/30 rounded-xl">
-                <p className="text-xs text-slate-500 uppercase tracking-wide mb-1">Data Registrazione</p>
+                <p className="text-xs text-slate-500 uppercase tracking-wide mb-1">{t("reseller.registrationDate")}</p>
                 <p className="font-semibold text-slate-900 dark:text-white flex items-center gap-2" data-testid="text-reseller-created">
                   <Calendar className="h-4 w-4 text-blue-500" />
                   {reseller.createdAt ? format(new Date(reseller.createdAt), "dd MMM yyyy", { locale: it }) : "-"}
@@ -243,7 +243,7 @@ export default function AdminResellerDetail() {
           </CardHeader>
           <CardContent className="space-y-3">
             <div className="p-3 bg-slate-50 dark:bg-slate-800/30 rounded-xl">
-              <p className="text-xs text-slate-500 uppercase tracking-wide mb-1">Ragione Sociale</p>
+              <p className="text-xs text-slate-500 uppercase tracking-wide mb-1">{t("repairCenter.businessName")}</p>
               <p className="font-semibold text-slate-900 dark:text-white" data-testid="text-reseller-ragione-sociale">
                 {reseller.ragioneSociale || "-"}
               </p>
@@ -251,13 +251,13 @@ export default function AdminResellerDetail() {
             
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="p-3 bg-slate-50 dark:bg-slate-800/30 rounded-xl">
-                <p className="text-xs text-slate-500 uppercase tracking-wide mb-1">Partita IVA</p>
+                <p className="text-xs text-slate-500 uppercase tracking-wide mb-1">{t("repairCenter.vatNumber")}</p>
                 <p className="font-mono text-sm text-slate-900 dark:text-white" data-testid="text-reseller-piva">
                   {reseller.partitaIva || "-"}
                 </p>
               </div>
               <div className="p-3 bg-slate-50 dark:bg-slate-800/30 rounded-xl">
-                <p className="text-xs text-slate-500 uppercase tracking-wide mb-1">Codice Fiscale</p>
+                <p className="text-xs text-slate-500 uppercase tracking-wide mb-1">{t("repairCenter.taxCode")}</p>
                 <p className="font-mono text-sm text-slate-900 dark:text-white" data-testid="text-reseller-cf">
                   {reseller.codiceFiscale || "-"}
                 </p>
@@ -290,7 +290,7 @@ export default function AdminResellerDetail() {
         <CardContent>
           {!paymentConfig ? (
             <div className="p-4 bg-slate-50 dark:bg-slate-800/30 rounded-xl text-center">
-              <p className="text-slate-500">Non configurato</p>
+              <p className="text-slate-500">{t("repairCenter.notConfigured")}</p>
             </div>
           ) : (
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
@@ -306,7 +306,7 @@ export default function AdminResellerDetail() {
                     <X className="h-4 w-4 text-slate-400" />
                   )}
                   <span className={paymentConfig.stripeEnabled && paymentConfig.stripeAccountId ? "text-emerald-600 font-medium text-sm" : "text-slate-400 text-sm"}>
-                    {paymentConfig.stripeEnabled && paymentConfig.stripeAccountId ? "Configurato" : "Non attivo"}
+                    {paymentConfig.stripeEnabled && paymentConfig.stripeAccountId ? t("repairCenter.configured") : t("repairCenter.notActive")}
                   </span>
                 </div>
               </div>
@@ -357,7 +357,7 @@ export default function AdminResellerDetail() {
             </div>
             <div>
               <p className="text-3xl font-bold" data-testid="stat-sub-resellers">{subResellers.length}</p>
-              <p className="text-sm text-blue-100">Sub-Rivenditori</p>
+              <p className="text-sm text-blue-100">{t("reseller.subResellers")}</p>
             </div>
           </div>
         </div>
@@ -370,7 +370,7 @@ export default function AdminResellerDetail() {
             </div>
             <div>
               <p className="text-3xl font-bold" data-testid="stat-repair-centers">{repairCenters.length}</p>
-              <p className="text-sm text-emerald-100">Centri Riparazione</p>
+              <p className="text-sm text-emerald-100">{t("reseller.repairCentersCount")}</p>
             </div>
           </div>
         </div>
@@ -396,7 +396,7 @@ export default function AdminResellerDetail() {
             </div>
             <div>
               <p className="text-3xl font-bold" data-testid="stat-staff">{staff.length}</p>
-              <p className="text-sm text-amber-100">Staff</p>
+              <p className="text-sm text-amber-100">{t("reseller.staffCount")}</p>
             </div>
           </div>
         </div>
@@ -429,7 +429,7 @@ export default function AdminResellerDetail() {
               {subResellers.length === 0 ? (
                 <div className="py-12 text-center bg-slate-50 dark:bg-slate-800/30 rounded-xl mt-4">
                   <Store className="h-12 w-12 mx-auto mb-4 text-slate-300" />
-                  <p className="text-slate-500">Nessun sub-rivenditore</p>
+                  <p className="text-slate-500">{t("reseller.noSubResellers")}</p>
                 </div>
               ) : (
                 <div className="rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden mt-4">
@@ -451,12 +451,12 @@ export default function AdminResellerDetail() {
                           <TableCell className="text-slate-500">{sub.phone || "-"}</TableCell>
                           <TableCell>
                             <Badge className={sub.isActive ? "bg-emerald-100 text-emerald-700" : "bg-slate-100 text-slate-600"}>
-                              {sub.isActive ? "Attivo" : "Inattivo"}
+                              {sub.isActive ? t("common.active") : t("common.inactive")}
                             </Badge>
                           </TableCell>
                           <TableCell className="text-right">
                             <Link href={`/admin/resellers/${sub.id}`}>
-                              <Button variant="ghost" size="icon" className="hover:bg-blue-100 hover:text-blue-600" title="Visualizza dettagli">
+                              <Button variant="ghost" size="icon" className="hover:bg-blue-100 hover:text-blue-600" title={t("reseller.viewDetails")}>
                                 <Eye className="h-4 w-4" />
                               </Button>
                             </Link>
@@ -474,7 +474,7 @@ export default function AdminResellerDetail() {
             {repairCenters.length === 0 ? (
               <div className="py-12 text-center bg-slate-50 dark:bg-slate-800/30 rounded-xl mt-4">
                 <Wrench className="h-12 w-12 mx-auto mb-4 text-slate-300" />
-                <p className="text-slate-500">Nessun centro riparazione</p>
+                <p className="text-slate-500">{t("reseller.noRepairCenters")}</p>
               </div>
             ) : (
               <div className="rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden mt-4">
@@ -482,7 +482,7 @@ export default function AdminResellerDetail() {
                   <TableHeader>
                     <TableRow className="bg-slate-50 dark:bg-slate-800/50">
                       <TableHead className="text-slate-600 dark:text-slate-400">{t("common.name")}</TableHead>
-                      <TableHead className="text-slate-600 dark:text-slate-400">Citta</TableHead>
+                      <TableHead className="text-slate-600 dark:text-slate-400">{t("reseller.cityCol")}</TableHead>
                       <TableHead className="text-slate-600 dark:text-slate-400">{t("common.phone")}</TableHead>
                       <TableHead className="text-slate-600 dark:text-slate-400">{t("common.email")}</TableHead>
                       <TableHead className="text-slate-600 dark:text-slate-400">{t("common.status")}</TableHead>
@@ -497,7 +497,7 @@ export default function AdminResellerDetail() {
                         <TableCell className="text-slate-500">{rc.email}</TableCell>
                         <TableCell>
                           <Badge className={rc.isActive ? "bg-emerald-100 text-emerald-700" : "bg-slate-100 text-slate-600"}>
-                            {rc.isActive ? "Attivo" : "Inattivo"}
+                            {rc.isActive ? t("common.active") : t("common.inactive")}
                           </Badge>
                         </TableCell>
                       </TableRow>
@@ -512,7 +512,7 @@ export default function AdminResellerDetail() {
             {customers.length === 0 ? (
               <div className="py-12 text-center bg-slate-50 dark:bg-slate-800/30 rounded-xl mt-4">
                 <Users className="h-12 w-12 mx-auto mb-4 text-slate-300" />
-                <p className="text-slate-500">Nessun cliente</p>
+                <p className="text-slate-500">{t("reseller.noCustomers")}</p>
               </div>
             ) : (
               <div className="rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden mt-4">
@@ -534,7 +534,7 @@ export default function AdminResellerDetail() {
                         <TableCell className="text-slate-500">{customer.phone || "-"}</TableCell>
                         <TableCell>
                           <Badge className={customer.isActive ? "bg-emerald-100 text-emerald-700" : "bg-slate-100 text-slate-600"}>
-                            {customer.isActive ? "Attivo" : "Inattivo"}
+                            {customer.isActive ? t("common.active") : t("common.inactive")}
                           </Badge>
                         </TableCell>
                         <TableCell className="text-right">
@@ -554,7 +554,7 @@ export default function AdminResellerDetail() {
 
           <TabsContent value="staff" className="px-6 pb-6">
             <div className="flex items-center justify-between mb-4 mt-4">
-              <h3 className="font-medium text-slate-900 dark:text-white">Membri Staff</h3>
+              <h3 className="font-medium text-slate-900 dark:text-white">{t("reseller.staffMembers")}</h3>
               <Link href={`/admin/resellers/${resellerId}/team`}>
                 <Button variant="outline" size="sm" className="rounded-xl" data-testid="button-manage-team">
                   <UsersRound className="h-4 w-4 mr-2" />
@@ -565,7 +565,7 @@ export default function AdminResellerDetail() {
             {staff.length === 0 ? (
               <div className="py-12 text-center bg-slate-50 dark:bg-slate-800/30 rounded-xl">
                 <UsersRound className="h-12 w-12 mx-auto mb-4 text-slate-300" />
-                <p className="text-slate-500">Nessun membro dello staff</p>
+                <p className="text-slate-500">{t("reseller.noStaff")}</p>
               </div>
             ) : (
               <div className="rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
@@ -586,7 +586,7 @@ export default function AdminResellerDetail() {
                         <TableCell className="text-slate-500">{member.phone || "-"}</TableCell>
                         <TableCell>
                           <Badge className={member.isActive ? "bg-emerald-100 text-emerald-700" : "bg-slate-100 text-slate-600"}>
-                            {member.isActive ? "Attivo" : "Inattivo"}
+                            {member.isActive ? t("common.active") : t("common.inactive")}
                           </Badge>
                         </TableCell>
                       </TableRow>
@@ -647,7 +647,7 @@ export default function AdminResellerDetail() {
                     Aggiornamento...
                   </>
                 ) : (
-                  "Conferma Reset"
+                  t("repairCenter.confirmReset")
                 )}
               </Button>
             </div>

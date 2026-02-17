@@ -33,21 +33,21 @@ type AdminWarrantyItem = {
 };
 
 const statusConfig: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
-  offered: { label: "In Attesa", variant: "secondary" },
-  accepted: { label: "Attiva", variant: "default" },
-  declined: { label: "Rifiutata", variant: "destructive" },
-  expired: { label: "Scaduta", variant: "outline" },
+  offered: { label: "offered", variant: "secondary" },
+  accepted: { label: "accepted", variant: "default" },
+  declined: { label: "declined", variant: "destructive" },
+  expired: { label: "expired", variant: "outline" },
 };
 
 const coverageLabels: Record<string, string> = {
-  basic: "Base",
-  extended: "Estesa",
-  full: "Completa",
+  basic: "basic",
+  extended: "extended",
+  full: "full",
 };
 
 const sellerTypeLabels: Record<string, string> = {
-  reseller: "Rivenditore",
-  repair_center: "Centro Riparazione",
+  reseller: "reseller",
+  repair_center: "repair_center",
 };
 
 function getDaysRemainingBadge(daysRemaining: number | null, status: string) {
@@ -195,8 +195,8 @@ export default function AdminWarranties() {
             <p className="text-lg font-medium">Nessuna garanzia trovata</p>
             <p className="text-sm text-muted-foreground">
               {search || statusFilter !== "all"
-                ? "Prova a modificare i filtri di ricerca"
-                : "Le garanzie vendute dai rivenditori appariranno qui"}
+                ? t("warranties.modifyFilters")
+                : t("warranties.willAppearHere")}
             </p>
           </CardContent>
         </Card>
@@ -220,7 +220,7 @@ export default function AdminWarranties() {
                         <div>
                           <p className="font-semibold text-sm">{w.productName}</p>
                           <p className="text-xs text-muted-foreground">
-                            {isStandalone ? "Garanzia Diretta" : `Ordine #${w.orderNumber}`}
+                            {isStandalone ? t("warranties.directWarranty") : `${t("common.order")} #${w.orderNumber}`}
                           </p>
                         </div>
                         <div className="flex flex-wrap items-center gap-2">

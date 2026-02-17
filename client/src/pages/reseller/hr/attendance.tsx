@@ -113,7 +113,7 @@ export default function HrAttendance() {
     queryKey: ["/api/reseller/hr/clock-events", entityType, selectedEntityId, selectedDate.toDateString()],
     queryFn: async () => {
       const res = await fetch(clockEventsUrl);
-      if (!res.ok) throw new Error("Errore nel caricamento");
+      if (!res.ok) throw new Error("{t("common.loadingError")}");
       return res.json();
     },
   });
@@ -130,7 +130,7 @@ export default function HrAttendance() {
       queryClient.invalidateQueries({ queryKey: ["/api/reseller/hr/clock-events"] });
       setDialogOpen(false);
       setNewEvent({ eventType: "entrata", userId: "", notes: "" });
-      toast({ title: "Timbratura registrata", description: t("hr.clockCreatedDesc") });
+      toast({ title: t("hr.clockRegistered"), description: t("hr.clockCreatedDesc") });
     },
     onError: (error: any) => {
       toast({ title: t("common.error"), description: error.message, variant: "destructive" });
@@ -145,7 +145,7 @@ export default function HrAttendance() {
       queryClient.invalidateQueries({ queryKey: ["/api/reseller/hr/clock-events"] });
       setEditDialogOpen(false);
       setEditingEvent(null);
-      toast({ title: "Timbratura aggiornata", description: "La modifica è stata salvata." });
+      toast({ title: t("hr.clockUpdated"), description: "La modifica è stata salvata." });
     },
     onError: (error: any) => {
       toast({ title: t("common.error"), description: error.message, variant: "destructive" });
@@ -256,7 +256,7 @@ export default function HrAttendance() {
                 <LogIn className="h-5 w-5 text-emerald-600" />
               </div>
               <div>
-                <p className="font-medium">Timbra Entrata</p>
+                <p className="font-medium">{t("hr.clockIn")}</p>
                 <p className="text-xs text-muted-foreground">Registra ingresso</p>
               </div>
             </CardContent>
@@ -318,7 +318,7 @@ export default function HrAttendance() {
             <div>
               <CardTitle className="flex flex-wrap items-center gap-2">
                 <CalendarIcon className="h-5 w-5 text-muted-foreground" />
-                {isToday ? "Timbrature di Oggi" : "Timbrature del Giorno"}
+                {isToday ? t("hr.todayTimecards") : t("hr.dayTimecards")}
               </CardTitle>
               <div className="flex flex-wrap items-center gap-2 mt-1">
                 <Button size="icon" variant="ghost" onClick={goToPreviousDay} data-testid="button-prev-day">
@@ -358,7 +358,7 @@ export default function HrAttendance() {
               <Select value={selectedUser} onValueChange={setSelectedUser}>
                 <SelectTrigger className="w-48" data-testid="select-user-filter">
                   <User className="h-4 w-4 mr-2" />
-                  <SelectValue placeholder="Tutti i dipendenti" />
+                  <SelectValue placeholder="{t("hr.allEmployees")}" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">Tutti i dipendenti</SelectItem>
@@ -382,7 +382,7 @@ export default function HrAttendance() {
           ) : filteredEvents.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">
               <Clock className="h-12 w-12 mx-auto mb-3 opacity-50" />
-              <p>{isToday ? "Nessuna timbratura registrata oggi" : `Nessuna timbratura per il ${format(selectedDate, "d MMMM yyyy", { locale: it })}`}</p>
+              <p>{isToday ? "{t("hr.noClockEntriesToday")}" : `{t("hr.noClockEntriesFor")} ${format(selectedDate, "d MMMM yyyy", { locale: it })}`}</p>
             </div>
           ) : (
             <Table>
@@ -443,11 +443,11 @@ export default function HrAttendance() {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Registrazione Manuale</DialogTitle>
-            <DialogDescription>Inserisci una timbratura manuale per un dipendente</DialogDescription>
+            <DialogDescription>{t("hr.manualClockDesc")}</DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label>Tipo Timbratura</Label>
+              <Label>{t("hr.clockType")}</Label>
               <Select value={newEvent.eventType} onValueChange={(v) => setNewEvent({ ...newEvent, eventType: v })}>
                 <SelectTrigger data-testid="select-event-type">
                   <SelectValue />
@@ -464,7 +464,7 @@ export default function HrAttendance() {
               <Label>{t("hr.employee")}</Label>
               <Select value={newEvent.userId} onValueChange={(v) => setNewEvent({ ...newEvent, userId: v })}>
                 <SelectTrigger data-testid="select-employee">
-                  <SelectValue placeholder="Seleziona dipendente" />
+                  <SelectValue placeholder={t("hr.selectEmployee")} />
                 </SelectTrigger>
                 <SelectContent>
                   {staffMembers.map((member) => (
@@ -474,11 +474,11 @@ export default function HrAttendance() {
               </Select>
             </div>
             <div className="space-y-2">
-              <Label>Note (opzionale)</Label>
+              <Label>{t("hr.notesOptional")}</Label>
               <Textarea
                 value={newEvent.notes}
                 onChange={(e) => setNewEvent({ ...newEvent, notes: e.target.value })}
-                placeholder="Motivazione timbratura manuale..."
+                placeholder="{t("hr.manualClockReason")}"
                 data-testid="input-notes"
               />
             </div>
@@ -490,7 +490,7 @@ export default function HrAttendance() {
               disabled={!newEvent.userId || createMutation.isPending}
               data-testid="button-save-manual"
             >
-              {createMutation.isPending ? t("profile.saving") : "Registra"}
+              {createMutation.isPending ? t("profile.saving") : t("hr.register")}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -500,7 +500,7 @@ export default function HrAttendance() {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>{t("hr.editClock")}</DialogTitle>
-            <DialogDescription>Modifica i dettagli della timbratura</DialogDescription>
+            <DialogDescription>{t("hr.editClockDetails")}</DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div className="space-y-2">
@@ -532,7 +532,7 @@ export default function HrAttendance() {
               <Textarea
                 value={editForm.notes}
                 onChange={(e) => setEditForm({ ...editForm, notes: e.target.value })}
-                placeholder="Note..."
+                placeholder={t("common.notesPlaceholder")}
                 data-testid="input-edit-notes"
               />
             </div>

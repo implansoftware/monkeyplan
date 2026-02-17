@@ -80,14 +80,14 @@ export default function ResellerCustomerDetail() {
       queryClient.invalidateQueries({ queryKey: ["/api/reseller/customers"] });
       setEditDialogOpen(false);
       toast({
-        title: "Cliente aggiornato",
-        description: "I dati del cliente sono stati salvati correttamente.",
+        title: t("customers.customerUpdated"),
+        description: t("customers.customerDataSaved"),
       });
     },
     onError: (error: Error) => {
       toast({
         title: t("common.error"),
-        description: error.message || "Impossibile aggiornare il cliente",
+        description: error.message || t("customers.cannotUpdate"),
         variant: "destructive",
       });
     },
@@ -117,7 +117,7 @@ export default function ResellerCustomerDetail() {
         <Card>
           <CardContent className="py-12 text-center text-muted-foreground">
             <Building2 className="h-10 w-10 mx-auto mb-3 opacity-20" />
-            <p>Cliente non trovato</p>
+            <p>{t("customers.customerNotFound")}</p>
           </CardContent>
         </Card>
       </div>
@@ -200,7 +200,7 @@ export default function ResellerCustomerDetail() {
                 <p className="text-2xl font-semibold tabular-nums">
                   {billingData ? "1" : "0"}
                 </p>
-                <p className="text-xs text-muted-foreground">Dati Fatt.</p>
+                <p className="text-xs text-muted-foreground">{t("customers.billingData")}</p>
               </div>
             </div>
           </CardContent>
@@ -257,13 +257,13 @@ export default function ResellerCustomerDetail() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {billingData.fiscalCode && (
                   <div>
-                    <p className="text-xs text-muted-foreground">C.F.</p>
+                    <p className="text-xs text-muted-foreground">{t("customers.fiscalCode")}</p>
                     <p className="font-mono" data-testid="text-billing-cf">{billingData.fiscalCode}</p>
                   </div>
                 )}
                 {billingData.vatNumber && (
                   <div>
-                    <p className="text-xs text-muted-foreground">P.IVA</p>
+                    <p className="text-xs text-muted-foreground">{t("customers.vatNumber")}</p>
                     <p className="font-mono" data-testid="text-billing-piva">{billingData.vatNumber}</p>
                   </div>
                 )}
@@ -313,7 +313,7 @@ export default function ResellerCustomerDetail() {
           </TabsTrigger>
           <TabsTrigger value="relationships" className="text-xs gap-1.5" data-testid="tab-relationships">
             <UserCheck className="h-3.5 w-3.5" />
-            Parentele
+            {t("customers.relationships")}
           </TabsTrigger>
         </TabsList>
 
@@ -323,7 +323,7 @@ export default function ResellerCustomerDetail() {
               {repairOrders.length === 0 ? (
                 <div className="py-12 text-center text-muted-foreground">
                   <Wrench className="h-8 w-8 mx-auto mb-2 opacity-20" />
-                  <p className="text-sm">Nessuna riparazione</p>
+                  <p className="text-sm">{t("customers.noRepairs")}</p>
                 </div>
               ) : (
                 <div className="overflow-x-auto">
@@ -332,7 +332,7 @@ export default function ResellerCustomerDetail() {
                       <TableRow className="hover:bg-transparent">
                         <TableHead className="pl-6">ID</TableHead>
                         <TableHead>{t("repairs.device")}</TableHead>
-                        <TableHead>Problema</TableHead>
+                        <TableHead>{t("repairs.issue")}</TableHead>
                         <TableHead>{t("common.status")}</TableHead>
                         <TableHead>{t("common.date")}</TableHead>
                         <TableHead className="pr-6 text-right">{t("common.actions")}</TableHead>
@@ -391,7 +391,7 @@ export default function ResellerCustomerDetail() {
               {salesOrders.length === 0 ? (
                 <div className="py-12 text-center text-muted-foreground">
                   <ShoppingCart className="h-8 w-8 mx-auto mb-2 opacity-20" />
-                  <p className="text-sm">Nessun ordine</p>
+                  <p className="text-sm">{t("customers.noOrders")}</p>
                 </div>
               ) : (
                 <div className="overflow-x-auto">
@@ -440,7 +440,7 @@ export default function ResellerCustomerDetail() {
               {utilityPractices.length === 0 ? (
                 <div className="py-12 text-center text-muted-foreground">
                   <Zap className="h-8 w-8 mx-auto mb-2 opacity-20" />
-                  <p className="text-sm">Nessuna pratica utility</p>
+                  <p className="text-sm">{t("customers.noUtilityPractices")}</p>
                 </div>
               ) : (
                 <div className="overflow-x-auto">
@@ -492,7 +492,7 @@ export default function ResellerCustomerDetail() {
       <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Modifica Cliente</DialogTitle>
+            <DialogTitle>{t("customers.editCustomer")}</DialogTitle>
           </DialogHeader>
           <CustomerEditForm
             customer={customer}

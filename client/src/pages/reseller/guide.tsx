@@ -63,221 +63,221 @@ export default function ResellerGuide() {
   const sections: GuideSectionProps[] = [
     {
       icon: LayoutDashboard,
-      title: "Dashboard Personalizzabile",
-      description: "Configura la tua dashboard secondo le tue esigenze",
+      title: t("guide.dashboard.title"),
+      description: t("guide.dashboard.description"),
       features: [
-        "Personalizza i widget visibili nella dashboard",
-        "Riordina i widget trascinandoli nella posizione desiderata",
-        "Nascondi i widget che non utilizzi frequentemente",
-        "Le preferenze sono salvate per ogni utente"
+        t("guide.dashboard.f1"),
+        t("guide.dashboard.f2"),
+        t("guide.dashboard.f3"),
+        t("guide.dashboard.f4"),
       ]
     },
     {
       icon: Users,
-      title: "Gestione Clienti",
-      description: "Gestisci la tua base clienti in modo efficiente",
+      title: t("guide.customers.title"),
+      description: t("guide.customers.description"),
       features: [
-        "Aggiungi nuovi clienti con tutti i dati anagrafici",
-        "Visualizza lo storico delle riparazioni per cliente",
-        "Gestisci i contatti e le preferenze di comunicazione",
-        "Assegna clienti ai tuoi centri di riparazione"
+        t("guide.customers.f1"),
+        t("guide.customers.f2"),
+        t("guide.customers.f3"),
+        t("guide.customers.f4"),
       ]
     },
     {
       icon: Building,
       title: t("admin.repairCenters.title"),
-      description: "Gestisci i tuoi centri di riparazione e il loro personale",
+      description: t("guide.repairCenters.description"),
       features: [
-        "Crea e configura nuovi centri di riparazione",
-        "Assegna tecnici e personale ai centri",
-        "Monitora le prestazioni di ogni centro",
-        "Configura gli orari di apertura e appuntamenti"
+        t("guide.repairCenters.f1"),
+        t("guide.repairCenters.f2"),
+        t("guide.repairCenters.f3"),
+        t("guide.repairCenters.f4"),
       ]
     },
     {
       icon: Wrench,
       title: t("sidebar.items.jobs"),
-      description: "Gestisci le riparazioni dall'accettazione alla consegna",
+      description: t("guide.repairs.description"),
       features: [
-        "Crea nuove riparazioni con il wizard guidato",
-        "Traccia lo stato di avanzamento di ogni riparazione",
-        "Gestisci preventivi e approvazioni cliente",
-        "Registra le parti utilizzate e i costi",
-        "Crea diagnosi e preventivi durante l'accettazione"
+        t("guide.repairs.f1"),
+        t("guide.repairs.f2"),
+        t("guide.repairs.f3"),
+        t("guide.repairs.f4"),
+        t("guide.repairs.f5"),
       ]
     },
     {
       icon: Shield,
-      title: "Garanzie e Assicurazioni",
-      description: "Offri estensioni di garanzia ai tuoi clienti",
+      title: t("guide.warranties.title"),
+      description: t("guide.warranties.description"),
       features: [
-        "Crea prodotti garanzia personalizzati",
-        "Offri garanzie direttamente dalla pagina riparazione",
-        "Visualizza analytics sulle vendite garanzie",
-        "Genera fatture automatiche per le garanzie vendute",
-        "I clienti possono visualizzare le loro garanzie nel portale"
+        t("guide.warranties.f1"),
+        t("guide.warranties.f2"),
+        t("guide.warranties.f3"),
+        t("guide.warranties.f4"),
+        t("guide.warranties.f5"),
       ]
     },
     {
       icon: Warehouse,
       title: t("warehouse.title"),
-      description: "Controlla l'inventario dei ricambi e accessori",
+      description: t("guide.warehouse.description"),
       features: [
-        "Visualizza le giacenze in tempo reale",
-        "Gestisci i movimenti di magazzino",
-        "Imposta soglie minime per i riordini",
-        "Trasferisci prodotti tra magazzini della rete",
-        "Lo stock viene aggiornato automaticamente su ordini e vendite"
+        t("guide.warehouse.f1"),
+        t("guide.warehouse.f2"),
+        t("guide.warehouse.f3"),
+        t("guide.warehouse.f4"),
+        t("guide.warehouse.f5"),
       ]
     },
     {
       icon: RefreshCcw,
-      title: "Gestione Stock Automatica",
-      description: "Lo stock si aggiorna automaticamente con ogni operazione",
+      title: t("guide.autoStock.title"),
+      description: t("guide.autoStock.description"),
       features: [
-        "Ordini e-commerce scalano lo stock dal magazzino",
-        "Ordini B2B trasferiscono stock tra magazzini",
-        "Ricezione merce da fornitori aggiorna le giacenze",
-        "Annullamento ordini ripristina automaticamente lo stock",
-        "Movimenti di magazzino tracciati per ogni operazione"
+        t("guide.autoStock.f1"),
+        t("guide.autoStock.f2"),
+        t("guide.autoStock.f3"),
+        t("guide.autoStock.f4"),
+        t("guide.autoStock.f5"),
       ]
     },
     {
       icon: Package,
-      title: "Ricambi e Accessori",
-      description: "Catalogo completo di ricambi e accessori",
+      title: t("guide.parts.title"),
+      description: t("guide.parts.description"),
       features: [
-        "Sfoglia il catalogo ricambi per dispositivo",
-        "Verifica compatibilita e disponibilita",
-        "Gestisci i prezzi di vendita al cliente",
-        "Ordina ricambi dai fornitori integrati"
+        t("guide.parts.f1"),
+        t("guide.parts.f2"),
+        t("guide.parts.f3"),
+        t("guide.parts.f4"),
       ]
     },
     {
       icon: Link2,
-      title: "Integrazioni Fornitori",
-      description: "Collegati ai principali fornitori di ricambi",
+      title: t("guide.supplierIntegrations.title"),
+      description: t("guide.supplierIntegrations.description"),
       features: [
-        "Integrazione con SIFAR per ricambi originali",
-        "Integrazione con Foneday per accessori",
-        "Integrazione con MobileSentrix",
-        "Integrazione con TrovaUsati per l'usato",
-        "Ordini automatici con aggiornamento stock"
+        t("guide.supplierIntegrations.f1"),
+        t("guide.supplierIntegrations.f2"),
+        t("guide.supplierIntegrations.f3"),
+        t("guide.supplierIntegrations.f4"),
+        t("guide.supplierIntegrations.f5"),
       ]
     },
     {
       icon: Truck,
       title: t("suppliers.title"),
-      description: "Gestisci i tuoi fornitori e gli ordini",
+      description: t("guide.suppliers.description"),
       features: [
-        "Configura i fornitori con i loro listini",
-        "Crea ordini di acquisto",
-        "Traccia le spedizioni in arrivo",
-        "Gestisci resi e contestazioni"
+        t("guide.suppliers.f1"),
+        t("guide.suppliers.f2"),
+        t("guide.suppliers.f3"),
+        t("guide.suppliers.f4"),
       ]
     },
     {
       icon: FileText,
       title: t("settings.billing"),
-      description: "Gestione completa della fatturazione",
+      description: t("guide.billing.description"),
       features: [
-        "Genera fatture automatiche per le riparazioni",
-        "Fatturazione automatica su ordini e-commerce",
-        "Fatturazione automatica su vendita garanzie",
-        "Esporta i dati per la contabilita",
-        "Monitora i pagamenti in sospeso"
+        t("guide.billing.f1"),
+        t("guide.billing.f2"),
+        t("guide.billing.f3"),
+        t("guide.billing.f4"),
+        t("guide.billing.f5"),
       ]
     },
     {
       icon: BarChart3,
       title: "Sibill",
-      description: "Integrazione per fatturazione elettronica",
+      description: t("guide.sibill.description"),
       features: [
-        "Collega il tuo account Sibill",
-        "Sincronizza fatture e documenti",
-        "Riconciliazione bancaria automatica",
-        "Gestione conti e transazioni"
+        t("guide.sibill.f1"),
+        t("guide.sibill.f2"),
+        t("guide.sibill.f3"),
+        t("guide.sibill.f4"),
       ]
     },
     {
       icon: Store,
       title: t("sidebar.sections.ecommerce"),
-      description: "Vendi online ai tuoi clienti",
+      description: t("guide.ecommerce.description"),
       features: [
-        "Configura il catalogo prodotti per lo shop",
-        "Gestisci gli ordini dei clienti online",
-        "Verifica disponibilita stock in tempo reale",
-        "Traccia spedizioni e consegne",
-        "Gestisci resi e rimborsi con ripristino stock"
+        t("guide.ecommerce.f1"),
+        t("guide.ecommerce.f2"),
+        t("guide.ecommerce.f3"),
+        t("guide.ecommerce.f4"),
+        t("guide.ecommerce.f5"),
       ]
     },
     {
       icon: ShoppingCart,
       title: t("sidebar.sections.purchasesB2B"),
-      description: "Ordina dalla piattaforma centrale",
+      description: t("guide.b2bPurchases.description"),
       features: [
-        "Sfoglia il catalogo B2B dell'admin",
-        "Effettua ordini all'ingrosso",
-        "Visualizza i prezzi riservati",
-        "Traccia lo stato degli ordini",
-        "Ricevi lo stock direttamente nel tuo magazzino"
+        t("guide.b2bPurchases.f1"),
+        t("guide.b2bPurchases.f2"),
+        t("guide.b2bPurchases.f3"),
+        t("guide.b2bPurchases.f4"),
+        t("guide.b2bPurchases.f5"),
       ]
     },
     {
       icon: PackageCheck,
-      title: "Ordini B2B Centri Riparazione",
-      description: "Gestisci gli ordini dai tuoi centri di riparazione",
+      title: t("guide.b2bCenterOrders.title"),
+      description: t("guide.b2bCenterOrders.description"),
       features: [
-        "Ricevi ordini dai centri della tua rete",
-        "Approva o rifiuta le richieste",
-        "Spedisci merce con trasferimento stock automatico",
-        "Traccia consegne e conferme di ricezione",
-        "Fatturazione automatica alla spedizione"
+        t("guide.b2bCenterOrders.f1"),
+        t("guide.b2bCenterOrders.f2"),
+        t("guide.b2bCenterOrders.f3"),
+        t("guide.b2bCenterOrders.f4"),
+        t("guide.b2bCenterOrders.f5"),
       ]
     },
     {
       icon: Calendar,
-      title: "Presenze e HR",
-      description: "Gestisci le presenze del personale",
+      title: t("guide.attendance.title"),
+      description: t("guide.attendance.description"),
       features: [
-        "Registra entrate e uscite del personale",
-        "Visualizza lo storico presenze",
-        "Calcola ore lavorate automaticamente",
-        "Gestisci ferie e permessi"
+        t("guide.attendance.f1"),
+        t("guide.attendance.f2"),
+        t("guide.attendance.f3"),
+        t("guide.attendance.f4"),
       ]
     },
     {
       icon: Zap,
       title: t("utility.title"),
-      description: "Gestisci pratiche per servizi aggiuntivi",
+      description: t("guide.utility.description"),
       features: [
-        "Configura i fornitori di servizi utility",
-        "Crea pratiche per luce, gas, telefonia",
-        "Gestisci le commissioni sulle pratiche",
-        "Monitora i report delle attivita"
+        t("guide.utility.f1"),
+        t("guide.utility.f2"),
+        t("guide.utility.f3"),
+        t("guide.utility.f4"),
       ]
     },
     {
       icon: CreditCard,
       title: t("sidebar.items.payments"),
-      description: "Gestisci incassi e pagamenti",
+      description: t("guide.payments.description"),
       features: [
-        "Registra i pagamenti dei clienti",
-        "Configura metodi di pagamento accettati",
-        "Visualizza lo storico transazioni",
-        "Gestisci rimborsi e note di credito"
+        t("guide.payments.f1"),
+        t("guide.payments.f2"),
+        t("guide.payments.f3"),
+        t("guide.payments.f4"),
       ]
     },
     {
       icon: Settings,
       title: t("settings.title"),
-      description: "Configura il tuo account e preferenze",
+      description: t("guide.settings.description"),
       features: [
-        "Personalizza i dati aziendali",
-        "Configura le notifiche email",
-        "Gestisci il team e i permessi",
-        "Collega le integrazioni esterne",
-        "Gestisci sub-reseller e fatturazione autonoma"
+        t("guide.settings.f1"),
+        t("guide.settings.f2"),
+        t("guide.settings.f3"),
+        t("guide.settings.f4"),
+        t("guide.settings.f5"),
       ]
     }
   ];
@@ -303,8 +303,8 @@ export default function ResellerGuide() {
               <FileText className="h-6 w-6 text-white" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold tracking-tight text-white" data-testid="text-guide-title">Guida alla Piattaforma</h1>
-              <p className="text-sm text-white/80" data-testid="text-guide-subtitle">Scopri tutte le funzionalita di MonkeyPlan per gestire al meglio la tua attivita</p>
+              <h1 className="text-2xl font-bold tracking-tight text-white" data-testid="text-guide-title">{t("guide.pageTitle")}</h1>
+              <p className="text-sm text-white/80" data-testid="text-guide-subtitle">{t("guide.pageSubtitle")}</p>
             </div>
           </div>
         </div>
@@ -320,15 +320,14 @@ export default function ResellerGuide() {
 
       <Card className="bg-muted/50 rounded-2xl" data-testid="card-guide-support">
         <CardHeader>
-          <CardTitle className="text-lg">Hai bisogno di aiuto?</CardTitle>
+          <CardTitle className="text-lg">{t("guide.needHelp")}</CardTitle>
           <CardDescription>
-            Se hai domande o problemi, il nostro team di supporto e sempre disponibile
+            {t("guide.needHelpDesc")}
           </CardDescription>
         </CardHeader>
         <CardContent>
           <p className="text-sm text-muted-foreground">
-            Apri un ticket dalla sezione "Assistenza" per ricevere supporto personalizzato. 
-            Il nostro team rispondera nel piu breve tempo possibile.
+            {t("guide.needHelpContent")}
           </p>
         </CardContent>
       </Card>

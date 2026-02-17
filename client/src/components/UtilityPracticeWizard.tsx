@@ -77,11 +77,11 @@ function getSteps(t: (key: string) => string): { id: WizardStep; label: string; 
 
 function getCategoryLabels(t: (key: string) => string): Record<string, string> {
   return {
-    fisso: "Fisso",
-    mobile: "Mobile",
-    centralino: "Centralino",
-    luce: "Luce",
-    gas: "Gas",
+    fisso: t("utility.fixed"),
+    mobile: t("utility.mobile"),
+    centralino: t("utility.switchboard"),
+    luce: t("utility.electricity"),
+    gas: t("utility.gas"),
     altro: t("common.other"),
   };
 }
@@ -486,7 +486,7 @@ export function UtilityPracticeWizard({ open, onOpenChange, onSuccess, preselect
        (subResellers.length > 0 || repairCenters.length > 0) && (
         <Card className="mb-4">
           <CardContent className="p-4 space-y-4">
-            <Label className="text-sm font-medium block">Per chi stai creando la pratica?</Label>
+            <Label className="text-sm font-medium block">{t("practice.whoCreatingFor")}</Label>
             
             {/* Target type selection */}
             <div className="grid grid-cols-3 gap-2">
@@ -502,7 +502,7 @@ export function UtilityPracticeWizard({ open, onOpenChange, onSuccess, preselect
                 data-testid="button-target-self"
               >
                 <User2 className="h-4 w-4 mr-1" />
-                Me stesso
+                {t("common.myself")}
               </Button>
               {subResellers.length > 0 && (
                 <Button
@@ -516,7 +516,7 @@ export function UtilityPracticeWizard({ open, onOpenChange, onSuccess, preselect
                   data-testid="button-target-subreseller"
                 >
                   <Building2 className="h-4 w-4 mr-1" />
-                  Sub-Rivenditore
+                  {t("customer.subReseller")}
                 </Button>
               )}
               {repairCenters.length > 0 && (
@@ -584,8 +584,8 @@ export function UtilityPracticeWizard({ open, onOpenChange, onSuccess, preselect
       )}
 
       <div className="text-center mb-6">
-        <h3 className="text-lg font-medium">Che tipo di pratica vuoi creare?</h3>
-        <p className="text-sm text-muted-foreground">Seleziona una delle opzioni seguenti</p>
+        <h3 className="text-lg font-medium">{t("practice.whatTypeToCreate")}</h3>
+        <p className="text-sm text-muted-foreground">{t("practice.selectOneOption")}</p>
       </div>
       
       <div className="grid gap-4">
@@ -602,7 +602,7 @@ export function UtilityPracticeWizard({ open, onOpenChange, onSuccess, preselect
             </div>
             <div className="flex-1">
               <h4 className="font-medium">{t("parts.service")}</h4>
-              <p className="text-sm text-muted-foreground">Attivazione di un servizio utility (telefonia, luce, gas, ecc.)</p>
+              <p className="text-sm text-muted-foreground">{t("practice.serviceActivationDesc")}</p>
             </div>
             {selectedItemType === "service" && <CheckCircle2 className="h-5 w-5 text-primary" />}
           </CardContent>
@@ -621,7 +621,7 @@ export function UtilityPracticeWizard({ open, onOpenChange, onSuccess, preselect
             </div>
             <div className="flex-1">
               <h4 className="font-medium">{t("parts.product")}</h4>
-              <p className="text-sm text-muted-foreground">Vendita di un prodotto (SIM, modem, router, ecc.)</p>
+              <p className="text-sm text-muted-foreground">{t("practice.productSaleDesc")}</p>
             </div>
             {selectedItemType === "product" && <CheckCircle2 className="h-5 w-5 text-primary" />}
           </CardContent>
@@ -642,8 +642,8 @@ export function UtilityPracticeWizard({ open, onOpenChange, onSuccess, preselect
               </div>
             </div>
             <div className="flex-1">
-              <h4 className="font-medium">Servizio + Prodotti</h4>
-              <p className="text-sm text-muted-foreground">Attivazione servizio con prodotti inclusi</p>
+              <h4 className="font-medium">{t("utility.serviceAndProducts")}</h4>
+              <p className="text-sm text-muted-foreground">{t("practice.serviceWithProductsDesc")}</p>
             </div>
             {selectedItemType === "service_with_products" && <CheckCircle2 className="h-5 w-5 text-primary" />}
           </CardContent>
@@ -657,7 +657,7 @@ export function UtilityPracticeWizard({ open, onOpenChange, onSuccess, preselect
       {(selectedItemType === "service" || selectedItemType === "service_with_products") && (
         <>
           <div>
-            <h3 className="text-lg font-medium mb-4">Seleziona Fornitore e Servizio</h3>
+            <h3 className="text-lg font-medium mb-4">{t("practice.selectSupplierAndService")}</h3>
             
             <div className="space-y-4">
               <div className="space-y-2">
@@ -673,7 +673,7 @@ export function UtilityPracticeWizard({ open, onOpenChange, onSuccess, preselect
                     data-testid="button-supplier-catalog"
                   >
                     <Building2 className="h-4 w-4 mr-2" />
-                    Da Catalogo
+                    {t("practice.fromCatalog")}
                   </Button>
                   <Button
                     type="button"
@@ -705,7 +705,7 @@ export function UtilityPracticeWizard({ open, onOpenChange, onSuccess, preselect
                       return (
                         <div className="absolute z-50 w-full mt-1 bg-popover border rounded-md shadow-lg max-h-48 overflow-auto">
                           <div className="p-2 text-xs text-muted-foreground border-b bg-muted">
-                            Fornitori esistenti trovati - clicca per selezionare:
+                            {t("practice.existingSuppliersFound")}
                           </div>
                           {matches.map(supplier => (
                             <button
@@ -764,12 +764,12 @@ export function UtilityPracticeWizard({ open, onOpenChange, onSuccess, preselect
                       </div>
                       {suppliers.filter(s => s.isActive && (supplierSearchQuery === "" || s.name.toLowerCase().includes(supplierSearchQuery.toLowerCase()))).length === 0 && (
                         <div className="text-center py-4 text-muted-foreground text-sm">
-                          Nessun fornitore trovato
+                          {t("practice.noSupplierFound")}
                         </div>
                       )}
                     </ScrollArea>
                     <p className="text-xs text-muted-foreground">
-                      {suppliers.filter(s => s.isActive).length} fornitori disponibili
+                      {suppliers.filter(s => s.isActive).length} {t("practice.suppliersAvailable")}
                     </p>
                   </div>
                 )}
@@ -840,7 +840,7 @@ export function UtilityPracticeWizard({ open, onOpenChange, onSuccess, preselect
           <div className="flex items-center justify-between">
             <div>
               <h3 className="text-lg font-medium">{t("parts.products")}</h3>
-              <p className="text-sm text-muted-foreground">Aggiungi i prodotti da includere nella pratica</p>
+              <p className="text-sm text-muted-foreground">{t("practice.addProductsToPractice")}</p>
             </div>
             <Button type="button" variant="outline" size="sm" onClick={addProduct} data-testid="button-add-product">
               <Plus className="h-4 w-4 mr-1" />
@@ -904,7 +904,7 @@ export function UtilityPracticeWizard({ open, onOpenChange, onSuccess, preselect
                         />
                       </div>
                       <div>
-                        <Label className="text-xs">Prezzo Unit.</Label>
+                        <Label className="text-xs">{t("common.unitPrice")}</Label>
                         <Input
                           type="number"
                           step="0.01"
@@ -928,7 +928,7 @@ export function UtilityPracticeWizard({ open, onOpenChange, onSuccess, preselect
               {practiceProducts.length > 0 && (
                 <div className="flex justify-end pt-2">
                   <div className="text-right">
-                    <span className="text-sm text-muted-foreground mr-2">Totale Prodotti:</span>
+                    <span className="text-sm text-muted-foreground mr-2">{t("products.totalProducts")}:</span>
                     <span className="font-bold text-lg">{formatCurrency(calculateProductsTotal())}</span>
                   </div>
                 </div>
@@ -943,8 +943,8 @@ export function UtilityPracticeWizard({ open, onOpenChange, onSuccess, preselect
   const renderCustomerStep = () => (
     <div className="space-y-6">
       <div className="text-center mb-4">
-        <h3 className="text-lg font-medium">Chi è il cliente?</h3>
-        <p className="text-sm text-muted-foreground">Seleziona un cliente esistente o inserisci i dati manualmente</p>
+        <h3 className="text-lg font-medium">{t("practice.whoIsCustomer")}</h3>
+        <p className="text-sm text-muted-foreground">{t("practice.selectExistingOrManual")}</p>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
@@ -962,7 +962,7 @@ export function UtilityPracticeWizard({ open, onOpenChange, onSuccess, preselect
         >
           <div className="flex flex-col items-center gap-2">
             <User className="h-6 w-6" />
-            <span>Da Anagrafica</span>
+            <span>{t("practice.fromRegistry")}</span>
           </div>
         </Button>
         <Button
@@ -1002,7 +1002,7 @@ export function UtilityPracticeWizard({ open, onOpenChange, onSuccess, preselect
                 return (
                   <div className="absolute z-50 w-full mt-1 bg-popover border rounded-md shadow-lg max-h-48 overflow-auto">
                     <div className="p-2 text-xs text-muted-foreground border-b bg-muted">
-                      Clienti esistenti trovati - clicca per selezionare:
+                      {t("practice.existingCustomersFound")}
                     </div>
                     {matches.map(customer => (
                       <button
@@ -1066,7 +1066,7 @@ export function UtilityPracticeWizard({ open, onOpenChange, onSuccess, preselect
                   variant="outline"
                   onClick={() => setUseTemporaryCustomer(true)}
                 >
-                  Inserisci cliente temporaneo
+                  {t("practice.enterTemporaryCustomer")}
                 </Button>
               </CardContent>
             </Card>
@@ -1105,13 +1105,13 @@ export function UtilityPracticeWizard({ open, onOpenChange, onSuccess, preselect
   const renderPricingStep = () => (
     <div className="space-y-6">
       <div className="text-center mb-4">
-        <h3 className="text-lg font-medium">Dettagli Prezzo</h3>
-        <p className="text-sm text-muted-foreground">Inserisci il tipo di prezzo e i dettagli</p>
+        <h3 className="text-lg font-medium">{t("practice.priceDetails")}</h3>
+        <p className="text-sm text-muted-foreground">{t("practice.enterPriceTypeDetails")}</p>
       </div>
 
       <div className="space-y-4">
         <div>
-          <Label className="mb-2 block">Tipo Prezzo</Label>
+          <Label className="mb-2 block">{t("practice.priceType")}</Label>
           <div className="grid grid-cols-3 gap-2">
             <Button
               type="button"
@@ -1122,7 +1122,7 @@ export function UtilityPracticeWizard({ open, onOpenChange, onSuccess, preselect
             >
               <div className="flex flex-col items-center gap-2">
                 <Euro className="h-6 w-6" />
-                <span>Mensile</span>
+                <span>{t("utility.monthly")}</span>
               </div>
             </Button>
             <Button
@@ -1134,7 +1134,7 @@ export function UtilityPracticeWizard({ open, onOpenChange, onSuccess, preselect
             >
               <div className="flex flex-col items-center gap-2">
                 <Euro className="h-6 w-6" />
-                <span>Forfait</span>
+                <span>{t("utility.flatRate")}</span>
               </div>
             </Button>
             <Button
@@ -1167,7 +1167,7 @@ export function UtilityPracticeWizard({ open, onOpenChange, onSuccess, preselect
                 disabled={!!selectedServiceId && !useCustomService}
               />
               {selectedServiceId && !useCustomService && (
-                <p className="text-xs text-muted-foreground">Prezzo definito dal listino</p>
+                <p className="text-xs text-muted-foreground">{t("practice.priceFromCatalog")}</p>
               )}
             </div>
           )}
@@ -1185,13 +1185,13 @@ export function UtilityPracticeWizard({ open, onOpenChange, onSuccess, preselect
                 disabled={!!selectedServiceId && !useCustomService}
               />
               {selectedServiceId && !useCustomService && (
-                <p className="text-xs text-muted-foreground">Prezzo definito dal listino</p>
+                <p className="text-xs text-muted-foreground">{t("practice.priceFromCatalog")}</p>
               )}
             </div>
           )}
           {selectedPriceType === "attivazione" && (
             <div className="space-y-2">
-              <Label>Costo Attivazione (EUR) *</Label>
+              <Label>{t("utility.activationCostEur")} *</Label>
               <Input
                 type="number"
                 step="0.01"
@@ -1203,12 +1203,12 @@ export function UtilityPracticeWizard({ open, onOpenChange, onSuccess, preselect
                 disabled={!!selectedServiceId && !useCustomService}
               />
               {selectedServiceId && !useCustomService && (
-                <p className="text-xs text-muted-foreground">Prezzo definito dal listino</p>
+                <p className="text-xs text-muted-foreground">{t("practice.priceFromCatalog")}</p>
               )}
             </div>
           )}
           <div className="space-y-2">
-            <Label>Commissione (EUR)</Label>
+            <Label>{t("utility.commissionEur")}</Label>
             <Input
               type="number"
               step="0.01"
@@ -1220,7 +1220,7 @@ export function UtilityPracticeWizard({ open, onOpenChange, onSuccess, preselect
               disabled={!!selectedServiceId && !useCustomService}
             />
             {selectedServiceId && !useCustomService && (
-              <p className="text-xs text-muted-foreground">Commissione definita dal listino</p>
+              <p className="text-xs text-muted-foreground">{t("practice.commissionFromCatalog")}</p>
             )}
           </div>
         </div>
@@ -1229,7 +1229,7 @@ export function UtilityPracticeWizard({ open, onOpenChange, onSuccess, preselect
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="space-y-2">
-            <Label>Rif. Fornitore</Label>
+            <Label>{t("practice.supplierRef")}</Label>
             <Input
               value={supplierReference}
               onChange={(e) => setSupplierReference(e.target.value)}
@@ -1246,7 +1246,7 @@ export function UtilityPracticeWizard({ open, onOpenChange, onSuccess, preselect
               <SelectContent>
                 <SelectItem value="bozza">{t("common.draft")}</SelectItem>
                 <SelectItem value="inviata">{t("common.sent")}</SelectItem>
-                <SelectItem value="in_lavorazione">In Lavorazione</SelectItem>
+                <SelectItem value="in_lavorazione">{t("common.inProgress")}</SelectItem>
                 <SelectItem value="completata">{t("common.completed")}</SelectItem>
               </SelectContent>
             </Select>
@@ -1270,8 +1270,8 @@ export function UtilityPracticeWizard({ open, onOpenChange, onSuccess, preselect
   const renderReviewStep = () => (
     <div className="space-y-6">
       <div className="text-center mb-4">
-        <h3 className="text-lg font-medium">Riepilogo Pratica</h3>
-        <p className="text-sm text-muted-foreground">Verifica i dati prima di creare la pratica</p>
+        <h3 className="text-lg font-medium">{t("practice.practiceSummary")}</h3>
+        <p className="text-sm text-muted-foreground">{t("practice.verifyBeforeCreating")}</p>
       </div>
 
       <div className="space-y-4">
@@ -1279,7 +1279,7 @@ export function UtilityPracticeWizard({ open, onOpenChange, onSuccess, preselect
           <CardContent className="p-4 space-y-3">
             <div className="flex flex-wrap items-center gap-2 text-muted-foreground mb-2">
               <ClipboardList className="h-4 w-4" />
-              <span className="text-sm font-medium">Tipo Pratica</span>
+              <span className="text-sm font-medium">{t("practice.practiceType")}</span>
             </div>
             <Badge>
               {selectedItemType === "service" ? t("quote.service") : 
@@ -1293,7 +1293,7 @@ export function UtilityPracticeWizard({ open, onOpenChange, onSuccess, preselect
             <CardContent className="p-4 space-y-3">
               <div className="flex flex-wrap items-center gap-2 text-muted-foreground mb-2">
                 <Building2 className="h-4 w-4" />
-                <span className="text-sm font-medium">Fornitore e Servizio</span>
+                <span className="text-sm font-medium">{t("practice.supplierAndService")}</span>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
@@ -1316,7 +1316,7 @@ export function UtilityPracticeWizard({ open, onOpenChange, onSuccess, preselect
             <CardContent className="p-4 space-y-3">
               <div className="flex flex-wrap items-center gap-2 text-muted-foreground mb-2">
                 <Package className="h-4 w-4" />
-                <span className="text-sm font-medium">Prodotti ({practiceProducts.length})</span>
+                <span className="text-sm font-medium">{t("parts.products")} ({practiceProducts.length})</span>
               </div>
               <div className="space-y-2">
                 {practiceProducts.map((item, idx) => {
@@ -1365,29 +1365,29 @@ export function UtilityPracticeWizard({ open, onOpenChange, onSuccess, preselect
               <div>
                 <p className="text-xs text-muted-foreground">{t("common.type")}</p>
                 <p className="font-medium">
-                  {selectedPriceType === "mensile" ? "Mensile" : 
-                   selectedPriceType === "forfait" ? "Forfait" : "Solo Attivazione"}
+                  {selectedPriceType === "mensile" ? t("utility.monthly") : 
+                   selectedPriceType === "forfait" ? t("utility.flatRate") : t("utility.activationOnly")}
                 </p>
               </div>
               <div>
                 <p className="text-xs text-muted-foreground">{t("common.amount")}</p>
                 <p className="font-medium text-lg">
                   {selectedPriceType === "mensile" 
-                    ? `${monthlyPrice || "0"}€/mese`
+                    ? t("utility.eurPerMonth", { amount: monthlyPrice || "0" })
                     : selectedPriceType === "forfait"
-                    ? `${flatPrice || "0"}€`
-                    : `${activationPrice || "0"}€ (una tantum)`}
+                    ? t("utility.eurFlat", { amount: flatPrice || "0" })
+                    : t("utility.eurOneTime", { amount: activationPrice || "0" })}
                 </p>
               </div>
               {commission && (
                 <div>
-                  <p className="text-xs text-muted-foreground">Commissione</p>
+                  <p className="text-xs text-muted-foreground">{t("utility.commission")}</p>
                   <p className="font-medium">{commission}€</p>
                 </div>
               )}
               {supplierReference && (
                 <div>
-                  <p className="text-xs text-muted-foreground">Rif. Fornitore</p>
+                  <p className="text-xs text-muted-foreground">{t("practice.supplierRef")}</p>
                   <p className="font-medium">{supplierReference}</p>
                 </div>
               )}
@@ -1430,7 +1430,7 @@ export function UtilityPracticeWizard({ open, onOpenChange, onSuccess, preselect
         <DialogHeader>
           <DialogTitle>{t("utility.newUtilityPractice")}</DialogTitle>
           <DialogDescription>
-            Segui i passaggi per creare una nuova pratica
+            {t("practice.followStepsToCreate")}
           </DialogDescription>
         </DialogHeader>
 
@@ -1463,7 +1463,7 @@ export function UtilityPracticeWizard({ open, onOpenChange, onSuccess, preselect
               ) : (
                 <Check className="h-4 w-4 mr-2" />
               )}
-              Crea Pratica
+              {t("practice.createPractice")}
             </Button>
           ) : (
             <Button

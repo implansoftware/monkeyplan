@@ -54,17 +54,17 @@ type TransferRequest = {
 };
 
 const statusConfig: Record<string, { label: string; color: string; icon: any }> = {
-  pending: { label: "In Attesa", color: "bg-yellow-500/20 text-yellow-700", icon: Clock },
-  approved: { label: "Approvata", color: "bg-blue-500/20 text-blue-700", icon: CheckCircle },
-  rejected: { label: "Rifiutata", color: "bg-red-500/20 text-red-700", icon: XCircle },
-  shipped: { label: "Spedita", color: "bg-purple-500/20 text-purple-700", icon: Truck },
-  received: { label: "Ricevuta", color: "bg-green-500/20 text-green-700", icon: PackageCheck },
-  cancelled: { label: "Annullata", color: "bg-gray-500/20 text-gray-700", icon: Ban },
+  pending: { label: "pending", color: "bg-yellow-500/20 text-yellow-700", icon: Clock },
+  approved: { label: "approved", color: "bg-blue-500/20 text-blue-700", icon: CheckCircle },
+  rejected: { label: "rejected", color: "bg-red-500/20 text-red-700", icon: XCircle },
+  shipped: { label: "shipped", color: "bg-purple-500/20 text-purple-700", icon: Truck },
+  received: { label: "received", color: "bg-green-500/20 text-green-700", icon: PackageCheck },
+  cancelled: { label: "cancelled", color: "bg-gray-500/20 text-gray-700", icon: Ban },
 };
 
 const requesterTypeLabels: Record<string, { label: string; icon: any }> = {
-  repair_center: { label: "Centro Riparazione", icon: Building },
-  sub_reseller: { label: "Sub-Reseller", icon: User },
+  repair_center: { label: "repairCenter", icon: Building },
+  sub_reseller: { label: "subReseller", icon: User },
 };
 
 export default function AdminTransferRequestsPage() {
@@ -192,19 +192,19 @@ export default function AdminTransferRequestsPage() {
               <Inbox className="h-5 w-5" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold tracking-tight" data-testid="text-page-title">Interscambio</h1>
-              <p className="text-sm text-muted-foreground">Gestisci tutte le richieste di interscambio prodotti</p>
+              <h1 className="text-2xl font-bold tracking-tight" data-testid="text-page-title">{t("transfers.title")}</h1>
+              <p className="text-sm text-muted-foreground">{t("transfers.description")}</p>
             </div>
           </div>
           <div className="flex flex-wrap items-center gap-2">
             {pendingCount > 0 && (
               <Badge className="bg-yellow-500/20 text-yellow-700" data-testid="badge-pending-count">
-                {pendingCount} in attesa
+                {pendingCount} {t("transfers.pendingCount")}
               </Badge>
             )}
             {approvedCount > 0 && (
               <Badge className="bg-blue-500/20 text-blue-700" data-testid="badge-approved-count">
-                {approvedCount} da spedire
+                {approvedCount} {t("transfers.toShip")}
               </Badge>
             )}
           </div>
@@ -215,7 +215,7 @@ export default function AdminTransferRequestsPage() {
         <CardHeader>
           <CardTitle className="flex flex-wrap items-center gap-2">
             <Inbox className="h-5 w-5" />
-            Filtri
+            {t("transfers.filters")}
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -251,7 +251,7 @@ export default function AdminTransferRequestsPage() {
               <SelectContent>
                 <SelectItem value="all">{t("common.allTypes")}</SelectItem>
                 <SelectItem value="repair_center">{t("roles.repairCenter")}</SelectItem>
-                <SelectItem value="sub_reseller">Sub-Reseller</SelectItem>
+                <SelectItem value="sub_reseller">{t("transfers.subReseller")}</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -283,11 +283,11 @@ export default function AdminTransferRequestsPage() {
                         </span>
                         <Badge className={statusConfig[request.status]?.color}>
                           <StatusIcon className="h-3 w-3 mr-1" />
-                          {statusConfig[request.status]?.label}
+                          {t(`common.statusLabels.${statusConfig[request.status]?.label}`)}
                         </Badge>
                         <Badge variant="outline" className="flex flex-wrap items-center gap-1">
                           <TypeIcon className="h-3 w-3" />
-                          {TypeInfo?.label}
+                          {t(`transfers.${TypeInfo?.label}`)}
                         </Badge>
                       </div>
                       
@@ -310,18 +310,18 @@ export default function AdminTransferRequestsPage() {
                         {request.items.slice(0, 3).map((item) => (
                           <Badge key={item.id} variant="secondary" className="text-xs">
                             <Package className="h-3 w-3 mr-1" />
-                            {item.product?.name || "Prodotto"} x{item.requestedQuantity}
+                            {item.product?.name || t("common.product")} x{item.requestedQuantity}
                           </Badge>
                         ))}
                         {request.items.length > 3 && (
                           <Badge variant="secondary" className="text-xs">
-                            +{request.items.length - 3} altri
+                            +{request.items.length - 3} {t("transfers.others")}
                           </Badge>
                         )}
                       </div>
                       
                       <p className="text-xs text-muted-foreground">
-                        Creata: {new Date(request.createdAt).toLocaleDateString('it-IT', { 
+                        {t("transfers.created")} {new Date(request.createdAt).toLocaleDateString('it-IT', { 
                           day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' 
                         })}
                       </p>
@@ -335,7 +335,7 @@ export default function AdminTransferRequestsPage() {
                         data-testid={`button-view-${request.id}`}
                       >
                         <Eye className="h-4 w-4 mr-1" />
-                        Dettagli
+                        {t("common.details")}
                       </Button>
                       
                       {request.status === 'pending' && (
@@ -345,7 +345,7 @@ export default function AdminTransferRequestsPage() {
                           data-testid={`button-decide-${request.id}`}
                         >
                           <CheckCircle className="h-4 w-4 mr-1" />
-                          Gestisci
+                          {t("transfers.manage")}
                         </Button>
                       )}
                       
@@ -357,7 +357,7 @@ export default function AdminTransferRequestsPage() {
                           data-testid={`button-ship-${request.id}`}
                         >
                           <Truck className="h-4 w-4 mr-1" />
-                          Spedisci
+                          {t("transfers.ship")}
                         </Button>
                       )}
                     </div>
@@ -380,19 +380,19 @@ export default function AdminTransferRequestsPage() {
                 <div>
                   <Label className="text-muted-foreground">{t("common.status")}</Label>
                   <Badge className={statusConfig[selectedRequest.status]?.color}>
-                    {statusConfig[selectedRequest.status]?.label}
+                    {t(`common.statusLabels.${statusConfig[selectedRequest.status]?.label}`)}
                   </Badge>
                 </div>
                 <div>
-                  <Label className="text-muted-foreground">Tipo Richiedente</Label>
-                  <p>{requesterTypeLabels[selectedRequest.requesterType]?.label}</p>
+                  <Label className="text-muted-foreground">{t("transfers.requesterType")}</Label>
+                  <p>{t(`transfers.${requesterTypeLabels[selectedRequest.requesterType]?.label}`)}</p>
                 </div>
                 <div>
-                  <Label className="text-muted-foreground">Richiedente</Label>
+                  <Label className="text-muted-foreground">{t("transfers.requester")}</Label>
                   <p>{selectedRequest.requesterName || "N/D"}</p>
                 </div>
                 <div>
-                  <Label className="text-muted-foreground">Data Creazione</Label>
+                  <Label className="text-muted-foreground">{t("transfers.creationDate")}</Label>
                   <p>{new Date(selectedRequest.createdAt).toLocaleDateString('it-IT')}</p>
                 </div>
               </div>
@@ -406,22 +406,22 @@ export default function AdminTransferRequestsPage() {
               
               {selectedRequest.rejectionReason && (
                 <div>
-                  <Label className="text-muted-foreground">Motivo Rifiuto</Label>
+                  <Label className="text-muted-foreground">{t("transfers.rejectionReason")}</Label>
                   <p className="text-sm text-red-600">{selectedRequest.rejectionReason}</p>
                 </div>
               )}
               
               <div>
-                <Label className="text-muted-foreground mb-2 block">Articoli Richiesti</Label>
+                <Label className="text-muted-foreground mb-2 block">{t("transfers.requestedItems")}</Label>
                 <div className="border rounded-lg overflow-hidden">
                   <table className="w-full text-sm">
                     <thead className="bg-muted">
                       <tr>
-                        <th className="text-left p-2">Prodotto</th>
-                        <th className="text-center p-2">Richiesti</th>
-                        <th className="text-center p-2">Approvati</th>
-                        <th className="text-center p-2">Spediti</th>
-                        <th className="text-center p-2">Ricevuti</th>
+                        <th className="text-left p-2">{t("common.product")}</th>
+                        <th className="text-center p-2">{t("transfers.requested")}</th>
+                        <th className="text-center p-2">{t("transfers.approvedQty")}</th>
+                        <th className="text-center p-2">{t("transfers.shippedQty")}</th>
+                        <th className="text-center p-2">{t("transfers.receivedQty")}</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -451,14 +451,14 @@ export default function AdminTransferRequestsPage() {
           {selectedRequest && (
             <div className="space-y-4">
               <div>
-                <Label className="mb-2 block">Quantità da Approvare</Label>
+                <Label className="mb-2 block">{t("transfers.quantityToApprove")}</Label>
                 <div className="border rounded-lg overflow-hidden">
                   <table className="w-full text-sm">
                     <thead className="bg-muted">
                       <tr>
-                        <th className="text-left p-2">Prodotto</th>
-                        <th className="text-center p-2">Richiesti</th>
-                        <th className="text-center p-2">Da Approvare</th>
+                        <th className="text-left p-2">{t("common.product")}</th>
+                        <th className="text-center p-2">{t("transfers.requested")}</th>
+                        <th className="text-center p-2">{t("transfers.toApprove")}</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -510,7 +510,7 @@ export default function AdminTransferRequestsPage() {
                   data-testid="button-reject"
                 >
                   <XCircle className="h-4 w-4 mr-1" />
-                  Rifiuta
+                  {t("common.reject")}
                 </Button>
                 <Button 
                   onClick={() => decideMutation.mutate({ 
@@ -522,7 +522,7 @@ export default function AdminTransferRequestsPage() {
                   data-testid="button-approve"
                 >
                   <CheckCircle className="h-4 w-4 mr-1" />
-                  Approva
+                  {t("common.approve")}
                 </Button>
               </DialogFooter>
             </div>
@@ -538,16 +538,16 @@ export default function AdminTransferRequestsPage() {
           {selectedRequest && (
             <div className="space-y-4">
               <p className="text-sm text-muted-foreground">
-                Conferma le quantità da spedire. Gli articoli verranno scalati dal magazzino sorgente.
+                {t("transfers.shipConfirmDesc")}
               </p>
               
               <div className="border rounded-lg overflow-hidden">
                 <table className="w-full text-sm">
                   <thead className="bg-muted">
                     <tr>
-                      <th className="text-left p-2">Prodotto</th>
-                      <th className="text-center p-2">Approvati</th>
-                      <th className="text-center p-2">Da Spedire</th>
+                      <th className="text-left p-2">{t("common.product")}</th>
+                      <th className="text-center p-2">{t("transfers.approvedQty")}</th>
+                      <th className="text-center p-2">{t("transfers.toShipQty")}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -586,7 +586,7 @@ export default function AdminTransferRequestsPage() {
                   data-testid="button-confirm-ship"
                 >
                   <Truck className="h-4 w-4 mr-1" />
-                  Conferma Spedizione
+                  {t("b2b.confirmShipment")}
                 </Button>
               </DialogFooter>
             </div>

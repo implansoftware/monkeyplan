@@ -29,7 +29,7 @@ function getStatusLabels(t: (key: string) => string): Record<string, { label: st
   return {
     pending: { label: t("hr.pending"), variant: "secondary" },
     accepted: { label: t("standalone.accepted"), variant: "default" },
-    scheduled: { label: "Programmato", variant: "outline" },
+    scheduled: { label: t("serviceOrders.scheduled"), variant: "outline" },
     in_progress: { label: t("tickets.status.inProgress"), variant: "default" },
     completed: { label: t("common.completed"), variant: "default" },
     cancelled: { label: t("repairs.status.cancelled"), variant: "destructive" },
@@ -38,14 +38,14 @@ function getStatusLabels(t: (key: string) => string): Record<string, { label: st
 
 function getPaymentStatusLabels(t: (key: string) => string): Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> {
   return {
-    pending: { label: "Da pagare", variant: "secondary" },
-    paid: { label: "Pagato", variant: "default" },
+    pending: { label: t("serviceOrders.toPay"), variant: "secondary" },
+    paid: { label: t("serviceOrders.paid"), variant: "default" },
     cancelled: { label: t("repairs.status.cancelled"), variant: "destructive" },
   };
 }
 
 const paymentMethodLabels: Record<string, { label: string; icon: string }> = {
-  in_person: { label: "In negozio", icon: "banknote" },
+  in_person: { label: t("serviceOrders.inStore"), icon: "banknote" },
   bank_transfer: { label: "Bonifico", icon: "building" },
 };
 
@@ -85,7 +85,7 @@ export default function ResellerServiceOrders() {
       setIsAcceptDialogOpen(false);
       setSelectedOrder(null);
       setAcceptForm({ repairCenterId: "", internalNotes: "" });
-      toast({ title: "Ordine accettato", description: "In attesa scelta consegna dal cliente" });
+      toast({ title: t("serviceOrders.orderAccepted"), description: "In attesa scelta consegna dal cliente" });
     },
     onError: (error: Error) => {
       toast({ title: t("common.error"), description: error.message, variant: "destructive" });
@@ -113,7 +113,7 @@ export default function ResellerServiceOrders() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/reseller/service-orders"] });
-      toast({ title: "Ordine completato" });
+      toast({ title: t("serviceOrders.orderCompleted") });
     },
     onError: (error: Error) => {
       toast({ title: t("common.error"), description: error.message, variant: "destructive" });
@@ -127,7 +127,7 @@ export default function ResellerServiceOrders() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/reseller/service-orders"] });
-      toast({ title: "Ordine annullato" });
+      toast({ title: t("serviceOrders.orderCancelled") });
     },
     onError: (error: Error) => {
       toast({ title: t("common.error"), description: error.message, variant: "destructive" });
@@ -173,7 +173,7 @@ export default function ResellerServiceOrders() {
       setIsScheduleDialogOpen(false);
       setSelectedOrder(null);
       setScheduleDate("");
-      toast({ title: "Appuntamento programmato" });
+      toast({ title: t("serviceOrders.appointmentScheduled") });
     },
     onError: (error: Error) => {
       toast({ title: t("common.error"), description: error.message, variant: "destructive" });
@@ -240,7 +240,7 @@ export default function ResellerServiceOrders() {
             </div>
             <div>
               <h1 className="text-2xl font-bold tracking-tight text-white" data-testid="text-page-title">{t("sidebar.items.serviceOrders")}</h1>
-              <p className="text-sm text-white/80">Gestisci le richieste di intervento dai tuoi clienti</p>
+              <p className="text-sm text-white/80">{t("common.manage")} le richieste di intervento dai tuoi clienti</p>
             </div>
           </div>
         </div>
@@ -249,13 +249,13 @@ export default function ResellerServiceOrders() {
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList>
           <TabsTrigger value="pending" data-testid="tab-pending">
-            In Attesa
+            {t("common.pendingStatus")}
             {pendingCount > 0 && (
               <Badge variant="secondary" className="ml-2">{pendingCount}</Badge>
             )}
           </TabsTrigger>
           <TabsTrigger value="active" data-testid="tab-active">
-            In Corso
+            {t("common.inProgress")}
             {activeCount > 0 && (
               <Badge variant="outline" className="ml-2">{activeCount}</Badge>
             )}
@@ -268,7 +268,7 @@ export default function ResellerServiceOrders() {
           {filterOrdersByTab(activeTab).length === 0 ? (
             <Card className="rounded-2xl">
               <CardContent className="py-8 text-center text-muted-foreground">
-                Nessun ordine in questa sezione
+                {t("serviceOrders.noOrdersInSection")}
               </CardContent>
             </Card>
           ) : (
@@ -392,7 +392,7 @@ export default function ResellerServiceOrders() {
                                 setSelectedOrder(order);
                                 setIsScheduleDialogOpen(true);
                               }}
-                              title="Programma appuntamento"
+                              title={t("serviceOrders.scheduleAppointmentTooltip")}
                               data-testid={`button-schedule-${order.id}`}
                             >
                               <Calendar className="w-4 h-4 text-blue-600" />
@@ -405,7 +405,7 @@ export default function ResellerServiceOrders() {
                               size="sm"
                               onClick={() => confirmReceiptMutation.mutate(order.id)}
                               disabled={confirmReceiptMutation.isPending}
-                              title="Conferma che il dispositivo è stato consegnato dal cliente"
+                              title={t("serviceOrders.confirmDeviceDelivered")}
                               data-testid={`button-confirm-receipt-${order.id}`}
                               className="text-green-600 border-green-200 hover:bg-green-50 dark:hover:bg-green-950"
                             >
@@ -419,7 +419,7 @@ export default function ResellerServiceOrders() {
                               size="icon"
                               onClick={() => downloadDdtMutation.mutate(order.id)}
                               disabled={downloadDdtMutation.isPending}
-                              title="Scarica DDT"
+                              title={t("serviceOrders.downloadDDT")}
                               data-testid={`button-ddt-${order.id}`}
                             >
                               <Download className="w-4 h-4" />
@@ -577,7 +577,7 @@ export default function ResellerServiceOrders() {
       <Dialog open={isAcceptDialogOpen} onOpenChange={setIsAcceptDialogOpen}>
         <DialogContent className="max-w-lg">
           <DialogHeader>
-            <DialogTitle>Accetta Ordine</DialogTitle>
+            <DialogTitle>{t("serviceOrders.acceptOrder")}</DialogTitle>
             <DialogDescription>
               Configura l'accettazione per {selectedOrder?.orderNumber}
             </DialogDescription>
@@ -591,7 +591,7 @@ export default function ResellerServiceOrders() {
                 onValueChange={(value) => setAcceptForm({ ...acceptForm, repairCenterId: value })}
               >
                 <SelectTrigger data-testid="select-repair-center">
-                  <SelectValue placeholder="Seleziona centro..." />
+                  <SelectValue placeholder={t("serviceOrders.selectCenterPlaceholder")} />
                 </SelectTrigger>
                 <SelectContent>
                   {repairCenters?.map((center) => (
@@ -636,7 +636,7 @@ export default function ResellerServiceOrders() {
       <Dialog open={isScheduleDialogOpen} onOpenChange={setIsScheduleDialogOpen}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>Programma Appuntamento</DialogTitle>
+            <DialogTitle>{t("serviceOrders.scheduleAppointment")}</DialogTitle>
             <DialogDescription>
               Seleziona data e ora per la consegna di persona - {selectedOrder?.orderNumber}
             </DialogDescription>
@@ -644,7 +644,7 @@ export default function ResellerServiceOrders() {
 
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label>Data e Ora Appuntamento</Label>
+              <Label>{t("serviceOrders.dateTime")}</Label>
               <Input
                 type="datetime-local"
                 value={scheduleDate}

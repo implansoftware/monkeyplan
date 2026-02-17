@@ -92,10 +92,10 @@ const formatCurrency = (cents: number) => {
 
 function getOwnershipInfo(item: ServiceItem, currentUserId: string | undefined, parentResellerId: string | undefined, t: (key: string) => string) {
   if (!item.createdBy) {
-    return { label: "Globale", icon: Globe, color: "text-blue-500" };
+    return { label: t("services.global"), icon: Globe, color: "text-blue-500" };
   }
   if (item.createdBy === currentUserId) {
-    return { label: "Mio", icon: User, color: "text-green-500" };
+    return { label: t("services.mine"), icon: User, color: "text-green-500" };
   }
   if (parentResellerId && item.createdBy === parentResellerId) {
     return { label: t("roles.reseller"), icon: Users, color: "text-orange-500" };
@@ -194,7 +194,7 @@ export default function ResellerServiceCatalog() {
       return await apiRequest("POST", "/api/reseller/service-item-prices", data);
     },
     onSuccess: () => {
-      toast({ title: "Prezzo Salvato", description: "Il prezzo personalizzato è stato salvato" });
+      toast({ title: t("services.priceSaved"), description: t("services.priceSavedDesc") });
       queryClient.invalidateQueries({ queryKey: ["/api/reseller/service-catalog"] });
       setIsPriceDialogOpen(false);
       resetPriceForm();
@@ -209,7 +209,7 @@ export default function ResellerServiceCatalog() {
       return await apiRequest("DELETE", `/api/reseller/service-item-prices/${priceId}`);
     },
     onSuccess: () => {
-      toast({ title: t("products.priceDeleted"), description: "Il prezzo personalizzato è stato eliminato" });
+      toast({ title: t("products.priceDeleted"), description: t("services.customPriceDeletedDesc") });
       queryClient.invalidateQueries({ queryKey: ["/api/reseller/service-catalog"] });
       setIsDeletePriceDialogOpen(false);
       setPriceToDelete(null);
@@ -234,7 +234,7 @@ export default function ResellerServiceCatalog() {
       return await apiRequest("POST", "/api/reseller/service-items", data);
     },
     onSuccess: () => {
-      toast({ title: t("products.interventionCreated"), description: "Il nuovo intervento è stato aggiunto al catalogo" });
+      toast({ title: t("products.interventionCreated"), description: t("services.interventionCreatedDesc") });
       queryClient.invalidateQueries({ queryKey: ["/api/reseller/service-items"] });
       queryClient.invalidateQueries({ queryKey: ["/api/reseller/service-catalog"] });
       setIsItemDialogOpen(false);
@@ -250,7 +250,7 @@ export default function ResellerServiceCatalog() {
       return await apiRequest("PATCH", `/api/reseller/service-items/${id}`, data);
     },
     onSuccess: () => {
-      toast({ title: t("products.interventionUpdated"), description: "Le modifiche sono state salvate" });
+      toast({ title: t("products.interventionUpdated"), description: t("services.changesSavedDesc") });
       queryClient.invalidateQueries({ queryKey: ["/api/reseller/service-items"] });
       queryClient.invalidateQueries({ queryKey: ["/api/reseller/service-catalog"] });
       setIsItemDialogOpen(false);
@@ -340,7 +340,7 @@ export default function ResellerServiceCatalog() {
     
     const priceCents = Math.round(parseFloat(priceEuros) * 100);
     if (isNaN(priceCents) || priceCents < 0) {
-      toast({ title: t("common.error"), description: "Prezzo non valido", variant: "destructive" });
+      toast({ title: t("common.error"), description: t("common.invalidPrice"), variant: "destructive" });
       return;
     }
     
@@ -362,13 +362,13 @@ export default function ResellerServiceCatalog() {
 
   const handleSaveItem = () => {
     if (!itemCode || !itemName || !itemCategory || !itemPriceEuros) {
-      toast({ title: t("common.error"), description: "Compila tutti i campi obbligatori", variant: "destructive" });
+      toast({ title: t("common.error"), description: t("common.fillRequired"), variant: "destructive" });
       return;
     }
 
     const priceCents = Math.round(parseFloat(itemPriceEuros) * 100);
     if (isNaN(priceCents) || priceCents < 0) {
-      toast({ title: t("common.error"), description: "Prezzo non valido", variant: "destructive" });
+      toast({ title: t("common.error"), description: t("common.invalidPrice"), variant: "destructive" });
       return;
     }
 
@@ -426,8 +426,8 @@ export default function ResellerServiceCatalog() {
     
     const ownership = getOwnershipInfo(item, user?.id, (user as any)?.parentResellerId, t);
     const matchesOrigin = originFilter === "all" || 
-      (originFilter === "global" && ownership.label === "Globale") ||
-      (originFilter === "mine" && ownership.label === "Mio") ||
+      (originFilter === "global" && ownership.label === t("services.global")) ||
+      (originFilter === "mine" && ownership.label === t("services.mine")) ||
       (originFilter === "reseller" && ownership.label === "Reseller");
     
     const itemAny = item as any;
@@ -512,13 +512,13 @@ export default function ResellerServiceCatalog() {
             <div>
               <h1 className="text-2xl font-bold tracking-tight text-white" data-testid="text-page-title">{t("sidebar.items.priceList")}</h1>
               <p className="text-sm text-white/80">
-                Gestisci i prezzi e crea le tue voci di listino personalizzate
+                {t("services.managePricesDesc")}
               </p>
             </div>
           </div>
           <Button onClick={() => openItemDialog()} data-testid="button-create-item" variant="secondary" className="bg-white/20 backdrop-blur-sm border border-white/30 text-white">
             <Plus className="h-4 w-4 mr-2" />
-            Nuova Voce
+            {t("services.newItem")}
           </Button>
         </div>
       </div>
@@ -528,10 +528,10 @@ export default function ResellerServiceCatalog() {
         <CardHeader>
           <CardTitle className="flex flex-wrap items-center gap-2 text-lg">
             <Tag className="h-5 w-5" />
-            Le Mie Voci
+            {t("services.myItems")}
           </CardTitle>
           <CardDescription>
-            {myItems?.length || 0} voci di listino create da te
+            {t("services.myItemsCount", { count: myItems?.length || 0 })}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -544,11 +544,11 @@ export default function ResellerServiceCatalog() {
           ) : filteredMyItems.length === 0 ? (
             <div className="text-center py-12 text-muted-foreground">
               <Wrench className="h-12 w-12 mx-auto mb-4 opacity-50" />
-              <p className="mb-4">{myItems?.length === 0 ? "Non hai ancora creato voci di listino personalizzate" : "Nessun risultato trovato"}</p>
+              <p className="mb-4">{myItems?.length === 0 ? t("services.noCustomItems") : t("common.noResults")}</p>
               {myItems?.length === 0 && (
                 <Button onClick={() => openItemDialog()} data-testid="button-create-first-item">
                   <Plus className="h-4 w-4 mr-2" />
-                  Crea la Prima Voce
+                  {t("services.createFirstItem")}
                 </Button>
               )}
             </div>
@@ -562,7 +562,7 @@ export default function ResellerServiceCatalog() {
                     <TableHead>{t("common.category")}</TableHead>
                     <TableHead>{t("products.compatibility")}</TableHead>
                     <TableHead className="text-right">{t("common.price")}</TableHead>
-                    <TableHead className="text-right">Tempo</TableHead>
+                    <TableHead className="text-right">{t("common.time")}</TableHead>
                     <TableHead className="w-[100px]">{t("common.actions")}</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -601,7 +601,7 @@ export default function ResellerServiceCatalog() {
                                       {deviceType.name}
                                     </Badge>
                                   </TooltipTrigger>
-                                  <TooltipContent>Tipo dispositivo</TooltipContent>
+                                  <TooltipContent>{t("common.deviceType")}</TooltipContent>
                                 </Tooltip>
                               )}
                               {brand && (
@@ -661,7 +661,7 @@ export default function ResellerServiceCatalog() {
             <CardHeader className="pb-4">
               <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-                  <Label className="text-sm font-medium">Visualizza prezzi per:</Label>
+                  <Label className="text-sm font-medium">{t("services.viewPricesFor")}</Label>
                   <Select
                     value={selectedCenterId}
                     onValueChange={setSelectedCenterId}
@@ -673,7 +673,7 @@ export default function ResellerServiceCatalog() {
                       <SelectItem value="reseller">
                         <div className="flex flex-wrap items-center gap-2">
                           <Tag className="h-4 w-4" />
-                          <span>Prezzi Rivenditore (miei)</span>
+                          <span>{t("services.resellerPrices")}</span>
                         </div>
                       </SelectItem>
                       {catalogData?.repairCenters.map(center => (
@@ -721,13 +721,13 @@ export default function ResellerServiceCatalog() {
                       <SelectItem value="global">
                         <div className="flex flex-wrap items-center gap-1.5">
                           <Globe className="h-3.5 w-3.5 text-blue-500" />
-                          Globale
+                          {t("services.global")}
                         </div>
                       </SelectItem>
                       <SelectItem value="mine">
                         <div className="flex flex-wrap items-center gap-1.5">
                           <User className="h-3.5 w-3.5 text-green-500" />
-                          Mio
+                          {t("services.mine")}
                         </div>
                       </SelectItem>
                       <SelectItem value="reseller">
@@ -743,7 +743,7 @@ export default function ResellerServiceCatalog() {
                     <SelectContent>
                       <SelectItem value="all">{t("common.all")}</SelectItem>
                       <SelectItem value="universal">{t("products.universal")}</SelectItem>
-                      <SelectItem value="specific">Con restrizioni</SelectItem>
+                      <SelectItem value="specific">{t("services.withRestrictions")}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -766,7 +766,7 @@ export default function ResellerServiceCatalog() {
                         <TableHead>{t("products.compatibility")}</TableHead>
                         <TableHead>{t("shipping.origin")}</TableHead>
                         <TableHead className="text-right">{t("products.basePrice")}</TableHead>
-                        <TableHead className="text-right">Prezzo Effettivo</TableHead>
+                        <TableHead className="text-right">{t("services.effectivePrice")}</TableHead>
                         <TableHead className="text-center">{t("common.status")}</TableHead>
                         <TableHead className="text-right">{t("common.actions")}</TableHead>
                       </TableRow>
@@ -837,10 +837,10 @@ export default function ResellerServiceCatalog() {
                                   </div>
                                 </TooltipTrigger>
                                 <TooltipContent>
-                                  {ownership.label === "Globale" && "Servizio globale disponibile per tutti"}
-                                  {ownership.label === "Mio" && "Servizio creato da te"}
-                                  {ownership.label === "Reseller" && "Servizio del reseller principale"}
-                                  {ownership.label === "Altro" && "Servizio di un altro utente"}
+                                  {ownership.label === t("services.global") && t("services.globalServiceTooltip")}
+                                  {ownership.label === t("services.mine") && t("services.myServiceTooltip")}
+                                  {ownership.label === t("roles.reseller") && t("services.resellerServiceTooltip")}
+                                  {ownership.label === t("services.other") && t("services.otherServiceTooltip")}
                                 </TooltipContent>
                               </Tooltip>
                             </TableCell>
@@ -857,7 +857,7 @@ export default function ResellerServiceCatalog() {
                                 )}
                                 {priceSource === "reseller" && selectedCenterId !== "reseller" && (
                                   <Badge variant="secondary" className="text-xs">
-                                    Da Rivenditore
+                                    {t("services.fromReseller")}
                                   </Badge>
                                 )}
                               </div>
@@ -1001,20 +1001,20 @@ export default function ResellerServiceCatalog() {
           <div className="space-y-4 py-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="itemCode">Codice *</Label>
+                <Label htmlFor="itemCode">{t("services.codeRequired")}</Label>
                 <Input
                   id="itemCode"
                   value={itemCode}
                   onChange={(e) => setItemCode(e.target.value)}
-                  placeholder="es. DISP-001"
+                  placeholder={t("services.codePlaceholder")}
                   data-testid="input-item-code"
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="itemCategory">Categoria *</Label>
+                <Label htmlFor="itemCategory">{t("services.categoryRequired")}</Label>
                 <Select value={itemCategory} onValueChange={setItemCategory}>
                   <SelectTrigger data-testid="select-item-category">
-                    <SelectValue placeholder="Seleziona..." />
+                    <SelectValue placeholder={t("common.selectPlaceholder")} />
                   </SelectTrigger>
                   <SelectContent>
                     {SERVICE_CATEGORIES.map(cat => (
@@ -1028,23 +1028,23 @@ export default function ResellerServiceCatalog() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="itemName">Nome *</Label>
+              <Label htmlFor="itemName">{t("services.nameRequired")}</Label>
               <Input
                 id="itemName"
                 value={itemName}
                 onChange={(e) => setItemName(e.target.value)}
-                placeholder="es. Sostituzione Display"
+                placeholder={t("services.namePlaceholder")}
                 data-testid="input-item-name"
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="itemDescription">Descrizione (opzionale)</Label>
+              <Label htmlFor="itemDescription">{t("services.descriptionOptional")}</Label>
               <Textarea
                 id="itemDescription"
                 value={itemDescription}
                 onChange={(e) => setItemDescription(e.target.value)}
-                placeholder="Descrizione dettagliata dell'intervento..."
+                placeholder={t("services.descriptionPlaceholder")}
                 rows={3}
                 data-testid="input-item-description"
               />
@@ -1052,9 +1052,9 @@ export default function ResellerServiceCatalog() {
 
             {/* Device compatibility filters */}
             <div className="space-y-2">
-              <Label>Compatibilità Dispositivo (opzionale)</Label>
+              <Label>{t("services.deviceCompatibility")}</Label>
               <p className="text-xs text-muted-foreground mb-2">
-                Seleziona per quale tipo/marca/modello di dispositivo è applicabile questo intervento
+                {t("services.deviceCompatibilityDesc")}
               </p>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <Select 
@@ -1066,7 +1066,7 @@ export default function ResellerServiceCatalog() {
                   }}
                 >
                   <SelectTrigger data-testid="select-item-device-type">
-                    <SelectValue placeholder="Tipo dispositivo" />
+                    <SelectValue placeholder={t("common.deviceType")} />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">{t("common.allTypes")}</SelectItem>
@@ -1107,7 +1107,7 @@ export default function ResellerServiceCatalog() {
                     <SelectValue placeholder={t("products.model")} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">Tutti i modelli</SelectItem>
+                    <SelectItem value="all">{t("common.allModels")}</SelectItem>
                     {filteredModels.map(model => (
                       <SelectItem key={model.id} value={model.id}>
                         {model.modelName}
@@ -1120,7 +1120,7 @@ export default function ResellerServiceCatalog() {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="itemPrice">Prezzo (EUR) *</Label>
+                <Label htmlFor="itemPrice">{t("services.priceEurRequired")}</Label>
                 <div className="relative">
                   <Euro className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
                   <Input
@@ -1137,7 +1137,7 @@ export default function ResellerServiceCatalog() {
                 </div>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="itemLabor">Tempo Manodopera (min)</Label>
+                <Label htmlFor="itemLabor">{t("services.laborTime")}</Label>
                 <div className="relative">
                   <Clock className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
                   <Input
@@ -1168,7 +1168,7 @@ export default function ResellerServiceCatalog() {
             >
               {(createItemMutation.isPending || updateItemMutation.isPending) 
                 ? t("profile.saving") 
-                : (editingServiceItem ? t("profile.saveChanges") : "Crea Intervento")}
+                : (editingServiceItem ? t("profile.saveChanges") : t("serviceCatalog.createService"))}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -1177,10 +1177,9 @@ export default function ResellerServiceCatalog() {
       <AlertDialog open={isDeletePriceDialogOpen} onOpenChange={setIsDeletePriceDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Elimina Prezzo Personalizzato</AlertDialogTitle>
+            <AlertDialogTitle>{t("services.deleteCustomPrice")}</AlertDialogTitle>
             <AlertDialogDescription>
-              Sei sicuro di voler eliminare il prezzo personalizzato per "{priceToDelete?.item.name}"?
-              Verrà ripristinato il prezzo base o quello del rivenditore.
+              {t("services.deleteCustomPriceConfirm", { name: priceToDelete?.item.name })}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -1199,10 +1198,9 @@ export default function ResellerServiceCatalog() {
       <AlertDialog open={isDeleteItemDialogOpen} onOpenChange={setIsDeleteItemDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Elimina Intervento</AlertDialogTitle>
+            <AlertDialogTitle>{t("services.eliminaIntervento")}</AlertDialogTitle>
             <AlertDialogDescription>
-              Sei sicuro di voler eliminare l'intervento "{itemToDelete?.name}"?
-              Questa azione non può essere annullata.
+              {t("services.deleteInterventionConfirm", { name: itemToDelete?.name })}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

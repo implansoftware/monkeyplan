@@ -31,25 +31,25 @@ function formatPrice(cents: number): string {
 }
 
 const statusConfig: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline"; icon: any }> = {
-  requested: { label: "In Attesa", variant: "secondary", icon: Clock },
-  approved: { label: "Approvato", variant: "default", icon: CheckCircle },
-  awaiting_shipment: { label: "Da Spedire", variant: "outline", icon: Truck },
-  rejected: { label: "Rifiutato", variant: "destructive", icon: XCircle },
-  shipped: { label: "Spedito", variant: "default", icon: Truck },
-  received: { label: "Ricevuto", variant: "default", icon: PackageCheck },
-  inspecting: { label: "In Ispezione", variant: "secondary", icon: Eye },
-  completed: { label: "Completato", variant: "default", icon: CheckCircle },
-  cancelled: { label: "Annullato", variant: "destructive", icon: XCircle },
+  requested: { label: "pending", variant: "secondary", icon: Clock },
+  approved: { label: "approved", variant: "default", icon: CheckCircle },
+  awaiting_shipment: { label: "awaitingShipment", variant: "outline", icon: Truck },
+  rejected: { label: "rejected", variant: "destructive", icon: XCircle },
+  shipped: { label: "shipped", variant: "default", icon: Truck },
+  received: { label: "received", variant: "default", icon: PackageCheck },
+  inspecting: { label: "inspecting", variant: "secondary", icon: Eye },
+  completed: { label: "completed", variant: "default", icon: CheckCircle },
+  cancelled: { label: "cancelled", variant: "destructive", icon: XCircle },
 };
 
 const reasonLabels: Record<string, string> = {
-  defective: "Difettoso",
-  wrong_item: "Articolo errato",
-  not_as_described: "Non conforme",
-  damaged_in_transit: "Danneggiato",
-  excess_stock: "Eccesso stock",
-  quality_issue: "Qualità",
-  other: "Altro",
+  defective: "defective",
+  wrong_item: "wrongItem",
+  not_as_described: "notAsDescribed",
+  damaged_in_transit: "damagedInTransit",
+  excess_stock: "excessStock",
+  quality_issue: "qualityIssue",
+  other: "other",
 };
 
 export default function AdminB2BReturns() {
@@ -153,21 +153,21 @@ export default function AdminB2BReturns() {
             </div>
             <Badge variant={status.variant} className="flex flex-wrap items-center gap-1">
               <StatusIcon className="h-3 w-3" />
-              {status.label}
+              {t(`common.statusLabels.${status.label}`)}
             </Badge>
           </div>
         </CardHeader>
         <CardContent className="space-y-2">
           <div className="flex justify-between text-sm">
-            <span className="text-muted-foreground">Motivo:</span>
-            <span>{reasonLabels[ret.reason] || ret.reason}</span>
+            <span className="text-muted-foreground">{t("b2b.reason")}</span>
+            <span>{t(`b2b.returnReasons.${ret.reason}`) || ret.reason}</span>
           </div>
         </CardContent>
         <CardFooter className="flex justify-between items-center">
           <span className="font-semibold text-primary">{formatPrice(ret.totalAmount || 0)}</span>
           <Button variant="ghost" size="sm">
             <Eye className="h-4 w-4 mr-1" />
-            Dettagli
+            {t("common.details")}
           </Button>
         </CardFooter>
       </Card>
@@ -198,8 +198,8 @@ export default function AdminB2BReturns() {
               <RotateCcw className="h-5 w-5" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold tracking-tight">Gestione Resi B2B</h1>
-              <p className="text-sm text-muted-foreground">Gestisci le richieste di reso dai reseller</p>
+              <h1 className="text-2xl font-bold tracking-tight">{t("b2b.manageReturns")}</h1>
+              <p className="text-sm text-muted-foreground">{t("b2b.manageReturnsDesc")}</p>
             </div>
           </div>
         </div>
@@ -208,13 +208,13 @@ export default function AdminB2BReturns() {
       <Tabs defaultValue="pending">
         <TabsList>
           <TabsTrigger value="pending" data-testid="tab-pending">
-            Da Approvare ({pendingReturns.length})
+            {t("b2b.toApprove")} ({pendingReturns.length})
           </TabsTrigger>
           <TabsTrigger value="active" data-testid="tab-active">
-            In Corso ({activeReturns.length})
+            {t("b2b.inProgressReturns")} ({activeReturns.length})
           </TabsTrigger>
           <TabsTrigger value="completed" data-testid="tab-completed">
-            Completati ({completedReturns.length})
+            {t("b2b.completedReturns")} ({completedReturns.length})
           </TabsTrigger>
         </TabsList>
 
@@ -223,7 +223,7 @@ export default function AdminB2BReturns() {
             <Card>
               <CardContent className="py-12 text-center">
                 <Clock className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                <p className="text-muted-foreground">Nessun reso da approvare</p>
+                <p className="text-muted-foreground">{t("b2b.noReturnsToApprove")}</p>
               </CardContent>
             </Card>
           ) : (
@@ -238,7 +238,7 @@ export default function AdminB2BReturns() {
             <Card>
               <CardContent className="py-12 text-center">
                 <Truck className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                <p className="text-muted-foreground">Nessun reso in corso</p>
+                <p className="text-muted-foreground">{t("b2b.noReturnsInProgress")}</p>
               </CardContent>
             </Card>
           ) : (
@@ -253,7 +253,7 @@ export default function AdminB2BReturns() {
             <Card>
               <CardContent className="py-12 text-center">
                 <CheckCircle className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                <p className="text-muted-foreground">Nessun reso completato</p>
+                <p className="text-muted-foreground">{t("b2b.noCompletedReturns")}</p>
               </CardContent>
             </Card>
           ) : (
@@ -274,11 +274,11 @@ export default function AdminB2BReturns() {
                   <div>
                     <DialogTitle>{t("suppliers.returnNumber")} {selectedReturn.returnNumber}</DialogTitle>
                     <DialogDescription>
-                      Richiesto il {selectedReturn.requestedAt && format(new Date(selectedReturn.requestedAt), "d MMMM yyyy 'alle' HH:mm", { locale: it })}
+                      {t("b2b.requestedOn")} {selectedReturn.requestedAt && format(new Date(selectedReturn.requestedAt), "d MMMM yyyy 'alle' HH:mm", { locale: it })}
                     </DialogDescription>
                   </div>
                   <Badge variant={statusConfig[selectedReturn.status]?.variant || "secondary"}>
-                    {statusConfig[selectedReturn.status]?.label || selectedReturn.status}
+                    {t(`common.statusLabels.${selectedReturn.status}`) || selectedReturn.status}
                   </Badge>
                 </div>
               </DialogHeader>
@@ -286,7 +286,7 @@ export default function AdminB2BReturns() {
               <div className="space-y-4">
                 {selectedReturn.reseller && (
                   <div className="bg-muted p-3 rounded-lg">
-                    <p className="text-sm font-medium">Reseller:</p>
+                    <p className="text-sm font-medium">{t("b2b.reseller")}</p>
                     <p className="text-sm">{selectedReturn.reseller.fullName || selectedReturn.reseller.username}</p>
                     <p className="text-xs text-muted-foreground">{selectedReturn.reseller.email}</p>
                   </div>
@@ -294,13 +294,13 @@ export default function AdminB2BReturns() {
 
                 {selectedReturn.order && (
                   <div className="bg-blue-50 dark:bg-blue-950/30 p-3 rounded-lg">
-                    <p className="text-sm font-medium">Ordine Originale:</p>
+                    <p className="text-sm font-medium">{t("b2b.originalOrder")}</p>
                     <p className="text-sm">{selectedReturn.order.orderNumber}</p>
                   </div>
                 )}
 
                 <div className="bg-muted p-3 rounded-lg">
-                  <p className="text-sm font-medium">Motivo: {reasonLabels[selectedReturn.reason] || selectedReturn.reason}</p>
+                  <p className="text-sm font-medium">{t("b2b.reasonLabel")} {t(`b2b.returnReasons.${selectedReturn.reason}`) || selectedReturn.reason}</p>
                   {selectedReturn.reasonDetails && (
                     <p className="text-sm text-muted-foreground mt-1">{selectedReturn.reasonDetails}</p>
                   )}
@@ -311,7 +311,7 @@ export default function AdminB2BReturns() {
                     <TableHeader>
                       <TableRow>
                         <TableHead>{t("products.product")}</TableHead>
-                        <TableHead className="text-right">Qtà</TableHead>
+                        <TableHead className="text-right">{t("b2b.qty")}</TableHead>
                         <TableHead className="text-right">{t("common.total")}</TableHead>
                       </TableRow>
                     </TableHeader>
@@ -342,20 +342,20 @@ export default function AdminB2BReturns() {
                 <Separator />
 
                 <div className="flex justify-between text-lg font-semibold">
-                  <span>Totale Reso:</span>
+                  <span>{t("b2b.totalReturn")}</span>
                   <span className="text-primary">{formatPrice(selectedReturn.totalAmount || 0)}</span>
                 </div>
 
                 {selectedReturn.resellerNotes && (
                   <div className="bg-muted p-3 rounded-lg">
-                    <p className="text-sm font-medium">Note reseller:</p>
+                    <p className="text-sm font-medium">{t("b2b.resellerNotes")}</p>
                     <p className="text-sm text-muted-foreground">{selectedReturn.resellerNotes}</p>
                   </div>
                 )}
 
                 {selectedReturn.trackingNumber && (
                   <div className="bg-green-50 dark:bg-green-950/30 p-3 rounded-lg">
-                    <p className="text-sm font-medium">Tracking spedizione:</p>
+                    <p className="text-sm font-medium">{t("b2b.shippingTrackingLabel")}</p>
                     <p className="text-sm">
                       {selectedReturn.carrier && <span className="text-muted-foreground">{selectedReturn.carrier}: </span>}
                       {selectedReturn.trackingNumber}
@@ -365,7 +365,7 @@ export default function AdminB2BReturns() {
 
                 {selectedReturn.creditAmount && selectedReturn.status === 'completed' && (
                   <div className="bg-green-50 dark:bg-green-950/30 p-3 rounded-lg">
-                    <p className="text-sm font-medium">Importo accreditato:</p>
+                    <p className="text-sm font-medium">{t("b2b.creditedAmount")}</p>
                     <p className="text-lg font-semibold text-green-600">{formatPrice(selectedReturn.creditAmount)}</p>
                   </div>
                 )}
@@ -375,7 +375,7 @@ export default function AdminB2BReturns() {
                   <div className="bg-blue-50 dark:bg-blue-950/30 p-3 rounded-lg space-y-2">
                     <p className="text-sm font-medium flex items-center gap-2">
                       <FileText className="h-4 w-4" />
-                      Documenti Spedizione
+                      {t("b2b.shippingDocuments")}
                     </p>
                     <div className="flex flex-wrap gap-2">
                       {selectedReturn.shippingLabelPath && (
@@ -391,7 +391,7 @@ export default function AdminB2BReturns() {
                             data-testid="button-admin-download-label"
                           >
                             <Tag className="h-4 w-4 mr-2" />
-                            Etichetta
+                            {t("b2b.label")}
                           </a>
                         </Button>
                       )}
@@ -427,17 +427,17 @@ export default function AdminB2BReturns() {
                                   toast({ title: t("b2b.documentsRegenerated"), description: t("b2b.documentsRegeneratedDesc") });
                                   queryClient.invalidateQueries({ queryKey: ['/api/admin/b2b-returns'] });
                                 } else {
-                                  throw new Error("Errore nella rigenerazione");
+                                  throw new Error(t("b2b.regenerationError"));
                                 }
                               })
                               .catch(() => {
-                                toast({ title: t("common.error"), description: "Impossibile rigenerare i documenti", variant: "destructive" });
+                                toast({ title: t("common.error"), description: t("b2b.cannotRegenerateDocuments"), variant: "destructive" });
                               });
                           }}
                           data-testid="button-regenerate-documents"
                         >
                           <RefreshCw className="h-4 w-4 mr-2" />
-                          Rigenera
+                          {t("b2b.regenerate")}
                         </Button>
                       )}
                     </div>
@@ -447,7 +447,7 @@ export default function AdminB2BReturns() {
 
               <DialogFooter className="gap-2 flex-wrap">
                 <Button variant="outline" onClick={() => setDetailOpen(false)}>
-                  Chiudi
+                  {t("common.close")}
                 </Button>
                 {selectedReturn.status === 'requested' && (
                   <>
@@ -457,7 +457,7 @@ export default function AdminB2BReturns() {
                       data-testid="button-reject-return"
                     >
                       <ThumbsDown className="h-4 w-4 mr-2" />
-                      Rifiuta
+                      {t("common.reject")}
                     </Button>
                     <Button
                       onClick={() => approveMutation.mutate({ id: selectedReturn.id })}
@@ -465,14 +465,14 @@ export default function AdminB2BReturns() {
                       data-testid="button-approve-return"
                     >
                       <ThumbsUp className="h-4 w-4 mr-2" />
-                      {approveMutation.isPending ? "Approvazione..." : "Approva"}
+                      {approveMutation.isPending ? t("b2b.approving") : t("common.approve")}
                     </Button>
                   </>
                 )}
                 {selectedReturn.status === 'shipped' && (
                   <Button onClick={() => { setCreditAmount(String(selectedReturn.totalAmount || 0)); setReceiveDialogOpen(true); }} data-testid="button-receive-return">
                     <PackageCheck className="h-4 w-4 mr-2" />
-                    Conferma Ricezione
+                    {t("b2b.confirmReceipt")}
                   </Button>
                 )}
               </DialogFooter>
@@ -487,13 +487,13 @@ export default function AdminB2BReturns() {
           <DialogHeader>
             <DialogTitle>{t("b2b.rejectReturn")}</DialogTitle>
             <DialogDescription>
-              Specifica il motivo del rifiuto
+              {t("b2b.specifyRejectionReason")}
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label>Motivo del rifiuto *</Label>
+              <Label>{t("b2b.rejectionReasonRequired")}</Label>
               <Textarea
                 value={rejectionReason}
                 onChange={(e) => setRejectionReason(e.target.value)}
@@ -522,7 +522,7 @@ export default function AdminB2BReturns() {
               disabled={!rejectionReason || rejectMutation.isPending}
               data-testid="button-confirm-reject"
             >
-              {rejectMutation.isPending ? "Rifiuto..." : "Conferma Rifiuto"}
+              {rejectMutation.isPending ? t("b2b.rejecting") : t("b2b.confirmRejection")}
             </Button>
           </DialogFooter>
         </DialogContent>

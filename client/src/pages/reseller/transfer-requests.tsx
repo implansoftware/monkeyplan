@@ -160,8 +160,8 @@ export default function TransferRequestsPage() {
       queryClient.invalidateQueries({ queryKey: ["/api/reseller/transfer-requests/overview"] });
       queryClient.invalidateQueries({ queryKey: ["/api/reseller/incoming-transfer-requests"] });
       queryClient.invalidateQueries({ queryKey: ["/api/reseller/incoming-transfer-requests/summary"] });
-      const action = variables.decision === 'approve' ? 'approvata' : 'rifiutata';
-      toast({ title: "Richiesta " + action, description: `La richiesta è stata ${action} con successo` });
+      const action = variables.decision === 'approve' ? t("common.approved") : t("common.rejected");
+      toast({ title: t("transfers.requestProcessed", { action }), description: t("transfers.requestProcessedDesc", { action }) });
       setShowDecideDialog(false);
       setSelectedRequest(null);
       setApprovedItems([]);
@@ -184,7 +184,7 @@ export default function TransferRequestsPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/reseller/transfer-requests/overview"] });
       queryClient.invalidateQueries({ queryKey: ["/api/reseller/incoming-transfer-requests"] });
-      toast({ title: "Spedizione registrata", description: "La richiesta è stata contrassegnata come spedita" });
+      toast({ title: t("transfers.shipmentRegistered"), description: t("transfers.shipmentRegisteredDesc") });
       setShowShipDialog(false);
       setSelectedRequest(null);
       setShippedItems([]);
@@ -208,7 +208,7 @@ export default function TransferRequestsPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/reseller/transfer-requests/overview"] });
       queryClient.invalidateQueries({ queryKey: ["/api/reseller/sub-reseller/transfer-requests"] });
-      toast({ title: "Merce ricevuta", description: "La ricezione è stata registrata con successo" });
+      toast({ title: t("transfers.goodsReceived"), description: t("transfers.goodsReceivedDesc") });
       setShowReceiveDialog(false);
       setSelectedRequest(null);
       setReceiveItems([]);
@@ -256,7 +256,7 @@ export default function TransferRequestsPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/reseller/sub-reseller/transfer-requests"] });
       queryClient.invalidateQueries({ queryKey: ["/api/reseller/transfer-requests/overview"] });
-      toast({ title: "Richiesta Inviata", description: "La richiesta di interscambio è stata inviata al reseller padre" });
+      toast({ title: t("transfers.requestSent"), description: t("transfers.requestSentDesc") });
       setShowNewRequestDialog(false);
       resetWizard();
     },
@@ -309,7 +309,7 @@ export default function TransferRequestsPage() {
       const response = await fetch(`/api/transfer-requests/${requestId}/ddt`, {
         credentials: 'include'
       });
-      if (!response.ok) throw new Error('Errore download DDT');
+      if (!response.ok) throw new Error(t('transfers.ddtDownloadError'));
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -362,15 +362,15 @@ export default function TransferRequestsPage() {
           
           <div className="mt-4 space-y-2">
             <div className="text-sm">
-              <span className="text-muted-foreground">Prodotti: </span>
+              <span className="text-muted-foreground">{t("transfers.products")}: </span>
               <span className="font-medium">{request.items.length}</span>
-              <span className="text-muted-foreground ml-4">Tot. pezzi: </span>
+              <span className="text-muted-foreground ml-4">{t("transfers.totalPieces")}: </span>
               <span className="font-medium">
                 {request.items.reduce((sum, item) => sum + item.requestedQuantity, 0)}
               </span>
             </div>
             <div className="text-sm text-muted-foreground">
-              Creata: {format(new Date(request.createdAt), "dd MMM yyyy HH:mm", { locale: it })}
+              {t("transfers.created")}: {format(new Date(request.createdAt), "dd MMM yyyy HH:mm", { locale: it })}
             </div>
             {request.ddtNumber && (
               <div className="text-sm">
@@ -396,7 +396,7 @@ export default function TransferRequestsPage() {
                 data-testid={`button-decide-${request.id}`}
               >
                 <CheckCircle className="h-4 w-4 mr-1" />
-                Gestisci
+                {t("transfers.manage")}
               </Button>
             )}
             
@@ -407,7 +407,7 @@ export default function TransferRequestsPage() {
                 data-testid={`button-ship-${request.id}`}
               >
                 <Truck className="h-4 w-4 mr-1" />
-                Spedisci
+                {t("transfers.ship")}
               </Button>
             )}
             
@@ -418,7 +418,7 @@ export default function TransferRequestsPage() {
                 data-testid={`button-receive-${request.id}`}
               >
                 <PackageCheck className="h-4 w-4 mr-1" />
-                Conferma Ricezione
+                {t("transfers.confirmReception")}
               </Button>
             )}
             
@@ -480,8 +480,8 @@ export default function TransferRequestsPage() {
               <ArrowRightLeft className="h-6 w-6 text-white" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold tracking-tight text-white">Interscambio</h1>
-              <p className="text-sm text-white/80">Gestisci le richieste di trasferimento prodotti</p>
+              <h1 className="text-2xl font-bold tracking-tight text-white">{t("transfers.exchange")}</h1>
+              <p className="text-sm text-white/80">{t("transfers.manageTransferRequests")}</p>
             </div>
           </div>
           {stats?.isSubReseller && (
@@ -513,7 +513,7 @@ export default function TransferRequestsPage() {
               </div>
               <div>
                 <p className="text-2xl font-bold">{stats?.incomingApproved || 0}</p>
-                <p className="text-sm text-muted-foreground">Da Spedire</p>
+                <p className="text-sm text-muted-foreground">{t("transfers.toShip")}</p>
               </div>
             </div>
           </CardContent>
@@ -526,7 +526,7 @@ export default function TransferRequestsPage() {
               </div>
               <div>
                 <p className="text-2xl font-bold">{(stats?.incomingShipped || 0) + (stats?.outgoingShipped || 0)}</p>
-                <p className="text-sm text-muted-foreground">In Transito</p>
+                <p className="text-sm text-muted-foreground">{t("transfers.inTransit")}</p>
               </div>
             </div>
           </CardContent>
@@ -539,7 +539,7 @@ export default function TransferRequestsPage() {
               </div>
               <div>
                 <p className="text-2xl font-bold">{stats?.totalHistory || 0}</p>
-                <p className="text-sm text-muted-foreground">Completate</p>
+                <p className="text-sm text-muted-foreground">{t("transfers.completed")}</p>
               </div>
             </div>
           </CardContent>
@@ -550,7 +550,7 @@ export default function TransferRequestsPage() {
         <div className="relative flex-1 min-w-[200px]">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder="Cerca per numero, richiedente o prodotto..."
+            placeholder={t("transfers.searchByNumberRequesterProduct")}
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="pl-9"
@@ -564,11 +564,11 @@ export default function TransferRequestsPage() {
           <SelectContent>
             <SelectItem value="all">{t("common.allStatuses")}</SelectItem>
             <SelectItem value="pending">{t("common.pending")}</SelectItem>
-            <SelectItem value="approved">Approvate</SelectItem>
-            <SelectItem value="shipped">Spedite</SelectItem>
-            <SelectItem value="received">Ricevute</SelectItem>
-            <SelectItem value="rejected">Rifiutate</SelectItem>
-            <SelectItem value="cancelled">Annullate</SelectItem>
+            <SelectItem value="approved">{t("common.approved")}</SelectItem>
+            <SelectItem value="shipped">{t("common.shipped")}</SelectItem>
+            <SelectItem value="received">{t("common.received")}</SelectItem>
+            <SelectItem value="rejected">{t("common.rejected")}</SelectItem>
+            <SelectItem value="cancelled">{t("common.cancelled")}</SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -577,21 +577,21 @@ export default function TransferRequestsPage() {
         <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="incoming" className="gap-2" data-testid="tab-incoming">
             <Inbox className="h-4 w-4" />
-            Ricevute
+            {t("transfers.incomingTab")}
             {(stats?.incomingPending || 0) > 0 && (
               <Badge variant="secondary" className="ml-1">{stats?.incomingPending}</Badge>
             )}
           </TabsTrigger>
           <TabsTrigger value="outgoing" className="gap-2" data-testid="tab-outgoing" disabled={!stats?.isSubReseller}>
             <Send className="h-4 w-4" />
-            Inviate
+            {t("transfers.outgoingTab")}
             {(stats?.outgoingPending || 0) > 0 && (
               <Badge variant="secondary" className="ml-1">{stats?.outgoingPending}</Badge>
             )}
           </TabsTrigger>
           <TabsTrigger value="history" className="gap-2" data-testid="tab-history">
             <History className="h-4 w-4" />
-            Storico
+            {t("transfers.history")}
           </TabsTrigger>
         </TabsList>
 
@@ -600,7 +600,7 @@ export default function TransferRequestsPage() {
             <Card>
               <CardContent className="py-12 text-center">
                 <Inbox className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                <p className="text-muted-foreground">Nessuna richiesta ricevuta</p>
+                <p className="text-muted-foreground">{t("transfers.noIncomingRequests")}</p>
               </CardContent>
             </Card>
           ) : (
@@ -616,7 +616,7 @@ export default function TransferRequestsPage() {
               <CardContent className="py-12 text-center">
                 <Send className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                 <p className="text-muted-foreground">
-                  Le richieste in uscita sono disponibili solo per i sub-reseller
+                  t("transfers.outgoingOnlyForSubResellers")
                 </p>
               </CardContent>
             </Card>
@@ -624,7 +624,7 @@ export default function TransferRequestsPage() {
             <Card>
               <CardContent className="py-12 text-center">
                 <Send className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                <p className="text-muted-foreground">Nessuna richiesta inviata</p>
+                <p className="text-muted-foreground">{t("transfers.noOutgoingRequests")}</p>
               </CardContent>
             </Card>
           ) : (
@@ -639,7 +639,7 @@ export default function TransferRequestsPage() {
             <Card>
               <CardContent className="py-12 text-center">
                 <History className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                <p className="text-muted-foreground">Nessun trasferimento completato</p>
+                <p className="text-muted-foreground">{t("transfers.noCompletedTransfers")}</p>
               </CardContent>
             </Card>
           ) : (
@@ -654,9 +654,9 @@ export default function TransferRequestsPage() {
       <Dialog open={showDetailsDialog} onOpenChange={setShowDetailsDialog}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle>Dettagli Richiesta {selectedRequest?.requestNumber}</DialogTitle>
+            <DialogTitle>{t("transfers.requestDetails")} {selectedRequest?.requestNumber}</DialogTitle>
             <DialogDescription>
-              Informazioni complete sulla richiesta di trasferimento
+              t("transfers.completeRequestInfo")
             </DialogDescription>
           </DialogHeader>
           {selectedRequest && (
@@ -667,15 +667,15 @@ export default function TransferRequestsPage() {
                   <div className="mt-1">{renderStatusBadge(selectedRequest.status)}</div>
                 </div>
                 <div>
-                  <Label className="text-muted-foreground">Tipo Richiedente</Label>
+                  <Label className="text-muted-foreground">{t("transfers.requesterType")}</Label>
                   <p className="font-medium">{requesterTypeLabels[selectedRequest.requesterType]?.label}</p>
                 </div>
                 <div>
-                  <Label className="text-muted-foreground">Richiedente</Label>
+                  <Label className="text-muted-foreground">{t("transfers.requester")}</Label>
                   <p className="font-medium">{selectedRequest.requester?.fullName || '-'}</p>
                 </div>
                 <div>
-                  <Label className="text-muted-foreground">Data Richiesta</Label>
+                  <Label className="text-muted-foreground">{t("transfers.requestDate")}</Label>
                   <p className="font-medium">
                     {format(new Date(selectedRequest.createdAt), "dd/MM/yyyy HH:mm", { locale: it })}
                   </p>
@@ -683,11 +683,11 @@ export default function TransferRequestsPage() {
                 {selectedRequest.trackingNumber && (
                   <>
                     <div>
-                      <Label className="text-muted-foreground">Corriere</Label>
+                      <Label className="text-muted-foreground">{t("shipping.carrier")}</Label>
                       <p className="font-medium">{selectedRequest.trackingCarrier || '-'}</p>
                     </div>
                     <div>
-                      <Label className="text-muted-foreground">Tracking</Label>
+                      <Label className="text-muted-foreground">{t("shipping.tracking")}</Label>
                       <p className="font-mono">{selectedRequest.trackingNumber}</p>
                     </div>
                   </>
@@ -705,7 +705,7 @@ export default function TransferRequestsPage() {
               </div>
               
               <div>
-                <Label className="text-muted-foreground">Prodotti Richiesti</Label>
+                <Label className="text-muted-foreground">{t("transfers.requestedProducts")}</Label>
                 <div className="mt-2 border rounded-lg divide-y">
                   {selectedRequest.items.map(item => (
                     <div key={item.id} className="p-3 flex items-center gap-3">
@@ -721,19 +721,19 @@ export default function TransferRequestsPage() {
                         )}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="font-medium truncate">{item.product?.name || 'Prodotto sconosciuto'}</p>
+                        <p className="font-medium truncate">{item.product?.name || t('products.unknownProduct')}</p>
                         <p className="text-sm text-muted-foreground">{item.product?.sku}</p>
                       </div>
                       <div className="text-right text-sm flex-shrink-0">
-                        <p>Richiesti: <span className="font-medium">{item.requestedQuantity}</span></p>
+                        <p>{t("transfers.requested")}: <span className="font-medium">{item.requestedQuantity}</span></p>
                         {item.approvedQuantity !== null && (
-                          <p>Approvati: <span className="font-medium">{item.approvedQuantity}</span></p>
+                          <p>{t("transfers.approvedQty")}: <span className="font-medium">{item.approvedQuantity}</span></p>
                         )}
                         {item.shippedQuantity !== null && (
-                          <p>Spediti: <span className="font-medium">{item.shippedQuantity}</span></p>
+                          <p>{t("transfers.shippedQty")}: <span className="font-medium">{item.shippedQuantity}</span></p>
                         )}
                         {item.receivedQuantity !== null && (
-                          <p>Ricevuti: <span className="font-medium">{item.receivedQuantity}</span></p>
+                          <p>{t("transfers.receivedQty")}: <span className="font-medium">{item.receivedQuantity}</span></p>
                         )}
                       </div>
                     </div>
@@ -750,7 +750,7 @@ export default function TransferRequestsPage() {
               
               {selectedRequest.rejectionReason && (
                 <div>
-                  <Label className="text-muted-foreground text-red-600">Motivo Rifiuto</Label>
+                  <Label className="text-muted-foreground text-red-600">{t("transfers.rejectionReason")}</Label>
                   <p className="mt-1 text-red-600">{selectedRequest.rejectionReason}</p>
                 </div>
               )}
@@ -763,15 +763,15 @@ export default function TransferRequestsPage() {
       <Dialog open={showDecideDialog} onOpenChange={setShowDecideDialog}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle>Gestisci Richiesta {selectedRequest?.requestNumber}</DialogTitle>
+            <DialogTitle>{t("transfers.manageRequest")} {selectedRequest?.requestNumber}</DialogTitle>
             <DialogDescription>
-              Approva o rifiuta la richiesta di trasferimento
+              t("transfers.approveOrReject")
             </DialogDescription>
           </DialogHeader>
           {selectedRequest && (
             <div className="space-y-4">
               <div>
-                <Label>Quantità da approvare per ogni prodotto</Label>
+                <Label>{t("transfers.quantityToApprove")}</Label>
                 <div className="mt-2 border rounded-lg divide-y">
                   {selectedRequest.items.map((item, idx) => (
                     <div key={item.id} className="p-3 flex items-center gap-3">
@@ -787,9 +787,9 @@ export default function TransferRequestsPage() {
                         )}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="font-medium truncate">{item.product?.name || 'Prodotto'}</p>
+                        <p className="font-medium truncate">{item.product?.name || t('products.product')}</p>
                         <p className="text-sm text-muted-foreground">
-                          Richiesti: {item.requestedQuantity}
+                          {t("transfers.requested")}: {item.requestedQuantity}
                         </p>
                       </div>
                       <Input
@@ -811,11 +811,11 @@ export default function TransferRequestsPage() {
               </div>
               
               <div>
-                <Label>Motivo rifiuto (opzionale)</Label>
+                <Label>{t("transfers.rejectionReasonOptional")}</Label>
                 <Textarea
                   value={rejectionReason}
                   onChange={(e) => setRejectionReason(e.target.value)}
-                  placeholder="Inserisci il motivo del rifiuto..."
+                  placeholder={t("transfers.enterRejectionReason")}
                   className="mt-1"
                   data-testid="textarea-rejection-reason"
                 />
@@ -852,30 +852,30 @@ export default function TransferRequestsPage() {
       <Dialog open={showShipDialog} onOpenChange={setShowShipDialog}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle>Spedisci Richiesta {selectedRequest?.requestNumber}</DialogTitle>
+            <DialogTitle>{t("transfers.shipRequest")} {selectedRequest?.requestNumber}</DialogTitle>
             <DialogDescription>
-              Inserisci i dati di spedizione
+              t("transfers.enterShippingData")
             </DialogDescription>
           </DialogHeader>
           {selectedRequest && (
             <div className="space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <Label>Corriere</Label>
+                  <Label>{t("shipping.carrier")}</Label>
                   <Input
                     value={shipTrackingCarrier}
                     onChange={(e) => setShipTrackingCarrier(e.target.value)}
-                    placeholder="Es. DHL, UPS, BRT..."
+                    placeholder={t("shipping.carrierExample")}
                     className="mt-1"
                     data-testid="input-ship-carrier"
                   />
                 </div>
                 <div>
-                  <Label>Numero Tracking</Label>
+                  <Label>{t("shipping.trackingNumber")}</Label>
                   <Input
                     value={shipTrackingNumber}
                     onChange={(e) => setShipTrackingNumber(e.target.value)}
-                    placeholder="Numero spedizione..."
+                    placeholder={t("shipping.shipmentNumber")}
                     className="mt-1"
                     data-testid="input-ship-tracking"
                   />
@@ -883,14 +883,14 @@ export default function TransferRequestsPage() {
               </div>
               
               <div>
-                <Label>Quantità da spedire</Label>
+                <Label>{t("transfers.quantityToShip")}</Label>
                 <div className="mt-2 border rounded-lg divide-y">
                   {selectedRequest.items.map((item, idx) => (
                     <div key={item.id} className="p-3 flex items-center justify-between gap-4">
                       <div className="flex-1">
-                        <p className="font-medium">{item.product?.name || 'Prodotto'}</p>
+                        <p className="font-medium">{item.product?.name || t('products.product')}</p>
                         <p className="text-sm text-muted-foreground">
-                          Approvati: {item.approvedQuantity || item.requestedQuantity}
+                          {t("transfers.approvedQty")}: {item.approvedQuantity || item.requestedQuantity}
                         </p>
                       </div>
                       <Input
@@ -928,7 +928,7 @@ export default function TransferRequestsPage() {
               data-testid="button-confirm-ship"
             >
               <Truck className="h-4 w-4 mr-1" />
-              Conferma Spedizione
+              {t("transfers.confirmShipment")}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -938,22 +938,22 @@ export default function TransferRequestsPage() {
       <Dialog open={showReceiveDialog} onOpenChange={setShowReceiveDialog}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle>Conferma Ricezione {selectedRequest?.requestNumber}</DialogTitle>
+            <DialogTitle>{t("transfers.confirmReception")} {selectedRequest?.requestNumber}</DialogTitle>
             <DialogDescription>
-              Conferma le quantità ricevute
+              t("transfers.confirmReceivedQuantities")
             </DialogDescription>
           </DialogHeader>
           {selectedRequest && (
             <div className="space-y-4">
               <div>
-                <Label>Quantità ricevute</Label>
+                <Label>{t("transfers.receivedQuantities")}</Label>
                 <div className="mt-2 border rounded-lg divide-y">
                   {selectedRequest.items.map((item, idx) => (
                     <div key={item.id} className="p-3 flex items-center justify-between gap-4">
                       <div className="flex-1">
-                        <p className="font-medium">{item.product?.name || 'Prodotto'}</p>
+                        <p className="font-medium">{item.product?.name || t('products.product')}</p>
                         <p className="text-sm text-muted-foreground">
-                          Spediti: {item.shippedQuantity || item.approvedQuantity || item.requestedQuantity}
+                          {t("transfers.shippedQty")}: {item.shippedQuantity || item.approvedQuantity || item.requestedQuantity}
                         </p>
                       </div>
                       <Input
@@ -988,7 +988,7 @@ export default function TransferRequestsPage() {
               data-testid="button-confirm-receive"
             >
               <PackageCheck className="h-4 w-4 mr-1" />
-              Conferma Ricezione
+              {t("transfers.confirmReception")}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -1001,11 +1001,11 @@ export default function TransferRequestsPage() {
       }}>
         <DialogContent className="max-w-3xl max-h-[85vh] overflow-hidden flex flex-col">
           <DialogHeader>
-            <DialogTitle>Nuova Richiesta Interscambio</DialogTitle>
+            <DialogTitle>{t("transfers.nuovaRichiestaInterscambio")}</DialogTitle>
             <DialogDescription>
-              {wizardStep === 1 && "Cerca il prodotto che vuoi richiedere"}
-              {wizardStep === 2 && "Seleziona il magazzino da cui richiedere"}
-              {wizardStep === 3 && "Conferma quantità e invia richiesta"}
+              {wizardStep === 1 && t("transfers.searchProduct")}
+              {wizardStep === 2 && t("transfers.selectWarehouse")}
+              {wizardStep === 3 && t("transfers.confirmQuantityAndSend")}
             </DialogDescription>
           </DialogHeader>
 
@@ -1033,7 +1033,7 @@ export default function TransferRequestsPage() {
                   <div className="relative flex-1">
                     <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     <Input
-                      placeholder="Cerca prodotto per nome, SKU o marca..."
+                      placeholder={t("transfers.cercaProdottoPerNomeSKUOMarca")}
                       value={productSearch}
                       onChange={(e) => setProductSearch(e.target.value)}
                       className="pl-10"
@@ -1045,10 +1045,10 @@ export default function TransferRequestsPage() {
                       <SelectValue placeholder={t("common.type")} />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="all">Tutti i tipi</SelectItem>
-                      <SelectItem value="ricambio">Ricambi</SelectItem>
-                      <SelectItem value="accessorio">Accessori</SelectItem>
-                      <SelectItem value="dispositivo">Dispositivi</SelectItem>
+                      <SelectItem value="all">{t("common.allTypes")}</SelectItem>
+                      <SelectItem value="ricambio">{t("products.spareParts")}</SelectItem>
+                      <SelectItem value="accessorio">{t("products.accessories")}</SelectItem>
+                      <SelectItem value="dispositivo">{t("products.devices")}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -1062,8 +1062,8 @@ export default function TransferRequestsPage() {
                 {!isSearching && searchResults.length === 0 && (
                   <div className="text-center py-8 text-muted-foreground">
                     <Package className="h-12 w-12 mx-auto mb-2 opacity-50" />
-                    <p>Nessun prodotto disponibile trovato</p>
-                    <p className="text-sm">Prova a modificare i criteri di ricerca</p>
+                    <p>{t("transfers.nessunProdottoDisponibileTrovato")}</p>
+                    <p className="text-sm">{t("common.tryModifySearch")}</p>
                   </div>
                 )}
 
@@ -1112,7 +1112,7 @@ export default function TransferRequestsPage() {
                               </div>
                               <div className="text-right">
                                 <Badge variant="secondary">
-                                  {totalStock} disponibili
+                                  {totalStock} {t("common.available")}
                                 </Badge>
                                 <p className="text-xs text-muted-foreground mt-1">
                                   {Array.from(new Set(item.warehouses.map(w => w.ownerName))).filter(Boolean).join(', ') || `${item.warehouses.length} magazzin${item.warehouses.length === 1 ? 'o' : 'i'}`}
@@ -1152,7 +1152,7 @@ export default function TransferRequestsPage() {
                   </CardContent>
                 </Card>
 
-                <Label>Seleziona il magazzino sorgente</Label>
+                <Label>{t("transfers.selezionaIlMagazzinoSorgente")}</Label>
                 <div className="grid gap-2">
                   {selectedProduct.warehouses.map((wh) => (
                     <Card
@@ -1211,7 +1211,7 @@ export default function TransferRequestsPage() {
                           {selectedProduct.warehouses.find(w => w.warehouseId === selectedWarehouse)?.warehouseName}
                         </p>
                         <p className="text-sm text-muted-foreground">
-                          Disponibili: {selectedProduct.warehouses.find(w => w.warehouseId === selectedWarehouse)?.quantity}
+                          {t("common.available")}: {selectedProduct.warehouses.find(w => w.warehouseId === selectedWarehouse)?.quantity}
                         </p>
                       </div>
                     </div>
@@ -1219,7 +1219,7 @@ export default function TransferRequestsPage() {
                 </Card>
 
                 <div className="space-y-2">
-                  <Label>Quantità richiesta</Label>
+                  <Label>{t("transfers.quantitRichiesta")}</Label>
                   <Input
                     type="number"
                     min={1}
@@ -1231,11 +1231,11 @@ export default function TransferRequestsPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label>Note (opzionale)</Label>
+                  <Label>{t("common.notesOptional")}</Label>
                   <Textarea
                     value={requestNotes}
                     onChange={(e) => setRequestNotes(e.target.value)}
-                    placeholder="Note aggiuntive per la richiesta..."
+                    placeholder={t("transfers.additionalNotes")}
                     data-testid="input-request-notes"
                   />
                 </div>
@@ -1260,7 +1260,7 @@ export default function TransferRequestsPage() {
                 disabled={!selectedProduct}
                 data-testid="button-wizard-next-1"
               >
-                Avanti
+                {t("common.next")}
                 <ArrowRight className="h-4 w-4 ml-2" />
               </Button>
             )}
@@ -1270,7 +1270,7 @@ export default function TransferRequestsPage() {
                 disabled={!selectedWarehouse}
                 data-testid="button-wizard-next-2"
               >
-                Avanti
+                {t("common.next")}
                 <ArrowRight className="h-4 w-4 ml-2" />
               </Button>
             )}
@@ -1284,7 +1284,7 @@ export default function TransferRequestsPage() {
                 disabled={createRequestMutation.isPending || requestQuantity < 1 || !selectedWarehouse || !selectedProduct}
                 data-testid="button-submit-request"
               >
-                {createRequestMutation.isPending ? "Invio..." : "Invia Richiesta"}
+                {createRequestMutation.isPending ? t("common.sending") : t("transfers.sendRequest")}
               </Button>
             )}
           </DialogFooter>

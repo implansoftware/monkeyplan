@@ -24,26 +24,26 @@ import { useTranslation } from "react-i18next";
 
 function getModules(t: (key: string) => string) {
   return [
-    { id: "repairs", name: "Lavorazioni", description: "Gestione riparazioni e ordini" },
-    { id: "customers", name: t("customers.title"), description: "Anagrafica clienti" },
-    { id: "products", name: "Prodotti", description: "Catalogo prodotti e ricambi" },
-    { id: "inventory", name: "Magazzino", description: "Gestione inventario" },
-    { id: "repair_centers", name: t("sidebar.items.repairCentersShort"), description: "Gestione centri" },
-    { id: "services", name: t("utility.services"), description: "Catalogo servizi" },
-    { id: "suppliers", name: t("suppliers.title"), description: "Gestione fornitori" },
-    { id: "supplier_orders", name: "Ordini Fornitori", description: "Ordini ai fornitori" },
-    { id: "appointments", name: "Appuntamenti", description: "Gestione appuntamenti" },
-    { id: "invoices", name: "Fatture", description: "Fatturazione" },
-    { id: "tickets", name: "Ticket Supporto", description: "Assistenza clienti" },
+    { id: "repairs", name: t("team.repairs"), description: t("team.repairsDesc") },
+    { id: "customers", name: t("customers.title"), description: t("team.customersDesc") },
+    { id: "products", name: t("products.title"), description: t("team.productsDesc") },
+    { id: "inventory", name: t("warehouse.title"), description: t("team.inventoryDesc") },
+    { id: "repair_centers", name: t("sidebar.items.repairCentersShort"), description: t("team.repairCentersDesc") },
+    { id: "services", name: t("utility.services"), description: t("team.servicesDesc") },
+    { id: "suppliers", name: t("suppliers.title"), description: t("team.suppliersDesc") },
+    { id: "supplier_orders", name: t("staff.supplierOrders"), description: t("staff.supplierOrdersDesc") },
+    { id: "appointments", name: t("team.appointments"), description: t("team.appointmentsDesc") },
+    { id: "invoices", name: t("staff.invoices"), description: t("staff.invoicesDesc") },
+    { id: "tickets", name: t("team.supportTickets"), description: t("team.supportTicketsDesc") },
   ];
 }
 
 function getPermissionActions(t: (key: string) => string) {
   return [
-    { id: "canRead", label: "Lettura", icon: Eye },
-    { id: "canCreate", label: "Creazione", icon: FilePlus },
+    { id: "canRead", label: t("team.read"), icon: Eye },
+    { id: "canCreate", label: t("staff.creation"), icon: FilePlus },
     { id: "canUpdate", label: t("common.edit"), icon: Pencil },
-    { id: "canDelete", label: "Eliminazione", icon: Trash2 },
+    { id: "canDelete", label: t("staff.deletion"), icon: Trash2 },
   ];
 }
 
@@ -85,11 +85,11 @@ interface StaffPermission {
 }
 
 const staffFormSchema = z.object({
-  username: z.string().min(3, "Username deve essere almeno 3 caratteri"),
-  email: z.string().email("Email non valida"),
-  fullName: z.string().min(2, "Nome completo richiesto"),
+  username: z.string().min(3, t("team.usernameMustBe3Chars")),
+  email: z.string().email(t("team.emailInvalid")),
+  fullName: z.string().min(2, t("team.fullNameRequired")),
   phone: z.string().optional(),
-  password: z.string().min(6, "Password deve essere almeno 6 caratteri").optional(),
+  password: z.string().min(6, t("team.passwordMustBe6Chars")).optional(),
 });
 
 type StaffFormValues = z.infer<typeof staffFormSchema>;
@@ -147,7 +147,7 @@ export default function ResellerTeam() {
     queryKey: getTeamQueryKey(),
     queryFn: async () => {
       const res = await fetch(getTeamQueryUrl(), { credentials: "include" });
-      if (!res.ok) throw new Error("Errore nel caricamento del team");
+      if (!res.ok) throw new Error(t("team.loadingError"));
       return res.json();
     },
     enabled: entityType === "own" || !!selectedEntityId,
@@ -169,14 +169,14 @@ export default function ResellerTeam() {
 
   // Get selected entity name for display
   const getSelectedEntityName = () => {
-    if (entityType === "own") return "Il mio team";
+    if (entityType === "own") return t("team.myTeam");
     if (entityType === "sub-reseller") {
       const sub = subResellers.find(s => s.id === selectedEntityId);
-      return sub ? (sub.ragioneSociale || sub.fullName) : "Seleziona sub-reseller";
+      return sub ? (sub.ragioneSociale || sub.fullName) : t("team.selectSubReseller");
     }
     if (entityType === "repair-center") {
       const rc = repairCenters.find(r => r.id === selectedEntityId);
-      return rc ? rc.name : "Seleziona centro";
+      return rc ? rc.name : t("team.selectCenter");
     }
     return "";
   };
@@ -196,14 +196,14 @@ export default function ResellerTeam() {
       setLocalRepairCenterIds([]);
       setLocalSubResellerIds([]);
       toast({
-        title: "Membro staff creato",
-        description: "Il nuovo membro del team è stato aggiunto con successo.",
+        title: t("team.staffMemberCreated"),
+        description: t("team.staffMemberCreatedDesc"),
       });
     },
     onError: (error: any) => {
       toast({
         title: t("common.error"),
-        description: error.message || "Impossibile creare il membro staff",
+        description: error.message || t("team.cannotCreateStaff"),
         variant: "destructive",
       });
     },
@@ -224,14 +224,14 @@ export default function ResellerTeam() {
       setLocalRepairCenterIds([]);
       setLocalSubResellerIds([]);
       toast({
-        title: "Aggiornato",
-        description: "Le modifiche sono state salvate con successo.",
+        title: t("common.updated"),
+        description: t("team.changesSavedSuccess"),
       });
     },
     onError: (error: any) => {
       toast({
         title: t("common.error"),
-        description: error.message || "Impossibile aggiornare",
+        description: error.message || t("team.cannotUpdate"),
         variant: "destructive",
       });
     },
@@ -246,14 +246,14 @@ export default function ResellerTeam() {
       setDeleteDialogOpen(false);
       setSelectedMember(null);
       toast({
-        title: "Eliminato",
-        description: "Il membro staff è stato rimosso dal team.",
+        title: t("common.deleted"),
+        description: t("team.staffMemberRemoved"),
       });
     },
     onError: (error: any) => {
       toast({
         title: t("common.error"),
-        description: error.message || "Impossibile eliminare",
+        description: error.message || t("team.cannotDelete"),
         variant: "destructive",
       });
     },
@@ -268,14 +268,14 @@ export default function ResellerTeam() {
       setNewPassword("");
       setSelectedMember(null);
       toast({
-        title: "Password aggiornata",
-        description: "La password del collaboratore è stata reimpostata con successo.",
+        title: t("team.passwordUpdated"),
+        description: t("team.passwordUpdatedDesc"),
       });
     },
     onError: (error: any) => {
       toast({
         title: t("common.error"),
-        description: error.message || "Impossibile reimpostare la password",
+        description: error.message || t("team.cannotResetPassword"),
         variant: "destructive",
       });
     },
@@ -445,9 +445,9 @@ export default function ResellerTeam() {
                 <Users className="h-6 w-6 text-white" />
               </div>
               <div>
-                <h1 className="text-2xl font-bold tracking-tight text-white">Gestione Team</h1>
+                <h1 className="text-2xl font-bold tracking-tight text-white">{t("team.teamManagement")}</h1>
                 <p className="text-sm text-white/80">
-                  Collaboratori e permessi
+                  t("team.collaboratorsAndPermissions")
                 </p>
               </div>
             </div>
@@ -456,13 +456,13 @@ export default function ResellerTeam() {
             <Link href="/reseller/hr">
               <Button variant="outline" className="bg-white/10 border-white/30 text-white backdrop-blur-sm" data-testid="button-hr-module">
                 <Briefcase className="h-4 w-4 mr-2" />
-                Gestione HR
+                t("team.hrManagement")
               </Button>
             </Link>
             {isOwnTeam && (
               <Button onClick={openCreateDialog} className="bg-white text-emerald-600 shadow-lg" data-testid="button-new-staff">
                 <Plus className="h-4 w-4 mr-2" />
-                Nuovo Collaboratore
+                {t("team.newCollaborator")}
               </Button>
             )}
           </div>
@@ -476,11 +476,11 @@ export default function ResellerTeam() {
           <CardContent className="relative pt-5 pb-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1">Totale Membri</p>
+                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1">{t("team.totaleMembri")}</p>
                 <p className="text-3xl font-bold tabular-nums">{staffMembers.length}</p>
                 <div className="flex flex-wrap items-center gap-1 mt-1">
                   <TrendingUp className="h-3 w-3 text-emerald-500" />
-                  <span className="text-xs text-emerald-600 dark:text-emerald-400 font-medium">Team attivo</span>
+                  <span className="text-xs text-emerald-600 dark:text-emerald-400 font-medium">{t("team.activeTeam")}</span>
                 </div>
               </div>
               <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-500 text-white flex items-center justify-center shadow-lg shadow-emerald-500/25">
@@ -495,10 +495,10 @@ export default function ResellerTeam() {
           <CardContent className="relative pt-5 pb-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1">Membri Attivi</p>
+                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1">{t("team.activeMembers")}</p>
                 <p className="text-3xl font-bold tabular-nums text-emerald-600 dark:text-emerald-400">{activeMembers}</p>
                 <p className="text-xs text-muted-foreground mt-1">
-                  {staffMembers.length > 0 ? Math.round((activeMembers / staffMembers.length) * 100) : 0}% del totale
+                  {staffMembers.length > 0 ? Math.round((activeMembers / staffMembers.length) * 100) : 0}% {t("common.ofTotal")}
                 </p>
               </div>
               <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-cyan-500 to-teal-500 text-white flex items-center justify-center shadow-lg shadow-cyan-500/25">
@@ -513,10 +513,10 @@ export default function ResellerTeam() {
           <CardContent className="relative pt-5 pb-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1">Permessi Totali</p>
+                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1">{t("team.totalPermissions")}</p>
                 <p className="text-3xl font-bold tabular-nums text-blue-600 dark:text-blue-400">{totalPermissions}</p>
                 <p className="text-xs text-muted-foreground mt-1">
-                  Media {staffMembers.length > 0 ? (totalPermissions / staffMembers.length).toFixed(1) : 0} per membro
+                  {t("team.averagePerMember", { avg: staffMembers.length > 0 ? (totalPermissions / staffMembers.length).toFixed(1) : 0 })}
                 </p>
               </div>
               <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-blue-500 to-cyan-500 text-white flex items-center justify-center shadow-lg shadow-blue-500/25">
@@ -532,18 +532,18 @@ export default function ResellerTeam() {
         <CardContent className="py-4">
           <div className="flex flex-col sm:flex-row sm:items-center gap-4">
             <div className="flex flex-wrap items-center gap-2">
-              <Label className="text-sm font-medium whitespace-nowrap">Visualizza team di:</Label>
+              <Label className="text-sm font-medium whitespace-nowrap">{t("team.viewTeamOf")}:</Label>
             </div>
             <div className="flex flex-wrap items-center gap-3">
               <Select value={entityType} onValueChange={(v) => handleEntityTypeChange(v as EntityType)}>
                 <SelectTrigger className="w-48" data-testid="select-entity-type">
-                  <SelectValue placeholder="Seleziona tipo" />
+                  <SelectValue placeholder={t("team.selectType")} />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="own">
                     <div className="flex flex-wrap items-center gap-2">
                       <Users className="h-4 w-4" />
-                      <span>Il mio team</span>
+                      <span>{t("team.myTeam")}</span>
                     </div>
                   </SelectItem>
                   {subResellers.length > 0 && (
@@ -568,7 +568,7 @@ export default function ResellerTeam() {
               {entityType === "sub-reseller" && (
                 <Select value={selectedEntityId} onValueChange={setSelectedEntityId}>
                   <SelectTrigger className="w-64" data-testid="select-sub-reseller">
-                    <SelectValue placeholder="Seleziona sub-reseller" />
+                    <SelectValue placeholder={t("team.selectSubReseller")} />
                   </SelectTrigger>
                   <SelectContent>
                     {subResellers.map((sub) => (
@@ -583,7 +583,7 @@ export default function ResellerTeam() {
               {entityType === "repair-center" && (
                 <Select value={selectedEntityId} onValueChange={setSelectedEntityId}>
                   <SelectTrigger className="w-64" data-testid="select-repair-center">
-                    <SelectValue placeholder="Seleziona centro" />
+                    <SelectValue placeholder={t("team.selectCenter")} />
                   </SelectTrigger>
                   <SelectContent>
                     {repairCenters.map((rc) => (
@@ -598,7 +598,7 @@ export default function ResellerTeam() {
             
             {(entityType !== "own" && selectedEntityId) && (
               <Badge variant="outline" className="ml-auto">
-                Team di: {getSelectedEntityName()}
+                {t("team.teamOf")}: {getSelectedEntityName()}
               </Badge>
             )}
           </div>
@@ -611,10 +611,10 @@ export default function ResellerTeam() {
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div className="flex flex-wrap items-center gap-3">
               <CardTitle className="text-base font-semibold">
-                {entityType === "own" ? "Membri del Team" : `Team: ${getSelectedEntityName()}`}
+                {entityType === "own" ? t("team.teamMembers") : `${t("team.teamOf")}: ${getSelectedEntityName()}`}
               </CardTitle>
               <Badge variant="secondary" className="font-normal">
-                {filteredMembers.length} risultati
+                {filteredMembers.length} {t("common.results")}
               </Badge>
             </div>
             <div className="flex flex-wrap items-center gap-3">
@@ -633,7 +633,7 @@ export default function ResellerTeam() {
                   className="h-7 text-xs px-3"
                   onClick={() => setActiveFilter("active")}
                 >
-                  Attivi
+                  {t("common.active")}
                   <Badge variant="secondary" className="ml-1.5 h-4 px-1 text-[10px]">{activeMembers}</Badge>
                 </Button>
                 <Button
@@ -642,14 +642,14 @@ export default function ResellerTeam() {
                   className="h-7 text-xs px-3"
                   onClick={() => setActiveFilter("inactive")}
                 >
-                  Inattivi
+                  {t("common.inactive")}
                   <Badge variant="secondary" className="ml-1.5 h-4 px-1 text-[10px]">{inactiveMembers}</Badge>
                 </Button>
               </div>
               <div className="relative w-64">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
-                  placeholder="Cerca collaboratore..."
+                  placeholder={t("team.searchCollaborator")}
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="pl-9 h-9 bg-background"
@@ -671,14 +671,14 @@ export default function ResellerTeam() {
               <div className="mx-auto w-16 h-16 rounded-full bg-muted flex items-center justify-center mb-4">
                 <Users className="h-8 w-8 text-muted-foreground" />
               </div>
-              <h3 className="font-medium mb-1">Nessun collaboratore trovato</h3>
+              <h3 className="font-medium mb-1">{t("team.noCollaboratorFound")}</h3>
               <p className="text-sm text-muted-foreground max-w-sm mx-auto">
-                {searchQuery ? "Prova a modificare i criteri di ricerca" : (isOwnTeam ? "Inizia aggiungendo il tuo primo collaboratore" : "Nessun membro nel team")}
+                {searchQuery ? t("common.tryModifySearch") : (isOwnTeam ? t("team.startAddingFirst") : t("team.noTeamMembers"))}
               </p>
               {!searchQuery && isOwnTeam && (
                 <Button className="mt-4" onClick={openCreateDialog}>
                   <Plus className="h-4 w-4 mr-2" />
-                  Aggiungi Collaboratore
+                  {t("team.addCollaborator")}
                 </Button>
               )}
             </div>
@@ -687,11 +687,11 @@ export default function ResellerTeam() {
               <Table>
                 <TableHeader>
                   <TableRow className="hover:bg-transparent bg-muted/50">
-                    <TableHead className="pl-6 w-[200px]">Collaboratore</TableHead>
+                    <TableHead className="pl-6 w-[200px]">{t("team.collaborator")}</TableHead>
                     <TableHead>{t("common.contacts")}</TableHead>
                     <TableHead className="text-center">{t("common.status")}</TableHead>
-                    <TableHead className="text-center">Permessi</TableHead>
-                    <TableHead>Centri Assegnati</TableHead>
+                    <TableHead className="text-center">{t("staff.permissions")}</TableHead>
+                    <TableHead>{t("team.assignedCenters")}</TableHead>
                     <TableHead className="pr-6 text-right">{t("common.actions")}</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -713,7 +713,7 @@ export default function ResellerTeam() {
                             </p>
                             {isOwner && (
                               <Badge variant="outline" className="text-xs bg-primary/10 text-primary border-primary/30">
-                                Proprietario
+                                t("team.owner")
                               </Badge>
                             )}
                           </div>
@@ -739,7 +739,7 @@ export default function ResellerTeam() {
                       </TableCell>
                       <TableCell className="text-center">
                         <Badge variant="outline" className="font-normal tabular-nums" data-testid={`badge-permissions-${member.id}`}>
-                          {getPermissionCount(member)} permessi
+                          {getPermissionCount(member)} {t("staff.permissions")}
                         </Badge>
                       </TableCell>
                       <TableCell>
@@ -769,7 +769,7 @@ export default function ResellerTeam() {
                                 size="icon"
                                 className="h-8 w-8"
                                 onClick={() => openPermissionsDialog(member)}
-                                title="Gestisci permessi"
+                                title={t("team.managePermissions")}
                                 data-testid={`button-permissions-${member.id}`}
                               >
                                 <Shield className="h-4 w-4" />
@@ -793,7 +793,7 @@ export default function ResellerTeam() {
                                   setNewPassword("");
                                   setResetPasswordDialogOpen(true);
                                 }}
-                                title="Reset password"
+                                title={t("team.resetPassword")}
                                 data-testid={`button-reset-password-${member.id}`}
                               >
                                 <Key className="h-4 w-4" />
@@ -839,12 +839,12 @@ export default function ResellerTeam() {
               </div>
               <div>
                 <DialogTitle className="text-xl font-bold">
-                  {isEditing ? "Modifica Collaboratore" : "Nuovo Collaboratore"}
+                  {isEditing ? t("team.editCollaborator") : t("team.newCollaborator")}
                 </DialogTitle>
                 <DialogDescription className="mt-0.5">
                   {isEditing
-                    ? "Modifica i dati del collaboratore"
-                    : "Inserisci i dati del nuovo membro del team"}
+                    ? t("team.editCollaboratorData")
+                    : t("team.enterNewMemberData")}
                 </DialogDescription>
               </div>
             </div>
@@ -858,9 +858,9 @@ export default function ResellerTeam() {
                   name="fullName"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Nome Completo</FormLabel>
+                      <FormLabel>{t("team.fullName")}</FormLabel>
                       <FormControl>
-                        <Input {...field} placeholder="Mario Rossi" data-testid="input-fullname" />
+                        <Input {...field} placeholder={t("team.fullNamePlaceholder")} data-testid="input-fullname" />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -874,7 +874,7 @@ export default function ResellerTeam() {
                     <FormItem>
                       <FormLabel>{t("common.email")}</FormLabel>
                       <FormControl>
-                        <Input {...field} type="email" placeholder="mario@esempio.it" data-testid="input-email" />
+                        <Input {...field} type="email" placeholder={t("team.emailPlaceholder")} data-testid="input-email" />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -888,9 +888,9 @@ export default function ResellerTeam() {
                       name="username"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Username</FormLabel>
+                          <FormLabel>{t("common.username")}</FormLabel>
                           <FormControl>
-                            <Input {...field} placeholder="mario.rossi" data-testid="input-username" />
+                            <Input {...field} placeholder={t("team.usernamePlaceholder")} data-testid="input-username" />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -902,7 +902,7 @@ export default function ResellerTeam() {
                       name="password"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Password</FormLabel>
+                          <FormLabel>{t("common.password")}</FormLabel>
                           <FormControl>
                             <Input {...field} type="password" placeholder="••••••" data-testid="input-password" />
                           </FormControl>
@@ -918,7 +918,7 @@ export default function ResellerTeam() {
                   name="phone"
                   render={({ field }) => (
                     <FormItem className={isEditing ? "col-span-2" : ""}>
-                      <FormLabel>Telefono (opzionale)</FormLabel>
+                      <FormLabel>{t("team.phoneOptional")}</FormLabel>
                       <FormControl>
                         <Input {...field} placeholder="+39 333 1234567" data-testid="input-phone" />
                       </FormControl>
@@ -930,7 +930,7 @@ export default function ResellerTeam() {
 
               {repairCenters.length > 0 && (
                 <div className="space-y-2 pt-4 border-t">
-                  <Label>Centri Riparazione Assegnati</Label>
+                  <Label>{t("team.assignedRepairCenters")}</Label>
                   <div className="flex flex-wrap gap-2">
                     {repairCenters.map((rc) => {
                       const isSelected = localRepairCenterIds.includes(rc.id);
@@ -958,7 +958,7 @@ export default function ResellerTeam() {
 
               {subResellers.length > 0 && (
                 <div className="space-y-2 pt-4 border-t">
-                  <Label>Sotto-Rivenditori Assegnati</Label>
+                  <Label>{t("team.assignedSubResellers")}</Label>
                   <div className="flex flex-wrap gap-2">
                     {subResellers.map((sr) => {
                       const isSelected = localSubResellerIds.includes(sr.id);
@@ -986,9 +986,9 @@ export default function ResellerTeam() {
 
               {!isEditing && (
                 <div className="space-y-3 pt-4 border-t">
-                  <Label>Permessi Iniziali</Label>
+                  <Label>{t("team.initialPermissions")}</Label>
                   <p className="text-sm text-muted-foreground">
-                    Seleziona i moduli a cui il collaboratore avrà accesso
+                    t("team.selectModulesAccess")
                   </p>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-48 overflow-y-auto">
                     {MODULES.map((mod) => {
@@ -1017,7 +1017,7 @@ export default function ResellerTeam() {
               <DialogFooter>
                 <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>{t("common.cancel")}</Button>
                 <Button type="submit" disabled={createMutation.isPending || updateMutation.isPending}>
-                  {createMutation.isPending || updateMutation.isPending ? t("profile.saving") : isEditing ? t("profile.saveChanges") : "Crea Collaboratore"}
+                  {createMutation.isPending || updateMutation.isPending ? t("profile.saving") : isEditing ? t("profile.saveChanges") : t("team.createCollaborator")}
                 </Button>
               </DialogFooter>
             </form>
@@ -1039,10 +1039,10 @@ export default function ResellerTeam() {
               </div>
               <div>
                 <DialogTitle className="text-xl font-bold">
-                  Permessi di {selectedMember?.fullName}
+                  {t("team.permissionsOf")} {selectedMember?.fullName}
                 </DialogTitle>
                 <DialogDescription className="mt-0.5">
-                  Configura i permessi per ogni modulo dell'applicazione
+                  t("team.configurePermissions")
                 </DialogDescription>
               </div>
             </div>
@@ -1100,7 +1100,7 @@ export default function ResellerTeam() {
             <DialogFooter className="pt-4">
               <Button variant="outline" onClick={() => setPermissionsDialogOpen(false)}>{t("common.cancel")}</Button>
               <Button onClick={handleSavePermissions} disabled={updateMutation.isPending} className="shadow-lg shadow-primary/25">
-                {updateMutation.isPending ? t("profile.saving") : "Salva Permessi"}
+                {updateMutation.isPending ? t("profile.saving") : t("team.savePermissions")}
               </Button>
             </DialogFooter>
           </div>
@@ -1111,10 +1111,9 @@ export default function ResellerTeam() {
       <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Elimina Collaboratore</DialogTitle>
+            <DialogTitle>{t("team.deleteCollaborator")}</DialogTitle>
             <DialogDescription>
-              Sei sicuro di voler eliminare <strong>{selectedMember?.fullName}</strong>?
-              Questa azione non può essere annullata.
+              {t("team.confirmDeleteMember", { name: "" })}<strong>{selectedMember?.fullName}</strong>
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
@@ -1134,20 +1133,20 @@ export default function ResellerTeam() {
       <Dialog open={resetPasswordDialogOpen} onOpenChange={setResetPasswordDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Reset Password</DialogTitle>
+            <DialogTitle>{t("team.resetPassword")}</DialogTitle>
             <DialogDescription>
-              Imposta una nuova password per <strong>{selectedMember?.fullName}</strong>
+              {t("team.setNewPasswordFor")} <strong>{selectedMember?.fullName}</strong>
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="new-password">Nuova Password</Label>
+              <Label htmlFor="new-password">{t("team.newPassword")}</Label>
               <Input
                 id="new-password"
                 type="password"
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
-                placeholder="Inserisci la nuova password"
+                placeholder={t("team.enterNewPassword")}
                 data-testid="input-new-password"
               />
             </div>
@@ -1158,7 +1157,7 @@ export default function ResellerTeam() {
               onClick={() => selectedMember && resetPasswordMutation.mutate({ id: selectedMember.id, newPassword })}
               disabled={resetPasswordMutation.isPending || newPassword.length < 6}
             >
-              {resetPasswordMutation.isPending ? t("profile.saving") : "Reimposta Password"}
+              {resetPasswordMutation.isPending ? t("profile.saving") : t("team.resetPassword")}
             </Button>
           </DialogFooter>
         </DialogContent>

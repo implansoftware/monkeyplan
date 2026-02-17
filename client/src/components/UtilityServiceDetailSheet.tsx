@@ -34,11 +34,11 @@ type ServiceCategory = "fisso" | "mobile" | "centralino" | "luce" | "gas" | "alt
 
 function getCategoryLabels(t: (key: string) => string): Record<ServiceCategory, string> {
   return {
-    fisso: "Fisso",
-    mobile: "Mobile",
-    centralino: "Centralino",
-    luce: "Luce",
-    gas: "Gas",
+    fisso: t("utility.landline"),
+    mobile: t("utility.mobile"),
+    centralino: t("utility.switchboard"),
+    luce: t("utility.electricity"),
+    gas: t("utility.gas"),
     altro: t("common.other"),
   };
 }
@@ -95,10 +95,10 @@ export function calculateServiceCommission(service: UtilityService): number {
 }
 
 export function inferServicePriceType(service: UtilityService, t?: (key: string) => string): string {
-  if (service.monthlyPriceCents && service.monthlyPriceCents > 0) return "Mensile";
-  if (service.flatPriceCents && service.flatPriceCents > 0) return "Forfait";
+  if (service.monthlyPriceCents && service.monthlyPriceCents > 0) return t ? t("utility.monthly") : "Mensile";
+  if (service.flatPriceCents && service.flatPriceCents > 0) return t ? t("utility.flatRate") : "Forfait";
   if (service.activationFeeCents && service.activationFeeCents > 0) return t ? t("utility.activation") : "Attivazione";
-  return "Non definito";
+  return t ? t("common.notDefined") : "Non definito";
 }
 
 export function UtilityServiceDetailSheet({
@@ -115,7 +115,7 @@ export function UtilityServiceDetailSheet({
       <Sheet open={open} onOpenChange={onOpenChange}>
         <SheetContent className="sm:max-w-lg" data-testid="sheet-service-detail">
           <SheetHeader>
-            <SheetTitle>Dettaglio Servizio</SheetTitle>
+            <SheetTitle>{t("utility.serviceDetail")}</SheetTitle>
             <SheetDescription>{t("services.noServiceSelected")}</SheetDescription>
           </SheetHeader>
         </SheetContent>
@@ -168,7 +168,7 @@ export function UtilityServiceDetailSheet({
           {supplier && (
             <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
               <Building2 className="h-4 w-4" />
-              <span>Fornitore: <span className="font-medium text-foreground">{supplier.name}</span></span>
+              <span>{t("common.supplier")}: <span className="font-medium text-foreground">{supplier.name}</span></span>
             </div>
           )}
 
@@ -186,17 +186,17 @@ export function UtilityServiceDetailSheet({
           <div>
             <h4 className="text-sm font-medium mb-3 flex items-center gap-2">
               <Euro className="h-4 w-4" />
-              Dettagli Prezzo
+              {t("utility.priceDetails")}
             </h4>
             <div className="space-y-3">
               <div className="flex items-center justify-between gap-2">
-                <span className="text-sm text-muted-foreground">Tipo prezzo</span>
+                <span className="text-sm text-muted-foreground">{t("utility.priceType")}</span>
                 <Badge variant="secondary" data-testid="badge-price-type">{inferredPriceType}</Badge>
               </div>
 
               {service.monthlyPriceCents != null && service.monthlyPriceCents > 0 && (
                 <div className="flex items-center justify-between gap-2">
-                  <span className="text-sm text-muted-foreground">Canone mensile</span>
+                  <span className="text-sm text-muted-foreground">{t("utility.monthlyFee")}</span>
                   <span className="text-sm font-semibold" data-testid="text-monthly-price">
                     {formatCurrency(service.monthlyPriceCents)}
                   </span>
@@ -205,7 +205,7 @@ export function UtilityServiceDetailSheet({
 
               {service.flatPriceCents != null && service.flatPriceCents > 0 && (
                 <div className="flex items-center justify-between gap-2">
-                  <span className="text-sm text-muted-foreground">Prezzo forfait</span>
+                  <span className="text-sm text-muted-foreground">{t("utility.flatPrice")}</span>
                   <span className="text-sm font-semibold" data-testid="text-flat-price">
                     {formatCurrency(service.flatPriceCents)}
                   </span>
@@ -214,7 +214,7 @@ export function UtilityServiceDetailSheet({
 
               {service.activationFeeCents != null && service.activationFeeCents > 0 && (
                 <div className="flex items-center justify-between gap-2">
-                  <span className="text-sm text-muted-foreground">Costo attivazione</span>
+                  <span className="text-sm text-muted-foreground">{t("utility.activationCost")}</span>
                   <span className="text-sm font-semibold" data-testid="text-activation-price">
                     {formatCurrency(service.activationFeeCents)}
                   </span>
@@ -225,10 +225,10 @@ export function UtilityServiceDetailSheet({
                 <div className="flex items-center justify-between gap-2">
                   <span className="text-sm text-muted-foreground flex items-center gap-1">
                     <Calendar className="h-3.5 w-3.5" />
-                    Durata contratto
+                    {t("utility.contractDuration")}
                   </span>
                   <span className="text-sm font-semibold" data-testid="text-contract-months">
-                    {service.contractMonths} mesi
+                    {service.contractMonths} {t("utility.months")}
                   </span>
                 </div>
               )}
@@ -240,12 +240,12 @@ export function UtilityServiceDetailSheet({
           <div>
             <h4 className="text-sm font-medium mb-3 flex items-center gap-2">
               <TrendingUp className="h-4 w-4 text-green-600 dark:text-green-400" />
-              Commissioni
+              {t("utility.commissions")}
             </h4>
             <Card className="border-green-200 dark:border-green-800 bg-green-500/5">
               <CardContent className="p-4 space-y-3">
                 <div className="flex items-baseline justify-between gap-2">
-                  <span className="text-sm text-green-700 dark:text-green-300">Per attivazione</span>
+                  <span className="text-sm text-green-700 dark:text-green-300">{t("utility.perActivation")}</span>
                   <span className="text-2xl font-bold text-green-600 dark:text-green-400" data-testid="text-commission-amount">
                     {formatCurrency(commission * 100)}
                   </span>
@@ -255,21 +255,21 @@ export function UtilityServiceDetailSheet({
                   <div className="flex flex-wrap items-center gap-1 text-xs text-green-600 dark:text-green-400">
                     <Percent className="h-3 w-3" />
                     {service.commissionPercent}%{" "}
-                    {service.monthlyPriceCents ? "del canone mensile" : "del costo attivazione"}
+                    {service.monthlyPriceCents ? t("utility.ofMonthlyFee") : t("utility.ofActivationCost")}
                   </div>
                 )}
 
                 {service.commissionFixed != null && service.commissionFixed > 0 && (
                   <div className="flex flex-wrap items-center gap-1 text-xs text-green-600 dark:text-green-400">
                     <Euro className="h-3 w-3" />
-                    Commissione fissa: {formatCurrency(service.commissionFixed)}
+                    {t("utility.fixedCommission")}: {formatCurrency(service.commissionFixed)}
                   </div>
                 )}
 
                 {service.commissionOneTime != null && service.commissionOneTime > 0 && (
                   <div className="flex flex-wrap items-center gap-1 text-xs text-green-600 dark:text-green-400">
                     <Zap className="h-3 w-3" />
-                    Una tantum: {formatCurrency(service.commissionOneTime)}
+                    {t("utility.oneTime")}: {formatCurrency(service.commissionOneTime)}
                   </div>
                 )}
 
@@ -279,7 +279,7 @@ export function UtilityServiceDetailSheet({
                   <div className="flex items-center justify-between gap-2 text-sm">
                     <span className="text-muted-foreground flex items-center gap-1">
                       <Calculator className="h-3 w-3" />
-                      10 attivazioni
+                      {t("utility.nActivations", { count: 10 })}
                     </span>
                     <span className="font-semibold text-foreground" data-testid="text-potential-10">
                       {formatCurrency(potential10 * 100)}
@@ -288,7 +288,7 @@ export function UtilityServiceDetailSheet({
                   <div className="flex items-center justify-between gap-2 text-sm">
                     <span className="text-muted-foreground flex items-center gap-1">
                       <Calculator className="h-3 w-3" />
-                      50 attivazioni
+                      {t("utility.nActivations", { count: 50 })}
                     </span>
                     <span className="font-semibold text-foreground" data-testid="text-potential-50">
                       {formatCurrency(potential50 * 100)}
@@ -311,7 +311,7 @@ export function UtilityServiceDetailSheet({
                 data-testid="button-create-practice-detail"
               >
                 <FileCheck className="h-4 w-4" />
-                Crea Pratica
+                {t("utility.createPractice")}
               </Button>
             </>
           )}

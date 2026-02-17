@@ -130,7 +130,7 @@ function CheckoutForm({
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       <div className="text-center pb-4 border-b">
-        <p className="text-sm text-muted-foreground">Totale da pagare</p>
+        <p className="text-sm text-muted-foreground">{t("payment.totalToPay")}</p>
         <p className="text-3xl font-bold">{formatPrice(totalAmount ?? 0)}</p>
       </div>
       
@@ -168,12 +168,12 @@ function CheckoutForm({
           {isProcessing ? (
             <>
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Elaborazione...
+              {t("payment.paymentProcessing")}
             </>
           ) : (
             <>
               <CreditCard className="mr-2 h-4 w-4" />
-              Paga Ora
+              {t("payment.payNow")}
             </>
           )}
         </Button>
@@ -276,12 +276,12 @@ export function StripeB2BCheckout({
         {isLoading ? (
           <>
             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            Preparazione pagamento...
+            {t("payment.preparingPayment")}
           </>
         ) : (
           <>
             <CreditCard className="mr-2 h-4 w-4" />
-            Paga con Carta di Credito
+            {t("payment.payWithCreditCard")}
           </>
         )}
       </Button>
@@ -291,10 +291,10 @@ export function StripeB2BCheckout({
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <CreditCard className="h-5 w-5" />
-              Pagamento con Carta
+              {t("payment.cardPayment")}
             </DialogTitle>
             <DialogDescription>
-              Inserisci i dati della tua carta per completare l'ordine
+              {t("payment.enterCardDetails")}
             </DialogDescription>
           </DialogHeader>
           

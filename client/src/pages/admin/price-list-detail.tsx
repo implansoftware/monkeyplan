@@ -191,13 +191,13 @@ export default function AdminPriceListDetail() {
   const getItemName = (item: PriceListItem) => {
     if (item.productId) {
       const product = products?.find(p => p.id === item.productId);
-      return product?.name || "Prodotto sconosciuto";
+      return product?.name || t("priceListDetail.unknownProduct");
     }
     if (item.serviceItemId) {
       const service = services?.find(s => s.id === item.serviceItemId);
-      return service?.name || "Servizio sconosciuto";
+      return service?.name || t("priceListDetail.unknownService");
     }
-    return "Sconosciuto";
+    return t("priceListDetail.unknown");
   };
 
   const getItemType = (item: PriceListItem) => {
@@ -231,12 +231,12 @@ export default function AdminPriceListDetail() {
 
   const getTargetAudienceLabel = (target: string | null) => {
     switch (target) {
-      case "all": return "Tutti";
-      case "sub_reseller": return "Sub-Rivenditori";
-      case "repair_center": return "Centri Riparazione";
-      case "customer": return "Clienti";
-      case "reseller": return "Rivenditori";
-      default: return "Tutti";
+      case "all": return t("priceListDetail.all");
+      case "sub_reseller": return t("priceListDetail.subResellers");
+      case "repair_center": return t("priceListDetail.repairCenters");
+      case "customer": return t("priceListDetail.customers");
+      case "reseller": return t("priceListDetail.resellers");
+      default: return t("priceListDetail.all");
     }
   };
 
@@ -290,7 +290,7 @@ export default function AdminPriceListDetail() {
             {getTargetAudienceLabel(priceList.targetAudience)}
           </Badge>
           <Badge variant={priceList.isActive ? "default" : "secondary"}>
-            {priceList.isActive ? "Attivo" : "Disattivato"}
+            {priceList.isActive ? t("common.active") : t("priceListDetail.deactivated")}
           </Badge>
         </div>
       </div>
@@ -537,7 +537,7 @@ export default function AdminPriceListDetail() {
               <Package className="h-12 w-12 mx-auto mb-4 opacity-50" />
               <p>{t("products.noPriceListItems")}</p>
               {isAdminList && (
-                <p className="text-sm mt-2">Clicca "Aggiungi" per inserire prodotti o servizi</p>
+                <p className="text-sm mt-2">{t("priceListDetail.addHint")}</p>
               )}
             </div>
           ) : (

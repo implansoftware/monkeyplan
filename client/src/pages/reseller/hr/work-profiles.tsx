@@ -98,10 +98,10 @@ export default function HrWorkProfiles() {
       queryClient.invalidateQueries({ queryKey: ["/api/reseller/hr/work-profiles"] });
       setSyncDialogOpen(false);
       setSelectedRepairCenterId("");
-      toast({ title: "Sincronizzazione completata", description: "Il profilo orario è stato creato dagli orari del centro riparazione." });
+      toast({ title: t("hr.syncCompleted"), description: t("hr.syncProfileCreatedDesc") });
     },
     onError: (error: any) => {
-      toast({ title: "Errore sincronizzazione", description: error.message, variant: "destructive" });
+      toast({ title: t("hr.syncError"), description: error.message, variant: "destructive" });
     }
   });
 
@@ -112,12 +112,12 @@ export default function HrWorkProfiles() {
     onSuccess: (data: any) => {
       queryClient.invalidateQueries({ queryKey: ["/api/reseller/hr/work-profiles"] });
       toast({ 
-        title: "Sincronizzazione completata", 
+        title: t("hr.syncCompleted"), 
         description: `Sincronizzati ${data.synced} profili su ${data.total} centri. ${data.skipped} saltati.` 
       });
     },
     onError: (error: any) => {
-      toast({ title: "Errore sincronizzazione", description: error.message, variant: "destructive" });
+      toast({ title: t("hr.syncError"), description: error.message, variant: "destructive" });
     }
   });
 
@@ -129,7 +129,7 @@ export default function HrWorkProfiles() {
       queryClient.invalidateQueries({ queryKey: ["/api/reseller/hr/work-profiles"] });
       setDialogOpen(false);
       resetForm();
-      toast({ title: "Profilo creato", description: "Il profilo orario è stato creato con successo." });
+      toast({ title: t("hr.profileCreated"), description: "Il profilo orario è stato creato con successo." });
     },
     onError: (error: any) => {
       toast({ title: t("common.error"), description: error.message, variant: "destructive" });
@@ -158,10 +158,10 @@ export default function HrWorkProfiles() {
     onSuccess: (_, { disabled }) => {
       queryClient.invalidateQueries({ queryKey: ["/api/reseller/hr/work-profiles"] });
       toast({ 
-        title: disabled ? "Auto-sync disattivato" : "Auto-sync attivato", 
+        title: disabled ? t("hr.autoSyncDisabled") : t("hr.autoSyncEnabled"), 
         description: disabled 
-          ? "Il profilo non sarà più aggiornato automaticamente." 
-          : "Il profilo verrà sincronizzato con gli orari del centro." 
+          ? t("hr.profileNoAutoUpdate") 
+          : t("hr.profileWillSync") 
       });
     },
     onError: (error: any) => {
@@ -177,7 +177,7 @@ export default function HrWorkProfiles() {
       queryClient.invalidateQueries({ queryKey: ["/api/reseller/hr/work-profiles"] });
       setDeleteDialogOpen(false);
       setSelectedProfile(null);
-      toast({ title: "Profilo eliminato", description: "Il profilo orario è stato eliminato." });
+      toast({ title: t("hr.profileDeleted"), description: "Il profilo orario è stato eliminato." });
     },
     onError: (error: any) => {
       toast({ title: t("common.error"), description: error.message, variant: "destructive" });
@@ -256,7 +256,7 @@ export default function HrWorkProfiles() {
             </Link>
             <Button variant="secondary" onClick={() => setSyncDialogOpen(true)} data-testid="button-sync-from-center">
               <Building2 className="h-4 w-4 mr-2" />
-              Sincronizza Centro
+              {t("hr.syncCenter")}
             </Button>
             <Button 
               variant="secondary" 
@@ -287,7 +287,7 @@ export default function HrWorkProfiles() {
             </div>
             <Select value={originFilter} onValueChange={(v) => setOriginFilter(v as typeof originFilter)}>
               <SelectTrigger className="w-48" data-testid="select-origin-filter">
-                <SelectValue placeholder="Filtra per origine" />
+                <SelectValue placeholder={t("hr.filterByOrigin")} />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Tutti i Profili</SelectItem>
@@ -315,9 +315,9 @@ export default function HrWorkProfiles() {
                 <TableRow>
                   <TableHead>Nome Profilo</TableHead>
                   <TableHead>{t("shipping.origin")}</TableHead>
-                  <TableHead>Ore Settimanali</TableHead>
-                  <TableHead>Ore Giornaliere</TableHead>
-                  <TableHead>Giorni Lavorativi</TableHead>
+                  <TableHead>{t("hr.weeklyHours")}</TableHead>
+                  <TableHead>{t("hr.dailyHours")}</TableHead>
+                  <TableHead>{t("hr.workDays")}</TableHead>
                   <TableHead>{t("hr.time")}</TableHead>
                   <TableHead>Pausa</TableHead>
                   <TableHead>{t("common.actions")}</TableHead>
@@ -379,7 +379,7 @@ export default function HrWorkProfiles() {
                               disabled: !profile.autoSyncDisabled 
                             })}
                             disabled={toggleAutoSyncMutation.isPending}
-                            title={profile.autoSyncDisabled ? "Riattiva sincronizzazione automatica" : "Disattiva sincronizzazione automatica"}
+                            title={profile.autoSyncDisabled ? t("hr.reEnableAutoSync") : t("hr.disableAutoSync")}
                             data-testid={`button-toggle-sync-${profile.id}`}
                           >
                             {profile.autoSyncDisabled ? <Unlink2 className="h-4 w-4" /> : <Link2 className="h-4 w-4" />}
@@ -416,7 +416,7 @@ export default function HrWorkProfiles() {
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>{selectedProfile ? "Modifica Profilo" : "Nuovo Profilo Orario"}</DialogTitle>
+            <DialogTitle>{selectedProfile ? t("hr.editProfileTitle") : t("hr.newWorkProfile")}</DialogTitle>
             <DialogDescription>Configura le impostazioni del profilo orario</DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
@@ -468,7 +468,7 @@ export default function HrWorkProfiles() {
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label>Orario Inizio</Label>
+                <Label>{t("hr.startTime")}</Label>
                 <Input
                   type="time"
                   value={formData.startTime}
@@ -477,7 +477,7 @@ export default function HrWorkProfiles() {
                 />
               </div>
               <div className="space-y-2">
-                <Label>Orario Fine</Label>
+                <Label>{t("hr.endTime")}</Label>
                 <Input
                   type="time"
                   value={formData.endTime}
@@ -487,7 +487,7 @@ export default function HrWorkProfiles() {
               </div>
             </div>
             <div className="space-y-2">
-              <Label>Pausa (minuti)</Label>
+              <Label>{t("hr.breakMinutes")}</Label>
               <Input
                 type="number"
                 value={formData.breakMinutes}
@@ -555,17 +555,17 @@ export default function HrWorkProfiles() {
             <div className="p-3 bg-muted/50 rounded-lg text-sm">
               <div className="flex flex-wrap items-center gap-2 text-muted-foreground mb-1">
                 <RefreshCw className="h-4 w-4" />
-                <span className="font-medium">Sincronizzazione Automatica</span>
+                <span className="font-medium">{t("hr.autoSync")}</span>
               </div>
               <p className="text-muted-foreground">
-                I profili sincronizzati vengono aggiornati automaticamente quando il centro riparazione modifica i propri orari di apertura.
+                {t("hr.autoSyncDesc")}
               </p>
             </div>
             <div className="space-y-2">
               <Label>{t("roles.repairCenter")}</Label>
               <Select value={selectedRepairCenterId} onValueChange={setSelectedRepairCenterId}>
                 <SelectTrigger data-testid="select-repair-center">
-                  <SelectValue placeholder="Seleziona centro riparazione..." />
+                  <SelectValue placeholder={t("hr.selectRepairCenter")} />
                 </SelectTrigger>
                 <SelectContent>
                   {repairCenters.filter(rc => rc.openingHours).map((center) => (
@@ -577,7 +577,7 @@ export default function HrWorkProfiles() {
               </Select>
               {repairCenters.filter(rc => rc.openingHours).length === 0 && (
                 <p className="text-sm text-muted-foreground">
-                  Nessun centro riparazione ha orari configurati. Configura prima gli orari nelle impostazioni del centro.
+                  {t("hr.noCenterWithHours")}
                 </p>
               )}
             </div>

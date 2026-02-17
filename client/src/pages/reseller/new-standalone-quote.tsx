@@ -202,7 +202,7 @@ export default function NewStandaloneQuote() {
         vatRate: service.vatRate || 22,
       }]);
     }
-    toast({ title: `${service.name} aggiunto al preventivo` });
+    toast({ title: t("standalone.addedToQuote", { name: service.name }) });
   };
 
   const addProductToQuote = (product: any) => {
@@ -226,7 +226,7 @@ export default function NewStandaloneQuote() {
         vatRate: product.vatRate || 22,
       }]);
     }
-    toast({ title: `${product.name} aggiunto al preventivo` });
+    toast({ title: t("standalone.addedToQuote", { name: product.name }) });
   };
 
   const removeLineItem = (index: number) => {
@@ -296,7 +296,7 @@ export default function NewStandaloneQuote() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/standalone-quotes"] });
-      toast({ title: "Preventivo creato con successo" });
+      toast({ title: t("standalone.quoteCreated") });
       const basePath = user?.role === "repair_center" ? "/repair-center" : "/reseller";
       navigate(`${basePath}/standalone-quotes`);
     },
@@ -371,19 +371,18 @@ export default function NewStandaloneQuote() {
       {currentStep === 0 && (
         <Card>
           <CardHeader>
-            <CardTitle className="text-lg">Seleziona Dispositivo</CardTitle>
+            <CardTitle className="text-lg">{t("standalone.selectDevice")}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <p className="text-sm text-muted-foreground">
-              Seleziona il tipo di dispositivo per filtrare i servizi compatibili.
-              Puoi anche saltare questo passaggio per vedere tutti i servizi.
+              {t("standalone.selectDeviceDesc")}
             </p>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div className="space-y-1.5">
                 <Label>{t("repairs.deviceType")}</Label>
                 <Select value={deviceTypeId} onValueChange={(v) => { setDeviceTypeId(v); setBrandId(""); setModelId(""); }}>
                   <SelectTrigger data-testid="select-device-type">
-                    <SelectValue placeholder="Seleziona tipo..." />
+                    <SelectValue placeholder={t("standalone.selectTypePlaceholder")} />
                   </SelectTrigger>
                   <SelectContent>
                     {deviceTypes.map((dt: any) => (
@@ -396,7 +395,7 @@ export default function NewStandaloneQuote() {
                 <Label>{t("products.brand")}</Label>
                 <Select value={brandId} onValueChange={(v) => { setBrandId(v); setModelId(""); }} disabled={!deviceTypeId}>
                   <SelectTrigger data-testid="select-brand">
-                    <SelectValue placeholder="Seleziona marca..." />
+                    <SelectValue placeholder={t("standalone.selectBrandPlaceholder")} />
                   </SelectTrigger>
                   <SelectContent>
                     {deviceBrands.map((b: any) => (
@@ -420,17 +419,17 @@ export default function NewStandaloneQuote() {
               </div>
             </div>
             <div className="space-y-1.5">
-              <Label>Descrizione dispositivo (opzionale)</Label>
+              <Label>{t("standalone.deviceDescriptionLabel")}</Label>
               <Input
                 value={deviceDescription}
                 onChange={(e) => setDeviceDescription(e.target.value)}
-                placeholder="Es. iPhone 15 Pro Max 256GB Blu - graffi sul retro"
+                placeholder={t("standalone.deviceDescriptionPlaceholder")}
                 data-testid="input-device-description"
               />
             </div>
             {(deviceTypeId || brandId || modelId) && (
               <div className="flex items-center gap-2 flex-wrap">
-                <span className="text-sm text-muted-foreground">Selezione:</span>
+                <span className="text-sm text-muted-foreground">{t("standalone.selection")}:</span>
                 {deviceTypeName && <Badge variant="secondary">{deviceTypeName}</Badge>}
                 {brandName && <Badge variant="secondary">{brandName}</Badge>}
                 {modelName && <Badge variant="secondary">{modelName}</Badge>}
@@ -440,7 +439,7 @@ export default function NewStandaloneQuote() {
                   onClick={() => { setDeviceTypeId(""); setBrandId(""); setModelId(""); }}
                   data-testid="button-clear-device"
                 >
-                  Cancella selezione
+                  {t("standalone.clearSelection")}
                 </Button>
               </div>
             )}
@@ -452,7 +451,7 @@ export default function NewStandaloneQuote() {
         <div className="space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle className="text-lg">Servizi Compatibili</CardTitle>
+              <CardTitle className="text-lg">{t("standalone.compatibleServices")}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="relative">
@@ -472,7 +471,7 @@ export default function NewStandaloneQuote() {
                 </div>
               ) : services.length === 0 ? (
                 <p className="text-sm text-muted-foreground text-center py-8">
-                  Nessun servizio trovato per il dispositivo selezionato.
+                  {t("standalone.noServicesFound")}
                 </p>
               ) : (
                 <div className="grid gap-2 max-h-[300px] overflow-y-auto">
@@ -507,7 +506,7 @@ export default function NewStandaloneQuote() {
                             data-testid={`button-add-service-${service.id}`}
                           >
                             <Plus className="h-3 w-3 mr-1" />
-                            {isAdded ? "Aggiungi ancora" : t("common.add")}
+                            {isAdded ? t("standalone.addAgain") : t("common.add")}
                           </Button>
                         </div>
                       </div>
@@ -520,16 +519,16 @@ export default function NewStandaloneQuote() {
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between gap-2">
-              <CardTitle className="text-lg">Voci del Preventivo ({lineItems.length})</CardTitle>
+              <CardTitle className="text-lg">{t("standalone.quoteItems")} ({lineItems.length})</CardTitle>
               <Button variant="outline" size="sm" onClick={addCustomLineItem} data-testid="button-add-custom-item">
                 <Plus className="h-4 w-4 mr-1" />
-                Voce personalizzata
+                {t("standalone.customItem")}
               </Button>
             </CardHeader>
             <CardContent>
               {lineItems.length === 0 ? (
                 <p className="text-sm text-muted-foreground text-center py-4">
-                  Nessuna voce aggiunta. Seleziona dalla lista sopra o aggiungi una voce personalizzata.
+                  {t("standalone.noItemsAdded")}
                 </p>
               ) : (
                 <div className="space-y-3">
@@ -544,7 +543,7 @@ export default function NewStandaloneQuote() {
                             <Input
                               value={item.name}
                               onChange={(e) => updateLineItem(idx, { name: e.target.value })}
-                              placeholder="Nome voce personalizzata"
+                              placeholder={t("standalone.customItemName")}
                               className="flex-1"
                               data-testid={`input-item-name-${idx}`}
                             />
@@ -564,7 +563,7 @@ export default function NewStandaloneQuote() {
                             />
                           </div>
                           <div>
-                            <Label className="text-xs">Prezzo unit. (EUR)</Label>
+                            <Label className="text-xs">{t("standalone.unitPriceEur")}</Label>
                             <Input
                               type="number"
                               min={0}
@@ -593,7 +592,7 @@ export default function NewStandaloneQuote() {
                           </div>
                         </div>
                         <div className="text-xs text-muted-foreground text-right">
-                          Totale: {formatCurrency(item.unitPriceCents * item.quantity)} + IVA {formatCurrency(Math.round(item.unitPriceCents * item.quantity * item.vatRate / 100))}
+                          {t("common.total")}: {formatCurrency(item.unitPriceCents * item.quantity)} + {t("standalone.vat")} {formatCurrency(Math.round(item.unitPriceCents * item.quantity * item.vatRate / 100))}
                         </div>
                       </div>
                       <Button
@@ -609,9 +608,9 @@ export default function NewStandaloneQuote() {
                   <Separator />
                   <div className="flex justify-end">
                     <div className="text-right space-y-1">
-                      <div className="text-sm">Imponibile: <span className="font-semibold" data-testid="text-subtotal">{formatCurrency(subtotalCents)}</span></div>
-                      <div className="text-sm">IVA: <span className="font-semibold" data-testid="text-vat">{formatCurrency(vatAmountCents)}</span></div>
-                      <div className="text-lg font-bold" data-testid="text-total">Totale: {formatCurrency(totalCents)}</div>
+                      <div className="text-sm">{t("standalone.taxableAmount")}: <span className="font-semibold" data-testid="text-subtotal">{formatCurrency(subtotalCents)}</span></div>
+                      <div className="text-sm">{t("standalone.vat")}: <span className="font-semibold" data-testid="text-vat">{formatCurrency(vatAmountCents)}</span></div>
+                      <div className="text-lg font-bold" data-testid="text-total">{t("common.total")}: {formatCurrency(totalCents)}</div>
                     </div>
                   </div>
                 </div>
@@ -627,13 +626,12 @@ export default function NewStandaloneQuote() {
             <CardHeader>
               <CardTitle className="text-lg flex items-center gap-2">
                 <Package className="h-5 w-5" />
-                Aggiungi Prodotti (opzionale)
+                {t("standalone.addProducts")}
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <p className="text-sm text-muted-foreground">
-                Aggiungi dispositivi, accessori o ricambi dal tuo magazzino o dal catalogo fornitori.
-                Puoi saltare questo passaggio se non servono prodotti.
+                {t("standalone.addProductsDesc")}
               </p>
 
               <Tabs value={productTab} onValueChange={setProductTab}>
@@ -642,7 +640,7 @@ export default function NewStandaloneQuote() {
                     <Warehouse className="h-4 w-4 mr-1.5" />{t("sidebar.items.myWarehouse")}</TabsTrigger>
                   <TabsTrigger value="supplier" data-testid="tab-supplier">
                     <Truck className="h-4 w-4 mr-1.5" />
-                    Catalogo Fornitori
+                    {t("standalone.supplierCatalog")}
                   </TabsTrigger>
                 </TabsList>
 
@@ -660,7 +658,7 @@ export default function NewStandaloneQuote() {
                 <TabsContent value="warehouse" className="mt-3">
                   {!userWarehouseId ? (
                     <p className="text-sm text-muted-foreground text-center py-8">
-                      Nessun magazzino trovato. Crea un magazzino per aggiungere prodotti.
+                      {t("standalone.noWarehouseFound")}
                     </p>
                   ) : warehouseProductsLoading ? (
                     <div className="flex items-center justify-center py-8">
@@ -668,7 +666,7 @@ export default function NewStandaloneQuote() {
                     </div>
                   ) : warehouseProducts.length === 0 ? (
                     <p className="text-sm text-muted-foreground text-center py-8">
-                      {productSearch ? "Nessun prodotto trovato nel magazzino." : "Il magazzino è vuoto."}
+                      {productSearch ? t("standalone.noProductsInWarehouse") : t("standalone.warehouseEmpty")}
                     </p>
                   ) : (
                     <div className="grid gap-2 max-h-[300px] overflow-y-auto">
@@ -690,7 +688,7 @@ export default function NewStandaloneQuote() {
                                 {product.category && <span>{product.category}</span>}
                                 {product.brand && <span>{product.brand}</span>}
                                 {product.availableQuantity != null && (
-                                  <span>Disp: {product.availableQuantity}</span>
+                                  <span>{t("standalone.available")}: {product.availableQuantity}</span>
                                 )}
                               </div>
                             </div>
@@ -705,7 +703,7 @@ export default function NewStandaloneQuote() {
                                 data-testid={`button-add-warehouse-product-${pid}`}
                               >
                                 <Plus className="h-3 w-3 mr-1" />
-                                {isAdded ? "Aggiungi ancora" : t("common.add")}
+                                {isAdded ? t("standalone.addAgain") : t("common.add")}
                               </Button>
                             </div>
                           </div>
@@ -722,7 +720,7 @@ export default function NewStandaloneQuote() {
                     </div>
                   ) : allProducts.length === 0 ? (
                     <p className="text-sm text-muted-foreground text-center py-8">
-                      {productSearch ? "Nessun prodotto trovato nel catalogo." : "Catalogo prodotti vuoto."}
+                      {productSearch ? t("standalone.noProductsInCatalog") : t("standalone.catalogEmpty")}
                     </p>
                   ) : (
                     <div className="grid gap-2 max-h-[300px] overflow-y-auto">
@@ -762,7 +760,7 @@ export default function NewStandaloneQuote() {
                                 data-testid={`button-add-supplier-product-${pid}`}
                               >
                                 <Plus className="h-3 w-3 mr-1" />
-                                {isAdded ? "Aggiungi ancora" : t("common.add")}
+                                {isAdded ? t("standalone.addAgain") : t("common.add")}
                               </Button>
                             </div>
                           </div>
@@ -778,7 +776,7 @@ export default function NewStandaloneQuote() {
           {lineItems.filter(li => li.itemType === "product").length > 0 && (
             <Card>
               <CardHeader>
-                <CardTitle className="text-lg">Prodotti Selezionati ({lineItems.filter(li => li.itemType === "product").length})</CardTitle>
+                <CardTitle className="text-lg">{t("standalone.selectedProducts")} ({lineItems.filter(li => li.itemType === "product").length})</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
@@ -803,7 +801,7 @@ export default function NewStandaloneQuote() {
                               />
                             </div>
                             <div>
-                              <Label className="text-xs">Prezzo unit. (EUR)</Label>
+                              <Label className="text-xs">{t("standalone.unitPriceEur")}</Label>
                               <Input
                                 type="number"
                                 min={0}
@@ -832,7 +830,7 @@ export default function NewStandaloneQuote() {
                             </div>
                           </div>
                           <div className="text-xs text-muted-foreground text-right">
-                            Totale: {formatCurrency(item.unitPriceCents * item.quantity)} + IVA {formatCurrency(Math.round(item.unitPriceCents * item.quantity * item.vatRate / 100))}
+                            {t("common.total")}: {formatCurrency(item.unitPriceCents * item.quantity)} + {t("standalone.vat")} {formatCurrency(Math.round(item.unitPriceCents * item.quantity * item.vatRate / 100))}
                           </div>
                         </div>
                         <Button
@@ -856,14 +854,14 @@ export default function NewStandaloneQuote() {
       {currentStep === 3 && (
         <Card>
           <CardHeader>
-            <CardTitle className="text-lg">Dati Cliente (opzionale)</CardTitle>
+            <CardTitle className="text-lg">{t("standalone.customerData")}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <p className="text-sm text-muted-foreground">
-              Puoi associare il preventivo a un cliente esistente o inserire i dati manualmente. Lascia vuoto per un preventivo senza cliente.
+              {t("standalone.customerDataDesc")}
             </p>
             <div className="space-y-1.5">
-              <Label>Cliente esistente</Label>
+              <Label>{t("standalone.existingCustomer")}</Label>
               <Select value={customerId} onValueChange={(v) => {
                 if (v === "__none__") {
                   setCustomerId("");
@@ -875,10 +873,10 @@ export default function NewStandaloneQuote() {
                 }
               }}>
                 <SelectTrigger data-testid="select-customer">
-                  <SelectValue placeholder="Seleziona cliente (opzionale)..." />
+                  <SelectValue placeholder={t("standalone.selectCustomerPlaceholder")} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="__none__">Nessun cliente</SelectItem>
+                  <SelectItem value="__none__">{t("standalone.noCustomer")}</SelectItem>
                   {customers.map((c: any) => (
                     <SelectItem key={c.id} value={c.id}>
                       {c.fullName || c.username} {c.email ? `(${c.email})` : ""}
@@ -905,7 +903,7 @@ export default function NewStandaloneQuote() {
                   type="email"
                   value={customerEmail}
                   onChange={(e) => setCustomerEmail(e.target.value)}
-                  placeholder="email@esempio.it"
+                  placeholder={t("common.emailPlaceholder")}
                   disabled={!!customerId}
                   data-testid="input-customer-email"
                 />
@@ -915,7 +913,7 @@ export default function NewStandaloneQuote() {
                 <Input
                   value={customerPhone}
                   onChange={(e) => setCustomerPhone(e.target.value)}
-                  placeholder="+39 ..."
+                  placeholder={t("common.phonePlaceholder")}
                   disabled={!!customerId}
                   data-testid="input-customer-phone"
                 />
@@ -926,23 +924,23 @@ export default function NewStandaloneQuote() {
               <Textarea
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
-                placeholder="Note aggiuntive per il preventivo..."
+                placeholder={t("standalone.notesPlaceholder")}
                 rows={3}
                 data-testid="input-notes"
               />
             </div>
             <div className="space-y-1.5">
-              <Label>Validità preventivo (giorni)</Label>
+              <Label>{t("standalone.validityDays")}</Label>
               <Select value={validDays} onValueChange={setValidDays}>
                 <SelectTrigger data-testid="select-validity">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="7">7 giorni</SelectItem>
-                  <SelectItem value="15">15 giorni</SelectItem>
-                  <SelectItem value="30">30 giorni</SelectItem>
-                  <SelectItem value="60">60 giorni</SelectItem>
-                  <SelectItem value="90">90 giorni</SelectItem>
+                  <SelectItem value="7">7 {t("standalone.days")}</SelectItem>
+                  <SelectItem value="15">15 {t("standalone.days")}</SelectItem>
+                  <SelectItem value="30">30 {t("standalone.days")}</SelectItem>
+                  <SelectItem value="60">60 {t("standalone.days")}</SelectItem>
+                  <SelectItem value="90">90 {t("standalone.days")}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -953,7 +951,7 @@ export default function NewStandaloneQuote() {
       {currentStep === 4 && (
         <Card>
           <CardHeader>
-            <CardTitle className="text-lg">Riepilogo Preventivo</CardTitle>
+            <CardTitle className="text-lg">{t("standalone.quoteSummary")}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             {(deviceTypeName || brandName || modelName || deviceDescription) && (
@@ -972,7 +970,7 @@ export default function NewStandaloneQuote() {
 
             {serviceItems.length > 0 && (
               <div className="space-y-1">
-                <h3 className="text-sm font-semibold flex items-center gap-2"><Wrench className="h-4 w-4" /> Servizi ({serviceItems.length})</h3>
+                <h3 className="text-sm font-semibold flex items-center gap-2"><Wrench className="h-4 w-4" /> {t("utility.services")} ({serviceItems.length})</h3>
                 <div className="space-y-2">
                   {serviceItems.map((item, idx) => (
                     <div key={idx} className="flex items-center justify-between gap-2 text-sm">
@@ -988,7 +986,7 @@ export default function NewStandaloneQuote() {
               <>
                 <Separator />
                 <div className="space-y-1">
-                  <h3 className="text-sm font-semibold flex items-center gap-2"><Package className="h-4 w-4" /> Prodotti ({productItems.length})</h3>
+                  <h3 className="text-sm font-semibold flex items-center gap-2"><Package className="h-4 w-4" /> {t("products.title")} ({productItems.length})</h3>
                   <div className="space-y-2">
                     {productItems.map((item, idx) => (
                       <div key={idx} className="flex items-center justify-between gap-2 text-sm">
@@ -1005,7 +1003,7 @@ export default function NewStandaloneQuote() {
               <>
                 <Separator />
                 <div className="space-y-1">
-                  <h3 className="text-sm font-semibold flex items-center gap-2"><FileText className="h-4 w-4" /> Voci Personalizzate ({customItems.length})</h3>
+                  <h3 className="text-sm font-semibold flex items-center gap-2"><FileText className="h-4 w-4" /> {t("standalone.customItems")} ({customItems.length})</h3>
                   <div className="space-y-2">
                     {customItems.map((item, idx) => (
                       <div key={idx} className="flex items-center justify-between gap-2 text-sm">
@@ -1022,11 +1020,11 @@ export default function NewStandaloneQuote() {
 
             <div className="flex justify-end">
               <div className="text-right space-y-1">
-                <div className="text-sm">Imponibile: <span className="font-semibold" data-testid="text-summary-subtotal">{formatCurrency(subtotalCents)}</span></div>
-                <div className="text-sm">IVA: <span className="font-semibold" data-testid="text-summary-vat">{formatCurrency(vatAmountCents)}</span></div>
+                <div className="text-sm">{t("standalone.taxableAmount")}: <span className="font-semibold" data-testid="text-summary-subtotal">{formatCurrency(subtotalCents)}</span></div>
+                <div className="text-sm">{t("standalone.vat")}: <span className="font-semibold" data-testid="text-summary-vat">{formatCurrency(vatAmountCents)}</span></div>
                 <div className="text-lg font-bold flex items-center gap-1 justify-end" data-testid="text-summary-total">
                   <Euro className="h-5 w-5" />
-                  Totale: {formatCurrency(totalCents)}
+                  {t("common.total")}: {formatCurrency(totalCents)}
                 </div>
               </div>
             </div>
@@ -1058,7 +1056,7 @@ export default function NewStandaloneQuote() {
             )}
 
             <p className="text-sm text-muted-foreground">
-              Validità: {validDays} giorni dalla creazione
+              {t("standalone.validityFromCreation", { days: validDays })}
             </p>
           </CardContent>
         </Card>
@@ -1091,7 +1089,7 @@ export default function NewStandaloneQuote() {
             ) : (
               <CheckCircle className="h-4 w-4 mr-1" />
             )}
-            Crea Preventivo
+            {t("standalone.createQuote")}
           </Button>
         )}
       </div>

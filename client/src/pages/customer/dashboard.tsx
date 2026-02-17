@@ -75,8 +75,8 @@ export default function CustomerDashboard() {
     pending: { label: t("b2b.status.pending"), variant: "secondary" },
     accepted: { label: t("remoteRequests.accepted"), variant: "default" },
     quoted: { label: t("remote.preventivoInviato"), variant: "outline" },
-    quote_accepted: { label: "Preventivo accettato", variant: "default" },
-    quote_declined: { label: "Preventivo rifiutato", variant: "destructive" },
+    quote_accepted: { label: t("customerPages.quoteAccepted"), variant: "default" },
+    quote_declined: { label: t("customerPages.quoteDeclined"), variant: "destructive" },
     awaiting_shipment: { label: t("b2b.inAttesaSpedizione"), variant: "secondary" },
     in_transit: { label: t("shipping.inTransit"), variant: "outline" },
     received: { label: t("repairs.status.received"), variant: "default" },
@@ -88,7 +88,7 @@ export default function CustomerDashboard() {
     queryKey: ["/api/stats"],
   });
 
-  const firstName = user?.fullName?.split(" ")[0] || user?.username || "Cliente";
+  const firstName = user?.fullName?.split(" ")[0] || user?.username || t("customers.customer");
 
   const quickActions = [
     { label: t("customerPages.acquistaServizio"), icon: ShoppingBag, href: "/customer/service-catalog", color: "bg-blue-500/10 text-blue-600 dark:text-blue-400" },
@@ -103,17 +103,17 @@ export default function CustomerDashboard() {
       <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold tracking-tight" data-testid="text-welcome">
-            Ciao, {firstName}
+            {t("dashboard.hello")}, {firstName}
           </h1>
           <p className="text-muted-foreground text-sm mt-1">
-            Ecco un riepilogo della tua area personale
+            {t("customerPages.personalAreaSummary")}
           </p>
         </div>
         {user?.resellerId && (
           <Link href={`/shop/${user.resellerId}`}>
             <Button variant="outline" size="sm" data-testid="button-go-to-shop">
               <ShoppingBag className="h-4 w-4 mr-2" />
-              Vai allo Shop
+              {t("customerPages.goToShop")}
             </Button>
           </Link>
         )}
@@ -198,7 +198,7 @@ export default function CustomerDashboard() {
                   </div>
                   <div>
                     <p className="text-2xl font-bold" data-testid="text-stat-completed">{stats?.repairsByStatus.completed ?? 0}</p>
-                    <p className="text-xs text-muted-foreground">Completate</p>
+                    <p className="text-xs text-muted-foreground">{t("customerPages.completate")}</p>
                   </div>
                 </div>
               )}
@@ -218,7 +218,7 @@ export default function CustomerDashboard() {
                 <CardTitle className="text-base">{t("customerPages.richiesteRemoteAttive")}</CardTitle>
                 <Link href="/customer/remote-requests">
                   <Button variant="ghost" size="sm" data-testid="button-view-all-remote">
-                    Vedi tutte
+                    {t("common.viewAll")}
                     <ArrowRight className="h-4 w-4 ml-1" />
                   </Button>
                 </Link>
@@ -273,7 +273,7 @@ export default function CustomerDashboard() {
                 <CardTitle className="text-base">{t("customerPages.statoRiparazioni")}</CardTitle>
                 <Link href="/customer/repairs">
                   <Button variant="ghost" size="sm" data-testid="button-view-all-repairs">
-                    Vedi tutte
+                    {t("common.viewAll")}
                     <ArrowRight className="h-4 w-4 ml-1" />
                   </Button>
                 </Link>
@@ -386,7 +386,7 @@ export default function CustomerDashboard() {
                     </div>
                   )}
                   <div className="min-w-0 flex-1">
-                    <p className="text-xs text-muted-foreground uppercase tracking-wide">Centro Riparazioni</p>
+                    <p className="text-xs text-muted-foreground uppercase tracking-wide">{t("customerPages.repairCenter")}</p>
                     <p className="font-semibold text-sm truncate" data-testid="text-assigned-center">
                       {stats.assignedCenter.name}
                     </p>
@@ -413,7 +413,7 @@ export default function CustomerDashboard() {
             <Card data-testid="card-ticket-summary">
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm font-medium flex items-center justify-between gap-1">
-                  Ticket
+                  {t("common.ticket")}
                   <Link href="/customer/tickets">
                     <Button variant="ghost" size="sm" data-testid="button-view-tickets">
                       <ArrowRight className="h-4 w-4" />
@@ -426,7 +426,7 @@ export default function CustomerDashboard() {
                   {[
                     { label: t("customerPages.aperti"), value: stats?.ticketsByStatus.open ?? 0, dot: "bg-amber-500" },
                     { label: t("customerPages.inCorso"), value: stats?.ticketsByStatus.in_progress ?? 0, dot: "bg-blue-500" },
-                    { label: "Risolti", value: stats?.ticketsByStatus.resolved ?? 0, dot: "bg-emerald-500" },
+                    { label: t("customerPages.resolved"), value: stats?.ticketsByStatus.resolved ?? 0, dot: "bg-emerald-500" },
                   ].filter(i => i.value > 0).map((item) => (
                     <div key={item.label} className="flex items-center justify-between text-sm">
                       <div className="flex items-center gap-2">

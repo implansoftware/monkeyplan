@@ -24,14 +24,14 @@ import { useTranslation } from "react-i18next";
 
 type PracticeStatus = "bozza" | "inviata" | "in_lavorazione" | "attesa_documenti" | "completata" | "rifiutata" | "annullata";
 
-const statusLabels: Record<PracticeStatus, string> = {
-  bozza: "Bozza",
-  inviata: "Inviata",
-  in_lavorazione: "In Lavorazione",
-  attesa_documenti: "Attesa Documenti",
-  completata: "Completata",
-  annullata: "Annullata",
-  rifiutata: "Rifiutata",
+const statusLabelsStatic: Record<PracticeStatus, string> = {
+  bozza: "bozza",
+  inviata: "inviata",
+  in_lavorazione: "in_lavorazione",
+  attesa_documenti: "attesa_documenti",
+  completata: "completata",
+  annullata: "annullata",
+  rifiutata: "rifiutata",
 };
 
 const statusColors: Record<PracticeStatus, string> = {
@@ -44,13 +44,13 @@ const statusColors: Record<PracticeStatus, string> = {
   rifiutata: "bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300",
 };
 
-const categoryLabels: Record<string, string> = {
-  fisso: "Fisso",
-  mobile: "Mobile",
-  centralino: "Centralino",
-  luce: "Luce",
-  gas: "Gas",
-  altro: "Altro",
+const categoryLabelsStatic: Record<string, string> = {
+  fisso: "fisso",
+  mobile: "mobile",
+  centralino: "centralino",
+  luce: "luce",
+  gas: "gas",
+  altro: "altro",
 };
 
 const formatCurrency = (cents: number) => {
@@ -74,6 +74,25 @@ export default function AdminUtilityPractices() {
   const { t } = useTranslation();
   const [searchQuery, setSearchQuery] = useState("");
   const [, navigate] = useLocation();
+  
+  const statusLabels: Record<PracticeStatus, string> = {
+    bozza: t("utility.statusDraft"),
+    inviata: t("utility.statusSent"),
+    in_lavorazione: t("utility.statusInProgress"),
+    attesa_documenti: t("utility.statusWaitingDocs"),
+    completata: t("utility.statusCompleted"),
+    annullata: t("utility.statusCancelled"),
+    rifiutata: t("utility.statusRejected"),
+  };
+  
+  const categoryLabels: Record<string, string> = {
+    fisso: t("utility.categoryFixed"),
+    mobile: t("utility.categoryMobile"),
+    centralino: t("utility.categorySwitchboard"),
+    luce: t("utility.categoryElectricity"),
+    gas: t("utility.categoryGas"),
+    altro: t("utility.categoryOther"),
+  };
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [viewMode, setViewMode] = useState<"table" | "pipeline">("pipeline");
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -289,17 +308,17 @@ export default function AdminUtilityPractices() {
     setImportText("");
     
     const foundFields = [
-      parsed.supplierName && "Fornitore",
-      parsed.customerName && "Cliente", 
-      parsed.serviceName && "Servizio",
-      parsed.supplierReference && "Riferimento",
+      parsed.supplierName && t("suppliers.supplier"),
+      parsed.customerName && t("common.customer"), 
+      parsed.serviceName && t("utility.service"),
+      parsed.supplierReference && t("utility.reference"),
     ].filter(Boolean);
     
     toast({ 
       title: t("utility.dataImported"), 
       description: foundFields.length > 0 
-        ? `Trovati: ${foundFields.join(", ")}` 
-        : "Nessun dato riconosciuto nel testo"
+        ? t("utility.foundFields", { fields: foundFields.join(", ") }) 
+        : t("utility.noDataRecognized")
     });
   };
 
@@ -425,7 +444,7 @@ export default function AdminUtilityPractices() {
 
   const handleCreateCustomer = () => {
     if (!newCustomerName.trim()) {
-      toast({ title: t("common.error"), description: "Il nome è obbligatorio", variant: "destructive" });
+      toast({ title: t("common.error"), description: t("utility.nameRequired"), variant: "destructive" });
       return;
     }
     createCustomerMutation.mutate({
@@ -774,8 +793,8 @@ export default function AdminUtilityPractices() {
               <FileCheck className="h-5 w-5" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold tracking-tight">Pratiche Utility</h1>
-              <p className="text-sm text-muted-foreground">Gestisci contratti e pratiche di servizi utility</p>
+              <h1 className="text-2xl font-bold tracking-tight">{t("utility.practicesTitle")}</h1>
+              <p className="text-sm text-muted-foreground">{t("utility.practicesSubtitle")}</p>
             </div>
           </div>
         </div>
@@ -809,18 +828,18 @@ export default function AdminUtilityPractices() {
               <TabsList>
                 <TabsTrigger value="pipeline" className="gap-1" data-testid="tab-pipeline">
                   <LayoutGrid className="h-4 w-4" />
-                  Pipeline
+                  {t("utility.pipeline")}
                 </TabsTrigger>
                 <TabsTrigger value="table" className="gap-1" data-testid="tab-table">
                   <TableIcon className="h-4 w-4" />
-                  Tabella
+                  {t("utility.tableView")}
                 </TabsTrigger>
               </TabsList>
             </Tabs>
           </div>
           <Button onClick={handleNewPractice} data-testid="button-new-practice">
             <Plus className="h-4 w-4 mr-2" />
-            Nuova Pratica
+            {t("utility.newPractice")}
           </Button>
         </CardHeader>
         <CardContent>
@@ -843,13 +862,13 @@ export default function AdminUtilityPractices() {
           ) : filteredPractices.length === 0 ? (
             <div className="text-center py-8">
               <FileCheck className="h-12 w-12 mx-auto text-muted-foreground mb-3" />
-              <p className="text-muted-foreground">Nessuna pratica trovata</p>
+              <p className="text-muted-foreground">{t("utility.noPracticesFound")}</p>
             </div>
           ) : (
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>N. Pratica</TableHead>
+                  <TableHead>{t("utility.practiceNumber")}</TableHead>
                   <TableHead>{t("common.customer")}</TableHead>
                   <TableHead>{t("utility.assignee")}</TableHead>
                   <TableHead>{t("common.type")}</TableHead>
@@ -895,15 +914,15 @@ export default function AdminUtilityPractices() {
                         ) : (
                           <div className="flex flex-wrap items-center gap-1">
                             <User2 className="h-3 w-3 text-muted-foreground" />
-                            <span className="text-sm text-muted-foreground">Admin</span>
+                            <span className="text-sm text-muted-foreground">{t("roles.admin")}</span>
                           </div>
                         )}
                       </TableCell>
                       <TableCell>
                         <Badge variant="outline">
-                          {itemType === "service" ? "Servizio" : 
-                           itemType === "product" ? "Prodotto" : 
-                           itemType === "service_with_products" ? "Servizio + Prodotti" : itemType}
+                          {itemType === "service" ? t("utility.service") : 
+                           itemType === "product" ? t("utility.product") : 
+                           itemType === "service_with_products" ? t("utility.serviceWithProducts") : itemType}
                         </Badge>
                       </TableCell>
                       <TableCell>
@@ -914,7 +933,7 @@ export default function AdminUtilityPractices() {
                                 {(practice as any).customServiceName || service?.name}
                               </span>
                               {(practice as any).customServiceName && (
-                                <Badge variant="outline" className="text-xs py-0 px-1">Temp.</Badge>
+                                <Badge variant="outline" className="text-xs py-0 px-1">{t("utility.temp")}</Badge>
                               )}
                             </div>
                             <span className="text-xs text-muted-foreground">
@@ -927,13 +946,13 @@ export default function AdminUtilityPractices() {
                                   return (
                                     <div key={idx} className="flex flex-wrap items-center gap-1">
                                       <Package className="h-3 w-3 text-muted-foreground" />
-                                      <span className="text-xs">{prod?.name || "Prodotto"} x{pp.quantity}</span>
+                                      <span className="text-xs">{prod?.name || t("utility.product")} x{pp.quantity}</span>
                                     </div>
                                   );
                                 })}
                                 {(practice as any).practiceProducts.length > 2 && (
                                   <span className="text-xs text-muted-foreground">
-                                    +{(practice as any).practiceProducts.length - 2} altri
+                                    +{(practice as any).practiceProducts.length - 2} {t("common.others")}
                                   </span>
                                 )}
                               </div>
@@ -948,13 +967,13 @@ export default function AdminUtilityPractices() {
                                   return (
                                     <div key={idx} className="flex flex-wrap items-center gap-1">
                                       <Package className="h-3 w-3 text-muted-foreground" />
-                                      <span className="text-sm">{prod?.name || "Prodotto"} x{pp.quantity}</span>
+                                      <span className="text-sm">{prod?.name || t("utility.product")} x{pp.quantity}</span>
                                     </div>
                                   );
                                 })}
                                 {(practice as any).practiceProducts.length > 2 && (
                                   <span className="text-xs text-muted-foreground">
-                                    +{(practice as any).practiceProducts.length - 2} altri prodotti
+                                    +{(practice as any).practiceProducts.length - 2} {t("utility.otherProducts")}
                                   </span>
                                 )}
                               </>
@@ -971,7 +990,7 @@ export default function AdminUtilityPractices() {
                         {practice.priceType === "forfait" && practice.flatPriceCents
                           ? formatCurrency(practice.flatPriceCents)
                           : practice.monthlyPriceCents 
-                            ? formatCurrency(practice.monthlyPriceCents) + "/mese"
+                            ? formatCurrency(practice.monthlyPriceCents) + t("utility.perMonth")
                             : "-"}
                       </TableCell>
                       <TableCell>
@@ -1002,7 +1021,7 @@ export default function AdminUtilityPractices() {
                             variant="ghost" 
                             size="icon"
                             onClick={() => {
-                              if (confirm("Sei sicuro di voler eliminare questa pratica?")) {
+                              if (confirm(t("utility.confirmDeletePractice"))) {
                                 deleteMutation.mutate(practice.id);
                               }
                             }}
@@ -1025,12 +1044,12 @@ export default function AdminUtilityPractices() {
         <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
-              {editingPractice ? "Modifica Pratica" : "Nuova Pratica Utility"}
+              {editingPractice ? t("utility.editPractice") : t("utility.newPracticeUtility")}
             </DialogTitle>
             <DialogDescription>
               {editingPractice 
-                ? "Modifica i dati della pratica."
-                : "Crea una nuova pratica di servizio utility."}
+                ? t("utility.editPracticeDesc")
+                : t("utility.newPracticeDesc")}
             </DialogDescription>
           </DialogHeader>
           
@@ -1046,12 +1065,12 @@ export default function AdminUtilityPractices() {
                   data-testid="button-show-import"
                 >
                   <ClipboardList className="h-4 w-4 mr-2" />
-                  Importa da testo (copia/incolla)
+                  {t("utility.importFromText")}
                 </Button>
               ) : (
                 <div className="space-y-2 p-3 border rounded-lg bg-muted/50">
                   <div className="flex items-center justify-between">
-                    <Label className="text-sm font-medium">Incolla il testo dal documento</Label>
+                    <Label className="text-sm font-medium">{t("utility.pasteFromDocument")}</Label>
                     <Button
                       type="button"
                       variant="ghost"
@@ -1082,7 +1101,7 @@ export default function AdminUtilityPractices() {
                     data-testid="button-import-text"
                   >
                     <ClipboardList className="h-4 w-4 mr-2" />
-                    Analizza e Importa
+                    {t("utility.analyzeAndImport")}
                   </Button>
                 </div>
               )}
@@ -1094,7 +1113,7 @@ export default function AdminUtilityPractices() {
             <div className="space-y-3 p-3 bg-muted/30 rounded-lg">
               <h4 className="text-sm font-semibold flex items-center gap-2">
                 <ClipboardList className="h-4 w-4" />
-                Tipo Pratica
+                {t("utility.practiceType")}
               </h4>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                 <Button
@@ -1105,7 +1124,7 @@ export default function AdminUtilityPractices() {
                   data-testid="button-item-type-service"
                 >
                   <FileCheck className="h-4 w-4 mr-1" />
-                  Servizio
+                  {t("utility.service")}
                 </Button>
                 <Button
                   type="button"
@@ -1115,7 +1134,7 @@ export default function AdminUtilityPractices() {
                   data-testid="button-item-type-product"
                 >
                   <Package className="h-4 w-4 mr-1" />
-                  Prodotto
+                  {t("utility.product")}
                 </Button>
                 <Button
                   type="button"
@@ -1124,12 +1143,12 @@ export default function AdminUtilityPractices() {
                   onClick={() => setSelectedItemType("service_with_products")}
                   data-testid="button-item-type-service-with-products"
                 >
-                  Serv.+Prod.
+                  {t("utility.servProd")}
                 </Button>
               </div>
               
               <div className="pt-2 border-t border-border/50">
-                <Label className="text-xs text-muted-foreground mb-2 block">Assegna a</Label>
+                <Label className="text-xs text-muted-foreground mb-2 block">{t("utility.assignTo")}</Label>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                   <Button
                     type="button"
@@ -1144,7 +1163,7 @@ export default function AdminUtilityPractices() {
                     data-testid="button-assignee-admin"
                   >
                     <User2 className="h-4 w-4 mr-1" />
-                    Admin
+                    {t("common.admin")}
                   </Button>
                   <Button
                     type="button"
@@ -1158,7 +1177,7 @@ export default function AdminUtilityPractices() {
                     data-testid="button-assignee-reseller"
                   >
                     <UserIcon className="h-4 w-4 mr-1" />
-                    Rivenditore
+                    {t("utility.reseller")}
                   </Button>
                   <Button
                     type="button"
@@ -1172,7 +1191,7 @@ export default function AdminUtilityPractices() {
                     data-testid="button-assignee-repair-center"
                   >
                     <Building2 className="h-4 w-4 mr-1" />
-                    Centro
+                    {t("utility.center")}
                   </Button>
                 </div>
                 
@@ -1206,7 +1225,7 @@ export default function AdminUtilityPractices() {
                           <SelectValue placeholder={t("utility.selectSubReseller")} />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="none">-- Nessuno (assegna al rivenditore) --</SelectItem>
+                          <SelectItem value="none">{t("utility.noneAssignToReseller")}</SelectItem>
                           {subResellers.map((sub) => (
                             <SelectItem key={sub.id} value={sub.id}>
                               {sub.fullName || sub.username}
@@ -1243,13 +1262,13 @@ export default function AdminUtilityPractices() {
               <div className="space-y-3 p-3 bg-muted/30 rounded-lg">
                 <h4 className="text-sm font-semibold flex items-center gap-2">
                   <Building2 className="h-4 w-4" />
-                  Fornitore e Servizio
+                  {t("utility.supplierAndService")}
                 </h4>
                 
                 <div className="space-y-3">
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
-                      <Label className="text-xs">Fornitore *</Label>
+                      <Label className="text-xs">{t("suppliers.supplier")} *</Label>
                       <Button
                         type="button"
                         variant="ghost"
@@ -1262,7 +1281,7 @@ export default function AdminUtilityPractices() {
                         }}
                         data-testid="button-toggle-supplier-mode"
                       >
-                        {useTemporarySupplier ? "Da Catalogo" : "Temporaneo"}
+                        {useTemporarySupplier ? t("utility.fromCatalog") : t("utility.temporary")}
                       </Button>
                     </div>
                     {useTemporarySupplier ? (
@@ -1282,7 +1301,7 @@ export default function AdminUtilityPractices() {
                           return (
                             <div className="absolute z-50 w-full mt-1 bg-popover border rounded-md shadow-lg max-h-48 overflow-auto">
                               <div className="p-1 text-xs text-muted-foreground border-b">
-                                Fornitori esistenti trovati:
+                                {t("utility.existingSuppliersFound")}:
                               </div>
                               {matches.map(supplier => (
                                 <button
@@ -1330,7 +1349,7 @@ export default function AdminUtilityPractices() {
                   
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
-                      <Label className="text-xs">Servizio *</Label>
+                      <Label className="text-xs">{t("utility.service")} *</Label>
                       <Button
                         type="button"
                         variant="ghost"
@@ -1343,7 +1362,7 @@ export default function AdminUtilityPractices() {
                         }}
                         data-testid="button-toggle-service-mode"
                       >
-                        {useCustomService ? "Da Catalogo" : "Temporaneo"}
+                        {useCustomService ? t("utility.fromCatalog") : t("utility.temporary")}
                       </Button>
                     </div>
                     {useCustomService ? (
@@ -1363,7 +1382,7 @@ export default function AdminUtilityPractices() {
                         required
                       >
                         <SelectTrigger data-testid="select-service">
-                          <SelectValue placeholder={selectedSupplierId ? "Seleziona servizio" : "Prima seleziona fornitore"} />
+                          <SelectValue placeholder={selectedSupplierId ? t("utility.selectService") : t("utility.selectSupplierFirst")} />
                         </SelectTrigger>
                         <SelectContent>
                           {services.filter(s => s.isActive).map((service) => (
@@ -1382,7 +1401,7 @@ export default function AdminUtilityPractices() {
             {(selectedItemType === "product" || selectedItemType === "service_with_products") && (
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
-                  <Label>Prodotti *</Label>
+                  <Label>{t("utility.products")} *</Label>
                   <Button
                     type="button"
                     variant="outline"
@@ -1391,7 +1410,7 @@ export default function AdminUtilityPractices() {
                     data-testid="button-add-product"
                   >
                     <Plus className="h-4 w-4 mr-1" />
-                    Aggiungi Prodotto
+                    {t("utility.addProduct")}
                   </Button>
                 </div>
                 
@@ -1399,7 +1418,7 @@ export default function AdminUtilityPractices() {
                   <div className="text-center py-4 border rounded-md border-dashed">
                     <Package className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
                     <p className="text-sm text-muted-foreground">
-                      Nessun prodotto aggiunto. Clicca "Aggiungi Prodotto" per iniziare.
+                      {t("utility.noProductsAdded")}
                     </p>
                   </div>
                 ) : (
@@ -1407,7 +1426,7 @@ export default function AdminUtilityPractices() {
                     {practiceProducts.map((item, index) => (
                       <div key={index} className="border rounded-lg p-3 space-y-3">
                         <div className="flex items-center justify-between">
-                          <span className="text-sm font-medium">Prodotto {index + 1}</span>
+                          <span className="text-sm font-medium">{t("utility.product")} {index + 1}</span>
                           <Button
                             type="button"
                             variant="ghost"
@@ -1420,7 +1439,7 @@ export default function AdminUtilityPractices() {
                         </div>
                         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                           <div className="col-span-3 sm:col-span-3">
-                            <Label className="text-xs">Prodotto</Label>
+                            <Label className="text-xs">{t("utility.product")}</Label>
                             <Select
                               value={item.productId}
                               onValueChange={(val) => updateProduct(index, "productId", val)}
@@ -1448,7 +1467,7 @@ export default function AdminUtilityPractices() {
                             />
                           </div>
                           <div>
-                            <Label className="text-xs">Prezzo Unit. (EUR)</Label>
+                            <Label className="text-xs">{t("utility.unitPriceEur")}</Label>
                             <Input
                               type="number"
                               step="0.01"
@@ -1471,7 +1490,7 @@ export default function AdminUtilityPractices() {
                     {practiceProducts.length > 0 && (
                       <div className="flex justify-end pt-2 border-t">
                         <div className="text-right">
-                          <span className="text-sm text-muted-foreground mr-2">Totale Prodotti:</span>
+                          <span className="text-sm text-muted-foreground mr-2">{t("utility.productsTotal")}:</span>
                           <span className="font-bold">{formatCurrency(calculateProductsTotal())}</span>
                         </div>
                       </div>
@@ -1486,7 +1505,7 @@ export default function AdminUtilityPractices() {
               <div className="flex items-center justify-between">
                 <h4 className="text-sm font-semibold flex items-center gap-2">
                   <User2 className="h-4 w-4" />
-                  Cliente
+                  {t("common.customer")}
                 </h4>
                 <Button
                   type="button"
@@ -1505,13 +1524,13 @@ export default function AdminUtilityPractices() {
                   }}
                   data-testid="button-toggle-customer-mode"
                 >
-                  {useTemporaryCustomer ? "Da Anagrafica" : "Nuovo Temporaneo"}
+                  {useTemporaryCustomer ? t("utility.fromRegistry") : t("utility.newTemporary")}
                 </Button>
               </div>
               {useTemporaryCustomer ? (
                 <div className="space-y-2 p-3 border rounded-md bg-muted/30">
                   <div className="relative">
-                    <Label className="text-xs">Nome Cliente *</Label>
+                    <Label className="text-xs">{t("utility.customerName")} *</Label>
                     <Input
                       value={temporaryCustomerName}
                       onChange={(e) => setTemporaryCustomerName(e.target.value)}
@@ -1528,7 +1547,7 @@ export default function AdminUtilityPractices() {
                       return (
                         <div className="absolute z-50 w-full mt-1 bg-popover border rounded-md shadow-lg max-h-48 overflow-auto">
                           <div className="p-1 text-xs text-muted-foreground border-b">
-                            Clienti esistenti trovati:
+                            {t("utility.existingCustomersFound")}:
                           </div>
                           {matches.map(customer => (
                             <button
@@ -1601,7 +1620,7 @@ export default function AdminUtilityPractices() {
                     variant="outline"
                     size="icon"
                     onClick={() => setNewCustomerDialogOpen(true)}
-                    title="Nuovo cliente"
+                    title={t("customers.newCustomer")}
                     data-testid="button-new-customer"
                   >
                     <Plus className="h-4 w-4" />
@@ -1614,12 +1633,12 @@ export default function AdminUtilityPractices() {
             <div className="space-y-3 p-3 bg-muted/30 rounded-lg">
               <h4 className="text-sm font-semibold flex items-center gap-2">
                 <Euro className="h-4 w-4" />
-                Prezzi e Stato
+                {t("utility.pricesAndStatus")}
               </h4>
               
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className="space-y-2">
-                  <Label className="text-xs">Tipo Prezzo</Label>
+                  <Label className="text-xs">{t("utility.priceType")}</Label>
                   <div className="flex gap-1">
                     <Button
                       type="button"
@@ -1630,7 +1649,7 @@ export default function AdminUtilityPractices() {
                       data-testid="button-price-mensile"
                     >
                       <Calendar className="h-3 w-3 mr-1" />
-                      Mensile
+                      {t("utility.monthly")}
                     </Button>
                     <Button
                       type="button"
@@ -1641,7 +1660,7 @@ export default function AdminUtilityPractices() {
                       data-testid="button-price-forfait"
                     >
                       <Euro className="h-3 w-3 mr-1" />
-                      Forfait
+                      {t("utility.flatRate")}
                     </Button>
                   </div>
                 </div>
@@ -1667,7 +1686,7 @@ export default function AdminUtilityPractices() {
                 <div className="space-y-1">
                   {selectedPriceType === "mensile" ? (
                     <>
-                      <Label className="text-xs">Prezzo Mensile (€)</Label>
+                      <Label className="text-xs">{t("utility.monthlyPrice")}</Label>
                       <Input
                         id="monthlyPriceCents"
                         name="monthlyPriceCents"
@@ -1681,7 +1700,7 @@ export default function AdminUtilityPractices() {
                     </>
                   ) : (
                     <>
-                      <Label className="text-xs">Prezzo Forfait (€)</Label>
+                      <Label className="text-xs">{t("utility.flatPrice")}</Label>
                       <Input
                         id="flatPriceCents"
                         name="flatPriceCents"
@@ -1696,7 +1715,7 @@ export default function AdminUtilityPractices() {
                   )}
                 </div>
                 <div className="space-y-1">
-                  <Label className="text-xs">Commissione (€)</Label>
+                  <Label className="text-xs">{t("utility.commissionEur")}</Label>
                   <Input
                     id="commissionAmountCents"
                     name="commissionAmountCents"
@@ -1709,7 +1728,7 @@ export default function AdminUtilityPractices() {
                   />
                 </div>
                 <div className="space-y-1">
-                  <Label className="text-xs">Rif. Fornitore</Label>
+                  <Label className="text-xs">{t("utility.supplierRef")}</Label>
                   <Input
                     id="supplierReference"
                     name="supplierReference"
@@ -1722,7 +1741,7 @@ export default function AdminUtilityPractices() {
               </div>
 
               <div className="space-y-1">
-                <Label className="text-xs">Note (opzionale)</Label>
+                <Label className="text-xs">{t("common.notes")} ({t("common.optional")})</Label>
                 <Textarea
                   id="notes"
                   name="notes"
@@ -1741,7 +1760,7 @@ export default function AdminUtilityPractices() {
                 onClick={() => setDialogOpen(false)}
                 data-testid="button-cancel"
               >
-                Annulla
+                {t("common.cancel")}
               </Button>
               <Button 
                 type="submit"
@@ -1753,7 +1772,7 @@ export default function AdminUtilityPractices() {
                 }
                 data-testid="button-save"
               >
-                {editingPractice ? "Salva Modifiche" : "Crea Pratica"}
+                {editingPractice ? t("common.saveChanges") : t("utility.createPractice")}
               </Button>
             </div>
           </form>
@@ -1766,12 +1785,12 @@ export default function AdminUtilityPractices() {
           <DialogHeader>
             <DialogTitle>{t("customers.newCustomer")}</DialogTitle>
             <DialogDescription>
-              Crea rapidamente un nuovo cliente. Solo il nome è obbligatorio.
+              {t("utility.quickCreateCustomerDesc")}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="newCustomerName">Nome Completo *</Label>
+              <Label htmlFor="newCustomerName">{t("common.fullName")} *</Label>
               <Input
                 id="newCustomerName"
                 value={newCustomerName}
@@ -1781,7 +1800,7 @@ export default function AdminUtilityPractices() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="newCustomerEmail">Email (opzionale)</Label>
+              <Label htmlFor="newCustomerEmail">{t("common.email")} ({t("common.optional")})</Label>
               <Input
                 id="newCustomerEmail"
                 type="email"
@@ -1792,7 +1811,7 @@ export default function AdminUtilityPractices() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="newCustomerPhone">Telefono (opzionale)</Label>
+              <Label htmlFor="newCustomerPhone">{t("common.phone")} ({t("common.optional")})</Label>
               <Input
                 id="newCustomerPhone"
                 value={newCustomerPhone}
@@ -1813,7 +1832,7 @@ export default function AdminUtilityPractices() {
                 }}
                 data-testid="button-cancel-new-customer"
               >
-                Annulla
+                {t("common.cancel")}
               </Button>
               <Button
                 type="button"
@@ -1821,7 +1840,7 @@ export default function AdminUtilityPractices() {
                 disabled={createCustomerMutation.isPending}
                 data-testid="button-save-new-customer"
               >
-                {createCustomerMutation.isPending ? t("admin.repairCenters.creating") : "Crea Cliente"}
+                {createCustomerMutation.isPending ? t("admin.repairCenters.creating") : t("utility.createCustomer")}
               </Button>
             </div>
           </div>

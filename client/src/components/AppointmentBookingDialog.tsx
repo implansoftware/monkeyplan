@@ -124,7 +124,7 @@ export function AppointmentBookingDialog({
     },
     onSuccess: () => {
       toast({
-        title: "Appuntamento prenotato",
+        title: t("appointment.appointmentBooked"),
         description: t("appointment.bookedSuccessfully"),
       });
       queryClient.invalidateQueries({ queryKey: ["/api/repair-orders", repairOrderId, "appointment"] });
@@ -152,7 +152,7 @@ export function AppointmentBookingDialog({
     },
     onSuccess: () => {
       toast({
-        title: "Appuntamento annullato",
+        title: t("appointment.appointmentCancelled"),
         description: t("appointment.cancelledSuccessfully"),
       });
       queryClient.invalidateQueries({ queryKey: ["/api/repair-orders", repairOrderId, "appointment"] });
@@ -197,7 +197,7 @@ export function AppointmentBookingDialog({
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
-            <DialogTitle>Appuntamento Consegna</DialogTitle>
+            <DialogTitle>{t("appointment.deliveryAppointment")}</DialogTitle>
           </DialogHeader>
           <div className="flex items-center justify-center p-8">
             <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
@@ -216,10 +216,10 @@ export function AppointmentBookingDialog({
           <DialogHeader>
             <DialogTitle className="flex flex-wrap items-center gap-2">
               <CalendarCheck className="h-5 w-5" />
-              Appuntamento Consegna
+              {t("appointment.deliveryAppointment")}
             </DialogTitle>
             <DialogDescription>
-              Ordine {orderNumber}
+              {t("appointment.orderNumber", { number: orderNumber })}
             </DialogDescription>
           </DialogHeader>
           
@@ -255,7 +255,7 @@ export function AppointmentBookingDialog({
                 
                 {existingAppointment.confirmedAt && (
                   <div className="flex items-center justify-between text-sm">
-                    <span className="text-muted-foreground">Confermato il</span>
+                    <span className="text-muted-foreground">{t("appointment.confirmedOn")}</span>
                     <span>{format(new Date(existingAppointment.confirmedAt), "dd/MM/yyyy HH:mm")}</span>
                   </div>
                 )}
@@ -273,7 +273,7 @@ export function AppointmentBookingDialog({
               >
                 {cancelMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 <XCircle className="mr-2 h-4 w-4" />
-                Annulla Appuntamento
+                {t("appointment.cancelAppointment")}
               </Button>
             )}
             <Button variant="outline" onClick={() => onOpenChange(false)} data-testid="button-close-appointment">
@@ -291,10 +291,10 @@ export function AppointmentBookingDialog({
         <DialogHeader>
           <DialogTitle className="flex flex-wrap items-center gap-2">
             <CalendarCheck className="h-5 w-5" />
-            Prenota Appuntamento Consegna
+            {t("appointment.bookDeliveryAppointment")}
           </DialogTitle>
           <DialogDescription>
-            Ordine {orderNumber} - Seleziona data e orario per il ritiro del dispositivo
+            {t("appointment.selectDateAndTime", { number: orderNumber })}
           </DialogDescription>
         </DialogHeader>
         
@@ -318,7 +318,7 @@ export function AppointmentBookingDialog({
           <div>
             <h4 className="text-sm font-medium mb-3 flex items-center gap-2">
               <Clock className="h-4 w-4" />
-              Orari disponibili
+              {t("appointment.availableSlots")}
               {selectedDate && (
                 <Button
                   variant="ghost"
@@ -334,7 +334,7 @@ export function AppointmentBookingDialog({
             
             {!selectedDate ? (
               <div className="text-sm text-muted-foreground p-4 text-center border rounded-md">
-                Seleziona una data per vedere gli orari disponibili
+                {t("appointment.selectDateToSeeSlots")}
               </div>
             ) : loadingSlots ? (
               <div className="space-y-2">
@@ -382,7 +382,7 @@ export function AppointmentBookingDialog({
                     <span className="font-medium">
                       {format(selectedDate!, "EEEE d MMMM yyyy", { locale: it })}
                     </span>
-                    <span className="text-muted-foreground mx-2">alle</span>
+                    <span className="text-muted-foreground mx-2">{t("appointment.at")}</span>
                     <span className="font-medium">{selectedSlot.startTime}</span>
                   </div>
                 </div>
@@ -418,7 +418,7 @@ export function AppointmentBookingDialog({
           >
             {bookMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             <CalendarCheck className="mr-2 h-4 w-4" />
-            Conferma Prenotazione
+            {t("appointment.confirmBooking")}
           </Button>
         </div>
       </DialogContent>

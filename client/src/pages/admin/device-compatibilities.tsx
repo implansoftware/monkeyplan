@@ -158,12 +158,12 @@ export default function DeviceCompatibilities() {
 
   const getCategoryLabel = (category: string) => {
     const labels: Record<string, string> = {
-      ricambio: "Ricambio",
-      accessorio: "Accessorio",
-      smartphone: "Smartphone",
-      tablet: "Tablet",
-      laptop: "Laptop",
-      smartwatch: "Smartwatch",
+      ricambio: "ricambio",
+      accessorio: "accessorio",
+      smartphone: "smartphone",
+      tablet: "tablet",
+      laptop: "laptop",
+      smartwatch: "smartwatch",
     };
     return labels[category] || category;
   };
@@ -394,7 +394,7 @@ export default function DeviceCompatibilities() {
                 onClick={handleSaveCompatibilities}
                 disabled={updateCompatibilities.isPending}
               >
-                {updateCompatibilities.isPending ? t("settings.savingRate") : "Salva compatibilità"}
+                {updateCompatibilities.isPending ? t("settings.savingRate") : t("deviceCompat.saveCompatibilities")}
               </Button>
             </div>
           </DialogFooter>

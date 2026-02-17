@@ -22,13 +22,13 @@ import { useTranslation } from "react-i18next";
 function getStatusLabels(t: (key: string) => string): Record<string, string> {
   return {
     pending: t("shipping.preparing"),
-    picked_up: "Ritirato",
+    picked_up: t("shipping.pickedUp"),
     in_transit: t("shipping.inTransit"),
-    out_for_delivery: "In consegna",
+    out_for_delivery: t("shipping.outForDelivery"),
     delivered: t("repairs.status.delivered"),
-    failed_attempt: "Tentativo fallito",
+    failed_attempt: t("shipping.failedAttempt"),
     returned: t("b2b.status.returned"),
-    lost: "Smarrito"
+    lost: t("shipping.lost")
   };
 }
 
@@ -108,7 +108,7 @@ export default function ResellerShipments() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/shipments'] });
-      toast({ title: "Spedizione creata" });
+      toast({ title: t("shipping.shipmentCreated") });
       setShowCreateDialog(false);
       setNewShipment({ orderId: "", carrier: "", trackingNumber: "", notes: "" });
     },
@@ -198,7 +198,7 @@ export default function ResellerShipments() {
           </div>
           <Button onClick={() => setShowCreateDialog(true)} data-testid="button-create-shipment" className="bg-white/20 backdrop-blur-sm border border-white/30 text-white">
             <Plus className="mr-2 h-4 w-4" />
-            Nuova spedizione
+            {t("shipping.newShipmentCreated")}
           </Button>
         </div>
       </div>
@@ -207,7 +207,7 @@ export default function ResellerShipments() {
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder="Cerca per numero tracking..."
+            placeholder={t("shipping.searchTracking")}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="pl-10"
@@ -241,8 +241,8 @@ export default function ResellerShipments() {
                 <TableRow>
                   <TableHead>Tracking</TableHead>
                   <TableHead>{t("shipping.carrier")}</TableHead>
-                  <TableHead>Data spedizione</TableHead>
-                  <TableHead>Data consegna stimata</TableHead>
+                  <TableHead>{t("shipping.shipDate")}</TableHead>
+                  <TableHead>{t("shipping.estimatedDelivery")}</TableHead>
                   <TableHead>{t("common.status")}</TableHead>
                   <TableHead className="text-right">{t("common.actions")}</TableHead>
                 </TableRow>
@@ -305,7 +305,7 @@ export default function ResellerShipments() {
                 onValueChange={(value) => setNewShipment({ ...newShipment, carrier: value })}
               >
                 <SelectTrigger data-testid="select-carrier">
-                  <SelectValue placeholder="Seleziona corriere" />
+                  <SelectValue placeholder={t("shipping.selectCarrier")} />
                 </SelectTrigger>
                 <SelectContent>
                   {carriers.map((carrier) => (
@@ -321,7 +321,7 @@ export default function ResellerShipments() {
               <Input
                 value={newShipment.trackingNumber}
                 onChange={(e) => setNewShipment({ ...newShipment, trackingNumber: e.target.value })}
-                placeholder="Numero di tracking"
+                placeholder={t("shipping.trackingNumberPlaceholder")}
                 data-testid="input-tracking-number"
               />
             </div>
@@ -330,7 +330,7 @@ export default function ResellerShipments() {
               <Textarea
                 value={newShipment.notes}
                 onChange={(e) => setNewShipment({ ...newShipment, notes: e.target.value })}
-                placeholder="Note opzionali..."
+                placeholder={t("common.optionalNotes")}
                 rows={2}
               />
             </div>
@@ -382,7 +382,7 @@ export default function ResellerShipments() {
               </div>
               
               <div className="space-y-4">
-                <h4 className="font-semibold">Aggiungi evento</h4>
+                <h4 className="font-semibold">{t("shipping.addEvent")}</h4>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label>{t("common.status")}</Label>
@@ -431,7 +431,7 @@ export default function ResellerShipments() {
               </div>
               
               <div className="space-y-4">
-                <h4 className="font-semibold">Cronologia eventi</h4>
+                <h4 className="font-semibold">{t("shipping.eventHistory")}</h4>
                 {Array.isArray(trackingEvents) && trackingEvents.length > 0 ? (
                   <div className="space-y-3">
                     {(trackingEvents as any[]).map((event: any, index: number) => (
@@ -462,7 +462,7 @@ export default function ResellerShipments() {
                     ))}
                   </div>
                 ) : (
-                  <p className="text-muted-foreground text-sm">Nessun evento registrato</p>
+                  <p className="text-muted-foreground text-sm">{t("shipping.noEvents")}</p>
                 )}
               </div>
             </div>

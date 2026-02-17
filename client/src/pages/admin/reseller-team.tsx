@@ -77,11 +77,11 @@ interface StaffPermission {
 }
 
 const staffFormSchema = z.object({
-  username: z.string().min(3, "Username deve essere almeno 3 caratteri"),
-  email: z.string().email("Email non valida"),
-  fullName: z.string().min(2, "Nome completo richiesto"),
+  username: z.string().min(3, "usernameMin"),
+  email: z.string().email("invalidEmail"),
+  fullName: z.string().min(2, "fullNameRequired"),
   phone: z.string().optional(),
-  password: z.string().min(6, "Password deve essere almeno 6 caratteri").optional(),
+  password: z.string().min(6, "passwordMin").optional(),
 });
 
 type StaffFormValues = z.infer<typeof staffFormSchema>;
@@ -117,7 +117,7 @@ export default function AdminResellerTeam() {
     queryKey: ["/api/users", resellerId],
     queryFn: async () => {
       const res = await fetch(`/api/users/${resellerId}`, { credentials: "include" });
-      if (!res.ok) throw new Error("Rivenditore non trovato");
+      if (!res.ok) throw new Error("resellerNotFound");
       return res.json();
     },
     enabled: !!resellerId,
@@ -127,7 +127,7 @@ export default function AdminResellerTeam() {
     queryKey: ["/api/admin/resellers", resellerId, "team"],
     queryFn: async () => {
       const res = await fetch(`/api/admin/resellers/${resellerId}/team`, { credentials: "include" });
-      if (!res.ok) throw new Error("Errore caricamento team");
+      if (!res.ok) throw new Error("teamLoadError");
       return res.json();
     },
     enabled: !!resellerId,
@@ -137,7 +137,7 @@ export default function AdminResellerTeam() {
     queryKey: ["/api/admin/resellers", resellerId, "repair-centers"],
     queryFn: async () => {
       const res = await fetch(`/api/admin/resellers/${resellerId}/repair-centers`, { credentials: "include" });
-      if (!res.ok) throw new Error("Errore caricamento centri");
+      if (!res.ok) throw new Error("centersLoadError");
       return res.json();
     },
     enabled: !!resellerId,
@@ -161,7 +161,7 @@ export default function AdminResellerTeam() {
     onError: (error: any) => {
       toast({
         title: t("common.error"),
-        description: error.message || "Impossibile creare il membro staff",
+        description: error.message || t("resellerTeam.createError"),
         variant: "destructive",
       });
     },
@@ -188,7 +188,7 @@ export default function AdminResellerTeam() {
     onError: (error: any) => {
       toast({
         title: t("common.error"),
-        description: error.message || "Impossibile aggiornare",
+        description: error.message || t("resellerTeam.updateError"),
         variant: "destructive",
       });
     },
@@ -210,7 +210,7 @@ export default function AdminResellerTeam() {
     onError: (error: any) => {
       toast({
         title: t("common.error"),
-        description: error.message || "Impossibile eliminare",
+        description: error.message || t("resellerTeam.deleteError"),
         variant: "destructive",
       });
     },
@@ -366,7 +366,7 @@ export default function AdminResellerTeam() {
                 <Users className="h-7 w-7 text-white" />
               </div>
               <div>
-                <h1 className="text-2xl sm:text-3xl font-bold text-white tracking-tight">Team di {reseller?.fullName || "Rivenditore"}</h1>
+                <h1 className="text-2xl sm:text-3xl font-bold text-white tracking-tight">Team di {reseller?.fullName || t("resellerTeam.resellerFallback")}</h1>
                 <p className="text-blue-100/80 mt-1 flex items-center gap-2">
                   <Store className="h-4 w-4" />
                   Gestisci i collaboratori e i loro permessi
@@ -426,7 +426,7 @@ export default function AdminResellerTeam() {
               <p className="text-slate-500 text-lg">
                 {staffMembers.length === 0
                   ? "Nessun collaboratore nel team. Aggiungi il primo membro!"
-                  : "Nessun collaboratore trovato"}
+                  : t("resellerTeam.noCollaborators")}
               </p>
             </div>
           ) : (
@@ -485,7 +485,7 @@ export default function AdminResellerTeam() {
                             size="icon"
                             className="hover:bg-blue-100 hover:text-blue-600"
                             onClick={() => openPermissionsDialog(member)}
-                            title="Gestisci permessi"
+                            title={t("resellerTeam.managePermissions")}
                             data-testid={`button-permissions-${member.id}`}
                           >
                             <Shield className="h-4 w-4" />
@@ -495,7 +495,7 @@ export default function AdminResellerTeam() {
                             size="icon"
                             className="hover:bg-amber-100 hover:text-amber-600"
                             onClick={() => openEditDialog(member)}
-                            title="Modifica utente"
+                            title={t("resellerTeam.editUser")}
                             data-testid={`button-edit-${member.id}`}
                           >
                             <Edit className="h-4 w-4" />
@@ -508,7 +508,7 @@ export default function AdminResellerTeam() {
                               setSelectedMember(member);
                               setDeleteDialogOpen(true);
                             }}
-                            title="Elimina utente"
+                            title={t("resellerTeam.deleteUser")}
                             data-testid={`button-delete-${member.id}`}
                           >
                             <Trash2 className="h-4 w-4" />

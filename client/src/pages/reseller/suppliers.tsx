@@ -165,11 +165,11 @@ export default function ResellerSuppliers() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/reseller/suppliers"] });
-      toast({ title: "Fornitore creato", description: "Il nuovo fornitore è stato aggiunto con successo" });
+      toast({ title: t("suppliers.created"), description: "Il nuovo fornitore è stato aggiunto con successo" });
       handleCloseDialog();
     },
     onError: (error: any) => {
-      toast({ title: t("common.error"), description: error.message || "Errore durante la creazione", variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message || t("common.errorCreating"), variant: "destructive" });
     },
   });
 
@@ -190,11 +190,11 @@ export default function ResellerSuppliers() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/reseller/suppliers"] });
-      toast({ title: "Fornitore aggiornato", description: "Le modifiche sono state salvate" });
+      toast({ title: t("suppliers.updated"), description: "Le modifiche sono state salvate" });
       handleCloseDialog();
     },
     onError: (error: any) => {
-      toast({ title: t("common.error"), description: error.message || "Errore durante l'aggiornamento", variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message || t("common.errorUpdating"), variant: "destructive" });
     },
   });
 
@@ -204,11 +204,11 @@ export default function ResellerSuppliers() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/reseller/suppliers"] });
-      toast({ title: "Fornitore eliminato", description: "Il fornitore è stato rimosso" });
+      toast({ title: t("suppliers.deleted"), description: "Il fornitore è stato rimosso" });
       setDeleteConfirmId(null);
     },
     onError: (error: any) => {
-      toast({ title: t("common.error"), description: error.message || "Errore durante l'eliminazione", variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message || t("common.errorDeleting"), variant: "destructive" });
     },
   });
 
@@ -405,7 +405,7 @@ export default function ResellerSuppliers() {
                             <Link href="/reseller/sifar/catalog">
                               <Button variant="default" size="sm" data-testid="button-sifar-catalog">
                                 <Package className="h-4 w-4 mr-2" />
-                                Catalogo Ricambi
+                                {t("suppliers.spareCatalog")}
                               </Button>
                             </Link>
                             <Link href="/reseller/sifar/cart">
@@ -427,13 +427,13 @@ export default function ResellerSuppliers() {
                           <div className="flex items-start gap-2 p-3 rounded-lg bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800">
                             <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
                             <p className="text-xs text-amber-800 dark:text-amber-200">
-                              Configura le credenziali per ordinare ricambi dal catalogo SIFAR.
+                              {t("suppliers.sifarDesc")}
                             </p>
                           </div>
                           <Link href="/reseller/sifar/settings">
                             <Button size="sm" className="w-full" data-testid="button-sifar-configure">
                               <Settings className="h-4 w-4 mr-2" />
-                              Configura SIFAR
+                              {t("suppliers.configureSifar")}
                             </Button>
                           </Link>
                         </div>
@@ -465,13 +465,13 @@ export default function ResellerSuppliers() {
                           <div className="flex items-start gap-2 p-3 rounded-lg bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800">
                             <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
                             <p className="text-xs text-amber-800 dark:text-amber-200">
-                              Configura le credenziali per accedere a valutazioni e marketplace usato.
+                              {t("suppliers.trovausatiDesc")}
                             </p>
                           </div>
                           <Link href="/reseller/trovausati/settings">
                             <Button size="sm" className="w-full" data-testid="button-trovausati-configure">
                               <Settings className="h-4 w-4 mr-2" />
-                              Configura TrovaUsati
+                              {t("suppliers.configureTrovausati")}
                             </Button>
                           </Link>
                         </div>
@@ -511,7 +511,7 @@ export default function ResellerSuppliers() {
                           <div className="flex items-start gap-2 p-3 rounded-lg bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800">
                             <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
                             <p className="text-xs text-amber-800 dark:text-amber-200">
-                              Configura il tuo API Token per ordinare ricambi da Foneday.
+                              {t("suppliers.fonedayDesc")}
                             </p>
                           </div>
                           <Link href="/reseller/foneday/settings">
@@ -551,13 +551,13 @@ export default function ResellerSuppliers() {
                           <div className="flex items-start gap-2 p-3 rounded-lg bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800">
                             <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
                             <p className="text-xs text-amber-800 dark:text-amber-200">
-                              Configura le credenziali per ordinare ricambi da MobileSentrix.
+                              {t("suppliers.mobilesentrixDesc")}
                             </p>
                           </div>
                           <Link href="/reseller/mobilesentrix/settings">
                             <Button size="sm" className="w-full" data-testid="button-mobilesentrix-configure">
                               <Settings className="h-4 w-4 mr-2" />
-                              Configura MobileSentrix
+                              {t("suppliers.configureMobilesentrix")}
                             </Button>
                           </Link>
                         </div>
@@ -574,7 +574,7 @@ export default function ResellerSuppliers() {
                           {integration.supportsCatalog && (
                             <Badge variant="outline" className="text-[10px] gap-1">
                               <Package className="h-3 w-3" />
-                              Catalogo prodotti
+                              {t("suppliers.productsCatalog")}
                             </Badge>
                           )}
                           {integration.supportsOrdering && (
@@ -616,7 +616,7 @@ export default function ResellerSuppliers() {
             <div className="text-center py-12 text-muted-foreground">
               <Truck className="h-12 w-12 mx-auto mb-4 opacity-50" />
               <p>{t("suppliers.noSuppliersFound")}</p>
-              <p className="text-sm mt-1">Clicca su "Nuovo Fornitore" per aggiungere il tuo primo fornitore</p>
+              <p className="text-sm mt-1">{t("suppliers.clickToAddFirst")}</p>
             </div>
           ) : (
             <Table>
@@ -626,7 +626,7 @@ export default function ResellerSuppliers() {
                   <TableHead>{t("common.code")}</TableHead>
                   <TableHead>{t("common.name")}</TableHead>
                   <TableHead>{t("common.contacts")}</TableHead>
-                  <TableHead>Città</TableHead>
+                  <TableHead>{t("suppliers.city")}</TableHead>
                   <TableHead>Tempi Consegna</TableHead>
                   <TableHead>{t("common.status")}</TableHead>
                   <TableHead className="w-[100px]">{t("common.actions")}</TableHead>
@@ -719,16 +719,16 @@ export default function ResellerSuppliers() {
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle>{editingSupplier ? "Modifica Fornitore" : t("suppliers.newSupplier")}</DialogTitle>
+            <DialogTitle>{editingSupplier ? t("suppliers.editSupplier") : t("suppliers.newSupplier")}</DialogTitle>
           </DialogHeader>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 py-4">
             <div className="space-y-2">
-              <Label htmlFor="name">Nome / Ragione Sociale *</Label>
+              <Label htmlFor="name">{t("suppliers.companyName")} *</Label>
               <Input
                 id="name"
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                placeholder="Nome del fornitore"
+                placeholder={t("suppliers.supplierNamePlaceholder")}
                 data-testid="input-supplier-name"
               />
             </div>
@@ -754,7 +754,7 @@ export default function ResellerSuppliers() {
               />
             </div>
             <div className="col-span-2 space-y-2">
-              <Label htmlFor="address">Indirizzo</Label>
+              <Label htmlFor="address">{t("suppliers.address")}</Label>
               <AddressAutocomplete
                 id="address"
                 name="address"
@@ -765,12 +765,12 @@ export default function ResellerSuppliers() {
                   setSelectedCity(result.city);
                   setSelectedZipCode(result.postalCode);
                 }}
-                placeholder="Inizia a digitare l'indirizzo..."
+                placeholder={t("suppliers.startTypingAddress")}
                 data-testid="input-supplier-address"
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="city">Città</Label>
+              <Label htmlFor="city">{t("suppliers.city")}</Label>
               <Input
                 id="city"
                 value={selectedCity}
@@ -790,7 +790,7 @@ export default function ResellerSuppliers() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="vatNumber">Partita IVA</Label>
+              <Label htmlFor="vatNumber">{t("auth.vatNumber")}</Label>
               <Input
                 id="vatNumber"
                 value={formData.vatNumber}
@@ -800,7 +800,7 @@ export default function ResellerSuppliers() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="fiscalCode">Codice Fiscale</Label>
+              <Label htmlFor="fiscalCode">{t("auth.fiscalCode")}</Label>
               <Input
                 id="fiscalCode"
                 value={formData.fiscalCode}
@@ -810,7 +810,7 @@ export default function ResellerSuppliers() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="deliveryDays">Tempi di Consegna (giorni)</Label>
+              <Label htmlFor="deliveryDays">{t("suppliers.deliveryTime")}</Label>
               <Input
                 id="deliveryDays"
                 type="number"
@@ -838,7 +838,7 @@ export default function ResellerSuppliers() {
       <Dialog open={!!deleteConfirmId} onOpenChange={() => setDeleteConfirmId(null)}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Conferma Eliminazione</DialogTitle>
+            <DialogTitle>{t("common.confirmDelete")}</DialogTitle>
           </DialogHeader>
           <p className="text-muted-foreground">
             Sei sicuro di voler eliminare questo fornitore? L'operazione non può essere annullata.

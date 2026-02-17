@@ -73,7 +73,7 @@ export default function AdminWarrantyProducts() {
       closeDialog();
     },
     onError: () => {
-      toast({ title: t("common.error"), description: "Impossibile creare il prodotto", variant: "destructive" });
+      toast({ title: t("common.error"), description: t("warrantyProducts.createError"), variant: "destructive" });
     },
   });
 
@@ -86,7 +86,7 @@ export default function AdminWarrantyProducts() {
       closeDialog();
     },
     onError: () => {
-      toast({ title: t("common.error"), description: "Impossibile aggiornare il prodotto", variant: "destructive" });
+      toast({ title: t("common.error"), description: t("warrantyProducts.updateError"), variant: "destructive" });
     },
   });
 
@@ -98,7 +98,7 @@ export default function AdminWarrantyProducts() {
       setDeleteConfirmId(null);
     },
     onError: () => {
-      toast({ title: t("common.error"), description: "Impossibile eliminare il prodotto", variant: "destructive" });
+      toast({ title: t("common.error"), description: t("warrantyProducts.deleteError"), variant: "destructive" });
     },
   });
 
@@ -132,7 +132,7 @@ export default function AdminWarrantyProducts() {
 
   const handleSubmit = () => {
     if (!formData.name || formData.durationMonths <= 0 || formData.priceInCents <= 0) {
-      toast({ title: t("common.error"), description: "Compila tutti i campi obbligatori", variant: "destructive" });
+      toast({ title: t("common.error"), description: t("warrantyProducts.fillRequired"), variant: "destructive" });
       return;
     }
 
@@ -152,9 +152,9 @@ export default function AdminWarrantyProducts() {
 
   const getCoverageLabel = (type: string) => {
     switch (type) {
-      case "basic": return "Base";
-      case "extended": return "Estesa";
-      case "full": return "Completa";
+      case "basic": return t("warranties.types.basic");
+      case "extended": return t("warranties.types.extended");
+      case "full": return t("warranties.types.full");
       default: return type;
     }
   };
@@ -255,7 +255,7 @@ export default function AdminWarrantyProducts() {
                     <TableCell className="text-right font-medium">{formatCurrency(product.priceInCents)}</TableCell>
                     <TableCell className="text-center">
                       <Badge variant={product.isActive ? "default" : "secondary"}>
-                        {product.isActive ? "Attivo" : "Inattivo"}
+                        {product.isActive ? t("common.active") : t("common.inactive")}
                       </Badge>
                     </TableCell>
                     <TableCell className="text-right">
@@ -289,9 +289,9 @@ export default function AdminWarrantyProducts() {
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent className="max-w-lg">
           <DialogHeader>
-            <DialogTitle>{editingProduct ? "Modifica Prodotto" : "Nuovo Prodotto Garanzia"}</DialogTitle>
+            <DialogTitle>{editingProduct ? t("warrantyProducts.editProduct") : t("warrantyProducts.newProduct")}</DialogTitle>
             <DialogDescription>
-              {editingProduct ? "Modifica i dettagli del prodotto garanzia" : "Crea un nuovo prodotto garanzia per il catalogo"}
+              {editingProduct ? t("warrantyProducts.editProductDesc") : t("warrantyProducts.newProductDesc")}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
@@ -425,7 +425,7 @@ export default function AdminWarrantyProducts() {
               disabled={createMutation.isPending || updateMutation.isPending}
               data-testid="button-save-warranty"
             >
-              {createMutation.isPending || updateMutation.isPending ? t("settings.savingRate") : editingProduct ? "Salva Modifiche" : "Crea Prodotto"}
+              {createMutation.isPending || updateMutation.isPending ? t("settings.savingRate") : editingProduct ? t("warrantyProducts.saveChanges") : t("warrantyProducts.createProduct")}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -447,7 +447,7 @@ export default function AdminWarrantyProducts() {
               disabled={deleteMutation.isPending}
               data-testid="button-confirm-delete"
             >
-              {deleteMutation.isPending ? t("admin.resellers.deleting") : "Elimina"}
+              {deleteMutation.isPending ? t("admin.resellers.deleting") : t("warrantyProducts.deleteProduct")}
             </Button>
           </DialogFooter>
         </DialogContent>

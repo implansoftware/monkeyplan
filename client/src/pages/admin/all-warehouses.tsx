@@ -37,20 +37,20 @@ type EnrichedMovement = WarehouseMovement & {
 };
 
 const OWNER_TYPE_LABELS: Record<string, { label: string; color: string }> = {
-  admin: { label: "Admin", color: "bg-purple-500/10 text-purple-500" },
-  reseller: { label: "Rivenditore", color: "bg-blue-500/10 text-blue-500" },
-  sub_reseller: { label: "Sub-Rivenditore", color: "bg-cyan-500/10 text-cyan-500" },
-  repair_center: { label: "Centro Riparazioni", color: "bg-orange-500/10 text-orange-500" },
+  admin: { label: "admin", color: "bg-purple-500/10 text-purple-500" },
+  reseller: { label: "reseller", color: "bg-blue-500/10 text-blue-500" },
+  sub_reseller: { label: "subReseller", color: "bg-cyan-500/10 text-cyan-500" },
+  repair_center: { label: "repairCenterLabel", color: "bg-orange-500/10 text-orange-500" },
 };
 
 const ROLE_LABELS: Record<string, string> = {
-  admin: "Admin",
-  admin_staff: "Staff Admin",
-  reseller: "Rivenditore",
-  reseller_staff: "Staff Rivenditore",
-  sub_reseller: "Sub-Rivenditore",
-  repair_center: "Centro Riparazioni",
-  customer: "Cliente",
+  admin: "admin",
+  admin_staff: "adminStaff",
+  reseller: "reseller",
+  reseller_staff: "resellerStaff",
+  sub_reseller: "subReseller",
+  repair_center: "repairCenterLabel",
+  customer: "customer",
 };
 
 export default function AllWarehousesPage() {
@@ -77,7 +77,7 @@ export default function AllWarehousesPage() {
       const params = new URLSearchParams();
       if (ownerTypeFilter !== "all") params.append("ownerType", ownerTypeFilter);
       const res = await fetch(`/api/admin/all-warehouses?${params.toString()}`, { credentials: "include" });
-      if (!res.ok) throw new Error("Errore caricamento magazzini");
+      if (!res.ok) throw new Error(t("common.loadError"));
       return res.json();
     },
   });
@@ -87,7 +87,7 @@ export default function AllWarehousesPage() {
     queryFn: async () => {
       if (!selectedWarehouse) return [];
       const res = await fetch(`/api/warehouses/${selectedWarehouse.id}/stock`, { credentials: "include" });
-      if (!res.ok) throw new Error("Errore caricamento stock");
+      if (!res.ok) throw new Error(t("common.loadError"));
       return res.json();
     },
     enabled: !!selectedWarehouse && detailDialogOpen,
@@ -98,7 +98,7 @@ export default function AllWarehousesPage() {
     queryFn: async () => {
       if (!selectedWarehouse) return [];
       const res = await fetch(`/api/warehouses/${selectedWarehouse.id}/movements`, { credentials: "include" });
-      if (!res.ok) throw new Error("Errore caricamento movimenti");
+      if (!res.ok) throw new Error(t("common.loadError"));
       return res.json();
     },
     enabled: !!selectedWarehouse && detailDialogOpen && activeDetailTab === "movements",
@@ -198,11 +198,11 @@ export default function AllWarehousesPage() {
   };
 
   const movementTypeLabels: Record<string, { label: string; icon: any; color: string }> = {
-    carico: { label: "Carico", icon: TrendingUp, color: "text-green-500" },
-    scarico: { label: "Scarico", icon: TrendingDown, color: "text-red-500" },
-    trasferimento_in: { label: "Trasf. In", icon: ArrowLeftRight, color: "text-blue-500" },
-    trasferimento_out: { label: "Trasf. Out", icon: ArrowLeftRight, color: "text-orange-500" },
-    rettifica: { label: "Rettifica", icon: RotateCcw, color: "text-purple-500" },
+    carico: { label: "carico", icon: TrendingUp, color: "text-green-500" },
+    scarico: { label: "scarico", icon: TrendingDown, color: "text-red-500" },
+    trasferimento_in: { label: "trasferimento_in", icon: ArrowLeftRight, color: "text-blue-500" },
+    trasferimento_out: { label: "trasferimento_out", icon: ArrowLeftRight, color: "text-orange-500" },
+    rettifica: { label: "rettifica", icon: RotateCcw, color: "text-purple-500" },
   };
 
   const totalStock = warehouses.reduce((sum, wh) => sum + wh.totalQuantity, 0);
@@ -221,7 +221,7 @@ export default function AllWarehousesPage() {
               <Building2 className="h-5 w-5" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold tracking-tight" data-testid="text-all-warehouses-title">Gestione Magazzini</h1>
+              <h1 className="text-2xl font-bold tracking-tight" data-testid="text-all-warehouses-title">{t("warehouse.management")}</h1>
               <p className="text-sm text-muted-foreground">
                 Visualizza e gestisci tutti i magazzini del sistema
               </p>
@@ -238,7 +238,7 @@ export default function AllWarehousesPage() {
                 <Warehouse className="h-6 w-6 text-primary" />
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">Magazzini Totali</p>
+                <p className="text-sm text-muted-foreground">{t("warehouse.totalWarehouses")}</p>
                 <p className="text-2xl font-bold" data-testid="text-total-warehouses">{warehouses.length}</p>
               </div>
             </div>
@@ -251,7 +251,7 @@ export default function AllWarehousesPage() {
                 <Package className="h-6 w-6 text-blue-500" />
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">Articoli Unici</p>
+                <p className="text-sm text-muted-foreground">{t("warehouse.uniqueItems")}</p>
                 <p className="text-2xl font-bold" data-testid="text-total-items">{totalItems}</p>
               </div>
             </div>
@@ -264,7 +264,7 @@ export default function AllWarehousesPage() {
                 <Boxes className="h-6 w-6 text-green-500" />
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">Quantità Totale</p>
+                <p className="text-sm text-muted-foreground">{t("warehouse.totalQuantity")}</p>
                 <p className="text-2xl font-bold" data-testid="text-total-quantity">{totalStock}</p>
               </div>
             </div>
@@ -277,7 +277,7 @@ export default function AllWarehousesPage() {
                 <User className="h-6 w-6 text-purple-500" />
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">Proprietari</p>
+                <p className="text-sm text-muted-foreground">{t("warehouse.owners")}</p>
                 <p className="text-2xl font-bold" data-testid="text-total-owners">
                   {new Set(warehouses.map(w => w.ownerId)).size}
                 </p>
@@ -311,7 +311,7 @@ export default function AllWarehousesPage() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">{t("common.allTypes")}</SelectItem>
-                  <SelectItem value="admin">Admin</SelectItem>
+                  <SelectItem value="admin">{t("roles.admin")}</SelectItem>
                   <SelectItem value="reseller">{t("sidebar.items.resellers")}</SelectItem>
                   <SelectItem value="sub_reseller">{t("admin.resellers.subResellers")}</SelectItem>
                   <SelectItem value="repair_center">{t("admin.repairCenters.repairCenters")}</SelectItem>
@@ -337,7 +337,7 @@ export default function AllWarehousesPage() {
                   <TableHead>{t("common.type")}</TableHead>
                   <TableHead>{t("warehouse.owner")}</TableHead>
                   <TableHead>{t("common.address")}</TableHead>
-                  <TableHead className="text-right">Articoli</TableHead>
+                  <TableHead className="text-right">{t("warehouse.items")}</TableHead>
                   <TableHead className="text-right">{t("common.quantity")}</TableHead>
                   <TableHead>{t("common.status")}</TableHead>
                   <TableHead className="text-right">{t("common.actions")}</TableHead>
@@ -379,7 +379,7 @@ export default function AllWarehousesPage() {
                     <TableCell className="text-right font-medium">{wh.totalQuantity}</TableCell>
                     <TableCell>
                       <Badge variant={wh.isActive ? "default" : "secondary"}>
-                        {wh.isActive ? "Attivo" : "Inattivo"}
+                        {wh.isActive ? t("common.active") : t("common.inactive")}
                       </Badge>
                     </TableCell>
                     <TableCell className="text-right">
@@ -495,7 +495,7 @@ export default function AllWarehousesPage() {
                                 <TableHead>{t("products.product")}</TableHead>
                                 <TableHead>{t("common.category")}</TableHead>
                                 <TableHead className="text-right">{t("common.quantity")}</TableHead>
-                                <TableHead className="text-right">Min. Stock</TableHead>
+                                <TableHead className="text-right">{t("warehouse.minStock")}</TableHead>
                                 <TableHead>{t("warehouse.location")}</TableHead>
                                 <TableHead className="text-right">{t("common.actions")}</TableHead>
                               </TableRow>
@@ -525,7 +525,7 @@ export default function AllWarehousesPage() {
                                       variant="ghost"
                                       onClick={() => handleOpenTransfer(item)}
                                       disabled={item.quantity <= 0}
-                                      title="Trasferisci a un altro magazzino"
+                                      title={t("warehouse.transferTo")}
                                       data-testid={`button-transfer-${item.id}`}
                                     >
                                       <ArrowLeftRight className="h-4 w-4" />
@@ -581,7 +581,7 @@ export default function AllWarehousesPage() {
                                 <TableCell>
                                   <div className={`flex items-center gap-1 ${typeInfo.color}`}>
                                     <Icon className="h-4 w-4" />
-                                    <span className="text-sm">{typeInfo.label}</span>
+                                    <span className="text-sm">{t(`warehouse.movementTypes.${typeInfo.label}`)}</span>
                                   </div>
                                 </TableCell>
                                 <TableCell className="text-sm">
@@ -670,7 +670,7 @@ export default function AllWarehousesPage() {
               disabled={updateWarehouseMutation.isPending || !editData.name.trim()}
               data-testid="button-save-warehouse"
             >
-              {updateWarehouseMutation.isPending ? t("settings.savingRate") : "Salva"}
+              {updateWarehouseMutation.isPending ? t("settings.savingRate") : t("common.save")}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -690,7 +690,7 @@ export default function AllWarehousesPage() {
               <div className="p-3 bg-muted rounded-lg">
                 <p className="font-medium">{transferItem.product?.name}</p>
                 <p className="text-sm text-muted-foreground">SKU: {transferItem.product?.sku}</p>
-                <p className="text-sm">Disponibili: <Badge variant="secondary">{transferItem.quantity}</Badge></p>
+                <p className="text-sm">{t("warehouse.available")}: <Badge variant="secondary">{transferItem.quantity}</Badge></p>
               </div>
               
               <div className="space-y-2">
@@ -738,7 +738,7 @@ export default function AllWarehousesPage() {
               disabled={transferMutation.isPending || !transferDestWarehouseId || transferQuantity <= 0}
               data-testid="button-confirm-transfer"
             >
-              {transferMutation.isPending ? "Trasferimento..." : "Trasferisci"}
+              {transferMutation.isPending ? t("warehouse.transferring") : t("warehouse.transfer")}
             </Button>
           </DialogFooter>
         </DialogContent>

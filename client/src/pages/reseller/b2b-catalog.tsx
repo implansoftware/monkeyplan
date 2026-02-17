@@ -113,7 +113,7 @@ export default function ResellerB2BCatalog() {
       return res.json();
     },
     onSuccess: () => {
-      toast({ title: "Ordine creato", description: "Il tuo ordine è stato inviato per approvazione" });
+      toast({ title: t("b2b.orderCreated"), description: t("b2b.orderSentForApproval") });
       setCart([]);
       setCheckoutOpen(false);
       setNotes("");
@@ -190,7 +190,7 @@ export default function ResellerB2BCatalog() {
 
   const handleCheckout = () => {
     if (cart.length === 0) {
-      toast({ title: t("pos.emptyCart"), description: "Aggiungi prodotti al carrello", variant: "destructive" });
+      toast({ title: t("pos.emptyCart"), description: t("marketplace.addProductsToCart"), variant: "destructive" });
       return;
     }
     setCheckoutOpen(true);
@@ -235,7 +235,7 @@ export default function ResellerB2BCatalog() {
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Cerca prodotti..."
+                placeholder={t("b2b.searchProducts")}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-9 w-64"
@@ -267,17 +267,17 @@ export default function ResellerB2BCatalog() {
               <Building2 className="h-5 w-5 text-blue-600 dark:text-blue-400 mt-0.5 shrink-0" />
               <div>
                 <p className="text-sm font-medium text-blue-900 dark:text-blue-100">
-                  Stai ordinando dall'Admin (fornitore centrale)
+                  {t("b2b.orderingFromAdmin")}
                 </p>
                 <p className="text-xs text-blue-700 dark:text-blue-300 mt-0.5">
-                  Qui trovi i prodotti messi a disposizione dall'amministratore della piattaforma.
+                  {t("b2b.adminProductsDesc")}
                 </p>
               </div>
             </div>
             <Link href="/reseller/marketplace" data-testid="link-to-marketplace">
               <Button variant="outline" size="sm" className="border-blue-300 dark:border-blue-700 text-blue-700 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-blue-900/50">
                 <Store className="h-4 w-4 mr-2" />
-                Vai al Marketplace Rivenditori
+                {t("b2b.goToMarketplace")}
                 <ArrowRight className="h-4 w-4 ml-2" />
               </Button>
             </Link>
@@ -505,7 +505,7 @@ export default function ResellerB2BCatalog() {
 
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="shippingMethod">Metodo di Spedizione</Label>
+              <Label htmlFor="shippingMethod">{t("b2b.shippingMethodLabel")}</Label>
               {shippingMethodsLoading ? (
                 <Skeleton className="h-10 w-full" />
               ) : !shippingMethods || shippingMethods.length === 0 ? (
@@ -515,7 +515,7 @@ export default function ResellerB2BCatalog() {
               ) : (
                 <Select value={selectedShippingMethod} onValueChange={setSelectedShippingMethod}>
                   <SelectTrigger data-testid="select-shipping">
-                    <SelectValue placeholder="Seleziona metodo di spedizione" />
+                    <SelectValue placeholder={t("b2b.selectShippingMethod")} />
                   </SelectTrigger>
                   <SelectContent>
                     {shippingMethods.map(method => (
@@ -530,7 +530,7 @@ export default function ResellerB2BCatalog() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="paymentMethod">Metodo di Pagamento</Label>
+              <Label htmlFor="paymentMethod">{t("b2b.paymentMethodLabel")}</Label>
               {paymentConfigLoading ? (
                 <Skeleton className="h-10 w-full" />
               ) : !paymentConfig?.hasAnyMethod ? (
@@ -540,7 +540,7 @@ export default function ResellerB2BCatalog() {
               ) : (
                 <Select value={paymentMethod} onValueChange={setPaymentMethod}>
                   <SelectTrigger data-testid="select-payment">
-                    <SelectValue placeholder="Seleziona metodo di pagamento" />
+                    <SelectValue placeholder={t("b2b.selectPaymentMethodPlaceholder")} />
                   </SelectTrigger>
                   <SelectContent>
                     {paymentConfig?.bankTransfer?.enabled && (
@@ -606,7 +606,7 @@ export default function ResellerB2BCatalog() {
                 id="notes"
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
-                placeholder="Aggiungi note per l'ordine..."
+                placeholder={t("b2b.addOrderNotes")}
                 rows={3}
                 data-testid="input-notes"
               />
@@ -630,7 +630,7 @@ export default function ResellerB2BCatalog() {
                 }}
                 onError={(error) => {
                   toast({
-                    title: "Errore PayPal",
+                    title: t("b2b.paypalError"),
                     description: error,
                     variant: "destructive",
                   });
@@ -638,7 +638,7 @@ export default function ResellerB2BCatalog() {
                 onCancel={() => {
                   toast({
                     title: t("license.paymentCancelled"),
-                    description: "Hai annullato il pagamento PayPal",
+                    description: t("b2b.paypalCancelled"),
                   });
                 }}
               />
@@ -652,7 +652,7 @@ export default function ResellerB2BCatalog() {
                   queryClient.invalidateQueries({ queryKey: ["/api/reseller/b2b-orders"] });
                   setCheckoutOpen(false);
                   setCart([]);
-                  toast({ title: "Ordine completato", description: "Pagamento ricevuto con successo" });
+                  toast({ title: t("b2b.orderCompleted"), description: t("b2b.paymentReceived") });
                 }}
                 onError={(error) => {
                   toast({ title: t("common.error"), description: error, variant: "destructive" });
@@ -665,7 +665,7 @@ export default function ResellerB2BCatalog() {
                 data-testid="button-submit-order"
               >
                 {createOrderMutation.isPending ? (
-                  "Invio in corso..."
+                  t("b2b.submitting")
                 ) : (
                   <>
                     <Send className="h-4 w-4 mr-2" />

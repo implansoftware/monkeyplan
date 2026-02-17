@@ -43,21 +43,21 @@ interface LeaveRequest {
 }
 
 const leaveTypeLabels: Record<string, string> = {
-  vacation: "Ferie",
-  sick: "Malattia",
-  personal: "Permesso Personale",
-  maternity: "Maternità",
-  paternity: "Paternità",
-  bereavement: "Lutto",
-  other: "Altro",
-  ferie: "Ferie",
+  vacation: "vacation",
+  sick: "sick",
+  personal: "personal",
+  maternity: "maternity",
+  paternity: "paternity",
+  bereavement: "bereavement",
+  other: "other",
+  ferie: "ferie",
   permesso_rol: "Permesso ROL",
-  permesso_studio: "Permesso Studio",
-  permesso_medico: "Permesso Medico",
-  permesso_lutto: "Permesso Lutto",
-  permesso_matrimonio: "Permesso Matrimonio",
-  congedo_parentale: "Congedo Parentale",
-  altro: "Altro",
+  permesso_studio: "permesso_studio",
+  permesso_medico: "permesso_medico",
+  permesso_lutto: "permesso_lutto",
+  permesso_matrimonio: "permesso_matrimonio",
+  congedo_parentale: "congedo_parentale",
+  altro: "altro",
 };
 
 const statusColors: Record<string, string> = {
@@ -67,7 +67,7 @@ const statusColors: Record<string, string> = {
 };
 
 const statusLabels: Record<string, string> = {
-  pending: "In Attesa",
+  pending: "pending",
   approved: "Approvata",
   rejected: "Rifiutata",
 };

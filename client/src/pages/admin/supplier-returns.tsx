@@ -83,23 +83,23 @@ interface SupplierReturnWithDetails extends SupplierReturn {
 }
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; icon: typeof Clock }> = {
-  draft: { label: "Bozza", color: "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300", icon: FileText },
-  requested: { label: "Richiesta", color: "bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300", icon: Send },
-  approved: { label: "Approvato", color: "bg-indigo-100 text-indigo-700 dark:bg-indigo-900 dark:text-indigo-300", icon: CheckCircle },
-  shipped: { label: "Spedito", color: "bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300", icon: Truck },
-  received: { label: "Ricevuto", color: "bg-teal-100 text-teal-700 dark:bg-teal-900 dark:text-teal-300", icon: Package },
-  refunded: { label: "Rimborsato", color: "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300", icon: DollarSign },
-  rejected: { label: "Rifiutato", color: "bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300", icon: Ban },
-  cancelled: { label: "Annullato", color: "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300", icon: XCircle },
+  draft: { label: "draft", color: "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300", icon: FileText },
+  requested: { label: "requested", color: "bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300", icon: Send },
+  approved: { label: "approved", color: "bg-indigo-100 text-indigo-700 dark:bg-indigo-900 dark:text-indigo-300", icon: CheckCircle },
+  shipped: { label: "shipped", color: "bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300", icon: Truck },
+  received: { label: "received", color: "bg-teal-100 text-teal-700 dark:bg-teal-900 dark:text-teal-300", icon: Package },
+  refunded: { label: "refunded", color: "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300", icon: DollarSign },
+  rejected: { label: "rejected", color: "bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300", icon: Ban },
+  cancelled: { label: "cancelled", color: "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300", icon: XCircle },
 };
 
 const REASON_LABELS: Record<string, string> = {
-  defective: "Prodotto difettoso",
-  wrong_item: "Articolo sbagliato",
-  damaged: "Danneggiato",
-  not_as_described: "Non conforme",
-  excess_stock: "Eccedenza stock",
-  other: "Altro",
+  defective: "defective",
+  wrong_item: "wrongItem",
+  damaged: "damaged",
+  not_as_described: "notAsDescribed",
+  excess_stock: "excessStock",
+  other: "other",
 };
 
 function formatCurrency(cents: number): string {
@@ -240,7 +240,7 @@ export default function SupplierReturnsPage() {
     const totalAmount = Math.round(parseFloat(formTotalAmount || "0") * 100);
     
     if (!formSupplierId || !formRepairCenterId || !formReason) {
-      toast({ title: t("common.error"), description: "Compila tutti i campi obbligatori", variant: "destructive" });
+      toast({ title: t("common.error"), description: t("suppliers.fillRequiredFields"), variant: "destructive" });
       return;
     }
     
@@ -260,7 +260,7 @@ export default function SupplierReturnsPage() {
       await apiRequest("POST", `/api/supplier-returns/${returnId}/status`, { status: newStatus });
       queryClient.invalidateQueries({ queryKey: ["/api/supplier-returns"] });
       const statusLabel = STATUS_CONFIG[newStatus]?.label || newStatus;
-      toast({ title: t("admin.resellers.statusUpdated"), description: `Reso aggiornato a: ${statusLabel}` });
+      toast({ title: t("admin.resellers.statusUpdated"), description: `${t("suppliers.returnUpdatedTo")} ${statusLabel}` });
     } catch (error: any) {
       toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     }
@@ -287,14 +287,14 @@ export default function SupplierReturnsPage() {
     <div className="p-6 space-y-6">
       <div className="flex items-center justify-between flex-wrap gap-4">
         <div>
-          <h1 className="text-2xl font-bold" data-testid="text-page-title">Resi Fornitori</h1>
+          <h1 className="text-2xl font-bold" data-testid="text-page-title">{t("suppliers.supplierReturns")}</h1>
           <p className="text-muted-foreground text-sm">
-            Gestisci i resi e i rimborsi verso i fornitori
+            {t("suppliers.supplierReturnsDesc")}
           </p>
         </div>
         <Button onClick={() => setCreateDialogOpen(true)} data-testid="button-create-return">
           <Plus className="h-4 w-4 mr-2" />
-          Nuovo Reso
+          {t("suppliers.newReturn")}
         </Button>
       </div>
 
@@ -318,7 +318,7 @@ export default function SupplierReturnsPage() {
           <SelectContent>
             <SelectItem value="all">{t("repairs.allStatuses")}</SelectItem>
             {Object.entries(STATUS_CONFIG).map(([key, config]) => (
-              <SelectItem key={key} value={key}>{config.label}</SelectItem>
+              <SelectItem key={key} value={key}>{t(`common.statusLabels.${config.label}`)}</SelectItem>
             ))}
           </SelectContent>
         </Select>
@@ -341,7 +341,7 @@ export default function SupplierReturnsPage() {
         <CardHeader>
           <CardTitle className="flex flex-wrap items-center gap-2">
             <Undo2 className="h-5 w-5" />
-            Lista Resi
+            {t("suppliers.returnList")}
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -354,9 +354,9 @@ export default function SupplierReturnsPage() {
           ) : filteredReturns.length === 0 ? (
             <div className="text-center py-12">
               <Package className="h-12 w-12 mx-auto mb-4 text-muted-foreground opacity-50" />
-              <p className="text-muted-foreground">Nessun reso trovato</p>
+              <p className="text-muted-foreground">{t("suppliers.noReturnsFound")}</p>
               <p className="text-xs text-muted-foreground mt-1">
-                Crea un nuovo reso per iniziare
+                {t("suppliers.createNewReturnHint")}
               </p>
             </div>
           ) : (
@@ -368,7 +368,7 @@ export default function SupplierReturnsPage() {
                   <TableHead>{t("admin.repairCenters.center")}</TableHead>
                   <TableHead>{t("common.reason")}</TableHead>
                   <TableHead>{t("common.status")}</TableHead>
-                  <TableHead className="text-right">Valore</TableHead>
+                  <TableHead className="text-right">{t("suppliers.value")}</TableHead>
                   <TableHead>RMA</TableHead>
                   <TableHead>{t("common.date")}</TableHead>
                   <TableHead className="w-[60px]"></TableHead>
@@ -400,13 +400,13 @@ export default function SupplierReturnsPage() {
                       <TableCell>{center?.name || "-"}</TableCell>
                       <TableCell>
                         <Badge variant="outline">
-                          {REASON_LABELS[ret.reason] || ret.reason}
+                          {t(`suppliers.returnReasons.${ret.reason}`) || ret.reason}
                         </Badge>
                       </TableCell>
                       <TableCell>
                         <Badge className={`gap-1 ${statusConfig.color}`}>
                           <StatusIcon className="h-3 w-3" />
-                          {statusConfig.label}
+                          {t(`common.statusLabels.${statusConfig.label}`)}
                         </Badge>
                       </TableCell>
                       <TableCell className="text-right font-medium">
@@ -428,42 +428,42 @@ export default function SupplierReturnsPage() {
                           <DropdownMenuContent align="end">
                             <DropdownMenuItem onClick={() => openReturnDetails(ret)}>
                               <Eye className="h-4 w-4 mr-2" />
-                              Dettagli
+                              {t("common.details")}
                             </DropdownMenuItem>
                             {ret.status === "draft" && (
                               <DropdownMenuItem onClick={() => handleStatusChange(ret.id, "requested")}>
                                 <Send className="h-4 w-4 mr-2" />
-                                Invia richiesta
+                                {t("suppliers.sendRequest")}
                               </DropdownMenuItem>
                             )}
                             {ret.status === "requested" && (
                               <>
                                 <DropdownMenuItem onClick={() => handleStatusChange(ret.id, "approved")}>
                                   <CheckCircle className="h-4 w-4 mr-2" />
-                                  Segna approvato
+                                  {t("suppliers.markApproved")}
                                 </DropdownMenuItem>
                                 <DropdownMenuItem onClick={() => handleStatusChange(ret.id, "rejected")}>
                                   <Ban className="h-4 w-4 mr-2" />
-                                  Segna rifiutato
+                                  {t("suppliers.markRejected")}
                                 </DropdownMenuItem>
                               </>
                             )}
                             {ret.status === "approved" && (
                               <DropdownMenuItem onClick={() => handleStatusChange(ret.id, "shipped")}>
                                 <Truck className="h-4 w-4 mr-2" />
-                                Segna spedito
+                                {t("suppliers.markShipped")}
                               </DropdownMenuItem>
                             )}
                             {ret.status === "shipped" && (
                               <DropdownMenuItem onClick={() => handleStatusChange(ret.id, "received")}>
                                 <Package className="h-4 w-4 mr-2" />
-                                Segna ricevuto
+                                {t("suppliers.markReceived")}
                               </DropdownMenuItem>
                             )}
                             {ret.status === "received" && (
                               <DropdownMenuItem onClick={() => handleStatusChange(ret.id, "refunded")}>
                                 <DollarSign className="h-4 w-4 mr-2" />
-                                Segna rimborsato
+                                {t("suppliers.markRefunded")}
                               </DropdownMenuItem>
                             )}
                             <DropdownMenuSeparator />
@@ -471,13 +471,13 @@ export default function SupplierReturnsPage() {
                               <DropdownMenuItem 
                                 className="text-destructive"
                                 onClick={() => {
-                                  if (confirm("Eliminare questo reso?")) {
+                                  if (confirm(t("suppliers.deleteReturn"))) {
                                     deleteReturnMutation.mutate(ret.id);
                                   }
                                 }}
                               >
                                 <Trash2 className="h-4 w-4 mr-2" />
-                                Elimina
+                                {t("common.delete")}
                               </DropdownMenuItem>
                             )}
                             {ret.status !== "draft" && ret.status !== "cancelled" && ret.status !== "refunded" && ret.status !== "rejected" && (
@@ -486,7 +486,7 @@ export default function SupplierReturnsPage() {
                                 onClick={() => handleStatusChange(ret.id, "cancelled")}
                               >
                                 <XCircle className="h-4 w-4 mr-2" />
-                                Annulla reso
+                                {t("suppliers.cancelReturn")}
                               </DropdownMenuItem>
                             )}
                           </DropdownMenuContent>
@@ -548,7 +548,7 @@ export default function SupplierReturnsPage() {
                 disabled={!formSupplierId}
               >
                 <SelectTrigger data-testid="select-new-order">
-                  <SelectValue placeholder={formSupplierId ? "Collega a un ordine..." : "Prima seleziona un fornitore"} />
+                  <SelectValue placeholder={formSupplierId ? t("suppliers.linkToOrder") : t("suppliers.selectSupplierFirst")} />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="__none__">{t("suppliers.noLinkedOrder")}</SelectItem>
@@ -561,7 +561,7 @@ export default function SupplierReturnsPage() {
               </Select>
               {formSupplierId && filteredOrders.length === 0 && (
                 <p className="text-xs text-muted-foreground">
-                  Nessun ordine ricevuto per questo fornitore
+                  {t("suppliers.noOrdersForSupplier")}
                 </p>
               )}
             </div>
@@ -575,7 +575,7 @@ export default function SupplierReturnsPage() {
                 <SelectContent>
                   {Object.entries(REASON_LABELS).map(([key, label]) => (
                     <SelectItem key={key} value={key}>
-                      {label}
+                      {t(`suppliers.returnReasons.${key}`)}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -615,14 +615,14 @@ export default function SupplierReturnsPage() {
                 variant="outline" 
                 onClick={() => setCreateDialogOpen(false)}
               >
-                Annulla
+                {t("common.cancel")}
               </Button>
               <Button 
                 type="submit"
                 disabled={createReturnMutation.isPending}
                 data-testid="button-submit-return"
               >
-                {createReturnMutation.isPending ? t("admin.repairCenters.creating") : "Crea Reso"}
+                {createReturnMutation.isPending ? t("admin.repairCenters.creating") : t("suppliers.createReturn")}
               </Button>
             </div>
           </form>
@@ -638,7 +638,7 @@ export default function SupplierReturnsPage() {
                 <DialogTitle className="flex flex-wrap items-center gap-3">
                   <span>{t("suppliers.returnNumber")} {selectedReturn.returnNumber}</span>
                   <Badge className={STATUS_CONFIG[selectedReturn.status]?.color}>
-                    {STATUS_CONFIG[selectedReturn.status]?.label}
+                    {t(`common.statusLabels.${STATUS_CONFIG[selectedReturn.status]?.label}`)}
                   </Badge>
                 </DialogTitle>
               </DialogHeader>
@@ -671,7 +671,7 @@ export default function SupplierReturnsPage() {
                         <Label>{t("suppliers.returnReason")}</Label>
                         <div className="p-3 bg-muted rounded-md flex items-center gap-2">
                           <AlertTriangle className="h-4 w-4 text-yellow-600" />
-                          {REASON_LABELS[selectedReturn.reason] || selectedReturn.reason}
+                          {t(`suppliers.returnReasons.${selectedReturn.reason}`) || selectedReturn.reason}
                         </div>
                       </div>
                       <div className="space-y-2">
@@ -679,7 +679,7 @@ export default function SupplierReturnsPage() {
                         <div className="p-3 bg-muted rounded-md">
                           {selectedReturn.supplierOrderId 
                             ? supplierOrders.find(o => o.id === selectedReturn.supplierOrderId)?.orderNumber
-                            : "Nessuno"}
+                            : t("common.none")}
                         </div>
                       </div>
                     </div>
@@ -735,7 +735,7 @@ export default function SupplierReturnsPage() {
                               });
                             }}
                           >
-                            Salva
+                            {t("common.save")}
                           </Button>
                         </div>
                       </div>

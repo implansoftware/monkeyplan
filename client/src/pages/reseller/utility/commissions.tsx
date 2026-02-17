@@ -26,8 +26,8 @@ type CommissionStatus = "pending" | "accrued" | "invoiced" | "paid" | "cancelled
 function getStatusLabels(t: (key: string) => string): Record<CommissionStatus, string> {
   return {
     pending: t("common.pending"),
-    accrued: "Maturata",
-    invoiced: "Fatturata",
+    accrued: t("utility.accrued"),
+    invoiced: t("utility.invoiced"),
     paid: t("invoices.paid"),
     cancelled: t("common.cancelled"),
   };
@@ -106,7 +106,7 @@ export default function ResellerUtilityCommissions() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/utility/commissions"] });
-      toast({ title: "Commissione approvata", description: "La commissione è stata approvata con successo" });
+      toast({ title: t("utility.commissionApproved"), description: "La commissione è stata approvata con successo" });
     },
     onError: (error: Error) => {
       toast({ title: t("common.error"), description: error.message, variant: "destructive" });
@@ -123,7 +123,7 @@ export default function ResellerUtilityCommissions() {
       setRejectDialogOpen(false);
       setRejectingCommission(null);
       setRejectReason("");
-      toast({ title: "Commissione rifiutata", description: "La commissione è stata rifiutata" });
+      toast({ title: t("utility.commissionRejected"), description: "La commissione è stata rifiutata" });
     },
     onError: (error: Error) => {
       toast({ title: t("common.error"), description: error.message, variant: "destructive" });
@@ -131,7 +131,7 @@ export default function ResellerUtilityCommissions() {
   });
 
   const handleApprove = (commission: UtilityCommission) => {
-    if (confirm("Sei sicuro di voler approvare questa commissione?")) {
+    if (confirm(t("utility.confirmApproveCommission"))) {
       approveMutation.mutate(commission.id);
     }
   };
@@ -164,18 +164,18 @@ export default function ResellerUtilityCommissions() {
   const currentYear = new Date().getFullYear();
   const years = Array.from({ length: 5 }, (_, i) => currentYear - i);
   const months = [
-    { value: 1, label: "Gennaio" },
-    { value: 2, label: "Febbraio" },
-    { value: 3, label: "Marzo" },
-    { value: 4, label: "Aprile" },
-    { value: 5, label: "Maggio" },
-    { value: 6, label: "Giugno" },
-    { value: 7, label: "Luglio" },
-    { value: 8, label: "Agosto" },
-    { value: 9, label: "Settembre" },
-    { value: 10, label: "Ottobre" },
-    { value: 11, label: "Novembre" },
-    { value: 12, label: "Dicembre" },
+    { value: 1, label: t("time.january") },
+    { value: 2, label: t("time.february") },
+    { value: 3, label: t("time.march") },
+    { value: 4, label: t("time.april") },
+    { value: 5, label: t("time.may") },
+    { value: 6, label: t("time.june") },
+    { value: 7, label: t("time.july") },
+    { value: 8, label: t("time.august") },
+    { value: 9, label: t("time.september") },
+    { value: 10, label: t("time.october") },
+    { value: 11, label: t("time.november") },
+    { value: 12, label: t("time.december") },
   ];
 
   return (
@@ -231,7 +231,7 @@ export default function ResellerUtilityCommissions() {
 
         <Card className="rounded-2xl" data-testid="card-total">
           <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Totale Anno</CardTitle>
+            <CardTitle className="text-sm font-medium">{t("utility.yearTotal")}</CardTitle>
             <Coins className="h-4 w-4 text-primary" />
           </CardHeader>
           <CardContent>
@@ -251,7 +251,7 @@ export default function ResellerUtilityCommissions() {
             <div className="flex flex-wrap items-center gap-2">
               <Search className="h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Cerca per pratica..."
+                placeholder={t("utility.searchPractice")}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="max-w-xs"
@@ -294,7 +294,7 @@ export default function ResellerUtilityCommissions() {
           ) : filteredCommissions.length === 0 ? (
             <div className="text-center py-8">
               <Coins className="h-12 w-12 mx-auto text-muted-foreground mb-3" />
-              <p className="text-muted-foreground">Nessuna commissione trovata</p>
+              <p className="text-muted-foreground">{t("utility.noCommissions")}</p>
             </div>
           ) : (
             <Table>
@@ -304,7 +304,7 @@ export default function ResellerUtilityCommissions() {
                   <TableHead>{t("common.period")}</TableHead>
                   <TableHead>{t("common.amount")}</TableHead>
                   <TableHead>{t("common.status")}</TableHead>
-                  <TableHead>Data Pagamento</TableHead>
+                  <TableHead>{t("utility.paymentDate")}</TableHead>
                   <TableHead className="text-right">{t("common.actions")}</TableHead>
                 </TableRow>
               </TableHeader>
@@ -379,20 +379,20 @@ export default function ResellerUtilityCommissions() {
       <Dialog open={rejectDialogOpen} onOpenChange={setRejectDialogOpen}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>Rifiuta Commissione</DialogTitle>
+            <DialogTitle>{t("utility.rejectCommission")}</DialogTitle>
             <DialogDescription>
-              Inserisci la motivazione del rifiuto per la commissione di{" "}
+              {t("utility.rejectCommissionDesc")}{" "}
               {rejectingCommission && formatCurrency(rejectingCommission.amountCents)}.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="rejectReason">Motivazione *</Label>
+              <Label htmlFor="rejectReason">{t("utility.reasonRequired")}</Label>
               <Textarea
                 id="rejectReason"
                 value={rejectReason}
                 onChange={(e) => setRejectReason(e.target.value)}
-                placeholder="Inserisci il motivo del rifiuto..."
+                placeholder={t("utility.enterRejectReason")}
                 rows={3}
                 data-testid="input-reject-reason"
               />

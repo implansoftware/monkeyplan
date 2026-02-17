@@ -96,14 +96,14 @@ function getQuoteSchema(t: (key: string) => string) {
     productId: z.string().optional(),
     name: z.string().min(1, t("quote.partNameRequired")),
     quantity: z.coerce.number().min(1, t("quote.quantityMinOne")),
-    unitPrice: z.coerce.number().min(0, "Il prezzo deve essere positivo"),
+    unitPrice: z.coerce.number().min(0, t("quote.priceMustBePositive")),
     imageUrl: z.string().optional(),
     source: z.string().optional(),
   });
 
   return z.object({
     parts: z.array(partSchema).optional(),
-    laborCost: z.coerce.number().min(0, "Il costo manodopera deve essere positivo").default(0),
+    laborCost: z.coerce.number().min(0, t("quote.laborCostMustBePositive")).default(0),
     validUntil: z.string().optional(),
     notes: z.string().optional(),
   });

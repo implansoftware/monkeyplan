@@ -30,13 +30,13 @@ interface B2BOrderWithItems extends ResellerPurchaseOrder {
 
 function getReturnStatusLabels(t: (key: string) => string): Record<string, string> {
   return {
-    requested: "Richiesto",
+    requested: t("b2b.status.requested"),
     approved: t("repairs.status.approved"),
     rejected: t("b2b.status.cancelled"),
-    awaiting_shipment: "In attesa spedizione",
+    awaiting_shipment: t("b2b.status.awaitingShipment"),
     shipped: t("b2b.status.shipped"),
     received: t("repairs.status.received"),
-    inspecting: "In ispezione",
+    inspecting: t("b2b.status.inspecting"),
     completed: t("common.completed"),
     cancelled: t("repairs.status.cancelled"),
   };
@@ -62,18 +62,18 @@ function getPaymentMethodLabels(t: (key: string) => string): Record<string, stri
   return {
     bank_transfer: t("settings.bankTransfer"),
     stripe: "Stripe",
-    credit: "Credito Reseller",
+    credit: t("b2b.resellerCredit"),
   };
 }
 
 function getReturnReasons(t: (key: string) => string): Record<string, string> {
   return {
-    defective: "Difettoso",
-    wrong_item: "Articolo errato",
-    not_as_described: "Non conforme alla descrizione",
-    damaged_in_transit: "Danneggiato in transito",
-    excess_stock: "Eccesso di stock",
-    quality_issue: "Problema qualità",
+    defective: t("b2b.returnReasons.defective"),
+    wrong_item: t("b2b.returnReasons.wrongItem"),
+    not_as_described: t("b2b.returnReasons.notAsDescribed"),
+    damaged_in_transit: t("b2b.returnReasons.damagedInTransit"),
+    excess_stock: t("b2b.returnReasons.excessStock"),
+    quality_issue: t("b2b.returnReasons.qualityIssue"),
     other: t("common.other"),
   };
 }
@@ -110,21 +110,21 @@ export default function ResellerB2BOrders() {
           const response = await apiRequest('GET', `/api/reseller/b2b-orders/stripe-success?session_id=${stripeSessionId}`);
           if (!response.ok) {
             const errorText = await response.text();
-            throw new Error(errorText || 'Errore creazione ordine');
+            throw new Error(errorText || t("b2b.orderCreationError"));
           }
           
           const data = await response.json();
           if (data.alreadyCreated) {
-            toast({ title: "Ordine esistente", description: "L'ordine è già stato creato" });
+            toast({ title: t("b2b.orderExists"), description: t("b2b.orderAlreadyCreated") });
           } else {
-            toast({ title: "Ordine completato!", description: "Pagamento ricevuto e ordine creato con successo" });
+            toast({ title: t("b2b.orderCompleted"), description: t("b2b.paymentReceivedOrderCreated") });
           }
           
           queryClient.invalidateQueries({ queryKey: ['/api/reseller/b2b-orders'] });
         } catch (error: any) {
           toast({ 
             title: t("common.error"), 
-            description: error.message || "Errore durante la creazione dell'ordine", 
+            description: error.message || t("b2b.orderCreationError"), 
             variant: "destructive" 
           });
         }
@@ -144,7 +144,7 @@ export default function ResellerB2BOrders() {
       return res.json();
     },
     onSuccess: () => {
-      toast({ title: "Ricezione confermata", description: "L'ordine è stato segnato come ricevuto" });
+      toast({ title: t("b2b.receiptConfirmed"), description: t("b2b.orderMarkedReceived") });
       queryClient.invalidateQueries({ queryKey: ['/api/reseller/b2b-orders'] });
       setDetailOpen(false);
     },
@@ -159,7 +159,7 @@ export default function ResellerB2BOrders() {
       return res.json();
     },
     onSuccess: () => {
-      toast({ title: "Richiesta reso inviata", description: "La tua richiesta di reso è stata inviata all'admin" });
+      toast({ title: t("b2b.returnRequestSent"), description: t("b2b.returnRequestSentDesc") });
       queryClient.invalidateQueries({ queryKey: ['/api/reseller/b2b-orders'] });
       queryClient.invalidateQueries({ queryKey: ['/api/reseller/b2b-returns'] });
       setReturnDialogOpen(false);
@@ -204,7 +204,7 @@ export default function ResellerB2BOrders() {
       }));
 
     if (!items || items.length === 0) {
-      toast({ title: t("common.error"), description: "Seleziona almeno un articolo da rendere", variant: "destructive" });
+      toast({ title: t("common.error"), description: t("b2b.selectAtLeastOneItem"), variant: "destructive" });
       return;
     }
 
@@ -252,7 +252,7 @@ export default function ResellerB2BOrders() {
               {hasActiveReturn && (
                 <Badge variant="outline" className="flex flex-wrap items-center gap-1 text-orange-600 border-orange-300">
                   <RotateCcw className="h-3 w-3" />
-                  Reso in corso
+                  {t("b2b.returnInProgress")}
                 </Badge>
               )}
               {hasCompletedReturn && !hasActiveReturn && (
@@ -264,11 +264,11 @@ export default function ResellerB2BOrders() {
         </CardHeader>
         <CardContent className="space-y-2">
           <div className="flex justify-between text-sm">
-            <span className="text-muted-foreground">Articoli:</span>
-            <span>{order.items?.length || 0} prodotti</span>
+            <span className="text-muted-foreground">{t("b2b.items")}:</span>
+            <span>{order.items?.length || 0} {t("b2b.productsCount")}</span>
           </div>
           <div className="flex justify-between text-sm">
-            <span className="text-muted-foreground">Pagamento:</span>
+            <span className="text-muted-foreground">{t("b2b.payment")}:</span>
             <span>{paymentMethodLabels[order.paymentMethod || 'bank_transfer']}</span>
           </div>
         </CardContent>
@@ -305,7 +305,7 @@ export default function ResellerB2BOrders() {
             </div>
             <div>
               <h1 className="text-2xl font-bold tracking-tight text-white">{t("sidebar.items.myB2BOrders")}</h1>
-              <p className="text-sm text-white/80">Gestisci i tuoi ordini di acquisto dal magazzino centrale</p>
+              <p className="text-sm text-white/80">{t("b2b.subtitle")}</p>
             </div>
           </div>
         </div>
@@ -314,13 +314,13 @@ export default function ResellerB2BOrders() {
       <Tabs defaultValue="pending">
         <TabsList>
           <TabsTrigger value="pending" data-testid="tab-pending">
-            In Attesa ({pendingOrders.length})
+            {t("b2b.tabPending")} ({pendingOrders.length})
           </TabsTrigger>
           <TabsTrigger value="active" data-testid="tab-active">
-            In Corso ({activeOrders.length})
+            {t("b2b.tabActive")} ({activeOrders.length})
           </TabsTrigger>
           <TabsTrigger value="completed" data-testid="tab-completed">
-            Completati ({completedOrders.length})
+            {t("b2b.tabCompleted")} ({completedOrders.length})
           </TabsTrigger>
         </TabsList>
 
@@ -329,7 +329,7 @@ export default function ResellerB2BOrders() {
             <Card className="rounded-2xl">
               <CardContent className="py-12 text-center">
                 <Clock className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                <p className="text-muted-foreground">Nessun ordine in attesa di approvazione</p>
+                <p className="text-muted-foreground">{t("b2b.noPendingOrders")}</p>
               </CardContent>
             </Card>
           ) : (
@@ -344,7 +344,7 @@ export default function ResellerB2BOrders() {
             <Card className="rounded-2xl">
               <CardContent className="py-12 text-center">
                 <Truck className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                <p className="text-muted-foreground">Nessun ordine in corso</p>
+                <p className="text-muted-foreground">{t("b2b.noActiveOrders")}</p>
               </CardContent>
             </Card>
           ) : (
@@ -359,7 +359,7 @@ export default function ResellerB2BOrders() {
             <Card className="rounded-2xl">
               <CardContent className="py-12 text-center">
                 <PackageCheck className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                <p className="text-muted-foreground">Nessun ordine completato</p>
+                <p className="text-muted-foreground">{t("b2b.noCompletedOrders")}</p>
               </CardContent>
             </Card>
           ) : (
@@ -377,9 +377,9 @@ export default function ResellerB2BOrders() {
               <DialogHeader>
                 <div className="flex items-center justify-between">
                   <div>
-                    <DialogTitle>Ordine {selectedOrder.orderNumber}</DialogTitle>
+                    <DialogTitle>{t("common.order")} {selectedOrder.orderNumber}</DialogTitle>
                     <DialogDescription>
-                      Creato il {selectedOrder.createdAt && format(new Date(selectedOrder.createdAt), "d MMMM yyyy 'alle' HH:mm", { locale: it })}
+                      {t("b2b.createdOn")} {selectedOrder.createdAt && format(new Date(selectedOrder.createdAt), "d MMMM yyyy 'alle' HH:mm", { locale: it })}
                     </DialogDescription>
                   </div>
                   <Badge variant={statusConfig[selectedOrder.status]?.variant || "secondary"}>
@@ -427,56 +427,56 @@ export default function ResellerB2BOrders() {
 
               <div className="space-y-2">
                 <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Imponibile:</span>
+                  <span className="text-muted-foreground">{t("standalone.taxableAmount")}:</span>
                   <span>{formatPrice(selectedOrder.subtotal || 0)}</span>
                 </div>
                 <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">IVA (22%):</span>
+                  <span className="text-muted-foreground">{t("standalone.vat")} (22%):</span>
                   <span>{formatPrice(Math.round((selectedOrder.subtotal || 0) * 0.22))}</span>
                 </div>
                 {(selectedOrder.discountAmount || 0) > 0 && (
                   <div className="flex justify-between text-sm text-green-600">
-                    <span>Sconto:</span>
+                    <span>{t("b2b.discount")}:</span>
                     <span>-{formatPrice(selectedOrder.discountAmount || 0)}</span>
                   </div>
                 )}
                 {(selectedOrder.shippingCost || 0) > 0 && (
                   <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">Spedizione:</span>
+                    <span className="text-muted-foreground">{t("common.shipment")}:</span>
                     <span>{formatPrice(selectedOrder.shippingCost || 0)}</span>
                   </div>
                 )}
                 <Separator className="my-1" />
                 <div className="flex justify-between text-lg font-semibold">
-                  <span>Totale:</span>
+                  <span>{t("common.total")}:</span>
                   <span className="text-primary">{formatPrice(selectedOrder.total || 0)}</span>
                 </div>
               </div>
 
               {selectedOrder.resellerNotes && (
                 <div className="bg-muted p-3 rounded-lg">
-                  <p className="text-sm font-medium">Le tue note:</p>
+                  <p className="text-sm font-medium">{t("b2b.yourNotes")}:</p>
                   <p className="text-sm text-muted-foreground">{selectedOrder.resellerNotes}</p>
                 </div>
               )}
 
               {selectedOrder.adminNotes && (
                 <div className="bg-blue-50 dark:bg-blue-950/30 p-3 rounded-lg">
-                  <p className="text-sm font-medium">Note amministratore:</p>
+                  <p className="text-sm font-medium">{t("b2b.adminNotes")}:</p>
                   <p className="text-sm text-muted-foreground">{selectedOrder.adminNotes}</p>
                 </div>
               )}
 
               {selectedOrder.rejectionReason && (
                 <div className="bg-destructive/10 p-3 rounded-lg">
-                  <p className="text-sm font-medium text-destructive">Motivo rifiuto:</p>
+                  <p className="text-sm font-medium text-destructive">{t("b2b.rejectionReason")}:</p>
                   <p className="text-sm">{selectedOrder.rejectionReason}</p>
                 </div>
               )}
 
               {selectedOrder.trackingNumber && (
                 <div className="bg-green-50 dark:bg-green-950/30 p-3 rounded-lg">
-                  <p className="text-sm font-medium">Tracking spedizione:</p>
+                  <p className="text-sm font-medium">{t("b2b.shippingTracking")}:</p>
                   <p className="text-sm">
                     {selectedOrder.trackingCarrier && <span className="text-muted-foreground">{selectedOrder.trackingCarrier}: </span>}
                     {selectedOrder.trackingNumber}
@@ -489,7 +489,7 @@ export default function ResellerB2BOrders() {
                 <div className="bg-orange-50 dark:bg-orange-950/30 p-3 rounded-lg space-y-2">
                   <p className="text-sm font-medium flex items-center gap-2">
                     <RotateCcw className="h-4 w-4" />
-                    Resi per questo ordine
+                    {t("b2b.returnsForOrder")}
                   </p>
                   {selectedOrder.returns.map((ret) => (
                     <div 
@@ -525,7 +525,7 @@ export default function ResellerB2BOrders() {
                     data-testid="button-confirm-receipt"
                   >
                     <PackageCheck className="h-4 w-4 mr-2" />
-                    {confirmReceiptMutation.isPending ? "Conferma in corso..." : t("b2b.confirmReceipt")}
+                    {confirmReceiptMutation.isPending ? t("b2b.confirmingReceipt") : t("b2b.confirmReceipt")}
                   </Button>
                 )}
                 {selectedOrder.status === 'received' && 
@@ -536,7 +536,7 @@ export default function ResellerB2BOrders() {
                     data-testid="button-request-return"
                   >
                     <RotateCcw className="h-4 w-4 mr-2" />
-                    Richiedi Reso
+                    {t("b2b.requestReturn")}
                   </Button>
                 )}
               </DialogFooter>
@@ -549,18 +549,18 @@ export default function ResellerB2BOrders() {
       <Dialog open={returnDialogOpen} onOpenChange={setReturnDialogOpen}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle>Richiesta Reso</DialogTitle>
+            <DialogTitle>{t("b2b.returnRequest")}</DialogTitle>
             <DialogDescription>
-              Ordine {selectedOrder?.orderNumber} - Seleziona gli articoli da rendere
+              {t("common.order")} {selectedOrder?.orderNumber} - {t("b2b.selectItemsToReturn")}
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label>Motivo del reso *</Label>
+              <Label>{t("b2b.returnReasonLabel")} *</Label>
               <Select value={returnReason} onValueChange={setReturnReason}>
                 <SelectTrigger data-testid="select-return-reason">
-                  <SelectValue placeholder="Seleziona un motivo" />
+                  <SelectValue placeholder={t("b2b.selectReason")} />
                 </SelectTrigger>
                 <SelectContent>
                   {Object.entries(returnReasons).map(([key, label]) => (
@@ -572,25 +572,25 @@ export default function ResellerB2BOrders() {
 
             {returnReason === 'other' && (
               <div className="space-y-2">
-                <Label>Specifica il motivo</Label>
+                <Label>{t("b2b.specifyReason")}</Label>
                 <Textarea
                   value={returnReasonDetails}
                   onChange={(e) => setReturnReasonDetails(e.target.value)}
-                  placeholder="Descrivi il motivo del reso..."
+                  placeholder={t("b2b.describeReturnReason")}
                   data-testid="input-reason-details"
                 />
               </div>
             )}
 
             <div className="space-y-2">
-              <Label>Articoli da rendere</Label>
+              <Label>{t("b2b.itemsToReturn")}</Label>
               <ScrollArea className="max-h-48 border rounded-lg">
                 <Table>
                   <TableHeader>
                     <TableRow>
                       <TableHead>{t("common.product")}</TableHead>
                       <TableHead className="text-right">{t("shop.inStock")}</TableHead>
-                      <TableHead className="text-right w-32">Qtà da rendere</TableHead>
+                      <TableHead className="text-right w-32">{t("b2b.qtyToReturn")}</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -632,11 +632,11 @@ export default function ResellerB2BOrders() {
             </div>
 
             <div className="space-y-2">
-              <Label>Note aggiuntive</Label>
+              <Label>{t("b2b.additionalNotes")}</Label>
               <Textarea
                 value={returnNotes}
                 onChange={(e) => setReturnNotes(e.target.value)}
-                placeholder="Inserisci eventuali note..."
+                placeholder={t("b2b.enterNotes")}
                 data-testid="input-return-notes"
               />
             </div>
@@ -649,7 +649,7 @@ export default function ResellerB2BOrders() {
               disabled={!returnReason || createReturnMutation.isPending}
               data-testid="button-submit-return"
             >
-              {createReturnMutation.isPending ? "Invio in corso..." : "Invia Richiesta Reso"}
+              {createReturnMutation.isPending ? t("b2b.sendingReturn") : t("b2b.sendReturnRequest")}
             </Button>
           </DialogFooter>
         </DialogContent>

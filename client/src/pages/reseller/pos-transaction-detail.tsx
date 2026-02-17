@@ -103,14 +103,14 @@ export default function ResellerPosTransactionDetail() {
       setVoidDialogOpen(false);
       setVoidReason("");
       toast({
-        title: "Vendita annullata",
-        description: "La transazione è stata annullata con successo",
+        title: t("pos.saleVoided"),
+        description: t("pos.saleVoidedDesc"),
       });
     },
     onError: (error: Error) => {
       toast({
         title: t("common.error"),
-        description: error.message || "Impossibile annullare la transazione",
+        description: error.message || t("pos.cannotVoidTransaction"),
         variant: "destructive",
       });
     },
@@ -128,14 +128,14 @@ export default function ResellerPosTransactionDetail() {
       setRefundReason("");
       setRefundAmount("");
       toast({
-        title: "Rimborso effettuato",
-        description: "Il rimborso è stato registrato con successo",
+        title: t("pos.refundCompleted"),
+        description: t("pos.refundSuccess"),
       });
     },
     onError: (error: Error) => {
       toast({
         title: t("common.error"),
-        description: error.message || "Impossibile effettuare il rimborso",
+        description: error.message || t("pos.refundError"),
         variant: "destructive",
       });
     },
@@ -144,7 +144,7 @@ export default function ResellerPosTransactionDetail() {
   const handlePrintReceipt = async () => {
     try {
       const res = await fetch(`/api/reseller/pos/transaction/${transactionId}/receipt`, { credentials: "include" });
-      if (!res.ok) throw new Error("Errore generazione scontrino");
+      if (!res.ok) throw new Error("t("pos.receiptError")");
       const blob = await res.blob();
       const url = URL.createObjectURL(blob);
       const win = window.open(url, "_blank");
@@ -152,7 +152,7 @@ export default function ResellerPosTransactionDetail() {
     } catch (error) {
       toast({
         title: t("common.error"),
-        description: "Impossibile stampare lo scontrino",
+        description: t("pos.printReceiptError"),
         variant: "destructive",
       });
     }
@@ -207,7 +207,7 @@ export default function ResellerPosTransactionDetail() {
       <div className="p-6">
         <Card>
           <CardContent className="py-8 text-center">
-            <p className="text-muted-foreground">Transazione non trovata</p>
+            <p className="text-muted-foreground">{t("pos.transactionNotFound")}</p>
             <Link href="/reseller/pos/sales-history">
               <Button variant="outline" className="mt-4">
                 <ArrowLeft className="w-4 h-4 mr-2" />
@@ -235,7 +235,7 @@ export default function ResellerPosTransactionDetail() {
               <Receipt className="w-6 h-6" />
               {transaction.transactionNumber}
             </h1>
-            <p className="text-muted-foreground">Dettaglio transazione POS</p>
+            <p className="text-muted-foreground">{t("pos.posTransactionDetail")}</p>
           </div>
         </div>
         <div className="flex flex-wrap items-center gap-2 flex-wrap">
@@ -384,7 +384,7 @@ export default function ResellerPosTransactionDetail() {
                     <div className="flex items-start gap-3">
                       <Banknote className="w-5 h-5 text-muted-foreground mt-0.5" />
                       <div>
-                        <p className="text-sm text-muted-foreground">Resto</p>
+                        <p className="text-sm text-muted-foreground">{t("pos.change")}</p>
                         <p className="font-medium">{formatCurrency(transaction.changeGiven)}</p>
                       </div>
                     </div>
@@ -413,14 +413,14 @@ export default function ResellerPosTransactionDetail() {
               <CardHeader>
                 <CardTitle className="text-lg text-red-600 flex items-center gap-2">
                   <XCircle className="w-5 h-5" />
-                  Motivo Annullamento
+                  {t("pos.voidReasonLabel")}
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <p>{transaction.voidReason}</p>
                 {transaction.voidedAt && (
                   <p className="text-sm text-muted-foreground mt-2">
-                    Annullata il {format(new Date(transaction.voidedAt), "dd/MM/yyyy HH:mm", { locale: it })}
+                    {t("pos.voidedOn")} {format(new Date(transaction.voidedAt), "dd/MM/yyyy HH:mm", { locale: it })}
                   </p>
                 )}
               </CardContent>
@@ -443,17 +443,17 @@ export default function ResellerPosTransactionDetail() {
       <Dialog open={voidDialogOpen} onOpenChange={setVoidDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Annulla Transazione</DialogTitle>
+            <DialogTitle>{t("pos.voidTransactionBtn")}</DialogTitle>
             <DialogDescription>
               Stai per annullare la transazione {transaction.transactionNumber}. Questa azione ripristinerà lo stock dei prodotti.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label htmlFor="void-reason">Motivo dell'annullamento *</Label>
+              <Label htmlFor="void-reason">{t("pos.voidReasonRequired")}</Label>
               <Textarea
                 id="void-reason"
-                placeholder="Inserisci il motivo dell'annullamento..."
+                placeholder="{t("pos.enterVoidReason")}"
                 value={voidReason}
                 onChange={(e) => setVoidReason(e.target.value)}
                 data-testid="input-void-reason"
@@ -468,7 +468,7 @@ export default function ResellerPosTransactionDetail() {
               disabled={!voidReason.trim() || voidMutation.isPending}
               data-testid="button-confirm-void"
             >
-              {voidMutation.isPending ? "Annullamento..." : "Conferma Annullamento"}
+              {voidMutation.isPending ? t("pos.voiding") : t("pos.confirmVoid")}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -477,14 +477,14 @@ export default function ResellerPosTransactionDetail() {
       <Dialog open={refundDialogOpen} onOpenChange={setRefundDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Rimborso Transazione</DialogTitle>
+            <DialogTitle>{t("pos.refundTransaction")}</DialogTitle>
             <DialogDescription>
-              Inserisci l'importo da rimborsare. Per un rimborso totale, lascia l'importo completo ({formatCurrency(transaction.total)}).
+              {t("pos.refundAmountDesc")} ({formatCurrency(transaction.total)}).
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label htmlFor="refund-amount">Importo (EUR)</Label>
+              <Label htmlFor="refund-amount">{t("pos.amountEur")}</Label>
               <Input
                 id="refund-amount"
                 type="number"
@@ -497,10 +497,10 @@ export default function ResellerPosTransactionDetail() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="refund-reason">Motivo del rimborso</Label>
+              <Label htmlFor="refund-reason">{t("pos.refundReason")}</Label>
               <Textarea
                 id="refund-reason"
-                placeholder="Inserisci il motivo del rimborso..."
+                placeholder={t("pos.enterRefundReason")}
                 value={refundReason}
                 onChange={(e) => setRefundReason(e.target.value)}
                 data-testid="input-refund-reason"
@@ -517,7 +517,7 @@ export default function ResellerPosTransactionDetail() {
               disabled={!refundAmount || isNaN(parseFloat(refundAmount)) || parseFloat(refundAmount) <= 0 || refundMutation.isPending}
               data-testid="button-confirm-refund"
             >
-              {refundMutation.isPending ? "Rimborso..." : "Conferma Rimborso"}
+              {refundMutation.isPending ? t("pos.refunding") : t("pos.confirmRefund")}
             </Button>
           </DialogFooter>
         </DialogContent>

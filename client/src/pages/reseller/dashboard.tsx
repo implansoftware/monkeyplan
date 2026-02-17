@@ -75,7 +75,7 @@ const CHART_COLORS = ['hsl(var(--primary))', 'hsl(var(--muted-foreground))', 'hs
 
 export default function ResellerDashboard() {
   const { t } = useTranslation();
-  usePageTitle("Dashboard Reseller");
+  usePageTitle(t("dashboard.title"));
   const [customerDialogOpen, setCustomerDialogOpen] = useState(false);
   const [acceptanceDialogOpen, setAcceptanceDialogOpen] = useState(false);
   const { user } = useAuth();
@@ -193,15 +193,15 @@ export default function ResellerDashboard() {
   const getStatusBadge = (status: string) => {
     const statusMap: Record<string, { label: string; color: string }> = {
       pending: { label: t("common.pending"), color: "#94a3b8" },
-      ingressato: { label: "Ingressato", color: "#6366f1" },
-      in_diagnosi: { label: "In Diagnosi", color: "#8b5cf6" },
-      preventivo_emesso: { label: "Prev. Emesso", color: "#f59e0b" },
-      preventivo_accettato: { label: "Prev. OK", color: "#22c55e" },
-      preventivo_rifiutato: { label: "Prev. Rifiutato", color: "#ef4444" },
-      attesa_ricambi: { label: "Attesa Ricambi", color: "#f97316" },
-      in_riparazione: { label: "In Riparazione", color: "#3b82f6" },
-      in_test: { label: "In Test", color: "#06b6d4" },
-      pronto_ritiro: { label: "Pronto", color: "#10b981" },
+      ingressato: { label: t("dashboard.ingressato"), color: "#6366f1" },
+      in_diagnosi: { label: t("dashboard.inDiagnosi"), color: "#8b5cf6" },
+      preventivo_emesso: { label: t("dashboard.prevEmesso"), color: "#f59e0b" },
+      preventivo_accettato: { label: t("dashboard.prevOK"), color: "#22c55e" },
+      preventivo_rifiutato: { label: t("dashboard.prevRifiutato"), color: "#ef4444" },
+      attesa_ricambi: { label: t("dashboard.attesaRicambi"), color: "#f97316" },
+      in_riparazione: { label: t("dashboard.inRiparazione"), color: "#3b82f6" },
+      in_test: { label: t("dashboard.inTest"), color: "#06b6d4" },
+      pronto_ritiro: { label: t("dashboard.prontoRitiro"), color: "#10b981" },
       consegnato: { label: t("repairs.status.delivered"), color: "#64748b" },
       cancelled: { label: t("repairs.status.cancelled"), color: "#dc2626" },
     };
@@ -217,19 +217,19 @@ export default function ResellerDashboard() {
   };
 
   const repairsChartData = stats?.repairsByStatus ? [
-    { name: "Ingressato", value: stats.repairsByStatus.ingressato },
-    { name: t("repairs.diagnosis"), value: stats.repairsByStatus.in_diagnosi },
-    { name: "Prev.", value: stats.repairsByStatus.preventivo_emesso },
-    { name: "In Rip.", value: stats.repairsByStatus.in_riparazione },
-    { name: "Pronto", value: stats.repairsByStatus.pronto_ritiro },
-    { name: "Conseg.", value: stats.repairsByStatus.consegnato },
+    { name: t("dashboard.ingressato"), value: stats.repairsByStatus.ingressato },
+    { name: t("dashboard.inDiagnosi"), value: stats.repairsByStatus.in_diagnosi },
+    { name: t("dashboard.prev"), value: stats.repairsByStatus.preventivo_emesso },
+    { name: t("dashboard.inRip"), value: stats.repairsByStatus.in_riparazione },
+    { name: t("dashboard.prontoRitiro"), value: stats.repairsByStatus.pronto_ritiro },
+    { name: t("dashboard.conseg"), value: stats.repairsByStatus.consegnato },
   ].filter(d => d.value > 0) : [];
 
   const pieData = stats?.repairsByStatus ? [
     { name: t("repairs.inProgress"), value: (stats.repairsByStatus.ingressato || 0) + (stats.repairsByStatus.in_diagnosi || 0) + (stats.repairsByStatus.in_riparazione || 0) },
     { name: t("common.pending"), value: (stats.repairsByStatus.preventivo_emesso || 0) + (stats.repairsByStatus.attesa_ricambi || 0) },
-    { name: "Completate", value: stats.repairsByStatus.consegnato || 0 },
-    { name: "Pronte", value: stats.repairsByStatus.pronto_ritiro || 0 },
+    { name: t("dashboard.completate"), value: stats.repairsByStatus.consegnato || 0 },
+    { name: t("dashboard.pronte"), value: stats.repairsByStatus.pronto_ritiro || 0 },
   ].filter(d => d.value > 0) : [];
 
   return (
@@ -259,7 +259,7 @@ export default function ResellerDashboard() {
                 </div>
                 <div>
                   <h1 className="text-2xl font-bold tracking-tight text-white">
-                    Ciao{user?.fullName ? `, ${user.fullName.split(' ')[0]}` : ''}
+                    {t("dashboard.hello")}{user?.fullName ? `, ${user.fullName.split(' ')[0]}` : ''}
                   </h1>
                   <p className="text-sm text-white/80">
                     {format(new Date(), "EEEE d MMMM", { locale: it })}
@@ -280,7 +280,7 @@ export default function ResellerDashboard() {
                 data-testid="button-new-repair"
               >
                 <PackageOpen className="h-4 w-4 mr-2" />
-                Nuova Lavorazione
+                {t("dashboard.nuovaLavorazione")}
               </Button>
             </div>
           </div>
@@ -292,10 +292,10 @@ export default function ResellerDashboard() {
                 <div className="flex flex-wrap items-center gap-2 px-4 py-2 rounded-full bg-white/15 backdrop-blur-sm border border-white/25 text-sm" data-testid="pill-repairs">
                   <Wrench className="h-3.5 w-3.5 text-white" />
                   <span className="font-semibold tabular-nums text-white">{stats?.overview?.activeRepairs ?? 0}</span>
-                  <span className="text-white/80 text-xs">riparazioni</span>
+                  <span className="text-white/80 text-xs">{t("dashboard.activeRepairsCount")}</span>
                 </div>
               </TooltipTrigger>
-              <TooltipContent>Riparazioni attive in corso</TooltipContent>
+              <TooltipContent>{t("dashboard.activeRepairsTooltip")}</TooltipContent>
             </TooltipUI>
             
             <TooltipUI>
@@ -303,10 +303,10 @@ export default function ResellerDashboard() {
                 <div className="flex flex-wrap items-center gap-2 px-4 py-2 rounded-full bg-white/15 backdrop-blur-sm border border-white/25 text-sm" data-testid="pill-revenue">
                   <Euro className="h-3.5 w-3.5 text-yellow-300" />
                   <span className="font-semibold tabular-nums text-white">{formatCurrency(todayRevenue)}</span>
-                  <span className="text-white/80 text-xs">totale</span>
+                  <span className="text-white/80 text-xs">{t("dashboard.total")}</span>
                 </div>
               </TooltipTrigger>
-              <TooltipContent>Totale vendite periodo corrente</TooltipContent>
+              <TooltipContent>{t("dashboard.totalSalesPeriod")}</TooltipContent>
             </TooltipUI>
             
             {totalUrgencies > 0 && (
@@ -315,10 +315,10 @@ export default function ResellerDashboard() {
                   <div className="flex flex-wrap items-center gap-2 px-4 py-2 rounded-full bg-orange-400/30 backdrop-blur-sm border border-orange-300/30 text-sm" data-testid="pill-urgencies">
                     <AlertTriangle className="h-3.5 w-3.5 text-orange-200" />
                     <span className="font-semibold tabular-nums text-white">{totalUrgencies}</span>
-                    <span className="text-orange-100 text-xs">urgenze</span>
+                    <span className="text-orange-100 text-xs">{t("dashboard.urgencies")}</span>
                   </div>
                 </TooltipTrigger>
-                <TooltipContent>Elementi che richiedono attenzione</TooltipContent>
+                <TooltipContent>{t("dashboard.attentionNeeded")}</TooltipContent>
               </TooltipUI>
             )}
           </div>
@@ -337,7 +337,7 @@ export default function ResellerDashboard() {
             </AvatarFallback>
           </Avatar>
           <div className="flex-1 min-w-0">
-            <p className="text-xs font-medium text-blue-600 dark:text-blue-400 uppercase tracking-wider mb-0.5">Fai parte della rete</p>
+            <p className="text-xs font-medium text-blue-600 dark:text-blue-400 uppercase tracking-wider mb-0.5">{t("dashboard.partOfNetwork")}</p>
             <p className="font-semibold text-foreground truncate" data-testid="text-parent-reseller-name">
               {parentReseller.ragioneSociale || parentReseller.fullName}
             </p>
@@ -355,8 +355,8 @@ export default function ResellerDashboard() {
                 <AlertTriangle className="h-4 w-4 text-amber-600" />
               </div>
               <div>
-                <CardTitle className="text-base font-semibold">Richiede Attenzione</CardTitle>
-                <p className="text-xs text-muted-foreground">Elementi che necessitano azione</p>
+                <CardTitle className="text-base font-semibold">{t("dashboard.needsAttention")}</CardTitle>
+                <p className="text-xs text-muted-foreground">{t("dashboard.itemsNeedAction")}</p>
               </div>
             </div>
           </CardHeader>
@@ -370,7 +370,7 @@ export default function ResellerDashboard() {
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-2xl font-bold text-red-700 dark:text-red-400" data-testid="text-urgent-diagnosi-count">{diagnosisPendingRepairs.length}</p>
-                      <p className="text-xs text-red-600/80 dark:text-red-400/80 truncate">Diagnosi in attesa (6+ giorni)</p>
+                      <p className="text-xs text-red-600/80 dark:text-red-400/80 truncate">{t("dashboard.diagnosisWaiting")}</p>
                     </div>
                     <ChevronRight className="h-4 w-4 text-red-400 shrink-0" />
                   </div>
@@ -385,7 +385,7 @@ export default function ResellerDashboard() {
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-2xl font-bold text-amber-700 dark:text-amber-400" data-testid="text-urgent-preventivi-count">{quotePendingRepairs.length}</p>
-                      <p className="text-xs text-amber-600/80 dark:text-amber-400/80 truncate">Preventivi in attesa risposta</p>
+                      <p className="text-xs text-amber-600/80 dark:text-amber-400/80 truncate">{t("dashboard.quotesWaiting")}</p>
                     </div>
                     <ChevronRight className="h-4 w-4 text-amber-400 shrink-0" />
                   </div>
@@ -400,7 +400,7 @@ export default function ResellerDashboard() {
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-2xl font-bold text-orange-700 dark:text-orange-400" data-testid="text-urgent-lowstock-count">{stats?.warehouse?.lowStockItems}</p>
-                      <p className="text-xs text-orange-600/80 dark:text-orange-400/80 truncate">Prodotti sotto scorta</p>
+                      <p className="text-xs text-orange-600/80 dark:text-orange-400/80 truncate">{t("dashboard.lowStockProducts")}</p>
                     </div>
                     <ChevronRight className="h-4 w-4 text-orange-400 shrink-0" />
                   </div>
@@ -415,7 +415,7 @@ export default function ResellerDashboard() {
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-2xl font-bold text-blue-700 dark:text-blue-400" data-testid="text-urgent-b2b-count">{stats?.b2b?.pendingOrders}</p>
-                      <p className="text-xs text-blue-600/80 dark:text-blue-400/80 truncate">Ordini B2B da gestire</p>
+                      <p className="text-xs text-blue-600/80 dark:text-blue-400/80 truncate">{t("dashboard.b2bOrdersToManage")}</p>
                     </div>
                     <ChevronRight className="h-4 w-4 text-blue-400 shrink-0" />
                   </div>
@@ -430,7 +430,7 @@ export default function ResellerDashboard() {
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-2xl font-bold text-red-700 dark:text-red-400" data-testid="text-urgent-invoices-count">{overdueInvoices.length}</p>
-                      <p className="text-xs text-red-600/80 dark:text-red-400/80 truncate">Fatture scadute</p>
+                      <p className="text-xs text-red-600/80 dark:text-red-400/80 truncate">{t("dashboard.overdueInvoices")}</p>
                     </div>
                     <ChevronRight className="h-4 w-4 text-red-400 shrink-0" />
                   </div>
@@ -460,7 +460,7 @@ export default function ResellerDashboard() {
                     <div className="flex flex-wrap items-center gap-1 mt-1">
                       <TrendingUp className="h-3 w-3 text-emerald-500" />
                       <span className="text-xs text-emerald-600 dark:text-emerald-400 font-medium">
-                        {stats?.overview?.totalRepairs ?? 0} totali
+                        {stats?.overview?.totalRepairs ?? 0} {t("dashboard.totalLabel")}
                       </span>
                     </div>
                   </div>
@@ -484,7 +484,7 @@ export default function ResellerDashboard() {
                         {stats?.overview?.totalCustomers ?? 0}
                       </p>
                     )}
-                    <p className="text-xs text-muted-foreground mt-1">Gestiti attivamente</p>
+                    <p className="text-xs text-muted-foreground mt-1">{t("dashboard.managedActively")}</p>
                   </div>
                   <div className="h-12 w-12 rounded-2xl bg-gradient-to-br from-emerald-500 to-green-500 text-white flex items-center justify-center shadow-lg shadow-emerald-500/30">
                     <Users className="h-6 w-6" />
@@ -498,7 +498,7 @@ export default function ResellerDashboard() {
               <CardContent className="relative pt-5 pb-4">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1">Fatturato</p>
+                    <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1">{t("dashboard.invoiced")}</p>
                     {isLoading ? (
                       <Skeleton className="h-9 w-24" />
                     ) : (
@@ -506,7 +506,7 @@ export default function ResellerDashboard() {
                         {formatCurrency(stats?.overview?.totalRevenue ?? 0)}
                       </p>
                     )}
-                    <p className="text-xs text-muted-foreground mt-1">Da riparazioni</p>
+                    <p className="text-xs text-muted-foreground mt-1">{t("dashboard.fromRepairs")}</p>
                   </div>
                   <div className="h-12 w-12 rounded-2xl bg-gradient-to-br from-amber-500 to-orange-500 text-white flex items-center justify-center shadow-lg shadow-amber-500/30">
                     <TrendingUp className="h-6 w-6" />
@@ -520,7 +520,7 @@ export default function ResellerDashboard() {
               <CardContent className="relative pt-5 pb-4">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1">Stock</p>
+                    <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1">{t("dashboard.stock")}</p>
                     {isLoading ? (
                       <Skeleton className="h-9 w-16" />
                     ) : (
@@ -530,8 +530,8 @@ export default function ResellerDashboard() {
                     )}
                     <p className="text-xs text-muted-foreground mt-1">
                       {stats?.warehouse?.lowStockItems ? (
-                        <span className="text-amber-600 dark:text-amber-400">{stats.warehouse.lowStockItems} sotto scorta</span>
-                      ) : "Articoli in magazzino"}
+                        <span className="text-amber-600 dark:text-amber-400">{stats.warehouse.lowStockItems} {t("dashboard.belowMinStock")}</span>
+                      ) : t("dashboard.itemsInWarehouse")}
                     </p>
                   </div>
                   <div className="h-12 w-12 rounded-2xl bg-gradient-to-br from-cyan-500 to-blue-500 text-white flex items-center justify-center shadow-lg shadow-cyan-500/30">
@@ -647,7 +647,7 @@ export default function ResellerDashboard() {
               </div>
               <div>
                 <CardTitle className="text-base font-semibold text-white">{t("sidebar.items.salesOverview")}</CardTitle>
-                <p className="text-xs text-white/80">Aggregato da tutte le fonti</p>
+                <p className="text-xs text-white/80">{t("dashboard.aggregatedFromSources")}</p>
               </div>
             </div>
             <Link href="/reseller/sales">
@@ -666,7 +666,7 @@ export default function ResellerDashboard() {
               <p className="text-2xl font-bold" data-testid="text-sales-total">
                 {formatCurrency(salesData?.summary?.totalAmount || 0)}
               </p>
-              <p className="text-xs text-muted-foreground mt-1">{salesData?.summary?.totalSales || 0} transazioni</p>
+              <p className="text-xs text-muted-foreground mt-1">{salesData?.summary?.totalSales || 0} {t("dashboard.transactions")}</p>
             </div>
             
             <div className={`p-3 rounded-lg border transition-all ${
@@ -684,7 +684,7 @@ export default function ResellerDashboard() {
               <p className={`text-lg font-bold tabular-nums ${(salesData?.summary?.bySource?.ecommerce || 0) === 0 ? 'text-muted-foreground/50' : 'text-blue-600'}`} data-testid="text-sales-ecommerce">
                 {formatCurrency(salesData?.summary?.bySource?.ecommerce || 0)}
               </p>
-              <p className="text-xs text-muted-foreground">{salesData?.summary?.countBySource?.ecommerce || 0} ordini</p>
+              <p className="text-xs text-muted-foreground">{salesData?.summary?.countBySource?.ecommerce || 0} {t("dashboard.orders")}</p>
             </div>
             
             <div className={`p-3 rounded-lg border transition-all ${
@@ -702,7 +702,7 @@ export default function ResellerDashboard() {
               <p className={`text-lg font-bold tabular-nums ${(salesData?.summary?.bySource?.pos || 0) === 0 ? 'text-muted-foreground/50' : 'text-green-600'}`} data-testid="text-sales-pos">
                 {formatCurrency(salesData?.summary?.bySource?.pos || 0)}
               </p>
-              <p className="text-xs text-muted-foreground">{salesData?.summary?.countBySource?.pos || 0} vendite</p>
+              <p className="text-xs text-muted-foreground">{salesData?.summary?.countBySource?.pos || 0} {t("dashboard.sales")}</p>
             </div>
             
             <div className={`p-3 rounded-lg border transition-all ${
@@ -720,7 +720,7 @@ export default function ResellerDashboard() {
               <p className={`text-lg font-bold tabular-nums ${(salesData?.summary?.bySource?.utility || 0) === 0 ? 'text-muted-foreground/50' : 'text-yellow-600'}`} data-testid="text-sales-utility">
                 {formatCurrency(salesData?.summary?.bySource?.utility || 0)}
               </p>
-              <p className="text-xs text-muted-foreground">{salesData?.summary?.countBySource?.utility || 0} pratiche</p>
+              <p className="text-xs text-muted-foreground">{salesData?.summary?.countBySource?.utility || 0} {t("dashboard.practices")}</p>
             </div>
             
             <div className={`p-3 rounded-lg border transition-all ${
@@ -738,7 +738,7 @@ export default function ResellerDashboard() {
               <p className={`text-lg font-bold tabular-nums ${(salesData?.summary?.bySource?.b2b || 0) === 0 ? 'text-muted-foreground/50' : 'text-purple-600'}`} data-testid="text-sales-b2b">
                 {formatCurrency(salesData?.summary?.bySource?.b2b || 0)}
               </p>
-              <p className="text-xs text-muted-foreground">{salesData?.summary?.countBySource?.b2b || 0} ordini</p>
+              <p className="text-xs text-muted-foreground">{salesData?.summary?.countBySource?.b2b || 0} {t("dashboard.orders")}</p>
             </div>
           </div>
         </CardContent>
@@ -765,7 +765,7 @@ export default function ResellerDashboard() {
               data-testid="button-quick-new-repair"
             >
               <PackageOpen className="h-4 w-4 mr-2" />
-              Nuova Lavorazione
+              {t("dashboard.nuovaLavorazione")}
             </Button>
           </div>
           
@@ -779,13 +779,13 @@ export default function ResellerDashboard() {
                 <Link href="/reseller/repairs" className="block">
                   <Button variant="ghost" size="sm" className="w-full justify-start" data-testid="button-quick-repairs">
                     <ExternalLink className="h-3.5 w-3.5 mr-2" />
-                    Tutte le lavorazioni
+                    {t("dashboard.allRepairs")}
                   </Button>
                 </Link>
                 <Link href="/reseller/appointments" className="block">
                   <Button variant="ghost" size="sm" className="w-full justify-start" data-testid="button-quick-appointment">
                     <CalendarPlus className="h-3.5 w-3.5 mr-2 text-blue-500" />
-                    Nuovo appuntamento
+                    {t("dashboard.newAppointment")}
                   </Button>
                 </Link>
               </div>
@@ -804,12 +804,12 @@ export default function ResellerDashboard() {
                   data-testid="button-quick-customer"
                 >
                   <UserPlus className="h-3.5 w-3.5 mr-2 text-emerald-500" />
-                  Nuovo cliente
+                  {t("dashboard.newCustomer")}
                 </Button>
                 <Link href="/reseller/repair-centers" className="block">
                   <Button variant="ghost" size="sm" className="w-full justify-start" data-testid="button-quick-centers">
                     <Building2 className="h-3.5 w-3.5 mr-2" />
-                    Centri riparazione
+                    {t("dashboard.repairCentersLabel")}
                   </Button>
                 </Link>
               </div>
@@ -823,7 +823,7 @@ export default function ResellerDashboard() {
                 <Link href="/reseller/warehouses" className="block">
                   <Button variant="ghost" size="sm" className="w-full justify-start" data-testid="button-quick-warehouse">
                     <Warehouse className="h-3.5 w-3.5 mr-2 text-violet-500" />
-                    Gestione magazzino
+                    {t("dashboard.warehouseManagement")}
                   </Button>
                 </Link>
                 <Link href="/reseller/transfer-requests" className="block">
@@ -833,7 +833,7 @@ export default function ResellerDashboard() {
                 <Link href="/reseller/b2b-catalog" className="block">
                   <Button variant="ghost" size="sm" className="w-full justify-start" data-testid="button-quick-b2b">
                     <ShoppingCart className="h-3.5 w-3.5 mr-2 text-orange-500" />
-                    Ordine B2B
+                    {t("dashboard.ordineB2B")}
                   </Button>
                 </Link>
               </div>
@@ -855,7 +855,7 @@ export default function ResellerDashboard() {
                 <Link href="/reseller/utility/practices" className="block">
                   <Button variant="ghost" size="sm" className="w-full justify-start" data-testid="button-quick-practices">
                     <Zap className="h-3.5 w-3.5 mr-2 text-yellow-500" />
-                    Pratiche utility
+                    {t("dashboard.utilityPractices")}
                   </Button>
                 </Link>
               </div>
@@ -880,7 +880,7 @@ export default function ResellerDashboard() {
                   <div className="h-7 w-7 rounded-lg bg-gradient-to-br from-teal-500 to-cyan-500 flex items-center justify-center">
                     <BarChart3 className="h-3.5 w-3.5 text-white" />
                   </div>
-                  <CardTitle className="text-sm font-semibold">Riparazioni per Stato</CardTitle>
+                  <CardTitle className="text-sm font-semibold">{t("dashboard.riparazioniPerStato")}</CardTitle>
                 </div>
               </CardHeader>
               <CardContent className="pt-4">
@@ -921,7 +921,7 @@ export default function ResellerDashboard() {
                   <div className="h-7 w-7 rounded-lg bg-gradient-to-br from-violet-500 to-purple-500 flex items-center justify-center">
                     <PieChartIcon className="h-3.5 w-3.5 text-white" />
                   </div>
-                  <CardTitle className="text-sm font-semibold">Stato Lavori</CardTitle>
+                  <CardTitle className="text-sm font-semibold">{t("dashboard.statoLavori")}</CardTitle>
                 </div>
               </CardHeader>
               <CardContent className="pt-4">
@@ -985,7 +985,7 @@ export default function ResellerDashboard() {
                 <div className="h-7 w-7 rounded-lg bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center">
                   <Wrench className="h-3.5 w-3.5 text-white" />
                 </div>
-                <CardTitle className="text-sm font-semibold">Ultime Riparazioni</CardTitle>
+                <CardTitle className="text-sm font-semibold">{t("dashboard.latestRepairs")}</CardTitle>
               </div>
               <Link href="/reseller/repairs">
                 <Button variant="ghost" size="sm" className="h-7 text-xs">{t("common.all")}<ChevronRight className="h-3 w-3 ml-1" />
@@ -996,8 +996,8 @@ export default function ResellerDashboard() {
               {recentRepairs.length === 0 ? (
                 <div className="text-center py-12 text-muted-foreground">
                   <Package className="h-10 w-10 mx-auto mb-3 opacity-20" />
-                  <p className="text-sm font-medium mb-1">Nessuna riparazione</p>
-                  <p className="text-xs text-muted-foreground">Inizia creando una nuova lavorazione</p>
+                  <p className="text-sm font-medium mb-1">{t("dashboard.noRepairs")}</p>
+                  <p className="text-xs text-muted-foreground">{t("dashboard.startNewRepair")}</p>
                 </div>
               ) : (
                 <div className="divide-y">

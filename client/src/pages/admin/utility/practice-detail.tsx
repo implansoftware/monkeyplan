@@ -35,14 +35,14 @@ type PracticeStatus = "bozza" | "inviata" | "in_lavorazione" | "attesa_documenti
 type TaskStatus = "da_fare" | "in_corso" | "completato" | "annullato";
 type Priority = "bassa" | "normale" | "alta" | "urgente";
 
-const statusLabels: Record<PracticeStatus, string> = {
-  bozza: "Bozza",
-  inviata: "Inviata",
-  in_lavorazione: "In Lavorazione",
-  attesa_documenti: "Attesa Documenti",
-  completata: "Completata",
-  annullata: "Annullata",
-  rifiutata: "Rifiutata",
+const statusLabels: Record<PracticeStatus, { label: string; labelKey: string }> = {
+  bozza: { label: "Bozza", labelKey: "utility.statusDraft" },
+  inviata: { label: "Inviata", labelKey: "utility.statusSent" },
+  in_lavorazione: { label: "In Lavorazione", labelKey: "utility.statusInProgress" },
+  attesa_documenti: { label: "Attesa Documenti", labelKey: "utility.statusWaitingDocuments" },
+  completata: { label: "Completata", labelKey: "utility.statusCompleted" },
+  annullata: { label: "Annullata", labelKey: "utility.statusCancelled" },
+  rifiutata: { label: "Rifiutata", labelKey: "utility.statusRejected" },
 };
 
 const statusColors: Record<PracticeStatus, string> = {
@@ -55,11 +55,11 @@ const statusColors: Record<PracticeStatus, string> = {
   rifiutata: "bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300",
 };
 
-const taskStatusLabels: Record<TaskStatus, string> = {
-  da_fare: "Da fare",
-  in_corso: "In corso",
-  completato: "Completato",
-  annullato: "Annullato",
+const taskStatusLabels: Record<TaskStatus, { label: string; labelKey: string }> = {
+  da_fare: { label: "Da fare", labelKey: "utility.taskTodo" },
+  in_corso: { label: "In corso", labelKey: "utility.taskInProgress" },
+  completato: { label: "Completato", labelKey: "utility.taskCompleted" },
+  annullato: { label: "Annullato", labelKey: "utility.taskCancelled" },
 };
 
 const taskStatusIcons: Record<TaskStatus, typeof Circle> = {
@@ -69,11 +69,11 @@ const taskStatusIcons: Record<TaskStatus, typeof Circle> = {
   annullato: XCircle,
 };
 
-const priorityLabels: Record<Priority, string> = {
-  bassa: "Bassa",
-  normale: "Normale",
-  alta: "Alta",
-  urgente: "Urgente",
+const priorityLabels: Record<Priority, { label: string; labelKey: string }> = {
+  bassa: { label: "Bassa", labelKey: "utility.priorityLow" },
+  normale: { label: "Normale", labelKey: "utility.priorityNormal" },
+  alta: { label: "Alta", labelKey: "utility.priorityHigh" },
+  urgente: { label: "Urgente", labelKey: "utility.priorityUrgent" },
 };
 
 const priorityColors: Record<Priority, string> = {
@@ -83,14 +83,14 @@ const priorityColors: Record<Priority, string> = {
   urgente: "bg-red-100 text-red-700",
 };
 
-const documentCategoryLabels: Record<string, string> = {
-  contratto: "Contratto",
-  documento_identita: "Documento Identità",
-  codice_fiscale: "Codice Fiscale",
-  bolletta: "Bolletta",
-  conferma_fornitore: "Conferma Fornitore",
-  fattura: "Fattura",
-  altro: "Altro",
+const documentCategoryLabels: Record<string, { label: string; labelKey: string }> = {
+  contratto: { label: "Contratto", labelKey: "utility.docContract" },
+  documento_identita: { label: "Documento Identità", labelKey: "utility.docIdentity" },
+  codice_fiscale: { label: "Codice Fiscale", labelKey: "utility.docFiscalCode" },
+  bolletta: { label: "Bolletta", labelKey: "utility.docBill" },
+  conferma_fornitore: { label: "Conferma Fornitore", labelKey: "utility.docSupplierConfirm" },
+  fattura: { label: "Fattura", labelKey: "utility.docInvoice" },
+  altro: { label: "Altro", labelKey: "utility.docOther" },
 };
 
 const formatCurrency = (cents: number | null | undefined) => {
@@ -280,9 +280,9 @@ export default function AdminUtilityPracticeDetail() {
       setStatusDialogOpen(false);
       setStatusReason("");
       const invoiceMsg = data.invoice 
-        ? ` - Fattura ${data.invoice.invoiceNumber} generata`
+        ? ` - ${t("utility.invoiceGenerated", { number: data.invoice.invoiceNumber })}`
         : "";
-      toast({ title: `Stato aggiornato${invoiceMsg}` });
+      toast({ title: `${t("utility.statusUpdated")}${invoiceMsg}` });
     },
   });
 
@@ -315,7 +315,7 @@ export default function AdminUtilityPracticeDetail() {
       
       if (!res.ok) {
         const errorText = await res.text();
-        throw new Error(errorText || 'Errore durante il caricamento');
+        throw new Error(errorText || t("utility.uploadError"));
       }
       
       queryClient.invalidateQueries({ queryKey: ["/api/utility/practices", params.id, "documents"] });
@@ -324,7 +324,7 @@ export default function AdminUtilityPracticeDetail() {
     } catch (error: any) {
       toast({ 
         title: t("common.error"), 
-        description: error.message || "Impossibile caricare il documento",
+        description: error.message || t("utility.cannotUploadDoc"),
         variant: "destructive" 
       });
     } finally {
@@ -349,7 +349,7 @@ export default function AdminUtilityPracticeDetail() {
       <div className="p-6">
         <div className="text-center py-12">
           <AlertCircle className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-          <h2 className="text-xl font-semibold mb-2">Pratica non trovata</h2>
+          <h2 className="text-xl font-semibold mb-2">{t("utility.practiceNotFound")}</h2>
           <Link href="/admin/utility/practices">
             <Button variant="outline">{t("utility.backToPractices")}</Button>
           </Link>
@@ -374,14 +374,14 @@ export default function AdminUtilityPracticeDetail() {
             <h1 className="text-2xl font-bold" data-testid="text-practice-number">{practice.practiceNumber}</h1>
             <p className="text-muted-foreground">
               {practice.itemType === "product" 
-                ? product?.name || "Prodotto" 
+                ? product?.name || t("utility.productType") 
                 : `${supplier?.name || ""} - ${(practice as any).customServiceName || service?.name || ""}`}
             </p>
           </div>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <Badge className={statusColors[practice.status as PracticeStatus]} data-testid="badge-status">
-            {statusLabels[practice.status as PracticeStatus]}
+            {t(statusLabels[practice.status as PracticeStatus]?.labelKey)}
           </Badge>
           <Button 
             variant="outline" 
@@ -392,7 +392,7 @@ export default function AdminUtilityPracticeDetail() {
             }}
             data-testid="button-change-status"
           >
-            Cambia Stato
+            {t("utility.changeStatus")}
           </Button>
         </div>
       </div>
@@ -401,23 +401,23 @@ export default function AdminUtilityPracticeDetail() {
         <TabsList className="grid w-full grid-cols-5" data-testid="tabs-practice">
           <TabsTrigger value="panoramica" className="flex flex-wrap items-center gap-2" data-testid="tab-panoramica">
             <FileText className="h-4 w-4" />
-            Panoramica
+            {t("utility.overview")}
           </TabsTrigger>
           <TabsTrigger value="attivita" className="flex flex-wrap items-center gap-2" data-testid="tab-attivita">
             <CheckSquare className="h-4 w-4" />
-            Attività ({completedTasks}/{totalTasks})
+            {t("utility.activities")} ({completedTasks}/{totalTasks})
           </TabsTrigger>
           <TabsTrigger value="documenti" className="flex flex-wrap items-center gap-2" data-testid="tab-documenti">
             <Upload className="h-4 w-4" />
-            Documenti ({documents.length})
+            {t("utility.documents")} ({documents.length})
           </TabsTrigger>
           <TabsTrigger value="cronologia" className="flex flex-wrap items-center gap-2" data-testid="tab-cronologia">
             <Clock className="h-4 w-4" />
-            Cronologia
+            {t("utility.chronology")}
           </TabsTrigger>
           <TabsTrigger value="note" className="flex flex-wrap items-center gap-2" data-testid="tab-note">
             <MessageSquare className="h-4 w-4" />
-            Note ({notes.length})
+            {t("common.notes")} ({notes.length})
           </TabsTrigger>
         </TabsList>
 
@@ -425,7 +425,7 @@ export default function AdminUtilityPracticeDetail() {
           <div className="grid gap-4 md:grid-cols-2">
             <Card>
               <CardHeader>
-                <CardTitle className="text-lg">Informazioni Cliente</CardTitle>
+                <CardTitle className="text-lg">{t("utility.customerInfo")}</CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
                 <div className="flex flex-wrap items-center gap-2">
@@ -433,15 +433,15 @@ export default function AdminUtilityPracticeDetail() {
                   <span className="font-medium" data-testid="text-customer-name">{customer?.fullName || "-"}</span>
                 </div>
                 <div className="text-sm text-muted-foreground">
-                  <p>Email: {customer?.email || "-"}</p>
-                  <p>Telefono: {customer?.phone || "-"}</p>
+                  <p>{t("common.email")}: {customer?.email || "-"}</p>
+                  <p>{t("common.phone")}: {customer?.phone || "-"}</p>
                 </div>
               </CardContent>
             </Card>
 
             <Card>
               <CardHeader>
-                <CardTitle className="text-lg">Gestito da</CardTitle>
+                <CardTitle className="text-lg">{t("utility.managedBy")}</CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
                 {reseller ? (
@@ -452,12 +452,12 @@ export default function AdminUtilityPracticeDetail() {
                         {reseller.fullName || reseller.username}
                       </span>
                       {parentReseller && (
-                        <Badge variant="secondary" className="text-xs">Sub-rivenditore</Badge>
+                        <Badge variant="secondary" className="text-xs">{t("admin.resellers.subReseller")}</Badge>
                       )}
                     </div>
                     {parentReseller && (
                       <div className="text-sm text-muted-foreground pl-6">
-                        Rivenditore padre: {parentReseller.fullName || parentReseller.username}
+                        {t("admin.resellers.parentReseller")}: {parentReseller.fullName || parentReseller.username}
                       </div>
                     )}
                   </div>
@@ -473,7 +473,7 @@ export default function AdminUtilityPracticeDetail() {
                   <div className="flex flex-wrap items-center gap-2">
                     <UserIcon className="h-4 w-4 text-muted-foreground" />
                     <span className="font-medium text-muted-foreground" data-testid="text-admin-managed">
-                      Admin (gestione diretta)
+                      {t("utility.adminDirectManagement")}
                     </span>
                   </div>
                 )}
@@ -483,9 +483,9 @@ export default function AdminUtilityPracticeDetail() {
             <Card>
               <CardHeader>
                 <CardTitle className="text-lg">
-                  {practice.itemType === "product" ? "Dettagli Prodotti" : 
-                   practice.itemType === "service_with_products" ? "Dettagli Servizio + Prodotti" : 
-                   "Dettagli Servizio"}
+                  {practice.itemType === "product" ? t("utility.productDetails") : 
+                   practice.itemType === "service_with_products" ? t("utility.serviceWithProductDetails") : 
+                   t("utility.serviceDetails")}
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
@@ -494,9 +494,9 @@ export default function AdminUtilityPracticeDetail() {
                   <p className="text-sm text-muted-foreground">{t("common.type")}</p>
                   <Badge variant="outline" className="mt-1">
                     {practice.itemType === "product" ? (
-                      <><Package className="h-3 w-3 mr-1" />Prodotto</>
+                      <><Package className="h-3 w-3 mr-1" />{t("utility.productType")}</>
                     ) : practice.itemType === "service_with_products" ? (
-                      <><FileText className="h-3 w-3 mr-1" /><Package className="h-3 w-3 mr-1" />Servizio + Prodotti</>
+                      <><FileText className="h-3 w-3 mr-1" /><Package className="h-3 w-3 mr-1" />{t("utility.serviceWithProducts")}</>
                     ) : (
                       <>{t("utility.utilityService")}</>
                     )}
@@ -507,17 +507,17 @@ export default function AdminUtilityPracticeDetail() {
                 {(practice.itemType === "service" || practice.itemType === "service_with_products") && (
                   <>
                     <div>
-                      <p className="text-sm text-muted-foreground">Fornitore</p>
+                      <p className="text-sm text-muted-foreground">{t("utility.supplier")}</p>
                       <p className="font-medium" data-testid="text-supplier-name">{supplier?.name || "-"}</p>
                     </div>
                     <div>
-                      <p className="text-sm text-muted-foreground">Servizio</p>
+                      <p className="text-sm text-muted-foreground">{t("utility.service")}</p>
                       <div className="flex flex-wrap items-center gap-2">
                         <p className="font-medium" data-testid="text-service-name">
                           {(practice as any).customServiceName || service?.name || "-"}
                         </p>
                         {(practice as any).customServiceName && (
-                          <Badge variant="outline" className="text-xs">Temporaneo</Badge>
+                          <Badge variant="outline" className="text-xs">{t("utility.temporary")}</Badge>
                         )}
                       </div>
                     </div>
@@ -529,14 +529,14 @@ export default function AdminUtilityPracticeDetail() {
                   <>
                     {practiceProducts.length > 0 ? (
                       <div className="space-y-2">
-                        <p className="text-sm text-muted-foreground">Prodotti ({practiceProducts.length})</p>
+                        <p className="text-sm text-muted-foreground">{t("utility.productsCount", { count: practiceProducts.length })}</p>
                         <div className="border rounded-md overflow-hidden">
                           <table className="w-full text-sm">
                             <thead className="bg-muted/50">
                               <tr>
-                                <th className="text-left p-2 font-medium">Prodotto</th>
-                                <th className="text-right p-2 font-medium">Qtà</th>
-                                <th className="text-right p-2 font-medium">Prezzo Unit.</th>
+                                <th className="text-left p-2 font-medium">{t("utility.productType")}</th>
+                                <th className="text-right p-2 font-medium">{t("common.qty")}</th>
+                                <th className="text-right p-2 font-medium">{t("common.unitPrice")}</th>
                                 <th className="text-right p-2 font-medium">{t("common.total")}</th>
                               </tr>
                             </thead>
@@ -557,7 +557,7 @@ export default function AdminUtilityPracticeDetail() {
                             </tbody>
                             <tfoot className="bg-muted/50 border-t">
                               <tr>
-                                <td colSpan={3} className="p-2 text-right font-medium">Totale Prodotti:</td>
+                                <td colSpan={3} className="p-2 text-right font-medium">{t("utility.productsTotal")}:</td>
                                 <td className="p-2 text-right font-bold" data-testid="text-products-total">
                                   {formatCurrency(practiceProducts.reduce((sum, pp) => sum + (pp.quantity * pp.unitPriceCents), 0))}
                                 </td>
@@ -568,7 +568,7 @@ export default function AdminUtilityPracticeDetail() {
                       </div>
                     ) : practice.itemType === "product" && product ? (
                       <div>
-                        <p className="text-sm text-muted-foreground">Prodotto</p>
+                        <p className="text-sm text-muted-foreground">{t("utility.productType")}</p>
                         <p className="font-medium" data-testid="text-product-name">{product?.name || "-"}</p>
                         {product?.sku && (
                           <p className="text-xs text-muted-foreground">SKU: {product.sku}</p>
@@ -580,7 +580,7 @@ export default function AdminUtilityPracticeDetail() {
 
                 <div>
                   <p className="text-sm text-muted-foreground">
-                    {practice.priceType === "forfait" ? "Prezzo Forfait" : "Canone Mensile"}
+                    {practice.priceType === "forfait" ? t("utility.priceForfait") : t("utility.monthlyFee")}
                   </p>
                   <p className="font-medium" data-testid="text-price">
                     {practice.priceType === "forfait" 
@@ -593,24 +593,24 @@ export default function AdminUtilityPracticeDetail() {
 
             <Card>
               <CardHeader>
-                <CardTitle className="text-lg">Date Importanti</CardTitle>
+                <CardTitle className="text-lg">{t("utility.importantDates")}</CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <p className="text-sm text-muted-foreground">Creata il</p>
+                    <p className="text-sm text-muted-foreground">{t("utility.createdOn")}</p>
                     <p className="font-medium">{formatDateShort(practice.createdAt)}</p>
                   </div>
                   <div>
-                    <p className="text-sm text-muted-foreground">Inviata il</p>
+                    <p className="text-sm text-muted-foreground">{t("utility.sentOn")}</p>
                     <p className="font-medium">{formatDateShort(practice.submittedAt)}</p>
                   </div>
                   <div>
-                    <p className="text-sm text-muted-foreground">Attivazione Prevista</p>
+                    <p className="text-sm text-muted-foreground">{t("utility.expectedActivation")}</p>
                     <p className="font-medium">{formatDateShort(practice.expectedActivationDate)}</p>
                   </div>
                   <div>
-                    <p className="text-sm text-muted-foreground">Attivata il</p>
+                    <p className="text-sm text-muted-foreground">{t("utility.activatedOn")}</p>
                     <p className="font-medium">{formatDateShort(practice.activatedAt)}</p>
                   </div>
                 </div>
@@ -619,21 +619,21 @@ export default function AdminUtilityPracticeDetail() {
 
             <Card>
               <CardHeader>
-                <CardTitle className="text-lg">Riferimenti</CardTitle>
+                <CardTitle className="text-lg">{t("utility.references")}</CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
                 <div>
-                  <p className="text-sm text-muted-foreground">Riferimento Fornitore</p>
+                  <p className="text-sm text-muted-foreground">{t("utility.supplierReference")}</p>
                   <p className="font-medium">{practice.supplierReference || "-"}</p>
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">{t("common.priority")}</p>
                   <Badge className={priorityColors[(practice.priority as Priority) || "normale"]}>
-                    {priorityLabels[(practice.priority as Priority) || "normale"]}
+                    {t(priorityLabels[(practice.priority as Priority) || "normale"]?.labelKey)}
                   </Badge>
                 </div>
                 <div>
-                  <p className="text-sm text-muted-foreground">Canale Comunicazione</p>
+                  <p className="text-sm text-muted-foreground">{t("utility.communicationChannel")}</p>
                   <p className="font-medium">{practice.communicationChannel || "-"}</p>
                 </div>
               </CardContent>
@@ -643,7 +643,7 @@ export default function AdminUtilityPracticeDetail() {
           {practice.notes && (
             <Card>
               <CardHeader>
-                <CardTitle className="text-lg">Note Pratica</CardTitle>
+                <CardTitle className="text-lg">{t("utility.practiceNotes")}</CardTitle>
               </CardHeader>
               <CardContent>
                 <p className="whitespace-pre-wrap">{practice.notes}</p>
@@ -655,14 +655,14 @@ export default function AdminUtilityPracticeDetail() {
         <TabsContent value="attivita" className="space-y-4">
           <div className="flex justify-between items-center">
             <div>
-              <h3 className="text-lg font-semibold">Attività da completare</h3>
+              <h3 className="text-lg font-semibold">{t("utility.tasksToComplete")}</h3>
               <p className="text-sm text-muted-foreground">
-                {completedTasks} di {totalTasks} completate
+                {t("utility.tasksCompletedOf", { completed: completedTasks, total: totalTasks })}
               </p>
             </div>
             <Button onClick={() => setTaskDialogOpen(true)} data-testid="button-add-task">
               <Plus className="h-4 w-4 mr-2" />
-              Nuova Attività
+              {t("utility.newActivity")}
             </Button>
           </div>
 
@@ -670,7 +670,7 @@ export default function AdminUtilityPracticeDetail() {
             <CardContent className="p-0">
               {tasks.length === 0 ? (
                 <div className="text-center py-8 text-muted-foreground">
-                  Nessuna attività. Aggiungi la prima attività per iniziare.
+                  {t("utility.noActivities")}
                 </div>
               ) : (
                 <div className="divide-y">
@@ -702,7 +702,7 @@ export default function AdminUtilityPracticeDetail() {
                           <div className="flex flex-wrap items-center gap-4 mt-2 text-xs text-muted-foreground">
                             <span className="flex flex-wrap items-center gap-1">
                               <StatusIcon className="h-3 w-3" />
-                              {taskStatusLabels[task.status as TaskStatus]}
+                              {t(taskStatusLabels[task.status as TaskStatus]?.labelKey)}
                             </span>
                             {task.dueDate && (
                               <span className="flex flex-wrap items-center gap-1">
@@ -740,8 +740,8 @@ export default function AdminUtilityPracticeDetail() {
           />
           <div className="flex justify-between items-center">
             <div>
-              <h3 className="text-lg font-semibold">Documenti allegati</h3>
-              <p className="text-sm text-muted-foreground">{documents.length} documenti</p>
+              <h3 className="text-lg font-semibold">{t("utility.attachedDocuments")}</h3>
+              <p className="text-sm text-muted-foreground">{t("utility.documentsCount", { count: documents.length })}</p>
             </div>
             <Button 
               variant="outline" 
@@ -750,7 +750,7 @@ export default function AdminUtilityPracticeDetail() {
               data-testid="button-upload-document"
             >
               <Upload className="h-4 w-4 mr-2" />
-              {isUploading ? "Caricamento..." : "Carica Documento"}
+              {isUploading ? t("utility.uploading") : t("utility.uploadDocument")}
             </Button>
           </div>
 
@@ -758,7 +758,7 @@ export default function AdminUtilityPracticeDetail() {
             <CardContent className="p-0">
               {documents.length === 0 ? (
                 <div className="text-center py-8 text-muted-foreground">
-                  Nessun documento allegato.
+                  {t("utility.noDocuments")}
                 </div>
               ) : (
                 <div className="divide-y">
@@ -772,7 +772,7 @@ export default function AdminUtilityPracticeDetail() {
                       <div className="flex-1 min-w-0">
                         <p className="font-medium truncate">{doc.fileName}</p>
                         <div className="flex flex-wrap items-center gap-2 mt-1">
-                          <Badge variant="outline">{documentCategoryLabels[doc.category] || doc.category}</Badge>
+                          <Badge variant="outline">{documentCategoryLabels[doc.category] ? t(documentCategoryLabels[doc.category].labelKey) : doc.category}</Badge>
                           <span className="text-xs text-muted-foreground">
                             {formatDate(doc.createdAt)}
                           </span>
@@ -807,8 +807,8 @@ export default function AdminUtilityPracticeDetail() {
         <TabsContent value="cronologia" className="space-y-4">
           <div className="flex justify-between items-center">
             <div>
-              <h3 className="text-lg font-semibold">Cronologia eventi</h3>
-              <p className="text-sm text-muted-foreground">{timeline.length} eventi</p>
+              <h3 className="text-lg font-semibold">{t("utility.eventHistory")}</h3>
+              <p className="text-sm text-muted-foreground">{t("utility.eventsCount", { count: timeline.length })}</p>
             </div>
           </div>
 
@@ -817,13 +817,13 @@ export default function AdminUtilityPracticeDetail() {
               <CardHeader>
                 <CardTitle className="text-base flex items-center gap-2">
                   <History className="h-4 w-4" />
-                  Storico Stati
+                  {t("utility.stateHistory")}
                 </CardTitle>
               </CardHeader>
               <CardContent className="p-0">
                 {stateHistory.length === 0 ? (
                   <div className="text-center py-4 text-muted-foreground text-sm">
-                    Nessun cambio di stato registrato.
+                    {t("utility.noStateChanges")}
                   </div>
                 ) : (
                   <div className="divide-y">
@@ -831,11 +831,11 @@ export default function AdminUtilityPracticeDetail() {
                       <div key={entry.id} className="flex flex-wrap items-center gap-3 p-4">
                         <div className="flex flex-wrap items-center gap-2">
                           <Badge className={statusColors[(entry.fromStatus as PracticeStatus) || "bozza"]} variant="outline">
-                            {statusLabels[(entry.fromStatus as PracticeStatus) || "bozza"]}
+                            {t(statusLabels[(entry.fromStatus as PracticeStatus) || "bozza"]?.labelKey)}
                           </Badge>
                           <ArrowLeft className="h-4 w-4 rotate-180" />
                           <Badge className={statusColors[entry.toStatus as PracticeStatus]}>
-                            {statusLabels[entry.toStatus as PracticeStatus]}
+                            {t(statusLabels[entry.toStatus as PracticeStatus]?.labelKey)}
                           </Badge>
                         </div>
                         <div className="flex-1 text-sm text-muted-foreground">
@@ -853,13 +853,13 @@ export default function AdminUtilityPracticeDetail() {
               <CardHeader>
                 <CardTitle className="text-base flex items-center gap-2">
                   <Clock className="h-4 w-4" />
-                  Timeline Eventi
+                  {t("utility.eventTimeline")}
                 </CardTitle>
               </CardHeader>
               <CardContent className="p-0">
                 {timeline.length === 0 ? (
                   <div className="text-center py-8 text-muted-foreground">
-                    Nessun evento registrato.
+                    {t("utility.noEvents")}
                   </div>
                 ) : (
                   <ScrollArea className="h-[400px]">
@@ -876,7 +876,7 @@ export default function AdminUtilityPracticeDetail() {
                             <div className="flex flex-wrap items-center gap-2 mt-2 text-xs text-muted-foreground">
                               <span>{formatDate(event.createdAt)}</span>
                               <span>•</span>
-                              <span>{users.find(u => u.id === event.createdBy)?.fullName || "Sistema"}</span>
+                              <span>{users.find(u => u.id === event.createdBy)?.fullName || t("utility.systemUser")}</span>
                             </div>
                           </div>
                         </div>
@@ -892,12 +892,12 @@ export default function AdminUtilityPracticeDetail() {
         <TabsContent value="note" className="space-y-4">
           <div className="flex justify-between items-center">
             <div>
-              <h3 className="text-lg font-semibold">Note e comunicazioni</h3>
-              <p className="text-sm text-muted-foreground">{notes.length} note</p>
+              <h3 className="text-lg font-semibold">{t("utility.notesAndCommunications")}</h3>
+              <p className="text-sm text-muted-foreground">{t("utility.notesCount", { count: notes.length })}</p>
             </div>
             <Button onClick={() => setNoteDialogOpen(true)} data-testid="button-add-note">
               <Plus className="h-4 w-4 mr-2" />
-              Nuova Nota
+              {t("utility.newNote")}
             </Button>
           </div>
 
@@ -905,7 +905,7 @@ export default function AdminUtilityPracticeDetail() {
             <CardContent className="p-0">
               {notes.length === 0 ? (
                 <div className="text-center py-8 text-muted-foreground">
-                  Nessuna nota. Aggiungi la prima nota.
+                  {t("utility.noNotes")}
                 </div>
               ) : (
                 <div className="divide-y">
@@ -919,7 +919,7 @@ export default function AdminUtilityPracticeDetail() {
                         <div className="flex-1">
                           <div className="flex flex-wrap items-center gap-2 mb-2">
                             <Badge variant={note.visibility === "internal" ? "secondary" : "outline"}>
-                              {note.visibility === "internal" ? "Interna" : "Cliente"}
+                              {note.visibility === "internal" ? t("utility.internalNote") : t("utility.customerNote")}
                             </Badge>
                             <span className="text-xs text-muted-foreground">
                               {formatDate(note.createdAt)}
@@ -927,7 +927,7 @@ export default function AdminUtilityPracticeDetail() {
                           </div>
                           <p className="whitespace-pre-wrap">{note.body}</p>
                           <p className="text-xs text-muted-foreground mt-2">
-                            di {users.find(u => u.id === note.createdBy)?.fullName || "Sistema"}
+                            {t("utility.ofUser")} {users.find(u => u.id === note.createdBy)?.fullName || t("utility.systemUser")}
                           </p>
                         </div>
                         <Button 
@@ -952,11 +952,11 @@ export default function AdminUtilityPracticeDetail() {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>{t("utility.newActivity")}</DialogTitle>
-            <DialogDescription>Aggiungi un'attività da completare per questa pratica.</DialogDescription>
+            <DialogDescription>{t("utility.addActivityDesc")}</DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div>
-              <Label htmlFor="task-title">Titolo *</Label>
+              <Label htmlFor="task-title">{t("common.title")} *</Label>
               <Input
                 id="task-title"
                 value={newTaskTitle}
@@ -983,7 +983,7 @@ export default function AdminUtilityPracticeDetail() {
               disabled={!newTaskTitle.trim() || createTaskMutation.isPending}
               data-testid="button-save-task"
             >
-              Aggiungi
+              {t("common.add")}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -993,7 +993,7 @@ export default function AdminUtilityPracticeDetail() {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>{t("utility.newNote")}</DialogTitle>
-            <DialogDescription>Aggiungi una nota o comunicazione per questa pratica.</DialogDescription>
+            <DialogDescription>{t("utility.addNoteDesc")}</DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div>
@@ -1003,13 +1003,13 @@ export default function AdminUtilityPracticeDetail() {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="internal">Interna (solo operatori)</SelectItem>
-                  <SelectItem value="customer">Cliente (visibile al cliente)</SelectItem>
+                  <SelectItem value="internal">{t("utility.internalOnlyOperators")}</SelectItem>
+                  <SelectItem value="customer">{t("utility.customerVisible")}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
             <div>
-              <Label htmlFor="note-body">Contenuto *</Label>
+              <Label htmlFor="note-body">{t("utility.content")} *</Label>
               <Textarea
                 id="note-body"
                 value={newNoteBody}
@@ -1027,7 +1027,7 @@ export default function AdminUtilityPracticeDetail() {
               disabled={!newNoteBody.trim() || createNoteMutation.isPending}
               data-testid="button-save-note"
             >
-              Aggiungi
+              {t("common.add")}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -1037,7 +1037,7 @@ export default function AdminUtilityPracticeDetail() {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>{t("utility.changeStatus")}</DialogTitle>
-            <DialogDescription>Seleziona il nuovo stato per la pratica.</DialogDescription>
+            <DialogDescription>{t("utility.selectNewStatus")}</DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div>
@@ -1047,14 +1047,14 @@ export default function AdminUtilityPracticeDetail() {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {Object.entries(statusLabels).map(([value, label]) => (
-                    <SelectItem key={value} value={value}>{label}</SelectItem>
+                  {Object.entries(statusLabels).map(([value, sl]) => (
+                    <SelectItem key={value} value={value}>{t(sl.labelKey)}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
             <div>
-              <Label htmlFor="status-reason">Motivo (opzionale)</Label>
+              <Label htmlFor="status-reason">{t("utility.reasonOptional")}</Label>
               <Textarea
                 id="status-reason"
                 value={statusReason}

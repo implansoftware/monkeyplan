@@ -10,18 +10,18 @@ import { it } from "date-fns/locale";
 import { useTranslation } from "react-i18next";
 
 const statusLabels: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
-  pending: { label: "In attesa", variant: "secondary" },
-  assigned: { label: "Assegnata", variant: "outline" },
-  accepted: { label: "Accettata", variant: "default" },
-  rejected: { label: "Rifiutata", variant: "destructive" },
-  awaiting_shipment: { label: "Attesa spedizione", variant: "outline" },
-  in_transit: { label: "In transito", variant: "default" },
-  received: { label: "Ricevuto", variant: "default" },
-  repair_created: { label: "Riparazione creata", variant: "default" },
-  cancelled: { label: "Annullata", variant: "destructive" },
-  quoted: { label: "Preventivo inviato", variant: "outline" },
-  quote_accepted: { label: "Preventivo accettato", variant: "default" },
-  quote_declined: { label: "Preventivo rifiutato", variant: "destructive" },
+  pending: { label: "pending", variant: "secondary" },
+  assigned: { label: "assigned", variant: "outline" },
+  accepted: { label: "accepted", variant: "default" },
+  rejected: { label: "rejected", variant: "destructive" },
+  awaiting_shipment: { label: "awaiting_shipment", variant: "outline" },
+  in_transit: { label: "in_transit", variant: "default" },
+  received: { label: "received", variant: "default" },
+  repair_created: { label: "repair_created", variant: "default" },
+  cancelled: { label: "cancelled", variant: "destructive" },
+  quoted: { label: "quoted", variant: "outline" },
+  quote_accepted: { label: "quote_accepted", variant: "default" },
+  quote_declined: { label: "quote_declined", variant: "destructive" },
 };
 
 export default function AdminRemoteRequests() {
@@ -49,7 +49,7 @@ export default function AdminRemoteRequests() {
   };
 
   const getCenterName = (centerId: string | null) => {
-    if (!centerId) return "Non assegnato";
+    if (!centerId) return t("remoteRequests.notAssigned");
     const center = repairCenters?.find(c => c.id === centerId);
     return center?.name || "N/D";
   };

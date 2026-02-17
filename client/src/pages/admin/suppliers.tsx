@@ -202,12 +202,12 @@ export default function AdminSuppliers() {
             <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>
-                {editingSupplier ? "Modifica Fornitore" : "Nuovo Fornitore"}
+                {editingSupplier ? t("suppliers.editSupplier") : t("suppliers.newSupplier")}
               </DialogTitle>
               <DialogDescription>
                 {editingSupplier 
-                  ? "Modifica i dati del fornitore selezionato" 
-                  : "Inserisci i dati del nuovo fornitore"}
+                  ? t("suppliers.editSupplierDesc") 
+                  : t("suppliers.newSupplierDesc")}
               </DialogDescription>
             </DialogHeader>
             <form onSubmit={handleSubmit}>
@@ -557,7 +557,7 @@ export default function AdminSuppliers() {
                 >
                   {(createMutation.isPending || updateMutation.isPending) 
                     ? t("settings.savingRate") 
-                    : editingSupplier ? "Aggiorna" : "Crea Fornitore"}
+                    : editingSupplier ? t("suppliers.updateSupplier") : t("suppliers.createSupplier")}
                 </Button>
               </div>
             </form>
@@ -590,7 +590,7 @@ export default function AdminSuppliers() {
             <div className="text-center py-12 text-muted-foreground">
               <Building2 className="h-12 w-12 mx-auto mb-4 opacity-20" />
               <p>{t("suppliers.noSuppliers")}</p>
-              <p className="text-sm">Clicca su "Nuovo Fornitore" per aggiungerne uno</p>
+              <p className="text-sm">{t("suppliers.clickNewSupplier")}</p>
             </div>
           ) : (
             <Table>
@@ -651,7 +651,7 @@ export default function AdminSuppliers() {
                       </TableCell>
                       <TableCell>
                         <Badge variant={supplier.isActive ? "default" : "secondary"}>
-                          {supplier.isActive ? "Attivo" : "Inattivo"}
+                          {supplier.isActive ? t("common.active") : t("common.inactive")}
                         </Badge>
                       </TableCell>
                       <TableCell className="text-right">

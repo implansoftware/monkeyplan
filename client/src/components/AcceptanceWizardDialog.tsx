@@ -451,8 +451,8 @@ export function AcceptanceWizardDialog({
   }, {} as Record<string, DiagnosticFinding[]>);
 
   const categoryLabels: Record<string, string> = {
-    hardware: "Hardware",
-    software: "Software",
+    hardware: t("diagnosis.hardware"),
+    software: t("diagnosis.software"),
     connectivity: t("diagnosis.connectivity"),
     altro: t("common.other"),
   };
@@ -707,11 +707,11 @@ export function AcceptanceWizardDialog({
       
       queryClient.invalidateQueries({ queryKey: ["/api/repair-orders"] });
       const photoMessage = uploadedCount > 0 
-        ? ` con ${uploadedCount} foto allegate`
+        ? ` ${t("repair.withPhotosAttached", { count: uploadedCount })}`
         : "";
       toast({
         title: t("repair.repairIntaked"),
-        description: `Ordine ${data.order.orderNumber} creato con successo${photoMessage}`,
+        description: `${t("repair.orderCreatedSuccess", { orderNumber: data.order.orderNumber })}${photoMessage}`,
       });
       handleClose();
       if (onSuccess) onSuccess(data);
@@ -840,7 +840,7 @@ export function AcceptanceWizardDialog({
     if (isPrivate && !newCustomerData.fullName) {
       toast({
         variant: "destructive",
-        title: "Dati mancanti",
+        title: t("common.missingData"),
         description: t("customer.fullNameRequired"),
       });
       return;
@@ -849,7 +849,7 @@ export function AcceptanceWizardDialog({
     if (!isPrivate && !newCustomerData.companyName) {
       toast({
         variant: "destructive",
-        title: "Dati mancanti",
+        title: t("common.missingData"),
         description: t("customer.companyNameRequired"),
       });
       return;
@@ -858,7 +858,7 @@ export function AcceptanceWizardDialog({
     if (!newCustomerData.email) {
       toast({
         variant: "destructive",
-        title: "Dati mancanti",
+        title: t("common.missingData"),
         description: t("customer.emailRequired"),
       });
       return;
@@ -867,7 +867,7 @@ export function AcceptanceWizardDialog({
     if (!newCustomerData.phone || !newCustomerData.address || !newCustomerData.city || !newCustomerData.zipCode) {
       toast({
         variant: "destructive",
-        title: "Dati mancanti",
+        title: t("common.missingData"),
         description: t("customer.phoneAddressCityZipRequired"),
       });
       return;
@@ -876,7 +876,7 @@ export function AcceptanceWizardDialog({
     if (!isPrivate && !newCustomerData.pec && !newCustomerData.codiceUnivoco) {
       toast({
         variant: "destructive",
-        title: "Dati mancanti",
+        title: t("common.missingData"),
         description: t("customer.pecOrUniqueCodeRequired"),
       });
       return;
@@ -886,8 +886,8 @@ export function AcceptanceWizardDialog({
         (!newCustomerData.username || !newCustomerData.password)) {
       toast({
         variant: "destructive",
-        title: "Dati mancanti",
-        description: "Username e password sono obbligatori",
+        title: t("common.missingData"),
+        description: t("customer.usernamePasswordRequired"),
       });
       return;
     }
@@ -964,7 +964,7 @@ export function AcceptanceWizardDialog({
       }
       toast({ title: t("repair.deviceFound"), description: t("repair.deviceFoundDesc", { type: data.typeName || "", brand: data.brandName || "", model: data.modelName || "" }) });
     } catch (error) {
-      toast({ variant: "destructive", title: t("common.error"), description: "Impossibile cercare il codice mercato" });
+      toast({ variant: "destructive", title: t("common.error"), description: t("repair.cannotSearchMarketCode") });
     } finally {
       setMarketCodeLoading(false);
     }
@@ -1091,7 +1091,7 @@ export function AcceptanceWizardDialog({
         toast({
           variant: "destructive",
           title: t("attachment.photoUploadError"),
-          description: `${failedPhotos.length} foto non caricate: ${failedPhotos.join(', ')}`,
+          description: t("repair.photosFailedUpload", { count: failedPhotos.length, names: failedPhotos.join(', ') }),
         });
       }
       
@@ -1146,7 +1146,7 @@ export function AcceptanceWizardDialog({
                     </Button>
                   </div>
                   <FormDescription>
-                    Seleziona il cliente o creane uno nuovo
+                    {t("customer.selectOrCreateNew")}
                   </FormDescription>
                   <FormMessage />
                 </FormItem>
@@ -1160,7 +1160,7 @@ export function AcceptanceWizardDialog({
               name="branchId"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Filiale (opzionale)</FormLabel>
+                  <FormLabel>{t("customer.branchOptional")}</FormLabel>
                   <Select onValueChange={field.onChange} value={field.value || ""}>
                     <FormControl>
                       <SelectTrigger data-testid="select-branch">
@@ -1168,7 +1168,7 @@ export function AcceptanceWizardDialog({
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="__none__">-- Nessuna filiale --</SelectItem>
+                      <SelectItem value="__none__">{t("customer.noBranch")}</SelectItem>
                       {activeBranches.map((branch) => (
                         <SelectItem key={branch.id} value={branch.id}>
                           [{branch.branchCode}] {branch.branchName}
@@ -1178,7 +1178,7 @@ export function AcceptanceWizardDialog({
                     </SelectContent>
                   </Select>
                   <FormDescription>
-                    Se il cliente ha più sedi, seleziona la filiale di provenienza del dispositivo
+                    {t("customer.selectBranchDescription")}
                   </FormDescription>
                   <FormMessage />
                 </FormItem>
@@ -1231,7 +1231,7 @@ export function AcceptanceWizardDialog({
                     <Label htmlFor="new-customer-name">{t("customer.fullName")} *</Label>
                     <Input
                       id="new-customer-name"
-                      placeholder="Mario Rossi"
+                      placeholder={t("customer.namePlaceholder")}
                       value={newCustomerData.fullName}
                       onChange={(e) => setNewCustomerData(prev => ({ ...prev, fullName: e.target.value }))}
                       data-testid="input-new-customer-name"
@@ -1239,10 +1239,10 @@ export function AcceptanceWizardDialog({
                   </div>
                 ) : (
                   <div className="space-y-1">
-                    <Label htmlFor="new-customer-company">Ragione Sociale *</Label>
+                    <Label htmlFor="new-customer-company">{t("customer.companyName")} *</Label>
                     <Input
                       id="new-customer-company"
-                      placeholder="Azienda S.r.l."
+                      placeholder={t("customer.companyNamePlaceholder")}
                       value={newCustomerData.companyName}
                       onChange={(e) => setNewCustomerData(prev => ({ ...prev, companyName: e.target.value }))}
                       data-testid="input-new-customer-company"
@@ -1280,7 +1280,7 @@ export function AcceptanceWizardDialog({
                   <Label htmlFor="new-customer-address">{t("common.addressLabel")} *</Label>
                   <AddressAutocomplete
                     id="new-customer-address"
-                    placeholder="Inizia a digitare l'indirizzo..."
+                    placeholder={t("customer.addressPlaceholder")}
                     value={newCustomerData.address}
                     onChange={(value) => setNewCustomerData(prev => ({ ...prev, address: value }))}
                     onAddressSelect={(result) => {
@@ -1302,7 +1302,7 @@ export function AcceptanceWizardDialog({
                     <Label htmlFor="new-customer-city">{t("common.city")} *</Label>
                     <Input
                       id="new-customer-city"
-                      placeholder="Milano"
+                      placeholder={t("customer.cityPlaceholder")}
                       value={newCustomerData.city}
                       onChange={(e) => setNewCustomerData(prev => ({ ...prev, city: e.target.value }))}
                       data-testid="input-new-customer-city"
@@ -1358,7 +1358,7 @@ export function AcceptanceWizardDialog({
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <div className="space-y-1">
-                        <Label htmlFor="new-customer-pec">PEC *</Label>
+                        <Label htmlFor="new-customer-pec">{t("common.pec")} *</Label>
                         <Input
                           id="new-customer-pec"
                           type="email"
@@ -1379,7 +1379,7 @@ export function AcceptanceWizardDialog({
                         />
                       </div>
                     </div>
-                    <p className="text-xs text-muted-foreground">* Almeno PEC o Codice Univoco è obbligatorio</p>
+                    <p className="text-xs text-muted-foreground">{t("customer.pecOrSdiRequired")}</p>
                   </>
                 )}
 
@@ -1401,7 +1401,7 @@ export function AcceptanceWizardDialog({
                     <Separator />
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <div className="space-y-1">
-                        <Label htmlFor="new-customer-username">Username *</Label>
+                        <Label htmlFor="new-customer-username">{t("auth.username")} *</Label>
                         <Input
                           id="new-customer-username"
                           placeholder="mrossi"
@@ -1509,7 +1509,7 @@ export function AcceptanceWizardDialog({
         name="repairCenterId"
         render={({ field }) => (
           <FormItem>
-            <FormLabel>Centro di Riparazione *</FormLabel>
+            <FormLabel>{t("repair.repairCenter")} *</FormLabel>
             <Select onValueChange={field.onChange} value={field.value}>
               <FormControl>
                 <SelectTrigger data-testid="select-repair-center">
@@ -1530,7 +1530,7 @@ export function AcceptanceWizardDialog({
                     {repairCenters.filter(c => c.isOwn).length > 0 && (
                       <>
                         <div className="px-2 py-1.5 text-xs font-medium text-muted-foreground">
-                          I miei centri
+                          {t("repair.myCenters")}
                         </div>
                         {repairCenters.filter(c => c.isOwn).map((center) => (
                           <SelectItem key={center.id} value={center.id}>
@@ -1543,7 +1543,7 @@ export function AcceptanceWizardDialog({
                     {repairCenters.filter(c => c.isSubResellerCenter).length > 0 && (
                       <>
                         <div className="px-2 py-1.5 text-xs font-medium text-muted-foreground">
-                          Centri della Rete
+                          {t("repair.networkCenters")}
                         </div>
                         {repairCenters.filter(c => c.isSubResellerCenter).map((center) => (
                           <SelectItem key={center.id} value={center.id}>
@@ -1563,7 +1563,7 @@ export function AcceptanceWizardDialog({
               </SelectContent>
             </Select>
             <FormDescription>
-              Seleziona il centro che effettuerà la riparazione
+              {t("repair.selectCenterDescription")}
             </FormDescription>
             <FormMessage />
           </FormItem>
@@ -1575,7 +1575,7 @@ export function AcceptanceWizardDialog({
         <Label>{t("repair.marketCodeOptional")}</Label>
         <div className="flex gap-2">
           <Input
-            placeholder="es. A2633, SM-G998B"
+            placeholder={t("repair.marketCodePlaceholder")}
             value={marketCodeInput}
             onChange={(e) => setMarketCodeInput(e.target.value.toUpperCase())}
             onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), lookupMarketCode())}
@@ -1591,7 +1591,7 @@ export function AcceptanceWizardDialog({
             {marketCodeLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
           </Button>
         </div>
-        <p className="text-xs text-muted-foreground">Inserisci il codice mercato per auto-compilare tipo, marca e modello</p>
+        <p className="text-xs text-muted-foreground">{t("repair.marketCodeHelp")}</p>
       </div>
 
       <FormField
@@ -1654,7 +1654,7 @@ export function AcceptanceWizardDialog({
           name="brand"
           render={({ field }) => (
             <FormItem className="min-w-0">
-              <FormLabel>Brand</FormLabel>
+              <FormLabel>{t("common.selectBrand")}</FormLabel>
               <div className="grid gap-2 w-full min-w-0" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(80px, 1fr))' }}>
                 {deviceBrands.map((brand) => {
                   const BrandIcon = getBrandIcon(brand.name);
@@ -1696,7 +1696,7 @@ export function AcceptanceWizardDialog({
                 })}
               </div>
               <FormDescription className="text-xs">
-                {selectedBrandId ? "Clicca di nuovo per deselezionare" : `${deviceBrands.length} brand disponibili`}
+                {selectedBrandId ? t("common.clickToDeselect") : t("common.brandsAvailable", { count: deviceBrands.length })}
               </FormDescription>
               <FormMessage />
             </FormItem>
@@ -1771,7 +1771,7 @@ export function AcceptanceWizardDialog({
                             data-testid="checkbox-save-for-reuse"
                           />
                           <Label htmlFor="save-for-reuse" className="text-sm font-normal text-muted-foreground cursor-pointer">
-                            Salva per riutilizzo futuro
+                            {t("repair.saveForReuse")}
                           </Label>
                         </div>
                       )}
@@ -1780,12 +1780,12 @@ export function AcceptanceWizardDialog({
                 </>
               ) : (
                 <FormControl>
-                  <Input {...field} placeholder="es. iPhone 13 Pro, Galaxy S21" data-testid="input-device-model" />
+                  <Input {...field} placeholder={t("repair.deviceModelPlaceholder")} data-testid="input-device-model" />
                 </FormControl>
               )}
               <FormDescription>
                 {selectedTypeId && filteredModels.length === 0 && t("products.noModelsAvailableEnterManually")}
-                {isCustomModel && "Digita il nome del modello nel campo sopra"}
+                {isCustomModel && t("repair.typeModelNameAbove")}
               </FormDescription>
               <FormMessage />
             </FormItem>
@@ -1828,7 +1828,7 @@ export function AcceptanceWizardDialog({
                     data-testid="checkbox-imei-not-readable"
                   />
                 </FormControl>
-                <FormLabel className="font-normal">IMEI non leggibile</FormLabel>
+                <FormLabel className="font-normal">{t("repair.imeiNotReadable")}</FormLabel>
               </FormItem>
             )}
           />
@@ -1845,7 +1845,7 @@ export function AcceptanceWizardDialog({
                     data-testid="checkbox-imei-not-present"
                   />
                 </FormControl>
-                <FormLabel className="font-normal">IMEI non presente</FormLabel>
+                <FormLabel className="font-normal">{t("repair.imeiNotPresent")}</FormLabel>
               </FormItem>
             )}
           />
@@ -1858,7 +1858,7 @@ export function AcceptanceWizardDialog({
             <FormItem>
               <FormLabel>{t("repair.serialNumber")}</FormLabel>
               <FormControl>
-                <Input {...field} placeholder="Serial number" data-testid="input-serial" />
+                <Input {...field} placeholder={t("common.serialNumber")} data-testid="input-serial" />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -1877,7 +1877,7 @@ export function AcceptanceWizardDialog({
                   data-testid="checkbox-serial-only"
                 />
               </FormControl>
-              <FormLabel className="font-normal">Solo numero di serie</FormLabel>
+              <FormLabel className="font-normal">{t("repair.serialOnly")}</FormLabel>
             </FormItem>
           )}
         />
@@ -1890,18 +1890,18 @@ export function AcceptanceWizardDialog({
         name="issueDescription"
         render={({ field }) => (
           <FormItem>
-            <FormLabel>Problemi riscontrati *</FormLabel>
+            <FormLabel>{t("repair.reportedIssues")} *</FormLabel>
             <FormDescription className="text-xs">
-              Seleziona uno o più problemi segnalati dal cliente
+              {t("repair.selectOneOrMoreIssues")}
             </FormDescription>
             {!selectedTypeId ? (
               <div className="text-sm text-muted-foreground p-3 border rounded-md bg-muted/50">
-                Seleziona prima un tipo di dispositivo per vedere i problemi disponibili
+                {t("repair.selectDeviceTypeFirst")}
               </div>
             ) : issueTypes.length === 0 ? (
               <div className="text-sm text-muted-foreground p-3 border rounded-md bg-muted/50">
                 <Loader2 className="h-4 w-4 animate-spin inline mr-2" />
-                Caricamento problemi...
+                {t("repair.loadingIssues")}
               </div>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-48 overflow-y-auto p-2 border rounded-md" data-testid="issue-types-list">
@@ -1948,7 +1948,7 @@ export function AcceptanceWizardDialog({
             )}
             {selectedIssues.length > 0 && (
               <div className="text-xs text-muted-foreground mt-1">
-                Selezionati: {selectedIssues.join(", ")}
+                {t("common.selected")}: {selectedIssues.join(", ")}
               </div>
             )}
             <FormMessage />
@@ -1962,11 +1962,11 @@ export function AcceptanceWizardDialog({
           name="otherIssueDescription"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Descrivi altro problema *</FormLabel>
+              <FormLabel>{t("repair.describeOtherIssue")} *</FormLabel>
               <FormControl>
                 <Textarea 
                   {...field} 
-                  placeholder="Descrivi il problema non elencato"
+                  placeholder={t("repair.describeUnlistedIssue")}
                   rows={2}
                   data-testid="textarea-other-issue"
                 />
@@ -1997,25 +1997,25 @@ export function AcceptanceWizardDialog({
                 <SelectItem value="ottimo">
                   <span className="flex flex-wrap items-center gap-2">
                     <CheckCircle2 className="h-5 w-5 text-green-500" />
-                    <span className="font-medium">Ottimo - Nessun difetto visibile</span>
+                    <span className="font-medium">{t("repair.conditionExcellent")}</span>
                   </span>
                 </SelectItem>
                 <SelectItem value="buono">
                   <span className="flex flex-wrap items-center gap-2">
                     <CircleDot className="h-5 w-5 text-blue-500" />
-                    <span className="font-medium">Buono - Minimi segni di usura</span>
+                    <span className="font-medium">{t("repair.conditionGood")}</span>
                   </span>
                 </SelectItem>
                 <SelectItem value="discreto">
                   <span className="flex flex-wrap items-center gap-2">
                     <AlertTriangle className="h-5 w-5 text-amber-500" />
-                    <span className="font-medium">Discreto - Segni di usura evidenti</span>
+                    <span className="font-medium">{t("repair.conditionFair")}</span>
                   </span>
                 </SelectItem>
                 <SelectItem value="scadente">
                   <span className="flex flex-wrap items-center gap-2">
                     <AlertCircle className="h-5 w-5 text-red-500" />
-                    <span className="font-medium">Scadente - Danni estetici significativi</span>
+                    <span className="font-medium">{t("repair.conditionPoor")}</span>
                   </span>
                 </SelectItem>
               </SelectContent>
@@ -2030,10 +2030,10 @@ export function AcceptanceWizardDialog({
         name="acceptance.aestheticNotes"
         render={({ field }) => (
           <FormItem>
-            <FormLabel>Difetti estetici rilevati</FormLabel>
+            <FormLabel>{t("repair.aestheticDefectsDetected")}</FormLabel>
             <div className="border rounded-md p-3 max-h-48 overflow-y-auto space-y-2">
               {aestheticDefects.length === 0 ? (
-                <p className="text-sm text-muted-foreground">Seleziona prima un tipo di dispositivo</p>
+                <p className="text-sm text-muted-foreground">{t("repair.selectDeviceTypeFirst")}</p>
               ) : (
                 <>
                   {aestheticDefects.map((defect) => {
@@ -2092,7 +2092,7 @@ export function AcceptanceWizardDialog({
                     />
                     <MoreHorizontal className="h-6 w-6 text-primary flex-shrink-0" />
                     <label htmlFor="defect-altro" className="text-sm cursor-pointer font-medium">
-                      Altro difetto non in elenco
+                      {t("repair.otherDefectNotListed")}
                     </label>
                   </div>
                 </>
@@ -2100,7 +2100,7 @@ export function AcceptanceWizardDialog({
             </div>
             {selectedDefects.length > 0 && (
               <div className="text-xs text-muted-foreground mt-1">
-                Selezionati: {selectedDefects.join(", ")}
+                {t("common.selected")}: {selectedDefects.join(", ")}
               </div>
             )}
             <FormMessage />
@@ -2114,11 +2114,11 @@ export function AcceptanceWizardDialog({
           name="acceptance.declaredDefects"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Descrivi altro difetto estetico *</FormLabel>
+              <FormLabel>{t("repair.describeOtherDefect")} *</FormLabel>
               <FormControl>
                 <Input 
                   {...field} 
-                  placeholder="Descrivi il difetto non elencato"
+                  placeholder={t("repair.describeUnlistedDefect")}
                   data-testid="input-other-defect"
                   onChange={(e) => {
                     field.onChange(e.target.value);
@@ -2141,7 +2141,7 @@ export function AcceptanceWizardDialog({
       <div className="space-y-3">
         <Label className="flex flex-wrap items-center gap-2">
           <Camera className="h-4 w-4" />
-          Foto del dispositivo
+          {t("repair.devicePhotos")}
         </Label>
         
         {/* Skip photos checkbox - inverted logic */}
@@ -2158,7 +2158,7 @@ export function AcceptanceWizardDialog({
                 />
               </FormControl>
               <FormLabel className="font-normal text-sm">
-                Non voglio caricare foto per questo dispositivo
+                {t("repair.dontWantPhotos")}
               </FormLabel>
             </FormItem>
           )}
@@ -2189,7 +2189,7 @@ export function AcceptanceWizardDialog({
               />
               <span className="text-xs text-muted-foreground">
                 {acceptancePhotos.length > 0 
-                  ? `${acceptancePhotos.length} foto selezionate`
+                  ? t("repair.photosSelected", { count: acceptancePhotos.length })
                   : t("repair.noPhotosSelected")}
               </span>
             </div>
@@ -2204,7 +2204,7 @@ export function AcceptanceWizardDialog({
                   >
                     <img 
                       src={photo.preview} 
-                      alt={`Foto ${index + 1}`}
+                      alt={`${t("common.photo")} ${index + 1}`}
                       className="w-full h-full object-cover"
                     />
                     <Button
@@ -2223,7 +2223,7 @@ export function AcceptanceWizardDialog({
             )}
             
             <p className="text-xs text-muted-foreground">
-              Scatta o carica foto del dispositivo per documentare le condizioni al momento dell'ingresso
+              {t("repair.photoDocumentConditions")}
             </p>
           </div>
         )}
@@ -2239,7 +2239,7 @@ export function AcceptanceWizardDialog({
             <FormLabel>{t("repair.deliveredAccessories")}</FormLabel>
             <div className="border rounded-md p-3 max-h-48 overflow-y-auto space-y-2">
               {accessoryTypes.length === 0 ? (
-                <p className="text-sm text-muted-foreground">Seleziona prima un tipo di dispositivo</p>
+                <p className="text-sm text-muted-foreground">{t("repair.selectDeviceTypeFirst")}</p>
               ) : (
                 <>
                   {accessoryTypes.map((accessory) => {
@@ -2316,7 +2316,7 @@ export function AcceptanceWizardDialog({
                         selectedAccessories.includes("Nessun accessorio") ? "text-muted-foreground" : ""
                       }`}
                     >
-                      Altro accessorio non in elenco
+                      {t("repair.otherAccessoryNotListed")}
                     </label>
                   </div>
                 </>
@@ -2324,7 +2324,7 @@ export function AcceptanceWizardDialog({
             </div>
             {selectedAccessories.length > 0 && (
               <div className="text-xs text-muted-foreground mt-1">
-                Selezionati: {selectedAccessories.join(", ")}
+                {t("common.selected")}: {selectedAccessories.join(", ")}
               </div>
             )}
             <FormMessage />
@@ -2334,9 +2334,9 @@ export function AcceptanceWizardDialog({
 
       {showOtherAccessory && (
         <div className="space-y-2">
-          <Label>Descrivi altro accessorio *</Label>
+          <Label>{t("repair.describeOtherAccessory")} *</Label>
           <Input 
-            placeholder="Descrivi l'accessorio non elencato"
+            placeholder={t("repair.describeUnlistedAccessory")}
             data-testid="input-other-accessory"
             onChange={(e) => {
               const baseAccessories = selectedAccessories.filter(a => a !== "Altro").join(", ");
@@ -2361,7 +2361,7 @@ export function AcceptanceWizardDialog({
                 data-testid="checkbox-accessories-removed"
               />
             </FormControl>
-            <FormLabel className="font-normal">Accessori rimossi prima dell'accettazione</FormLabel>
+            <FormLabel className="font-normal">{t("repair.accessoriesRemovedBeforeAcceptance")}</FormLabel>
           </FormItem>
         )}
       />
@@ -2380,7 +2380,7 @@ export function AcceptanceWizardDialog({
                 data-testid="checkbox-has-lock-code"
               />
             </FormControl>
-            <FormLabel className="font-normal">Il dispositivo ha un codice di blocco</FormLabel>
+            <FormLabel className="font-normal">{t("repair.deviceHasLockCode")}</FormLabel>
           </FormItem>
         )}
       />
@@ -2411,7 +2411,7 @@ export function AcceptanceWizardDialog({
             name="acceptance.lockPattern"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Sequenza sblocco (stile Android)</FormLabel>
+                <FormLabel>{t("repair.unlockPattern")}</FormLabel>
                 <FormControl>
                   <PatternLock
                     value={field.value || ""}
@@ -2420,7 +2420,7 @@ export function AcceptanceWizardDialog({
                   />
                 </FormControl>
                 <FormDescription>
-                  Disegna la sequenza collegando i punti (minimo 4)
+                  {t("repair.drawPatternMinNodes")}
                 </FormDescription>
                 <FormMessage />
               </FormItem>
@@ -2438,10 +2438,10 @@ export function AcceptanceWizardDialog({
         <CardHeader>
           <CardTitle className="flex flex-wrap items-center gap-2">
             <FileText className="h-5 w-5" />
-            Preventivo Riparazione
+            {t("repair.repairQuote")}
           </CardTitle>
           <CardDescription>
-            Puoi eseguire diagnosi e/o creare preventivo durante l'accettazione, oppure farlo successivamente.
+            {t("repair.diagnosisQuoteDescription")}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -2454,18 +2454,18 @@ export function AcceptanceWizardDialog({
               data-testid="checkbox-create-diagnosis"
             />
             <Label htmlFor="createDiagnosisNow" className="font-medium">
-              Esegui diagnosi ora
+              {t("repair.performDiagnosisNow")}
             </Label>
           </div>
 
           {createDiagnosisNow && (
             <div className="space-y-4 pt-4 border-t">
-              {/* Risultati Diagnosi (Findings) */}
+              {/* {t("repair.diagnosisResults")} (Findings) */}
               {diagnosticFindings.length > 0 && (
                 <div className="space-y-3">
                   <Label className="flex flex-wrap items-center gap-2">
                     <AlertCircle className="h-4 w-4" />
-                    Risultati Diagnosi
+                    {t("diagnosis.diagnosisResults")}
                   </Label>
                   {Object.entries(findingsByCategory).map(([category, findings]) => (
                     <div key={category} className="space-y-2">
@@ -2497,7 +2497,7 @@ export function AcceptanceWizardDialog({
               {/* Componenti Danneggiati */}
               {damagedComponentTypes.length > 0 && (
                 <div className="space-y-2">
-                  <Label>Componenti Danneggiati</Label>
+                  <Label>{t("repair.damagedComponents")}</Label>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                     {damagedComponentTypes.map((comp) => (
                       <div key={comp.id} className="flex items-center space-x-2">
@@ -2534,14 +2534,14 @@ export function AcceptanceWizardDialog({
                     data-testid="checkbox-show-technical-diagnosis"
                   />
                   <Label htmlFor="show-technical-diagnosis-acceptance" className="text-sm font-medium cursor-pointer">
-                    Voglio lasciare diagnosi tecnica
+                    {t("repair.wantLeaveTechnicalDiagnosis")}
                   </Label>
                 </div>
                 {showTechnicalDiagnosis && (
                   <Textarea
                     value={diagnosisTechnical}
                     onChange={(e) => setDiagnosisTechnical(e.target.value)}
-                    placeholder="Descrivi la diagnosi tecnica del dispositivo..."
+                    placeholder={t("repair.describeTechnicalDiagnosis")}
                     rows={3}
                     data-testid="textarea-diagnosis-technical"
                   />
@@ -2550,7 +2550,7 @@ export function AcceptanceWizardDialog({
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label>Esito Diagnosi</Label>
+                  <Label>{t("diagnosis.selectOutcome")}</Label>
                   <Select value={diagnosisOutcome} onValueChange={(v: any) => {
                     setDiagnosisOutcome(v);
                     if (v !== "irriparabile") setDiagnosisUnrepairableReasonId("");
@@ -2560,14 +2560,14 @@ export function AcceptanceWizardDialog({
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="riparabile">Riparabile</SelectItem>
-                      <SelectItem value="non_conveniente">Non Conveniente</SelectItem>
-                      <SelectItem value="irriparabile">Irriparabile</SelectItem>
+                      <SelectItem value="riparabile">{t("repair.repairable")}</SelectItem>
+                      <SelectItem value="non_conveniente">{t("repair.notConvenient")}</SelectItem>
+                      <SelectItem value="irriparabile">{t("repair.irreparableOption")}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
                 <div className="space-y-2">
-                  <Label>Tempo Stimato</Label>
+                  <Label>{t("repair.estimatedTime")}</Label>
                   <Select value={diagnosisEstimatedTimeId} onValueChange={setDiagnosisEstimatedTimeId}>
                     <SelectTrigger data-testid="select-diagnosis-time">
                       <SelectValue placeholder={t("repair.selectDuration")} />
@@ -2586,7 +2586,7 @@ export function AcceptanceWizardDialog({
               {/* Motivo Irriparabilità (condizionale) */}
               {diagnosisOutcome === "irriparabile" && unrepairableReasons.length > 0 && (
                 <div className="space-y-2">
-                  <Label>Motivo Irriparabilità</Label>
+                  <Label>{t("repair.unrepairableReason")}</Label>
                   <Select value={diagnosisUnrepairableReasonId} onValueChange={setDiagnosisUnrepairableReasonId}>
                     <SelectTrigger data-testid="select-unrepairable-reason">
                       <SelectValue placeholder={t("common.selectReason")} />
@@ -2605,7 +2605,7 @@ export function AcceptanceWizardDialog({
               {/* Promozioni Suggerite (condizionale) */}
               {diagnosisOutcome === "non_conveniente" && promotions.length > 0 && (
                 <div className="space-y-2">
-                  <Label>Promozioni Suggerite</Label>
+                  <Label>{t("repair.suggestedPromotions")}</Label>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                     {promotions.map((promo) => (
                       <div key={promo.id} className="flex items-center space-x-2">
@@ -2649,7 +2649,7 @@ export function AcceptanceWizardDialog({
                     data-testid="checkbox-requires-external-parts"
                   />
                   <Label htmlFor="diagnosisRequiresExternalParts">
-                    Richiede ricambi esterni
+                    {t("repair.requiresExternalParts")}
                   </Label>
                 </div>
 
@@ -2661,7 +2661,7 @@ export function AcceptanceWizardDialog({
                     data-testid="checkbox-customer-data-important"
                   />
                   <Label htmlFor="diagnosisCustomerDataImportant">
-                    Dati cliente importanti (presenti sul dispositivo)
+                    {t("repair.customerDataImportant")}
                   </Label>
                 </div>
 
@@ -2674,7 +2674,7 @@ export function AcceptanceWizardDialog({
                       data-testid="checkbox-data-recovery-requested"
                     />
                     <Label htmlFor="diagnosisDataRecoveryRequested">
-                      Recupero dati richiesto dal cliente
+                      {t("repair.dataRecoveryRequested")}
                     </Label>
                   </div>
                 )}
@@ -2687,7 +2687,7 @@ export function AcceptanceWizardDialog({
                     data-testid="checkbox-want-photos"
                   />
                   <Label htmlFor="diagnosisWantPhotos" className="flex flex-col">
-                    <span>Voglio caricare foto</span>
+                    <span>{t("repair.wantUploadPhotos")}</span>
                   </Label>
                 </div>
                 {!diagnosisSkipPhotos && (
@@ -2713,7 +2713,7 @@ export function AcceptanceWizardDialog({
               data-testid="checkbox-create-quote"
             />
             <Label htmlFor="createQuoteNow" className="font-medium">
-              Crea preventivo ora
+              {t("repair.createQuoteNow")}
             </Label>
           </div>
 
@@ -2723,7 +2723,7 @@ export function AcceptanceWizardDialog({
               <div className="space-y-3">
                 <Label className="flex flex-wrap items-center gap-2">
                   <Package className="h-4 w-4" />
-                  Ricambi e Servizi
+                  {t("quote.addPartsAndServices")}
                 </Label>
                 
                 {/* Warehouse selection */}
@@ -2753,12 +2753,12 @@ export function AcceptanceWizardDialog({
                     data-testid="button-add-part-manual"
                   >
                     <Plus className="h-4 w-4 mr-1" />
-                    Manuale
+                    {t("quote.manual")}
                   </Button>
                   <SearchableServiceCombobox
                     onSelect={(service) => {
                       setQuoteParts([...quoteParts, {
-                        name: `[Servizio] ${service.name}`,
+                        name: `[${t("common.service")}] ${service.name}`,
                         quantity: 1,
                         unitPrice: service.effectivePriceCents,
                       }]);
@@ -2785,7 +2785,7 @@ export function AcceptanceWizardDialog({
                 <div className="space-y-2">
                   {quoteParts.length === 0 ? (
                     <p className="text-sm text-muted-foreground text-center py-2">
-                      Nessun elemento aggiunto. Seleziona dal catalogo, magazzino o aggiungi manualmente.
+                      {t("quote.noItemsAddedSelectOrManual")}
                     </p>
                   ) : (
                     quoteParts.map((part, index) => (
@@ -2804,7 +2804,7 @@ export function AcceptanceWizardDialog({
                         <Input
                           type="number"
                           min="1"
-                          placeholder="Qty"
+                          placeholder={t("common.qty")}
                           value={part.quantity}
                           onChange={(e) => {
                             const newParts = [...quoteParts];
@@ -2870,7 +2870,7 @@ export function AcceptanceWizardDialog({
                     data-testid="checkbox-want-labor-cost"
                   />
                   <Label htmlFor="wantAddLaborCost">
-                    Vuoi aggiungere costo manodopera aggiuntivo?
+                    {t("quote.wantAddLaborCost")}
                   </Label>
                 </div>
                 
@@ -2878,7 +2878,7 @@ export function AcceptanceWizardDialog({
                   <div className="space-y-2 pl-6">
                     <Label className="flex flex-wrap items-center gap-2">
                       <Calculator className="h-4 w-4" />
-                      Costo Manodopera (€)
+                      {t("quote.laborCostEuro")}
                     </Label>
                     <Input
                       type="number"
@@ -2896,7 +2896,7 @@ export function AcceptanceWizardDialog({
               {/* Total Preview */}
               <div className="bg-muted p-4 rounded-lg">
                 <div className="flex justify-between items-center">
-                  <span className="font-medium">Totale Preventivo:</span>
+                  <span className="font-medium">{t("quote.totalQuote")}:</span>
                   <span className="text-xl font-bold">
                     € {((quoteParts.reduce((sum, p) => sum + p.quantity * p.unitPrice, 0) / 100) + quoteLaborCost).toFixed(2)}
                   </span>
@@ -2948,43 +2948,43 @@ export function AcceptanceWizardDialog({
           </CardHeader>
           <CardContent className="space-y-2 text-sm">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-              <div className="text-muted-foreground">Tipo:</div>
+              <div className="text-muted-foreground">{t("common.type")}:</div>
               <div className="font-medium" data-testid="text-review-device-type">{formData.deviceType || "-"}</div>
               
-              <div className="text-muted-foreground">Brand:</div>
+              <div className="text-muted-foreground">{t("common.selectBrand")}:</div>
               <div className="font-medium" data-testid="text-review-brand">{formData.brand || "-"}</div>
               
-              <div className="text-muted-foreground">Modello:</div>
+              <div className="text-muted-foreground">{t("common.model")}:</div>
               <div className="font-medium" data-testid="text-review-model">{formData.deviceModel || "-"}</div>
               
-              <div className="text-muted-foreground">IMEI:</div>
+              <div className="text-muted-foreground">{t("repair.imei")}:</div>
               <div className="font-medium" data-testid="text-review-imei">
-                {formData.imeiNotReadable ? "Non leggibile" : 
-                 formData.imeiNotPresent ? "Non presente" : 
+                {formData.imeiNotReadable ? t("repair.imeiNotReadable") : 
+                 formData.imeiNotPresent ? t("repair.imeiNotPresent") : 
                  formData.imei || "-"}
               </div>
               
-              <div className="text-muted-foreground">Serial:</div>
+              <div className="text-muted-foreground">{t("common.serialNumber")}:</div>
               <div className="font-medium" data-testid="text-review-serial">
-                {formData.serialOnly ? `Solo serial: ${formData.serial}` : formData.serial || "-"}
+                {formData.serialOnly ? `${t("repair.serialOnly")}: ${formData.serial}` : formData.serial || "-"}
               </div>
             </div>
             
             <Separator className="my-2" />
             
             <div>
-              <div className="text-muted-foreground mb-1">Problemi segnalati:</div>
+              <div className="text-muted-foreground mb-1">{t("repair.reportedIssues")}:</div>
               <div className="font-medium" data-testid="text-review-issue">{formData.issueDescription}</div>
               {formData.otherIssueDescription && (
                 <div className="text-sm text-muted-foreground mt-1">
-                  Altro: {formData.otherIssueDescription}
+                  {t("common.other")}: {formData.otherIssueDescription}
                 </div>
               )}
             </div>
             
             {formData.notes && (
               <div>
-                <div className="text-muted-foreground mb-1">Note:</div>
+                <div className="text-muted-foreground mb-1">{t("common.notes")}:</div>
                 <div className="font-medium" data-testid="text-review-notes">{formData.notes}</div>
               </div>
             )}
@@ -2993,18 +2993,18 @@ export function AcceptanceWizardDialog({
 
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">Controlli accettazione</CardTitle>
+            <CardTitle className="text-base">{t("repair.acceptanceChecks")}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-2 text-sm">
             {formData.acceptance.declaredDefects && (
               <div>
-                <div className="text-muted-foreground mb-1">Difetti dichiarati:</div>
+                <div className="text-muted-foreground mb-1">{t("repair.declaredDefects")}:</div>
                 <div className="font-medium" data-testid="text-review-defects">{formData.acceptance.declaredDefects}</div>
               </div>
             )}
             
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-              <div className="text-muted-foreground">Condizioni estetiche:</div>
+              <div className="text-muted-foreground">{t("repair.cosmeticCondition")}:</div>
               <div className="font-medium capitalize" data-testid="text-review-aesthetic">
                 {formData.acceptance.aestheticCondition || "-"}
               </div>
@@ -3012,14 +3012,14 @@ export function AcceptanceWizardDialog({
             
             {formData.acceptance.aestheticNotes && (
               <div>
-                <div className="text-muted-foreground mb-1">Note estetiche:</div>
+                <div className="text-muted-foreground mb-1">{t("repair.aestheticNotes")}:</div>
                 <div className="font-medium" data-testid="text-review-aesthetic-notes">{formData.acceptance.aestheticNotes}</div>
               </div>
             )}
             
             {formData.acceptance.accessories && (
               <div>
-                <div className="text-muted-foreground mb-1">Accessori:</div>
+                <div className="text-muted-foreground mb-1">{t("repair.deliveredAccessories")}:</div>
                 <div className="font-medium" data-testid="text-review-accessories">{formData.acceptance.accessories}</div>
               </div>
             )}
@@ -3060,7 +3060,7 @@ export function AcceptanceWizardDialog({
                     >
                       <img 
                         src={photo.preview} 
-                        alt={`Foto ${index + 1}`}
+                        alt={`${t("common.photo")} ${index + 1}`}
                         className="w-full h-full object-cover"
                       />
                     </div>
@@ -3072,10 +3072,10 @@ export function AcceptanceWizardDialog({
         </Card>
 
         <div className="rounded-md bg-muted p-4 text-sm">
-          <p className="font-medium mb-1">Nota importante</p>
+          <p className="font-medium mb-1">{t("common.importantNote")}</p>
           <p className="text-muted-foreground">
             {t("repair.afterConfirmIntakeStatus")} 
-            e sarà pronto per la fase di diagnosi.
+            {t("repair.readyForDiagnosisPhase")}
           </p>
         </div>
       </div>
@@ -3088,7 +3088,7 @@ export function AcceptanceWizardDialog({
         <DialogHeader>
           <DialogTitle className="flex flex-wrap items-center gap-2">
             <Smartphone className="w-5 h-5" />
-            Accettazione dispositivo - {step === "device-info" ? "Passo 1/4" : step === "acceptance-checks" ? "Passo 2/4" : step === "quote" ? "Passo 3/4" : "Passo 4/4"}
+            {t("repair.deviceAcceptance")} - {step === "device-info" ? t("common.stepOf", { step: 1, total: 4 }) : step === "acceptance-checks" ? t("common.stepOf", { step: 2, total: 4 }) : step === "quote" ? t("common.stepOf", { step: 3, total: 4 }) : t("common.stepOf", { step: 4, total: 4 })}
           </DialogTitle>
           <DialogDescription>
             {step === "device-info" && t("repair.enterDeviceInfoAndCodes")}
@@ -3151,7 +3151,7 @@ export function AcceptanceWizardDialog({
                     {isUploadingPhotos ? (
                       <>
                         <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                        Caricamento foto...
+                        {t("repair.uploadingPhotos")}
                       </>
                     ) : createOrderMutation.isPending ? (
                       <>

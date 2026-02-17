@@ -50,11 +50,11 @@ const statusColors: Record<string, string> = {
 };
 
 const statusLabels: Record<string, string> = {
-  draft: "Bozza",
-  submitted: "Inviata",
-  approved: "Approvata",
-  rejected: "Rifiutata",
-  paid: "Pagata",
+  draft: "draft",
+  submitted: "submitted",
+  approved: "approved",
+  rejected: "rejected",
+  paid: "paid",
 };
 
 export default function AdminExpensesPage() {
@@ -318,7 +318,7 @@ export default function AdminExpensesPage() {
                                 size="icon"
                                 variant="ghost"
                                 onClick={() => deleteReceiptMutation.mutate(rep.id)}
-                                title="Rimuovi allegato"
+                                title={t("hr.expenses.removeAttachment")}
                                 data-testid={`button-delete-receipt-${rep.id}`}
                               >
                                 <X className="h-4 w-4 text-orange-600" />
@@ -342,7 +342,7 @@ export default function AdminExpensesPage() {
                               variant="ghost"
                               asChild
                               disabled={uploadingReportId === rep.id}
-                              title="Carica giustificativo"
+                              title={t("hr.expenses.uploadReceipt")}
                             >
                               <span>
                                 {uploadingReportId === rep.id ? (
@@ -425,7 +425,7 @@ export default function AdminExpensesPage() {
               Annulla
             </Button>
             <Button onClick={handleEdit} disabled={editMutation.isPending} data-testid="button-save-edit">
-              {editMutation.isPending ? t("settings.savingRate") : "Salva"}
+              {editMutation.isPending ? t("settings.savingRate") : t("common.save")}
             </Button>
           </DialogFooter>
         </DialogContent>

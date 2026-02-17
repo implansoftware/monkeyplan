@@ -51,34 +51,34 @@ type SmartphoneWithSpecs = Product & {
 
 const STORAGE_OPTIONS = ["16GB", "32GB", "64GB", "128GB", "256GB", "512GB", "1TB", "2TB"];
 const GRADE_OPTIONS = [
-  { value: "A+", label: "A+ - Come nuovo" },
-  { value: "A", label: "A - Ottimo" },
-  { value: "B", label: "B - Buono" },
-  { value: "C", label: "C - Discreto" },
-  { value: "D", label: "D - Danneggiato" },
+  { value: "A+", label: t("products.gradeAPlus") },
+  { value: "A", label: t("products.gradeA") },
+  { value: "B", label: t("products.gradeB") },
+  { value: "C", label: t("products.gradeC") },
+  { value: "D", label: t("products.gradeD") },
 ];
 const NETWORK_LOCK_OPTIONS = [
-  { value: "unlocked", label: "Sbloccato" },
-  { value: "locked", label: "Bloccato operatore" },
-  { value: "icloud_locked", label: "Bloccato iCloud" },
+  { value: "unlocked", label: t("products.unlocked") },
+  { value: "locked", label: t("products.operatorLocked") },
+  { value: "icloud_locked", label: t("products.icloudLocked") },
 ];
 function getConditionOptions(t: (key: string) => string) {
   return [
     { value: "nuovo", label: t("common.new") },
     { value: "ricondizionato", label: t("products.refurbished") },
     { value: "usato", label: t("products.used") },
-    { value: "difettoso", label: "Difettoso" },
+    { value: "difettoso", label: t("products.defective") },
   ];
 }
 // Categorie dispositivi
 function getDeviceCategories(t: (key: string) => string) {
   return [
-    { value: "smartphone", label: "Smartphone" },
-    { value: "tablet", label: "Tablet" },
-    { value: "portatile", label: "PC Portatile" },
-    { value: "pc_fisso", label: "PC Fisso" },
-    { value: "smartwatch", label: "Smartwatch" },
-    { value: "console", label: "Console" },
+    { value: "smartphone", label: t("products.smartphone") },
+    { value: "tablet", label: t("products.tablet") },
+    { value: "portatile", label: t("products.laptop") },
+    { value: "pc_fisso", label: t("products.desktop") },
+    { value: "smartwatch", label: t("products.smartwatch") },
+    { value: "console", label: t("products.console") },
     { value: "altro", label: t("common.other") },
   ];
 }
@@ -115,15 +115,15 @@ const BATTERY_OPTIONS = [
   { value: "90-94", label: "90-94%" },
   { value: "85-89", label: "85-89%" },
   { value: "80-84", label: "80-84%" },
-  { value: "<80", label: "Meno di 80%" },
+  { value: "<80", label: t("products.lessThan80") },
 ];
 
 const ACCESSORY_OPTIONS = [
-  "Caricatore originale",
-  "Cavo USB",
-  "Auricolari",
-  "Cover",
-  "Pellicola",
+  t("products.originalCharger"),
+  t("products.usbCable"),
+  t("products.earphones"),
+  t("products.cover"),
+  t("products.screenProtector"),
 ];
 
 export default function SmartphoneCatalog() {
@@ -243,7 +243,7 @@ export default function SmartphoneCatalog() {
       queryClient.invalidateQueries({ queryKey: ["/api/reseller/products"] });
       setSettingsDialogOpen(false);
       setSettingsProduct(null);
-      toast({ title: t("settings.saved"), description: "Le impostazioni di vendita sono state aggiornate." });
+      toast({ title: t("settings.saved"), description: t("products.salesSettingsUpdated") });
     },
     onError: (error: any) => {
       toast({ title: t("common.error"), description: error.message, variant: "destructive" });
@@ -263,11 +263,11 @@ export default function SmartphoneCatalog() {
     
     // Validazione quantità
     if (quantity < 1) {
-      toast({ title: t("common.error"), description: "La quantità deve essere almeno 1", variant: "destructive" });
+      toast({ title: t("common.error"), description: t("products.quantityMinOne"), variant: "destructive" });
       return;
     }
     if (quantity < minQty) {
-      toast({ title: t("common.error"), description: `La quantità minima per questo prodotto è ${minQty}`, variant: "destructive" });
+      toast({ title: t("common.error"), description: t("products.minQuantityIs", { qty: minQty }), variant: "destructive" });
       return;
     }
     
@@ -275,7 +275,7 @@ export default function SmartphoneCatalog() {
     if (existing) {
       const newQty = existing.quantity + quantity;
       if (newQty < minQty) {
-        toast({ title: t("common.error"), description: `La quantità minima per questo prodotto è ${minQty}`, variant: "destructive" });
+        toast({ title: t("common.error"), description: t("products.minQuantityIs", { qty: minQty }), variant: "destructive" });
         return;
       }
       updateCart(cart.map(item => 
@@ -286,7 +286,7 @@ export default function SmartphoneCatalog() {
     } else {
       updateCart([...cart, { productId: product.id, quantity, name: product.name, b2bPrice }]);
     }
-    toast({ title: "Aggiunto al carrello", description: `${quantity}x ${product.name}` });
+    toast({ title: t("products.addedToCart"), description: `${quantity}x ${product.name}` });
     setBuyDialogOpen(false);
     setBuyProduct(null);
     setBuyQuantity(1);
@@ -348,7 +348,7 @@ export default function SmartphoneCatalog() {
       setEditingSmartphone(null);
       setEditStock([]);
       resetForm();
-      toast({ title: t("products.smartphoneUpdated"), description: "Le modifiche sono state salvate." });
+      toast({ title: t("products.smartphoneUpdated"), description: t("products.changesSaved") });
     },
     onError: (error: any) => {
       toast({ title: t("common.error"), description: error.message, variant: "destructive" });
@@ -386,7 +386,7 @@ export default function SmartphoneCatalog() {
       queryClient.invalidateQueries({ queryKey: ["/api/smartphones"] });
       setMarketplaceDialogOpen(false);
       setMarketplaceProduct(null);
-      toast({ title: "Salvato", description: "Impostazioni Marketplace aggiornate." });
+      toast({ title: t("common.saved"), description: t("products.marketplaceSettingsUpdated") });
     },
     onError: (error: any) => {
       toast({ title: t("common.error"), description: error.message, variant: "destructive" });
@@ -414,11 +414,11 @@ export default function SmartphoneCatalog() {
     const file = e.target.files?.[0];
     if (file) {
       if (!["image/jpeg", "image/png", "image/webp", "image/gif"].includes(file.type)) {
-        toast({ title: t("common.error"), description: "Formato non supportato. Usa JPEG, PNG, WebP o GIF.", variant: "destructive" });
+        toast({ title: t("common.error"), description: t("products.unsupportedFormat"), variant: "destructive" });
         return;
       }
       if (file.size > 10 * 1024 * 1024) {
-        toast({ title: t("common.error"), description: "Immagine troppo grande. Max 10MB.", variant: "destructive" });
+        toast({ title: t("common.error"), description: t("products.imageTooLarge"), variant: "destructive" });
         return;
       }
       setImageFile(file);
@@ -551,7 +551,7 @@ export default function SmartphoneCatalog() {
   const addEditStock = (warehouseId: string) => {
     const warehouse = accessibleWarehouses.find(w => w.id === warehouseId);
     if (!warehouse) {
-      toast({ title: t("common.error"), description: "Magazzino non trovato", variant: "destructive" });
+      toast({ title: t("common.error"), description: t("warehouse.notFound"), variant: "destructive" });
       return;
     }
     setEditStock(prev => {
@@ -645,7 +645,7 @@ export default function SmartphoneCatalog() {
           } catch (stockError: any) {
             toast({ 
               title: t("common.warning"), 
-              description: "Smartphone salvato ma alcune giacenze non sono state aggiornate", 
+              description: t("products.savedButStockNotUpdated"), 
               variant: "destructive" 
             });
           }
@@ -682,7 +682,7 @@ export default function SmartphoneCatalog() {
 
   const getNetworkLockBadge = (lock: string | null | undefined) => {
     switch (lock) {
-      case "unlocked": return <Badge variant="outline" className="text-green-600 border-green-600">Sbloccato</Badge>;
+      case "unlocked": return <Badge variant="outline" className="text-green-600 border-green-600">{t("products.unlocked")}</Badge>;
       case "locked": return <Badge variant="outline" className="text-yellow-600 border-yellow-600">{t("warehouse.operator")}</Badge>;
       case "icloud_locked": return <Badge variant="destructive">iCloud Lock</Badge>;
       default: return null;
@@ -714,24 +714,24 @@ export default function SmartphoneCatalog() {
             </div>
             <div>
               <h1 className="text-2xl font-bold tracking-tight text-white">{t("products.deviceCatalog")}</h1>
-              <p className="text-sm text-white/80">Gestisci il tuo catalogo di dispositivi nuovi, ricondizionati e usati</p>
+              <p className="text-sm text-white/80">{t("products.manageCatalogDesc")}</p>
             </div>
           </div>
           <Button onClick={() => setWizardOpen(true)} className="bg-white/20 backdrop-blur-sm border border-white/30 text-white shadow-lg" data-testid="button-add-device">
             <Plus className="mr-2 h-4 w-4" />
-            Aggiungi Dispositivo
+            t("products.addDevice")
           </Button>
         </div>
       </div>
 
       <Card className="rounded-2xl">
         <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-4">
-          <CardTitle>Lista Dispositivi ({filteredSmartphones.length})</CardTitle>
+          <CardTitle>{t("products.deviceList")} ({filteredSmartphones.length})</CardTitle>
           <div className="flex flex-wrap items-center gap-2 flex-wrap">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Cerca per nome, SKU o IMEI..."
+                placeholder={t("products.searchByNameSkuImei")}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-9 w-64"
@@ -783,8 +783,8 @@ export default function SmartphoneCatalog() {
           ) : filteredSmartphones.length === 0 ? (
             <div className="text-center py-12 text-muted-foreground">
               <Smartphone className="mx-auto h-12 w-12 mb-4 opacity-50" />
-              <p>Nessuno smartphone nel catalogo</p>
-              <p className="text-sm">Clicca "Aggiungi Smartphone" per iniziare</p>
+              <p>{t("products.noDevicesInCatalog")}</p>
+              <p className="text-sm">{t("products.clickAddToStart")}</p>
             </div>
           ) : (
             <ScrollArea className="h-[500px]">
@@ -793,7 +793,7 @@ export default function SmartphoneCatalog() {
                   <TableRow>
                     <TableHead className="w-16">{t("common.photo")}</TableHead>
                     <TableHead>{t("repairs.device")}</TableHead>
-                    <TableHead>Barcode</TableHead>
+                    <TableHead>{t("products.barcode")}</TableHead>
                     <TableHead>{t("common.category")}</TableHead>
                     <TableHead>{t("common.type")}</TableHead>
                     <TableHead>{t("common.supplier")}</TableHead>
@@ -842,15 +842,15 @@ export default function SmartphoneCatalog() {
                       <TableCell>
                         {(smartphone as any).isOwn ? (
                           <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
-                            Proprio
+                            t("products.own")
                           </Badge>
                         ) : assignmentMap.has(smartphone.id) ? (
                           <Badge variant="outline" className="bg-purple-50 text-purple-700 border-purple-200">
-                            Assegnato
+                            t("products.assigned")
                           </Badge>
                         ) : (
                           <Badge variant="outline" className="text-muted-foreground">
-                            Admin
+                            {t("common.admin")}
                           </Badge>
                         )}
                       </TableCell>
@@ -889,7 +889,7 @@ export default function SmartphoneCatalog() {
                                 )}
                               </Button>
                             </TooltipTrigger>
-                            <TooltipContent>Configura vendita su Marketplace P2P</TooltipContent>
+                            <TooltipContent>{t("products.configureMarketplaceSale")}</TooltipContent>
                           </Tooltip>
                         ) : (
                           <span className="text-muted-foreground text-xs">-</span>
@@ -932,7 +932,7 @@ export default function SmartphoneCatalog() {
                                   });
                                   setSettingsDialogOpen(true);
                                 }}
-                                title="Impostazioni vendita"
+                                title={t("products.salesSettings")}
                                 data-testid={`button-settings-smartphone-${smartphone.id}`}
                               >
                                 <Settings className="h-4 w-4" />
@@ -946,7 +946,7 @@ export default function SmartphoneCatalog() {
                                   setBuyQuantity(assignment?.minimumOrderQuantity || 1);
                                   setBuyDialogOpen(true);
                                 }}
-                                title="Acquista da Admin"
+                                title={t("products.buyFromAdmin")}
                                 data-testid={`button-buy-smartphone-${smartphone.id}`}
                               >
                                 <ShoppingCart className="h-4 w-4 text-green-600" />
@@ -977,21 +977,21 @@ export default function SmartphoneCatalog() {
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>{editingSmartphone ? "Modifica Smartphone" : "Aggiungi Smartphone"}</DialogTitle>
+            <DialogTitle>{editingSmartphone ? t("products.editSmartphone") : t("products.addSmartphone")}</DialogTitle>
             <DialogDescription>
-              {editingSmartphone ? "Modifica i dettagli dello smartphone" : "Inserisci i dettagli del nuovo smartphone"}
+              {editingSmartphone ? t("products.editSmartphoneDesc") : t("products.addSmartphoneDesc")}
             </DialogDescription>
           </DialogHeader>
 
           <div className="grid gap-4 py-4">
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="name">Nome dispositivo *</Label>
+                <Label htmlFor="name">{t("products.deviceName")} *</Label>
                 <Input
                   id="name"
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  placeholder="es. iPhone 14 Pro Max"
+                  placeholder={t("products.deviceNamePlaceholder")}
                   data-testid="input-smartphone-name"
                 />
               </div>
@@ -1001,12 +1001,12 @@ export default function SmartphoneCatalog() {
                   id="sku"
                   value={formData.sku}
                   onChange={(e) => setFormData({ ...formData, sku: e.target.value })}
-                  placeholder="es. IP14PM-256-BLK"
+                  placeholder={t("products.skuPlaceholder")}
                   data-testid="input-smartphone-sku"
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="category">Categoria *</Label>
+                <Label htmlFor="category">{t("common.category")} *</Label>
                 <Select value={formData.category} onValueChange={(v) => setFormData({ ...formData, category: v })}>
                   <SelectTrigger data-testid="select-smartphone-category">
                     <SelectValue placeholder={t("utility.selectCategory")} />
@@ -1070,7 +1070,7 @@ export default function SmartphoneCatalog() {
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                     {specsConfig.storage && (
                       <div className="space-y-2">
-                        <Label htmlFor="storage">Storage *</Label>
+                        <Label htmlFor="storage">{t("products.storage")} *</Label>
                         <Select value={formData.storage} onValueChange={(v) => setFormData({ ...formData, storage: v })}>
                           <SelectTrigger data-testid="select-smartphone-storage">
                             <SelectValue />
@@ -1142,12 +1142,12 @@ export default function SmartphoneCatalog() {
                             id="imei"
                             value={formData.imei}
                             onChange={(e) => setFormData({ ...formData, imei: e.target.value })}
-                            placeholder="es. 353012345678901"
+                            placeholder={t("products.imeiPlaceholder")}
                             data-testid="input-smartphone-imei"
                           />
                         </div>
                         <div className="space-y-2">
-                          <Label htmlFor="imei2">IMEI 2 (Dual SIM)</Label>
+                          <Label htmlFor="imei2">{t("products.imei2DualSim")}</Label>
                           <Input
                             id="imei2"
                             value={formData.imei2}
@@ -1160,12 +1160,12 @@ export default function SmartphoneCatalog() {
                     )}
                     {specsConfig.serialNumber && (
                       <div className="space-y-2">
-                        <Label htmlFor="serialNumber">Seriale</Label>
+                        <Label htmlFor="serialNumber">{t("products.serialNumber")}</Label>
                         <Input
                           id="serialNumber"
                           value={formData.serialNumber}
                           onChange={(e) => setFormData({ ...formData, serialNumber: e.target.value })}
-                          placeholder="es. DNPX12345678"
+                          placeholder={t("products.serialNumberPlaceholder")}
                           data-testid="input-smartphone-serial"
                         />
                       </div>
@@ -1177,26 +1177,26 @@ export default function SmartphoneCatalog() {
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="unitPrice">Prezzo Vendita *</Label>
+                <Label htmlFor="unitPrice">{t("products.sellingPrice")} *</Label>
                 <Input
                   id="unitPrice"
                   type="number"
                   step="0.01"
                   value={formData.unitPrice}
                   onChange={(e) => setFormData({ ...formData, unitPrice: e.target.value })}
-                  placeholder="es. 599.00"
+                  placeholder={t("products.pricePlaceholder")}
                   data-testid="input-smartphone-price"
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="costPrice">Prezzo Costo</Label>
+                <Label htmlFor="costPrice">{t("products.costPrice")}</Label>
                 <Input
                   id="costPrice"
                   type="number"
                   step="0.01"
                   value={formData.costPrice}
                   onChange={(e) => setFormData({ ...formData, costPrice: e.target.value })}
-                  placeholder="es. 450.00"
+                  placeholder={t("products.costPricePlaceholder")}
                   data-testid="input-smartphone-cost"
                 />
               </div>
@@ -1217,7 +1217,7 @@ export default function SmartphoneCatalog() {
               <Label htmlFor="supplierId">{t("products.preferredSupplier")}</Label>
               <Select value={formData.supplierId || "none"} onValueChange={(v) => setFormData({ ...formData, supplierId: v === "none" ? "" : v })}>
                 <SelectTrigger data-testid="select-smartphone-supplier">
-                  <SelectValue placeholder="Seleziona fornitore (opzionale)" />
+                  <SelectValue placeholder={t("products.selectSupplierOptional")} />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="none">{t("common.none")}</SelectItem>
@@ -1242,7 +1242,7 @@ export default function SmartphoneCatalog() {
                         data-testid="checkbox-smartphone-box"
                       />
                       <Label htmlFor="originalBox" className="text-sm cursor-pointer">
-                        Include scatola originale
+                        t("products.includesOriginalBox")
                       </Label>
                     </div>
                   )}
@@ -1279,7 +1279,7 @@ export default function SmartphoneCatalog() {
                         id="description"
                         value={formData.description}
                         onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                        placeholder="Descrizione del dispositivo..."
+                        placeholder={t("products.deviceDescription")}
                         rows={2}
                         data-testid="textarea-smartphone-description"
                       />
@@ -1295,20 +1295,20 @@ export default function SmartphoneCatalog() {
                 id="notes"
                 value={formData.notes}
                 onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                placeholder="Note aggiuntive sul dispositivo..."
+                placeholder={t("products.additionalDeviceNotes")}
                 rows={3}
                 data-testid="textarea-smartphone-notes"
               />
             </div>
 
             <div className="space-y-2">
-                <Label>Immagine prodotto</Label>
+                <Label>{t("products.productImage")}</Label>
                 <div className="flex items-start gap-4">
                   {imagePreview ? (
                     <div className="relative">
                       <img
                         src={imagePreview}
-                        alt="Preview"
+                        alt={t("common.preview")}
                         className="h-24 w-24 object-cover rounded-lg border"
                       />
                       <Button
@@ -1326,7 +1326,7 @@ export default function SmartphoneCatalog() {
                     <div className="relative">
                       <img
                         src={editingSmartphone.imageUrl}
-                        alt="Existing"
+                        alt={t("common.existing")}
                         className="h-24 w-24 object-cover rounded-lg border"
                       />
                       <Button
@@ -1365,7 +1365,7 @@ export default function SmartphoneCatalog() {
                       data-testid="button-select-image"
                     >
                       <ImagePlus className="mr-2 h-4 w-4" />
-                      Seleziona immagine
+                      t("products.selectImage")
                     </Button>
                     {editingSmartphone && imageFile && (
                       <Button
@@ -1376,7 +1376,7 @@ export default function SmartphoneCatalog() {
                         data-testid="button-upload-image"
                       >
                         {uploadingImage && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                        Carica immagine
+                        t("products.uploadImage")
                       </Button>
                     )}
                     <p className="text-xs text-muted-foreground">JPEG, PNG, WebP o GIF. Max 10MB.</p>
@@ -1390,7 +1390,7 @@ export default function SmartphoneCatalog() {
                 <div className="flex items-center justify-between">
                   <Label className="text-base font-medium flex items-center gap-2">
                     <Package className="h-4 w-4" />
-                    Giacenza Magazzini
+                    t("warehouse.warehouseStock")
                   </Label>
                   <Select
                     value=""
@@ -1419,11 +1419,11 @@ export default function SmartphoneCatalog() {
                 {loadingEditStock ? (
                   <div className="flex items-center justify-center py-4">
                     <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-                    <span className="ml-2 text-sm text-muted-foreground">Caricamento giacenze...</span>
+                    <span className="ml-2 text-sm text-muted-foreground">{t("warehouse.loadingStock")}</span>
                   </div>
                 ) : editStock.length === 0 ? (
                   <p className="text-sm text-muted-foreground italic py-2">
-                    Nessuna giacenza configurata. Seleziona un magazzino per aggiungere stock.
+                    {t("warehouse.noStockConfigured")}
                   </p>
                 ) : (
                   <div className="space-y-2">
@@ -1484,7 +1484,7 @@ export default function SmartphoneCatalog() {
                         </div>
                         {stock.quantity !== stock.originalQuantity && (
                           <span className="text-xs text-muted-foreground">
-                            (era: {stock.originalQuantity})
+                            ({t("common.was")}: {stock.originalQuantity})
                           </span>
                         )}
                       </div>
@@ -1514,7 +1514,7 @@ export default function SmartphoneCatalog() {
           <DialogHeader>
             <DialogTitle>{t("admin.teams.deleteConfirm")}</DialogTitle>
             <DialogDescription>
-              Sei sicuro di voler eliminare "{smartphoneToDelete?.name}"? Questa azione non può essere annullata.
+              {t("products.confirmDeleteDevice", { name: smartphoneToDelete?.name })}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
@@ -1526,7 +1526,7 @@ export default function SmartphoneCatalog() {
               data-testid="button-confirm-delete"
             >
               {deleteMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Elimina
+              {t("common.delete")}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -1536,20 +1536,20 @@ export default function SmartphoneCatalog() {
       <Dialog open={settingsDialogOpen} onOpenChange={setSettingsDialogOpen}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>Impostazioni Vendita</DialogTitle>
+            <DialogTitle>{t("products.salesSettings")}</DialogTitle>
             <DialogDescription>
-              Configura il prezzo e la visibilità di "{settingsProduct?.name}" nel tuo shop.
+              {t("products.configurePriceVisibility", { name: settingsProduct?.name })}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label>Prezzo originale (Admin)</Label>
+              <Label>{t("products.originalPriceAdmin")}</Label>
               <div className="text-lg font-medium text-muted-foreground">
                 €{settingsProduct ? (settingsProduct.unitPrice / 100).toFixed(2) : '0.00'}
               </div>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="customPrice">Tuo prezzo di vendita (€)</Label>
+              <Label htmlFor="customPrice">{t("products.yourSellingPrice")}</Label>
               <Input
                 id="customPrice"
                 type="number"
@@ -1562,8 +1562,8 @@ export default function SmartphoneCatalog() {
             </div>
             <div className="flex items-center justify-between">
               <div>
-                <Label htmlFor="isPublished">Pubblica nello Shop</Label>
-                <p className="text-sm text-muted-foreground">Rendi visibile questo prodotto ai tuoi clienti</p>
+                <Label htmlFor="isPublished">{t("products.publishToShop")}</Label>
+                <p className="text-sm text-muted-foreground">{t("products.makeVisibleToCustomers")}</p>
               </div>
               <Switch
                 id="isPublished"
@@ -1584,7 +1584,7 @@ export default function SmartphoneCatalog() {
               data-testid="button-save-settings"
             >
               {updateSettingsMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Salva
+              {t("common.save")}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -1594,9 +1594,9 @@ export default function SmartphoneCatalog() {
       <Dialog open={buyDialogOpen} onOpenChange={setBuyDialogOpen}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>Acquista da Admin</DialogTitle>
+            <DialogTitle>{t("products.buyFromAdmin")}</DialogTitle>
             <DialogDescription>
-              Aggiungi "{buyProduct?.name}" al carrello B2B.
+              {t("products.addToB2BCart", { name: buyProduct?.name })}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
@@ -1614,7 +1614,7 @@ export default function SmartphoneCatalog() {
               </div>
             </div>
             <div className="space-y-2">
-              <Label>Prezzo B2B</Label>
+              <Label>{t("products.b2bPrice")}</Label>
               <div className="text-xl font-bold text-green-600">
                 €{(() => {
                   if (!buyProduct) return '0.00';
@@ -1636,13 +1636,13 @@ export default function SmartphoneCatalog() {
               />
               {assignmentMap.get(buyProduct?.id || '')?.minimumOrderQuantity && (
                 <p className="text-xs text-muted-foreground">
-                  Quantità minima: {assignmentMap.get(buyProduct?.id || '')?.minimumOrderQuantity}
+                  {t("products.minQuantity")}: {assignmentMap.get(buyProduct?.id || '')?.minimumOrderQuantity}
                 </p>
               )}
             </div>
             <div className="bg-muted p-3 rounded-lg">
               <div className="flex justify-between">
-                <span>Totale:</span>
+                <span>{t("common.total")}:</span>
                 <span className="font-bold">
                   €{(() => {
                     if (!buyProduct) return '0.00';
@@ -1655,7 +1655,7 @@ export default function SmartphoneCatalog() {
             </div>
             {cart.length > 0 && (
               <div className="text-sm text-muted-foreground">
-                Hai {cart.reduce((sum, item) => sum + item.quantity, 0)} articoli nel carrello B2B
+                {t("products.itemsInB2BCart", { count: cart.reduce((sum, item) => sum + item.quantity, 0) })}
               </div>
             )}
           </div>
@@ -1671,7 +1671,7 @@ export default function SmartphoneCatalog() {
               data-testid="button-add-to-cart"
             >
               <ShoppingCart className="mr-2 h-4 w-4" />
-              Aggiungi al Carrello
+              t("products.addToCart")
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -1683,10 +1683,10 @@ export default function SmartphoneCatalog() {
           <DialogHeader>
             <DialogTitle className="flex flex-wrap items-center gap-2">
               <Store className="h-5 w-5" />
-              Impostazioni Marketplace P2P
+              t("products.marketplaceP2PSettings")
             </DialogTitle>
             <DialogDescription>
-              Configura la vendita di questo smartphone ad altri rivenditori nel marketplace.
+              t("products.configureMarketplaceDesc")
             </DialogDescription>
           </DialogHeader>
           {marketplaceProduct && (
@@ -1702,9 +1702,9 @@ export default function SmartphoneCatalog() {
               
               <div className="flex items-center justify-between">
                 <div>
-                  <Label className="text-base">Attivo su Marketplace</Label>
+                  <Label className="text-base">{t("products.activeOnMarketplace")}</Label>
                   <p className="text-sm text-muted-foreground">
-                    Rendi visibile questo prodotto agli altri rivenditori
+                    t("products.makeVisibleToResellers")
                   </p>
                 </div>
                 <Switch
@@ -1717,7 +1717,7 @@ export default function SmartphoneCatalog() {
               {marketplaceEnabled && (
                 <>
                   <div className="space-y-2">
-                    <Label htmlFor="marketplace-smartphone-price">Prezzo Marketplace (opzionale)</Label>
+                    <Label htmlFor="marketplace-smartphone-price">{t("products.marketplacePrice")}</Label>
                     <div className="flex flex-wrap items-center gap-2">
                       <span className="text-muted-foreground">€</span>
                       <Input
@@ -1732,12 +1732,12 @@ export default function SmartphoneCatalog() {
                       />
                     </div>
                     <p className="text-xs text-muted-foreground">
-                      Se vuoto, verrà usato il prezzo standard del prodotto
+                      t("products.emptyUsesStandardPrice")
                     </p>
                   </div>
                   
                   <div className="space-y-2">
-                    <Label htmlFor="marketplace-smartphone-min-qty">Quantità Minima Ordine</Label>
+                    <Label htmlFor="marketplace-smartphone-min-qty">{t("products.minOrderQuantity")}</Label>
                     <Input
                       id="marketplace-smartphone-min-qty"
                       type="number"

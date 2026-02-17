@@ -25,14 +25,14 @@ import { useTranslation } from "react-i18next";
 function getStatusLabels(t: (key: string) => string): Record<string, string> {
   return {
     pending: t("hr.pending"),
-    confirmed: "Confermato",
-    processing: "In elaborazione",
-    ready_to_ship: "Pronto per spedizione",
+    confirmed: t("sales.confirmed"),
+    processing: t("sales.processing"),
+    ready_to_ship: t("sales.readyToShip"),
     shipped: t("b2b.status.shipped"),
     delivered: t("repairs.status.delivered"),
     completed: t("common.completed"),
     cancelled: t("repairs.status.cancelled"),
-    refunded: "Rimborsato"
+    refunded: t("sales.refunded")
   };
 }
 
@@ -91,7 +91,7 @@ export default function ResellerSalesOrders() {
       const params = new URLSearchParams();
       if (statusFilter && statusFilter !== "all") params.set('status', statusFilter);
       const res = await fetch(`/api/sales-orders?${params}`, { credentials: 'include' });
-      if (!res.ok) throw new Error('Errore nel caricamento ordini');
+      if (!res.ok) throw new Error(t("sales.loadOrdersError"));
       return res.json();
     },
     enabled: !orderId
@@ -101,7 +101,7 @@ export default function ResellerSalesOrders() {
     queryKey: ['/api/sales-orders', orderId],
     queryFn: async () => {
       const res = await fetch(`/api/sales-orders/${orderId}`, { credentials: 'include' });
-      if (!res.ok) throw new Error('Errore nel caricamento dettagli ordine');
+      if (!res.ok) throw new Error(t("sales.loadOrderDetailError"));
       return res.json();
     },
     enabled: !!orderId
@@ -182,11 +182,11 @@ export default function ResellerSalesOrders() {
     
     // Validate shipping fields if status is shipped
     if (newStatus === 'shipped' && !shippingCarrier) {
-      toast({ title: t("common.error"), description: "Seleziona un corriere", variant: "destructive" });
+      toast({ title: t("common.error"), description: t("sales.selectCarrier"), variant: "destructive" });
       return;
     }
     if (newStatus === 'shipped' && shippingCarrier === 'other' && !shippingCarrierName) {
-      toast({ title: t("common.error"), description: "Inserisci il nome del corriere", variant: "destructive" });
+      toast({ title: t("common.error"), description: t("sales.enterCarrierName"), variant: "destructive" });
       return;
     }
     
@@ -222,12 +222,12 @@ export default function ResellerSalesOrders() {
       return (
         <div className="space-y-6">
           <Button variant="ghost" onClick={() => setLocation('/reseller/sales-orders')}>
-            <ArrowLeft className="mr-2 h-4 w-4" /> Torna agli ordini
+            <ArrowLeft className="mr-2 h-4 w-4" /> {t("sales.backToOrders")}
           </Button>
           <Card>
             <CardContent className="p-12 text-center">
               <Package className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-              <p className="text-muted-foreground">Ordine non trovato</p>
+              <p className="text-muted-foreground">{t("sales.orderNotFound")}</p>
             </CardContent>
           </Card>
         </div>
@@ -240,7 +240,7 @@ export default function ResellerSalesOrders() {
       <div className="space-y-6">
         <div className="flex flex-wrap items-center gap-4">
           <Button variant="ghost" onClick={() => setLocation('/reseller/sales-orders')} data-testid="button-back">
-            <ArrowLeft className="mr-2 h-4 w-4" /> Torna agli ordini
+            <ArrowLeft className="mr-2 h-4 w-4" /> {t("sales.backToOrders")}
           </Button>
         </div>
         
@@ -256,7 +256,7 @@ export default function ResellerSalesOrders() {
               </div>
               <div>
                 <h1 className="text-2xl font-bold text-white" data-testid="text-order-detail-title">
-                  Ordine {order.orderNumber}
+                  {t("common.order")} {order.orderNumber}
                 </h1>
                 <p className="text-white/80 text-sm">{formatDate(order.createdAt)}</p>
               </div>
@@ -274,7 +274,7 @@ export default function ResellerSalesOrders() {
           <Card className="rounded-2xl">
             <CardHeader>
               <CardTitle className="flex flex-wrap items-center gap-2">
-                <MapPin className="h-5 w-5" /> Indirizzo di spedizione
+                <MapPin className="h-5 w-5" /> {t("sales.shippingAddress")}
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-2">
@@ -294,7 +294,7 @@ export default function ResellerSalesOrders() {
           <Card className="rounded-2xl">
             <CardHeader>
               <CardTitle className="flex flex-wrap items-center gap-2">
-                <CreditCard className="h-5 w-5" /> Riepilogo pagamento
+                <CreditCard className="h-5 w-5" /> {t("sales.paymentSummary")}
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
@@ -310,7 +310,7 @@ export default function ResellerSalesOrders() {
               )}
               <div className="flex justify-between">
                 <span className="text-muted-foreground">{t("common.shipment")}</span>
-                <span>{order.shippingCost > 0 ? formatPrice(order.shippingCost) : 'Gratuita'}</span>
+                <span>{order.shippingCost > 0 ? formatPrice(order.shippingCost) : t("sales.free")}</span>
               </div>
               <Separator />
               <div className="flex justify-between font-bold text-lg">
@@ -324,19 +324,19 @@ export default function ResellerSalesOrders() {
         <Card className="rounded-2xl">
           <CardHeader>
             <CardTitle className="flex flex-wrap items-center gap-2">
-              <Package className="h-5 w-5" /> Prodotti ordinati
+              <Package className="h-5 w-5" /> {t("sales.orderedProducts")}
             </CardTitle>
           </CardHeader>
           <CardContent>
             {items.length === 0 ? (
-              <p className="text-muted-foreground text-center py-4">Nessun prodotto</p>
+              <p className="text-muted-foreground text-center py-4">{t("sales.noProducts")}</p>
             ) : (
               <Table>
                 <TableHeader>
                   <TableRow>
                     <TableHead>{t("common.product")}</TableHead>
                     <TableHead className="text-center">{t("common.quantity")}</TableHead>
-                    <TableHead className="text-right">Prezzo unit.</TableHead>
+                    <TableHead className="text-right">{t("sales.unitPrice")}</TableHead>
                     <TableHead className="text-right">{t("common.total")}</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -397,8 +397,8 @@ export default function ResellerSalesOrders() {
                       <TableCell className="capitalize">{payment.method}</TableCell>
                       <TableCell>
                         <Badge variant={payment.status === 'completed' ? 'default' : 'secondary'}>
-                          {payment.status === 'completed' ? 'Completato' : 
-                           payment.status === 'pending' ? 'In attesa' : payment.status}
+                          {payment.status === 'completed' ? t("common.completed") : 
+                           payment.status === 'pending' ? t("common.pending") : payment.status}
                         </Badge>
                       </TableCell>
                       <TableCell className="text-right">{formatPrice(payment.amount)}</TableCell>
@@ -422,9 +422,9 @@ export default function ResellerSalesOrders() {
                 <TableHeader>
                   <TableRow>
                     <TableHead>{t("shipping.carrier")}</TableHead>
-                    <TableHead>Tracking</TableHead>
+                    <TableHead>{t("shipping.tracking")}</TableHead>
                     <TableHead>{t("common.status")}</TableHead>
-                    <TableHead>Data spedizione</TableHead>
+                    <TableHead>{t("sales.shipDate")}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -442,9 +442,9 @@ export default function ResellerSalesOrders() {
                       </TableCell>
                       <TableCell>
                         <Badge variant={shipment.status === 'delivered' ? 'default' : 'secondary'}>
-                          {shipment.status === 'delivered' ? 'Consegnato' : 
-                           shipment.status === 'in_transit' ? 'In transito' : 
-                           shipment.status === 'pending' ? 'In preparazione' : shipment.status}
+                          {shipment.status === 'delivered' ? t("repairs.status.delivered") : 
+                           shipment.status === 'in_transit' ? t("sales.inTransit") : 
+                           shipment.status === 'pending' ? t("sales.inPreparation") : shipment.status}
                         </Badge>
                       </TableCell>
                       <TableCell>{shipment.createdAt ? formatDate(shipment.createdAt) : 'N/A'}</TableCell>
@@ -460,7 +460,7 @@ export default function ResellerSalesOrders() {
           <Card className="rounded-2xl">
             <CardHeader>
               <CardTitle className="flex flex-wrap items-center gap-2">
-                <FileText className="h-5 w-5" /> Note cliente
+                <FileText className="h-5 w-5" /> {t("sales.customerNotes")}
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -483,14 +483,14 @@ export default function ResellerSalesOrders() {
             {selectedOrder && (
               <div className="space-y-4">
                 <div>
-                  <p className="text-sm text-muted-foreground mb-2">Ordine: {selectedOrder.orderNumber}</p>
+                  <p className="text-sm text-muted-foreground mb-2">{t("common.order")}: {selectedOrder.orderNumber}</p>
                   <p className="text-sm">
-                    Stato attuale: <Badge variant="secondary">{statusLabels[selectedOrder.status]}</Badge>
+                    {t("sales.currentStatus")}: <Badge variant="secondary">{statusLabels[selectedOrder.status]}</Badge>
                   </p>
                 </div>
                 
                 <div className="space-y-2">
-                  <Label>Nuovo stato</Label>
+                  <Label>{t("sales.newStatus")}</Label>
                   <Select value={newStatus} onValueChange={setNewStatus}>
                     <SelectTrigger>
                       <SelectValue placeholder={t("common.selectNewStatus")} />
@@ -507,11 +507,11 @@ export default function ResellerSalesOrders() {
                 
                 {newStatus === 'cancelled' && (
                   <div className="space-y-2">
-                    <Label>Motivo annullamento</Label>
+                    <Label>{t("sales.cancellationReason")}</Label>
                     <Textarea
                       value={statusReason}
                       onChange={(e) => setStatusReason(e.target.value)}
-                      placeholder="Inserisci il motivo dell'annullamento..."
+                      placeholder={t("sales.cancellationReasonPlaceholder")}
                       rows={3}
                     />
                   </div>
@@ -521,14 +521,14 @@ export default function ResellerSalesOrders() {
                   <div className="space-y-4 p-4 bg-muted/50 rounded-lg">
                     <div className="flex flex-wrap items-center gap-2 text-sm font-medium">
                       <Truck className="h-4 w-4" />
-                      Dati spedizione
+                      {t("sales.shippingData")}
                     </div>
                     
                     <div className="space-y-2">
-                      <Label>Corriere *</Label>
+                      <Label>{t("sales.carrierRequired")}</Label>
                       <Select value={shippingCarrier} onValueChange={setShippingCarrier}>
                         <SelectTrigger data-testid="select-carrier">
-                          <SelectValue placeholder="Seleziona corriere" />
+                          <SelectValue placeholder={t("sales.selectCarrier")} />
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="dhl">DHL</SelectItem>
@@ -545,22 +545,22 @@ export default function ResellerSalesOrders() {
                     
                     {shippingCarrier === 'other' && (
                       <div className="space-y-2">
-                        <Label>Nome corriere *</Label>
+                        <Label>{t("sales.carrierNameRequired")}</Label>
                         <Input
                           value={shippingCarrierName}
                           onChange={(e) => setShippingCarrierName(e.target.value)}
-                          placeholder="Inserisci nome corriere..."
+                          placeholder={t("sales.enterCarrierName")}
                           data-testid="input-carrier-name"
                         />
                       </div>
                     )}
                     
                     <div className="space-y-2">
-                      <Label>Numero tracking</Label>
+                      <Label>{t("sales.trackingNumber")}</Label>
                       <Input
                         value={shippingTrackingNumber}
                         onChange={(e) => setShippingTrackingNumber(e.target.value)}
-                        placeholder="Inserisci numero tracking..."
+                        placeholder={t("sales.enterTracking")}
                         data-testid="input-tracking-number"
                       />
                     </div>
@@ -614,8 +614,8 @@ export default function ResellerSalesOrders() {
               <ShoppingBag className="h-6 w-6 text-white" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold text-white" data-testid="text-sales-orders-title">Ordini Vendita</h1>
-              <p className="text-white/80 text-sm">Gestione ordini clienti</p>
+              <h1 className="text-2xl font-bold text-white" data-testid="text-sales-orders-title">{t("sales.title")}</h1>
+              <p className="text-white/80 text-sm">{t("sales.subtitle")}</p>
             </div>
           </div>
         </div>
@@ -625,7 +625,7 @@ export default function ResellerSalesOrders() {
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder="Cerca per numero ordine..."
+            placeholder={t("sales.searchPlaceholder")}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="pl-10"
@@ -726,14 +726,14 @@ export default function ResellerSalesOrders() {
           {selectedOrder && (
             <div className="space-y-4">
               <div>
-                <p className="text-sm text-muted-foreground mb-2">Ordine: {selectedOrder.orderNumber}</p>
+                <p className="text-sm text-muted-foreground mb-2">{t("sales.orderLabel")}: {selectedOrder.orderNumber}</p>
                 <p className="text-sm">
-                  Stato attuale: <Badge variant="secondary">{statusLabels[selectedOrder.status]}</Badge>
+                  {t("sales.currentStatus")}: <Badge variant="secondary">{statusLabels[selectedOrder.status]}</Badge>
                 </p>
               </div>
               
               <div className="space-y-2">
-                <Label>Nuovo stato</Label>
+                <Label>{t("sales.newStatus")}</Label>
                 <Select value={newStatus} onValueChange={setNewStatus}>
                   <SelectTrigger>
                     <SelectValue placeholder={t("common.selectNewStatus")} />
@@ -750,11 +750,11 @@ export default function ResellerSalesOrders() {
               
               {newStatus === 'cancelled' && (
                 <div className="space-y-2">
-                  <Label>Motivo annullamento</Label>
+                  <Label>{t("sales.cancellationReason")}</Label>
                   <Textarea
                     value={statusReason}
                     onChange={(e) => setStatusReason(e.target.value)}
-                    placeholder="Inserisci il motivo dell'annullamento..."
+                    placeholder={t("sales.cancellationReasonPlaceholder")}
                     rows={3}
                   />
                 </div>
@@ -764,14 +764,14 @@ export default function ResellerSalesOrders() {
                 <div className="space-y-4 p-4 bg-muted/50 rounded-lg">
                   <div className="flex flex-wrap items-center gap-2 text-sm font-medium">
                     <Truck className="h-4 w-4" />
-                    Dati spedizione
+                    {t("sales.shippingData")}
                   </div>
                   
                   <div className="space-y-2">
-                    <Label>Corriere *</Label>
+                    <Label>{t("sales.carrierRequired")}</Label>
                     <Select value={shippingCarrier} onValueChange={setShippingCarrier}>
                       <SelectTrigger data-testid="select-carrier-list">
-                        <SelectValue placeholder="Seleziona corriere" />
+                        <SelectValue placeholder={t("sales.selectCarrier")} />
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="dhl">DHL</SelectItem>
@@ -788,22 +788,22 @@ export default function ResellerSalesOrders() {
                   
                   {shippingCarrier === 'other' && (
                     <div className="space-y-2">
-                      <Label>Nome corriere *</Label>
+                      <Label>{t("sales.carrierNameRequired")}</Label>
                       <Input
                         value={shippingCarrierName}
                         onChange={(e) => setShippingCarrierName(e.target.value)}
-                        placeholder="Inserisci nome corriere..."
+                        placeholder={t("sales.enterCarrierName")}
                         data-testid="input-carrier-name-list"
                       />
                     </div>
                   )}
                   
                   <div className="space-y-2">
-                    <Label>Numero tracking</Label>
+                    <Label>{t("sales.trackingNumber")}</Label>
                     <Input
                       value={shippingTrackingNumber}
                       onChange={(e) => setShippingTrackingNumber(e.target.value)}
-                      placeholder="Inserisci numero tracking..."
+                      placeholder={t("sales.enterTracking")}
                       data-testid="input-tracking-number-list"
                     />
                   </div>

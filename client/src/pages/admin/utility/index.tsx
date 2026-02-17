@@ -32,21 +32,21 @@ interface UtilitySummary {
 }
 
 const categoryLabels: Record<string, string> = {
-  fisso: "Fisso",
-  mobile: "Mobile",
-  centralino: "Centralino",
-  luce: "Luce",
-  gas: "Gas",
-  altro: "Altro",
+  fisso: "fisso",
+  mobile: "mobile",
+  centralino: "centralino",
+  luce: "luce",
+  gas: "gas",
+  altro: "altro",
 };
 
 const statusLabels: Record<string, string> = {
-  bozza: "Bozza",
-  inviata: "Inviata",
-  in_lavorazione: "In Lavorazione",
-  completata: "Completata",
-  annullata: "Annullata",
-  rifiutata: "Rifiutata",
+  bozza: "bozza",
+  inviata: "inviata",
+  in_lavorazione: "in_lavorazione",
+  completata: "completata",
+  annullata: "annullata",
+  rifiutata: "rifiutata",
 };
 
 const formatCurrency = (cents: number) => {

@@ -75,17 +75,17 @@ interface RepairCenterOverviewResponse {
 }
 
 const STATUS_LABELS: Record<string, string> = {
-  accettazione: "Accettazione",
-  diagnosi: "Diagnosi",
-  preventivo: "Preventivo",
-  attesa_approvazione: "Attesa Approv.",
-  approvato: "Approvato",
-  ordine_ricambi: "Ordine Ricambi",
-  in_riparazione: "In Riparazione",
-  riparato: "Riparato",
-  pronto_consegna: "Pronto Consegna",
-  consegnato: "Consegnato",
-  cancelled: "Annullato",
+  accettazione: "accettazione",
+  diagnosi: "diagnosi",
+  preventivo: "preventivo",
+  attesa_approvazione: "attesa_approvazione",
+  approvato: "approvato",
+  ordine_ricambi: "ordine_ricambi",
+  in_riparazione: "in_riparazione",
+  riparato: "riparato",
+  pronto_consegna: "pronto_consegna",
+  consegnato: "consegnato",
+  cancelled: "cancelled",
 };
 
 const STATUS_COLORS: Record<string, string> = {
@@ -103,23 +103,23 @@ const STATUS_COLORS: Record<string, string> = {
 };
 
 const B2B_STATUS_LABELS: Record<string, string> = {
-  pending: "In Attesa",
-  approved: "Approvato",
-  processing: "In Elaborazione",
-  shipped: "Spedito",
-  delivered: "Consegnato",
-  received: "Ricevuto",
-  cancelled: "Annullato",
+  pending: "pending",
+  approved: "approved",
+  processing: "processing",
+  shipped: "shipped",
+  delivered: "delivered",
+  received: "received",
+  cancelled: "cancelled",
 };
 
 const UTILITY_STATUS_LABELS: Record<string, string> = {
-  bozza: "Bozza",
-  inviata: "Inviata",
-  in_lavorazione: "In Lavorazione",
-  attesa_documenti: "Attesa Documenti",
-  completata: "Completata",
-  annullata: "Annullata",
-  rifiutata: "Rifiutata",
+  bozza: "bozza",
+  inviata: "inviata",
+  in_lavorazione: "in_lavorazione",
+  attesa_documenti: "attesa_documenti",
+  completata: "completata",
+  annullata: "annullata",
+  rifiutata: "rifiutata",
 };
 
 const UTILITY_STATUS_COLORS: Record<string, string> = {
@@ -248,7 +248,7 @@ export default function AdminRepairCenterDetail() {
                 Reset Password
               </Button>
               <Badge className={center.isActive ? "bg-emerald-400/20 text-emerald-100 border border-emerald-400/30" : "bg-slate-400/20 text-slate-100 border border-slate-400/30"} data-testid="badge-center-status">
-                {center.isActive ? "Attivo" : "Inattivo"}
+                {center.isActive ? t("common.active") : t("common.inactive")}
               </Badge>
             </div>
           </div>
@@ -264,7 +264,7 @@ export default function AdminRepairCenterDetail() {
             </div>
             <div>
               <p className="text-2xl font-bold" data-testid="stat-total-repairs">{stats.totalRepairs}</p>
-              <p className="text-xs text-blue-100">Lavorazioni</p>
+              <p className="text-xs text-blue-100">{t("repairCenter.repairs")}</p>
             </div>
           </div>
         </div>
@@ -276,7 +276,7 @@ export default function AdminRepairCenterDetail() {
             </div>
             <div>
               <p className="text-2xl font-bold" data-testid="stat-active-repairs">{stats.activeRepairs}</p>
-              <p className="text-xs text-emerald-100">Attive</p>
+              <p className="text-xs text-emerald-100">{t("repairCenter.activeRepairs")}</p>
             </div>
           </div>
         </div>
@@ -288,7 +288,7 @@ export default function AdminRepairCenterDetail() {
             </div>
             <div>
               <p className="text-2xl font-bold" data-testid="stat-utility-practices">{stats.totalUtilityPractices}</p>
-              <p className="text-xs text-cyan-100">Pratiche Utility</p>
+              <p className="text-xs text-cyan-100">{t("repairCenter.utilityPractices")}</p>
             </div>
           </div>
         </div>
@@ -312,7 +312,7 @@ export default function AdminRepairCenterDetail() {
             </div>
             <div>
               <p className="text-2xl font-bold" data-testid="stat-repairs-30days">{stats.repairs30Days}</p>
-              <p className="text-xs text-violet-100">Ultimi 30gg</p>
+              <p className="text-xs text-violet-100">{t("repairCenter.last30Days")}</p>
             </div>
           </div>
         </div>
@@ -355,7 +355,7 @@ export default function AdminRepairCenterDetail() {
               </div>
               {center.hourlyRateCents && (
                 <div className="p-4 bg-slate-50 dark:bg-slate-800/30 rounded-xl">
-                  <p className="text-xs text-slate-500 uppercase tracking-wide mb-1">Tariffa Oraria</p>
+                  <p className="text-xs text-slate-500 uppercase tracking-wide mb-1">{t("repairCenter.hourlyRate")}</p>
                   <p className="font-semibold text-slate-900 dark:text-white" data-testid="text-center-hourly-rate">
                     €{(center.hourlyRateCents / 100).toFixed(2)}
                   </p>
@@ -364,7 +364,7 @@ export default function AdminRepairCenterDetail() {
             </div>
             {reseller && (
               <div className="pt-4 border-t border-slate-200 dark:border-slate-700">
-                <p className="text-xs text-slate-500 uppercase tracking-wide mb-2">Rivenditore di appartenenza</p>
+                <p className="text-xs text-slate-500 uppercase tracking-wide mb-2">{t("repairCenter.parentReseller")}</p>
                 <div className="flex flex-wrap items-center gap-2">
                   <Building2 className="h-4 w-4 text-slate-400" />
                   <Link href={`/admin/resellers/${reseller.id}`}>
@@ -377,7 +377,7 @@ export default function AdminRepairCenterDetail() {
             )}
             {subReseller && (
               <div className="pt-4 border-t border-slate-200 dark:border-slate-700">
-                <p className="text-xs text-slate-500 uppercase tracking-wide mb-2">Sub-Reseller di riferimento</p>
+                <p className="text-xs text-slate-500 uppercase tracking-wide mb-2">{t("repairCenter.parentSubReseller")}</p>
                 <div className="flex flex-wrap items-center gap-2">
                   <Users className="h-4 w-4 text-slate-400" />
                   <Link href={`/admin/resellers/${subReseller.id}`}>
@@ -408,25 +408,25 @@ export default function AdminRepairCenterDetail() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {center.ragioneSociale && (
                   <div className="p-4 bg-slate-50 dark:bg-slate-800/30 rounded-xl">
-                    <p className="text-xs text-slate-500 uppercase tracking-wide mb-1">Ragione Sociale</p>
+                    <p className="text-xs text-slate-500 uppercase tracking-wide mb-1">{t("repairCenter.businessName")}</p>
                     <p className="font-semibold text-slate-900 dark:text-white" data-testid="text-ragione-sociale">{center.ragioneSociale}</p>
                   </div>
                 )}
                 {center.partitaIva && (
                   <div className="p-4 bg-slate-50 dark:bg-slate-800/30 rounded-xl">
-                    <p className="text-xs text-slate-500 uppercase tracking-wide mb-1">Partita IVA</p>
+                    <p className="text-xs text-slate-500 uppercase tracking-wide mb-1">{t("repairCenter.vatNumber")}</p>
                     <p className="font-semibold text-slate-900 dark:text-white" data-testid="text-partita-iva">{center.partitaIva}</p>
                   </div>
                 )}
                 {center.codiceFiscale && (
                   <div className="p-4 bg-slate-50 dark:bg-slate-800/30 rounded-xl">
-                    <p className="text-xs text-slate-500 uppercase tracking-wide mb-1">Codice Fiscale</p>
+                    <p className="text-xs text-slate-500 uppercase tracking-wide mb-1">{t("repairCenter.taxCode")}</p>
                     <p className="font-semibold text-slate-900 dark:text-white" data-testid="text-codice-fiscale">{center.codiceFiscale}</p>
                   </div>
                 )}
                 {center.codiceUnivoco && (
                   <div className="p-4 bg-slate-50 dark:bg-slate-800/30 rounded-xl">
-                    <p className="text-xs text-slate-500 uppercase tracking-wide mb-1">Codice SDI</p>
+                    <p className="text-xs text-slate-500 uppercase tracking-wide mb-1">{t("repairCenter.sdiCode")}</p>
                     <p className="font-semibold text-slate-900 dark:text-white" data-testid="text-codice-sdi">{center.codiceUnivoco}</p>
                   </div>
                 )}
@@ -466,7 +466,7 @@ export default function AdminRepairCenterDetail() {
         <CardContent>
           {!paymentConfig ? (
             <div className="p-4 bg-slate-50 dark:bg-slate-800/30 rounded-xl text-center">
-              <p className="text-slate-500">Non configurato</p>
+              <p className="text-slate-500">{t("repairCenter.notConfigured")}</p>
             </div>
           ) : (
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
@@ -482,7 +482,7 @@ export default function AdminRepairCenterDetail() {
                     <X className="h-4 w-4 text-slate-400" />
                   )}
                   <span className={paymentConfig.stripeEnabled && paymentConfig.stripeAccountId ? "text-emerald-600 font-medium text-sm" : "text-slate-400 text-sm"}>
-                    {paymentConfig.stripeEnabled && paymentConfig.stripeAccountId ? "Configurato" : "Non attivo"}
+                    {paymentConfig.stripeEnabled && paymentConfig.stripeAccountId ? t("repairCenter.configured") : t("repairCenter.notActive")}
                   </span>
                 </div>
               </div>
@@ -556,7 +556,7 @@ export default function AdminRepairCenterDetail() {
               {repairs.length === 0 ? (
                 <div className="py-12 text-center bg-slate-50 dark:bg-slate-800/30 rounded-xl">
                   <Wrench className="h-12 w-12 mx-auto mb-4 text-slate-300" />
-                  <p className="text-slate-500">Nessuna lavorazione trovata</p>
+                  <p className="text-slate-500">{t("repairCenter.noRepairsFound")}</p>
                 </div>
               ) : (
                 <div className="rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
@@ -566,7 +566,7 @@ export default function AdminRepairCenterDetail() {
                         <TableHead className="text-slate-600 dark:text-slate-400">{t("common.customer")}</TableHead>
                         <TableHead className="text-slate-600 dark:text-slate-400">{t("repairs.device")}</TableHead>
                         <TableHead className="text-slate-600 dark:text-slate-400">{t("common.status")}</TableHead>
-                        <TableHead className="text-slate-600 dark:text-slate-400">Data Creazione</TableHead>
+                        <TableHead className="text-slate-600 dark:text-slate-400">{t("repairCenter.creationDate")}</TableHead>
                         <TableHead className="text-slate-600 dark:text-slate-400">{t("common.actions")}</TableHead>
                       </TableRow>
                     </TableHeader>
@@ -581,7 +581,7 @@ export default function AdminRepairCenterDetail() {
                           </TableCell>
                           <TableCell>
                             <Badge className={STATUS_COLORS[repair.status] || ""}>
-                              {STATUS_LABELS[repair.status] || repair.status}
+                              {t(`repair.statuses.${repair.status}`) || repair.status}
                             </Badge>
                           </TableCell>
                           <TableCell>
@@ -613,7 +613,7 @@ export default function AdminRepairCenterDetail() {
               {utilityPractices.length === 0 ? (
                 <div className="py-12 text-center bg-slate-50 dark:bg-slate-800/30 rounded-xl">
                   <FileCheck className="h-12 w-12 mx-auto mb-4 text-slate-300" />
-                  <p className="text-slate-500">Nessuna pratica utility trovata</p>
+                  <p className="text-slate-500">{t("repairCenter.noUtilityPractices")}</p>
                 </div>
               ) : (
                 <div className="rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
@@ -621,8 +621,8 @@ export default function AdminRepairCenterDetail() {
                     <TableHeader>
                       <TableRow className="bg-slate-50 dark:bg-slate-800/50">
                         <TableHead className="text-slate-600 dark:text-slate-400">{t("common.customer")}</TableHead>
-                        <TableHead className="text-slate-600 dark:text-slate-400">Fornitore</TableHead>
-                        <TableHead className="text-slate-600 dark:text-slate-400">Servizio</TableHead>
+                        <TableHead className="text-slate-600 dark:text-slate-400">{t("repairCenter.supplierCol")}</TableHead>
+                        <TableHead className="text-slate-600 dark:text-slate-400">{t("repairCenter.serviceCol")}</TableHead>
                         <TableHead className="text-slate-600 dark:text-slate-400">{t("common.status")}</TableHead>
                         <TableHead className="text-slate-600 dark:text-slate-400">{t("common.amount")}</TableHead>
                         <TableHead className="text-slate-600 dark:text-slate-400">{t("common.date")}</TableHead>
@@ -643,7 +643,7 @@ export default function AdminRepairCenterDetail() {
                           </TableCell>
                           <TableCell>
                             <Badge className={UTILITY_STATUS_COLORS[practice.status] || ""}>
-                              {UTILITY_STATUS_LABELS[practice.status] || practice.status}
+                              {UTILITY_t(`repair.statuses.${practice.status}`) || practice.status}
                             </Badge>
                           </TableCell>
                           <TableCell>
@@ -681,14 +681,14 @@ export default function AdminRepairCenterDetail() {
               {b2bOrders.length === 0 ? (
                 <div className="py-12 text-center bg-slate-50 dark:bg-slate-800/30 rounded-xl">
                   <Package className="h-12 w-12 mx-auto mb-4 text-slate-300" />
-                  <p className="text-slate-500">Nessun ordine B2B trovato</p>
+                  <p className="text-slate-500">{t("repairCenter.noB2bOrders")}</p>
                 </div>
               ) : (
                 <div className="rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
                   <Table>
                     <TableHeader>
                       <TableRow className="bg-slate-50 dark:bg-slate-800/50">
-                        <TableHead className="text-slate-600 dark:text-slate-400">Numero Ordine</TableHead>
+                        <TableHead className="text-slate-600 dark:text-slate-400">{t("repairCenter.orderNumber")}</TableHead>
                         <TableHead className="text-slate-600 dark:text-slate-400">{t("common.status")}</TableHead>
                         <TableHead className="text-slate-600 dark:text-slate-400">{t("common.total")}</TableHead>
                         <TableHead className="text-slate-600 dark:text-slate-400">{t("common.date")}</TableHead>
@@ -700,7 +700,7 @@ export default function AdminRepairCenterDetail() {
                           <TableCell className="font-mono text-sm">{order.orderNumber}</TableCell>
                           <TableCell>
                             <Badge variant="outline">
-                              {B2B_STATUS_LABELS[order.status] || order.status}
+                              {B2B_t(`repair.statuses.${order.status}`) || order.status}
                             </Badge>
                           </TableCell>
                           <TableCell>
@@ -728,7 +728,7 @@ export default function AdminRepairCenterDetail() {
               {customers.length === 0 ? (
                 <div className="py-12 text-center bg-slate-50 dark:bg-slate-800/30 rounded-xl">
                   <Users className="h-12 w-12 mx-auto mb-4 text-slate-300" />
-                  <p className="text-slate-500">Nessun cliente associato</p>
+                  <p className="text-slate-500">{t("repairCenter.noCustomers")}</p>
                 </div>
               ) : (
                 <div className="rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
@@ -749,7 +749,7 @@ export default function AdminRepairCenterDetail() {
                           <TableCell>{customer.phone || "-"}</TableCell>
                           <TableCell>
                             <Badge variant={customer.isActive ? "default" : "secondary"}>
-                              {customer.isActive ? "Attivo" : "Inattivo"}
+                              {customer.isActive ? t("common.active") : t("common.inactive")}
                             </Badge>
                           </TableCell>
                         </TableRow>
@@ -771,7 +771,7 @@ export default function AdminRepairCenterDetail() {
               {staff.length === 0 ? (
                 <div className="py-12 text-center bg-slate-50 dark:bg-slate-800/30 rounded-xl">
                   <Users className="h-12 w-12 mx-auto mb-4 text-slate-300" />
-                  <p className="text-slate-500">Nessuno staff assegnato</p>
+                  <p className="text-slate-500">{t("repairCenter.noStaff")}</p>
                 </div>
               ) : (
                 <div className="rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
@@ -794,7 +794,7 @@ export default function AdminRepairCenterDetail() {
                           </TableCell>
                           <TableCell>
                             <Badge variant={member.isActive ? "default" : "secondary"}>
-                              {member.isActive ? "Attivo" : "Inattivo"}
+                              {member.isActive ? t("common.active") : t("common.inactive")}
                             </Badge>
                           </TableCell>
                         </TableRow>
@@ -849,7 +849,7 @@ export default function AdminRepairCenterDetail() {
                 className="rounded-xl bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600"
                 data-testid="button-confirm-reset-password"
               >
-                {resetPasswordMutation.isPending ? t("admin.common.updating") : "Conferma Reset"}
+                {resetPasswordMutation.isPending ? t("admin.common.updating") : t("repairCenter.confirmReset")}
               </Button>
             </div>
           </div>

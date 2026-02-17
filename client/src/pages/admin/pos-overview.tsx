@@ -107,10 +107,10 @@ export default function AdminPosOverview() {
 
   const getPaymentMethodLabel = (method: string) => {
     const labels: Record<string, string> = {
-      cash: "Contanti",
-      card: "Carta",
+      cash: "cash",
+      card: "card",
       pos_terminal: "POS",
-      mixed: "Misto",
+      mixed: "mixed",
     };
     return labels[method] || method;
   };

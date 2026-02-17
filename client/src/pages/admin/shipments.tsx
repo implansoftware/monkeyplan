@@ -22,14 +22,14 @@ import type { SalesOrderShipment, User as UserType } from "@shared/schema";
 import { useTranslation } from "react-i18next";
 
 const statusLabels: Record<string, string> = {
-  pending: "In preparazione",
-  picked_up: "Ritirato",
-  in_transit: "In transito",
-  out_for_delivery: "In consegna",
-  delivered: "Consegnato",
-  failed_attempt: "Tentativo fallito",
-  returned: "Reso",
-  lost: "Smarrito"
+  pending: "pending",
+  picked_up: "picked_up",
+  in_transit: "in_transit",
+  out_for_delivery: "out_for_delivery",
+  delivered: "delivered",
+  failed_attempt: "failed_attempt",
+  returned: "returned",
+  lost: "lost"
 };
 
 const statusColors: Record<string, string> = {
@@ -49,10 +49,10 @@ const carriers = [
   { value: "ups", label: "UPS" },
   { value: "gls", label: "GLS" },
   { value: "tnt", label: "TNT" },
-  { value: "poste", label: "Poste Italiane" },
-  { value: "fedex", label: "FedEx" },
+  { value: "poste", label: "poste" },
+  { value: "fedex", label: "fedex" },
   { value: "sda", label: "SDA" },
-  { value: "altro", label: "Altro" }
+  { value: "altro", label: "altro" }
 ];
 
 export default function AdminShipments() {
@@ -389,7 +389,7 @@ export default function AdminShipments() {
                   <div>
                     <span className="text-muted-foreground">Stato:</span>{" "}
                     <Badge variant={statusColors[selectedShipment.status] as any}>
-                      {statusLabels[selectedShipment.status]}
+                      {t(`shipments.statuses.${selectedShipment.status}`)}
                     </Badge>
                   </div>
                   <div>

@@ -53,14 +53,17 @@ interface TeamMember {
   fullName: string;
 }
 
-const statusLabels: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
-  pending: { label: "In Corso", variant: "secondary" },
-  confirmed: { label: "Confermata", variant: "default" },
-  closed: { label: "Conclusa", variant: "outline" },
-};
+function getStatusLabels(t: (key: string) => string): Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> {
+  return {
+    pending: { label: t("hr.inProgress"), variant: "secondary" },
+    confirmed: { label: t("hr.confirmed"), variant: "default" },
+    closed: { label: t("hr.closed"), variant: "outline" },
+  };
+}
 
 export default function HrSickLeave() {
   const { t } = useTranslation();
+  const statusLabels = getStatusLabels(t);
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
@@ -96,7 +99,7 @@ export default function HrSickLeave() {
     queryKey: ["/api/reseller/hr/sick-leaves", entityType, selectedEntityId],
     queryFn: async () => {
       const res = await fetch(`/api/reseller/hr/sick-leaves${queryParams}`);
-      if (!res.ok) throw new Error("Errore nel caricamento");
+      if (!res.ok) throw new Error(t("common.loadingError"));
       return res.json();
     },
   });
@@ -115,7 +118,7 @@ export default function HrSickLeave() {
     });
     if (!response.ok) {
       const error = await response.json();
-      throw new Error(error.error || "Errore durante l'upload del certificato");
+      throw new Error(error.error || t("hr.certificateUploadError"));
     }
     return response.json();
   };
@@ -133,14 +136,14 @@ export default function HrSickLeave() {
         setUploadingCertificate(true);
         try {
           await uploadCertificate(result.id, certificateFile);
-          toast({ title: "Malattia e certificato registrati", description: "La comunicazione di malattia e il certificato sono stati registrati." });
+          toast({ title: t("hr.sickLeaveAndCertificateRegistered"), description: t("hr.sickLeaveAndCertificateRegisteredDesc") });
         } catch (error: any) {
-          toast({ title: "Malattia registrata", description: "La malattia è stata registrata, ma c'è stato un errore nel caricamento del certificato.", variant: "destructive" });
+          toast({ title: t("hr.sickLeaveRegistered"), description: t("hr.sickLeaveCertificateError"), variant: "destructive" });
         } finally {
           setUploadingCertificate(false);
         }
       } else {
-        toast({ title: "Malattia registrata", description: "La comunicazione di malattia è stata registrata." });
+        toast({ title: t("hr.sickLeaveRegistered"), description: t("hr.sickLeaveRegisteredDesc") });
       }
       queryClient.invalidateQueries({ queryKey: ["/api/reseller/hr/sick-leaves"] });
       setDialogOpen(false);
@@ -160,7 +163,7 @@ export default function HrSickLeave() {
       queryClient.invalidateQueries({ queryKey: ["/api/reseller/hr/sick-leaves"] });
       setEditDialogOpen(false);
       setEditingSickLeave(null);
-      toast({ title: "Malattia modificata", description: "Le modifiche sono state salvate." });
+      toast({ title: t("hr.sickLeaveModified"), description: t("products.changesSaved") });
     },
     onError: (error: any) => {
       toast({ title: t("common.error"), description: error.message, variant: "destructive" });
@@ -173,8 +176,8 @@ export default function HrSickLeave() {
     },
     onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: ["/api/reseller/hr/sick-leaves"] });
-      const statusLabel = variables.status === 'confirmed' ? 'confermata' : 'chiusa';
-      toast({ title: t("tickets.statusUpdated"), description: `Malattia ${statusLabel} con successo.` });
+      const statusLabel = variables.status === 'confirmed' ? t('hr.confirmed') : t('hr.closed');
+      toast({ title: t("tickets.statusUpdated"), description: `${t("hr.sickLeave")} ${statusLabel}` });
     },
     onError: (error: any) => {
       toast({ title: t("common.error"), description: error.message, variant: "destructive" });
@@ -214,7 +217,7 @@ export default function HrSickLeave() {
               </div>
               <div>
                 <h1 className="text-2xl font-bold text-white" data-testid="text-sick-leave-title">{t("hr.sickLeaveManagement")}</h1>
-                <p className="text-white/80">Certificati e comunicazioni di malattia</p>
+                <p className="text-white/80">{t("hr.sickLeaveCertificatesDesc")}</p>
               </div>
             </div>
           </div>
@@ -222,13 +225,13 @@ export default function HrSickLeave() {
             <Link href="/reseller/hr">
               <Button variant="secondary" data-testid="button-back-to-hr">
                 <ArrowLeft className="h-4 w-4 mr-2" />
-                Torna a HR
+                {t("hr.backToHr")}
               </Button>
             </Link>
             {!readOnly && (
               <Button variant="secondary" onClick={() => setDialogOpen(true)} data-testid="button-new-sick-leave">
                 <Plus className="h-4 w-4 mr-2" />
-                Registra Malattia
+                {t("hr.registerSickLeave")}
               </Button>
             )}
           </div>
@@ -244,7 +247,7 @@ export default function HrSickLeave() {
         {readOnly && (
           <div className="mt-3 flex items-center gap-2 text-sm text-white/80">
             <Eye className="h-4 w-4" />
-            <span>Modalità sola lettura - Visualizzazione dati esterni</span>
+            <span>{t("hr.readOnlyMode")}</span>
           </div>
         )}
       </div>
@@ -256,8 +259,8 @@ export default function HrSickLeave() {
               <Thermometer className="h-5 w-5 text-red-600" />
             </div>
             <div>
-              <p className="font-medium">Malattie in corso</p>
-              <p className="text-sm text-muted-foreground">{activeSickLeaves} dipendenti attualmente in malattia</p>
+              <p className="font-medium">{t("hr.activeSickLeaves")}</p>
+              <p className="text-sm text-muted-foreground">{t("hr.employeesCurrentlySick", { count: activeSickLeaves })}</p>
             </div>
           </CardContent>
         </Card>
@@ -269,9 +272,9 @@ export default function HrSickLeave() {
             <div>
               <CardTitle className="flex flex-wrap items-center gap-2">
                 <FileText className="h-5 w-5 text-muted-foreground" />
-                Registro Malattie
+                {t("hr.sickLeaveRegistry")}
               </CardTitle>
-              <CardDescription>Storico delle comunicazioni di malattia</CardDescription>
+              <CardDescription>{t("hr.sickLeaveRegistryDesc")}</CardDescription>
             </div>
             <Select value={statusFilter} onValueChange={setStatusFilter}>
               <SelectTrigger className="w-40" data-testid="select-status-filter">
@@ -280,9 +283,9 @@ export default function HrSickLeave() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">{t("common.allMasc")}</SelectItem>
-                <SelectItem value="pending">In Corso</SelectItem>
-                <SelectItem value="confirmed">Confermate</SelectItem>
-                <SelectItem value="closed">Concluse</SelectItem>
+                <SelectItem value="pending">{t("hr.inProgress")}</SelectItem>
+                <SelectItem value="confirmed">{t("hr.confirmedPlural")}</SelectItem>
+                <SelectItem value="closed">{t("hr.closedPlural")}</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -304,9 +307,9 @@ export default function HrSickLeave() {
                   <TableHead>{t("hr.employee")}</TableHead>
                   <TableHead>{t("common.startDate")}</TableHead>
                   <TableHead>{t("common.endDate")}</TableHead>
-                  <TableHead>Giorni</TableHead>
-                  <TableHead>N. Certificato</TableHead>
-                  <TableHead>Protocollo INPS</TableHead>
+                  <TableHead>{t("hr.days")}</TableHead>
+                  <TableHead>{t("hr.certificateNumber")}</TableHead>
+                  <TableHead>{t("hr.inpsProtocol")}</TableHead>
                   <TableHead>{t("hr.certificate")}</TableHead>
                   <TableHead>{t("common.status")}</TableHead>
                   <TableHead>{t("common.actions")}</TableHead>
@@ -322,7 +325,7 @@ export default function HrSickLeave() {
                     <TableRow key={sl.id} data-testid={`row-sick-leave-${sl.id}`}>
                       <TableCell className="font-medium">{sl.user?.fullName || '-'}</TableCell>
                       <TableCell>{format(new Date(sl.startDate), "dd/MM/yyyy")}</TableCell>
-                      <TableCell>{sl.endDate ? format(new Date(sl.endDate), "dd/MM/yyyy") : 'In corso'}</TableCell>
+                      <TableCell>{sl.endDate ? format(new Date(sl.endDate), "dd/MM/yyyy") : t('hr.inProgress')}</TableCell>
                       <TableCell>{days}</TableCell>
                       <TableCell>{sl.certificateNumber || '-'}</TableCell>
                       <TableCell>{sl.inpsProtocol || '-'}</TableCell>
@@ -331,7 +334,7 @@ export default function HrSickLeave() {
                           <div className="flex flex-wrap items-center gap-2">
                             <Badge variant="default" className="bg-green-600">
                               <Check className="h-3 w-3 mr-1" />
-                              Caricato
+                              {t("hr.uploaded")}
                             </Badge>
                             <Button
                               size="icon"
@@ -343,7 +346,7 @@ export default function HrSickLeave() {
                                   });
                                   if (!response.ok) {
                                     const error = await response.json();
-                                    throw new Error(error.error || "Errore nel download");
+                                    throw new Error(error.error || t("hr.downloadError"));
                                   }
                                   const data = await response.json();
                                   window.open(data.downloadUrl, '_blank');
@@ -359,7 +362,7 @@ export default function HrSickLeave() {
                         ) : (
                           <Badge variant="outline" className="text-muted-foreground">
                             <X className="h-3 w-3 mr-1" />
-                            Mancante
+                            {t("hr.missing")}
                           </Badge>
                         )}
                       </TableCell>
@@ -388,7 +391,7 @@ export default function HrSickLeave() {
                                 className="h-8 w-8 text-green-600 hover:text-green-700 hover:bg-green-50"
                                 onClick={() => statusMutation.mutate({ id: sl.id, status: 'confirmed' })}
                                 disabled={statusMutation.isPending}
-                                title="Conferma malattia"
+                                title={t("hr.confirmSickLeave")}
                                 data-testid={`button-confirm-${sl.id}`}
                               >
                                 <CheckCircle className="h-4 w-4" />
@@ -399,7 +402,7 @@ export default function HrSickLeave() {
                                 className="h-8 w-8 text-orange-600 hover:text-orange-700 hover:bg-orange-50"
                                 onClick={() => statusMutation.mutate({ id: sl.id, status: 'closed' })}
                                 disabled={statusMutation.isPending}
-                                title="Chiudi malattia"
+                                title={t("hr.closeSickLeave")}
                                 data-testid={`button-close-${sl.id}`}
                               >
                                 <XCircle className="h-4 w-4" />
@@ -413,7 +416,7 @@ export default function HrSickLeave() {
                               className="h-8 w-8 text-orange-600 hover:text-orange-700 hover:bg-orange-50"
                               onClick={() => statusMutation.mutate({ id: sl.id, status: 'closed' })}
                               disabled={statusMutation.isPending}
-                              title="Chiudi malattia"
+                              title={t("hr.closeSickLeave")}
                               data-testid={`button-close-${sl.id}`}
                             >
                               <XCircle className="h-4 w-4" />
@@ -433,8 +436,8 @@ export default function HrSickLeave() {
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Registra Malattia</DialogTitle>
-            <DialogDescription>Inserisci i dati della comunicazione di malattia</DialogDescription>
+            <DialogTitle>{t("hr.registerSickLeave")}</DialogTitle>
+            <DialogDescription>{t("hr.insertSickLeaveData")}</DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div className="space-y-2">
@@ -444,7 +447,7 @@ export default function HrSickLeave() {
                 onValueChange={(value) => setNewSickLeave({ ...newSickLeave, userId: value })}
               >
                 <SelectTrigger data-testid="select-employee">
-                  <SelectValue placeholder="Seleziona dipendente" />
+                  <SelectValue placeholder={t("hr.selectEmployee")} />
                 </SelectTrigger>
                 <SelectContent>
                   {teamMembers.map((member) => (
@@ -466,7 +469,7 @@ export default function HrSickLeave() {
                 />
               </div>
               <div className="space-y-2">
-                <Label>Data Fine (se nota)</Label>
+                <Label>{t("hr.endDateIfKnown")}</Label>
                 <Input
                   type="date"
                   value={newSickLeave.endDate}
@@ -476,25 +479,25 @@ export default function HrSickLeave() {
               </div>
             </div>
             <div className="space-y-2">
-              <Label>Numero Certificato</Label>
+              <Label>{t("hr.certificateNumber")}</Label>
               <Input
                 value={newSickLeave.certificateNumber}
                 onChange={(e) => setNewSickLeave({ ...newSickLeave, certificateNumber: e.target.value })}
-                placeholder="es. ABC123456"
+                placeholder={t("hr.placeholderCertificateNumber")}
                 data-testid="input-certificate"
               />
             </div>
             <div className="space-y-2">
-              <Label>Protocollo INPS</Label>
+              <Label>{t("hr.inpsProtocol")}</Label>
               <Input
                 value={newSickLeave.inpsProtocol}
                 onChange={(e) => setNewSickLeave({ ...newSickLeave, inpsProtocol: e.target.value })}
-                placeholder="es. INPS-2024-123456"
+                placeholder={t("hr.placeholderInpsProtocol")}
                 data-testid="input-protocol"
               />
             </div>
             <div className="space-y-2">
-              <Label>Note (opzionale)</Label>
+              <Label>{t("common.notes")} ({t("utility.optional")})</Label>
               <Textarea
                 value={newSickLeave.notes}
                 onChange={(e) => setNewSickLeave({ ...newSickLeave, notes: e.target.value })}
@@ -503,7 +506,7 @@ export default function HrSickLeave() {
               />
             </div>
             <div className="space-y-2">
-              <Label>Certificato Medico (opzionale)</Label>
+              <Label>{t("hr.medicalCertificate")} ({t("utility.optional")})</Label>
               <div className="flex flex-wrap items-center gap-2">
                 <input
                   type="file"
@@ -521,7 +524,7 @@ export default function HrSickLeave() {
                   data-testid="button-select-file"
                 >
                   <Upload className="h-4 w-4 mr-2" />
-                  {certificateFile ? certificateFile.name : "Seleziona file"}
+                  {certificateFile ? certificateFile.name : t("hr.selectFile")}
                 </Button>
                 {certificateFile && (
                   <Button
@@ -538,7 +541,7 @@ export default function HrSickLeave() {
                   </Button>
                 )}
               </div>
-              <p className="text-xs text-muted-foreground">Formati supportati: PDF, JPEG, PNG, WebP (max 10MB)</p>
+              <p className="text-xs text-muted-foreground">{t("hr.supportedFormats")}</p>
             </div>
           </div>
           <DialogFooter>
@@ -551,15 +554,15 @@ export default function HrSickLeave() {
               {uploadingCertificate ? (
                 <>
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Caricamento certificato...
+                  {t("hr.uploadingCertificate")}
                 </>
               ) : createMutation.isPending ? (
                 <>
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Registrazione...
+                  {t("hr.registering")}
                 </>
               ) : (
-                "Registra"
+                t("hr.register")
               )}
             </Button>
           </DialogFooter>
@@ -570,7 +573,7 @@ export default function HrSickLeave() {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>{t("hr.editSickLeave")}</DialogTitle>
-            <DialogDescription>Modifica i dati della malattia di {editingSickLeave?.user?.fullName}</DialogDescription>
+            <DialogDescription>{t("hr.editSickLeaveDesc", { name: editingSickLeave?.user?.fullName })}</DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -583,7 +586,7 @@ export default function HrSickLeave() {
                 />
               </div>
               <div className="space-y-2">
-                <Label>Data Fine (se nota)</Label>
+                <Label>{t("hr.endDateIfKnown")}</Label>
                 <Input
                   type="date"
                   value={editForm.endDate}
@@ -592,23 +595,23 @@ export default function HrSickLeave() {
               </div>
             </div>
             <div className="space-y-2">
-              <Label>Numero Certificato</Label>
+              <Label>{t("hr.certificateNumber")}</Label>
               <Input
                 value={editForm.certificateNumber}
                 onChange={(e) => setEditForm({ ...editForm, certificateNumber: e.target.value })}
-                placeholder="es. ABC123456"
+                placeholder={t("hr.placeholderCertificateNumber")}
               />
             </div>
             <div className="space-y-2">
-              <Label>Protocollo INPS</Label>
+              <Label>{t("hr.inpsProtocol")}</Label>
               <Input
                 value={editForm.inpsProtocol}
                 onChange={(e) => setEditForm({ ...editForm, inpsProtocol: e.target.value })}
-                placeholder="es. INPS-2024-123456"
+                placeholder={t("hr.placeholderInpsProtocol")}
               />
             </div>
             <div className="space-y-2">
-              <Label>Note (opzionale)</Label>
+              <Label>{t("common.notes")} ({t("utility.optional")})</Label>
               <Textarea
                 value={editForm.notes}
                 onChange={(e) => setEditForm({ ...editForm, notes: e.target.value })}
@@ -622,9 +625,9 @@ export default function HrSickLeave() {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="pending">In Corso</SelectItem>
-                  <SelectItem value="confirmed">Confermata</SelectItem>
-                  <SelectItem value="closed">Conclusa</SelectItem>
+                  <SelectItem value="pending">{t("hr.inProgress")}</SelectItem>
+                  <SelectItem value="confirmed">{t("hr.confirmed")}</SelectItem>
+                  <SelectItem value="closed">{t("hr.closed")}</SelectItem>
                 </SelectContent>
               </Select>
             </div>

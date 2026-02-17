@@ -31,15 +31,15 @@ interface OrderDetailResponse {
 }
 
 const statusLabels: Record<string, string> = {
-  pending: "In attesa",
-  confirmed: "Confermato",
-  processing: "In elaborazione",
-  ready_to_ship: "Pronto per spedizione",
-  shipped: "Spedito",
-  delivered: "Consegnato",
-  completed: "Completato",
-  cancelled: "Annullato",
-  refunded: "Rimborsato"
+  pending: "pending",
+  confirmed: "confirmed",
+  processing: "processing",
+  ready_to_ship: "ready_to_ship",
+  shipped: "shipped",
+  delivered: "delivered",
+  completed: "completed",
+  cancelled: "cancelled",
+  refunded: "refunded"
 };
 
 const statusColors: Record<string, string> = {
@@ -420,7 +420,7 @@ export default function AdminSalesOrders() {
                     <Label className="text-muted-foreground">{t("common.status")}</Label>
                     <div className="mt-1">
                       <Badge variant={statusColors[selectedOrder.status] as any}>
-                        {statusLabels[selectedOrder.status]}
+                        {t(`salesOrders.statuses.${selectedOrder.status}`)}
                       </Badge>
                     </div>
                   </div>
@@ -535,7 +535,7 @@ export default function AdminSalesOrders() {
               <div>
                 <p className="text-sm text-muted-foreground mb-2">Ordine: {selectedOrder.orderNumber}</p>
                 <p className="text-sm">
-                  Stato attuale: <Badge variant="secondary">{statusLabels[selectedOrder.status]}</Badge>
+                  Stato attuale: <Badge variant="secondary">{t(`salesOrders.statuses.${selectedOrder.status}`)}</Badge>
                 </p>
               </div>
               

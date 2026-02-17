@@ -33,20 +33,20 @@ function formatPrice(cents: number): string {
 }
 
 const statusConfig: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline"; icon: any }> = {
-  draft: { label: "Bozza", variant: "outline", icon: Clock },
-  pending: { label: "In Attesa", variant: "secondary", icon: Clock },
-  approved: { label: "Approvato", variant: "default", icon: CheckCircle },
-  rejected: { label: "Rifiutato", variant: "destructive", icon: XCircle },
-  shipped: { label: "Spedito", variant: "default", icon: Truck },
-  received: { label: "Ricevuto", variant: "default", icon: PackageCheck },
-  cancelled: { label: "Annullato", variant: "destructive", icon: XCircle },
+  draft: { label: "draft", variant: "outline", icon: Clock },
+  pending: { label: "pending", variant: "secondary", icon: Clock },
+  approved: { label: "approved", variant: "default", icon: CheckCircle },
+  rejected: { label: "rejected", variant: "destructive", icon: XCircle },
+  shipped: { label: "shipped", variant: "default", icon: Truck },
+  received: { label: "received", variant: "default", icon: PackageCheck },
+  cancelled: { label: "cancelled", variant: "destructive", icon: XCircle },
 };
 
 const paymentMethodLabels: Record<string, string> = {
-  bank_transfer: "Bonifico Bancario",
-  stripe: "Stripe",
-  paypal: "PayPal",
-  credit: "Credito Reseller",
+  bank_transfer: "bankTransfer",
+  stripe: "stripe",
+  paypal: "paypal",
+  credit: "resellerCredit",
 };
 
 export default function AdminB2BOrders() {
@@ -69,9 +69,9 @@ export default function AdminB2BOrders() {
   });
 
   const getShippingMethodName = (methodId: string | null | undefined): string => {
-    if (!methodId) return "Non specificato";
+    if (!methodId) return t("common.notSpecified");
     const method = shippingMethods?.find(m => m.id === methodId);
-    return method?.name || "Metodo sconosciuto";
+    return method?.name || t("common.unknownMethod");
   };
 
   const approveMutation = useMutation({
@@ -178,12 +178,12 @@ export default function AdminB2BOrders() {
         <TableCell className="text-right">{order.items?.length || 0}</TableCell>
         <TableCell className="text-right font-medium">{formatPrice(order.total || 0)}</TableCell>
         <TableCell>
-          {paymentMethodLabels[order.paymentMethod || 'bank_transfer']}
+          {t(`common.paymentMethods.${paymentMethodLabels[order.paymentMethod || "bank_transfer"]}`)}
         </TableCell>
         <TableCell>
           <Badge variant={status.variant} className="flex flex-wrap items-center gap-1 w-fit">
             <StatusIcon className="h-3 w-3" />
-            {status.label}
+            {t(`common.statusLabels.${status.label}`)}
           </Badge>
         </TableCell>
         <TableCell>
@@ -209,9 +209,9 @@ export default function AdminB2BOrders() {
       <div>
         <h1 className="text-2xl font-bold flex items-center gap-2">
           <ShoppingBag className="h-6 w-6" />
-          Ordini B2B Reseller
+          {t("b2b.resellerOrders")}
         </h1>
-        <p className="text-muted-foreground">Gestisci gli ordini di acquisto dai reseller</p>
+        <p className="text-muted-foreground">{t("b2b.resellerOrdersDesc")}</p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -245,19 +245,19 @@ export default function AdminB2BOrders() {
         <TabsList>
           <TabsTrigger value="pending" data-testid="tab-pending">
             <Clock className="h-4 w-4 mr-1" />
-            In Attesa ({pendingOrders.length})
+            {t("common.pending")} ({pendingOrders.length})
           </TabsTrigger>
           <TabsTrigger value="approved" data-testid="tab-approved">
             <CheckCircle className="h-4 w-4 mr-1" />
-            Approvati ({approvedOrders.length})
+            {t("common.approvedPlural")} ({approvedOrders.length})
           </TabsTrigger>
           <TabsTrigger value="shipped" data-testid="tab-shipped">
             <Truck className="h-4 w-4 mr-1" />
-            Spediti ({shippedOrders.length})
+            {t("common.shippedPlural")} ({shippedOrders.length})
           </TabsTrigger>
           <TabsTrigger value="completed" data-testid="tab-completed">
             <PackageCheck className="h-4 w-4 mr-1" />
-            Completati ({completedOrders.length})
+            {t("common.completedPlural")} ({completedOrders.length})
           </TabsTrigger>
         </TabsList>
 
@@ -267,10 +267,10 @@ export default function AdminB2BOrders() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>N. Ordine</TableHead>
+                    <TableHead>{t("b2b.orderNumber")}</TableHead>
                     <TableHead>{t("admin.resellers.reseller")}</TableHead>
                     <TableHead>{t("common.date")}</TableHead>
-                    <TableHead className="text-right">Articoli</TableHead>
+                    <TableHead className="text-right">{t("b2b.items")}</TableHead>
                     <TableHead className="text-right">{t("common.total")}</TableHead>
                     <TableHead>{t("common.payment")}</TableHead>
                     <TableHead>{t("common.status")}</TableHead>
@@ -290,7 +290,7 @@ export default function AdminB2BOrders() {
                   ).length === 0 && (
                     <TableRow>
                       <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
-                        Nessun ordine in questa categoria
+                        {t("b2b.noOrdersInThisCategory")}
                       </TableCell>
                     </TableRow>
                   )}
@@ -317,7 +317,7 @@ export default function AdminB2BOrders() {
                     </DialogDescription>
                   </div>
                   <Badge variant={statusConfig[selectedOrder.status]?.variant || "secondary"}>
-                    {statusConfig[selectedOrder.status]?.label || selectedOrder.status}
+                    {t(`common.statusLabels.${statusConfig[selectedOrder.status]?.label}`) || selectedOrder.status}
                   </Badge>
                 </div>
               </DialogHeader>
@@ -327,8 +327,8 @@ export default function AdminB2BOrders() {
                   <TableHeader>
                     <TableRow>
                       <TableHead>{t("products.product")}</TableHead>
-                      <TableHead className="text-right">Prezzo B2B</TableHead>
-                      <TableHead className="text-right">Qtà</TableHead>
+                      <TableHead className="text-right">{t("b2b.b2bPrice")}</TableHead>
+                      <TableHead className="text-right">{t("b2b.qty")}</TableHead>
                       <TableHead className="text-right">{t("common.total")}</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -364,22 +364,22 @@ export default function AdminB2BOrders() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">Imponibile:</span>
+                    <span className="text-muted-foreground">{t("b2b.taxableAmountLabel")}</span>
                     <span>{formatPrice(selectedOrder.subtotal || 0)}</span>
                   </div>
                   <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">IVA (22%):</span>
+                    <span className="text-muted-foreground">{t("b2b.vatLabel")}</span>
                     <span>{formatPrice(Math.round((selectedOrder.subtotal || 0) * 0.22))}</span>
                   </div>
                   {(selectedOrder.shippingCost || 0) > 0 && (
                     <div className="flex justify-between text-sm">
-                      <span className="text-muted-foreground">Costo Spedizione:</span>
+                      <span className="text-muted-foreground">{t("b2b.shippingCostLabel")}</span>
                       <span>{formatPrice(selectedOrder.shippingCost || 0)}</span>
                     </div>
                   )}
                   {(selectedOrder.discountAmount || 0) > 0 && (
                     <div className="flex justify-between text-sm text-green-600">
-                      <span>Sconto:</span>
+                      <span>{t("b2b.discountLabel")}</span>
                       <span>-{formatPrice(selectedOrder.discountAmount || 0)}</span>
                     </div>
                   )}
@@ -391,15 +391,15 @@ export default function AdminB2BOrders() {
                 </div>
                 <div className="space-y-2 text-sm">
                   <div className="flex justify-between">
-                    <span className="text-muted-foreground">Pagamento:</span>
-                    <span>{paymentMethodLabels[selectedOrder.paymentMethod || 'bank_transfer']}</span>
+                    <span className="text-muted-foreground">{t("b2b.paymentLabel")}</span>
+                    <span>{t(`common.paymentMethods.${paymentMethodLabels[selectedOrder.paymentMethod || "bank_transfer"]}`)}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-muted-foreground">Spedizione:</span>
+                    <span className="text-muted-foreground">{t("b2b.shippingLabel")}</span>
                     <span data-testid="text-shipping-method">{getShippingMethodName(selectedOrder.shippingMethodId)}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-muted-foreground">Creato il:</span>
+                    <span className="text-muted-foreground">{t("b2b.createdOn")}</span>
                     <span>{selectedOrder.createdAt && format(new Date(selectedOrder.createdAt), "dd/MM/yyyy HH:mm")}</span>
                   </div>
                 </div>
@@ -407,14 +407,14 @@ export default function AdminB2BOrders() {
 
               {selectedOrder.resellerNotes && (
                 <div className="bg-muted p-3 rounded-lg">
-                  <p className="text-sm font-medium">Note del reseller:</p>
+                  <p className="text-sm font-medium">{t("b2b.resellerNotesLabel")}</p>
                   <p className="text-sm text-muted-foreground">{selectedOrder.resellerNotes}</p>
                 </div>
               )}
 
               {selectedOrder.trackingNumber && (
                 <div className="bg-green-50 dark:bg-green-950/30 p-3 rounded-lg">
-                  <p className="text-sm font-medium">Tracking:</p>
+                  <p className="text-sm font-medium">{t("b2b.trackingLabel")}</p>
                   <p className="text-sm">
                     {selectedOrder.trackingCarrier}: {selectedOrder.trackingNumber}
                   </p>
@@ -423,7 +423,7 @@ export default function AdminB2BOrders() {
 
               <DialogFooter className="gap-2">
                 <Button variant="outline" onClick={() => setDetailOpen(false)}>
-                  Chiudi
+                  {t("common.close")}
                 </Button>
                 
                 {selectedOrder.status === 'pending' && selectedOrder.paymentMethod === 'bank_transfer' && (
@@ -434,7 +434,7 @@ export default function AdminB2BOrders() {
                       data-testid="button-reject"
                     >
                       <ThumbsDown className="h-4 w-4 mr-2" />
-                      Rifiuta
+                      {t("common.reject")}
                     </Button>
                     <Button 
                       onClick={handleApprove}
@@ -442,7 +442,7 @@ export default function AdminB2BOrders() {
                       data-testid="button-approve"
                     >
                       <ThumbsUp className="h-4 w-4 mr-2" />
-                      {approveMutation.isPending ? "Approvazione..." : "Approva"}
+                      {approveMutation.isPending ? t("b2b.approving") : t("common.approve")}
                     </Button>
                   </>
                 )}
@@ -453,7 +453,7 @@ export default function AdminB2BOrders() {
                     data-testid="button-ship"
                   >
                     <Truck className="h-4 w-4 mr-2" />
-                    Segna come Spedito
+                    {t("b2b.markAsShippedAction")}
                   </Button>
                 )}
               </DialogFooter>
@@ -467,7 +467,7 @@ export default function AdminB2BOrders() {
           <DialogHeader>
             <DialogTitle>{t("b2b.rejectOrder")}</DialogTitle>
             <DialogDescription>
-              Inserisci il motivo del rifiuto. Il reseller verrà notificato.
+              {t("b2b.rejectOrderDesc")}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
@@ -485,7 +485,7 @@ export default function AdminB2BOrders() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setRejectDialogOpen(false)}>
-              Annulla
+              {t("common.cancel")}
             </Button>
             <Button 
               variant="destructive" 
@@ -493,7 +493,7 @@ export default function AdminB2BOrders() {
               disabled={rejectMutation.isPending}
               data-testid="button-confirm-reject"
             >
-              {rejectMutation.isPending ? "Rifiuto in corso..." : "Conferma Rifiuto"}
+              {rejectMutation.isPending ? t("b2b.rejectingInProgress") : t("b2b.confirmRejection")}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -504,7 +504,7 @@ export default function AdminB2BOrders() {
           <DialogHeader>
             <DialogTitle>{t("b2b.markAsShipped")}</DialogTitle>
             <DialogDescription>
-              Inserisci i dettagli della spedizione per notificare il reseller.
+              {t("b2b.shipmentDetailsDesc")}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
@@ -539,7 +539,7 @@ export default function AdminB2BOrders() {
               data-testid="button-confirm-ship"
             >
               <Send className="h-4 w-4 mr-2" />
-              {shipMutation.isPending ? "Registrazione..." : "Conferma Spedizione"}
+              {shipMutation.isPending ? t("b2b.registering") : t("b2b.confirmShipment")}
             </Button>
           </DialogFooter>
         </DialogContent>

@@ -49,12 +49,12 @@ interface UtilitySummary {
 }
 
 const categoryLabels: Record<string, string> = {
-  fisso: "Fisso",
-  mobile: "Mobile",
-  centralino: "Centralino",
-  luce: "Luce",
-  gas: "Gas",
-  altro: "Altro",
+  fisso: "fisso",
+  mobile: "mobile",
+  centralino: "centralino",
+  luce: "luce",
+  gas: "gas",
+  altro: "altro",
 };
 
 const categoryIcons: Record<string, typeof Phone> = {
@@ -67,12 +67,12 @@ const categoryIcons: Record<string, typeof Phone> = {
 };
 
 const statusLabels: Record<string, string> = {
-  bozza: "Bozza",
-  inviata: "Inviata",
-  in_lavorazione: "In Lavorazione",
-  completata: "Completata",
-  annullata: "Annullata",
-  rifiutata: "Rifiutata",
+  bozza: "bozza",
+  inviata: "inviata",
+  in_lavorazione: "in_lavorazione",
+  completata: "completata",
+  annullata: "annullata",
+  rifiutata: "rifiutata",
 };
 
 const COLORS = ["#0088FE", "#00C49F", "#FFBB28", "#FF8042", "#8884d8", "#82ca9d"];
@@ -107,8 +107,8 @@ export default function AdminUtilityReports() {
   }));
 
   const commissionsData = [
-    { name: "Pagate", value: summary?.commissions?.paid || 0, fill: "#22c55e" },
-    { name: "In Attesa", value: summary?.commissions?.pending || 0, fill: "#eab308" },
+    { name: t("utility.reports.paid"), value: summary?.commissions?.paid || 0, fill: "#22c55e" },
+    { name: t("utility.reports.pending"), value: summary?.commissions?.pending || 0, fill: "#eab308" },
   ];
 
   if (isLoading) {
@@ -286,7 +286,7 @@ export default function AdminUtilityReports() {
                     <XAxis type="number" />
                     <YAxis dataKey="name" type="category" width={100} />
                     <Tooltip />
-                    <Bar dataKey="count" fill="#8884d8" name="Pratiche" />
+                    <Bar dataKey="count" fill="#8884d8" name={t("utility.reports.practices")} />
                   </BarChart>
                 </ResponsiveContainer>
               </div>

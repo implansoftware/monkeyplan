@@ -111,26 +111,26 @@ interface SupplierOrderWithDetails extends SupplierOrder {
 }
 
 // Owner type configuration
-const OWNER_TYPE_CONFIG: Record<SupplierOrderOwnerType, { label: string; icon: typeof Shield }> = {
-  admin: { label: "Admin", icon: Shield },
-  reseller: { label: "Reseller", icon: Users },
-  sub_reseller: { label: "Sub-Reseller", icon: Store },
-  repair_center: { label: "Centro Riparazione", icon: Wrench },
+const OWNER_TYPE_CONFIG_STATIC: Record<SupplierOrderOwnerType, { labelKey: string; icon: typeof Shield }> = {
+  admin: { labelKey: "suppliers.ownerAdmin", icon: Shield },
+  reseller: { labelKey: "suppliers.ownerReseller", icon: Users },
+  sub_reseller: { labelKey: "suppliers.ownerSubReseller", icon: Store },
+  repair_center: { labelKey: "suppliers.ownerRepairCenter", icon: Wrench },
 };
 
 interface OrderItemWithProduct extends SupplierOrderItem {
   product?: Product;
 }
 
-const STATUS_CONFIG: Record<string, { label: string; color: string; icon: typeof Clock }> = {
-  draft: { label: "Bozza", color: "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300", icon: FileText },
-  sent: { label: "Inviato", color: "bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300", icon: Send },
-  confirmed: { label: "Confermato", color: "bg-indigo-100 text-indigo-700 dark:bg-indigo-900 dark:text-indigo-300", icon: CheckCircle },
-  partially_shipped: { label: "Parziale", color: "bg-yellow-100 text-yellow-700 dark:bg-yellow-900 dark:text-yellow-300", icon: Truck },
-  shipped: { label: "Spedito", color: "bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300", icon: Truck },
-  partially_received: { label: "Ricevuto Parziale", color: "bg-orange-100 text-orange-700 dark:bg-orange-900 dark:text-orange-300", icon: PackageX },
-  received: { label: "Ricevuto", color: "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300", icon: PackageCheck },
-  cancelled: { label: "Annullato", color: "bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300", icon: XCircle },
+const STATUS_CONFIG_STATIC: Record<string, { labelKey: string; color: string; icon: typeof Clock }> = {
+  draft: { labelKey: "suppliers.statusDraft", color: "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300", icon: FileText },
+  sent: { labelKey: "suppliers.statusSent", color: "bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300", icon: Send },
+  confirmed: { labelKey: "suppliers.statusConfirmed", color: "bg-indigo-100 text-indigo-700 dark:bg-indigo-900 dark:text-indigo-300", icon: CheckCircle },
+  partially_shipped: { labelKey: "suppliers.statusPartiallyShipped", color: "bg-yellow-100 text-yellow-700 dark:bg-yellow-900 dark:text-yellow-300", icon: Truck },
+  shipped: { labelKey: "suppliers.statusShipped", color: "bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300", icon: Truck },
+  partially_received: { labelKey: "suppliers.statusPartiallyReceived", color: "bg-orange-100 text-orange-700 dark:bg-orange-900 dark:text-orange-300", icon: PackageX },
+  received: { labelKey: "suppliers.statusReceived", color: "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300", icon: PackageCheck },
+  cancelled: { labelKey: "suppliers.statusCancelled", color: "bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300", icon: XCircle },
 };
 
 function formatCurrency(cents: number): string {
@@ -145,6 +145,24 @@ function formatDate(date: Date | string | null | undefined): string {
 export default function SupplierOrdersPage() {
   const { t } = useTranslation();
   const { toast } = useToast();
+  
+  const OWNER_TYPE_CONFIG: Record<SupplierOrderOwnerType, { label: string; icon: typeof Shield }> = {
+    admin: { label: t("suppliers.ownerAdmin"), icon: Shield },
+    reseller: { label: t("suppliers.ownerReseller"), icon: Users },
+    sub_reseller: { label: t("suppliers.ownerSubReseller"), icon: Store },
+    repair_center: { label: t("suppliers.ownerRepairCenter"), icon: Wrench },
+  };
+  
+  const STATUS_CONFIG: Record<string, { label: string; color: string; icon: typeof Clock }> = {
+    draft: { label: t("suppliers.statusDraft"), color: STATUS_CONFIG_STATIC.draft.color, icon: FileText },
+    sent: { label: t("suppliers.statusSent"), color: STATUS_CONFIG_STATIC.sent.color, icon: Send },
+    confirmed: { label: t("suppliers.statusConfirmed"), color: STATUS_CONFIG_STATIC.confirmed.color, icon: CheckCircle },
+    partially_shipped: { label: t("suppliers.statusPartiallyShipped"), color: STATUS_CONFIG_STATIC.partially_shipped.color, icon: Truck },
+    shipped: { label: t("suppliers.statusShipped"), color: STATUS_CONFIG_STATIC.shipped.color, icon: Truck },
+    partially_received: { label: t("suppliers.statusPartiallyReceived"), color: STATUS_CONFIG_STATIC.partially_received.color, icon: PackageX },
+    received: { label: t("suppliers.statusReceived"), color: STATUS_CONFIG_STATIC.received.color, icon: PackageCheck },
+    cancelled: { label: t("suppliers.statusCancelled"), color: STATUS_CONFIG_STATIC.cancelled.color, icon: XCircle },
+  };
   const [searchTerm, setSearchTerm] = useState("");
   const [filterStatus, setFilterStatus] = useState<string>("all");
   const [filterSupplier, setFilterSupplier] = useState<string>("all");
@@ -311,12 +329,12 @@ export default function SupplierOrdersPage() {
     const notes = formData.get("notes") as string;
     
     if (!supplierId) {
-      toast({ title: t("common.error"), description: "Seleziona un fornitore", variant: "destructive" });
+      toast({ title: t("common.error"), description: t("suppliers.selectSupplierError"), variant: "destructive" });
       return;
     }
     
     if (newOrderOwnerType !== "admin" && !newOrderOwnerId) {
-      toast({ title: t("common.error"), description: "Seleziona il destinatario dell'ordine", variant: "destructive" });
+      toast({ title: t("common.error"), description: t("suppliers.selectRecipientError"), variant: "destructive" });
       return;
     }
     
@@ -356,7 +374,7 @@ export default function SupplierOrdersPage() {
     const unitPrice = Math.round(parseFloat(itemFormData.unitPrice || "0") * 100);
     
     if (!itemFormData.description) {
-      toast({ title: t("common.error"), description: "La descrizione è obbligatoria", variant: "destructive" });
+      toast({ title: t("common.error"), description: t("suppliers.descriptionRequired"), variant: "destructive" });
       return;
     }
     
@@ -438,13 +456,13 @@ export default function SupplierOrdersPage() {
     
     switch (ownerType) {
       case "admin":
-        return "Piattaforma";
+        return t("suppliers.platform");
       case "reseller":
-        return resellers.find(r => r.id === ownerId)?.name || "Reseller";
+        return resellers.find(r => r.id === ownerId)?.name || t("suppliers.ownerReseller");
       case "sub_reseller":
-        return subResellers.find(sr => sr.id === ownerId)?.name || "Sub-Reseller";
+        return subResellers.find(sr => sr.id === ownerId)?.name || t("suppliers.ownerSubReseller");
       case "repair_center":
-        return repairCenters.find(c => c.id === ownerId)?.name || "Centro";
+        return repairCenters.find(c => c.id === ownerId)?.name || t("utility.center");
       default:
         return "-";
     }
@@ -486,13 +504,13 @@ export default function SupplierOrdersPage() {
               <Truck className="h-5 w-5" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold tracking-tight" data-testid="text-page-title">Ordini Fornitori</h1>
-              <p className="text-sm text-muted-foreground">Gestisci gli ordini di acquisto verso i fornitori</p>
+              <h1 className="text-2xl font-bold tracking-tight" data-testid="text-page-title">{t("suppliers.supplierOrders")}</h1>
+              <p className="text-sm text-muted-foreground">{t("suppliers.supplierOrdersDesc")}</p>
             </div>
           </div>
           <Button onClick={() => setCreateDialogOpen(true)} data-testid="button-create-order" className="shadow-lg shadow-primary/25">
             <Plus className="h-4 w-4 mr-2" />
-            Nuovo Ordine
+            {t("suppliers.newOrder")}
           </Button>
         </div>
       </div>
@@ -560,7 +578,7 @@ export default function SupplierOrdersPage() {
         <CardHeader>
           <CardTitle className="flex flex-wrap items-center gap-2">
             <ShoppingCart className="h-5 w-5" />
-            Lista Ordini
+            {t("suppliers.ordersList")}
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -573,9 +591,9 @@ export default function SupplierOrdersPage() {
           ) : filteredOrders.length === 0 ? (
             <div className="text-center py-12">
               <Package className="h-12 w-12 mx-auto mb-4 text-muted-foreground opacity-50" />
-              <p className="text-muted-foreground">Nessun ordine trovato</p>
+              <p className="text-muted-foreground">{t("suppliers.noOrdersFound")}</p>
               <p className="text-xs text-muted-foreground mt-1">
-                Crea un nuovo ordine per iniziare
+                {t("suppliers.createOrderToStart")}
               </p>
             </div>
           ) : (
@@ -685,7 +703,7 @@ export default function SupplierOrdersPage() {
                               <DropdownMenuItem 
                                 className="text-destructive"
                                 onClick={() => {
-                                  if (confirm("Eliminare questo ordine?")) {
+                                  if (confirm(t("suppliers.confirmDeleteOrder"))) {
                                     deleteOrderMutation.mutate(order.id);
                                   }
                                 }}
@@ -760,13 +778,13 @@ export default function SupplierOrdersPage() {
                   <SelectItem value="reseller">
                     <div className="flex flex-wrap items-center gap-2">
                       <Users className="h-4 w-4" />
-                      <span>Reseller</span>
+                      <span>{t("suppliers.ownerReseller")}</span>
                     </div>
                   </SelectItem>
                   <SelectItem value="sub_reseller">
                     <div className="flex flex-wrap items-center gap-2">
                       <Store className="h-4 w-4" />
-                      <span>Sub-Reseller</span>
+                      <span>{t("suppliers.ownerSubReseller")}</span>
                     </div>
                   </SelectItem>
                   <SelectItem value="repair_center">
@@ -787,10 +805,10 @@ export default function SupplierOrdersPage() {
               >
                 <SelectTrigger data-testid="select-new-owner">
                   <SelectValue placeholder={
-                    newOrderOwnerType === "admin" ? "Ordine per Admin" :
-                    newOrderOwnerType === "reseller" ? "Seleziona reseller..." :
-                    newOrderOwnerType === "sub_reseller" ? "Seleziona sub-reseller..." :
-                    "Seleziona centro..."
+                    newOrderOwnerType === "admin" ? t("suppliers.orderForAdmin") :
+                    newOrderOwnerType === "reseller" ? t("suppliers.selectReseller") :
+                    newOrderOwnerType === "sub_reseller" ? t("suppliers.selectSubReseller") :
+                    t("suppliers.selectCenter")
                   } />
                 </SelectTrigger>
                 <SelectContent>
@@ -860,14 +878,14 @@ export default function SupplierOrdersPage() {
                 variant="outline" 
                 onClick={() => setCreateDialogOpen(false)}
               >
-                Annulla
+                {t("common.cancel")}
               </Button>
               <Button 
                 type="submit"
                 disabled={createOrderMutation.isPending}
                 data-testid="button-submit-order"
               >
-                {createOrderMutation.isPending ? t("admin.repairCenters.creating") : "Crea Ordine"}
+                {createOrderMutation.isPending ? t("admin.repairCenters.creating") : t("suppliers.createOrder")}
               </Button>
             </div>
           </form>
@@ -893,7 +911,7 @@ export default function SupplierOrdersPage() {
                   <TabsList>
                     <TabsTrigger value="items">{t("suppliers.items")}</TabsTrigger>
                     <TabsTrigger value="info">{t("common.information")}</TabsTrigger>
-                    <TabsTrigger value="tracking">Tracking</TabsTrigger>
+                    <TabsTrigger value="tracking">{t("suppliers.tracking")}</TabsTrigger>
                   </TabsList>
                   
                   <TabsContent value="items" className="space-y-4">
@@ -972,7 +990,7 @@ export default function SupplierOrdersPage() {
                                       variant="ghost"
                                       size="icon"
                                       onClick={() => {
-                                        if (confirm("Rimuovere questo articolo?")) {
+                                        if (confirm(t("suppliers.removeItem"))) {
                                           deleteItemMutation.mutate(item.id);
                                         }
                                       }}
@@ -1005,7 +1023,7 @@ export default function SupplierOrdersPage() {
                         )}
                         {(selectedOrder.taxAmount ?? 0) > 0 && (
                           <div className="flex justify-between text-sm">
-                            <span>IVA:</span>
+                            <span>{t("common.vat")}:</span>
                             <span>{formatCurrency(selectedOrder.taxAmount ?? 0)}</span>
                           </div>
                         )}
@@ -1037,7 +1055,7 @@ export default function SupplierOrdersPage() {
                     <div className="space-y-2">
                       <Label>{t("common.notes")}</Label>
                       <div className="p-3 bg-muted rounded-md min-h-[80px]">
-                        {selectedOrder.notes || <span className="text-muted-foreground">Nessuna nota</span>}
+                        {selectedOrder.notes || <span className="text-muted-foreground">{t("suppliers.noNotes")}</span>}
                       </div>
                     </div>
                     
@@ -1133,12 +1151,12 @@ export default function SupplierOrdersPage() {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>
-              {editingItem ? "Modifica Articolo" : "Aggiungi Articolo"}
+              {editingItem ? t("suppliers.editItem") : t("suppliers.addItem")}
             </DialogTitle>
           </DialogHeader>
           <form onSubmit={handleAddItem} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="productId">Prodotto (opzionale)</Label>
+              <Label htmlFor="productId">{t("utility.product")} ({t("common.optional")})</Label>
               <Select value={itemFormData.productId} onValueChange={handleProductSelect}>
                 <SelectTrigger data-testid="select-item-product">
                   {itemFormData.productId && itemFormData.productId !== "__none__" ? (
@@ -1192,12 +1210,12 @@ export default function SupplierOrdersPage() {
                 </SelectContent>
               </Select>
               <p className="text-xs text-muted-foreground">
-                Collega a un prodotto esistente per aggiornare automaticamente le giacenze
+                {t("suppliers.linkProductHint")}
               </p>
             </div>
             
             <div className="space-y-2">
-              <Label htmlFor="description">Descrizione *</Label>
+              <Label htmlFor="description">{t("common.description")} *</Label>
               <Input
                 id="description"
                 required
@@ -1220,7 +1238,7 @@ export default function SupplierOrdersPage() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="quantity">Quantità *</Label>
+                <Label htmlFor="quantity">{t("common.quantity")} *</Label>
                 <Input
                   id="quantity"
                   type="number"
@@ -1234,7 +1252,7 @@ export default function SupplierOrdersPage() {
             </div>
             
             <div className="space-y-2">
-              <Label htmlFor="unitPrice">Prezzo Unitario (€) *</Label>
+              <Label htmlFor="unitPrice">{t("suppliers.unitPriceEur")} *</Label>
               <Input
                 id="unitPrice"
                 type="number"
@@ -1274,7 +1292,7 @@ export default function SupplierOrdersPage() {
               >
                 {(createItemMutation.isPending || updateItemMutation.isPending)
                   ? t("settings.savingRate")
-                  : editingItem ? "Aggiorna" : "Aggiungi"}
+                  : editingItem ? t("common.update") : t("common.add")}
               </Button>
             </div>
           </form>

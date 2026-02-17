@@ -50,9 +50,9 @@ type ProductDetails = {
 function getConditionLabels(t: (key: string) => string): Record<string, string> {
   return {
     nuovo: t("common.new"),
-    ricondizionato: "Ricondizionato",
-    usato: "Usato",
-    difettoso: "Difettoso",
+    ricondizionato: t("products.refurbished"),
+    usato: t("common.used"),
+    difettoso: t("products.defective"),
   };
 }
 
@@ -64,12 +64,14 @@ function getNetworkLabels(t: (key: string) => string): Record<string, string> {
   };
 }
 
-const OWNER_TYPE_LABELS: Record<string, string> = {
-  admin: "Admin",
-  reseller: "Rivenditore",
-  sub_reseller: "Sub-Rivenditore",
-  repair_center: "Centro Riparazioni",
-};
+function getOwnerTypeLabels(t: (key: string) => string): Record<string, string> {
+  return {
+    admin: t("common.admin"),
+    reseller: t("common.reseller"),
+    sub_reseller: t("customer.subReseller"),
+    repair_center: t("customer.repairCenter"),
+  };
+}
 
 interface ProductDetailDialogProps {
   open: boolean;
@@ -84,11 +86,12 @@ export function ProductDetailDialog({ open, onOpenChange, productId, hideStock =
   const { t } = useTranslation();
   const CONDITION_LABELS = getConditionLabels(t);
   const NETWORK_LABELS = getNetworkLabels(t);
+  const OWNER_TYPE_LABELS = getOwnerTypeLabels(t);
   const { data, isLoading } = useQuery<ProductDetails>({
     queryKey: ["/api/products", productId, "details"],
     queryFn: async () => {
       const res = await fetch(`/api/products/${productId}`);
-      if (!res.ok) throw new Error("Failed to fetch product details");
+      if (!res.ok) throw new Error(t("products.loadError"));
       return res.json();
     },
     enabled: !!productId && open,
@@ -102,7 +105,7 @@ export function ProductDetailDialog({ open, onOpenChange, productId, hideStock =
         <DialogHeader>
           <DialogTitle className="flex flex-wrap items-center gap-2">
             <Info className="h-5 w-5" />
-            Dettagli Prodotto
+            {t("products.productDetails")}
           </DialogTitle>
         </DialogHeader>
 
@@ -136,7 +139,7 @@ export function ProductDetailDialog({ open, onOpenChange, productId, hideStock =
                 )}
                 <div className="flex-1">
                   <h2 className="text-xl font-semibold">{data.product.name}</h2>
-                  <p className="text-sm text-muted-foreground">SKU: {data.product.sku}</p>
+                  <p className="text-sm text-muted-foreground">{t("products.sku")}: {data.product.sku}</p>
                   <div className="flex flex-wrap gap-2 mt-2">
                     <Badge variant="outline">
                       {data.product.productType === 'dispositivo' && data.product.category
@@ -149,7 +152,7 @@ export function ProductDetailDialog({ open, onOpenChange, productId, hideStock =
                       </Badge>
                     )}
                     <Badge variant={data.product.isActive ? "default" : "destructive"}>
-                      {data.product.isActive ? t("common.active") : "Inattivo"}
+                      {data.product.isActive ? t("common.active") : t("common.inactive")}
                     </Badge>
                   </div>
                   <div className="flex flex-wrap items-center gap-4 mt-3">
@@ -159,7 +162,7 @@ export function ProductDetailDialog({ open, onOpenChange, productId, hideStock =
                     </div>
                     <div className="flex flex-wrap items-center gap-1">
                       <Warehouse className="h-4 w-4 text-muted-foreground" />
-                      <span className="font-medium">{totalStock} unità</span>
+                      <span className="font-medium">{totalStock} {t("common.units")}</span>
                     </div>
                   </div>
                 </div>
@@ -181,13 +184,13 @@ export function ProductDetailDialog({ open, onOpenChange, productId, hideStock =
                     <div>
                       <h3 className="font-medium flex items-center gap-2 mb-3">
                         <Smartphone className="h-4 w-4" />
-                        Specifiche {DEVICE_CATEGORY_LABELS[data.product.category || ''] || t('products.device')}
+                        {t("products.specs")} {DEVICE_CATEGORY_LABELS[data.product.category || ''] || t('products.device')}
                       </h3>
                       {specs ? (
                         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 text-sm">
                           {data.product.brand && (
                             <div>
-                              <span className="text-muted-foreground">Marca:</span>
+                              <span className="text-muted-foreground">{t("common.brand")}:</span>
                               <span className="ml-2 font-medium">{data.product.brand}</span>
                             </div>
                           )}
@@ -199,7 +202,7 @@ export function ProductDetailDialog({ open, onOpenChange, productId, hideStock =
                           )}
                           {data.product.color && (
                             <div>
-                              <span className="text-muted-foreground">Colore:</span>
+                              <span className="text-muted-foreground">{t("common.color")}:</span>
                               <span className="ml-2 font-medium">{data.product.color}</span>
                             </div>
                           )}
@@ -211,13 +214,13 @@ export function ProductDetailDialog({ open, onOpenChange, productId, hideStock =
                           )}
                           {specsConfig.grade && specs.grade && (
                             <div>
-                              <span className="text-muted-foreground">Grado:</span>
+                              <span className="text-muted-foreground">{t("products.grade")}:</span>
                               <Badge className="ml-2" variant="outline">{specs.grade}</Badge>
                             </div>
                           )}
                           {specsConfig.networkLock && specs.networkLock && (
                             <div>
-                              <span className="text-muted-foreground">Rete:</span>
+                              <span className="text-muted-foreground">{t("products.network")}:</span>
                               <span className="ml-2 font-medium">
                                 {NETWORK_LABELS[specs.networkLock || ''] || specs.networkLock}
                               </span>
@@ -231,7 +234,7 @@ export function ProductDetailDialog({ open, onOpenChange, productId, hideStock =
                           )}
                           {specsConfig.serialNumber && specs.serialNumber && (
                             <div className="col-span-2">
-                              <span className="text-muted-foreground">Numero Seriale:</span>
+                              <span className="text-muted-foreground">{t("products.serialNumber")}:</span>
                               <span className="ml-2 font-mono text-xs">{specs.serialNumber}</span>
                             </div>
                           )}
@@ -242,13 +245,13 @@ export function ProductDetailDialog({ open, onOpenChange, productId, hideStock =
                               ) : (
                                 <XCircle className="h-4 w-4 text-muted-foreground" />
                               )}
-                              <span>Scatola originale</span>
+                              <span>{t("products.originalBox")}</span>
                             </div>
                           )}
                         </div>
                       ) : (
                         <div className="text-sm text-muted-foreground italic">
-                          Nessuna specifica tecnica disponibile. Modifica il dispositivo per aggiungere le specifiche.
+                          {t("products.noSpecsAvailable")}
                         </div>
                       )}
                     </div>
@@ -262,24 +265,24 @@ export function ProductDetailDialog({ open, onOpenChange, productId, hideStock =
                   <div>
                     <h3 className="font-medium flex items-center gap-2 mb-3">
                       <Headphones className="h-4 w-4" />
-                      Specifiche Accessorio
+                      {t("products.accessorySpecs")}
                     </h3>
                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 text-sm">
                       {data.product.brand && (
                         <div>
-                          <span className="text-muted-foreground">Marca:</span>
+                          <span className="text-muted-foreground">{t("common.brand")}:</span>
                           <span className="ml-2 font-medium">{data.product.brand}</span>
                         </div>
                       )}
                       {(data.specs as AccessorySpecs).accessoryType && (
                         <div>
-                          <span className="text-muted-foreground">Tipo:</span>
+                          <span className="text-muted-foreground">{t("common.type")}:</span>
                           <span className="ml-2 font-medium">{(data.specs as AccessorySpecs).accessoryType}</span>
                         </div>
                       )}
                       {(data.specs as AccessorySpecs).color || data.product.color ? (
                         <div>
-                          <span className="text-muted-foreground">Colore:</span>
+                          <span className="text-muted-foreground">{t("common.color")}:</span>
                           <span className="ml-2 font-medium">{(data.specs as AccessorySpecs).color || data.product.color}</span>
                         </div>
                       ) : null}
@@ -294,31 +297,31 @@ export function ProductDetailDialog({ open, onOpenChange, productId, hideStock =
                   <div>
                     <h3 className="font-medium flex items-center gap-2 mb-3">
                       <Wrench className="h-4 w-4" />
-                      Dettagli Ricambio
+                      {t("products.sparePartDetails")}
                     </h3>
                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 text-sm">
                       {data.product.category && (
                         <div>
-                          <span className="text-muted-foreground">Categoria:</span>
+                          <span className="text-muted-foreground">{t("common.category")}:</span>
                           <span className="ml-2 font-medium">{data.product.category}</span>
                         </div>
                       )}
                       {data.product.brand && (
                         <div>
-                          <span className="text-muted-foreground">Marca:</span>
+                          <span className="text-muted-foreground">{t("common.brand")}:</span>
                           <span className="ml-2 font-medium">{data.product.brand}</span>
                         </div>
                       )}
                       {data.product.color && (
                         <div>
-                          <span className="text-muted-foreground">Colore:</span>
+                          <span className="text-muted-foreground">{t("common.color")}:</span>
                           <span className="ml-2 font-medium">{data.product.color}</span>
                         </div>
                       )}
                       {data.product.warrantyMonths && (
                         <div>
-                          <span className="text-muted-foreground">Garanzia:</span>
-                          <span className="ml-2 font-medium">{data.product.warrantyMonths} mesi</span>
+                          <span className="text-muted-foreground">{t("products.warranty")}:</span>
+                          <span className="ml-2 font-medium">{t("products.monthCount", { count: data.product.warrantyMonths })}</span>
                         </div>
                       )}
                     </div>
@@ -332,7 +335,7 @@ export function ProductDetailDialog({ open, onOpenChange, productId, hideStock =
                   <div>
                     <h3 className="font-medium flex items-center gap-2 mb-3">
                       <Warehouse className="h-4 w-4" />
-                      Stock Magazzino
+                      {t("warehouse.warehouseStock")}
                     </h3>
                     {data.stock && data.stock.length > 0 ? (
                       <Table>
@@ -341,7 +344,7 @@ export function ProductDetailDialog({ open, onOpenChange, productId, hideStock =
                             <TableHead>{t("warehouse.warehouse")}</TableHead>
                             <TableHead>{t("common.type")}</TableHead>
                             <TableHead className="text-right">{t("common.quantity")}</TableHead>
-                            <TableHead className="text-right">Min. Stock</TableHead>
+                            <TableHead className="text-right">{t("warehouse.minStock")}</TableHead>
                             <TableHead>{t("warehouse.position")}</TableHead>
                           </TableRow>
                         </TableHeader>
@@ -375,7 +378,7 @@ export function ProductDetailDialog({ open, onOpenChange, productId, hideStock =
                         </TableBody>
                       </Table>
                     ) : (
-                      <p className="text-sm text-muted-foreground">Nessuno stock registrato per questo prodotto.</p>
+                      <p className="text-sm text-muted-foreground">{t("products.noStockRegistered")}</p>
                     )}
                   </div>
                 </>
@@ -411,14 +414,14 @@ export function ProductDetailDialog({ open, onOpenChange, productId, hideStock =
                   <div>
                     <h3 className="font-medium flex items-center gap-2 mb-3">
                       <Users className="h-4 w-4" />
-                      Assegnazioni Rivenditori
+                      {t("products.resellerAssignments")}
                     </h3>
                     <Table>
                       <TableHeader>
                         <TableRow>
                           <TableHead>{t("staff.reseller")}</TableHead>
                           <TableHead className="text-right">{t("products.salePrice")}</TableHead>
-                          <TableHead className="text-right">Prezzo Costo</TableHead>
+                          <TableHead className="text-right">{t("products.costPrice")}</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
@@ -438,7 +441,7 @@ export function ProductDetailDialog({ open, onOpenChange, productId, hideStock =
               )}
             </div>
           ) : (
-            <p className="text-muted-foreground">Prodotto non trovato.</p>
+            <p className="text-muted-foreground">{t("products.productNotFound")}</p>
           )}
         </ScrollArea>
       </DialogContent>

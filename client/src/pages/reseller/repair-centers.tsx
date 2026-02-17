@@ -188,10 +188,10 @@ export default function ResellerRepairCenters() {
             credentials: "include",
           });
           if (!logoRes.ok) {
-            toast({ title: t("common.warning"), description: "Centro creato ma upload logo fallito. Puoi caricarlo dal dettaglio.", variant: "default" });
+            toast({ title: t("common.warning"), description: t("admin.repairCenters.centerCreatedLogoFailed"), variant: "default" });
           }
         } catch {
-          toast({ title: t("common.warning"), description: "Centro creato ma upload logo fallito.", variant: "default" });
+          toast({ title: t("common.warning"), description: t("admin.repairCenters.centerCreatedLogoFailedShort"), variant: "default" });
         }
       }
       queryClient.invalidateQueries({ queryKey: ["/api/reseller/repair-centers"] });
@@ -300,7 +300,7 @@ export default function ResellerRepairCenters() {
       queryClient.invalidateQueries({ queryKey: [`/api/reseller/repair-centers/${selectedCenterId}/detail`] });
       toast({ title: t("profile.logoUploaded"), description: t("profile.logoUploadedDesc") });
     } catch (error: any) {
-      toast({ title: t("common.error"), description: error.message || "Impossibile caricare il logo", variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message || t("admin.repairCenters.logoUploadError"), variant: "destructive" });
     } finally {
       setIsUploadingLogo(false);
       if (logoInputRef.current) logoInputRef.current.value = "";
@@ -321,7 +321,7 @@ export default function ResellerRepairCenters() {
       queryClient.invalidateQueries({ queryKey: [`/api/reseller/repair-centers/${selectedCenterId}/detail`] });
       toast({ title: t("profile.logoRemoved"), description: t("profile.logoRemovedDesc") });
     } catch (error: any) {
-      toast({ title: t("common.error"), description: error.message || "Impossibile eliminare il logo", variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message || t("admin.repairCenters.logoDeleteError"), variant: "destructive" });
     }
   };
 
@@ -357,14 +357,14 @@ export default function ResellerRepairCenters() {
   const getStatusBadge = (status: string) => {
     const statusConfig: Record<string, { label: string; variant: "default" | "secondary" | "outline" | "destructive" }> = {
       pending: { label: t("common.pending"), variant: "secondary" },
-      ingressato: { label: "Ingressato", variant: "outline" },
-      in_diagnosi: { label: "In Diagnosi", variant: "outline" },
-      preventivo_emesso: { label: "Preventivo Emesso", variant: "outline" },
-      preventivo_accettato: { label: "Preventivo Accettato", variant: "default" },
-      attesa_ricambi: { label: "Attesa Ricambi", variant: "secondary" },
-      in_riparazione: { label: "In Riparazione", variant: "default" },
-      in_test: { label: "In Test", variant: "default" },
-      pronto_ritiro: { label: "Pronto Ritiro", variant: "default" },
+      ingressato: { label: t("repairs.status.received"), variant: "outline" },
+      in_diagnosi: { label: t("repairs.status.inDiagnosis"), variant: "outline" },
+      preventivo_emesso: { label: t("repairs.preventivoEmesso"), variant: "outline" },
+      preventivo_accettato: { label: t("repairs.preventivoAccettato"), variant: "default" },
+      attesa_ricambi: { label: t("repairs.status.waitingParts"), variant: "secondary" },
+      in_riparazione: { label: t("repairs.status.inRepair"), variant: "default" },
+      in_test: { label: t("repairs.status.inTest"), variant: "default" },
+      pronto_ritiro: { label: t("repairs.readyForPickup"), variant: "default" },
       consegnato: { label: t("repairs.status.delivered"), variant: "default" },
       cancelled: { label: t("repairs.status.cancelled"), variant: "destructive" },
     };
@@ -447,7 +447,7 @@ export default function ResellerRepairCenters() {
 
   const handleFinalSubmit = () => {
     if (!addressData.address.trim() || !addressData.city.trim()) {
-      toast({ title: t("common.error"), description: "Indirizzo e Città sono campi obbligatori", variant: "destructive" });
+      toast({ title: t("common.error"), description: t("admin.repairCenters.addressCityRequired"), variant: "destructive" });
       return;
     }
     
@@ -521,7 +521,7 @@ export default function ResellerRepairCenters() {
             <div>
               <h1 className="text-2xl font-bold tracking-tight text-white">{t("admin.repairCenters.title")}</h1>
               <p className="text-sm text-white/80">
-                Gestisci i tuoi centri di riparazione
+                {t("admin.repairCenters.manageDesc")}
               </p>
             </div>
           </div>
@@ -540,7 +540,7 @@ export default function ResellerRepairCenters() {
             </ActionGuard>
           <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto" data-testid="dialog-center-form">
             <DialogHeader>
-              <DialogTitle>{editingCenter ? t("admin.repairCenters.editCenter") : "Nuovo Centro di Riparazione"}</DialogTitle>
+              <DialogTitle>{editingCenter ? t("admin.repairCenters.editCenter") : t("admin.repairCenters.newCenter")}</DialogTitle>
             </DialogHeader>
             
             {/* MODIFICA: Form con Accordion (tutte le sezioni visibili) */}
@@ -554,7 +554,7 @@ export default function ResellerRepairCenters() {
                     </AccordionTrigger>
                     <AccordionContent className="space-y-4 pt-2">
                       <div className="space-y-2">
-                        <Label htmlFor="edit-name">Nome Centro *</Label>
+                        <Label htmlFor="edit-name">{t("admin.repairCenters.centerName")} *</Label>
                         <Input 
                           id="edit-name"
                           value={formData.name}
@@ -563,7 +563,7 @@ export default function ResellerRepairCenters() {
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="edit-email">Email *</Label>
+                        <Label htmlFor="edit-email">{t("common.email")} *</Label>
                         <Input 
                           id="edit-email"
                           type="email"
@@ -573,7 +573,7 @@ export default function ResellerRepairCenters() {
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="edit-phone">Telefono *</Label>
+                        <Label htmlFor="edit-phone">{t("common.phone")} *</Label>
                         <Input 
                           id="edit-phone"
                           type="tel"
@@ -592,7 +592,7 @@ export default function ResellerRepairCenters() {
                     </AccordionTrigger>
                     <AccordionContent className="space-y-4 pt-2">
                       <div className="space-y-2">
-                        <Label>Indirizzo *</Label>
+                        <Label>{t("common.address")} *</Label>
                         <AddressAutocomplete
                           value={addressData.address}
                           onChange={(val) => setAddressData(prev => ({ ...prev, address: val }))}
@@ -610,7 +610,7 @@ export default function ResellerRepairCenters() {
                       </div>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <div className="space-y-2">
-                          <Label htmlFor="edit-city">Città *</Label>
+                          <Label htmlFor="edit-city">{t("common.city")} *</Label>
                           <Input 
                             id="edit-city"
                             value={addressData.city}
@@ -629,13 +629,13 @@ export default function ResellerRepairCenters() {
                             />
                           </div>
                           <div className="space-y-2">
-                            <Label htmlFor="edit-provincia">Prov.</Label>
+                            <Label htmlFor="edit-provincia">{t("common.province")}</Label>
                             <Input 
                               id="edit-provincia"
                               maxLength={2}
                               value={addressData.provincia}
                               onChange={(e) => setAddressData(prev => ({ ...prev, provincia: e.target.value }))}
-                              placeholder="XX"
+                              placeholder={t("common.provincePlaceholder")}
                               data-testid="edit-input-provincia" 
                             />
                           </div>
@@ -650,7 +650,7 @@ export default function ResellerRepairCenters() {
                         <FileText className="h-4 w-4" />{t("profile.fiscalInfo")}</div>
                     </AccordionTrigger>
                     <AccordionContent className="space-y-4 pt-2">
-                      <p className="text-sm text-muted-foreground">Dati fiscali e fatturazione (opzionali).</p>
+                      <p className="text-sm text-muted-foreground">{t("admin.repairCenters.fiscalDataOptional")}</p>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <div className="space-y-2">
                           <Label htmlFor="edit-ragioneSociale">{t("auth.companyName")}</Label>
@@ -686,7 +686,7 @@ export default function ResellerRepairCenters() {
                             maxLength={7}
                             value={formData.codiceUnivoco}
                             onChange={(e) => setFormData(prev => ({ ...prev, codiceUnivoco: e.target.value }))}
-                            placeholder="7 caratteri"
+                            placeholder={t("common.sdiPlaceholder")}
                             data-testid="edit-input-codiceUnivoco" 
                           />
                         </div>
@@ -697,7 +697,7 @@ export default function ResellerRepairCenters() {
                             type="email"
                             value={formData.pec}
                             onChange={(e) => setFormData(prev => ({ ...prev, pec: e.target.value }))}
-                            placeholder="email@pec.it"
+                            placeholder={t("common.pecPlaceholder")}
                             data-testid="edit-input-pec" 
                           />
                         </div>
@@ -707,7 +707,7 @@ export default function ResellerRepairCenters() {
                             id="edit-iban"
                             value={formData.iban}
                             onChange={(e) => setFormData(prev => ({ ...prev, iban: e.target.value }))}
-                            placeholder="IT..."
+                            placeholder={t("common.ibanPlaceholder")}
                             data-testid="edit-input-iban" 
                           />
                         </div>
@@ -742,16 +742,16 @@ export default function ResellerRepairCenters() {
                       
                       {subResellers.length > 0 && (
                         <div className="space-y-2">
-                          <Label htmlFor="edit-subReseller">Sub-Reseller (opzionale)</Label>
+                          <Label htmlFor="edit-subReseller">{t("admin.repairCenters.subResellerOptional")}</Label>
                           <Select
                             value={selectedSubResellerId || "none"}
                             onValueChange={(value) => setSelectedSubResellerId(value === "none" ? null : value)}
                           >
                             <SelectTrigger data-testid="edit-select-sub-reseller">
-                              <SelectValue placeholder="Seleziona sub-reseller..." />
+                              <SelectValue placeholder={t("admin.repairCenters.selectSubReseller")} />
                             </SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="none">Nessuno (gestito direttamente)</SelectItem>
+                              <SelectItem value="none">{t("admin.repairCenters.noneDirectManaged")}</SelectItem>
                               {subResellers.map((sr) => (
                                 <SelectItem key={sr.id} value={sr.id}>
                                   {sr.fullName}
@@ -760,7 +760,7 @@ export default function ResellerRepairCenters() {
                             </SelectContent>
                           </Select>
                           <p className="text-xs text-muted-foreground">
-                            Assegna questo centro a un sub-reseller per permettergli di gestirlo.
+                            {t("admin.repairCenters.assignSubResellerDesc")}
                           </p>
                         </div>
                       )}
@@ -776,9 +776,9 @@ export default function ResellerRepairCenters() {
                       <div className="flex flex-wrap items-center gap-4">
                         <Avatar className="h-16 w-16 rounded-lg border-2 border-dashed border-muted-foreground/25">
                           {editingCenter?.logoUrl ? (
-                            <AvatarImage src={editingCenter.logoUrl} alt="Logo centro" className="object-contain" />
+                            <AvatarImage src={editingCenter.logoUrl} alt={t("admin.repairCenters.centerLogoAlt")} className="object-contain" />
                           ) : pendingLogoPreview ? (
-                            <AvatarImage src={pendingLogoPreview} alt="Anteprima logo" className="object-contain" />
+                            <AvatarImage src={pendingLogoPreview} alt={t("admin.repairCenters.logoPreviewAlt")} className="object-contain" />
                           ) : null}
                           <AvatarFallback className="rounded-lg bg-muted text-muted-foreground">
                             <Building className="h-6 w-6" />
@@ -824,7 +824,7 @@ export default function ResellerRepairCenters() {
                             )}
                           </div>
                           <p className="text-xs text-muted-foreground">
-                            Formati supportati: JPEG, PNG, WebP. Max 2MB
+                            {t("admin.repairCenters.supportedFormats")}
                           </p>
                         </div>
                         <input
@@ -837,11 +837,11 @@ export default function ResellerRepairCenters() {
 
                             const allowedTypes = ["image/jpeg", "image/png", "image/webp"];
                             if (!allowedTypes.includes(file.type)) {
-                              toast({ title: t("profile.unsupportedFormat"), description: "Usa JPEG, PNG o WebP", variant: "destructive" });
+                              toast({ title: t("profile.unsupportedFormat"), description: t("admin.repairCenters.useJpegPngWebp"), variant: "destructive" });
                               return;
                             }
                             if (file.size > 2 * 1024 * 1024) {
-                              toast({ title: t("profile.fileTooLarge"), description: "Max 2MB", variant: "destructive" });
+                              toast({ title: t("profile.fileTooLarge"), description: t("admin.repairCenters.max2mb"), variant: "destructive" });
                               return;
                             }
 
@@ -922,9 +922,9 @@ export default function ResellerRepairCenters() {
                 <div className="min-h-[280px]">
                   {wizardStep === 1 && (
                     <div className="space-y-4">
-                      <p className="text-sm text-muted-foreground">Informazioni di base del centro di riparazione.</p>
+                      <p className="text-sm text-muted-foreground">{t("admin.repairCenters.basicInfoDesc")}</p>
                       <div className="space-y-2">
-                        <Label htmlFor="name">Nome Centro *</Label>
+                        <Label htmlFor="name">{t("admin.repairCenters.centerName")} *</Label>
                         <Input 
                           id="name"
                           value={formData.name}
@@ -933,7 +933,7 @@ export default function ResellerRepairCenters() {
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="email">Email *</Label>
+                        <Label htmlFor="email">{t("common.email")} *</Label>
                         <Input 
                           id="email"
                           type="email"
@@ -943,7 +943,7 @@ export default function ResellerRepairCenters() {
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="phone">Telefono *</Label>
+                        <Label htmlFor="phone">{t("common.phone")} *</Label>
                         <Input 
                           id="phone"
                           type="tel"
@@ -953,7 +953,7 @@ export default function ResellerRepairCenters() {
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="password">Password Account * (min 6 caratteri)</Label>
+                        <Label htmlFor="password">{t("admin.repairCenters.passwordAccountLabel")}</Label>
                         <Input 
                           id="password"
                           type="password"
@@ -963,7 +963,7 @@ export default function ResellerRepairCenters() {
                           data-testid="input-password" 
                         />
                         <p className="text-xs text-muted-foreground">
-                          Questa password verrà usata dal centro per accedere al sistema
+                          {t("admin.repairCenters.passwordUsedByCenter")}
                         </p>
                       </div>
                     </div>
@@ -971,9 +971,9 @@ export default function ResellerRepairCenters() {
 
                   {wizardStep === 2 && (
                     <div className="space-y-4">
-                      <p className="text-sm text-muted-foreground">Indirizzo e ubicazione del centro.</p>
+                      <p className="text-sm text-muted-foreground">{t("admin.repairCenters.addressLocationDesc")}</p>
                       <div className="space-y-2">
-                        <Label>Indirizzo *</Label>
+                        <Label>{t("common.address")} *</Label>
                         <AddressAutocomplete
                           value={addressData.address}
                           onChange={(val) => setAddressData(prev => ({ ...prev, address: val }))}
@@ -991,7 +991,7 @@ export default function ResellerRepairCenters() {
                       </div>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <div className="space-y-2">
-                          <Label htmlFor="city">Città *</Label>
+                          <Label htmlFor="city">{t("common.city")} *</Label>
                           <Input 
                             id="city"
                             value={addressData.city}
@@ -1010,13 +1010,13 @@ export default function ResellerRepairCenters() {
                             />
                           </div>
                           <div className="space-y-2">
-                            <Label htmlFor="provincia">Prov.</Label>
+                            <Label htmlFor="provincia">{t("common.provinceShort")}</Label>
                             <Input 
                               id="provincia"
                               maxLength={2}
                               value={addressData.provincia}
                               onChange={(e) => setAddressData(prev => ({ ...prev, provincia: e.target.value }))}
-                              placeholder="XX"
+                              placeholder={t("common.provincePlaceholder")}
                               data-testid="input-provincia" 
                             />
                           </div>
@@ -1028,7 +1028,7 @@ export default function ResellerRepairCenters() {
                   {wizardStep === 3 && (
                     <div className="space-y-4">
                       <div className="flex items-center justify-between">
-                        <p className="text-sm text-muted-foreground">Dati fiscali e fatturazione (opzionali).</p>
+                        <p className="text-sm text-muted-foreground">{t("admin.repairCenters.fiscalDataOptionalDesc")}</p>
                         <div className="flex flex-wrap items-center gap-2">
                           <Checkbox 
                             id="useMyFiscalData" 
@@ -1037,7 +1037,7 @@ export default function ResellerRepairCenters() {
                             data-testid="checkbox-use-my-fiscal-data"
                           />
                           <Label htmlFor="useMyFiscalData" className="text-xs cursor-pointer">
-                            Usa i miei dati
+                            {t("admin.repairCenters.useMyData")}
                           </Label>
                         </div>
                       </div>
@@ -1076,7 +1076,7 @@ export default function ResellerRepairCenters() {
                             maxLength={7}
                             value={formData.codiceUnivoco}
                             onChange={(e) => setFormData(prev => ({ ...prev, codiceUnivoco: e.target.value }))}
-                            placeholder="7 caratteri"
+                            placeholder={t("common.sdiPlaceholder")}
                             data-testid="input-codiceUnivoco" 
                           />
                         </div>
@@ -1087,7 +1087,7 @@ export default function ResellerRepairCenters() {
                             type="email"
                             value={formData.pec}
                             onChange={(e) => setFormData(prev => ({ ...prev, pec: e.target.value }))}
-                            placeholder="email@pec.it"
+                            placeholder={t("common.pecPlaceholder")}
                             data-testid="input-pec" 
                           />
                         </div>
@@ -1097,7 +1097,7 @@ export default function ResellerRepairCenters() {
                             id="iban"
                             value={formData.iban}
                             onChange={(e) => setFormData(prev => ({ ...prev, iban: e.target.value }))}
-                            placeholder="IT..."
+                            placeholder={t("common.ibanPlaceholder")}
                             data-testid="input-iban" 
                           />
                         </div>
@@ -1107,7 +1107,7 @@ export default function ResellerRepairCenters() {
 
                   {wizardStep === 4 && (
                     <div className="space-y-4">
-                      <p className="text-sm text-muted-foreground">Configurazione tariffe e servizi.</p>
+                      <p className="text-sm text-muted-foreground">{t("admin.repairCenters.configRatesDesc")}</p>
                       
                       <div className="space-y-2">
                         <h4 className="font-medium text-sm text-muted-foreground flex items-center gap-2">
@@ -1129,8 +1129,7 @@ export default function ResellerRepairCenters() {
                             />
                           </div>
                           <p className="text-xs text-muted-foreground">
-                            Tariffa oraria per il calcolo del costo manodopera. 
-                            Se non specificata, verrà usata la tariffa di sistema.
+                            {t("admin.repairCenters.hourlyRateDesc")}
                           </p>
                         </div>
                       </div>
@@ -1139,19 +1138,19 @@ export default function ResellerRepairCenters() {
                         <div className="space-y-2">
                           <h4 className="font-medium text-sm text-muted-foreground flex items-center gap-2">
                             <UserCheck className="h-4 w-4" />
-                            Assegnazione Sub-Reseller
+                            {t("admin.repairCenters.subResellerAssignment")}
                           </h4>
                           <div className="space-y-2">
-                            <Label htmlFor="subReseller">Sub-Reseller (opzionale)</Label>
+                            <Label htmlFor="subReseller">{t("admin.repairCenters.subResellerOptional")}</Label>
                             <Select
                               value={selectedSubResellerId || "none"}
                               onValueChange={(value) => setSelectedSubResellerId(value === "none" ? null : value)}
                             >
                               <SelectTrigger data-testid="select-sub-reseller">
-                                <SelectValue placeholder="Seleziona sub-reseller..." />
+                                <SelectValue placeholder={t("team.selectSubReseller")} />
                               </SelectTrigger>
                               <SelectContent>
-                                <SelectItem value="none">Nessuno (gestito direttamente)</SelectItem>
+                                <SelectItem value="none">{t("repairs.noneDirectlyManaged")}</SelectItem>
                                 {subResellers.map((sr) => (
                                   <SelectItem key={sr.id} value={sr.id}>
                                     {sr.fullName}
@@ -1160,7 +1159,7 @@ export default function ResellerRepairCenters() {
                               </SelectContent>
                             </Select>
                             <p className="text-xs text-muted-foreground">
-                              Assegna questo centro a un sub-reseller per permettergli di gestirlo.
+                              {t("admin.repairCenters.assignSubResellerWizDesc")}
                             </p>
                           </div>
                         </div>
@@ -1169,12 +1168,12 @@ export default function ResellerRepairCenters() {
                       <div className="space-y-2">
                         <h4 className="font-medium text-sm text-muted-foreground flex items-center gap-2">
                           <ImageIcon className="h-4 w-4" />
-                          Logo Aziendale (opzionale)
+                          {t("admin.repairCenters.companyLogoOptional")}
                         </h4>
                         <div className="flex flex-wrap items-center gap-4">
                           <Avatar className="h-16 w-16 rounded-lg border-2 border-dashed border-muted-foreground/25">
                             {pendingLogoPreview ? (
-                              <AvatarImage src={pendingLogoPreview} alt="Anteprima logo" className="object-contain" />
+                              <AvatarImage src={pendingLogoPreview} alt={t("admin.repairCenters.logoPreviewAlt")} className="object-contain" />
                             ) : null}
                             <AvatarFallback className="rounded-lg bg-muted text-muted-foreground">
                               <Building className="h-6 w-6" />
@@ -1190,7 +1189,7 @@ export default function ResellerRepairCenters() {
                                 data-testid="button-select-logo"
                               >
                                 <Upload className="h-4 w-4 mr-2" />
-                                {pendingLogoFile ? "Cambia" : t("common.select")}
+                                {pendingLogoFile ? t("common.change") : t("common.select")}
                               </Button>
                               {pendingLogoFile && (
                                 <Button
@@ -1205,7 +1204,7 @@ export default function ResellerRepairCenters() {
                               )}
                             </div>
                             <p className="text-xs text-muted-foreground">
-                              JPEG, PNG, WebP. Max 2MB
+                              {t("admin.repairCenters.supportedFormatsShort")}
                             </p>
                           </div>
                           <input
@@ -1221,7 +1220,7 @@ export default function ResellerRepairCenters() {
                       
                       <div className="bg-muted/50 p-3 rounded-md mt-4">
                         <p className="text-xs text-muted-foreground">
-                          Il centro di riparazione sarà automaticamente associato al tuo account rivenditore e potrai gestirne le attività.
+                          {t("admin.repairCenters.centerAutoAssociated")}
                         </p>
                       </div>
                     </div>
@@ -1273,7 +1272,7 @@ export default function ResellerRepairCenters() {
                 <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1">{t("admin.repairCenters.totalCenters")}</p>
                 <p className="text-3xl font-bold tabular-nums">{centers.length}</p>
                 <p className="text-xs text-muted-foreground mt-1">
-                  {hasSubResellers && `+${totalNetworkCenters} nella rete`}
+                  {hasSubResellers && `+${totalNetworkCenters} ${t("admin.repairCenters.inNetwork")}`}
                 </p>
               </div>
               <div className="h-12 w-12 rounded-xl bg-primary text-primary-foreground flex items-center justify-center shadow-lg shadow-primary/20">
@@ -1291,7 +1290,7 @@ export default function ResellerRepairCenters() {
                 <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1">{t("admin.repairCenters.activeCenters")}</p>
                 <p className="text-3xl font-bold tabular-nums text-emerald-600 dark:text-emerald-400">{activeCenters}</p>
                 <p className="text-xs text-muted-foreground mt-1">
-                  {centers.length > 0 ? Math.round((activeCenters / centers.length) * 100) : 0}% operativi
+                  {centers.length > 0 ? Math.round((activeCenters / centers.length) * 100) : 0}% {t("admin.repairCenters.operational")}
                 </p>
               </div>
               <div className="h-12 w-12 rounded-xl bg-emerald-500 text-white flex items-center justify-center shadow-lg shadow-emerald-500/20">
@@ -1306,10 +1305,10 @@ export default function ResellerRepairCenters() {
           <CardContent className="relative pt-5 pb-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1">Rete Sub-Reseller</p>
+                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1">{t("admin.repairCenters.subResellerNetwork")}</p>
                 <p className="text-3xl font-bold tabular-nums text-blue-600 dark:text-blue-400">{totalNetworkCenters}</p>
                 <p className="text-xs text-muted-foreground mt-1">
-                  Centri gestiti da {subResellersCenters.length} sub-reseller
+                  {t("admin.repairCenters.centersManaged", { count: subResellersCenters.length })}
                 </p>
               </div>
               <div className="h-12 w-12 rounded-xl bg-blue-500 text-white flex items-center justify-center shadow-lg shadow-blue-500/20">
@@ -1344,7 +1343,7 @@ export default function ResellerRepairCenters() {
             <div className="text-center py-12 text-muted-foreground">
               <Building className="h-12 w-12 mx-auto mb-4 opacity-20" />
               <p>{t("admin.repairCenters.noCenterFound")}</p>
-              <p className="text-sm mt-2">Clicca su "Nuovo Centro" per crearne uno</p>
+              <p className="text-sm mt-2">{t("admin.repairCenters.clickNewCenter")}</p>
             </div>
           ) : (
             <Table>
@@ -1396,9 +1395,9 @@ export default function ResellerRepairCenters() {
                     </TableCell>
                     <TableCell data-testid={`text-hourly-rate-${center.id}`}>
                       {center.hourlyRateCents ? (
-                        <span className="font-medium">€{(center.hourlyRateCents / 100).toFixed(2)}/ora</span>
+                        <span className="font-medium">€{(center.hourlyRateCents / 100).toFixed(2)}/{t("common.hour")}</span>
                       ) : (
-                        <span className="text-muted-foreground text-sm">Default</span>
+                        <span className="text-muted-foreground text-sm">{t("common.defaultValue")}</span>
                       )}
                     </TableCell>
                     <TableCell>
@@ -1412,7 +1411,7 @@ export default function ResellerRepairCenters() {
                           variant="ghost"
                           size="icon"
                           onClick={() => handleViewDetail(center.id)}
-                          title="Visualizza Dettagli"
+                          title={t("common.viewDetails")}
                           data-testid={`button-view-detail-${center.id}`}
                         >
                           <Eye className="h-4 w-4" />
@@ -1453,7 +1452,7 @@ export default function ResellerRepairCenters() {
                           variant="ghost"
                           size="icon"
                           onClick={() => handleResetPasswordClick(center)}
-                          title="Reimposta Password"
+                          title={t("admin.repairCenters.resetPassword")}
                           data-testid={`button-reset-password-${center.id}`}
                         >
                           <KeyRound className="h-4 w-4" />
@@ -1462,7 +1461,7 @@ export default function ResellerRepairCenters() {
                           variant="ghost"
                           size="icon"
                           onClick={() => {
-                            if (confirm("Sei sicuro di voler eliminare questo centro di riparazione?")) {
+                            if (confirm(t("repairs.confirmDeleteCenter"))) {
                               deleteCenterMutation.mutate(center.id);
                             }
                           }}
@@ -1491,20 +1490,20 @@ export default function ResellerRepairCenters() {
                   <Network className="h-5 w-5 text-primary" />
                 </div>
                 <div>
-                  <h2 className="text-lg font-semibold">Centri della Rete</h2>
+                  <h2 className="text-lg font-semibold">{t("repairs.networkCenters")}</h2>
                   <p className="text-sm text-muted-foreground">
-                    Centri di riparazione dei tuoi rivenditori
+                    {t("admin.repairCenters.networkCentersDesc")}
                   </p>
                 </div>
               </div>
               <div className="flex flex-wrap items-center gap-2">
                 <Badge variant="secondary" className="flex flex-wrap items-center gap-1">
                   <Users className="h-3 w-3" />
-                  {subResellersCenters.length} Rivenditori
+                  {subResellersCenters.length} {t("common.resellers")}
                 </Badge>
                 <Badge variant="outline" className="flex flex-wrap items-center gap-1">
                   <Building className="h-3 w-3" />
-                  {totalNetworkCenters} Centri
+                  {totalNetworkCenters} {t("admin.repairCenters.centers")}
                 </Badge>
               </div>
             </div>
@@ -1518,7 +1517,7 @@ export default function ResellerRepairCenters() {
             ) : totalNetworkCenters === 0 ? (
               <div className="text-center py-8 text-muted-foreground">
                 <Network className="h-10 w-10 mx-auto mb-3 opacity-20" />
-                <p>I tuoi rivenditori non hanno ancora centri di riparazione</p>
+                <p>{t("admin.repairCenters.noSubResellerCenters")}</p>
               </div>
             ) : (
               <div className="space-y-3">
@@ -1544,7 +1543,7 @@ export default function ResellerRepairCenters() {
                           </div>
                           <div className="flex flex-wrap items-center gap-2">
                             <Badge variant="outline">
-                              {srData.repairCenters.length} {srData.repairCenters.length === 1 ? 'Centro' : 'Centri'}
+                              {srData.repairCenters.length} {srData.repairCenters.length === 1 ? t("admin.repairCenters.center") : t("admin.repairCenters.centers")}
                             </Badge>
                             <ChevronRight className={`h-4 w-4 transition-transform ${expandedSubResellers[srData.subReseller.id] ? 'rotate-90' : ''}`} />
                           </div>
@@ -1553,7 +1552,7 @@ export default function ResellerRepairCenters() {
                       <CollapsibleContent>
                         {srData.repairCenters.length === 0 ? (
                           <div className="px-4 pb-4 text-sm text-muted-foreground">
-                            Nessun centro di riparazione
+                            {t("admin.repairCenters.noRepairCenter")}
                           </div>
                         ) : (
                           <div className="border-t">
@@ -1626,7 +1625,7 @@ export default function ResellerRepairCenters() {
                 <Building className="h-5 w-5" />
               </div>
               <div>
-                <span className="text-xl">{centerDetail?.center.name || "Caricamento..."}</span>
+                <span className="text-xl">{centerDetail?.center.name || t("common.loading")}</span>
                 {centerDetail?.center.isActive !== undefined && (
                   <Badge variant={centerDetail.center.isActive ? "default" : "secondary"} className="ml-3">
                     {centerDetail.center.isActive ? t("common.active") : t("common.inactive")}
@@ -1667,7 +1666,7 @@ export default function ResellerRepairCenters() {
                     <div className="flex flex-wrap items-center gap-6">
                       <Avatar className="h-20 w-20 rounded-lg border-2 border-dashed border-muted-foreground/25">
                         {centerDetail.center.logoUrl ? (
-                          <AvatarImage src={centerDetail.center.logoUrl} alt="Logo centro" className="object-contain" />
+                          <AvatarImage src={centerDetail.center.logoUrl} alt={t("admin.repairCenters.centerLogoAlt")} className="object-contain" />
                         ) : null}
                         <AvatarFallback className="rounded-lg bg-muted text-muted-foreground">
                           <Building className="h-8 w-8" />
@@ -1697,7 +1696,7 @@ export default function ResellerRepairCenters() {
                           )}
                         </div>
                         <p className="text-xs text-muted-foreground">
-                          Formati supportati: JPEG, PNG, WebP. Max 2MB
+                          {t("admin.repairCenters.supportedFormats")}
                         </p>
                       </div>
                       <input
@@ -1801,7 +1800,7 @@ export default function ResellerRepairCenters() {
                     <CardContent className="relative pt-4 pb-3">
                       <div className="flex items-center justify-between">
                         <div>
-                          <p className="text-xs text-muted-foreground uppercase">Totale Riparazioni</p>
+                          <p className="text-xs text-muted-foreground uppercase">{t("repairs.totalRepairs")}</p>
                           <p className="text-2xl font-bold">{centerDetail.stats.totalRepairs}</p>
                         </div>
                         <div className="h-10 w-10 rounded-lg bg-blue-500 text-white flex items-center justify-center">
@@ -1831,7 +1830,7 @@ export default function ResellerRepairCenters() {
                     <CardContent className="relative pt-4 pb-3">
                       <div className="flex items-center justify-between">
                         <div>
-                          <p className="text-xs text-muted-foreground uppercase">In Corso</p>
+                          <p className="text-xs text-muted-foreground uppercase">{t("common.inProgress")}</p>
                           <p className="text-2xl font-bold text-violet-600">{centerDetail.stats.inProgressRepairs}</p>
                         </div>
                         <div className="h-10 w-10 rounded-lg bg-violet-500 text-white flex items-center justify-center">
@@ -1846,7 +1845,7 @@ export default function ResellerRepairCenters() {
                     <CardContent className="relative pt-4 pb-3">
                       <div className="flex items-center justify-between">
                         <div>
-                          <p className="text-xs text-muted-foreground uppercase">Completate</p>
+                          <p className="text-xs text-muted-foreground uppercase">{t("common.completedFem")}</p>
                           <p className="text-2xl font-bold text-emerald-600">{centerDetail.stats.completedRepairs}</p>
                         </div>
                         <div className="h-10 w-10 rounded-lg bg-emerald-500 text-white flex items-center justify-center">
@@ -1865,7 +1864,7 @@ export default function ResellerRepairCenters() {
                           <Euro className="h-5 w-5 text-green-600 dark:text-green-400" />
                         </div>
                         <div>
-                          <p className="text-xs text-muted-foreground uppercase">Fatturato Totale</p>
+                          <p className="text-xs text-muted-foreground uppercase">{t("admin.repairCenters.totalRevenue")}</p>
                           <p className="text-xl font-bold">€{(centerDetail.stats.totalRevenue / 100).toFixed(2)}</p>
                         </div>
                       </div>
@@ -1893,7 +1892,7 @@ export default function ResellerRepairCenters() {
                           <User2 className="h-5 w-5 text-purple-600 dark:text-purple-400" />
                         </div>
                         <div>
-                          <p className="text-xs text-muted-foreground uppercase">Clienti Serviti</p>
+                          <p className="text-xs text-muted-foreground uppercase">{t("admin.repairCenters.customersServed")}</p>
                           <p className="text-xl font-bold">{centerDetail.stats.customerCount}</p>
                         </div>
                       </div>
@@ -1908,7 +1907,7 @@ export default function ResellerRepairCenters() {
                 <div className="flex items-center justify-between gap-4 flex-wrap">
                   <h4 className="text-sm font-semibold flex items-center gap-2">
                     <Wrench className="h-4 w-4" />
-                    Riparazioni ({repairsData?.total || 0})
+                    {t("repairs.title")} ({repairsData?.total || 0})
                   </h4>
                   <div className="flex flex-wrap items-center gap-2">
                     <Select value={repairsStatusFilter} onValueChange={(v) => { setRepairsStatusFilter(v); setRepairsPage(0); }}>
@@ -1918,14 +1917,14 @@ export default function ResellerRepairCenters() {
                       <SelectContent>
                         <SelectItem value="all">{t("common.allStatuses")}</SelectItem>
                         <SelectItem value="pending">{t("common.pending")}</SelectItem>
-                        <SelectItem value="ingressato">Ingressato</SelectItem>
-                        <SelectItem value="in_diagnosi">In Diagnosi</SelectItem>
-                        <SelectItem value="preventivo_emesso">Preventivo Emesso</SelectItem>
-                        <SelectItem value="preventivo_accettato">Preventivo Accettato</SelectItem>
-                        <SelectItem value="attesa_ricambi">Attesa Ricambi</SelectItem>
-                        <SelectItem value="in_riparazione">In Riparazione</SelectItem>
-                        <SelectItem value="in_test">In Test</SelectItem>
-                        <SelectItem value="pronto_ritiro">Pronto Ritiro</SelectItem>
+                        <SelectItem value="ingressato">{t("repairs.status.received")}</SelectItem>
+                        <SelectItem value="in_diagnosi">{t("repairs.status.inDiagnosis")}</SelectItem>
+                        <SelectItem value="preventivo_emesso">{t("repairs.preventivoEmesso")}</SelectItem>
+                        <SelectItem value="preventivo_accettato">{t("repairs.preventivoAccettato")}</SelectItem>
+                        <SelectItem value="attesa_ricambi">{t("repairs.status.waitingParts")}</SelectItem>
+                        <SelectItem value="in_riparazione">{t("repairs.status.inRepair")}</SelectItem>
+                        <SelectItem value="in_test">{t("repairs.status.inTest")}</SelectItem>
+                        <SelectItem value="pronto_ritiro">{t("repairs.readyForPickup")}</SelectItem>
                         <SelectItem value="consegnato">{t("repairs.status.delivered")}</SelectItem>
                         <SelectItem value="cancelled">{t("repairs.status.cancelled")}</SelectItem>
                       </SelectContent>
@@ -1940,7 +1939,7 @@ export default function ResellerRepairCenters() {
                 ) : !repairsData || repairsData.repairs.length === 0 ? (
                   <div className="text-center py-8 text-muted-foreground">
                     <Wrench className="h-10 w-10 mx-auto mb-2 opacity-20" />
-                    <p>Nessuna riparazione trovata</p>
+                    <p>{t("repairs.noRepairsFound")}</p>
                   </div>
                 ) : (
                   <>
@@ -2002,7 +2001,7 @@ export default function ResellerRepairCenters() {
                     {repairsData.total > 20 && (
                       <div className="flex items-center justify-between pt-4 border-t">
                         <p className="text-sm text-muted-foreground">
-                          Pagina {repairsPage + 1} di {Math.ceil(repairsData.total / 20)}
+                          {t("common.pageXofY", { current: repairsPage + 1, total: Math.ceil(repairsData.total / 20) })}
                         </p>
                         <div className="flex flex-wrap items-center gap-2">
                           <Button
@@ -2020,7 +2019,7 @@ export default function ResellerRepairCenters() {
                             disabled={(repairsPage + 1) * 20 >= repairsData.total}
                             data-testid="button-next-repairs-page"
                           >
-                            Successiva
+                            {t("table.next")}
                             <ChevronRight className="h-4 w-4 ml-1" />
                           </Button>
                         </div>
@@ -2033,7 +2032,7 @@ export default function ResellerRepairCenters() {
           ) : (
             <div className="text-center py-8 text-muted-foreground">
               <AlertCircle className="h-10 w-10 mx-auto mb-2 opacity-20" />
-              <p>Impossibile caricare i dati del centro</p>
+              <p>{t("repairs.cannotLoadCenterData")}</p>
             </div>
           )}
         </DialogContent>
@@ -2045,11 +2044,11 @@ export default function ResellerRepairCenters() {
           <AlertDialogHeader>
             <AlertDialogTitle className="flex flex-wrap items-center gap-2">
               <KeyRound className="h-5 w-5" />
-              Reimposta Password
+              {t("team.resetPassword")}
             </AlertDialogTitle>
             <AlertDialogDescription asChild>
               <div className="space-y-4">
-                <p>Inserisci la nuova password per il centro <strong>{centerToResetPassword?.name}</strong>.</p>
+                <p>{t("repairs.enterNewPasswordForCenter")} <strong>{centerToResetPassword?.name}</strong>.</p>
                 <div className="space-y-2">
                   <Label htmlFor="newPassword">{t("profile.newPassword")}</Label>
                   <Input
@@ -2057,11 +2056,11 @@ export default function ResellerRepairCenters() {
                     type="text"
                     value={newPassword}
                     onChange={(e) => setNewPassword(e.target.value)}
-                    placeholder="Minimo 6 caratteri"
+                    placeholder={t("staff.passwordMinLength")}
                     data-testid="input-new-password"
                   />
                   {newPassword.length > 0 && newPassword.length < 6 && (
-                    <p className="text-sm text-destructive">La password deve contenere almeno 6 caratteri</p>
+                    <p className="text-sm text-destructive">{t("staff.passwordMinLength")}</p>
                   )}
                 </div>
               </div>
@@ -2076,7 +2075,7 @@ export default function ResellerRepairCenters() {
               onClick={confirmResetPassword}
               disabled={newPassword.length < 6 || resetPasswordMutation.isPending}
             >
-              {resetPasswordMutation.isPending ? t("profile.updating") : "Aggiorna Password"}
+              {resetPasswordMutation.isPending ? t("profile.updating") : t("admin.repairCenters.updatePassword")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

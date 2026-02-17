@@ -53,8 +53,8 @@ export default function MobilesentrixSettingsPage() {
       // Server-side exchange completed successfully
       if (event.data?.type === 'mobilesentrix_oauth_success') {
         toast({
-          title: "Autorizzazione completata",
-          description: "Access Token ottenuto con successo! Ora puoi accedere al catalogo.",
+          title: t("suppliers.authorizationCompleted"),
+          description: t("suppliers.accessTokenObtained"),
         });
         queryClient.invalidateQueries({ queryKey: ["/api/mobilesentrix/credentials"] });
         setIsAuthorizing(false);
@@ -73,21 +73,21 @@ export default function MobilesentrixSettingsPage() {
             
             if (data.success) {
               toast({
-                title: "Autorizzazione completata",
-                description: "Access Token ottenuto con successo! Ora puoi testare la connessione.",
+                title: t("suppliers.authorizationCompleted"),
+                description: t("suppliers.accessTokenObtainedTest"),
               });
               queryClient.invalidateQueries({ queryKey: ["/api/mobilesentrix/credentials"] });
             } else {
               toast({
-                title: "Errore autorizzazione",
-                description: data.message || "Errore durante lo scambio dei token",
+                title: t("suppliers.authorizationError"),
+                description: data.message || t("suppliers.tokenExchangeError"),
                 variant: "destructive",
               });
             }
           } catch (error: any) {
             toast({
               title: t("common.error"),
-              description: error.message || "Errore durante lo scambio dei token",
+              description: error.message || t("suppliers.tokenExchangeError"),
               variant: "destructive",
             });
           } finally {
@@ -107,7 +107,7 @@ export default function MobilesentrixSettingsPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/mobilesentrix/credentials"] });
-      toast({ title: "Salvato", description: "Credenziali MobileSentrix salvate con successo. Ora completa l'autorizzazione OAuth." });
+      toast({ title: t("common.saved"), description: t("suppliers.credentialsSaved") });
       setConsumerName("");
       setConsumerKey("");
       setConsumerSecret("");
@@ -138,8 +138,8 @@ export default function MobilesentrixSettingsPage() {
         
         setIsAuthorizing(true);
         toast({
-          title: "Autorizzazione avviata",
-          description: "Completa il login nella finestra popup che si è aperta.",
+          title: t("suppliers.authorizationStarted"),
+          description: t("suppliers.completeLoginInPopup"),
         });
         
         // Poll for access token completion every 2 seconds
@@ -164,8 +164,8 @@ export default function MobilesentrixSettingsPage() {
                 queryClient.invalidateQueries({ queryKey: ["/api/mobilesentrix/credentials"] });
                 setIsAuthorizing(false);
                 toast({
-                  title: "Autorizzazione completata",
-                  description: "Access Token ottenuto con successo! Ora puoi accedere al catalogo.",
+                  title: t("suppliers.authorizationCompleted"),
+                  description: t("suppliers.accessTokenObtained"),
                 });
               }
             }
@@ -195,9 +195,9 @@ export default function MobilesentrixSettingsPage() {
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["/api/mobilesentrix/credentials"] });
       if (data.success) {
-        toast({ title: "Connessione riuscita", description: data.message });
+        toast({ title: t("suppliers.connectionSuccessful"), description: data.message });
       } else {
-        toast({ title: "Connessione fallita", description: data.message, variant: "destructive" });
+        toast({ title: t("suppliers.connectionFailed"), description: data.message, variant: "destructive" });
       }
     },
     onError: (error: Error) => {
@@ -211,7 +211,7 @@ export default function MobilesentrixSettingsPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/mobilesentrix/credentials"] });
-      toast({ title: t("pages.deleted"), description: "Credenziali MobileSentrix eliminate" });
+      toast({ title: t("pages.deleted"), description: t("suppliers.credentialsDeleted") });
     },
     onError: (error: Error) => {
       toast({ title: t("common.error"), description: error.message, variant: "destructive" });
@@ -220,14 +220,14 @@ export default function MobilesentrixSettingsPage() {
 
   const handleSave = () => {
     if (!consumerName.trim() || !consumerKey.trim() || !consumerSecret.trim()) {
-      toast({ title: t("common.error"), description: "Compila tutti i campi obbligatori", variant: "destructive" });
+      toast({ title: t("common.error"), description: t("suppliers.fillRequiredFields"), variant: "destructive" });
       return;
     }
     saveMutation.mutate();
   };
 
   const formatDate = (date: string | null) => {
-    if (!date) return "Mai";
+    if (!date) return t("common.never");
     return new Date(date).toLocaleString("it-IT");
   };
 
@@ -246,15 +246,15 @@ export default function MobilesentrixSettingsPage() {
         <div className="flex flex-wrap items-center gap-3">
           <Settings className="h-8 w-8" />
           <div>
-            <h1 className="text-2xl font-bold">Impostazioni MobileSentrix</h1>
-            <p className="text-muted-foreground">Configura la connessione con il tuo account MobileSentrix</p>
+            <h1 className="text-2xl font-bold">{t("suppliers.mobilesentrixSettings")}</h1>
+            <p className="text-muted-foreground">{t("suppliers.configureConnection")}</p>
           </div>
         </div>
         {credential && credential.accessToken && (
           <Link href="/reseller/mobilesentrix/catalog">
             <Button data-testid="button-go-catalog">
               <Package className="h-4 w-4 mr-2" />
-              Vai al Catalogo
+              {t("suppliers.goToCatalog")}
             </Button>
           </Link>
         )}
@@ -267,23 +267,23 @@ export default function MobilesentrixSettingsPage() {
               <div>
                 <CardTitle className="flex flex-wrap items-center gap-2">
                   <Key className="h-5 w-5" />
-                  Credenziali Configurate
+                  {t("suppliers.configuredCredentials")}
                 </CardTitle>
-                <CardDescription>Le tue credenziali MobileSentrix sono salvate</CardDescription>
+                <CardDescription>{t("suppliers.credentialsSavedDesc")}</CardDescription>
               </div>
               <div className="flex flex-wrap items-center gap-2">
                 {credential.accessToken ? (
                   <Badge className="bg-gradient-to-r from-blue-500 to-cyan-500 text-white">
                     <Shield className="h-3 w-3 mr-1" />
-                    Autorizzato
+                    {t("suppliers.authorized")}
                   </Badge>
                 ) : (
                   <Badge variant="outline" className="border-amber-500 text-amber-600">
-                    Richiede Autorizzazione
+                    {t("suppliers.requiresAuthorization")}
                   </Badge>
                 )}
                 <Badge variant={credential.isActive ? "default" : "secondary"}>
-                  {credential.isActive ? t("common.active") : "Disattivato"}
+                  {credential.isActive ? t("common.active") : t("suppliers.disabled")}
                 </Badge>
               </div>
             </div>
@@ -291,7 +291,7 @@ export default function MobilesentrixSettingsPage() {
           <CardContent className="space-y-4">
             <div className="grid gap-4 md:grid-cols-2">
               <div className="space-y-2">
-                <Label>Consumer Name</Label>
+                <Label>{t("suppliers.consumerName")}</Label>
                 <Input
                   type="text"
                   value={credential.consumerName}
@@ -301,7 +301,7 @@ export default function MobilesentrixSettingsPage() {
                 />
               </div>
               <div className="space-y-2">
-                <Label>Consumer Key</Label>
+                <Label>{t("suppliers.consumerKey")}</Label>
                 <Input
                   type="text"
                   value={credential.consumerKey}
@@ -311,7 +311,7 @@ export default function MobilesentrixSettingsPage() {
                 />
               </div>
               <div className="space-y-2">
-                <Label>Consumer Secret</Label>
+                <Label>{t("suppliers.consumerSecret")}</Label>
                 <div className="flex flex-wrap items-center gap-2">
                   <Input
                     type={showSecret ? "text" : "password"}
@@ -325,15 +325,15 @@ export default function MobilesentrixSettingsPage() {
                     size="sm"
                     onClick={() => setShowSecret(!showSecret)}
                   >
-                    {showSecret ? "Nascondi" : "Mostra"}
+                    {showSecret ? t("suppliers.hide") : t("suppliers.show")}
                   </Button>
                 </div>
               </div>
               <div className="space-y-2">
-                <Label>Ambiente</Label>
+                <Label>{t("suppliers.environment")}</Label>
                 <div className="flex flex-wrap items-center gap-2">
                   <Badge variant={credential.environment === "production" ? "default" : "outline"}>
-                    {credential.environment === "production" ? "Produzione" : "Staging"}
+                    {credential.environment === "production" ? t("suppliers.production") : t("suppliers.staging")}
                   </Badge>
                   <span className="text-sm text-muted-foreground">
                     {credential.environment === "production" ? "www.mobilesentrix.eu" : "preprod.mobilesentrix.eu"}
@@ -341,7 +341,7 @@ export default function MobilesentrixSettingsPage() {
                 </div>
               </div>
               <div className="space-y-2">
-                <Label>Ultimo Test</Label>
+                <Label>{t("suppliers.lastTest")}</Label>
                 <div className="flex flex-wrap items-center gap-2">
                   {credential.testStatus === "success" ? (
                     <CheckCircle className="h-4 w-4 text-green-500" />
@@ -357,7 +357,7 @@ export default function MobilesentrixSettingsPage() {
                 )}
               </div>
               <div className="space-y-2">
-                <Label>Access Token</Label>
+                <Label>{t("suppliers.accessToken")}</Label>
                 <div className="flex flex-wrap items-center gap-2">
                   {credential.accessToken ? (
                     <>
@@ -367,7 +367,7 @@ export default function MobilesentrixSettingsPage() {
                   ) : (
                     <>
                       <XCircle className="h-4 w-4 text-amber-500" />
-                      <span className="text-sm text-amber-600">Non ancora ottenuto</span>
+                      <span className="text-sm text-amber-600">{t("suppliers.notYetObtained")}</span>
                     </>
                   )}
                 </div>
@@ -378,7 +378,7 @@ export default function MobilesentrixSettingsPage() {
               <Alert className="border-amber-500 bg-amber-50 dark:bg-amber-950/20">
                 <AlertDescription className="flex items-center justify-between flex-wrap gap-4">
                   <span>
-                    Per accedere al catalogo, devi completare l'autorizzazione OAuth con MobileSentrix.
+                    {t("suppliers.completeOAuthAlert")}
                   </span>
                   <Button
                     onClick={() => authorizeMutation.mutate()}
@@ -391,7 +391,7 @@ export default function MobilesentrixSettingsPage() {
                     ) : (
                       <LogIn className="h-4 w-4 mr-2" />
                     )}
-                    Autorizza con MobileSentrix
+                    {t("suppliers.authorizeWithMobilesentrix")}
                   </Button>
                 </AlertDescription>
               </Alert>
@@ -410,7 +410,7 @@ export default function MobilesentrixSettingsPage() {
                   ) : (
                     <LogIn className="h-4 w-4 mr-2" />
                   )}
-                  Autorizza OAuth
+                  {t("suppliers.authorizeOAuth")}
                 </Button>
               )}
               {credential.accessToken && (
@@ -425,7 +425,7 @@ export default function MobilesentrixSettingsPage() {
                   ) : (
                     <TestTube className="h-4 w-4 mr-2" />
                   )}
-                  Test Connessione
+                  {t("suppliers.testConnection")}
                 </Button>
               )}
               <Button
@@ -439,7 +439,7 @@ export default function MobilesentrixSettingsPage() {
                 ) : (
                   <Trash2 className="h-4 w-4 mr-2" />
                 )}
-                Elimina Credenziali
+                {t("suppliers.deleteCredentials")}
               </Button>
             </div>
           </CardContent>
@@ -449,76 +449,76 @@ export default function MobilesentrixSettingsPage() {
           <CardHeader>
             <CardTitle className="flex flex-wrap items-center gap-2">
               <Key className="h-5 w-5" />
-              Configura MobileSentrix
+              {t("suppliers.configureMobilesentrix")}
             </CardTitle>
             <CardDescription>
-              Inserisci le tue credenziali OAuth MobileSentrix per accedere al catalogo ricambi
+              {t("suppliers.insertOAuthCredentials")}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="consumerName">Consumer Name</Label>
+              <Label htmlFor="consumerName">{t("suppliers.consumerName")}</Label>
               <Input
                 id="consumerName"
                 type="text"
-                placeholder="Il nome del tuo consumer"
+                placeholder={t("suppliers.consumerNamePlaceholder")}
                 value={consumerName}
                 onChange={(e) => setConsumerName(e.target.value)}
                 data-testid="input-consumer-name"
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="consumerKey">Consumer Key</Label>
+              <Label htmlFor="consumerKey">{t("suppliers.consumerKey")}</Label>
               <Input
                 id="consumerKey"
                 type="text"
-                placeholder="La tua Consumer Key"
+                placeholder={t("suppliers.consumerKeyPlaceholder")}
                 value={consumerKey}
                 onChange={(e) => setConsumerKey(e.target.value)}
                 data-testid="input-consumer-key"
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="consumerSecret">Consumer Secret</Label>
+              <Label htmlFor="consumerSecret">{t("suppliers.consumerSecret")}</Label>
               <Input
                 id="consumerSecret"
                 type="password"
-                placeholder="Il tuo Consumer Secret"
+                placeholder={t("suppliers.consumerSecretPlaceholder")}
                 value={consumerSecret}
                 onChange={(e) => setConsumerSecret(e.target.value)}
                 data-testid="input-consumer-secret"
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="environment">Ambiente</Label>
+              <Label htmlFor="environment">{t("suppliers.environment")}</Label>
               <Select value={environment} onValueChange={(v) => setEnvironment(v as "production" | "staging")}>
                 <SelectTrigger data-testid="select-environment">
-                  <SelectValue placeholder="Seleziona ambiente" />
+                  <SelectValue placeholder={t("suppliers.selectEnvironment")} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="production">Produzione (www.mobilesentrix.eu)</SelectItem>
-                  <SelectItem value="staging">Staging (preprod.mobilesentrix.eu)</SelectItem>
+                  <SelectItem value="production">{t("suppliers.production")} (www.mobilesentrix.eu)</SelectItem>
+                  <SelectItem value="staging">{t("suppliers.staging")} (preprod.mobilesentrix.eu)</SelectItem>
                 </SelectContent>
               </Select>
               <p className="text-sm text-muted-foreground">
-                Puoi ottenere le tue credenziali OAuth dal pannello MobileSentrix.{" "}
+                {t("suppliers.getCredentialsInfo")}{" "}
                 <a
                   href="https://www.mobilesentrix.eu"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-primary hover:underline inline-flex items-center gap-1"
                 >
-                  Vai a MobileSentrix <ExternalLink className="h-3 w-3" />
+                  {t("suppliers.goToMobilesentrix")} <ExternalLink className="h-3 w-3" />
                 </a>
               </p>
             </div>
 
             <Alert>
               <AlertDescription>
-                <strong>Flusso di configurazione:</strong><br />
-                1. Inserisci Consumer Name, Consumer Key e Consumer Secret<br />
-                2. Clicca "Salva Credenziali"<br />
-                3. Clicca "Autorizza con MobileSentrix" per completare l'autenticazione OAuth
+                <strong>{t("suppliers.setupFlow")}:</strong><br />
+                {t("suppliers.setupStep1")}<br />
+                {t("suppliers.setupStep2")}<br />
+                {t("suppliers.setupStep3")}
               </AlertDescription>
             </Alert>
 
@@ -532,7 +532,7 @@ export default function MobilesentrixSettingsPage() {
               ) : (
                 <Save className="h-4 w-4 mr-2" />
               )}
-              Salva Credenziali
+              {t("suppliers.saveCredentials")}
             </Button>
           </CardContent>
         </Card>
@@ -540,23 +540,21 @@ export default function MobilesentrixSettingsPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Informazioni su MobileSentrix</CardTitle>
-          <CardDescription>Come funziona l'integrazione MobileSentrix</CardDescription>
+          <CardTitle>{t("suppliers.aboutMobilesentrix")}</CardTitle>
+          <CardDescription>{t("suppliers.howIntegrationWorks")}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-3 text-sm text-muted-foreground">
           <p>
-            MobileSentrix è un fornitore premium di ricambi per smartphone e tablet.
-            L'integrazione ti permette di:
+            {t("suppliers.mobilesentrixDescription")}
           </p>
           <ul className="list-disc list-inside space-y-1 ml-2">
-            <li>Consultare il catalogo prodotti con prezzi e disponibilità in tempo reale</li>
-            <li>Ricercare prodotti per marca, modello e categoria</li>
-            <li>Visualizzare dettagli prodotto e specifiche tecniche</li>
-            <li>Effettuare ordini direttamente dalla piattaforma</li>
+            <li>{t("suppliers.feature1")}</li>
+            <li>{t("suppliers.feature2")}</li>
+            <li>{t("suppliers.feature3")}</li>
+            <li>{t("suppliers.feature4")}</li>
           </ul>
           <p className="pt-2">
-            Per utilizzare l'integrazione, devi prima creare un account business su MobileSentrix e
-            ottenere le tue credenziali OAuth (Consumer Key e Consumer Secret) dal pannello di controllo.
+            {t("suppliers.usageRequirements")}
           </p>
         </CardContent>
       </Card>

@@ -283,7 +283,7 @@ export function RepairOrderDetailDrawer({
       return await apiRequest("PATCH", `/api/repair-orders/${repairOrderId}`, { repairCenterId });
     },
     onSuccess: () => {
-      toast({ title: "Centro di riparazione aggiornato" });
+      toast({ title: t("repair.repairCenterUpdated") });
       queryClient.invalidateQueries({ queryKey: ["/api/repair-orders"] });
       queryClient.invalidateQueries({ queryKey: ["/api/repair-orders", repairOrderId] });
     },
@@ -392,29 +392,29 @@ export function RepairOrderDetailDrawer({
 
   const getStatusBadge = (status: string) => {
     switch (status) {
-      case "ingressato": return <Badge variant="secondary" data-testid={`status-${status}`}>Ingressato</Badge>;
-      case "in_diagnosi": return <Badge variant="outline" data-testid={`status-${status}`}>In Diagnosi</Badge>;
-      case "preventivo_emesso": return <Badge variant="outline" data-testid={`status-${status}`}>Preventivo Emesso</Badge>;
-      case "preventivo_accettato": return <Badge data-testid={`status-${status}`}>Preventivo Accettato</Badge>;
-      case "preventivo_rifiutato": return <Badge variant="destructive" data-testid={`status-${status}`}>Preventivo Rifiutato</Badge>;
-      case "attesa_ricambi": return <Badge variant="outline" data-testid={`status-${status}`}>Attesa Ricambi</Badge>;
-      case "in_riparazione": return <Badge data-testid={`status-${status}`}>In Riparazione</Badge>;
-      case "in_test": return <Badge data-testid={`status-${status}`}>In Test</Badge>;
-      case "pronto_ritiro": return <Badge data-testid={`status-${status}`}>Pronto Ritiro</Badge>;
+      case "ingressato": return <Badge variant="secondary" data-testid={`status-${status}`}>{t("repair.statusIntake")}</Badge>;
+      case "in_diagnosi": return <Badge variant="outline" data-testid={`status-${status}`}>{t("repair.statusDiagnosis")}</Badge>;
+      case "preventivo_emesso": return <Badge variant="outline" data-testid={`status-${status}`}>{t("repair.statusQuoteIssued")}</Badge>;
+      case "preventivo_accettato": return <Badge data-testid={`status-${status}`}>{t("repair.statusQuoteAccepted")}</Badge>;
+      case "preventivo_rifiutato": return <Badge variant="destructive" data-testid={`status-${status}`}>{t("repair.statusQuoteRejected")}</Badge>;
+      case "attesa_ricambi": return <Badge variant="outline" data-testid={`status-${status}`}>{t("repair.statusWaitingParts")}</Badge>;
+      case "in_riparazione": return <Badge data-testid={`status-${status}`}>{t("repair.statusRepairing")}</Badge>;
+      case "in_test": return <Badge data-testid={`status-${status}`}>{t("repair.statusTesting")}</Badge>;
+      case "pronto_ritiro": return <Badge data-testid={`status-${status}`}>{t("repair.statusReadyPickup")}</Badge>;
       case "consegnato": return <Badge variant="outline" data-testid={`status-${status}`}>{t("repair.delivered")}</Badge>;
-      case "cancelled": return <Badge variant="destructive" data-testid={`status-${status}`}>Annullato</Badge>;
+      case "cancelled": return <Badge variant="destructive" data-testid={`status-${status}`}>{t("common.cancelled")}</Badge>;
       // Legacy stati
       case "pending": return <Badge variant="secondary" data-testid={`status-${status}`}>{t("common.pending")}</Badge>;
       case "in_progress": return <Badge data-testid={`status-${status}`}>{t("kanban.inProgress")}</Badge>;
-      case "waiting_parts": return <Badge variant="outline" data-testid={`status-${status}`}>In attesa pezzi</Badge>;
-      case "completed": return <Badge variant="outline" data-testid={`status-${status}`}>Completata</Badge>;
-      case "delivered": return <Badge variant="outline" data-testid={`status-${status}`}>Consegnata</Badge>;
+      case "waiting_parts": return <Badge variant="outline" data-testid={`status-${status}`}>{t("repair.statusWaitingParts")}</Badge>;
+      case "completed": return <Badge variant="outline" data-testid={`status-${status}`}>{t("common.completed")}</Badge>;
+      case "delivered": return <Badge variant="outline" data-testid={`status-${status}`}>{t("repair.delivered")}</Badge>;
       default: return <Badge variant="outline" data-testid={`status-${status}`}>{status}</Badge>;
     }
   };
 
   const formatCurrency = (amount: number | null | undefined, inCents: boolean = false) => {
-    if (amount === null || amount === undefined) return "Da definire";
+    if (amount === null || amount === undefined) return t("common.toBeDecided");
     const value = inCents ? amount / 100 : amount;
     return new Intl.NumberFormat("it-IT", {
       style: "currency",
@@ -426,10 +426,10 @@ export function RepairOrderDetailDrawer({
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto" data-testid="dialog-repair-detail">
         <DialogHeader>
-          <DialogTitle data-testid="text-dialog-title">Dettaglio Riparazione</DialogTitle>
+          <DialogTitle data-testid="text-dialog-title">{t("repair.repairDetail")}</DialogTitle>
           {repair && (
             <DialogDescription data-testid="text-order-number">
-              Ordine #{repair.orderNumber}
+              {t("repair.orderNumber", { number: repair.orderNumber })}
             </DialogDescription>
           )}
         </DialogHeader>
@@ -460,7 +460,7 @@ export function RepairOrderDetailDrawer({
                   diagnosis: t("repair.diagnosis"),
                   quote: t("repair.quote"), 
                   parts: t("parts.parts"),
-                  test: "Test",
+                  test: t("repair.testing"),
                   delivery: t("delivery.delivery"),
                 };
                 
@@ -469,7 +469,7 @@ export function RepairOrderDetailDrawer({
                   if (mins >= 1440) {
                     const days = Math.floor(mins / 1440);
                     const hours = Math.floor((mins % 1440) / 60);
-                    return `${days} giorni ${hours}h`;
+                    return t("sla.daysHours", { days, hours });
                   }
                   if (mins >= 60) {
                     const hours = Math.floor(mins / 60);
@@ -481,7 +481,7 @@ export function RepairOrderDetailDrawer({
                 
                 return (
                   <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium text-muted-foreground">Tempo SLA</span>
+                    <span className="text-sm font-medium text-muted-foreground">{t("sla.slaTime")}</span>
                     <Badge 
                       variant="outline" 
                       className={
@@ -515,9 +515,9 @@ export function RepairOrderDetailDrawer({
                 <CardHeader className="pb-2">
                   <CardTitle className="text-base flex items-center gap-2">
                     <Wrench className="h-4 w-4" />
-                    Flusso di Lavoro
+                    {t("repair.workflow")}
                     {!canManageWorkflow && (
-                      <Badge variant="outline" className="ml-2 text-xs">Sola lettura</Badge>
+                      <Badge variant="outline" className="ml-2 text-xs">{t("common.readOnly")}</Badge>
                     )}
                   </CardTitle>
                 </CardHeader>
@@ -610,14 +610,14 @@ export function RepairOrderDetailDrawer({
                   <div className="space-y-3">
                     <div className="flex flex-wrap items-center gap-2">
                       <AlertCircle className="h-4 w-4 text-primary" />
-                      <span className="font-semibold text-sm">PROSSIMO PASSO</span>
+                      <span className="font-semibold text-sm">{t("repair.nextStep")}</span>
                     </div>
                     
                     {/* Status: ingressato - Need to do diagnosis */}
                     {repair.status === 'ingressato' && (
                       <div className="bg-primary/10 border border-primary/20 rounded-lg p-4 space-y-3">
                         <p className="text-sm">
-                          Il dispositivo è stato ricevuto. <strong>Esegui la diagnosi</strong> per identificare i problemi.
+                          {t("repair.deviceReceivedDoDiagnosis")}
                         </p>
                         <Button
                           onClick={() => setDiagnosisDialogOpen(true)}
@@ -626,7 +626,7 @@ export function RepairOrderDetailDrawer({
                           data-testid="button-diagnosis"
                         >
                           <Stethoscope className="h-5 w-5" />
-                          Inizia Diagnosi
+                          {t("repair.startDiagnosis")}
                         </Button>
                       </div>
                     )}
@@ -831,7 +831,7 @@ export function RepairOrderDetailDrawer({
                             data-testid="button-ready-pickup"
                           >
                             <CheckCircle className="h-4 w-4" />
-                            Pronto per Ritiro
+                            {t("repair.readyForPickup")}
                           </Button>
                         </div>
                       </div>
@@ -886,7 +886,7 @@ export function RepairOrderDetailDrawer({
                         ) : (
                           <>
                             <p className="text-sm">
-                              Dispositivo pronto per il ritiro. <strong>Prenota un appuntamento</strong> o <strong>completa la consegna</strong> quando il cliente arriva.
+                              {t("repair.deviceReadyBookOrComplete")}
                             </p>
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                               <Button
@@ -894,8 +894,8 @@ export function RepairOrderDetailDrawer({
                                 onClick={() => {
                                   if (!repair.repairCenterId) {
                                     toast({
-                                      title: "Centro riparazione non assegnato",
-                                      description: "Questo ordine non ha un centro riparazione assegnato. Contatta l'amministratore.",
+                                      title: t("repair.repairCenterNotAssigned"),
+                                      description: t("repair.contactAdminForCenter"),
                                       variant: "destructive",
                                     });
                                     return;
@@ -906,7 +906,7 @@ export function RepairOrderDetailDrawer({
                                 data-testid="button-book-appointment"
                               >
                                 <CalendarCheck className="h-4 w-4" />
-                                Prenota Appuntamento
+                                {t("repair.bookAppointment")}
                               </Button>
                               <Button
                                 onClick={() => setDeliveryDialogOpen(true)}
@@ -926,7 +926,7 @@ export function RepairOrderDetailDrawer({
                     {repair.status === 'consegnato' && (
                       <div className="bg-green-500/10 border border-green-500/20 rounded-lg p-4 space-y-3">
                         <p className="text-sm text-green-600 dark:text-green-400 font-medium">
-                          Riparazione completata e consegnata al cliente.
+                          {t("repair.repairCompletedDelivered")}
                         </p>
                         <Button
                           variant="outline"
@@ -935,7 +935,7 @@ export function RepairOrderDetailDrawer({
                           data-testid="button-view-delivery"
                         >
                           <PackageCheck className="h-4 w-4" />
-                          Visualizza Dettagli Consegna
+                          {t("repair.viewDeliveryDetails")}
                         </Button>
                       </div>
                     )}
@@ -944,7 +944,7 @@ export function RepairOrderDetailDrawer({
                     {repair.status === 'cancelled' && (
                       <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-4">
                         <p className="text-sm text-red-600 dark:text-red-400 font-medium">
-                          Ordine annullato.
+                          {t("repair.orderCancelled")}
                         </p>
                       </div>
                     )}
@@ -1045,32 +1045,32 @@ export function RepairOrderDetailDrawer({
                     )}
                     {repair.serial && (
                       <div>
-                        <p className="text-sm text-muted-foreground">Seriale</p>
+                        <p className="text-sm text-muted-foreground">{t("common.serialNumber")}</p>
                         <p className="text-sm font-mono" data-testid="text-device-serial">{repair.serial}</p>
                       </div>
                     )}
                     {repair.imeiNotReadable && (
                       <div>
                         <p className="text-sm text-muted-foreground">{t("repair.imei")}</p>
-                        <p className="text-sm text-amber-600" data-testid="text-imei-not-readable">Non leggibile</p>
+                        <p className="text-sm text-amber-600" data-testid="text-imei-not-readable">{t("repair.imeiNotReadable")}</p>
                       </div>
                     )}
                     {repair.imeiNotPresent && (
                       <div>
                         <p className="text-sm text-muted-foreground">{t("repair.imei")}</p>
-                        <p className="text-sm text-amber-600" data-testid="text-imei-not-present">Non presente</p>
+                        <p className="text-sm text-amber-600" data-testid="text-imei-not-present">{t("repair.imeiNotPresent")}</p>
                       </div>
                     )}
                     {repair.serialOnly && !repair.imei && (
                       <div>
                         <p className="text-sm text-muted-foreground">{t("common.notes")}</p>
-                        <p className="text-sm text-muted-foreground" data-testid="text-serial-only">Solo seriale presente</p>
+                        <p className="text-sm text-muted-foreground" data-testid="text-serial-only">{t("repair.serialOnlyPresent")}</p>
                       </div>
                     )}
                   </div>
                 )}
                 <div>
-                  <p className="text-sm text-muted-foreground">Problema</p>
+                  <p className="text-sm text-muted-foreground">{t("repair.problem")}</p>
                   <p className="text-sm" data-testid="text-issue-description">{repair.issueDescription}</p>
                 </div>
               </div>
@@ -1165,7 +1165,7 @@ export function RepairOrderDetailDrawer({
                     {updateRepairCenterMutation.isPending && (
                       <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
                         <Loader2 className="h-3 w-3 animate-spin" />
-                        Aggiornamento in corso...
+                        {t("common.updating")}
                       </div>
                     )}
                   </div>
@@ -1180,13 +1180,13 @@ export function RepairOrderDetailDrawer({
                 <div className="space-y-3">
                   <div className="flex flex-wrap items-center gap-2 font-medium">
                     <ClipboardCheck className="h-4 w-4" />
-                    Dati Accettazione
+                    {t("repair.acceptanceData")}
                   </div>
                   <div className="grid gap-3">
                     {/* Declared Defects */}
                     {acceptance.declaredDefects && acceptance.declaredDefects.length > 0 && (
                       <div>
-                        <p className="text-sm text-muted-foreground">Guasti Dichiarati</p>
+                        <p className="text-sm text-muted-foreground">{t("repair.declaredDefects")}</p>
                         <div className="flex flex-wrap gap-1 mt-1">
                           {acceptance.declaredDefects.map((defect, idx) => (
                             <Badge key={idx} variant="secondary" className="text-xs" data-testid={`badge-defect-${idx}`}>
@@ -1199,20 +1199,20 @@ export function RepairOrderDetailDrawer({
                     {/* Aesthetic Condition */}
                     {acceptance.aestheticCondition && (
                       <div>
-                        <p className="text-sm text-muted-foreground">Condizione Estetica</p>
+                        <p className="text-sm text-muted-foreground">{t("repair.cosmeticCondition")}</p>
                         <p className="text-sm" data-testid="text-aesthetic-condition">{acceptance.aestheticCondition}</p>
                       </div>
                     )}
                     {acceptance.aestheticNotes && (
                       <div>
-                        <p className="text-sm text-muted-foreground">Note Estetiche</p>
+                        <p className="text-sm text-muted-foreground">{t("repair.aestheticNotes")}</p>
                         <p className="text-sm text-muted-foreground whitespace-pre-wrap" data-testid="text-aesthetic-notes">{acceptance.aestheticNotes}</p>
                       </div>
                     )}
                     {/* Accessories */}
                     {acceptance.accessories && acceptance.accessories.length > 0 && (
                       <div>
-                        <p className="text-sm text-muted-foreground">Accessori Inclusi</p>
+                        <p className="text-sm text-muted-foreground">{t("repair.includedAccessories")}</p>
                         <div className="flex flex-wrap gap-1 mt-1">
                           {acceptance.accessories.map((acc, idx) => (
                             <Badge key={idx} variant="outline" className="text-xs" data-testid={`badge-accessory-${idx}`}>
@@ -1225,16 +1225,16 @@ export function RepairOrderDetailDrawer({
                     {/* Lock Code Section */}
                     {acceptance.hasLockCode && (
                       <div className="space-y-2">
-                        <p className="text-sm text-muted-foreground font-medium">Codici di Sblocco</p>
+                        <p className="text-sm text-muted-foreground font-medium">{t("repair.unlockCodes")}</p>
                         {acceptance.lockCode && (
                           <div>
-                            <p className="text-xs text-muted-foreground">PIN/Password:</p>
+                            <p className="text-xs text-muted-foreground">{t("repair.pinPassword")}:</p>
                             <p className="text-sm font-mono" data-testid="text-lock-code">{acceptance.lockCode}</p>
                           </div>
                         )}
                         {acceptance.lockPattern && (
                           <div>
-                            <p className="text-xs text-muted-foreground mb-1">Sequenza Pattern:</p>
+                            <p className="text-xs text-muted-foreground mb-1">{t("repair.patternSequence")}:</p>
                             <PatternLock 
                               value={acceptance.lockPattern} 
                               readOnly 
@@ -1244,14 +1244,14 @@ export function RepairOrderDetailDrawer({
                         )}
                         {!acceptance.lockCode && !acceptance.lockPattern && (
                           <p className="text-sm text-muted-foreground italic">
-                            Cliente ha indicato presenza codice ma non fornito
+                            {t("repair.lockCodeIndicatedNotProvided")}
                           </p>
                         )}
                       </div>
                     )}
                     {/* Acceptance Date */}
                     <div>
-                      <p className="text-sm text-muted-foreground">Data Accettazione</p>
+                      <p className="text-sm text-muted-foreground">{t("repair.acceptanceDate")}</p>
                       <p className="text-sm" data-testid="text-acceptance-date">
                         {format(new Date(acceptance.acceptedAt), "dd/MM/yyyy HH:mm")}
                       </p>
@@ -1274,7 +1274,7 @@ export function RepairOrderDetailDrawer({
                   </div>
                   <div className="grid gap-3">
                     <div>
-                      <p className="text-sm text-muted-foreground">Numero</p>
+                      <p className="text-sm text-muted-foreground">{t("common.number")}</p>
                       <p className="text-sm font-mono" data-testid="text-quote-number">{quote.quoteNumber}</p>
                     </div>
                     
@@ -1306,7 +1306,7 @@ export function RepairOrderDetailDrawer({
                     {/* Labor cost */}
                     {Number(quote.laborCost) > 0 && (
                       <div className="flex justify-between items-center">
-                        <p className="text-sm text-muted-foreground">Manodopera</p>
+                        <p className="text-sm text-muted-foreground">{t("quote.laborCost")}</p>
                         <p className="text-sm font-medium" data-testid="text-labor-cost">
                           {formatCurrency(Number(quote.laborCost), true)}
                         </p>
@@ -1323,7 +1323,7 @@ export function RepairOrderDetailDrawer({
                     </div>
                     
                     <div>
-                      <p className="text-sm text-muted-foreground mb-1">Stato Preventivo</p>
+                      <p className="text-sm text-muted-foreground mb-1">{t("repair.quoteStatus")}</p>
                       {canManageWorkflow ? (
                         <Select
                           value={quote.status}
@@ -1354,7 +1354,7 @@ export function RepairOrderDetailDrawer({
                     </div>
                     {quote.validUntil && (
                       <div>
-                        <p className="text-sm text-muted-foreground">Valido fino al</p>
+                        <p className="text-sm text-muted-foreground">{t("quote.validUntil")}</p>
                         <p className="text-sm" data-testid="text-quote-valid-until">
                           {format(new Date(quote.validUntil), "dd/MM/yyyy")}
                         </p>
@@ -1387,17 +1387,17 @@ export function RepairOrderDetailDrawer({
             <div className="space-y-3">
               <div className="flex flex-wrap items-center gap-2 font-medium">
                 <Calendar className="h-4 w-4" />
-                Date
+                {t("common.dates")}
               </div>
               <div className="grid gap-3">
                 <div>
-                  <p className="text-sm text-muted-foreground">Creata</p>
+                  <p className="text-sm text-muted-foreground">{t("common.created")}</p>
                   <p className="text-sm" data-testid="text-created-at">
                     {format(new Date(repair.createdAt), "dd/MM/yyyy HH:mm")}
                   </p>
                 </div>
                 <div>
-                  <p className="text-sm text-muted-foreground">Aggiornata</p>
+                  <p className="text-sm text-muted-foreground">{t("common.updated")}</p>
                   <p className="text-sm" data-testid="text-updated-at">
                     {format(new Date(repair.updatedAt), "dd/MM/yyyy HH:mm")}
                   </p>
@@ -1432,7 +1432,7 @@ export function RepairOrderDetailDrawer({
                               <Building2 className="h-4 w-4 text-blue-500" />
                             )}
                             <span className="font-medium">
-                              {dataRecoveryJob.handlingType === 'internal' ? 'Recupero Interno' : 'Laboratorio Esterno'}
+                              {dataRecoveryJob.handlingType === 'internal' ? t("dataRecovery.internalRecovery") : t("dataRecovery.externalLab")}
                             </span>
                           </div>
                           <Badge variant={
@@ -1455,7 +1455,7 @@ export function RepairOrderDetailDrawer({
                         </div>
                         
                         <div className="text-sm text-muted-foreground">
-                          <p>Job: <span className="font-mono">{dataRecoveryJob.jobNumber}</span></p>
+                          <p>{t("dataRecovery.job")}: <span className="font-mono">{dataRecoveryJob.jobNumber}</span></p>
                           {dataRecoveryJob.externalLab && (
                             <p>{t("dataRecovery.laboratory")}: {dataRecoveryJob.externalLab.name}</p>
                           )}
@@ -1498,7 +1498,7 @@ export function RepairOrderDetailDrawer({
                               data-testid="button-download-shipping-doc"
                             >
                               <Download className="h-3 w-3" />
-                              Documento Invio
+                              {t("dataRecovery.shipmentDocument")}
                             </Button>
                             <Button
                               variant="outline"
@@ -1508,7 +1508,7 @@ export function RepairOrderDetailDrawer({
                               data-testid="button-download-label"
                             >
                               <Truck className="h-3 w-3" />
-                              Etichetta
+                              {t("dataRecovery.label")}
                             </Button>
                           </div>
                         )}
@@ -1630,9 +1630,9 @@ export function RepairOrderDetailDrawer({
                 <Dialog open={skipQuoteDialogOpen} onOpenChange={setSkipQuoteDialogOpen}>
                   <DialogContent className="max-w-md" data-testid="dialog-skip-quote">
                     <DialogHeader>
-                      <DialogTitle>Salta Preventivo</DialogTitle>
+                      <DialogTitle>{t("repair.skipQuote")}</DialogTitle>
                       <DialogDescription>
-                        Seleziona il motivo per cui vuoi saltare il preventivo. Questa azione non può essere annullata.
+                        {t("repair.selectReasonSkipQuote")}
                       </DialogDescription>
                     </DialogHeader>
                     <div className="space-y-4 py-4">
@@ -1721,7 +1721,7 @@ export function RepairOrderDetailDrawer({
           </div>
         ) : (
           <div className="mt-6 text-center text-muted-foreground">
-            Riparazione non trovata
+            {t("repair.repairNotFound")}
           </div>
         )}
       </DialogContent>

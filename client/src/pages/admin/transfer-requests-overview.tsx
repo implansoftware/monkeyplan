@@ -73,18 +73,18 @@ type OverviewData = {
   };
 };
 
-const statusConfig: Record<string, { label: string; color: string; icon: any }> = {
-  pending: { label: "In Attesa", color: "bg-yellow-500/20 text-yellow-700", icon: Clock },
-  approved: { label: "Approvata", color: "bg-blue-500/20 text-blue-700", icon: CheckCircle },
-  rejected: { label: "Rifiutata", color: "bg-red-500/20 text-red-700", icon: XCircle },
-  shipped: { label: "Spedita", color: "bg-purple-500/20 text-purple-700", icon: Truck },
-  received: { label: "Ricevuta", color: "bg-green-500/20 text-green-700", icon: PackageCheck },
-  cancelled: { label: "Annullata", color: "bg-gray-500/20 text-gray-700", icon: Ban },
+const statusConfig: Record<string, { labelKey: string; color: string; icon: any }> = {
+  pending: { labelKey: "common.pending", color: "bg-yellow-500/20 text-yellow-700", icon: Clock },
+  approved: { labelKey: "common.approved", color: "bg-blue-500/20 text-blue-700", icon: CheckCircle },
+  rejected: { labelKey: "common.rejected", color: "bg-red-500/20 text-red-700", icon: XCircle },
+  shipped: { labelKey: "common.shipped", color: "bg-purple-500/20 text-purple-700", icon: Truck },
+  received: { labelKey: "common.received", color: "bg-green-500/20 text-green-700", icon: PackageCheck },
+  cancelled: { labelKey: "common.cancelled", color: "bg-gray-500/20 text-gray-700", icon: Ban },
 };
 
-const requesterTypeLabels: Record<string, { label: string; icon: any }> = {
-  repair_center: { label: "Centro Riparazione", icon: Building },
-  sub_reseller: { label: "Sub-Reseller", icon: User },
+const requesterTypeLabels: Record<string, { labelKey: string; icon: any }> = {
+  repair_center: { labelKey: "admin.repairCenters.title", icon: Building },
+  sub_reseller: { labelKey: "transfers.subReseller", icon: User },
 };
 
 export default function AdminTransferRequestsOverviewPage() {
@@ -211,19 +211,19 @@ export default function AdminTransferRequestsOverviewPage() {
   };
 
   const renderStatusBadge = (status: string) => {
-    const config = statusConfig[status] || { label: status, color: "bg-gray-500/20 text-gray-700", icon: Clock };
+    const config = statusConfig[status] || { labelKey: status, color: "bg-gray-500/20 text-gray-700", icon: Clock };
     const Icon = config.icon;
     return (
       <Badge className={`${config.color} gap-1`}>
         <Icon className="h-3 w-3" />
-        {config.label}
+        {t(config.labelKey)}
       </Badge>
     );
   };
 
   const renderRequestCard = (request: TransferRequest) => {
     const TypeIcon = requesterTypeLabels[request.requesterType]?.icon || User;
-    const typeLabel = requesterTypeLabels[request.requesterType]?.label || request.requesterType;
+    const typeLabel = requesterTypeLabels[request.requesterType]?.labelKey ? t(requesterTypeLabels[request.requesterType].labelKey) : request.requesterType;
     
     return (
       <Card key={request.id} className="hover-elevate" data-testid={`card-admin-transfer-${request.id}`}>
@@ -250,15 +250,15 @@ export default function AdminTransferRequestsOverviewPage() {
           
           <div className="mt-4 space-y-2">
             <div className="text-sm">
-              <span className="text-muted-foreground">Prodotti: </span>
+              <span className="text-muted-foreground">{t("transfers.productsLabel")}: </span>
               <span className="font-medium">{request.items.length}</span>
-              <span className="text-muted-foreground ml-4">Tot. pezzi: </span>
+              <span className="text-muted-foreground ml-4">{t("transfers.totalPieces")}: </span>
               <span className="font-medium">
                 {request.items.reduce((sum, item) => sum + item.requestedQuantity, 0)}
               </span>
             </div>
             <div className="text-sm text-muted-foreground">
-              Creata: {format(new Date(request.createdAt), "dd MMM yyyy HH:mm", { locale: it })}
+              {t("transfers.created")}: {format(new Date(request.createdAt), "dd MMM yyyy HH:mm", { locale: it })}
             </div>
             {request.ddtNumber && (
               <div className="text-sm">
@@ -276,7 +276,7 @@ export default function AdminTransferRequestsOverviewPage() {
               data-testid={`button-admin-view-${request.id}`}
             >
               <Eye className="h-4 w-4 mr-1" />
-              Dettagli
+              {t("transfers.details")}
             </Button>
             
             {request.status === 'pending' && (
@@ -286,7 +286,7 @@ export default function AdminTransferRequestsOverviewPage() {
                 data-testid={`button-admin-decide-${request.id}`}
               >
                 <CheckCircle className="h-4 w-4 mr-1" />
-                Gestisci
+                {t("transfers.manage")}
               </Button>
             )}
             
@@ -297,7 +297,7 @@ export default function AdminTransferRequestsOverviewPage() {
                 data-testid={`button-admin-ship-${request.id}`}
               >
                 <Truck className="h-4 w-4 mr-1" />
-                Spedisci
+                {t("transfers.ship")}
               </Button>
             )}
             
@@ -347,8 +347,8 @@ export default function AdminTransferRequestsOverviewPage() {
               <Package className="h-5 w-5" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold tracking-tight">Panoramica Trasferimenti</h1>
-              <p className="text-sm text-muted-foreground">Visualizza e gestisci tutte le richieste di trasferimento nel sistema</p>
+              <h1 className="text-2xl font-bold tracking-tight">{t("transfers.transfersOverview")}</h1>
+              <p className="text-sm text-muted-foreground">{t("transfers.transfersOverviewDesc")}</p>
             </div>
           </div>
         </div>
@@ -363,7 +363,7 @@ export default function AdminTransferRequestsOverviewPage() {
               </div>
               <div>
                 <p className="text-2xl font-bold">{stats?.pending || 0}</p>
-                <p className="text-sm text-muted-foreground">In Attesa</p>
+                <p className="text-sm text-muted-foreground">{t("transfers.pendingLabel")}</p>
               </div>
             </div>
           </CardContent>
@@ -376,7 +376,7 @@ export default function AdminTransferRequestsOverviewPage() {
               </div>
               <div>
                 <p className="text-2xl font-bold">{stats?.approved || 0}</p>
-                <p className="text-sm text-muted-foreground">Da Spedire</p>
+                <p className="text-sm text-muted-foreground">{t("transfers.toShip")}</p>
               </div>
             </div>
           </CardContent>
@@ -389,7 +389,7 @@ export default function AdminTransferRequestsOverviewPage() {
               </div>
               <div>
                 <p className="text-2xl font-bold">{stats?.shipped || 0}</p>
-                <p className="text-sm text-muted-foreground">In Transito</p>
+                <p className="text-sm text-muted-foreground">{t("transfers.inTransit")}</p>
               </div>
             </div>
           </CardContent>
@@ -402,7 +402,7 @@ export default function AdminTransferRequestsOverviewPage() {
               </div>
               <div>
                 <p className="text-2xl font-bold">{stats?.totalHistory || 0}</p>
-                <p className="text-sm text-muted-foreground">Completate</p>
+                <p className="text-sm text-muted-foreground">{t("transfers.completed")}</p>
               </div>
             </div>
           </CardContent>
@@ -440,14 +440,14 @@ export default function AdminTransferRequestsOverviewPage() {
         <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="active" className="gap-2" data-testid="tab-admin-active">
             <ListFilter className="h-4 w-4" />
-            Attive
+            {t("transfers.activeTab")}
             {(stats?.totalActive || 0) > 0 && (
               <Badge variant="secondary" className="ml-1">{stats?.totalActive}</Badge>
             )}
           </TabsTrigger>
           <TabsTrigger value="history" className="gap-2" data-testid="tab-admin-history">
             <History className="h-4 w-4" />
-            Storico
+            {t("transfers.historyTab")}
           </TabsTrigger>
         </TabsList>
 
@@ -456,7 +456,7 @@ export default function AdminTransferRequestsOverviewPage() {
             <Card>
               <CardContent className="py-12 text-center">
                 <Package className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                <p className="text-muted-foreground">Nessuna richiesta attiva</p>
+                <p className="text-muted-foreground">{t("transfers.noActiveRequests")}</p>
               </CardContent>
             </Card>
           ) : (
@@ -471,7 +471,7 @@ export default function AdminTransferRequestsOverviewPage() {
             <Card>
               <CardContent className="py-12 text-center">
                 <History className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                <p className="text-muted-foreground">Nessun trasferimento completato</p>
+                <p className="text-muted-foreground">{t("transfers.noCompletedTransfers")}</p>
               </CardContent>
             </Card>
           ) : (
@@ -488,30 +488,30 @@ export default function AdminTransferRequestsOverviewPage() {
           <DialogHeader>
             <DialogTitle className="flex flex-wrap items-center gap-2">
               <Package className="h-5 w-5" />
-              Dettagli Richiesta {selectedRequest?.requestNumber}
+              {t("transfers.requestDetails")} {selectedRequest?.requestNumber}
             </DialogTitle>
           </DialogHeader>
           {selectedRequest && (
             <div className="space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
                 <div>
-                  <span className="text-muted-foreground">Stato:</span>
+                  <span className="text-muted-foreground">{t("transfers.statusLabel")}:</span>
                   <div className="mt-1">{renderStatusBadge(selectedRequest.status)}</div>
                 </div>
                 <div>
-                  <span className="text-muted-foreground">Tipo Richiedente:</span>
+                  <span className="text-muted-foreground">{t("transfers.requesterType")}:</span>
                   <p className="font-medium">{requesterTypeLabels[selectedRequest.requesterType]?.label}</p>
                 </div>
                 <div>
-                  <span className="text-muted-foreground">Richiedente:</span>
+                  <span className="text-muted-foreground">{t("transfers.requester")}:</span>
                   <p className="font-medium">{selectedRequest.requesterName}</p>
                 </div>
                 <div>
-                  <span className="text-muted-foreground">Reseller Target:</span>
+                  <span className="text-muted-foreground">{t("transfers.targetReseller")}:</span>
                   <p className="font-medium">{selectedRequest.targetResellerName}</p>
                 </div>
                 <div>
-                  <span className="text-muted-foreground">Creata il:</span>
+                  <span className="text-muted-foreground">{t("transfers.createdOn")}:</span>
                   <p className="font-medium">{format(new Date(selectedRequest.createdAt), "dd/MM/yyyy HH:mm", { locale: it })}</p>
                 </div>
                 {selectedRequest.ddtNumber && (
@@ -524,7 +524,7 @@ export default function AdminTransferRequestsOverviewPage() {
               
               {selectedRequest.notes && (
                 <div>
-                  <span className="text-sm text-muted-foreground">Note:</span>
+                  <span className="text-sm text-muted-foreground">{t("transfers.notesLabel")}:</span>
                   <p className="text-sm mt-1 p-2 bg-muted rounded">{selectedRequest.notes}</p>
                 </div>
               )}
@@ -535,11 +535,11 @@ export default function AdminTransferRequestsOverviewPage() {
                   <table className="w-full text-sm">
                     <thead className="bg-muted">
                       <tr>
-                        <th className="text-left p-2">Prodotto</th>
-                        <th className="text-right p-2">Richiesti</th>
-                        <th className="text-right p-2">Approvati</th>
-                        <th className="text-right p-2">Spediti</th>
-                        <th className="text-right p-2">Ricevuti</th>
+                        <th className="text-left p-2">{t("transfers.productCol")}</th>
+                        <th className="text-right p-2">{t("transfers.requestedCol")}</th>
+                        <th className="text-right p-2">{t("transfers.approvedCol")}</th>
+                        <th className="text-right p-2">{t("transfers.shippedCol")}</th>
+                        <th className="text-right p-2">{t("transfers.receivedCol")}</th>
                       </tr>
                     </thead>
                     <tbody>

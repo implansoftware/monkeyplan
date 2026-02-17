@@ -51,7 +51,7 @@ export function CustomerBranchManager({ customerId, customerName, readOnly = fal
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: branchesQueryKey });
       setDialogOpen(false);
-      toast({ title: "Filiale creata con successo" });
+      toast({ title: t("customer.branchCreated") });
     },
     onError: (error: Error) => {
       toast({ title: t("common.error"), description: error.message, variant: "destructive" });
@@ -66,7 +66,7 @@ export function CustomerBranchManager({ customerId, customerName, readOnly = fal
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: branchesQueryKey });
       setEditBranch(null);
-      toast({ title: "Filiale aggiornata con successo" });
+      toast({ title: t("customer.branchUpdated") });
     },
     onError: (error: Error) => {
       toast({ title: t("common.error"), description: error.message, variant: "destructive" });
@@ -79,7 +79,7 @@ export function CustomerBranchManager({ customerId, customerName, readOnly = fal
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: branchesQueryKey });
-      toast({ title: "Filiale eliminata" });
+      toast({ title: t("customer.branchDeleted") });
     },
     onError: (error: Error) => {
       toast({ title: t("common.error"), description: error.message, variant: "destructive" });
@@ -104,7 +104,7 @@ export function CustomerBranchManager({ customerId, customerName, readOnly = fal
     };
 
     if (!data.branchCode || !data.branchName) {
-      toast({ title: t("common.error"), description: "Codice e Nome filiale sono obbligatori", variant: "destructive" });
+      toast({ title: t("common.error"), description: t("customer.branchCodeNameRequired"), variant: "destructive" });
       return;
     }
 
@@ -160,7 +160,7 @@ export function CustomerBranchManager({ customerId, customerName, readOnly = fal
       <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-2">
         <CardTitle className="flex flex-wrap items-center gap-2">
           <Building2 className="h-5 w-5" />
-          Filiali {customerName && `di ${customerName}`}
+          {t("customer.branches")} {customerName && `${t("common.of")} ${customerName}`}
           <Badge variant="secondary">{branches.length}</Badge>
         </CardTitle>
         {!readOnly && (
@@ -168,7 +168,7 @@ export function CustomerBranchManager({ customerId, customerName, readOnly = fal
             <DialogTrigger asChild>
               <Button size="sm" data-testid="button-add-branch">
                 <Plus className="h-4 w-4 mr-1" />
-                Aggiungi Filiale
+                {t("customer.addBranch")}
               </Button>
             </DialogTrigger>
             <DialogContent className="max-w-lg">
@@ -185,7 +185,7 @@ export function CustomerBranchManager({ customerId, customerName, readOnly = fal
                       id="branchCode"
                       name="branchCode"
                       required
-                      placeholder="es. FIL001"
+                      placeholder={t("customer.egBranchCode")}
                       defaultValue={editBranch?.branchCode || ""}
                       data-testid="input-branch-code"
                     />
@@ -196,7 +196,7 @@ export function CustomerBranchManager({ customerId, customerName, readOnly = fal
                       id="branchName"
                       name="branchName"
                       required
-                      placeholder="es. Filiale Milano Centro"
+                      placeholder={t("customer.egBranchName")}
                       defaultValue={editBranch?.branchName || ""}
                       data-testid="input-branch-name"
                     />
@@ -216,7 +216,7 @@ export function CustomerBranchManager({ customerId, customerName, readOnly = fal
                       setSelectedProvince(result.province);
                       setSelectedPostalCode(result.postalCode);
                     }}
-                    placeholder="Inizia a digitare l'indirizzo..."
+                    placeholder={t("common.startTypingAddress")}
                     data-testid="input-branch-address"
                   />
                 </div>
@@ -227,7 +227,7 @@ export function CustomerBranchManager({ customerId, customerName, readOnly = fal
                     <Input
                       id="city"
                       name="city"
-                      placeholder="es. Milano"
+                      placeholder={t("customer.egCity")}
                       value={selectedCity}
                       onChange={(e) => setSelectedCity(e.target.value)}
                       data-testid="input-branch-city"
@@ -238,7 +238,7 @@ export function CustomerBranchManager({ customerId, customerName, readOnly = fal
                     <Input
                       id="province"
                       name="province"
-                      placeholder="es. MI"
+                      placeholder={t("customer.egProvince")}
                       maxLength={2}
                       value={selectedProvince}
                       onChange={(e) => setSelectedProvince(e.target.value)}
@@ -250,7 +250,7 @@ export function CustomerBranchManager({ customerId, customerName, readOnly = fal
                     <Input
                       id="postalCode"
                       name="postalCode"
-                      placeholder="es. 20100"
+                      placeholder={t("customer.egPostalCode")}
                       maxLength={5}
                       value={selectedPostalCode}
                       onChange={(e) => setSelectedPostalCode(e.target.value)}
@@ -265,7 +265,7 @@ export function CustomerBranchManager({ customerId, customerName, readOnly = fal
                     <Input
                       id="contactName"
                       name="contactName"
-                      placeholder="es. Mario Rossi"
+                      placeholder={t("customer.egContactName")}
                       defaultValue={editBranch?.contactName || ""}
                       data-testid="input-branch-contact"
                     />
@@ -276,7 +276,7 @@ export function CustomerBranchManager({ customerId, customerName, readOnly = fal
                       id="contactPhone"
                       name="contactPhone"
                       type="tel"
-                      placeholder="es. 02 1234567"
+                      placeholder={t("customer.egPhone")}
                       defaultValue={editBranch?.contactPhone || ""}
                       data-testid="input-branch-phone"
                     />
@@ -289,7 +289,7 @@ export function CustomerBranchManager({ customerId, customerName, readOnly = fal
                     id="contactEmail"
                     name="contactEmail"
                     type="email"
-                    placeholder="es. filiale.milano@azienda.it"
+                    placeholder={t("customer.egEmail")}
                     defaultValue={editBranch?.contactEmail || ""}
                     data-testid="input-branch-email"
                   />
@@ -315,7 +315,7 @@ export function CustomerBranchManager({ customerId, customerName, readOnly = fal
                     disabled={createBranchMutation.isPending || updateBranchMutation.isPending}
                     data-testid="button-save-branch"
                   >
-                    {createBranchMutation.isPending || updateBranchMutation.isPending ? t("common.saving") : "Salva"}
+                    {createBranchMutation.isPending || updateBranchMutation.isPending ? t("common.saving") : t("common.save")}
                   </Button>
                 </div>
               </form>
@@ -329,7 +329,7 @@ export function CustomerBranchManager({ customerId, customerName, readOnly = fal
             <Building2 className="h-12 w-12 mx-auto mb-2 opacity-50" />
             <p>{t("customer.noBranchRegistered")}</p>
             {!readOnly && (
-              <p className="text-sm">Clicca su "Aggiungi Filiale" per creare la prima filiale</p>
+              <p className="text-sm">{t("customer.clickAddBranch")}</p>
             )}
           </div>
         ) : (
@@ -390,9 +390,9 @@ export function CustomerBranchManager({ customerId, customerName, readOnly = fal
                   </TableCell>
                   <TableCell>
                     {branch.isActive ? (
-                      <Badge variant="outline">Attiva</Badge>
+                      <Badge variant="outline">{t("common.active")}</Badge>
                     ) : (
-                      <Badge variant="destructive">Disattivata</Badge>
+                      <Badge variant="destructive">{t("common.deactivated")}</Badge>
                     )}
                   </TableCell>
                   {!readOnly && (
@@ -420,8 +420,7 @@ export function CustomerBranchManager({ customerId, customerName, readOnly = fal
                             <AlertDialogHeader>
                               <AlertDialogTitle>{t("customer.deleteBranch")}</AlertDialogTitle>
                               <AlertDialogDescription>
-                                Stai per eliminare la filiale "{branch.branchName}" ({branch.branchCode}). 
-                                Questa azione non può essere annullata.
+                                {t("customer.deleteBranchDescription", { name: branch.branchName, code: branch.branchCode })}
                               </AlertDialogDescription>
                             </AlertDialogHeader>
                             <AlertDialogFooter>

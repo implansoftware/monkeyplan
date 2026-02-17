@@ -21,25 +21,25 @@ type ServiceOrderWithDetails = ServiceOrder & {
 };
 
 const statusLabels: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
-  pending: { label: "In attesa", variant: "secondary" },
-  accepted: { label: "Accettato", variant: "default" },
-  scheduled: { label: "Programmato", variant: "outline" },
-  in_progress: { label: "In lavorazione", variant: "default" },
-  completed: { label: "Completato", variant: "default" },
-  cancelled: { label: "Annullato", variant: "destructive" },
+  pending: { label: "pending", variant: "secondary" },
+  accepted: { label: "accepted", variant: "default" },
+  scheduled: { label: "scheduled", variant: "outline" },
+  in_progress: { label: "in_progress", variant: "default" },
+  completed: { label: "completed", variant: "default" },
+  cancelled: { label: "cancelled", variant: "destructive" },
 };
 
 const paymentStatusLabels: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
-  pending: { label: "Da pagare", variant: "secondary" },
-  paid: { label: "Pagato", variant: "default" },
-  cancelled: { label: "Annullato", variant: "destructive" },
+  pending: { label: "pending", variant: "secondary" },
+  paid: { label: "paid", variant: "default" },
+  cancelled: { label: "cancelled", variant: "destructive" },
 };
 
 const paymentMethodLabels: Record<string, { label: string; icon: any }> = {
-  in_person: { label: "In negozio", icon: Banknote },
-  bank_transfer: { label: "Bonifico", icon: Building },
-  card: { label: "Carta", icon: CreditCard },
-  paypal: { label: "PayPal", icon: CreditCard },
+  in_person: { label: "in_person", icon: Banknote },
+  bank_transfer: { label: "bank_transfer", icon: Building },
+  card: { label: "card", icon: CreditCard },
+  paypal: { label: "paypal", icon: CreditCard },
 };
 
 export default function AdminServiceOrders() {
@@ -80,8 +80,8 @@ export default function AdminServiceOrders() {
     <div className="container mx-auto p-6 space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold" data-testid="text-page-title">Ordini Intervento</h1>
-          <p className="text-muted-foreground">Panoramica di tutti gli ordini di intervento nel sistema</p>
+          <h1 className="text-2xl font-bold" data-testid="text-page-title">{t("serviceOrders.title")}</h1>
+          <p className="text-muted-foreground">{t("serviceOrders.desc")}</p>
         </div>
       </div>
 
@@ -198,7 +198,7 @@ export default function AdminServiceOrders() {
       <Dialog open={isDetailOpen} onOpenChange={setIsDetailOpen}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle>Dettaglio Ordine {selectedOrder?.orderNumber}</DialogTitle>
+            <DialogTitle>{t("serviceOrders.orderDetail")} {selectedOrder?.orderNumber}</DialogTitle>
             <DialogDescription>{t("utility.serviceOrderInfo")}</DialogDescription>
           </DialogHeader>
           {selectedOrder && (
@@ -217,7 +217,7 @@ export default function AdminServiceOrders() {
                   <p>{selectedOrder.repairCenterName || "-"}</p>
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-muted-foreground">Servizio</label>
+                  <label className="text-sm font-medium text-muted-foreground">{t("serviceOrders.service")}</label>
                   <p>{selectedOrder.serviceName}</p>
                 </div>
                 <div>
@@ -233,7 +233,7 @@ export default function AdminServiceOrders() {
                   <p className="font-medium">{formatPrice(selectedOrder.priceCents)}</p>
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-muted-foreground">Stato Pagamento</label>
+                  <label className="text-sm font-medium text-muted-foreground">{t("serviceOrders.paymentStatus")}</label>
                   <Badge variant={paymentStatusLabels[selectedOrder.paymentStatus]?.variant || "secondary"}>
                     {paymentStatusLabels[selectedOrder.paymentStatus]?.label}
                   </Badge>
@@ -241,13 +241,13 @@ export default function AdminServiceOrders() {
               </div>
               {selectedOrder.issueDescription && (
                 <div>
-                  <label className="text-sm font-medium text-muted-foreground">Descrizione problema</label>
+                  <label className="text-sm font-medium text-muted-foreground">{t("serviceOrders.problemDescription")}</label>
                   <p className="whitespace-pre-wrap">{selectedOrder.issueDescription}</p>
                 </div>
               )}
               {selectedOrder.customerNotes && (
                 <div>
-                  <label className="text-sm font-medium text-muted-foreground">Note cliente</label>
+                  <label className="text-sm font-medium text-muted-foreground">{t("serviceOrders.customerNotes")}</label>
                   <p className="whitespace-pre-wrap">{selectedOrder.customerNotes}</p>
                 </div>
               )}

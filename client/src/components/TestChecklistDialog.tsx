@@ -69,16 +69,16 @@ type TestChecklistFormData = z.infer<typeof testChecklistSchema>;
 
 function getTestItems(t: (key: string) => string) {
   return [
-    { key: "displayTest", label: "Display", icon: Monitor, description: "Schermo, colori, pixel morti" },
-    { key: "touchTest", label: "Touch", icon: Hand, description: t("repair.touchReactivity") },
-    { key: "batteryTest", label: t("repair.battery"), icon: Battery, description: "Salute batteria, cicli di ricarica" },
-    { key: "audioTest", label: "Audio", icon: Volume2, description: "Altoparlanti, microfono, capsula" },
-    { key: "cameraTest", label: t("repair.camera"), icon: Camera, description: "Fotocamere anteriore/posteriore, flash" },
-    { key: "connectivityTest", label: t("diagnosis.connectivity"), icon: Wifi, description: "WiFi, Bluetooth, rete cellulare" },
-    { key: "buttonsTest", label: "Pulsanti", icon: MousePointer2, description: "Tasti fisici, volume, accensione" },
+    { key: "displayTest", label: t("test.display"), icon: Monitor, description: t("test.displayDescription") },
+    { key: "touchTest", label: t("test.touch"), icon: Hand, description: t("repair.touchReactivity") },
+    { key: "batteryTest", label: t("repair.battery"), icon: Battery, description: t("test.batteryDescription") },
+    { key: "audioTest", label: t("test.audio"), icon: Volume2, description: t("test.audioDescription") },
+    { key: "cameraTest", label: t("repair.camera"), icon: Camera, description: t("test.cameraDescription") },
+    { key: "connectivityTest", label: t("diagnosis.connectivity"), icon: Wifi, description: t("test.connectivityDescription") },
+    { key: "buttonsTest", label: t("test.buttons"), icon: MousePointer2, description: t("test.buttonsDescription") },
     { key: "sensorsTest", label: t("repair.sensors"), icon: Gauge, description: t("repair.proximityAccelerometer") },
-    { key: "chargingTest", label: t("repair.charging"), icon: Plug, description: "Porta di ricarica, ricarica wireless" },
-    { key: "softwareTest", label: "Software", icon: Smartphone, description: t("repair.osStability") },
+    { key: "chargingTest", label: t("repair.charging"), icon: Plug, description: t("test.chargingDescription") },
+    { key: "softwareTest", label: t("test.software"), icon: Smartphone, description: t("repair.osStability") },
   ] as const;
 }
 
@@ -163,8 +163,8 @@ export function TestChecklistDialog({
     },
     onSuccess: () => {
       toast({
-        title: "Checklist salvata",
-        description: "I risultati dei test sono stati salvati con successo",
+        title: t("test.checklistSaved"),
+        description: t("test.testResultsSaved"),
       });
       queryClient.invalidateQueries({ queryKey: ["/api/repair-orders", repairOrderId, "test-checklist"] });
       queryClient.invalidateQueries({ queryKey: ["/api/repair-orders"] });
@@ -199,9 +199,9 @@ export function TestChecklistDialog({
               <ClipboardCheck className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
             </div>
             <div>
-              <span className="text-lg font-semibold">Checklist Collaudo Dispositivo</span>
+              <span className="text-lg font-semibold">{t("test.deviceTestChecklist")}</span>
               <DialogDescription className="mt-0.5">
-                Esegui e registra i test funzionali del dispositivo
+                {t("test.performAndRecordTests")}
               </DialogDescription>
             </div>
           </DialogTitle>
@@ -209,13 +209,13 @@ export function TestChecklistDialog({
 
         <div className="flex gap-2 mb-4">
           <Badge variant="default" className="gap-1">
-            <CheckCircle className="h-3 w-3" /> {passedTests} Superati
+            <CheckCircle className="h-3 w-3" /> {passedTests} {t("test.passed")}
           </Badge>
           <Badge variant="destructive" className="gap-1">
-            <XCircle className="h-3 w-3" /> {failedTests} Falliti
+            <XCircle className="h-3 w-3" /> {failedTests} {t("test.failed")}
           </Badge>
           <Badge variant="outline" className="gap-1">
-            {pendingTests} In Attesa
+            {pendingTests} {t("test.pending")}
           </Badge>
         </div>
 
@@ -229,7 +229,7 @@ export function TestChecklistDialog({
                     <div className="h-6 w-6 rounded-md bg-emerald-500/10 flex items-center justify-center">
                       <Smartphone className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
                     </div>
-                    Test Funzionali
+                    {t("test.functionalTests")}
                   </CardTitle>
                   <div className="flex gap-2">
                     <Button
@@ -244,7 +244,7 @@ export function TestChecklistDialog({
                       className="gap-1"
                       data-testid="button-all-ok"
                     >
-                      <CheckCircle className="h-3 w-3" /> Tutti OK
+                      <CheckCircle className="h-3 w-3" /> {t("test.allOk")}
                     </Button>
                     <Button
                       type="button"
@@ -258,7 +258,7 @@ export function TestChecklistDialog({
                       className="gap-1"
                       data-testid="button-all-ko"
                     >
-                      <XCircle className="h-3 w-3" /> Tutti KO
+                      <XCircle className="h-3 w-3" /> {t("test.allFailed")}
                     </Button>
                   </div>
                 </div>
@@ -335,7 +335,7 @@ export function TestChecklistDialog({
                   <div className="h-6 w-6 rounded-md bg-blue-500/10 flex items-center justify-center">
                     <ClipboardCheck className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400" />
                   </div>
-                  Risultato Generale
+                  {t("test.overallResult")}
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -352,7 +352,7 @@ export function TestChecklistDialog({
                         />
                       </FormControl>
                       <FormLabel className="text-base font-medium cursor-pointer">
-                        Il dispositivo ha superato tutti i test ed è pronto per la consegna
+                        {t("test.devicePassedAllTests")}
                       </FormLabel>
                       <FormMessage />
                     </FormItem>
@@ -368,7 +368,7 @@ export function TestChecklistDialog({
                       <FormControl>
                         <Textarea
                           {...field}
-                          placeholder="Osservazioni aggiuntive, problemi riscontrati, raccomandazioni..."
+                          placeholder={t("test.additionalObservations")}
                           rows={3}
                           data-testid="input-notes"
                         />
@@ -394,7 +394,7 @@ export function TestChecklistDialog({
                 disabled={saveChecklistMutation.isPending}
                 data-testid="button-save-checklist"
               >
-                {saveChecklistMutation.isPending ? t("common.saving") : "Salva Checklist"}
+                {saveChecklistMutation.isPending ? t("common.saving") : t("test.saveChecklist")}
               </Button>
             </div>
           </form>
