@@ -103,7 +103,7 @@ export default function RepairCenterHrLeaveRequests() {
       queryClient.invalidateQueries({ queryKey: ["/api/repair-center/hr/leave-requests"] });
       setEditDialogOpen(false);
       setEditingRequest(null);
-      toast({ title: "Richiesta modificata", description: "Le modifiche sono state salvate." });
+      toast({ title: t("hr.requestModified"), description: t("hr.changesHaveBeenSaved") });
     },
     onError: (error: any) => {
       toast({ title: t("auth.error"), description: error.message, variant: "destructive" });

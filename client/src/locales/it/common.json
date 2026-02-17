@@ -879,7 +879,9 @@
     "monthsLabel": "mesi",
     "searchByNameCode": "Cerca per nome, codice...",
     "noServiceFound": "Nessun servizio trovato",
-    "vatSummary": "Riepilogo IVA (Corrispettivi)"
+    "vatSummary": "Riepilogo IVA (Corrispettivi)",
+    "syncAll": "Sincronizza Tutti",
+    "syncing": "Sincronizzazione..."
   },
   "roles": {
     "admin": "Amministratore",
@@ -1187,7 +1189,15 @@
     "pending": "In Attesa",
     "searchInvoice": "Cerca fattura...",
     "vat": "IVA",
-    "vatRate": "Aliquota IVA"
+    "vatRate": "Aliquota IVA",
+    "importedDocuments": "Importati {{count}} documenti da {{companies}} aziende",
+    "csvNumber": "Numero",
+    "csvDate": "Data",
+    "csvAmount": "Importo",
+    "csvPaymentMethod": "Metodo Pagamento",
+    "csvDueDate": "Scadenza",
+    "csvStatus": "Stato",
+    "csvSource": "Fonte"
   },
   "tickets": {
     "title": "Ticket",
@@ -2312,7 +2322,8 @@
     "searchPlaceholder": "Cerca cliente...",
     "selectReseller": "Seleziona Rivenditore",
     "totalCustomers": "Totale Clienti",
-    "vatNumber": "Partita IVA"
+    "vatNumber": "Partita IVA",
+    "deleteCustomer": "Elimina cliente"
   },
   "b2b": {
     "title": "Ordini B2B",
@@ -3344,6 +3355,7 @@
     "manageLeaveRequests": "Gestisci le richieste ferie",
     "pendingApproval": "In Attesa di Approvazione",
     "requestModified": "Richiesta modificata",
+    "changesHaveBeenSaved": "Le modifiche sono state salvate.",
     "requestSent": "Richiesta inviata",
     "requestStatusUpdated": "Stato richiesta aggiornato",
     "requestUpdated": "Richiesta aggiornata",
@@ -4157,6 +4169,14 @@
     "commissionsTotal": "Compensi Totali",
     "practicesByCategory": "Pratiche per Categoria",
     "practicesByStatus": "Pratiche per Stato",
+    "servicesList": "Listino Servizi",
+    "commissionsStatus": "Stato Commissioni",
+    "practicesCategoryDetail": "Dettaglio per Categoria",
+    "completedPractices": "Completate",
+    "utilityModule": "Modulo Utility",
+    "manageTelecomAndEnergyServices": "Gestione servizi telefonici, energetici e altro",
+    "catalogAndPrices": "Catalogo e prezzi",
+    "activeContracts": "Contratti attivi",
     "paid": "Pagate",
     "practicesLabel": "Pratiche",
     "utilitySuppliers": "Fornitori Utility",
@@ -4244,7 +4264,9 @@
       "normale": "Normale",
       "alta": "Alta",
       "urgente": "Urgente"
-    }
+    },
+    "editCommissionData": "Modifica i dati della commissione.",
+    "registerNewCommission": "Registra una nuova commissione per una pratica utility."
   },
   "suppliers": {
     "title": "Fornitori",
@@ -4918,6 +4940,8 @@
     "placeholderPaypalEmail": "pagamenti@tuaemail.it",
     "paypalClientIdDesc": "Il Client ID del tuo account PayPal Developer",
     "leaveEmptyToKeep": "Lascia vuoto per mantenere il valore esistente",
+    "leaveEmptyToKeepExistingValue": "Lascia vuoto per mantenere il valore esistente",
+    "requiredToEnableStripe": "Richiesto per abilitare Stripe",
     "savePaymentConfig": "Salva Configurazione Pagamenti",
     "hourlyLaborRate": "Tariffa Oraria Manodopera",
     "hourlyLaborRateDesc": "Configura la tariffa oraria per il calcolo dei costi di manodopera",
@@ -4925,6 +4949,8 @@
     "useResellerRateDesc": "Eredita automaticamente la tariffa oraria dal tuo Reseller",
     "customized": "Personalizzata",
     "fromReseller": "Dal Reseller",
+    "priceList": "Listino",
+    "reseller": "Rivenditore",
     "usingCustomRate": "Stai usando una tariffa personalizzata per questo centro",
     "warningHours": "Warning (ore)",
     "criticalHours": "Critical (ore)",
@@ -7359,7 +7385,11 @@
     "deviceCountLabelPlural": "{{count}} dispositivi",
     "unitsCount": "{{qty}} unità",
     "qtyLabel": "Qtà: {{qty}}",
-    "devicesAndUnits": "{{deviceCount}} dispositivi · {{totalCount}} unità"
+    "devicesAndUnits": "{{deviceCount}} dispositivi · {{totalCount}} unità",
+    "awaitingResponse": "In attesa risposta",
+    "accepted": "Accettato",
+    "rejected": "Rifiutato",
+    "workDescription": "Descrizione lavori"
   },
   "services": {
     "catalogoServiziConPrezziApplicatiAlTuoCentr": "Catalogo servizi con prezzi applicati al tuo centro",
@@ -8177,7 +8207,11 @@
     "editItemDesc": "Modifica i dettagli della voce di listino",
     "newItemDesc": "Crea una nuova voce di listino personalizzata per il tuo catalogo",
     "baseTimeMinutes": "Tempo base: {{minutes}} minuti",
-    "codiceRequired": "Codice Required"
+    "codiceRequired": "Codice Required",
+    "serviceCreated": "Intervento creato",
+    "serviceUpdated": "Intervento aggiornato",
+    "serviceDeleted": "Intervento eliminato",
+    "newServiceAdded": "Nuovo intervento aggiunto al listino"
   },
   "serviceOrders": {
     "toPay": "Da pagare",
@@ -10066,7 +10100,8 @@
     "cartItems": "Articoli nel carrello",
     "configure": "Configura",
     "credentialsSavedDesc": "Credenziali salvate con successo",
-    "envHint": "Usa \"Sviluppo\" per test, \"Produzione\" per dati reali."
+    "envHint": "Usa \"Sviluppo\" per test, \"Produzione\" per dati reali.",
+    "confirmDeleteIntegration": "Eliminare l'integrazione \"{{name}}\"?"
   },
   "shipments": {
     "statuses": {

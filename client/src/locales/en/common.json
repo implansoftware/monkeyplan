@@ -879,7 +879,9 @@
     "monthsLabel": "months",
     "searchByNameCode": "Search by name, code...",
     "noServiceFound": "No service found",
-    "vatSummary": "VAT Summary (Receipts)"
+    "vatSummary": "VAT Summary (Receipts)",
+    "syncAll": "Sync All",
+    "syncing": "Syncing..."
   },
   "roles": {
     "admin": "Administrator",
@@ -1187,7 +1189,15 @@
     "pending": "Pending",
     "searchInvoice": "Search invoice...",
     "vat": "VAT",
-    "vatRate": "VAT Rate"
+    "vatRate": "VAT Rate",
+    "importedDocuments": "Imported {{count}} documents from {{companies}} companies",
+    "csvNumber": "Number",
+    "csvDate": "Date",
+    "csvAmount": "Amount",
+    "csvPaymentMethod": "Payment Method",
+    "csvDueDate": "Due Date",
+    "csvStatus": "Status",
+    "csvSource": "Source"
   },
   "tickets": {
     "title": "Tickets",
@@ -2312,7 +2322,8 @@
     "searchPlaceholder": "Search customer...",
     "selectReseller": "Select Reseller",
     "totalCustomers": "Total Customers",
-    "vatNumber": "VAT Number"
+    "vatNumber": "VAT Number",
+    "deleteCustomer": "Delete customer"
   },
   "b2b": {
     "title": "B2B Orders",
@@ -3346,6 +3357,7 @@
     "manageLeaveRequests": "Manage leave requests",
     "pendingApproval": "Pending Approval",
     "requestModified": "Request modified",
+    "changesHaveBeenSaved": "Changes have been saved.",
     "requestSent": "Request sent",
     "requestStatusUpdated": "Request status updated",
     "requestUpdated": "Request updated",
@@ -4159,6 +4171,14 @@
     "commissionsTotal": "Total Commissions",
     "practicesByCategory": "Practices by Category",
     "practicesByStatus": "Practices by Status",
+    "servicesList": "Service List",
+    "commissionsStatus": "Commissions Status",
+    "practicesCategoryDetail": "Category Details",
+    "completedPractices": "Completed",
+    "utilityModule": "Utility Module",
+    "manageTelecomAndEnergyServices": "Management of telecom, energy and other services",
+    "catalogAndPrices": "Catalog and prices",
+    "activeContracts": "Active contracts",
     "paid": "Paid",
     "practicesLabel": "Practices",
     "utilitySuppliers": "Utility Suppliers",
@@ -4246,7 +4266,9 @@
       "normale": "Normal",
       "alta": "High",
       "urgente": "Urgent"
-    }
+    },
+    "editCommissionData": "Edit commission data.",
+    "registerNewCommission": "Register a new commission for a utility practice."
   },
   "suppliers": {
     "title": "Suppliers",
@@ -4920,6 +4942,8 @@
     "placeholderPaypalEmail": "payments@youremail.com",
     "paypalClientIdDesc": "The Client ID from your PayPal Developer account",
     "leaveEmptyToKeep": "Leave empty to keep existing value",
+    "leaveEmptyToKeepExistingValue": "Leave empty to keep existing value",
+    "requiredToEnableStripe": "Required to enable Stripe",
     "savePaymentConfig": "Save Payment Configuration",
     "hourlyLaborRate": "Hourly Labor Rate",
     "hourlyLaborRateDesc": "Configure the hourly rate for labor cost calculations",
@@ -4927,6 +4951,8 @@
     "useResellerRateDesc": "Automatically inherit the hourly rate from your Reseller",
     "customized": "Customized",
     "fromReseller": "From Reseller",
+    "priceList": "Price List",
+    "reseller": "Reseller",
     "usingCustomRate": "You are using a custom rate for this center",
     "warningHours": "Warning (hours)",
     "criticalHours": "Critical (hours)",
@@ -7361,7 +7387,11 @@
     "deviceCountLabelPlural": "{{count}} devices",
     "unitsCount": "{{qty}} units",
     "qtyLabel": "Qty: {{qty}}",
-    "devicesAndUnits": "{{deviceCount}} devices · {{totalCount}} units"
+    "devicesAndUnits": "{{deviceCount}} devices · {{totalCount}} units",
+    "awaitingResponse": "Awaiting response",
+    "accepted": "Accepted",
+    "rejected": "Rejected",
+    "workDescription": "Work description"
   },
   "services": {
     "catalogoServiziConPrezziApplicatiAlTuoCentr": "Service catalog with prices applied to your center",
@@ -8190,7 +8220,11 @@
     "editItemDesc": "Edit the price list item details",
     "newItemDesc": "Create a new custom price list item for your catalog",
     "baseTimeMinutes": "Base time: {{minutes}} minutes",
-    "codiceRequired": "Codice Required"
+    "codiceRequired": "Codice Required",
+    "serviceCreated": "Service created successfully",
+    "serviceUpdated": "Service updated",
+    "serviceDeleted": "Service deleted",
+    "newServiceAdded": "New service added to the catalog"
   },
   "serviceOrders": {
     "toPay": "To pay",
@@ -10352,7 +10386,8 @@
     "sibillCredentialsDeleted": "Sibill credentials deleted",
     "vatNumber": "VAT: {{number}}",
     "fiscalCode": "FC: {{code}}",
-    "environmentLabel": "Environment"
+    "environmentLabel": "Environment",
+    "confirmDeleteIntegration": "Delete the integration \"{{name}}\"?"
   },
   "shipments": {
     "statuses": {

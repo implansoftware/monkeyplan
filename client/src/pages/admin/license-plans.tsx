@@ -33,19 +33,19 @@ const DURATION_LABEL_KEYS: Record<number, string> = {
 };
 
 const AVAILABLE_FEATURES = [
-  { id: "repairs", label: "Gestione riparazioni", labelKey: "license.featureRepairs", icon: Wrench },
-  { id: "warehouse", label: "Magazzino e inventario", labelKey: "license.featureWarehouse", icon: Package },
-  { id: "invoicing", label: "Fatturazione", labelKey: "license.featureInvoicing", icon: FileText },
-  { id: "pos", label: "POS e corrispettivi", labelKey: "license.featurePos", icon: Receipt },
-  { id: "fiscal_rt", label: "Registratore Telematico (RT)", labelKey: "license.featureFiscalRt", icon: Receipt },
-  { id: "b2b_orders", label: "Ordini B2B", labelKey: "license.featureB2bOrders", icon: ShoppingCart },
-  { id: "marketplace", label: "Marketplace P2P", labelKey: "license.featureMarketplace", icon: Store },
-  { id: "analytics", label: "Statistiche e report", labelKey: "license.featureAnalytics", icon: BarChart3 },
-  { id: "ticketing", label: "Ticketing e supporto", labelKey: "license.featureTicketing", icon: Headphones },
-  { id: "warranty", label: "Garanzie e assicurazioni", labelKey: "license.featureWarranty", icon: Shield },
-  { id: "push_notifications", label: "Notifiche push", labelKey: "license.featurePushNotifications", icon: Smartphone },
-  { id: "crm", label: "Gestione clienti", labelKey: "license.featureCrm", icon: Users },
-  { id: "payments", label: "Pagamenti online", labelKey: "license.featurePayments", icon: CreditCard },
+  { id: "repairs", label: "Repair Management", labelKey: "license.featureRepairs", icon: Wrench },
+  { id: "warehouse", label: "Warehouse & Inventory", labelKey: "license.featureWarehouse", icon: Package },
+  { id: "invoicing", label: "Invoicing", labelKey: "license.featureInvoicing", icon: FileText },
+  { id: "pos", label: "POS & Receipts", labelKey: "license.featurePos", icon: Receipt },
+  { id: "fiscal_rt", label: "Fiscal Register (RT)", labelKey: "license.featureFiscalRt", icon: Receipt },
+  { id: "b2b_orders", label: "B2B Orders", labelKey: "license.featureB2bOrders", icon: ShoppingCart },
+  { id: "marketplace", label: "P2P Marketplace", labelKey: "license.featureMarketplace", icon: Store },
+  { id: "analytics", label: "Statistics & Reports", labelKey: "license.featureAnalytics", icon: BarChart3 },
+  { id: "ticketing", label: "Ticketing & Support", labelKey: "license.featureTicketing", icon: Headphones },
+  { id: "warranty", label: "Warranties & Insurance", labelKey: "license.featureWarranty", icon: Shield },
+  { id: "push_notifications", label: "Push Notifications", labelKey: "license.featurePushNotifications", icon: Smartphone },
+  { id: "crm", label: "Customer Management", labelKey: "license.featureCrm", icon: Users },
+  { id: "payments", label: "Online Payments", labelKey: "license.featurePayments", icon: CreditCard },
 ];
 
 const MAX_STAFF_OPTIONS = [

@@ -134,7 +134,7 @@ export default function RepairCenterServiceCatalog() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/repair-center/service-catalog"] });
-      toast({ title: "Intervento creato", description: "Nuovo intervento aggiunto al listino" });
+      toast({ title: t("serviceCatalog.serviceCreated"), description: t("serviceCatalog.newServiceAdded") });
       closeItemDialog();
     },
     onError: (error: any) => {
@@ -153,7 +153,7 @@ export default function RepairCenterServiceCatalog() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/repair-center/service-catalog"] });
-      toast({ title: "Intervento aggiornato" });
+      toast({ title: t("serviceCatalog.serviceUpdated") });
       closeItemDialog();
     },
     onError: (error: any) => {
@@ -171,7 +171,7 @@ export default function RepairCenterServiceCatalog() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/repair-center/service-catalog"] });
-      toast({ title: "Intervento eliminato" });
+      toast({ title: t("serviceCatalog.serviceDeleted") });
       setIsDeleteDialogOpen(false);
       setItemToDelete(null);
     },

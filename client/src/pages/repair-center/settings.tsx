@@ -1661,8 +1661,8 @@ export default function RepairCenterSettings() {
                                             </FormControl>
                                             <FormDescription>
                                               {(paymentConfigData?.ownConfig as any)?.hasStripeSecret 
-                                                ? "Lascia vuoto per mantenere il valore esistente"
-                                                : "Richiesta per abilitare Stripe"
+                                                ? t("settings.leaveEmptyToKeepExistingValue")
+                                                : t("settings.requiredToEnableStripe")
                                               }
                                             </FormDescription>
                                             <FormMessage />
@@ -2000,8 +2000,8 @@ export default function RepairCenterSettings() {
                             variant={slaData.source === 'own' ? 'default' : 'secondary'}
                             data-testid="badge-sla-source"
                           >
-                            {slaData.source === 'own' ? 'Personalizzate' : 
-                             slaData.source === 'reseller' ? 'Dal Reseller' : 'Default'}
+                            {slaData.source === 'own' ? t("settings.customized") : 
+                             slaData.source === 'reseller' ? t("settings.fromReseller") : t("common.default")}
                           </Badge>
                         )}
                       </div>

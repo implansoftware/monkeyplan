@@ -656,7 +656,7 @@ function CreateReturnDialog({ open, onClose, orders, reasonLabels }: {
             disabled={!selectedOrderId || !reason || createMutation.isPending}
             data-testid="button-create-return"
           >
-            {createMutation.isPending ? "Invio..." : "Invia Richiesta"}
+            {createMutation.isPending ? t("common.sending") : t("common.sendRequest")}
           </Button>
         </DialogFooter>
       </DialogContent>

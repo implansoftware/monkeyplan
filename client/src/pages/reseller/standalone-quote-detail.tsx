@@ -34,7 +34,7 @@ type QuoteWithItems = StandaloneQuote & { items: StandaloneQuoteItem[] };
 function getStatusLabels(t: (key: string) => string): Record<string, string> {
   return {
     draft: t("invoices.draft"),
-    sent: "Inviato",
+    sent: t("common.sent"),
     accepted: t("standalone.accepted"),
     rejected: t("b2b.status.cancelled"),
     expired: t("standalone.expired"),

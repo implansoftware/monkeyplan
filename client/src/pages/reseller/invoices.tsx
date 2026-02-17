@@ -70,7 +70,7 @@ export default function ResellerInvoices() {
       queryClient.invalidateQueries({ queryKey: ["/api/sibill/documents"] });
       toast({
         title: t("invoices.syncCompleted"),
-        description: `Importati ${data.syncedCount} documenti da ${data.companiesProcessed} aziende`,
+        description: t("invoices.importedDocuments", { count: data.syncedCount, companies: data.companiesProcessed }),
       });
     },
     onError: (error: Error) => {
@@ -132,7 +132,7 @@ export default function ResellerInvoices() {
       setIsExporting(true);
       
       const csv = [
-        ['Numero', 'Data', 'Importo', 'Metodo Pagamento', 'Scadenza', 'Stato'].join(','),
+        [t("invoices.csvNumber"), t("invoices.csvDate"), t("invoices.csvAmount"), t("invoices.csvPaymentMethod"), t("invoices.csvDueDate"), t("invoices.csvStatus")].join(','),
         ...filteredInvoices.map(inv => [
           inv.invoiceNumber,
           format(new Date(inv.createdAt), "dd/MM/yyyy"),

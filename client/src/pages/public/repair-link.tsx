@@ -77,7 +77,7 @@ export default function RepairLink() {
   }
 
   if (isError) {
-    const errorMessage = (error as any)?.message || "Errore sconosciuto";
+    const errorMessage = (error as any)?.message || t("common.unknownError");
     const is403 = errorMessage.includes("403") || errorMessage.includes("accesso");
     const is404 = errorMessage.includes("404") || errorMessage.includes("not found");
 

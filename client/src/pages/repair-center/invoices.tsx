@@ -89,7 +89,7 @@ export default function RepairCenterInvoices() {
       setIsExporting(true);
       
       const csv = [
-        ['Numero', 'Data', 'Fonte', 'Importo', 'Metodo Pagamento', 'Scadenza', 'Stato'].join(','),
+        [t("invoices.csvNumber"), t("invoices.csvDate"), t("invoices.csvSource"), t("invoices.csvAmount"), t("invoices.csvPaymentMethod"), t("invoices.csvDueDate"), t("invoices.csvStatus")].join(','),
         ...filteredInvoices.map(inv => [
           inv.invoiceNumber,
           format(new Date(inv.createdAt), "dd/MM/yyyy"),

@@ -36,13 +36,13 @@ type TaskStatus = "da_fare" | "in_corso" | "completato" | "annullato";
 type Priority = "bassa" | "normale" | "alta" | "urgente";
 
 const statusLabels: Record<PracticeStatus, { label: string; labelKey: string }> = {
-  bozza: { label: "Bozza", labelKey: "utility.statusDraft" },
-  inviata: { label: "Inviata", labelKey: "utility.statusSent" },
-  in_lavorazione: { label: "In Lavorazione", labelKey: "utility.statusInProgress" },
-  attesa_documenti: { label: "Attesa Documenti", labelKey: "utility.statusWaitingDocuments" },
-  completata: { label: "Completata", labelKey: "utility.statusCompleted" },
-  annullata: { label: "Annullata", labelKey: "utility.statusCancelled" },
-  rifiutata: { label: "Rifiutata", labelKey: "utility.statusRejected" },
+  bozza: { label: "Draft", labelKey: "utility.statusDraft" },
+  inviata: { label: "Sent", labelKey: "utility.statusSent" },
+  in_lavorazione: { label: "In Progress", labelKey: "utility.statusInProgress" },
+  attesa_documenti: { label: "Waiting Documents", labelKey: "utility.statusWaitingDocuments" },
+  completata: { label: "Completed", labelKey: "utility.statusCompleted" },
+  annullata: { label: "Cancelled", labelKey: "utility.statusCancelled" },
+  rifiutata: { label: "Rejected", labelKey: "utility.statusRejected" },
 };
 
 const statusColors: Record<PracticeStatus, string> = {
@@ -56,10 +56,10 @@ const statusColors: Record<PracticeStatus, string> = {
 };
 
 const taskStatusLabels: Record<TaskStatus, { label: string; labelKey: string }> = {
-  da_fare: { label: "Da fare", labelKey: "utility.taskTodo" },
-  in_corso: { label: "In corso", labelKey: "utility.taskInProgress" },
-  completato: { label: "Completato", labelKey: "utility.taskCompleted" },
-  annullato: { label: "Annullato", labelKey: "utility.taskCancelled" },
+  da_fare: { label: "To Do", labelKey: "utility.taskTodo" },
+  in_corso: { label: "In Progress", labelKey: "utility.taskInProgress" },
+  completato: { label: "Completed", labelKey: "utility.taskCompleted" },
+  annullato: { label: "Cancelled", labelKey: "utility.taskCancelled" },
 };
 
 const taskStatusIcons: Record<TaskStatus, typeof Circle> = {
@@ -70,10 +70,10 @@ const taskStatusIcons: Record<TaskStatus, typeof Circle> = {
 };
 
 const priorityLabels: Record<Priority, { label: string; labelKey: string }> = {
-  bassa: { label: "Bassa", labelKey: "utility.priorityLow" },
-  normale: { label: "Normale", labelKey: "utility.priorityNormal" },
-  alta: { label: "Alta", labelKey: "utility.priorityHigh" },
-  urgente: { label: "Urgente", labelKey: "utility.priorityUrgent" },
+  bassa: { label: "Low", labelKey: "utility.priorityLow" },
+  normale: { label: "Normal", labelKey: "utility.priorityNormal" },
+  alta: { label: "High", labelKey: "utility.priorityHigh" },
+  urgente: { label: "Urgent", labelKey: "utility.priorityUrgent" },
 };
 
 const priorityColors: Record<Priority, string> = {
@@ -84,13 +84,13 @@ const priorityColors: Record<Priority, string> = {
 };
 
 const documentCategoryLabels: Record<string, { label: string; labelKey: string }> = {
-  contratto: { label: "Contratto", labelKey: "utility.docContract" },
-  documento_identita: { label: "Documento Identità", labelKey: "utility.docIdentity" },
-  codice_fiscale: { label: "Codice Fiscale", labelKey: "utility.docFiscalCode" },
-  bolletta: { label: "Bolletta", labelKey: "utility.docBill" },
-  conferma_fornitore: { label: "Conferma Fornitore", labelKey: "utility.docSupplierConfirm" },
-  fattura: { label: "Fattura", labelKey: "utility.docInvoice" },
-  altro: { label: "Altro", labelKey: "utility.docOther" },
+  contratto: { label: "Contract", labelKey: "utility.docContract" },
+  documento_identita: { label: "Identity Document", labelKey: "utility.docIdentity" },
+  codice_fiscale: { label: "Fiscal Code", labelKey: "utility.docFiscalCode" },
+  bolletta: { label: "Bill", labelKey: "utility.docBill" },
+  conferma_fornitore: { label: "Supplier Confirmation", labelKey: "utility.docSupplierConfirm" },
+  fattura: { label: "Invoice", labelKey: "utility.docInvoice" },
+  altro: { label: "Other", labelKey: "utility.docOther" },
 };
 
 const formatCurrency = (cents: number | null | undefined) => {

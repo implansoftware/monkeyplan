@@ -57,11 +57,11 @@ const formatCurrency = (cents: number) => {
   }).format(cents / 100);
 };
 
-const getPriceSourceLabel = (source: string) => {
+const getPriceSourceLabel = (source: string, t: (key: string) => string) => {
   switch (source) {
-    case 'price_list': return 'Listino';
-    case 'reseller': return 'Rivenditore';
-    case 'base': return 'Base';
+    case 'price_list': return t("settings.priceList");
+    case 'reseller': return t("settings.reseller");
+    case 'base': return t("common.base");
     default: return source;
   }
 };
@@ -229,7 +229,7 @@ export default function SubResellerServiceCatalog() {
                     </TableCell>
                     <TableCell>
                       <Badge variant="outline" className={getPriceSourceColor(item.priceSource)}>
-                        {getPriceSourceLabel(item.priceSource)}
+                        {getPriceSourceLabel(item.priceSource, t)}
                       </Badge>
                     </TableCell>
                   </TableRow>

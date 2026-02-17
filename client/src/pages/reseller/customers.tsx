@@ -480,7 +480,7 @@ export default function ResellerCustomers() {
                                 size="icon"
                                 className="h-8 w-8 text-muted-foreground hover:text-destructive"
                                 onClick={() => handleDeleteClick(customer)}
-                                title="Elimina cliente"
+                                title={t("customers.deleteCustomer")}
                                 data-testid={`button-delete-${customer.id}`}
                               >
                                 <Trash2 className="h-4 w-4" />

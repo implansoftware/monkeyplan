@@ -377,14 +377,14 @@ export default function RepairCenterRemoteRequests() {
                               <Euro className="h-4 w-4 text-muted-foreground" />
                               <span className="text-sm font-medium">{t("remote.preventivoInviato")}</span>
                               <Badge variant={request.status === 'quote_accepted' ? 'default' : request.status === 'quote_declined' ? 'destructive' : 'outline'} className="text-xs">
-                                {request.status === 'quoted' ? 'In attesa risposta' : request.status === 'quote_accepted' ? 'Accettato' : request.status === 'quote_declined' ? 'Rifiutato' : 'Inviato'}
+                                {request.status === 'quoted' ? t("remote.awaitingResponse") : request.status === 'quote_accepted' ? t("remote.accepted") : request.status === 'quote_declined' ? t("remote.rejected") : t("common.sent")}
                               </Badge>
                             </div>
                             <p className="text-lg font-bold">{(request.quoteAmount / 100).toFixed(2)} EUR</p>
                           </div>
                           {request.quoteDescription && (
                             <div className="mt-2">
-                              <p className="text-xs text-muted-foreground mb-1">Descrizione lavori</p>
+                              <p className="text-xs text-muted-foreground mb-1">{t("remote.workDescription")}</p>
                               <p className="text-sm">{request.quoteDescription}</p>
                             </div>
                           )}
@@ -597,14 +597,14 @@ export default function RepairCenterRemoteRequests() {
                               <Euro className="h-4 w-4 text-muted-foreground" />
                               <span className="text-sm font-medium">{t("remote.preventivoInviato")}</span>
                               <Badge variant={request.status === 'quote_accepted' ? 'default' : request.status === 'quote_declined' ? 'destructive' : 'outline'} className="text-xs">
-                                {request.status === 'quoted' ? 'In attesa risposta' : request.status === 'quote_accepted' ? 'Accettato' : request.status === 'quote_declined' ? 'Rifiutato' : 'Inviato'}
+                                {request.status === 'quoted' ? t("remote.awaitingResponse") : request.status === 'quote_accepted' ? t("remote.accepted") : request.status === 'quote_declined' ? t("remote.rejected") : t("common.sent")}
                               </Badge>
                             </div>
                             <p className="text-lg font-bold">{(request.quoteAmount / 100).toFixed(2)} EUR</p>
                           </div>
                           {request.quoteDescription && (
                             <div className="mt-2">
-                              <p className="text-xs text-muted-foreground mb-1">Descrizione lavori</p>
+                              <p className="text-xs text-muted-foreground mb-1">{t("remote.workDescription")}</p>
                               <p className="text-sm">{request.quoteDescription}</p>
                             </div>
                           )}

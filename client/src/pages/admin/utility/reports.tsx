@@ -183,13 +183,13 @@ export default function AdminUtilityReports() {
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card data-testid="card-total-practices">
           <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Totale Pratiche</CardTitle>
+            <CardTitle className="text-sm font-medium">{t("utility.totalPractices")}</CardTitle>
             <FileCheck className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{summary?.totalPractices || 0}</div>
             <p className="text-xs text-muted-foreground">
-              {summary?.activePractices || 0} completate
+              {summary?.activePractices || 0} {t("utility.completedPractices")}
             </p>
           </CardContent>
         </Card>
@@ -201,26 +201,26 @@ export default function AdminUtilityReports() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{summary?.supplierCount || 0}</div>
-            <p className="text-xs text-muted-foreground">Provider attivi</p>
+            <p className="text-xs text-muted-foreground">{t("utility.activeProviders")}</p>
           </CardContent>
         </Card>
 
         <Card data-testid="card-commissions-pending">
           <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Compensi Pending</CardTitle>
+            <CardTitle className="text-sm font-medium">{t("utility.commissionsPending")}</CardTitle>
             <Coins className="h-4 w-4 text-yellow-500" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
               {formatCurrency(summary?.commissions?.pending || 0)}
             </div>
-            <p className="text-xs text-muted-foreground">Da liquidare</p>
+            <p className="text-xs text-muted-foreground">{t("utility.toBePaid")}</p>
           </CardContent>
         </Card>
 
         <Card data-testid="card-commissions-total">
           <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Compensi Totali</CardTitle>
+            <CardTitle className="text-sm font-medium">{t("utility.commissionsTotal")}</CardTitle>
             <TrendingUp className="h-4 w-4 text-green-500" />
           </CardHeader>
           <CardContent>
@@ -235,7 +235,7 @@ export default function AdminUtilityReports() {
       <div className="grid gap-6 md:grid-cols-2">
         <Card data-testid="card-chart-categories">
           <CardHeader>
-            <CardTitle className="text-lg">Pratiche per Categoria</CardTitle>
+            <CardTitle className="text-lg">{t("utility.practicesByCategory")}</CardTitle>
           </CardHeader>
           <CardContent>
             {categoryData.length > 0 ? (
@@ -267,7 +267,7 @@ export default function AdminUtilityReports() {
               </div>
             ) : (
               <div className="h-64 flex items-center justify-center text-muted-foreground">
-                Nessun dato disponibile
+                {t("common.noDataAvailable")}
               </div>
             )}
           </CardContent>
@@ -275,7 +275,7 @@ export default function AdminUtilityReports() {
 
         <Card data-testid="card-chart-status">
           <CardHeader>
-            <CardTitle className="text-lg">Pratiche per Stato</CardTitle>
+            <CardTitle className="text-lg">{t("utility.practicesByStatus")}</CardTitle>
           </CardHeader>
           <CardContent>
             {statusData.length > 0 ? (
@@ -292,7 +292,7 @@ export default function AdminUtilityReports() {
               </div>
             ) : (
               <div className="h-64 flex items-center justify-center text-muted-foreground">
-                Nessun dato disponibile
+                {t("common.noDataAvailable")}
               </div>
             )}
           </CardContent>
@@ -300,7 +300,7 @@ export default function AdminUtilityReports() {
 
         <Card data-testid="card-chart-commissions">
           <CardHeader>
-            <CardTitle className="text-lg">Stato Commissioni</CardTitle>
+            <CardTitle className="text-lg">{t("utility.commissionsStatus")}</CardTitle>
           </CardHeader>
           <CardContent>
             {(summary?.commissions?.total || 0) > 0 ? (
@@ -336,7 +336,7 @@ export default function AdminUtilityReports() {
 
         <Card data-testid="card-categories-detail">
           <CardHeader>
-            <CardTitle className="text-lg">Dettaglio per Categoria</CardTitle>
+            <CardTitle className="text-lg">{t("utility.practicesCategoryDetail")}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
@@ -364,14 +364,14 @@ export default function AdminUtilityReports() {
                       </div>
                       <div className="text-right">
                         <p className="font-semibold">{formatCurrency(cat.commissions)}</p>
-                        <p className="text-xs text-muted-foreground">commissioni</p>
+                        <p className="text-xs text-muted-foreground">{t("utility.commissions")}</p>
                       </div>
                     </div>
                   );
                 })
               ) : (
                 <p className="text-center text-muted-foreground py-8">
-                  Nessun dato disponibile
+                  {t("common.noDataAvailable")}
                 </p>
               )}
             </div>

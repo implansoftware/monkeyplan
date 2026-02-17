@@ -60,22 +60,22 @@ interface CompatibilityEntry {
 
 const STORAGE_OPTIONS = ["16GB", "32GB", "64GB", "128GB", "256GB", "512GB", "1TB", "2TB"];
 const GRADE_OPTIONS = [
-  { value: "A+", label: "A+ - Come nuovo", labelKey: "products.gradeAPlus" },
-  { value: "A", label: "A - Ottimo", labelKey: "products.gradeA" },
-  { value: "B", label: "B - Buono", labelKey: "products.gradeB" },
-  { value: "C", label: "C - Discreto", labelKey: "products.gradeC" },
-  { value: "D", label: "D - Danneggiato", labelKey: "products.gradeD" },
+  { value: "A+", label: "A+ - Like New", labelKey: "products.gradeAPlus" },
+  { value: "A", label: "A - Excellent", labelKey: "products.gradeA" },
+  { value: "B", label: "B - Good", labelKey: "products.gradeB" },
+  { value: "C", label: "C - Fair", labelKey: "products.gradeC" },
+  { value: "D", label: "D - Damaged", labelKey: "products.gradeD" },
 ];
 const NETWORK_LOCK_OPTIONS = [
-  { value: "unlocked", label: "Sbloccato", labelKey: "products.unlocked" },
-  { value: "locked", label: "Bloccato operatore", labelKey: "products.lockedCarrier" },
-  { value: "icloud_locked", label: "Bloccato iCloud", labelKey: "products.icloudLocked" },
+  { value: "unlocked", label: "Unlocked", labelKey: "products.unlocked" },
+  { value: "locked", label: "Carrier Locked", labelKey: "products.lockedCarrier" },
+  { value: "icloud_locked", label: "iCloud Locked", labelKey: "products.icloudLocked" },
 ];
 const CONDITION_OPTIONS = [
-  { value: "nuovo", label: "Nuovo", labelKey: "products.conditionNew" },
-  { value: "ricondizionato", label: "Ricondizionato", labelKey: "products.conditionRefurbished" },
-  { value: "usato", label: "Usato", labelKey: "products.conditionUsed" },
-  { value: "difettoso", label: "Difettoso", labelKey: "products.conditionDefective" },
+  { value: "nuovo", label: "New", labelKey: "products.conditionNew" },
+  { value: "ricondizionato", label: "Refurbished", labelKey: "products.conditionRefurbished" },
+  { value: "usato", label: "Used", labelKey: "products.conditionUsed" },
+  { value: "difettoso", label: "Defective", labelKey: "products.conditionDefective" },
 ];
 const BRANDS = ["Apple", "Samsung", "Xiaomi", "Huawei", "OPPO", "OnePlus", "Google", "Motorola", "Sony", "Nokia", "Altro"];
 
@@ -108,25 +108,25 @@ const BATTERY_OPTIONS = [
   { value: "90-94", label: "90-94%", labelKey: "products.battery90" },
   { value: "85-89", label: "85-89%", labelKey: "products.battery85" },
   { value: "80-84", label: "80-84%", labelKey: "products.battery80" },
-  { value: "<80", label: "Meno di 80%", labelKey: "products.batteryBelow80" },
+  { value: "<80", label: "Below 80%", labelKey: "products.batteryBelow80" },
 ];
 
 const CATEGORY_OPTIONS = [
   { value: "smartphone", label: "Smartphone", labelKey: "products.catSmartphone" },
   { value: "tablet", label: "Tablet", labelKey: "products.catTablet" },
-  { value: "portatile", label: "PC Portatile", labelKey: "products.catLaptop" },
-  { value: "pc_fisso", label: "PC Fisso", labelKey: "products.catDesktop" },
+  { value: "portatile", label: "Laptop", labelKey: "products.catLaptop" },
+  { value: "pc_fisso", label: "Desktop PC", labelKey: "products.catDesktop" },
   { value: "smartwatch", label: "Smartwatch", labelKey: "products.catSmartwatch" },
   { value: "console", label: "Console", labelKey: "products.catConsole" },
-  { value: "altro", label: "Altro", labelKey: "products.catOther" },
+  { value: "altro", label: "Other", labelKey: "products.catOther" },
 ];
 
 const ACCESSORY_OPTIONS_KEYS = [
-  { label: "Caricatore originale", labelKey: "products.accOriginalCharger" },
-  { label: "Cavo USB", labelKey: "products.accUsbCable" },
-  { label: "Auricolari", labelKey: "products.accEarphones" },
+  { label: "Original Charger", labelKey: "products.accOriginalCharger" },
+  { label: "USB Cable", labelKey: "products.accUsbCable" },
+  { label: "Earphones", labelKey: "products.accEarphones" },
   { label: "Cover", labelKey: "products.accCover" },
-  { label: "Pellicola", labelKey: "products.accScreenProtector" },
+  { label: "Screen Protector", labelKey: "products.accScreenProtector" },
 ];
 
 export default function AdminSmartphoneCatalog() {

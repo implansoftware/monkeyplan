@@ -67,7 +67,7 @@ export default function AdminUtility() {
       <div className="p-6 space-y-6">
         <div className="flex flex-wrap items-center gap-3">
           <Zap className="h-8 w-8 text-primary" />
-          <h1 className="text-2xl font-bold">Modulo Utility</h1>
+          <h1 className="text-2xl font-bold">{t("utility.utilityModule")}</h1>
         </div>
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           {[...Array(4)].map((_, i) => (
@@ -93,9 +93,9 @@ export default function AdminUtility() {
         <div className="flex flex-wrap items-center gap-3">
           <Zap className="h-8 w-8 text-primary" />
           <div>
-            <h1 className="text-2xl font-bold">Modulo Utility</h1>
+            <h1 className="text-2xl font-bold">{t("utility.utilityModule")}</h1>
             <p className="text-muted-foreground">
-              Gestione servizi telefonici, energetici e altro
+              {t("utility.manageTelecomAndEnergyServices")}
             </p>
           </div>
         </div>
@@ -104,7 +104,7 @@ export default function AdminUtility() {
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card data-testid="card-total-practices">
           <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Totale Pratiche</CardTitle>
+            <CardTitle className="text-sm font-medium">{t("utility.totalPractices")}</CardTitle>
             <FileCheck className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -123,14 +123,14 @@ export default function AdminUtility() {
           <CardContent>
             <div className="text-2xl font-bold">{summary?.supplierCount || 0}</div>
             <p className="text-xs text-muted-foreground">
-              Provider attivi
+              {t("utility.activeProviders")}
             </p>
           </CardContent>
         </Card>
 
         <Card data-testid="card-pending-commissions">
           <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Compensi Pending</CardTitle>
+            <CardTitle className="text-sm font-medium">{t("utility.commissionsPending")}</CardTitle>
             <Coins className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -138,14 +138,14 @@ export default function AdminUtility() {
               {formatCurrency(summary?.commissions?.pending || 0)}
             </div>
             <p className="text-xs text-muted-foreground">
-              Da liquidare
+              {t("utility.toBePaid")}
             </p>
           </CardContent>
         </Card>
 
         <Card data-testid="card-total-commissions">
           <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Compensi Totali</CardTitle>
+            <CardTitle className="text-sm font-medium">{t("utility.commissionsTotal")}</CardTitle>
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -180,7 +180,7 @@ export default function AdminUtility() {
                 </div>
               ))}
               {Object.keys(summary?.byCategory || {}).length === 0 && (
-                <p className="text-sm text-muted-foreground">Nessun dato disponibile</p>
+                <p className="text-sm text-muted-foreground">{t("common.noDataAvailable")}</p>
               )}
             </div>
           </CardContent>
@@ -199,7 +199,7 @@ export default function AdminUtility() {
                 </div>
               ))}
               {Object.keys(summary?.byStatus || {}).length === 0 && (
-                <p className="text-sm text-muted-foreground">Nessun dato disponibile</p>
+                <p className="text-sm text-muted-foreground">{t("common.noDataAvailable")}</p>
               )}
             </div>
           </CardContent>
@@ -224,9 +224,9 @@ export default function AdminUtility() {
           <Link href="/admin/utility/services">
             <CardContent className="p-6 flex flex-col items-center text-center cursor-pointer">
               <Package className="h-10 w-10 text-primary mb-3" />
-              <h3 className="font-semibold mb-1">Listino Servizi</h3>
+              <h3 className="font-semibold mb-1">{t("utility.servicesList")}</h3>
               <p className="text-xs text-muted-foreground mb-3">
-                Catalogo e prezzi
+                {t("utility.catalogAndPrices")}
               </p>
               <ArrowRight className="h-4 w-4 text-muted-foreground" />
             </CardContent>
@@ -239,7 +239,7 @@ export default function AdminUtility() {
               <FileCheck className="h-10 w-10 text-primary mb-3" />
               <h3 className="font-semibold mb-1">{t("sidebar.items.practices")}</h3>
               <p className="text-xs text-muted-foreground mb-3">
-                Contratti attivi
+                {t("utility.activeContracts")}
               </p>
               <ArrowRight className="h-4 w-4 text-muted-foreground" />
             </CardContent>

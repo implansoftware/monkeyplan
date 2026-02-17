@@ -24,11 +24,11 @@ import { useTranslation } from "react-i18next";
 type CommissionStatus = "pending" | "accrued" | "invoiced" | "paid" | "cancelled";
 
 const statusLabels: Record<CommissionStatus, { label: string; labelKey: string }> = {
-  pending: { label: "In Attesa", labelKey: "utility.commStatusPending" },
-  accrued: { label: "Maturata", labelKey: "utility.commStatusAccrued" },
-  invoiced: { label: "Fatturata", labelKey: "utility.commStatusInvoiced" },
-  paid: { label: "Pagata", labelKey: "utility.commStatusPaid" },
-  cancelled: { label: "Annullata", labelKey: "utility.commStatusCancelled" },
+  pending: { label: "Pending", labelKey: "utility.commStatusPending" },
+  accrued: { label: "Accrued", labelKey: "utility.commStatusAccrued" },
+  invoiced: { label: "Invoiced", labelKey: "utility.commStatusInvoiced" },
+  paid: { label: "Paid", labelKey: "utility.commStatusPaid" },
+  cancelled: { label: "Cancelled", labelKey: "utility.commStatusCancelled" },
 };
 
 const statusColors: Record<CommissionStatus, string> = {

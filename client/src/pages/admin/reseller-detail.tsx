@@ -539,7 +539,7 @@ export default function AdminResellerDetail() {
                         </TableCell>
                         <TableCell className="text-right">
                           <Link href={`/admin/customers/${customer.id}`}>
-                            <Button variant="ghost" size="icon" className="hover:bg-blue-100 hover:text-blue-600" title="Visualizza dettagli">
+                            <Button variant="ghost" size="icon" className="hover:bg-blue-100 hover:text-blue-600" title={t("common.viewDetails")}>
                               <Eye className="h-4 w-4" />
                             </Button>
                           </Link>

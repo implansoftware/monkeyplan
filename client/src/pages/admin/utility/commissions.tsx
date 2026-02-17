@@ -475,8 +475,8 @@ export default function AdminUtilityCommissions() {
             </DialogTitle>
             <DialogDescription>
               {editingCommission 
-                ? "Modifica i dati della commissione."
-                : "Registra una nuova commissione per una pratica utility."}
+                ? t("utility.editCommissionData")
+                : t("utility.registerNewCommission")}
             </DialogDescription>
           </DialogHeader>
           <form onSubmit={handleSubmit} className="space-y-4">

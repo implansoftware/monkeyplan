@@ -265,7 +265,7 @@ export default function HrWorkProfiles() {
               data-testid="button-sync-all"
             >
               <RefreshCw className={`h-4 w-4 mr-2 ${syncAllMutation.isPending ? 'animate-spin' : ''}`} />
-              {syncAllMutation.isPending ? 'Sincronizzazione...' : 'Sincronizza Tutti'}
+              {syncAllMutation.isPending ? t("common.syncing") : t("common.syncAll")}
             </Button>
             <Button variant="secondary" onClick={() => { resetForm(); setDialogOpen(true); }} data-testid="button-new-profile">
               <Plus className="h-4 w-4 mr-2" />

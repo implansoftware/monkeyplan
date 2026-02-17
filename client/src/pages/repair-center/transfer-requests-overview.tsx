@@ -265,7 +265,7 @@ export default function RepairCenterTransferRequestsOverviewPage() {
               <div>
                 <p className="font-medium font-mono">{request.requestNumber}</p>
                 <div className="text-sm text-muted-foreground">
-                  Da: {request.sourceWarehouse?.name || 'Magazzino'}
+                  {t("common.from")}: {request.sourceWarehouse?.name || t("common.warehouse")}
                 </div>
               </div>
             </div>
@@ -1002,7 +1002,7 @@ export default function RepairCenterTransferRequestsOverviewPage() {
                 disabled={createRequestMutation.isPending || requestQuantity < 1 || !selectedWarehouse || !selectedProduct}
                 data-testid="button-rc-submit-request"
               >
-                {createRequestMutation.isPending ? "Invio..." : "Invia Richiesta"}
+                {createRequestMutation.isPending ? t("common.sending") : t("common.sendRequest")}
               </Button>
             )}
           </DialogFooter>

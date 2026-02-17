@@ -894,22 +894,22 @@ const jsonLdSoftware = {
     "@type": "Offer",
     "price": "0",
     "priceCurrency": "EUR",
-    "description": "Prime 100 licenze gratuite",
+    "description": "First 100 licenses free",
     "availability": "https://schema.org/LimitedAvailability"
   },
   "featureList": [
-    "Gestione assistenza tecnica e riparazioni",
-    "Magazzino e ricambi con tracciabilità",
-    "POS fiscale con Registratore Telematico",
-    "CRM clienti e dispositivi",
-    "Ordini B2B multi-livello",
-    "Garanzie e assicurazioni",
-    "Multi-negozio e multi-ruolo",
-    "Integrazioni fornitori (SIFAR, Foneday, MobileSentrix)",
-    "Fatturazione automatica",
-    "Marketplace P2P"
+    "Technical assistance and repair management",
+    "Warehouse and spare parts with traceability",
+    "Fiscal POS with Telematic Register",
+    "Customer and device CRM",
+    "Multi-level B2B orders",
+    "Warranties and insurance",
+    "Multi-store and multi-role",
+    "Supplier integrations (SIFAR, Foneday, MobileSentrix)",
+    "Automatic invoicing",
+    "P2P Marketplace"
   ],
-  "inLanguage": "it"
+  "inLanguage": "en"
 };
 
 const jsonLdWebPage = {

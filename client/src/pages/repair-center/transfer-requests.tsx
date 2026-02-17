@@ -554,7 +554,7 @@ export default function RepairCenterTransferRequestsPage() {
                   disabled={createRequestMutation.isPending || requestQuantity < 1 || !selectedWarehouse || !selectedProduct}
                   data-testid="button-submit-request"
                 >
-                  {createRequestMutation.isPending ? "Invio..." : "Invia Richiesta"}
+                  {createRequestMutation.isPending ? t("common.sending") : t("common.sendRequest")}
                 </Button>
               )}
             </DialogFooter>

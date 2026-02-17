@@ -65,21 +65,21 @@ type AccessoryWithSpecs = Product & {
 };
 
 const ACCESSORY_TYPES = [
-  { value: "cover", label: "Cover / Custodia", labelKey: "products.typeCover" },
-  { value: "pellicola", label: "Pellicola protettiva", labelKey: "products.typeScreenProtector" },
-  { value: "caricatore", label: "Caricatore", labelKey: "products.typeCharger" },
-  { value: "cavo", label: "Cavo", labelKey: "products.typeCable" },
-  { value: "auricolare", label: "Auricolari", labelKey: "products.typeEarphones" },
+  { value: "cover", label: "Cover / Case", labelKey: "products.typeCover" },
+  { value: "pellicola", label: "Screen Protector", labelKey: "products.typeScreenProtector" },
+  { value: "caricatore", label: "Charger", labelKey: "products.typeCharger" },
+  { value: "cavo", label: "Cable", labelKey: "products.typeCable" },
+  { value: "auricolare", label: "Earphones", labelKey: "products.typeEarphones" },
   { value: "powerbank", label: "Power Bank", labelKey: "products.typePowerBank" },
-  { value: "supporto", label: "Supporto / Stand", labelKey: "products.typeStand" },
-  { value: "adattatore", label: "Adattatore", labelKey: "products.typeAdapter" },
-  { value: "altro", label: "Altro", labelKey: "products.typeOther" },
+  { value: "supporto", label: "Stand / Mount", labelKey: "products.typeStand" },
+  { value: "adattatore", label: "Adapter", labelKey: "products.typeAdapter" },
+  { value: "altro", label: "Other", labelKey: "products.typeOther" },
 ];
 
 const CONDITION_OPTIONS = [
-  { value: "nuovo", label: "Nuovo", labelKey: "products.conditionNew" },
-  { value: "ricondizionato", label: "Ricondizionato", labelKey: "products.conditionRefurbished" },
-  { value: "usato", label: "Usato", labelKey: "products.conditionUsed" },
+  { value: "nuovo", label: "New", labelKey: "products.conditionNew" },
+  { value: "ricondizionato", label: "Refurbished", labelKey: "products.conditionRefurbished" },
+  { value: "usato", label: "Used", labelKey: "products.conditionUsed" },
 ];
 
 const BRANDS = ["Apple", "Samsung", "Xiaomi", "Huawei", "Anker", "Belkin", "Spigen", "OtterBox", "Universale", "Altro"];

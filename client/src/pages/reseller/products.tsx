@@ -727,7 +727,7 @@ export default function ResellerProducts() {
       const center = repairCenters.find(rc => rc.id === warehouseId);
       setEditStock([...editStock, { 
         warehouseId, 
-        warehouseName: warehouse?.name || center?.name || 'Magazzino',
+        warehouseName: warehouse?.name || center?.name || t("common.warehouse"),
         ownerType: (warehouse?.ownerType || 'repair_center') as 'reseller' | 'sub_reseller' | 'repair_center',
         ownerName: warehouse?.owner?.fullName || warehouse?.owner?.username || center?.name || '',
         quantity: 0, 

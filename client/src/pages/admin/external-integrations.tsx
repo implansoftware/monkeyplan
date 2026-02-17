@@ -519,7 +519,7 @@ export default function AdminExternalIntegrations() {
                           size="icon" 
                           variant="ghost"
                           onClick={() => {
-                            if (confirm(`Eliminare l'integrazione "${integration.name}"?`)) {
+                            if (confirm(t("integrations.confirmDeleteIntegration", { name: integration.name }))) {
                               deleteMutation.mutate(integration.id);
                             }
                           }}
